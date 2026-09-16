@@ -5,9 +5,11 @@ Master API contract for TICKBRON.
 Version prefix: `/api/v1/`
 
 Core endpoints:
-- POST `/api/v1/auth/register/`
-- POST `/api/v1/auth/login/`
-- POST `/api/v1/auth/refresh/`
+- POST `/api/v1/auth/register/` ✅ IMPLEMENTED (Checkpoint 03)
+- POST `/api/v1/auth/login/` ✅ IMPLEMENTED (Checkpoint 03)
+- POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
+- POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
+- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03)
 - GET `/api/v1/properties/search/`
 - GET `/api/v1/properties/{id}/`
 - GET `/api/v1/properties/{id}/availability/`
@@ -34,3 +36,4 @@ Rules:
 - OpenAPI documentation is mandatory.
 - Frontend must not invent response/request fields.
 - Contract changes must be recorded here and in HANDOFF.md.
+- ✅ indicates implemented endpoints, ❌ indicates pending implementation.

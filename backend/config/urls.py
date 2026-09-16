@@ -13,6 +13,6 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # API v1 endpoints (to be implemented in future checkpoints)
-    # path('api/v1/', include('api_v1.urls')),
+    # API v1 endpoints
+    path('api/v1/auth/', include('users.urls')),
 ]

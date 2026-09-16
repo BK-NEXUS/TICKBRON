@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # TICKBRON apps
     'common',
     'core',
+    'users',
     
     # Third-party apps
     'rest_framework',
@@ -143,6 +144,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom User Model
+AUTH_USER_MODEL = 'users.User'
 
 # Security Settings
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')

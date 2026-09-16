@@ -8,14 +8,14 @@ Architecture: Django + Django REST Framework + PostgreSQL + Redis + Celery; Reac
 - Frontend: Baxram
 
 ## Current status
-Backend: 2/20 checkpoints
+Backend: 3/20 checkpoints
 Frontend: 2/20 checkpoints
 
 ## Shared rule
 GitHub is the shared source for code and `.ai` coordination state.
 
 ## Next checkpoints
-Backend: 03
+Backend: 04
 Frontend: 03
 
 ## Important
