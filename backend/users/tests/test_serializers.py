@@ -48,8 +48,8 @@ class TestUserRegistrationSerializer(TestCase):
             'email': 'newuser@example.com',
             'first_name': 'New',
             'last_name': 'User',
-            'password': 'securepass123',
-            'password_confirm': 'securepass123'
+            'password': 'SecureP@ssw0rd123',
+            'password_confirm': 'SecureP@ssw0rd123'
         }
         
         serializer = UserRegistrationSerializer(data=data)
@@ -57,7 +57,7 @@ class TestUserRegistrationSerializer(TestCase):
         
         user = serializer.save()
         assert user.email == 'newuser@example.com'
-        assert user.check_password('securepass123')
+        assert user.check_password('SecureP@ssw0rd123')
     
     def test_password_mismatch(self):
         """Test registration with mismatched passwords."""
@@ -74,7 +74,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'password' in serializer.errors
     
     def test_password_too_short(self):
-        """Test registration with short password."""
+        """Test registration with short password (less than 12 characters)."""
         data = {
             'email': 'newuser@example.com',
             'first_name': 'New',
@@ -91,8 +91,8 @@ class TestUserRegistrationSerializer(TestCase):
         """Test registration with missing required fields."""
         data = {
             'email': 'newuser@example.com',
-            'password': 'securepass123',
-            'password_confirm': 'securepass123'
+            'password': 'SecureP@ssw0rd123',
+            'password_confirm': 'SecureP@ssw0rd123'
         }
         
         serializer = UserRegistrationSerializer(data=data)

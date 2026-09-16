@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'common',
     'core',
     'users',
+    'permissions',
     
     # Third-party apps
     'rest_framework',
@@ -104,10 +105,13 @@ if os.getenv('DB_ENGINE') == 'django.db.backends.postgresql':
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        }
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',

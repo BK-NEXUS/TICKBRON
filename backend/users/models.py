@@ -61,6 +61,23 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
     
+    # Security and verification fields
+    failed_login_attempts = models.IntegerField(default=0)
+    last_failed_login = models.DateTimeField(null=True, blank=True)
+    account_locked_until = models.DateTimeField(null=True, blank=True)
+    last_login_ip = models.GenericIPAddressField(null=True, blank=True)
+    email_verified = models.BooleanField(default=False)
+    email_verification_token = models.CharField(max_length=255, blank=True, null=True)
+    email_verification_sent_at = models.DateTimeField(null=True, blank=True)
+    
+    # 2FA foundation fields
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
+    two_factor_backup_codes = models.TextField(blank=True, null=True)
+    
+    # Role foundation (for RBAC)
+    role = models.ForeignKey('permissions.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    
     objects = UserManager()
     
     USERNAME_FIELD = 'email'
@@ -87,3 +104,34 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         Return the short name for the user.
         """
         return self.first_name
+    
+    def is_account_locked(self):
+        """
+        Check if the account is currently locked due to failed login attempts.
+        """
+        if self.account_locked_until and self.account_locked_until > timezone.now():
+            return True
+        return False
+    
+    def increment_failed_login(self):
+        """
+        Increment failed login attempts and lock account if threshold reached.
+        """
+        self.failed_login_attempts += 1
+        self.last_failed_login = timezone.now()
+        
+        # Lock account after 5 failed attempts for 30 minutes
+        if self.failed_login_attempts >= 5:
+            from datetime import timedelta
+            self.account_locked_until = timezone.now() + timedelta(minutes=30)
+        
+        self.save()
+    
+    def reset_failed_login(self):
+        """
+        Reset failed login attempts after successful login.
+        """
+        self.failed_login_attempts = 0
+        self.last_failed_login = None
+        self.account_locked_until = None
+        self.save()

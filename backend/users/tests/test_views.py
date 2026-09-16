@@ -21,8 +21,8 @@ class TestAuthViews(TestCase):
             'email': 'test@example.com',
             'first_name': 'Test',
             'last_name': 'User',
-            'password': 'testpass123',
-            'password_confirm': 'testpass123'
+            'password': 'SecureP@ssw0rd123',
+            'password_confirm': 'SecureP@ssw0rd123'
         }
     
     def test_register_user(self):
@@ -61,7 +61,7 @@ class TestAuthViews(TestCase):
         # Create user
         user = User.objects.create_user(
             email='test@example.com',
-            password='testpass123',
+            password='SecureP@ssw0rd123',
             first_name='Test',
             last_name='User'
         )
@@ -69,7 +69,7 @@ class TestAuthViews(TestCase):
         # Login
         login_data = {
             'email': 'test@example.com',
-            'password': 'testpass123'
+            'password': 'SecureP@ssw0rd123'
         }
         response = self.client.post('/api/v1/auth/login/', login_data)
         
@@ -80,7 +80,7 @@ class TestAuthViews(TestCase):
         """Test login with invalid credentials."""
         login_data = {
             'email': 'test@example.com',
-            'password': 'wrongpass'
+            'password': 'WrongP@ssw0rd123'
         }
         response = self.client.post('/api/v1/auth/login/', login_data)
         
@@ -91,14 +91,14 @@ class TestAuthViews(TestCase):
         # Create inactive user
         user = User.objects.create_user(
             email='test@example.com',
-            password='testpass123'
+            password='SecureP@ssw0rd123'
         )
         user.is_active = False
         user.save()
         
         login_data = {
             'email': 'test@example.com',
-            'password': 'testpass123'
+            'password': 'SecureP@ssw0rd123'
         }
         response = self.client.post('/api/v1/auth/login/', login_data)
         
@@ -109,7 +109,7 @@ class TestAuthViews(TestCase):
         # Create and authenticate user
         user = User.objects.create_user(
             email='test@example.com',
-            password='testpass123'
+            password='SecureP@ssw0rd123'
         )
         self.client.force_authenticate(user=user)
         
@@ -130,7 +130,7 @@ class TestAuthViews(TestCase):
         # Create and authenticate user
         user = User.objects.create_user(
             email='test@example.com',
-            password='testpass123',
+            password='SecureP@ssw0rd123',
             first_name='Test',
             last_name='User'
         )
@@ -152,7 +152,7 @@ class TestAuthViews(TestCase):
         """Test session refresh when authenticated."""
         user = User.objects.create_user(
             email='test@example.com',
-            password='testpass123',
+            password='SecureP@ssw0rd123',
             first_name='Test',
             last_name='User'
         )
@@ -168,3 +168,31 @@ class TestAuthViews(TestCase):
         response = self.client.post('/api/v1/auth/refresh/')
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    def test_account_lockout_after_failed_attempts(self):
+        """Test account lockout after multiple failed login attempts."""
+        # Create user
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='SecureP@ssw0rd123',
+            first_name='Test',
+            last_name='User'
+        )
+        
+        # Simulate 5 failed login attempts
+        for _ in range(5):
+            login_data = {
+                'email': 'test@example.com',
+                'password': 'WrongP@ssw0rd123'
+            }
+            self.client.post('/api/v1/auth/login/', login_data)
+        
+        # Try to login with correct password (should be locked)
+        login_data = {
+            'email': 'test@example.com',
+            'password': 'SecureP@ssw0rd123'
+        }
+        response = self.client.post('/api/v1/auth/login/', login_data)
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert 'locked' in response.data['detail'].lower()

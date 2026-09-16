@@ -5,6 +5,7 @@ This module contains serializers for the User model to be used in API endpoints.
 """
 from rest_framework import serializers
 from users.models import User
+from users.validators import EmailFormatValidator
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -16,7 +17,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 
-                  'phone_number', 'is_active', 'date_joined', 'last_login']
+                  'phone_number', 'is_active', 'date_joined', 'last_login',
+                  'email_verified', 'two_factor_enabled']
         read_only_fields = ['id', 'date_joined', 'last_login']
     
     def get_full_name(self, obj):
@@ -27,7 +29,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration.
     """
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     
     class Meta:
@@ -38,6 +40,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'first_name': {'required': True},
             'last_name': {'required': True},
         }
+    
+    def validate_email(self, value):
+        """Validate email format."""
+        validator = EmailFormatValidator()
+        validator.validate(value)
+        return value
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -59,3 +67,9 @@ class UserLoginSerializer(serializers.Serializer):
     """
     email = serializers.EmailField()
     password = serializers.CharField()
+    
+    def validate_email(self, value):
+        """Validate email format."""
+        validator = EmailFormatValidator()
+        validator.validate(value)
+        return value
