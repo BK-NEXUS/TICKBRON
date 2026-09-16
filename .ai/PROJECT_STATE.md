@@ -8,7 +8,7 @@ Architecture: Django + Django REST Framework + PostgreSQL + Redis + Celery; Reac
 - Frontend: Baxram
 
 ## Current status
-Backend: 4/20 checkpoints
+Backend: 5/20 checkpoints
 Frontend: 4/20 checkpoints
 
 ## Shared rule

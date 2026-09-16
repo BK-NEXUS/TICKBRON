@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'core',
     'users',
     'permissions',
+    'properties',
     
     # Third-party apps
     'rest_framework',
