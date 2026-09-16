@@ -14,25 +14,41 @@ describe('HomePage', () => {
     expect(screen.getByText('Discover unique homes and experiences around the world')).toBeInTheDocument()
   })
 
-  it('renders the search input with proper accessibility', () => {
+  it('renders the search form with proper accessibility', () => {
     render(
       <BrowserRouter>
         <HomePage />
       </BrowserRouter>
     )
-    const searchInput = screen.getByLabelText('Search destination')
-    expect(searchInput).toBeInTheDocument()
-    expect(searchInput).toHaveAttribute('type', 'text')
-    expect(searchInput).toHaveAttribute('placeholder', 'Where are you going?')
+    const destinationInput = screen.getByLabelText('Destination')
+    expect(destinationInput).toBeInTheDocument()
+    expect(destinationInput).toHaveAttribute('type', 'text')
+    expect(destinationInput).toHaveAttribute('placeholder', 'Where are you going?')
   })
 
-  it('renders the search button', () => {
+  it('renders the search form button', () => {
     render(
       <BrowserRouter>
         <HomePage />
       </BrowserRouter>
     )
-    expect(screen.getByText('Search')).toBeInTheDocument()
+    const searchButton = screen.getByRole('button', { name: 'Search' })
+    expect(searchButton).toBeInTheDocument()
+  })
+
+  it('renders search form with all required fields', () => {
+    render(
+      <BrowserRouter>
+        <HomePage />
+      </BrowserRouter>
+    )
+    expect(screen.getByLabelText('Destination')).toBeInTheDocument()
+    expect(screen.getByLabelText('Check-in')).toBeInTheDocument()
+    expect(screen.getByLabelText('Check-out')).toBeInTheDocument()
+    expect(screen.getByLabelText('Guests')).toBeInTheDocument()
+    expect(screen.getByLabelText('Adults')).toBeInTheDocument()
+    expect(screen.getByLabelText('Children')).toBeInTheDocument()
+    expect(screen.getByLabelText('Rooms')).toBeInTheDocument()
   })
 
   it('renders hero statistics', () => {

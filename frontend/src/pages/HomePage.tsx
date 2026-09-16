@@ -1,3 +1,5 @@
+import { SearchForm } from '../components/SearchForm'
+
 // Mock data for homepage content
 // TODO: Replace with real data from backend API when available
 const FEATURED_DESTINATIONS = [
@@ -54,13 +56,7 @@ export function HomePage() {
           <h1 className="hero-title">Find Your Perfect Stay</h1>
           <p className="hero-subtitle">Discover unique homes and experiences around the world</p>
           <div className="hero-search">
-            <input 
-              type="text" 
-              placeholder="Where are you going?" 
-              className="search-input" 
-              aria-label="Search destination"
-            />
-            <button className="btn btn-primary btn-large">Search</button>
+            <SearchForm />
           </div>
           <div className="hero-stats">
             {STATS.map((stat) => (

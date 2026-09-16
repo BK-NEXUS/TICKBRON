@@ -634,8 +634,17 @@ body {
 .hero-search {
   display: flex;
   gap: var(--spacing-sm);
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto var(--spacing-2xl);
+}
+
+.hero-search .search-form-input {
+  background-color: white;
+  color: var(--color-text-primary);
+}
+
+.hero-search .search-form-label {
+  color: white;
 }
 
 .search-input {
@@ -667,6 +676,65 @@ body {
 .hero-stat-label {
   font-size: var(--font-size-sm);
   opacity: 0.9;
+}
+
+/* Search Form */
+.search-form {
+  width: 100%;
+}
+
+.search-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.search-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.search-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.search-form-input {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search-form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+}
+
+.search-form-input-error {
+  border-color: var(--color-error);
+}
+
+.search-form-input-error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.1);
+}
+
+.search-form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--spacing-xs);
+}
+
+.search-form-submit {
+  align-self: flex-end;
 }
 
 /* Section Styles */
@@ -986,6 +1054,14 @@ body {
     flex-direction: column;
   }
   
+  .search-form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .search-form-submit {
+    align-self: stretch;
+  }
+  
   .hero-stats {
     gap: var(--spacing-lg);
   }
@@ -1062,6 +1138,14 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
   
+  .search-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .search-form-submit {
+    grid-column: span 2;
+  }
+  
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1105,6 +1189,14 @@ body {
   .destinations-grid,
   .property-types-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .search-form-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .search-form-submit {
+    grid-column: span 4;
   }
   
   .features-grid {
@@ -1154,6 +1246,14 @@ body {
   .destinations-grid,
   .property-types-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .search-form-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .search-form-submit {
+    grid-column: span 4;
   }
   
   .features-grid {
