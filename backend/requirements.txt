@@ -22,8 +22,8 @@ python-dotenv==1.0.0
 drf-spectacular==0.26.5
 
 # Testing
-pytest==7.4.3
-pytest-django==4.7.0
+pytest==9.1.1
+pytest-django==4.14.0
 pytest-cov==4.1.0
 
 # Code Quality

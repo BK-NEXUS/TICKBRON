@@ -5,6 +5,7 @@ Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -32,6 +33,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # TICKBRON apps
+    'common',
+    'core',
     
     # Third-party apps
     'rest_framework',
@@ -74,25 +79,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Use SQLite for development/foundation setup. PostgreSQL will be configured when DB is available.
+# Database configuration - supports both SQLite (development) and PostgreSQL (production)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 
-# PostgreSQL configuration (commented out until DB is available)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME', 'tickbron'),
-#         'USER': os.getenv('DB_USER', 'tickbron_user'),
-#         'PASSWORD': os.getenv('DB_PASSWORD', 'tickbron_password'),
-#         'HOST': os.getenv('DB_HOST', 'localhost'),
-#         'PORT': os.getenv('DB_PORT', '5432'),
-#     }
-# }
+# PostgreSQL-specific settings when using PostgreSQL
+if os.getenv('DB_ENGINE') == 'django.db.backends.postgresql':
+    DATABASES['default']['OPTIONS'] = {
+        'connect_timeout': 10,
+    }
 
 
 # Password validation
@@ -188,3 +191,14 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# Database connection health check
+DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
+DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
+
+# Testing database configuration
+if 'test' in sys.argv or 'pytest' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
