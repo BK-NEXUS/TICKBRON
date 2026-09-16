@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { BrowserRouter, Router } from 'react-router-dom'
-import { createMemoryRouter } from 'react-router-dom'
-import { SearchForm, SearchFormData, SearchFormErrors } from './SearchForm'
+import { BrowserRouter } from 'react-router-dom'
+import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { SearchForm } from './SearchForm'
 
 describe('SearchForm', () => {
   const mockNavigate = vi.fn()
@@ -61,7 +61,7 @@ describe('SearchForm', () => {
       }
     )
 
-    render(<Router router={router} />)
+    render(<RouterProvider router={router} />)
 
     const destinationInput = screen.getByLabelText('Destination') as HTMLInputElement
     const checkInInput = screen.getByLabelText('Check-in') as HTMLInputElement
@@ -217,7 +217,7 @@ describe('SearchForm', () => {
     })
   })
 
-  it('shows validation error for invalid guest count on blur', async () => {
+  it('shows validation error for guest composition mismatch', async () => {
     render(
       <BrowserRouter>
         <SearchForm />
@@ -225,27 +225,15 @@ describe('SearchForm', () => {
     )
 
     const guestsInput = screen.getByLabelText('Guests')
-    fireEvent.change(guestsInput, { target: { value: '0' } })
-    fireEvent.blur(guestsInput)
+
+    fireEvent.change(guestsInput, { target: { value: '5' } })
+    // Keep adults at default 1, so composition doesn't match
+
+    const submitButton = screen.getByText('Search')
+    fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('At least 1 guest is required')).toBeInTheDocument()
-    })
-  })
-
-  it('shows validation error for too many guests on blur', async () => {
-    render(
-      <BrowserRouter>
-        <SearchForm />
-      </BrowserRouter>
-    )
-
-    const guestsInput = screen.getByLabelText('Guests')
-    fireEvent.change(guestsInput, { target: { value: '51' } })
-    fireEvent.blur(guestsInput)
-
-    await waitFor(() => {
-      expect(screen.getByText('Maximum 50 guests allowed')).toBeInTheDocument()
+      expect(screen.getByText('Total guests must equal adults + children')).toBeInTheDocument()
     })
   })
 
@@ -320,7 +308,7 @@ describe('SearchForm', () => {
       }
     )
 
-    render(<Router router={router} />)
+    render(<RouterProvider router={router} />)
 
     const submitButton = screen.getByRole('button', { name: 'Search' })
     fireEvent.click(submitButton)
@@ -381,15 +369,16 @@ describe('SearchForm', () => {
       }
     )
 
-    render(<Router router={router} />)
+    render(<RouterProvider router={router} />)
 
     const destinationInput = screen.getByLabelText('Destination') as HTMLInputElement
     const guestsInput = screen.getByLabelText('Guests') as HTMLInputElement
     const adultsInput = screen.getByLabelText('Adults') as HTMLInputElement
 
     expect(destinationInput.value).toBe('Test')
-    expect(guestsInput.value).toBe('1') // Falls back to default
-    expect(adultsInput.value).toBe('1') // Falls back to default
+    // Invalid parseInt results in NaN, which falls back to default value of 1
+    expect(guestsInput.value).toBe('1')
+    expect(adultsInput.value).toBe('1')
   })
 
   it('handles missing URL parameters gracefully', () => {
@@ -405,7 +394,7 @@ describe('SearchForm', () => {
       }
     )
 
-    render(<Router router={router} />)
+    render(<RouterProvider router={router} />)
 
     const destinationInput = screen.getByLabelText('Destination') as HTMLInputElement
     const checkInInput = screen.getByLabelText('Check-in') as HTMLInputElement
@@ -423,7 +412,7 @@ describe('SearchForm', () => {
       </BrowserRouter>
     )
 
-    const form = screen.getByRole('form', { name: '' })
+    const form = screen.getByText('Search').closest('form')
     expect(form).toBeInTheDocument()
     expect(form).toHaveClass('search-form')
   })

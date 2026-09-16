@@ -49,7 +49,7 @@ describe('MobileMenu', () => {
   })
 
   it('applies custom className', () => {
-    const { container } = render(
+    render(
       <MobileMenu isOpen={true} onClose={vi.fn()} className="custom-class" />
     )
     const menu = screen.getByRole('dialog')

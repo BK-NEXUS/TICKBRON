@@ -53,7 +53,7 @@ const URL_PARAMS = {
  * - Browser back/forward navigation
  */
 export function SearchForm() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   
   const [formData, setFormData] = useState<SearchFormData>(DEFAULT_VALUES)
@@ -74,10 +74,10 @@ export function SearchForm() {
       destination: urlDestination || DEFAULT_VALUES.destination,
       checkIn: urlCheckIn || DEFAULT_VALUES.checkIn,
       checkOut: urlCheckOut || DEFAULT_VALUES.checkOut,
-      guests: urlGuests ? parseInt(urlGuests, 10) : DEFAULT_VALUES.guests,
-      adults: urlAdults ? parseInt(urlAdults, 10) : DEFAULT_VALUES.adults,
-      children: urlChildren ? parseInt(urlChildren, 10) : DEFAULT_VALUES.children,
-      rooms: urlRooms ? parseInt(urlRooms, 10) : DEFAULT_VALUES.rooms,
+      guests: urlGuests && !isNaN(parseInt(urlGuests, 10)) ? parseInt(urlGuests, 10) : DEFAULT_VALUES.guests,
+      adults: urlAdults && !isNaN(parseInt(urlAdults, 10)) ? parseInt(urlAdults, 10) : DEFAULT_VALUES.adults,
+      children: urlChildren && !isNaN(parseInt(urlChildren, 10)) ? parseInt(urlChildren, 10) : DEFAULT_VALUES.children,
+      rooms: urlRooms && !isNaN(parseInt(urlRooms, 10)) ? parseInt(urlRooms, 10) : DEFAULT_VALUES.rooms,
     })
   }, [searchParams])
 
@@ -208,9 +208,7 @@ export function SearchForm() {
     newParams.set(URL_PARAMS.ROOMS, formData.rooms.toString())
 
     // Navigate to search results page with parameters
-    // TODO: Implement search results page in future checkpoint
-    // For now, just update the URL parameters on the current page for state preservation
-    setSearchParams(newParams)
+    navigate(`/search?${newParams.toString()}`)
   }
 
   // Handle field-specific change handlers
