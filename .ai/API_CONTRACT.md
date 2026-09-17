@@ -10,7 +10,7 @@ Core endpoints:
 - POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
 - GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03)
-- GET `/api/v1/properties/search/`
+- GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 09)
 - GET `/api/v1/properties/{id}/`
 - GET `/api/v1/properties/{id}/availability/`
 - POST `/api/v1/bookings/`
@@ -44,6 +44,21 @@ Core endpoints:
 - Added admin interfaces for all new models (internal only)
 - No public API changes in this checkpoint
 - Room/rate plan/inventory management endpoints to be implemented in future checkpoints
+
+## Checkpoint 09 Notes (Search backend foundation)
+- Added GET `/api/v1/properties/search/` endpoint with comprehensive filtering
+- Search parameters: q (text), location, lat/lng/radius (geographic), min/max_price, min/max_guests, amenities, property_type, check_in/check_out, sort, page/page_size
+- Added GET `/api/v1/properties/search/suggestions/` endpoint for autocomplete
+- Response format: { count, next, previous, results: [{ property details, amenities, primary_photo }] }
+- Public endpoint (no authentication required)
+- Cross-database compatible (SQLite development, PostgreSQL production)
+- Text search using Django ORM icontains (works with both databases)
+- Geographic search using bounding box approach for compatibility
+- Comprehensive filtering: location, price, guests, amenities, property type, dates
+- Sorting options: relevance, price_asc, price_desc, rating, distance
+- Pagination support with configurable page size (max 100)
+- Database indexes for search performance optimization
+- Security review passed (24/24 checks)
 
 Rules:
 - Breaking API changes require `/api/v2/`.

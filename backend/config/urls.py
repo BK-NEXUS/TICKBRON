@@ -15,4 +15,5 @@ urlpatterns = [
     
     # API v1 endpoints
     path('api/v1/auth/', include('users.urls')),
+    path('api/v1/', include('properties.urls')),
 ]
