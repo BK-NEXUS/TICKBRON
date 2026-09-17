@@ -6,7 +6,9 @@ This module contains models for properties, translations, policies, and related 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 from common.models import BaseModel
+from common.storage import get_media_upload_path, validate_image_file
 
 
 class PropertyType(BaseModel):
@@ -431,3 +433,109 @@ class PropertyAmenity(BaseModel):
     def __str__(self):
         availability = "Available" if self.is_available else "Not Available"
         return f"{self.property.id} - {self.amenity.name} ({availability})"
+
+
+class PropertyPhoto(BaseModel):
+    """
+    Property photo model for handling property images.
+    
+    Stores property photos with metadata, ordering, and storage abstraction.
+    """
+    PHOTO_TYPE_CHOICES = [
+        ('exterior', _('Exterior')),
+        ('interior', _('Interior')),
+        ('amenity', _('Amenity')),
+        ('room', _('Room')),
+        ('other', _('Other')),
+    ]
+    
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='photos',
+        db_index=True
+    )
+    photo = models.ImageField(
+        upload_to=get_media_upload_path,
+        help_text=_('Property photo image')
+    )
+    photo_type = models.CharField(
+        max_length=20,
+        choices=PHOTO_TYPE_CHOICES,
+        default='other',
+        db_index=True,
+        help_text=_('Type of photo')
+    )
+    caption = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_('Photo caption or description')
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text=_('Whether this is the primary/cover photo for the property')
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        help_text=_('Display order for photos')
+    )
+    alt_text = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_('Alt text for accessibility')
+    )
+    
+    class Meta:
+        db_table = 'property_photos'
+        verbose_name = 'Property Photo'
+        verbose_name_plural = 'Property Photos'
+        ordering = ['property', 'display_order', 'created_at']
+        indexes = [
+            models.Index(fields=['property', 'display_order']),
+            models.Index(fields=['is_primary']),
+            models.Index(fields=['photo_type']),
+        ]
+    
+    def __str__(self):
+        return f"Photo {self.id} - Property {self.property.id} ({self.get_photo_type_display()})"
+    
+    def clean(self):
+        """Validate the photo file."""
+        super().clean()
+        
+        if self.photo:
+            # Validate the image file
+            is_valid, error_message = validate_image_file(self.photo)
+            if not is_valid:
+                raise ValidationError({'photo': error_message})
+            
+            # Ensure only one primary photo per property
+            if self.is_primary:
+                existing_primary = PropertyPhoto.objects.filter(
+                    property=self.property,
+                    is_primary=True
+                ).exclude(id=self.id)
+                
+                if existing_primary.exists():
+                    raise ValidationError({
+                        'is_primary': _('Only one primary photo is allowed per property')
+                    })
+    
+    def save(self, *args, **kwargs):
+        """Override save to enforce single primary photo constraint."""
+        if self.is_primary:
+            # Set all other photos for this property to non-primary
+            PropertyPhoto.objects.filter(
+                property=self.property,
+                is_primary=True
+            ).exclude(id=self.id).update(is_primary=False)
+        
+        super().save(*args, **kwargs)
+    
+    def get_absolute_url(self):
+        """Get the absolute URL for the photo."""
+        return self.photo.url if self.photo else None

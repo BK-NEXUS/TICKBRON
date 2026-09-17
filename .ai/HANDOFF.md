@@ -143,3 +143,33 @@ Status: FRONTEND READY (API endpoint pending)
 - Responsive interaction patterns implemented for all device sizes
 - No backend API dependencies for checkpoint 06 (mock adapter only)
 - Frontend can continue with checkpoint 07 independently
+
+## Property Photo Data Model (Backend Checkpoint 07)
+Status: DATA MODEL READY (API endpoints pending)
+
+### PropertyPhoto
+- Stores property photos with metadata and ordering
+- Fields: property (FK), photo (ImageField), photo_type, caption, is_primary, display_order, alt_text
+- Photo types: exterior, interior, amenity, room, other
+- is_primary flag for cover photo (enforced: only one primary per property)
+- display_order for photo gallery ordering
+- Server-side image validation (file type, size, content type)
+- Storage abstraction layer (TickBronStorage, LocalStorage, S3 placeholder)
+- Upload path: properties/{property_id}/photos/{filename}
+- CASCADE deletion on property delete
+- Admin interface with inline editing in Property admin
+
+### Storage Abstraction
+- TickBronStorage: Unified storage interface across environments
+- LocalStorage: Local filesystem storage for development
+- S3Storage: Placeholder for S3-compatible storage (production)
+- get_media_upload_path: Generates upload paths
+- validate_image_file: Server-side image validation (10MB limit, .jpg/.jpeg/.png/.gif/.webp only)
+
+### Notes
+- PropertyPhoto model inherits from BaseModel (timestamps, soft delete, active status)
+- Comprehensive database indexes for performance
+- Admin interface available for PropertyPhoto model
+- Full test coverage (25 tests) with 100% pass rate
+- Security review passed (9/9 checks)
+- API endpoints for photo management will be implemented in future checkpoints

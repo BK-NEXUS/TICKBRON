@@ -4,7 +4,8 @@ Admin configuration for property models.
 from django.contrib import admin
 from properties.models import (
     PropertyType, Property, PropertyTranslation, PropertyPolicy,
-    AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity
+    AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity,
+    PropertyPhoto
 )
 
 
@@ -48,6 +49,16 @@ class PropertyAmenityInline(admin.TabularInline):
     autocomplete_fields = ['amenity']
 
 
+class PropertyPhotoInline(admin.TabularInline):
+    """
+    Inline admin for PropertyPhoto.
+    """
+    model = PropertyPhoto
+    extra = 0
+    fields = ('photo', 'photo_type', 'caption', 'is_primary', 'display_order', 'alt_text')
+    readonly_fields = ('created_at',)
+
+
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
     """
@@ -57,7 +68,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_filter = ('status', 'property_type', 'country', 'currency', 'is_active', 'is_deleted', 'created_at')
     search_fields = ('owner__email', 'city', 'country', 'address_line1')
     ordering = ('-created_at',)
-    inlines = [PropertyTranslationInline, PropertyPolicyInline, PropertyAmenityInline]
+    inlines = [PropertyTranslationInline, PropertyPolicyInline, PropertyAmenityInline, PropertyPhotoInline]
     
     fieldsets = (
         ('Basic Information', {
@@ -183,3 +194,27 @@ class PropertyAmenityAdmin(admin.ModelAdmin):
     search_fields = ('property__id', 'amenity__name', 'notes')
     ordering = ('property', 'amenity')
     raw_id_fields = ('property', 'amenity')
+
+
+@admin.register(PropertyPhoto)
+class PropertyPhotoAdmin(admin.ModelAdmin):
+    """
+    Admin interface for PropertyPhoto model.
+    """
+    list_display = ('property', 'photo_type', 'caption', 'is_primary', 'display_order', 'created_at')
+    list_filter = ('photo_type', 'is_primary', 'created_at')
+    search_fields = ('property__id', 'caption', 'alt_text')
+    ordering = ('property', 'display_order', 'created_at')
+    raw_id_fields = ('property',)
+    
+    fieldsets = (
+        ('Photo Information', {
+            'fields': ('property', 'photo', 'photo_type')
+        }),
+        ('Display Settings', {
+            'fields': ('caption', 'is_primary', 'display_order', 'alt_text')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'is_deleted', 'deleted_at')
+        }),
+    )

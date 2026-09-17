@@ -31,6 +31,13 @@ Core endpoints:
 - POST `/api/v1/admin/properties/{id}/suspend/`
 - GET `/api/v1/admin/amenities/`
 
+## Checkpoint 07 Notes (Property Media/Storage)
+- Added PropertyPhoto data model (internal only)
+- Added storage abstraction layer (internal only)
+- Added admin interface for PropertyPhoto (internal only)
+- No public API changes in this checkpoint
+- Photo upload endpoints to be implemented in future checkpoints
+
 Rules:
 - Breaking API changes require `/api/v2/`.
 - OpenAPI documentation is mandatory.

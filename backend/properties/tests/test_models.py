@@ -8,7 +8,8 @@ from django.utils import timezone
 from decimal import Decimal
 from properties.models import (
     PropertyType, Property, PropertyTranslation, PropertyPolicy,
-    AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity
+    AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity,
+    PropertyPhoto
 )
 from users.models import User
 
@@ -1318,3 +1319,256 @@ class AmenityModelIntegrationTest(TestCase):
         unavailable_amenities = PropertyAmenity.objects.filter(is_available=False)
         self.assertIn(unavailable_amenity, unavailable_amenities)
         self.assertNotIn(available_amenity, unavailable_amenities)
+
+
+class PropertyPhotoModelTest(TestCase):
+    """Test cases for PropertyPhoto model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        # Create a mock image file for testing
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.image = SimpleUploadedFile(
+            name='test_photo.jpg',
+            content=b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x4c\x01\x00\x3b',
+            content_type='image/jpeg'
+        )
+    
+    def test_property_photo_creation(self):
+        """Test PropertyPhoto creation."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            photo_type='exterior',
+            caption='Beautiful exterior view',
+            is_primary=True,
+            display_order=1,
+            alt_text='Exterior photo of the property'
+        )
+        self.assertEqual(photo.property, self.property)
+        self.assertEqual(photo.photo_type, 'exterior')
+        self.assertEqual(photo.caption, 'Beautiful exterior view')
+        self.assertTrue(photo.is_primary)
+        self.assertEqual(photo.display_order, 1)
+        self.assertEqual(photo.alt_text, 'Exterior photo of the property')
+    
+    def test_property_photo_str(self):
+        """Test PropertyPhoto string representation."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            photo_type='interior'
+        )
+        expected = f"Photo {photo.id} - Property {self.property.id} (Interior)"
+        self.assertEqual(str(photo), expected)
+    
+    def test_property_photo_type_choices(self):
+        """Test PropertyPhoto photo_type field choices."""
+        valid_types = ['exterior', 'interior', 'amenity', 'room', 'other']
+        for photo_type in valid_types:
+            photo = PropertyPhoto.objects.create(
+                property=self.property,
+                photo=self.image,
+                photo_type=photo_type
+            )
+            self.assertEqual(photo.photo_type, photo_type)
+    
+    def test_property_photo_primary_constraint(self):
+        """Test that only one primary photo is allowed per property."""
+        # Create first primary photo
+        primary_photo1 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            is_primary=True
+        )
+        
+        # Create second photo as primary - should make first one non-primary
+        primary_photo2 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            is_primary=True
+        )
+        
+        # Refresh from database
+        primary_photo1.refresh_from_db()
+        primary_photo2.refresh_from_db()
+        
+        # Only the second should be primary
+        self.assertFalse(primary_photo1.is_primary)
+        self.assertTrue(primary_photo2.is_primary)
+    
+    def test_property_photo_display_order(self):
+        """Test PropertyPhoto display ordering."""
+        photo1 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            display_order=2
+        )
+        photo2 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            display_order=0
+        )
+        photo3 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            display_order=1
+        )
+        
+        photos = list(PropertyPhoto.objects.filter(property=self.property))
+        self.assertEqual(photos[0], photo2)  # display_order=0
+        self.assertEqual(photos[1], photo3)  # display_order=1
+        self.assertEqual(photos[2], photo1)  # display_order=2
+    
+    def test_property_photo_validation_invalid_file_type(self):
+        """Test PropertyPhoto validation with invalid file type."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        invalid_file = SimpleUploadedFile(
+            name='test.txt',
+            content=b'This is not an image',
+            content_type='text/plain'
+        )
+        
+        photo = PropertyPhoto(
+            property=self.property,
+            photo=invalid_file
+        )
+        
+        with self.assertRaises(ValidationError):
+            photo.full_clean()
+    
+    def test_property_photo_validation_file_too_large(self):
+        """Test PropertyPhoto validation with file too large."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        # Create a file larger than 10MB
+        large_file = SimpleUploadedFile(
+            name='large.jpg',
+            content=b'x' * (11 * 1024 * 1024),  # 11MB
+            content_type='image/jpeg'
+        )
+        
+        photo = PropertyPhoto(
+            property=self.property,
+            photo=large_file
+        )
+        
+        with self.assertRaises(ValidationError):
+            photo.full_clean()
+    
+    def test_property_photo_soft_delete(self):
+        """Test PropertyPhoto soft delete functionality."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        photo.soft_delete()
+        self.assertTrue(photo.is_deleted)
+        self.assertIsNotNone(photo.deleted_at)
+    
+    def test_property_photo_restore(self):
+        """Test PropertyPhoto restore functionality."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        photo.soft_delete()
+        photo.restore()
+        self.assertFalse(photo.is_deleted)
+        self.assertIsNone(photo.deleted_at)
+    
+    def test_property_photo_property_relation(self):
+        """Test PropertyPhoto relation to Property."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        self.assertEqual(photo.property, self.property)
+        self.assertIn(photo, self.property.photos.all())
+    
+    def test_property_photo_cascade_deletion(self):
+        """Test that deleting a property cascades to photos."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        photo_id = photo.id
+        
+        # Delete property
+        self.property.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(PropertyPhoto.objects.filter(id=photo_id).exists())
+    
+    def test_property_photo_get_absolute_url(self):
+        """Test PropertyPhoto get_absolute_url method."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        url = photo.get_absolute_url()
+        self.assertIsNotNone(url)
+        self.assertIn('media', url)
+    
+    def test_property_photo_multiple_photos(self):
+        """Test that a property can have multiple photos."""
+        photo1 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            photo_type='exterior',
+            display_order=1
+        )
+        photo2 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            photo_type='interior',
+            display_order=2
+        )
+        photo3 = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image,
+            photo_type='amenity',
+            display_order=3
+        )
+        
+        self.assertEqual(self.property.photos.count(), 3)
+        self.assertIn(photo1, self.property.photos.all())
+        self.assertIn(photo2, self.property.photos.all())
+        self.assertIn(photo3, self.property.photos.all())
+    
+    def test_property_photo_optional_fields(self):
+        """Test PropertyPhoto optional fields (caption, alt_text)."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        self.assertIsNone(photo.caption)
+        self.assertIsNone(photo.alt_text)
+    
+    def test_property_photo_default_values(self):
+        """Test PropertyPhoto default field values."""
+        photo = PropertyPhoto.objects.create(
+            property=self.property,
+            photo=self.image
+        )
+        self.assertEqual(photo.photo_type, 'other')
+        self.assertFalse(photo.is_primary)
+        self.assertEqual(photo.display_order, 0)
