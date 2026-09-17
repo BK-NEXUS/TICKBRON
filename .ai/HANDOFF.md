@@ -223,3 +223,61 @@ Status: DATA MODEL READY (API endpoints pending)
 - Full test coverage (25 tests) with 100% pass rate
 - Security review passed (9/9 checks)
 - API endpoints for photo management will be implemented in future checkpoints
+
+## Room/rate plan/inventory Data Models (Backend Checkpoint 08)
+Status: DATA MODELS READY (API endpoints pending)
+
+### RoomType
+- Classifies rooms within properties (Standard Room, Suite, Deluxe Room, etc.)
+- Fields: property (FK), name, slug, description, base_occupancy, max_occupancy, base_price, currency, total_rooms, bed_configuration, room_size
+- Occupancy validation: max_occupancy cannot be less than base_occupancy
+- Price validation: negative prices prevented
+- Unique constraint on (property, slug)
+- CASCADE deletion on property delete
+- Admin interface with inline editing (RoomPhotoInline, RoomAmenityInline)
+
+### RoomPhoto
+- Stores room-specific photos with metadata and ordering
+- Fields: room_type (FK), photo (ImageField), photo_type, caption, is_primary, display_order, alt_text
+- Photo types: bedroom, bathroom, living_area, kitchen, view, other
+- is_primary flag enforced (only one primary per room type)
+- Server-side image validation using storage abstraction
+- CASCADE deletion on room_type delete
+- Admin interface with inline editing in RoomType admin
+
+### RoomAmenity
+- Links room types to their available amenities
+- Fields: room_type (FK), amenity (FK), is_available, notes
+- Unique constraint on (room_type, amenity)
+- CASCADE deletion on both room_type and amenity delete
+- Admin interface with inline editing in RoomType admin
+
+### RatePlan
+- Defines pricing strategies for room types
+- Fields: room_type (FK), name, slug, rate_type, description, base_price, currency, min_nights, max_nights, is_active, cancellation_policy, deposit_required, deposit_percentage, advance_booking_days
+- Rate types: standard, non_refundable, early_bird, last_minute, long_stay, seasonal, corporate, promo
+- Validation: max_nights cannot be less than min_nights
+- Validation: deposit_percentage required when deposit_required is True
+- Price validation: negative prices prevented
+- Unique constraint on (room_type, slug)
+- CASCADE deletion on room_type delete
+- Admin interface with comprehensive fieldsets
+
+### DateInventory
+- Tracks day-by-day availability and pricing
+- Fields: rate_plan (FK), date, available_rooms, booked_rooms, price, currency, is_available, minimum_stay, maximum_stay, notes
+- Validation: booked_rooms cannot exceed available_rooms
+- Validation: maximum_stay cannot be less than minimum_stay
+- remaining_rooms property: calculates available rooms minus booked rooms
+- is_available_for_booking method: checks availability with night count constraints
+- Unique constraint on (rate_plan, date)
+- CASCADE deletion on rate_plan delete
+- Admin interface with remaining_rooms display
+
+### Notes
+- All models inherit from BaseModel (timestamps, soft delete, active status)
+- Comprehensive database indexes for performance
+- Full admin interfaces available for all models
+- Full test coverage (54 tests) with 100% pass rate
+- Security review passed (25/25 checks)
+- API endpoints for room/rate plan/inventory management will be implemented in future checkpoints

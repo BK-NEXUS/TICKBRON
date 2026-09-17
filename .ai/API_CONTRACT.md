@@ -38,6 +38,13 @@ Core endpoints:
 - No public API changes in this checkpoint
 - Photo upload endpoints to be implemented in future checkpoints
 
+## Checkpoint 08 Notes (Rooms/rate plans/availability schema)
+- Added RoomType, RoomPhoto, RoomAmenity, RatePlan, DateInventory data models (internal only)
+- Added comprehensive validation for occupancy, pricing, and inventory
+- Added admin interfaces for all new models (internal only)
+- No public API changes in this checkpoint
+- Room/rate plan/inventory management endpoints to be implemented in future checkpoints
+
 Rules:
 - Breaking API changes require `/api/v2/`.
 - OpenAPI documentation is mandatory.
