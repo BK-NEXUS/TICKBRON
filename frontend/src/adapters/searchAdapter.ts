@@ -23,6 +23,53 @@ export interface PropertyPolicy {
   is_strict: boolean
 }
 
+export interface AmenityCategory {
+  id: number
+  name: string
+  slug: string
+  description: string
+  icon: string
+  sort_order: number
+}
+
+export interface Amenity {
+  id: number
+  category: AmenityCategory
+  name: string
+  slug: string
+  description: string
+  icon: string
+  is_searchable: boolean
+  sort_order: number
+}
+
+export interface PropertyAmenity {
+  amenity: Amenity
+  is_available: boolean
+  notes?: string
+}
+
+export interface NearbyPlace {
+  id: number
+  name: string
+  category: string
+  distance: number
+  distance_unit: string
+  rating?: number
+  address?: string
+}
+
+export interface Restaurant {
+  id: number
+  name: string
+  cuisine: string
+  distance: number
+  distance_unit: string
+  rating?: number
+  price_range: string
+  address?: string
+}
+
 export interface Property {
   id: number
   owner_id: number
@@ -50,6 +97,9 @@ export interface Property {
   has_heating: boolean
   translations: PropertyTranslation[]
   policies: PropertyPolicy[]
+  amenities?: PropertyAmenity[]
+  nearby_places?: NearbyPlace[]
+  restaurants?: Restaurant[]
   rating?: number
   review_count?: number
   image_url?: string
@@ -406,6 +456,78 @@ const MOCK_PROPERTIES: Property[] = [
   },
 ]
 
+// Mock amenity categories based on backend AmenityCategory model
+const MOCK_AMENITY_CATEGORIES: AmenityCategory[] = [
+  { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '🍳', sort_order: 1 },
+  { id: 2, name: 'Bathroom', slug: 'bathroom', description: 'Bathroom amenities', icon: '🚿', sort_order: 2 },
+  { id: 3, name: 'Entertainment', slug: 'entertainment', description: 'Entertainment options', icon: '📺', sort_order: 3 },
+  { id: 4, name: 'Safety', slug: 'safety', description: 'Safety features', icon: '🔒', sort_order: 4 },
+  { id: 5, name: 'Outdoor', slug: 'outdoor', description: 'Outdoor spaces', icon: '🌳', sort_order: 5 },
+]
+
+// Mock amenities based on backend Amenity model
+const MOCK_AMENITIES: Amenity[] = [
+  { id: 1, category: MOCK_AMENITY_CATEGORIES[0], name: 'WiFi', slug: 'wifi', description: 'High-speed internet', icon: '📶', is_searchable: true, sort_order: 1 },
+  { id: 2, category: MOCK_AMENITY_CATEGORIES[0], name: 'Kitchen', slug: 'kitchen', description: 'Full kitchen', icon: '🍳', is_searchable: true, sort_order: 2 },
+  { id: 3, category: MOCK_AMENITY_CATEGORIES[1], name: 'Air Conditioning', slug: 'ac', description: 'Climate control', icon: '❄️', is_searchable: true, sort_order: 3 },
+  { id: 4, category: MOCK_AMENITY_CATEGORIES[1], name: 'Heating', slug: 'heating', description: 'Central heating', icon: '🔥', is_searchable: true, sort_order: 4 },
+  { id: 5, category: MOCK_AMENITY_CATEGORIES[2], name: 'TV', slug: 'tv', description: 'Flat-screen TV', icon: '📺', is_searchable: true, sort_order: 5 },
+  { id: 6, category: MOCK_AMENITY_CATEGORIES[3], name: 'Smoke Alarm', slug: 'smoke-alarm', description: 'Smoke detector', icon: '🔥', is_searchable: false, sort_order: 6 },
+  { id: 7, category: MOCK_AMENITY_CATEGORIES[3], name: 'First Aid Kit', slug: 'first-aid', description: 'First aid supplies', icon: '🩹', is_searchable: false, sort_order: 7 },
+  { id: 8, category: MOCK_AMENITY_CATEGORIES[4], name: 'Parking', slug: 'parking', description: 'Free parking', icon: '🅿️', is_searchable: true, sort_order: 8 },
+  { id: 9, category: MOCK_AMENITY_CATEGORIES[4], name: 'Balcony', slug: 'balcony', description: 'Private balcony', icon: '🌆', is_searchable: true, sort_order: 9 },
+  { id: 10, category: MOCK_AMENITY_CATEGORIES[0], name: 'Washer', slug: 'washer', description: 'Washing machine', icon: '🧺', is_searchable: true, sort_order: 10 },
+]
+
+// Mock nearby places
+const MOCK_NEARBY_PLACES: NearbyPlace[] = [
+  { id: 1, name: 'Central Park', category: 'Park', distance: 0.3, distance_unit: 'km', rating: 4.8, address: 'Manhattan, NY' },
+  { id: 2, name: 'Times Square', category: 'Landmark', distance: 1.2, distance_unit: 'km', rating: 4.5, address: 'Manhattan, NY' },
+  { id: 3, name: 'Grand Central Terminal', category: 'Transportation', distance: 0.8, distance_unit: 'km', rating: 4.7, address: 'Manhattan, NY' },
+  { id: 4, name: 'Museum of Modern Art', category: 'Museum', distance: 0.5, distance_unit: 'km', rating: 4.9, address: 'Manhattan, NY' },
+  { id: 5, name: 'Empire State Building', category: 'Landmark', distance: 1.5, distance_unit: 'km', rating: 4.6, address: 'Manhattan, NY' },
+]
+
+// Mock restaurants
+const MOCK_RESTAURANTS: Restaurant[] = [
+  { id: 1, name: 'Le Bernardin', cuisine: 'French', distance: 0.2, distance_unit: 'km', rating: 4.9, price_range: '$$$$', address: '155 W 51st St' },
+  { id: 2, name: 'Joe\'s Pizza', cuisine: 'Italian', distance: 0.1, distance_unit: 'km', rating: 4.5, price_range: '$', address: '7 Carmine St' },
+  { id: 3, name: 'Xi\'an Famous Foods', cuisine: 'Chinese', distance: 0.3, distance_unit: 'km', rating: 4.7, price_range: '$$', address: 'multiple locations' },
+  { id: 4, name: 'Katz\'s Delicatessen', cuisine: 'American', distance: 0.4, distance_unit: 'km', rating: 4.8, price_range: '$$', address: '205 E Houston St' },
+  { id: 5, name: 'Tatiana by Kwame Onwuachi', cuisine: 'African', distance: 0.6, distance_unit: 'km', rating: 4.6, price_range: '$$$', address: 'Lincoln Center' },
+]
+
+// Helper function to get amenities for a property
+function getPropertyAmenities(propertyId: number): PropertyAmenity[] {
+  // For demo purposes, assign different amenities to different properties
+  const baseAmenities = [
+    { amenity: MOCK_AMENITIES[0], is_available: true }, // WiFi
+    { amenity: MOCK_AMENITIES[2], is_available: true }, // AC
+    { amenity: MOCK_AMENITIES[3], is_available: true }, // Heating
+    { amenity: MOCK_AMENITIES[5], is_available: true }, // Smoke Alarm
+    { amenity: MOCK_AMENITIES[6], is_available: true }, // First Aid Kit
+  ]
+  
+  // Add property-specific amenities
+  if (propertyId === 1) {
+    return [
+      ...baseAmenities,
+      { amenity: MOCK_AMENITIES[1], is_available: true }, // Kitchen
+      { amenity: MOCK_AMENITIES[4], is_available: true }, // TV
+      { amenity: MOCK_AMENITIES[8], is_available: false }, // Parking (not available)
+    ]
+  } else if (propertyId === 2) {
+    return [
+      ...baseAmenities,
+      { amenity: MOCK_AMENITIES[1], is_available: true }, // Kitchen
+      { amenity: MOCK_AMENITIES[7], is_available: true }, // Parking
+      { amenity: MOCK_AMENITIES[9], is_available: true }, // Washer
+    ]
+  }
+  
+  return baseAmenities
+}
+
 /**
  * Mock search adapter that simulates backend search API
  * This will be replaced by real API integration when the backend search endpoint is implemented
@@ -522,7 +644,15 @@ export class SearchAdapter {
     await new Promise(resolve => setTimeout(resolve, 300))
 
     const property = MOCK_PROPERTIES.find(p => p.id === id)
-    return property || null
+    if (!property) return null
+
+    // Add extended data for property detail page
+    return {
+      ...property,
+      amenities: getPropertyAmenities(id),
+      nearby_places: MOCK_NEARBY_PLACES,
+      restaurants: MOCK_RESTAURANTS,
+    }
   }
 
   /**

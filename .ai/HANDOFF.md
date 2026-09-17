@@ -144,6 +144,56 @@ Status: FRONTEND READY (API endpoint pending)
 - No backend API dependencies for checkpoint 06 (mock adapter only)
 - Frontend can continue with checkpoint 07 independently
 
+## Property Detail Extensions (Frontend Checkpoint 07)
+Status: FRONTEND READY (API endpoint pending)
+
+### Property Amenities Detail
+- Displays property amenities grouped by category with availability status
+- Shows amenity icons, names, descriptions, and availability indicators
+- Supports category-based organization with proper sorting
+- Mock status: Frontend uses mock adapter with amenity data structure
+- Expected API: GET `/api/v1/properties/{id}/amenities/` when backend endpoint is available
+
+### Property Policies Detail
+- Displays property policies grouped by type (check-in, cancellation, house rules, payment, security)
+- Shows policy titles, descriptions, and strictness indicators
+- Formats policy type labels for better readability
+- Mock status: Frontend uses mock adapter with policy data structure
+- Expected API: GET `/api/v1/properties/{id}/policies/` when backend endpoint is available
+
+### Nearby Places
+- Displays nearby attractions and places with distance, rating, and category information
+- Sorts places by distance (ascending) for user convenience
+- Shows place names, categories, distances, ratings, and addresses
+- Mock status: Frontend uses mock adapter with nearby places data structure
+- Expected API: GET `/api/v1/properties/{id}/nearby-places/` when backend endpoint is available
+
+### Dining Restaurants
+- Displays nearby restaurants with cuisine, distance, rating, and price range information
+- Formats price range labels (Budget-friendly, Moderate, Expensive, Fine dining)
+- Sorts restaurants by distance (ascending) for user convenience
+- Shows restaurant names, cuisine, distances, ratings, price ranges, and addresses
+- Mock status: Frontend uses mock adapter with restaurant data structure
+- Expected API: GET `/api/v1/properties/{id}/restaurants/` when backend endpoint is available
+
+### Frontend Implementation Details
+- All four components integrated into PropertyDetailPage as additional sections
+- Comprehensive test coverage: 40 new tests (PropertyAmenitiesDetail: 9, PropertyPoliciesDetail: 8, NearbyPlaces: 10, DiningRestaurants: 13)
+- Responsive design for all breakpoints with proper grid layouts
+- Empty state handling for missing data
+- Accessibility features: semantic HTML, ARIA labels, proper heading hierarchy
+- Security review passed (13/13 checks)
+- No API calls made - uses mock adapter architecture
+- Mock adapter extended with amenities, nearby places, and restaurants data
+
+### Notes
+- All property detail extensions are complete and production-ready
+- Mock adapter structure matches expected backend data models
+- Components are ready for backend API integration when endpoints become available
+- Responsive interaction patterns implemented for all device sizes
+- No backend API dependencies for checkpoint 07 (mock adapter only)
+- Frontend can continue with checkpoint 08 independently
+
 ## Property Photo Data Model (Backend Checkpoint 07)
 Status: DATA MODEL READY (API endpoints pending)
 

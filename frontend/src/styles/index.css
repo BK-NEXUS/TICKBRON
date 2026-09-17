@@ -2345,3 +2345,470 @@ body {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Property Amenities Detail */
+.property-amenities-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.property-amenities-detail--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.property-amenities-detail-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.property-amenities-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.property-amenities-category-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.property-amenities-category-icon {
+  font-size: var(--font-size-xl);
+}
+
+.property-amenities-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.property-amenity-item {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.property-amenity-item--unavailable {
+  opacity: 0.6;
+}
+
+.property-amenity-item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.property-amenity-item-icon {
+  font-size: var(--font-size-lg);
+}
+
+.property-amenity-item-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.property-amenity-item-status {
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  font-weight: var(--font-weight-medium);
+  margin-left: auto;
+}
+
+.property-amenity-item-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.property-amenity-item-notes {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Property Policies Detail */
+.property-policies-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.property-policies-detail--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.property-policies-detail-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.property-policies-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.property-policies-group-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.property-policy-item {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.property-policy-item--strict {
+  border-left: 3px solid var(--color-error);
+}
+
+.property-policy-item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.property-policy-item-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.property-policy-item-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-error);
+  background-color: rgba(255, 77, 79, 0.1);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+}
+
+.property-policy-item-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-normal);
+}
+
+/* Nearby Places */
+.nearby-places {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.nearby-places--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.nearby-places-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.nearby-places-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.nearby-place-item {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.nearby-place-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--spacing-sm);
+}
+
+.nearby-place-item-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.nearby-place-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.nearby-place-item-category {
+  font-weight: var(--font-weight-medium);
+}
+
+.nearby-place-item-distance {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.nearby-place-item-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.nearby-place-item-rating-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.nearby-place-item-address {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Dining Restaurants */
+.dining-restaurants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.dining-restaurants--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.dining-restaurants-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.dining-restaurants-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.dining-restaurant-item {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dining-restaurant-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--spacing-sm);
+}
+
+.dining-restaurant-item-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.dining-restaurant-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.dining-restaurant-item-cuisine {
+  font-weight: var(--font-weight-medium);
+}
+
+.dining-restaurant-item-distance {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dining-restaurant-item-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.dining-restaurant-item-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.dining-restaurant-item-rating-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.dining-restaurant-item-price {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.dining-restaurant-item-price-range {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.dining-restaurant-item-price-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.dining-restaurant-item-address {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Property Detail Page Responsive Design */
+@media (max-width: 767px) {
+  .property-detail-header-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .property-detail-header-location {
+    font-size: var(--font-size-base);
+  }
+
+  .property-detail-header-meta {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .property-gallery-main {
+    height: 300px;
+  }
+
+  .property-gallery-thumbnails {
+    display: none;
+  }
+
+  .property-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .property-detail-sidebar {
+    position: static;
+  }
+
+  .property-detail-info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .property-amenities-list {
+    grid-template-columns: 1fr;
+  }
+
+  .nearby-places-list,
+  .dining-restaurants-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .property-detail-header-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .property-gallery-main {
+    height: 400px;
+  }
+
+  .property-detail-content {
+    grid-template-columns: 1fr 280px;
+  }
+
+  .property-detail-info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .property-amenities-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nearby-places-list,
+  .dining-restaurants-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .property-detail-content {
+    grid-template-columns: 1fr 300px;
+  }
+
+  .property-detail-info {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .property-amenities-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .nearby-places-list,
+  .dining-restaurants-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1440px) {
+  .property-amenities-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .nearby-places-list,
+  .dining-restaurants-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

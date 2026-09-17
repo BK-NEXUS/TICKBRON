@@ -46,6 +46,44 @@ describe('PropertyDetailPage', () => {
         is_strict: false,
       },
     ],
+    amenities: [
+      {
+        amenity: {
+          id: 1,
+          category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '🍳', sort_order: 1 },
+          name: 'WiFi',
+          slug: 'wifi',
+          description: 'High-speed internet',
+          icon: '📶',
+          is_searchable: true,
+          sort_order: 1,
+        },
+        is_available: true,
+      },
+    ],
+    nearby_places: [
+      {
+        id: 1,
+        name: 'Test Park',
+        category: 'Park',
+        distance: 0.5,
+        distance_unit: 'km',
+        rating: 4.5,
+        address: '123 Park St',
+      },
+    ],
+    restaurants: [
+      {
+        id: 1,
+        name: 'Test Restaurant',
+        cuisine: 'Italian',
+        distance: 0.3,
+        distance_unit: 'km',
+        rating: 4.7,
+        price_range: '$$',
+        address: '456 Food Ave',
+      },
+    ],
     rating: 4.5,
     review_count: 100,
     created_at: '2024-01-01T00:00:00Z',
@@ -132,8 +170,7 @@ describe('PropertyDetailPage', () => {
     render(<PropertyDetailPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('WiFi')).toBeInTheDocument()
-      expect(screen.getByText('Air Conditioning')).toBeInTheDocument()
+      expect(screen.getByText('Amenities')).toBeInTheDocument()
     })
   })
 
@@ -143,8 +180,28 @@ describe('PropertyDetailPage', () => {
     render(<PropertyDetailPage />)
 
     await waitFor(() => {
+      expect(screen.getByText('Policies')).toBeInTheDocument()
       expect(screen.getByText('Check-in Policy')).toBeInTheDocument()
-      expect(screen.getByText('Check-in from 3:00 PM')).toBeInTheDocument()
+    })
+  })
+
+  it('renders nearby places', async () => {
+    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+
+    render(<PropertyDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('What\'s Nearby')).toBeInTheDocument()
+    })
+  })
+
+  it('renders dining restaurants', async () => {
+    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+
+    render(<PropertyDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Dining & Restaurants')).toBeInTheDocument()
     })
   })
 

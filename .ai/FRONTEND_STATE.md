@@ -2,8 +2,8 @@
 
 Owner: Baxram
 Checkpoint sequence: 01 → 20
-Current checkpoint: 07
-Completed: 6/20
+Current checkpoint: 08
+Completed: 7/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -77,4 +77,21 @@ Commit format:
 - Mock adapter architecture extended with getPropertyById method
 - Comprehensive CSS for property detail UI including gallery, header, content sections, and sidebar
 - TypeScript interfaces and type safety throughout all components
+- No API calls or invented endpoints - mock adapter architecture ready for backend API integration
+
+## Checkpoint 07 (Completed)
+- Implemented property amenities detail component with category grouping and availability status
+- PropertyAmenitiesDetail component groups amenities by category with icons, descriptions, and availability indicators
+- Implemented property policies detail component with policy type grouping and strictness indicators
+- PropertyPoliciesDetail component groups policies by type (check-in, cancellation, house rules, payment, security) with strict policy badges
+- Implemented nearby places component with distance sorting and rating display
+- NearbyPlaces component displays nearby attractions with category, distance, rating, and address information
+- Implemented dining restaurants component with price range formatting and sorting
+- DiningRestaurants component displays nearby restaurants with cuisine, distance, rating, price range, and address
+- All components integrated into PropertyDetailPage as additional sections
+- Comprehensive test coverage: 40 new tests (PropertyAmenitiesDetail: 9, PropertyPoliciesDetail: 8, NearbyPlaces: 10, DiningRestaurants: 13, PropertyDetailPage: +0)
+- Mock adapter extended with amenities, nearby places, and restaurants data for property detail page
+- CSS styles for all new components with responsive design for all breakpoints
+- Accessibility features: semantic HTML, ARIA labels, proper heading hierarchy, empty states
+- Security review completed - no vulnerabilities, safe data rendering, no XSS risks
 - No API calls or invented endpoints - mock adapter architecture ready for backend API integration

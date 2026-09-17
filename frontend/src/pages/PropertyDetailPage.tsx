@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { SearchAdapter, Property } from '../adapters/searchAdapter'
 import { PropertyGallery } from '../components/PropertyGallery'
 import { PropertyDetailHeader } from '../components/PropertyDetailHeader'
+import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
+import { PropertyPoliciesDetail } from '../components/PropertyPoliciesDetail'
+import { NearbyPlaces } from '../components/NearbyPlaces'
+import { DiningRestaurants } from '../components/DiningRestaurants'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -153,54 +157,20 @@ export function PropertyDetailPage() {
           </section>
 
           <section className="property-detail-section">
-            <h2 className="property-detail-section-title">Amenities</h2>
-            <div className="property-detail-amenities">
-              {property.has_wifi && (
-                <div className="property-detail-amenity">
-                  <span className="property-detail-amenity-icon">📶</span>
-                  <span className="property-detail-amenity-name">WiFi</span>
-                </div>
-              )}
-              {property.has_parking && (
-                <div className="property-detail-amenity">
-                  <span className="property-detail-amenity-icon">🅿️</span>
-                  <span className="property-detail-amenity-name">Parking</span>
-                </div>
-              )}
-              {property.has_ac && (
-                <div className="property-detail-amenity">
-                  <span className="property-detail-amenity-icon">❄️</span>
-                  <span className="property-detail-amenity-name">Air Conditioning</span>
-                </div>
-              )}
-              {property.has_heating && (
-                <div className="property-detail-amenity">
-                  <span className="property-detail-amenity-icon">🔥</span>
-                  <span className="property-detail-amenity-name">Heating</span>
-                </div>
-              )}
-              {property.has_elevator && (
-                <div className="property-detail-amenity">
-                  <span className="property-detail-amenity-icon">🛗</span>
-                  <span className="property-detail-amenity-name">Elevator</span>
-                </div>
-              )}
-            </div>
+            <PropertyAmenitiesDetail amenities={property.amenities} />
           </section>
 
-          {property.policies && property.policies.length > 0 && (
-            <section className="property-detail-section">
-              <h2 className="property-detail-section-title">Policies</h2>
-              <div className="property-detail-policies">
-                {property.policies.map((policy, index) => (
-                  <div key={index} className="property-detail-policy">
-                    <h3 className="property-detail-policy-title">{policy.title}</h3>
-                    <p className="property-detail-policy-description">{policy.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <section className="property-detail-section">
+            <PropertyPoliciesDetail policies={property.policies} />
+          </section>
+
+          <section className="property-detail-section">
+            <NearbyPlaces places={property.nearby_places} />
+          </section>
+
+          <section className="property-detail-section">
+            <DiningRestaurants restaurants={property.restaurants} />
+          </section>
         </div>
 
         <aside className="property-detail-sidebar">
