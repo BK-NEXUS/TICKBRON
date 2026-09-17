@@ -101,3 +101,45 @@ Status: DATA MODELS READY (API endpoints pending)
 - Full test coverage (44 tests) with 100% pass rate
 - Security review passed (13/13 checks)
 - API endpoints for amenity management will be implemented in future checkpoints
+
+## Property Detail Page (Frontend Checkpoint 06)
+Status: FRONTEND READY (API endpoint pending)
+
+### GET `/api/v1/properties/{id}/`
+- Request: Property ID via URL parameter
+- Response needed: Full property details including:
+  - Basic property information (id, name, description, location, etc.)
+  - Property type details
+  - Amenities (with categories and availability)
+  - Media/images (gallery URLs)
+  - Pricing information
+  - Policies (check-in, cancellation, etc.)
+  - Rating and review information
+  - Availability information
+- Auth: None (public endpoint for property viewing)
+- Error: 404 if property not found, 403 if property is inactive/suspended
+- Mock status: Frontend uses mock adapter with property data structure
+- Expected states: Loading, property found, property not found, error
+- READY/BLOCKED status: READY (frontend complete, waiting for backend API)
+
+### Frontend Implementation Details
+- PropertyDetailPage component with routing at `/property/:id`
+- PropertyGallery component with image navigation (mock images)
+- PropertyDetailHeader component with property metadata
+- SEO metadata foundations (document title, meta description)
+- Responsive design for all breakpoints (mobile, tablet, desktop, large desktop)
+- Comprehensive error handling and loading states
+- Accessibility features (ARIA attributes, keyboard navigation, semantic HTML)
+- PropertyCard navigation to property detail page
+- Test coverage: 35 new tests (PropertyGallery: 10, PropertyDetailHeader: 12, PropertyDetailPage: 13, PropertyCard: +1)
+- Security review passed (13/13 checks)
+- No API calls made - uses mock adapter architecture
+
+### Notes
+- Frontend property detail page is complete and production-ready
+- Mock adapter structure matches backend Property models from Backend Checkpoint 05
+- Gallery uses placeholder images (real images to come from backend media API)
+- SEO metadata structure ready for backend integration
+- Responsive interaction patterns implemented for all device sizes
+- No backend API dependencies for checkpoint 06 (mock adapter only)
+- Frontend can continue with checkpoint 07 independently

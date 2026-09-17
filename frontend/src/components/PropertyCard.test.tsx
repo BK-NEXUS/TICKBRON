@@ -3,7 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { PropertyCard } from './PropertyCard'
 import { Property } from '../adapters/searchAdapter'
 
+// Mock React Router
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}))
+
 describe('PropertyCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   const mockProperty: Property = {
     id: 1,
     owner_id: 1,
@@ -132,5 +142,24 @@ describe('PropertyCard', () => {
     render(<PropertyCard property={propertyWithoutImage} />)
 
     expect(screen.getByText('🏠')).toBeInTheDocument()
+  })
+
+  it('has click handler that calls custom onClick', () => {
+    const handleClick = vi.fn()
+    render(<PropertyCard property={mockProperty} onClick={handleClick} />)
+
+    const card = screen.getByLabelText('Charming Paris Apartment in Paris, France')
+    fireEvent.click(card)
+
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('navigates to property detail page when clicked', () => {
+    render(<PropertyCard property={mockProperty} />)
+
+    const card = screen.getByLabelText('Charming Paris Apartment in Paris, France')
+    fireEvent.click(card)
+
+    expect(mockNavigate).toHaveBeenCalledWith('/property/1')
   })
 })

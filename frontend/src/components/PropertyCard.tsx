@@ -1,4 +1,5 @@
 import { Property } from '../adapters/searchAdapter'
+import { useNavigate } from 'react-router-dom'
 
 interface PropertyCardProps {
   property: Property
@@ -10,9 +11,17 @@ interface PropertyCardProps {
  * Shows property image, name, location, rating, price, and key amenities
  */
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
+  const navigate = useNavigate()
   const translation = property.translations[0] || { name: 'Unknown Property', description: '' }
   const rating = property.rating || 0
   const reviewCount = property.review_count || 0
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick()
+    }
+    navigate(`/property/${property.id}`)
+  }
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -31,10 +40,16 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
   return (
     <article 
       className="property-card"
-      onClick={onClick}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       aria-label={`${translation.name} in ${getLocationString()}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
     >
       <div className="property-card-image">
         <div className="property-card-image-placeholder">
