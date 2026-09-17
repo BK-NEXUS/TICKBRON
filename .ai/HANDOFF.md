@@ -281,3 +281,70 @@ Status: DATA MODELS READY (API endpoints pending)
 - Full test coverage (54 tests) with 100% pass rate
 - Security review passed (25/25 checks)
 - API endpoints for room/rate plan/inventory management will be implemented in future checkpoints
+
+## Room/rate plan/availability UI (Frontend Checkpoint 08)
+Status: FRONTEND READY (API endpoint pending)
+
+### RoomCard Component
+- Displays room information: name, description, occupancy, bed configuration, room size, available rooms, and pricing
+- Formats price using Intl.NumberFormat for proper currency display
+- Supports selection state with visual indicators
+- Keyboard navigation support (Enter, Space keys)
+- Accessibility features: role="button", aria-pressed, aria-label
+- Mock status: Frontend uses mock adapter with RoomType data structure
+- Expected API: GET `/api/v1/properties/{id}/room-types/` when backend endpoint is available
+
+### RatePlanCard Component
+- Displays rate plan options: name, type, description, pricing, cancellation policy, minimum/maximum stay, deposit requirements, and advance booking
+- Formats rate type labels (Standard, Non-Refundable, Early Bird, etc.)
+- Shows deposit information when required with percentage
+- Displays advance booking requirements when specified
+- Supports selection state with visual indicators
+- Keyboard navigation support (Enter, Space keys)
+- Accessibility features: role="button", aria-pressed, aria-label
+- Mock status: Frontend uses mock adapter with RatePlan data structure
+- Expected API: GET `/api/v1/room-types/{id}/rate-plans/` when backend endpoint is available
+
+### AvailabilityCalendar Component
+- Displays date-based availability with pricing, availability status (available, limited, fully booked, unavailable), and booking constraints
+- Month navigation with previous/next buttons
+- Calendar grid with weekday headers and day cells
+- Color-coded availability indicators (green for available, yellow for limited, red for fully booked/unavailable)
+- Price display per day with currency formatting
+- Date selection with visual feedback
+- Keyboard navigation support for available dates
+- Accessibility features: aria-labels, aria-disabled, aria-pressed
+- Mock status: Frontend uses mock adapter with DateInventory data structure
+- Expected API: GET `/api/v1/rate-plans/{id}/availability/` when backend endpoint is available
+
+### RoomSelection Component
+- Coordinates room selection, rate plan selection, and date selection in a unified UI
+- Progressive disclosure: room cards → rate plans → availability calendar → selection summary
+- Loading states for async data fetching
+- Error handling with graceful degradation
+- Selection summary with room, rate plan, check-in date, and price per night
+- "Proceed to Booking" button (non-functional in checkpoint 08 - scope-limited)
+- Resets child selections when parent selection changes
+- Mock status: Frontend uses mock adapter methods getRatePlansForRoomType and getDateInventoryForRatePlan
+- Expected APIs: Room/rate plan/inventory endpoints when backend APIs are available
+
+### Frontend Implementation Details
+- All four components integrated into PropertyDetailPage as room selection section
+- Comprehensive test coverage: 58 new tests (RoomCard: 12, RatePlanCard: 18, AvailabilityCalendar: 16, RoomSelection: 18, PropertyDetailPage: +2)
+- Responsive design for all breakpoints with proper grid layouts
+- Empty state handling for missing data
+- Loading states with spinner indicators
+- Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy
+- Security review passed (13/13 checks)
+- No API calls made - uses mock adapter architecture
+- Mock adapter extended with RoomType, RatePlan, and DateInventory interfaces
+- Mock data generation for 30-day inventory with realistic availability patterns
+
+### Notes
+- All room/rate plan/availability UI components are complete and production-ready
+- Mock adapter structure matches backend RoomType, RatePlan, and DateInventory models from Backend Checkpoint 08
+- Components are ready for backend API integration when endpoints become available
+- Responsive interaction patterns implemented for all device sizes
+- Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)
+- No backend API dependencies for checkpoint 08 (mock adapter only)
+- Frontend can continue with checkpoint 09 independently

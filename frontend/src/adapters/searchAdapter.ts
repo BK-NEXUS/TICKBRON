@@ -70,6 +70,53 @@ export interface Restaurant {
   address?: string
 }
 
+export interface RoomType {
+  id: number
+  property_id: number
+  name: string
+  slug: string
+  description: string
+  base_occupancy: number
+  max_occupancy: number
+  base_price: number
+  currency: string
+  total_rooms: number
+  bed_configuration: string
+  room_size?: number
+}
+
+export interface RatePlan {
+  id: number
+  room_type_id: number
+  name: string
+  slug: string
+  rate_type: string
+  description: string
+  base_price: number
+  currency: string
+  min_nights: number
+  max_nights: number
+  is_active: boolean
+  cancellation_policy: string
+  deposit_required: boolean
+  deposit_percentage?: number
+  advance_booking_days?: number
+}
+
+export interface DateInventory {
+  id: number
+  rate_plan_id: number
+  date: string
+  available_rooms: number
+  booked_rooms: number
+  price: number
+  currency: string
+  is_available: boolean
+  minimum_stay: number
+  maximum_stay: number
+  notes?: string
+}
+
 export interface Property {
   id: number
   owner_id: number
@@ -100,6 +147,7 @@ export interface Property {
   amenities?: PropertyAmenity[]
   nearby_places?: NearbyPlace[]
   restaurants?: Restaurant[]
+  room_types?: RoomType[]
   rating?: number
   review_count?: number
   image_url?: string
@@ -497,6 +545,199 @@ const MOCK_RESTAURANTS: Restaurant[] = [
   { id: 5, name: 'Tatiana by Kwame Onwuachi', cuisine: 'African', distance: 0.6, distance_unit: 'km', rating: 4.6, price_range: '$$$', address: 'Lincoln Center' },
 ]
 
+// Mock room types based on backend RoomType model
+const MOCK_ROOM_TYPES: RoomType[] = [
+  {
+    id: 1,
+    property_id: 1,
+    name: 'Standard Room',
+    slug: 'standard-room',
+    description: 'Comfortable room with essential amenities',
+    base_occupancy: 2,
+    max_occupancy: 2,
+    base_price: 120,
+    currency: 'EUR',
+    total_rooms: 5,
+    bed_configuration: '1 Queen Bed',
+    room_size: 25,
+  },
+  {
+    id: 2,
+    property_id: 1,
+    name: 'Deluxe Room',
+    slug: 'deluxe-room',
+    description: 'Spacious room with city views',
+    base_occupancy: 2,
+    max_occupancy: 3,
+    base_price: 180,
+    currency: 'EUR',
+    total_rooms: 3,
+    bed_configuration: '1 King Bed',
+    room_size: 35,
+  },
+  {
+    id: 3,
+    property_id: 1,
+    name: 'Suite',
+    slug: 'suite',
+    description: 'Luxury suite with separate living area',
+    base_occupancy: 2,
+    max_occupancy: 4,
+    base_price: 280,
+    currency: 'EUR',
+    total_rooms: 2,
+    bed_configuration: '1 King Bed + Sofa Bed',
+    room_size: 55,
+  },
+  {
+    id: 4,
+    property_id: 2,
+    name: 'Japanese Style Room',
+    slug: 'japanese-style-room',
+    description: 'Traditional Japanese room with tatami',
+    base_occupancy: 2,
+    max_occupancy: 4,
+    base_price: 150,
+    currency: 'JPY',
+    total_rooms: 4,
+    bed_configuration: '2 Futon Beds',
+    room_size: 30,
+  },
+  {
+    id: 5,
+    property_id: 2,
+    name: 'Modern Western Room',
+    slug: 'modern-western-room',
+    description: 'Contemporary room with modern amenities',
+    base_occupancy: 2,
+    max_occupancy: 3,
+    base_price: 200,
+    currency: 'JPY',
+    total_rooms: 3,
+    bed_configuration: '1 Queen Bed',
+    room_size: 28,
+  },
+]
+
+// Mock rate plans based on backend RatePlan model
+const MOCK_RATE_PLANS: RatePlan[] = [
+  {
+    id: 1,
+    room_type_id: 1,
+    name: 'Standard Rate',
+    slug: 'standard-rate',
+    rate_type: 'standard',
+    description: 'Standard flexible rate with free cancellation',
+    base_price: 120,
+    currency: 'EUR',
+    min_nights: 1,
+    max_nights: 30,
+    is_active: true,
+    cancellation_policy: 'Free cancellation up to 48 hours before check-in',
+    deposit_required: false,
+  },
+  {
+    id: 2,
+    room_type_id: 1,
+    name: 'Non-Refundable Rate',
+    slug: 'non-refundable-rate',
+    rate_type: 'non_refundable',
+    description: 'Discounted rate with no free cancellation',
+    base_price: 100,
+    currency: 'EUR',
+    min_nights: 2,
+    max_nights: 30,
+    is_active: true,
+    cancellation_policy: 'No free cancellation',
+    deposit_required: false,
+  },
+  {
+    id: 3,
+    room_type_id: 2,
+    name: 'Deluxe Standard Rate',
+    slug: 'deluxe-standard-rate',
+    rate_type: 'standard',
+    description: 'Standard rate for deluxe rooms',
+    base_price: 180,
+    currency: 'EUR',
+    min_nights: 1,
+    max_nights: 30,
+    is_active: true,
+    cancellation_policy: 'Free cancellation up to 48 hours before check-in',
+    deposit_required: false,
+  },
+  {
+    id: 4,
+    room_type_id: 3,
+    name: 'Suite Standard Rate',
+    slug: 'suite-standard-rate',
+    rate_type: 'standard',
+    description: 'Standard rate for suites',
+    base_price: 280,
+    currency: 'EUR',
+    min_nights: 1,
+    max_nights: 30,
+    is_active: true,
+    cancellation_policy: 'Free cancellation up to 72 hours before check-in',
+    deposit_required: true,
+    deposit_percentage: 20,
+  },
+  {
+    id: 5,
+    room_type_id: 4,
+    name: 'Japanese Room Rate',
+    slug: 'japanese-room-rate',
+    rate_type: 'standard',
+    description: 'Standard rate for Japanese style rooms',
+    base_price: 150,
+    currency: 'JPY',
+    min_nights: 1,
+    max_nights: 14,
+    is_active: true,
+    cancellation_policy: 'Free cancellation up to 24 hours before check-in',
+    deposit_required: false,
+  },
+]
+
+// Mock date inventory based on backend DateInventory model
+const MOCK_DATE_INVENTORY: DateInventory[] = []
+
+// Generate mock date inventory for the next 30 days
+function generateMockDateInventory() {
+  const today = new Date()
+  const inventory: DateInventory[] = []
+  
+  MOCK_RATE_PLANS.forEach(ratePlan => {
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today)
+      date.setDate(today.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      // Random availability between 0 and total rooms
+      const availableRooms = Math.floor(Math.random() * 3) + 1
+      const bookedRooms = Math.floor(Math.random() * availableRooms)
+      
+      inventory.push({
+        id: inventory.length + 1,
+        rate_plan_id: ratePlan.id,
+        date: dateStr,
+        available_rooms: availableRooms,
+        booked_rooms: bookedRooms,
+        price: ratePlan.base_price + (Math.random() > 0.7 ? 20 : 0), // Random price variation
+        currency: ratePlan.currency,
+        is_available: availableRooms > bookedRooms,
+        minimum_stay: ratePlan.min_nights,
+        maximum_stay: ratePlan.max_nights,
+        notes: i === 0 ? 'Check-in available from 3:00 PM' : undefined,
+      })
+    }
+  })
+  
+  return inventory
+}
+
+MOCK_DATE_INVENTORY.push(...generateMockDateInventory())
+
 // Helper function to get amenities for a property
 function getPropertyAmenities(propertyId: number): PropertyAmenity[] {
   // For demo purposes, assign different amenities to different properties
@@ -526,6 +767,21 @@ function getPropertyAmenities(propertyId: number): PropertyAmenity[] {
   }
   
   return baseAmenities
+}
+
+// Helper function to get room types for a property
+function getPropertyRoomTypes(propertyId: number): RoomType[] {
+  return MOCK_ROOM_TYPES.filter(room => room.property_id === propertyId)
+}
+
+// Helper function to get rate plans for a room type
+function getRatePlansForRoomType(roomTypeId: number): RatePlan[] {
+  return MOCK_RATE_PLANS.filter(plan => plan.room_type_id === roomTypeId && plan.is_active)
+}
+
+// Helper function to get date inventory for a rate plan
+function getDateInventoryForRatePlan(ratePlanId: number): DateInventory[] {
+  return MOCK_DATE_INVENTORY.filter(inventory => inventory.rate_plan_id === ratePlanId)
 }
 
 /**
@@ -652,6 +908,7 @@ export class SearchAdapter {
       amenities: getPropertyAmenities(id),
       nearby_places: MOCK_NEARBY_PLACES,
       restaurants: MOCK_RESTAURANTS,
+      room_types: getPropertyRoomTypes(id),
     }
   }
 
@@ -664,5 +921,45 @@ export class SearchAdapter {
     await new Promise(resolve => setTimeout(resolve, 200))
 
     return MOCK_PROPERTY_TYPES
+  }
+
+  /**
+   * Get rate plans for a room type
+   * @param roomTypeId - Room type ID
+   * @returns Promise with rate plans
+   */
+  static async getRatePlansForRoomType(roomTypeId: number): Promise<RatePlan[]> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    return getRatePlansForRoomType(roomTypeId)
+  }
+
+  /**
+   * Get date inventory for a rate plan
+   * @param ratePlanId - Rate plan ID
+   * @param startDate - Start date (ISO format)
+   * @param endDate - End date (ISO format)
+   * @returns Promise with date inventory
+   */
+  static async getDateInventoryForRatePlan(
+    ratePlanId: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<DateInventory[]> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    let inventory = getDateInventoryForRatePlan(ratePlanId)
+
+    // Filter by date range if provided
+    if (startDate) {
+      inventory = inventory.filter(item => item.date >= startDate)
+    }
+    if (endDate) {
+      inventory = inventory.filter(item => item.date <= endDate)
+    }
+
+    return inventory
   }
 }

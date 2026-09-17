@@ -7,6 +7,7 @@ import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
 import { PropertyPoliciesDetail } from '../components/PropertyPoliciesDetail'
 import { NearbyPlaces } from '../components/NearbyPlaces'
 import { DiningRestaurants } from '../components/DiningRestaurants'
+import { RoomSelection } from '../components/RoomSelection'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -171,6 +172,12 @@ export function PropertyDetailPage() {
           <section className="property-detail-section">
             <DiningRestaurants restaurants={property.restaurants} />
           </section>
+
+          {property.room_types && property.room_types.length > 0 && (
+            <section className="property-detail-section">
+              <RoomSelection roomTypes={property.room_types} currency={property.currency} />
+            </section>
+          )}
         </div>
 
         <aside className="property-detail-sidebar">

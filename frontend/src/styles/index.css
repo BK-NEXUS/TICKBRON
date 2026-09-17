@@ -2812,3 +2812,604 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Room Card */
+.room-card {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  position: relative;
+}
+
+.room-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.room-card:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.room-card--selected {
+  border-color: var(--color-primary);
+  background-color: rgba(255, 56, 92, 0.05);
+  box-shadow: var(--shadow-md);
+}
+
+.room-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--spacing-md);
+}
+
+.room-card-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.room-card-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
+.room-card-price-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.room-card-price-period {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.room-card-description {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+  margin: 0;
+}
+
+.room-card-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.room-card-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.room-card-detail-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.room-card-detail-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.room-card-selected-indicator {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background-color: var(--color-primary);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Rate Plan Card */
+.rate-plan-card {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  position: relative;
+}
+
+.rate-plan-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.rate-plan-card:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.rate-plan-card--selected {
+  border-color: var(--color-primary);
+  background-color: rgba(255, 56, 92, 0.05);
+  box-shadow: var(--shadow-md);
+}
+
+.rate-plan-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--spacing-md);
+}
+
+.rate-plan-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.rate-plan-card-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.rate-plan-card-type {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  background-color: rgba(255, 56, 92, 0.1);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  align-self: flex-start;
+}
+
+.rate-plan-card-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
+.rate-plan-card-price-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.rate-plan-card-price-period {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.rate-plan-card-description {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+  margin: 0;
+}
+
+.rate-plan-card-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.rate-plan-card-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.rate-plan-card-detail--deposit {
+  grid-column: span 2;
+}
+
+.rate-plan-card-detail-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.rate-plan-card-detail-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rate-plan-card-selected-indicator {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background-color: var(--color-primary);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Availability Calendar */
+.availability-calendar {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.availability-calendar--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.availability-calendar-empty {
+  margin: 0;
+}
+
+.availability-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.availability-calendar-nav {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  width: 40px;
+  height: 40px;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.availability-calendar-nav:hover {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-primary);
+}
+
+.availability-calendar-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.availability-calendar-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.availability-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.availability-calendar-weekday {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xs);
+}
+
+.availability-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.availability-calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 60px;
+}
+
+.availability-calendar-day--empty {
+  border: none;
+  cursor: default;
+}
+
+.availability-calendar-day:hover:not(.availability-calendar-day--empty):not([aria-disabled="true"]) {
+  border-color: var(--color-primary);
+  background-color: var(--color-background-alt);
+}
+
+.availability-calendar-day:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.availability-calendar-day--selected {
+  border-color: var(--color-primary);
+  background-color: rgba(255, 56, 92, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.availability-calendar-day[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.availability-calendar-day-number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.availability-calendar-day-price {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.availability-calendar-day-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.availability-calendar-legend {
+  display: flex;
+  gap: var(--spacing-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.availability-calendar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.availability-calendar-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* Room Selection */
+.room-selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.room-selection--empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.room-selection-empty {
+  margin: 0;
+}
+
+.room-selection-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.room-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.room-selection-section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.room-selection-room-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.room-selection-rate-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.room-selection-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  gap: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.room-selection-loading p {
+  margin: 0;
+}
+
+.room-selection-summary {
+  background-color: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.room-selection-summary-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.room-selection-summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.room-selection-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.room-selection-summary-item:last-child {
+  border-bottom: none;
+}
+
+.room-selection-summary-label {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.room-selection-summary-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.room-selection-cta {
+  width: 100%;
+  margin-top: var(--spacing-md);
+}
+
+/* Room Selection Responsive Design */
+@media (max-width: 767px) {
+  .room-selection-room-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .room-selection-rate-plans {
+    grid-template-columns: 1fr;
+  }
+
+  .room-card-details {
+    grid-template-columns: 1fr;
+  }
+
+  .rate-plan-card-details {
+    grid-template-columns: 1fr;
+  }
+
+  .rate-plan-card-detail--deposit {
+    grid-column: span 1;
+  }
+
+  .availability-calendar-weekdays,
+  .availability-calendar-days {
+    gap: var(--spacing-xs);
+  }
+
+  .availability-calendar-day {
+    min-height: 50px;
+  }
+
+  .availability-calendar-day-price {
+    font-size: 10px;
+  }
+
+  .room-selection-summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .room-selection-room-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .room-selection-rate-plans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .room-card-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rate-plan-card-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .room-selection-room-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .room-selection-rate-plans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .room-card-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rate-plan-card-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1440px) {
+  .room-selection-room-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .room-selection-rate-plans {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .room-card-details {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .rate-plan-card-details {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -2,8 +2,8 @@
 
 Owner: Baxram
 Checkpoint sequence: 01 → 20
-Current checkpoint: 08
-Completed: 7/20
+Current checkpoint: 09
+Completed: 8/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -95,3 +95,33 @@ Commit format:
 - Accessibility features: semantic HTML, ARIA labels, proper heading hierarchy, empty states
 - Security review completed - no vulnerabilities, safe data rendering, no XSS risks
 - No API calls or invented endpoints - mock adapter architecture ready for backend API integration
+
+## Checkpoint 08 (Completed)
+- Implemented room/rate plan/availability UI with room cards, rate plan cards, and availability calendar
+- RoomCard component displays room information: name, description, occupancy, bed configuration, room size, available rooms, and pricing
+- RatePlanCard component displays rate plan options: name, type, description, pricing, cancellation policy, minimum/maximum stay, deposit requirements, and advance booking
+- AvailabilityCalendar component displays date-based availability with pricing, availability status (available, limited, fully booked, unavailable), and booking constraints
+- RoomSelection component coordinates room selection, rate plan selection, and date selection in a unified UI
+- Mock adapter extended with RoomType, RatePlan, and DateInventory interfaces matching backend models
+- Mock data includes: room types with occupancy and pricing, rate plans with policies and constraints, date inventory with availability counts and pricing
+- TypeScript interfaces aligned with backend checkpoint 08 models (RoomType, RatePlan, DateInventory)
+- Comprehensive test coverage: 58 new tests (RoomCard: 12, RatePlanCard: 18, AvailabilityCalendar: 16, RoomSelection: 18, PropertyDetailPage: +2)
+- CSS styles for all new components with responsive design for all breakpoints
+- Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy, loading states, empty states
+- Security review completed - no vulnerabilities, safe pricing formatting, safe date handling, no XSS risks
+- No API calls or invented endpoints - mock adapter architecture ready for backend API integration
+- Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)
+- Implemented room/rate/availability UI with room cards, rate plan cards, and availability calendar
+- RoomCard component displays room information: name, description, occupancy, bed configuration, room size, available rooms, and pricing
+- RatePlanCard component displays rate plan options: name, type, description, pricing, cancellation policy, minimum/maximum stay, deposit requirements, and advance booking
+- AvailabilityCalendar component displays date-based availability with pricing, availability status (available, limited, fully booked, unavailable), and booking constraints
+- RoomSelection component coordinates room selection, rate plan selection, and date selection in a unified UI
+- Mock adapter extended with RoomType, RatePlan, and DateInventory interfaces matching backend models
+- Mock data includes: room types with occupancy and pricing, rate plans with policies and constraints, date inventory with availability counts and pricing
+- TypeScript interfaces aligned with backend checkpoint 08 models (RoomType, RatePlan, DateInventory)
+- Comprehensive test coverage: 58 new tests (RoomCard: 12, RatePlanCard: 18, AvailabilityCalendar: 16, RoomSelection: 18, PropertyDetailPage: +2)
+- CSS styles for all new components with responsive design for all breakpoints
+- Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy, loading states, empty states
+- Security review completed - no vulnerabilities, safe pricing formatting, safe date handling, no XSS risks
+- No API calls or invented endpoints - mock adapter architecture ready for backend API integration
+- Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)

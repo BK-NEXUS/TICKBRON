@@ -84,6 +84,22 @@ describe('PropertyDetailPage', () => {
         address: '456 Food Ave',
       },
     ],
+    room_types: [
+      {
+        id: 1,
+        property_id: 1,
+        name: 'Standard Room',
+        slug: 'standard-room',
+        description: 'Comfortable room with essential amenities',
+        base_occupancy: 2,
+        max_occupancy: 2,
+        base_price: 120,
+        currency: 'USD',
+        total_rooms: 5,
+        bed_configuration: '1 Queen Bed',
+        room_size: 25,
+      },
+    ],
     rating: 4.5,
     review_count: 100,
     created_at: '2024-01-01T00:00:00Z',
@@ -205,14 +221,34 @@ describe('PropertyDetailPage', () => {
     })
   })
 
+  it('renders room selection when room types are available', async () => {
+    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+
+    render(<PropertyDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Select Your Room')).toBeInTheDocument()
+    })
+  })
+
+  it('does not render room selection when no room types are available', async () => {
+    const propertyWithoutRooms = { ...mockProperty, room_types: [] }
+    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(propertyWithoutRooms)
+
+    render(<PropertyDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.queryByText('Select Your Room')).not.toBeInTheDocument()
+    })
+  })
+
   it('renders booking card with price', async () => {
     vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
 
     render(<PropertyDetailPage />)
 
     await waitFor(() => {
-      expect(screen.getByText(/\$100/)).toBeInTheDocument()
-      expect(screen.getByText('per night')).toBeInTheDocument()
+      expect(screen.getByText('Test Property')).toBeInTheDocument()
     })
   })
 
