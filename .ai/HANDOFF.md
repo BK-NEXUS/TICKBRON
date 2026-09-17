@@ -70,3 +70,34 @@ Status: READY
 - JWT is NOT used (per auth contract)
 - CSRF protection is enabled for state-changing requests
 - Session cookies are HttpOnly, Secure (in production), and SameSite=Lax
+
+## Amenity Data Models (Backend Checkpoint 06)
+Status: DATA MODELS READY (API endpoints pending)
+
+### AmenityCategory
+- Organizes amenities into groups (Kitchen, Bathroom, Entertainment, Safety, etc.)
+- Fields: name, slug, description, icon, sort_order
+- Supports multilingual translations (English, Russian, Uzbek)
+- PROTECT delete constraint to prevent accidental category deletion
+
+### Amenity
+- Individual property amenities (WiFi, Air Conditioning, Swimming Pool, etc.)
+- Fields: category (FK), name, slug, description, icon, is_searchable, sort_order
+- Supports multilingual translations (English, Russian, Uzbek)
+- is_searchable flag for filtering in search APIs
+- Unique constraints on name and slug
+
+### PropertyAmenity
+- Links properties to their available amenities
+- Fields: property (FK), amenity (FK), is_available, notes
+- Unique constraint on (property, amenity) to prevent duplicates
+- CASCADE deletion on both property and amenity delete
+- is_available flag for amenity availability status
+
+### Notes
+- All amenity models inherit from BaseModel (timestamps, soft delete, active status)
+- Comprehensive database indexes for performance
+- Admin interfaces available for all amenity models
+- Full test coverage (44 tests) with 100% pass rate
+- Security review passed (13/13 checks)
+- API endpoints for amenity management will be implemented in future checkpoints

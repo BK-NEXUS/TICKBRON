@@ -2,7 +2,10 @@
 Admin configuration for property models.
 """
 from django.contrib import admin
-from properties.models import PropertyType, Property, PropertyTranslation, PropertyPolicy
+from properties.models import (
+    PropertyType, Property, PropertyTranslation, PropertyPolicy,
+    AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity
+)
 
 
 @admin.register(PropertyType)
@@ -35,6 +38,16 @@ class PropertyPolicyInline(admin.TabularInline):
     fields = ('policy_type', 'title', 'description', 'is_strict')
 
 
+class PropertyAmenityInline(admin.TabularInline):
+    """
+    Inline admin for PropertyAmenity.
+    """
+    model = PropertyAmenity
+    extra = 0
+    fields = ('amenity', 'is_available', 'notes')
+    autocomplete_fields = ['amenity']
+
+
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
     """
@@ -44,7 +57,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_filter = ('status', 'property_type', 'country', 'currency', 'is_active', 'is_deleted', 'created_at')
     search_fields = ('owner__email', 'city', 'country', 'address_line1')
     ordering = ('-created_at',)
-    inlines = [PropertyTranslationInline, PropertyPolicyInline]
+    inlines = [PropertyTranslationInline, PropertyPolicyInline, PropertyAmenityInline]
     
     fieldsets = (
         ('Basic Information', {
@@ -91,3 +104,82 @@ class PropertyPolicyAdmin(admin.ModelAdmin):
     list_filter = ('policy_type', 'is_strict', 'created_at')
     search_fields = ('title', 'description', 'property__id')
     ordering = ('property', 'policy_type')
+
+
+class AmenityCategoryTranslationInline(admin.TabularInline):
+    """
+    Inline admin for AmenityCategoryTranslation.
+    """
+    model = AmenityCategoryTranslation
+    extra = 0
+    fields = ('language', 'name', 'description')
+
+
+@admin.register(AmenityCategory)
+class AmenityCategoryAdmin(admin.ModelAdmin):
+    """
+    Admin interface for AmenityCategory model.
+    """
+    list_display = ('name', 'slug', 'description', 'icon', 'sort_order', 'is_active', 'created_at')
+    list_filter = ('is_active', 'is_deleted', 'created_at')
+    search_fields = ('name', 'slug', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('sort_order', 'name')
+    inlines = [AmenityCategoryTranslationInline]
+
+
+@admin.register(AmenityCategoryTranslation)
+class AmenityCategoryTranslationAdmin(admin.ModelAdmin):
+    """
+    Admin interface for AmenityCategoryTranslation model.
+    """
+    list_display = ('category', 'language', 'name', 'created_at')
+    list_filter = ('language', 'created_at')
+    search_fields = ('name', 'description', 'category__name')
+    ordering = ('category', 'language')
+
+
+class AmenityTranslationInline(admin.TabularInline):
+    """
+    Inline admin for AmenityTranslation.
+    """
+    model = AmenityTranslation
+    extra = 0
+    fields = ('language', 'name', 'description')
+
+
+@admin.register(Amenity)
+class AmenityAdmin(admin.ModelAdmin):
+    """
+    Admin interface for Amenity model.
+    """
+    list_display = ('name', 'slug', 'category', 'description', 'icon', 'is_searchable', 'sort_order', 'is_active', 'created_at')
+    list_filter = ('category', 'is_searchable', 'is_active', 'is_deleted', 'created_at')
+    search_fields = ('name', 'slug', 'description', 'category__name')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('category', 'sort_order', 'name')
+    autocomplete_fields = ['category']
+    inlines = [AmenityTranslationInline]
+
+
+@admin.register(AmenityTranslation)
+class AmenityTranslationAdmin(admin.ModelAdmin):
+    """
+    Admin interface for AmenityTranslation model.
+    """
+    list_display = ('amenity', 'language', 'name', 'created_at')
+    list_filter = ('language', 'created_at')
+    search_fields = ('name', 'description', 'amenity__name')
+    ordering = ('amenity', 'language')
+
+
+@admin.register(PropertyAmenity)
+class PropertyAmenityAdmin(admin.ModelAdmin):
+    """
+    Admin interface for PropertyAmenity model.
+    """
+    list_display = ('property', 'amenity', 'is_available', 'created_at')
+    list_filter = ('is_available', 'amenity__category', 'created_at')
+    search_fields = ('property__id', 'amenity__name', 'notes')
+    ordering = ('property', 'amenity')
+    raw_id_fields = ('property', 'amenity')

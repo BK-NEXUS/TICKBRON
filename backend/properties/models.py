@@ -256,3 +256,178 @@ class PropertyPolicy(BaseModel):
     
     def __str__(self):
         return f"{self.property.id} - {self.get_policy_type_display()}"
+
+
+class AmenityCategory(BaseModel):
+    """
+    Amenity category model for organizing amenities into groups.
+    
+    Examples: Kitchen, Bathroom, Entertainment, Safety, etc.
+    """
+    name = models.CharField(max_length=100, unique=True, db_index=True)
+    slug = models.SlugField(max_length=100, unique=True, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True)  # Icon class or emoji
+    sort_order = models.PositiveIntegerField(default=0, help_text=_('Display order'))
+    
+    class Meta:
+        db_table = 'amenity_categories'
+        verbose_name = 'Amenity Category'
+        verbose_name_plural = 'Amenity Categories'
+        ordering = ['sort_order', 'name']
+        indexes = [
+            models.Index(fields=['sort_order', 'name']),
+        ]
+    
+    def __str__(self):
+        return self.name
+
+
+class AmenityCategoryTranslation(BaseModel):
+    """
+    Amenity category translation model for multilingual support.
+    
+    Stores translated amenity category information for different languages.
+    """
+    LANGUAGE_CHOICES = [
+        ('en', _('English')),
+        ('ru', _('Russian')),
+        ('uz', _('Uzbek')),
+    ]
+    
+    category = models.ForeignKey(
+        AmenityCategory,
+        on_delete=models.CASCADE,
+        related_name='translations',
+        db_index=True
+    )
+    language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        db_index=True
+    )
+    name = models.CharField(max_length=100, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'amenity_category_translations'
+        verbose_name = 'Amenity Category Translation'
+        verbose_name_plural = 'Amenity Category Translations'
+        unique_together = ('category', 'language')
+        ordering = ['category', 'language']
+    
+    def __str__(self):
+        return f"{self.category.name} - {self.language}: {self.name}"
+
+
+class Amenity(BaseModel):
+    """
+    Amenity model for individual property amenities.
+    
+    Examples: WiFi, Air Conditioning, Swimming Pool, Kitchen, etc.
+    """
+    category = models.ForeignKey(
+        AmenityCategory,
+        on_delete=models.PROTECT,
+        related_name='amenities',
+        db_index=True
+    )
+    name = models.CharField(max_length=100, unique=True, db_index=True)
+    slug = models.SlugField(max_length=100, unique=True, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True)  # Icon class or emoji
+    is_searchable = models.BooleanField(
+        default=True,
+        help_text=_('Whether this amenity can be used in search filters')
+    )
+    sort_order = models.PositiveIntegerField(default=0, help_text=_('Display order'))
+    
+    class Meta:
+        db_table = 'amenities'
+        verbose_name = 'Amenity'
+        verbose_name_plural = 'Amenities'
+        ordering = ['category', 'sort_order', 'name']
+        indexes = [
+            models.Index(fields=['category', 'sort_order', 'name']),
+            models.Index(fields=['is_searchable']),
+        ]
+    
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
+
+class AmenityTranslation(BaseModel):
+    """
+    Amenity translation model for multilingual support.
+    
+    Stores translated amenity information for different languages.
+    """
+    LANGUAGE_CHOICES = [
+        ('en', _('English')),
+        ('ru', _('Russian')),
+        ('uz', _('Uzbek')),
+    ]
+    
+    amenity = models.ForeignKey(
+        Amenity,
+        on_delete=models.CASCADE,
+        related_name='translations',
+        db_index=True
+    )
+    language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        db_index=True
+    )
+    name = models.CharField(max_length=100, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'amenity_translations'
+        verbose_name = 'Amenity Translation'
+        verbose_name_plural = 'Amenity Translations'
+        unique_together = ('amenity', 'language')
+        ordering = ['amenity', 'language']
+    
+    def __str__(self):
+        return f"{self.amenity.name} - {self.language}: {self.name}"
+
+
+class PropertyAmenity(BaseModel):
+    """
+    Property amenity relation model.
+    
+    Links properties to their available amenities with optional additional information.
+    """
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='property_amenities',
+        db_index=True
+    )
+    amenity = models.ForeignKey(
+        Amenity,
+        on_delete=models.CASCADE,
+        related_name='property_amenities',
+        db_index=True
+    )
+    is_available = models.BooleanField(
+        default=True,
+        help_text=_('Whether this amenity is currently available at the property')
+    )
+    notes = models.TextField(blank=True, null=True, help_text=_('Additional notes about this amenity'))
+    
+    class Meta:
+        db_table = 'property_amenities'
+        verbose_name = 'Property Amenity'
+        verbose_name_plural = 'Property Amenities'
+        unique_together = ('property', 'amenity')
+        ordering = ['property', 'amenity']
+        indexes = [
+            models.Index(fields=['property', 'amenity']),
+            models.Index(fields=['is_available']),
+        ]
+    
+    def __str__(self):
+        availability = "Available" if self.is_available else "Not Available"
+        return f"{self.property.id} - {self.amenity.name} ({availability})"
