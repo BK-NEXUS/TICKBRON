@@ -6,10 +6,11 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
+from datetime import date
 from properties.models import (
     PropertyType, Property, PropertyTranslation, PropertyPolicy,
     AmenityCategory, AmenityCategoryTranslation, Amenity, AmenityTranslation, PropertyAmenity,
-    PropertyPhoto
+    PropertyPhoto, RoomType, RoomPhoto, RoomAmenity, RatePlan, DateInventory
 )
 from users.models import User
 
@@ -1572,3 +1573,990 @@ class PropertyPhotoModelTest(TestCase):
         self.assertEqual(photo.photo_type, 'other')
         self.assertFalse(photo.is_primary)
         self.assertEqual(photo.display_order, 0)
+
+
+class RoomTypeModelTest(TestCase):
+    """Test cases for RoomType model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            description='A comfortable standard room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00'),
+            currency='USD',
+            total_rooms=5,
+            bed_configuration='1 Queen Bed',
+            room_size=25
+        )
+    
+    def test_room_type_creation(self):
+        """Test RoomType creation."""
+        self.assertEqual(self.room_type.property, self.property)
+        self.assertEqual(self.room_type.name, 'Standard Room')
+        self.assertEqual(self.room_type.slug, 'standard-room')
+        self.assertEqual(self.room_type.base_occupancy, 2)
+        self.assertEqual(self.room_type.max_occupancy, 4)
+        self.assertEqual(self.room_type.base_price, Decimal('80.00'))
+        self.assertEqual(self.room_type.currency, 'USD')
+        self.assertEqual(self.room_type.total_rooms, 5)
+    
+    def test_room_type_str(self):
+        """Test RoomType string representation."""
+        expected = f"{self.property.id} - Standard Room"
+        self.assertEqual(str(self.room_type), expected)
+    
+    def test_room_type_unique_slug(self):
+        """Test that RoomType slug must be unique per property."""
+        with self.assertRaises(Exception):
+            RoomType.objects.create(
+                property=self.property,
+                name='Different Room',
+                slug='standard-room',  # Same slug
+                base_occupancy=2,
+                max_occupancy=4,
+                base_price=Decimal('90.00')
+            )
+    
+    def test_room_type_occupancy_validation(self):
+        """Test RoomType occupancy validation."""
+        # Test max_occupancy < base_occupancy
+        room_type = RoomType(
+            property=self.property,
+            name='Invalid Room',
+            slug='invalid-room',
+            base_occupancy=4,
+            max_occupancy=2,  # Invalid: less than base_occupancy
+            base_price=Decimal('80.00')
+        )
+        
+        with self.assertRaises(ValidationError):
+            room_type.full_clean()
+    
+    def test_room_type_property_relation(self):
+        """Test RoomType relation to Property."""
+        self.assertEqual(self.room_type.property, self.property)
+        self.assertIn(self.room_type, self.property.room_types.all())
+    
+    def test_room_type_soft_delete(self):
+        """Test RoomType soft delete functionality."""
+        self.room_type.soft_delete()
+        self.assertTrue(self.room_type.is_deleted)
+        self.assertIsNotNone(self.room_type.deleted_at)
+    
+    def test_room_type_restore(self):
+        """Test RoomType restore functionality."""
+        self.room_type.soft_delete()
+        self.room_type.restore()
+        self.assertFalse(self.room_type.is_deleted)
+        self.assertIsNone(self.room_type.deleted_at)
+    
+    def test_room_type_multiple_room_types(self):
+        """Test that a property can have multiple room types."""
+        room_type2 = RoomType.objects.create(
+            property=self.property,
+            name='Deluxe Room',
+            slug='deluxe-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('120.00'),
+            total_rooms=3
+        )
+        room_type3 = RoomType.objects.create(
+            property=self.property,
+            name='Suite',
+            slug='suite',
+            base_occupancy=4,
+            max_occupancy=6,
+            base_price=Decimal('200.00'),
+            total_rooms=2
+        )
+        
+        self.assertEqual(self.property.room_types.count(), 3)
+        self.assertIn(self.room_type, self.property.room_types.all())
+        self.assertIn(room_type2, self.property.room_types.all())
+        self.assertIn(room_type3, self.property.room_types.all())
+    
+    def test_room_type_cascade_deletion(self):
+        """Test that deleting a property cascades to room types."""
+        room_type_id = self.room_type.id
+        
+        # Delete property
+        self.property.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(RoomType.objects.filter(id=room_type_id).exists())
+
+
+class RoomPhotoModelTest(TestCase):
+    """Test cases for RoomPhoto model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00')
+        )
+        # Create a mock image file for testing
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.image = SimpleUploadedFile(
+            name='test_room_photo.jpg',
+            content=b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x4c\x01\x00\x3b',
+            content_type='image/jpeg'
+        )
+    
+    def test_room_photo_creation(self):
+        """Test RoomPhoto creation."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            photo_type='bedroom',
+            caption='Comfortable bedroom',
+            is_primary=True,
+            display_order=1,
+            alt_text='Bedroom photo'
+        )
+        self.assertEqual(photo.room_type, self.room_type)
+        self.assertEqual(photo.photo_type, 'bedroom')
+        self.assertEqual(photo.caption, 'Comfortable bedroom')
+        self.assertTrue(photo.is_primary)
+        self.assertEqual(photo.display_order, 1)
+    
+    def test_room_photo_str(self):
+        """Test RoomPhoto string representation."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            photo_type='bathroom'
+        )
+        expected = f"Photo {photo.id} - Standard Room (Bathroom)"
+        self.assertEqual(str(photo), expected)
+    
+    def test_room_photo_type_choices(self):
+        """Test RoomPhoto photo_type field choices."""
+        valid_types = ['bedroom', 'bathroom', 'living_area', 'kitchen', 'view', 'other']
+        for photo_type in valid_types:
+            photo = RoomPhoto.objects.create(
+                room_type=self.room_type,
+                photo=self.image,
+                photo_type=photo_type
+            )
+            self.assertEqual(photo.photo_type, photo_type)
+    
+    def test_room_photo_primary_constraint(self):
+        """Test that only one primary photo is allowed per room type."""
+        # Create first primary photo
+        primary_photo1 = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            is_primary=True
+        )
+        
+        # Create second photo as primary - should make first one non-primary
+        primary_photo2 = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            is_primary=True
+        )
+        
+        # Refresh from database
+        primary_photo1.refresh_from_db()
+        primary_photo2.refresh_from_db()
+        
+        # Only the second should be primary
+        self.assertFalse(primary_photo1.is_primary)
+        self.assertTrue(primary_photo2.is_primary)
+    
+    def test_room_photo_display_order(self):
+        """Test RoomPhoto display ordering."""
+        photo1 = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            display_order=2
+        )
+        photo2 = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            display_order=0
+        )
+        photo3 = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image,
+            display_order=1
+        )
+        
+        photos = list(RoomPhoto.objects.filter(room_type=self.room_type))
+        self.assertEqual(photos[0], photo2)  # display_order=0
+        self.assertEqual(photos[1], photo3)  # display_order=1
+        self.assertEqual(photos[2], photo1)  # display_order=2
+    
+    def test_room_photo_validation_invalid_file_type(self):
+        """Test RoomPhoto validation with invalid file type."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        invalid_file = SimpleUploadedFile(
+            name='test.txt',
+            content=b'This is not an image',
+            content_type='text/plain'
+        )
+        
+        photo = RoomPhoto(
+            room_type=self.room_type,
+            photo=invalid_file
+        )
+        
+        with self.assertRaises(ValidationError):
+            photo.full_clean()
+    
+    def test_room_photo_soft_delete(self):
+        """Test RoomPhoto soft delete functionality."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image
+        )
+        photo.soft_delete()
+        self.assertTrue(photo.is_deleted)
+        self.assertIsNotNone(photo.deleted_at)
+    
+    def test_room_photo_room_type_relation(self):
+        """Test RoomPhoto relation to RoomType."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image
+        )
+        self.assertEqual(photo.room_type, self.room_type)
+        self.assertIn(photo, self.room_type.photos.all())
+    
+    def test_room_photo_cascade_deletion(self):
+        """Test that deleting a room type cascades to photos."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image
+        )
+        photo_id = photo.id
+        
+        # Delete room type
+        self.room_type.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(RoomPhoto.objects.filter(id=photo_id).exists())
+    
+    def test_room_photo_get_absolute_url(self):
+        """Test RoomPhoto get_absolute_url method."""
+        photo = RoomPhoto.objects.create(
+            room_type=self.room_type,
+            photo=self.image
+        )
+        url = photo.get_absolute_url()
+        self.assertIsNotNone(url)
+        self.assertIn('media', url)
+
+
+class RoomAmenityModelTest(TestCase):
+    """Test cases for RoomAmenity model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00')
+        )
+        self.category = AmenityCategory.objects.create(
+            name='Kitchen',
+            slug='kitchen'
+        )
+        self.amenity = Amenity.objects.create(
+            category=self.category,
+            name='Microwave',
+            slug='microwave'
+        )
+        self.room_amenity = RoomAmenity.objects.create(
+            room_type=self.room_type,
+            amenity=self.amenity,
+            is_available=True,
+            notes='Room-specific microwave'
+        )
+    
+    def test_room_amenity_creation(self):
+        """Test RoomAmenity creation."""
+        self.assertEqual(self.room_amenity.room_type, self.room_type)
+        self.assertEqual(self.room_amenity.amenity, self.amenity)
+        self.assertTrue(self.room_amenity.is_available)
+        self.assertEqual(self.room_amenity.notes, 'Room-specific microwave')
+    
+    def test_room_amenity_str(self):
+        """Test RoomAmenity string representation."""
+        expected = f"Standard Room - Microwave (Available)"
+        self.assertEqual(str(self.room_amenity), expected)
+    
+    def test_room_amenity_unique_constraint(self):
+        """Test RoomAmenity unique constraint on room_type and amenity."""
+        with self.assertRaises(Exception):
+            RoomAmenity.objects.create(
+                room_type=self.room_type,
+                amenity=self.amenity,  # Same amenity for same room type
+                is_available=False
+            )
+    
+    def test_room_amenity_is_available(self):
+        """Test RoomAmenity is_available field."""
+        available_amenity = RoomAmenity.objects.create(
+            room_type=self.room_type,
+            amenity=Amenity.objects.create(
+                category=self.category,
+                name='Oven',
+                slug='oven'
+            ),
+            is_available=True
+        )
+        unavailable_amenity = RoomAmenity.objects.create(
+            room_type=self.room_type,
+            amenity=Amenity.objects.create(
+                category=self.category,
+                name='Dishwasher',
+                slug='dishwasher'
+            ),
+            is_available=False
+        )
+        
+        self.assertTrue(available_amenity.is_available)
+        self.assertFalse(unavailable_amenity.is_available)
+    
+    def test_room_amenity_room_type_relation(self):
+        """Test RoomAmenity relation to RoomType."""
+        self.assertEqual(self.room_amenity.room_type, self.room_type)
+        self.assertIn(self.room_amenity, self.room_type.room_amenities.all())
+    
+    def test_room_amenity_amenity_relation(self):
+        """Test RoomAmenity relation to Amenity."""
+        self.assertEqual(self.room_amenity.amenity, self.amenity)
+        self.assertIn(self.room_amenity, self.amenity.room_amenities.all())
+    
+    def test_room_amenity_soft_delete(self):
+        """Test RoomAmenity soft delete functionality."""
+        self.room_amenity.soft_delete()
+        self.assertTrue(self.room_amenity.is_deleted)
+        self.assertIsNotNone(self.room_amenity.deleted_at)
+    
+    def test_room_amenity_multiple_amenities(self):
+        """Test that a room type can have multiple amenities."""
+        amenity2 = Amenity.objects.create(
+            category=self.category,
+            name='Oven',
+            slug='oven'
+        )
+        amenity3 = Amenity.objects.create(
+            category=self.category,
+            name='Refrigerator',
+            slug='refrigerator'
+        )
+        
+        room_amenity2 = RoomAmenity.objects.create(
+            room_type=self.room_type,
+            amenity=amenity2
+        )
+        room_amenity3 = RoomAmenity.objects.create(
+            room_type=self.room_type,
+            amenity=amenity3
+        )
+        
+        self.assertEqual(self.room_type.room_amenities.count(), 3)
+        self.assertIn(self.room_amenity, self.room_type.room_amenities.all())
+        self.assertIn(room_amenity2, self.room_type.room_amenities.all())
+        self.assertIn(room_amenity3, self.room_type.room_amenities.all())
+    
+    def test_room_amenity_cascade_deletion(self):
+        """Test that deleting a room type cascades to room amenities."""
+        room_amenity_id = self.room_amenity.id
+        
+        # Delete room type
+        self.room_type.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(RoomAmenity.objects.filter(id=room_amenity_id).exists())
+
+
+class RatePlanModelTest(TestCase):
+    """Test cases for RatePlan model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00')
+        )
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            description='Standard rate with flexible cancellation',
+            base_price=Decimal('80.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True,
+            cancellation_policy='Free cancellation up to 24 hours before check-in',
+            deposit_required=False
+        )
+    
+    def test_rate_plan_creation(self):
+        """Test RatePlan creation."""
+        self.assertEqual(self.rate_plan.room_type, self.room_type)
+        self.assertEqual(self.rate_plan.name, 'Standard Rate')
+        self.assertEqual(self.rate_plan.slug, 'standard-rate')
+        self.assertEqual(self.rate_plan.rate_type, 'standard')
+        self.assertEqual(self.rate_plan.base_price, Decimal('80.00'))
+        self.assertEqual(self.rate_plan.currency, 'USD')
+        self.assertEqual(self.rate_plan.min_nights, 1)
+        self.assertEqual(self.rate_plan.max_nights, 30)
+        self.assertTrue(self.rate_plan.is_active)
+    
+    def test_rate_plan_str(self):
+        """Test RatePlan string representation."""
+        expected = "Standard Room - Standard Rate"
+        self.assertEqual(str(self.rate_plan), expected)
+    
+    def test_rate_plan_rate_type_choices(self):
+        """Test RatePlan rate_type field choices."""
+        valid_types = ['standard', 'non_refundable', 'early_bird', 'last_minute', 'long_stay', 'seasonal', 'corporate', 'promo']
+        for i, rate_type in enumerate(valid_types):
+            rate_plan = RatePlan.objects.create(
+                room_type=self.room_type,
+                name=f'{rate_type.title()} Rate',
+                slug=f'{rate_type}-rate-{i}',  # Make slug unique
+                rate_type=rate_type,
+                base_price=Decimal('90.00')
+            )
+            self.assertEqual(rate_plan.rate_type, rate_type)
+    
+    def test_rate_plan_unique_slug(self):
+        """Test that RatePlan slug must be unique per room type."""
+        with self.assertRaises(Exception):
+            RatePlan.objects.create(
+                room_type=self.room_type,
+                name='Different Rate',
+                slug='standard-rate',  # Same slug
+                base_price=Decimal('90.00')
+            )
+    
+    def test_rate_plan_nights_validation(self):
+        """Test RatePlan nights validation."""
+        # Test max_nights < min_nights
+        rate_plan = RatePlan(
+            room_type=self.room_type,
+            name='Invalid Rate',
+            slug='invalid-rate',
+            min_nights=7,
+            max_nights=3,  # Invalid: less than min_nights
+            base_price=Decimal('80.00')
+        )
+        
+        with self.assertRaises(ValidationError):
+            rate_plan.full_clean()
+    
+    def test_rate_plan_deposit_validation(self):
+        """Test RatePlan deposit validation."""
+        # Test deposit_required without deposit_percentage
+        rate_plan = RatePlan(
+            room_type=self.room_type,
+            name='Invalid Deposit Rate',
+            slug='invalid-deposit-rate',
+            base_price=Decimal('80.00'),
+            deposit_required=True,
+            deposit_percentage=None  # Invalid: required when deposit_required is True
+        )
+        
+        with self.assertRaises(ValidationError):
+            rate_plan.full_clean()
+        
+        # Test deposit_percentage without deposit_required
+        rate_plan = RatePlan(
+            room_type=self.room_type,
+            name='Invalid Deposit Rate 2',
+            slug='invalid-deposit-rate-2',
+            base_price=Decimal('80.00'),
+            deposit_required=False,
+            deposit_percentage=20  # Invalid: should not be set when deposit_required is False
+        )
+        
+        with self.assertRaises(ValidationError):
+            rate_plan.full_clean()
+    
+    def test_rate_plan_room_type_relation(self):
+        """Test RatePlan relation to RoomType."""
+        self.assertEqual(self.rate_plan.room_type, self.room_type)
+        self.assertIn(self.rate_plan, self.room_type.rate_plans.all())
+    
+    def test_rate_plan_soft_delete(self):
+        """Test RatePlan soft delete functionality."""
+        self.rate_plan.soft_delete()
+        self.assertTrue(self.rate_plan.is_deleted)
+        self.assertIsNotNone(self.rate_plan.deleted_at)
+    
+    def test_rate_plan_restore(self):
+        """Test RatePlan restore functionality."""
+        self.rate_plan.soft_delete()
+        self.rate_plan.restore()
+        self.assertFalse(self.rate_plan.is_deleted)
+        self.assertIsNone(self.rate_plan.deleted_at)
+    
+    def test_rate_plan_multiple_rate_plans(self):
+        """Test that a room type can have multiple rate plans."""
+        rate_plan2 = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Non-refundable Rate',
+            slug='non-refundable-rate',
+            rate_type='non_refundable',
+            base_price=Decimal('70.00')
+        )
+        rate_plan3 = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Early Bird Rate',
+            slug='early-bird-rate',
+            rate_type='early_bird',
+            base_price=Decimal('75.00')
+        )
+        
+        self.assertEqual(self.room_type.rate_plans.count(), 3)
+        self.assertIn(self.rate_plan, self.room_type.rate_plans.all())
+        self.assertIn(rate_plan2, self.room_type.rate_plans.all())
+        self.assertIn(rate_plan3, self.room_type.rate_plans.all())
+    
+    def test_rate_plan_cascade_deletion(self):
+        """Test that deleting a room type cascades to rate plans."""
+        rate_plan_id = self.rate_plan.id
+        
+        # Delete room type
+        self.room_type.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(RatePlan.objects.filter(id=rate_plan_id).exists())
+
+
+class DateInventoryModelTest(TestCase):
+    """Test cases for DateInventory model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00')
+        )
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            base_price=Decimal('80.00')
+        )
+        self.date_inventory = DateInventory.objects.create(
+            rate_plan=self.rate_plan,
+            date=date(2024, 6, 15),
+            available_rooms=5,
+            booked_rooms=2,
+            price=Decimal('85.00'),
+            currency='USD',
+            is_available=True,
+            minimum_stay=1,
+            maximum_stay=14
+        )
+    
+    def test_date_inventory_creation(self):
+        """Test DateInventory creation."""
+        self.assertEqual(self.date_inventory.rate_plan, self.rate_plan)
+        self.assertEqual(self.date_inventory.available_rooms, 5)
+        self.assertEqual(self.date_inventory.booked_rooms, 2)
+        self.assertEqual(self.date_inventory.price, Decimal('85.00'))
+        self.assertEqual(self.date_inventory.currency, 'USD')
+        self.assertTrue(self.date_inventory.is_available)
+        self.assertEqual(self.date_inventory.minimum_stay, 1)
+        self.assertEqual(self.date_inventory.maximum_stay, 14)
+    
+    def test_date_inventory_str(self):
+        """Test DateInventory string representation."""
+        expected = "Standard Rate - 2024-06-15 (5 available)"
+        self.assertEqual(str(self.date_inventory), expected)
+    
+    def test_date_inventory_unique_constraint(self):
+        """Test DateInventory unique constraint on rate_plan and date."""
+        from datetime import date
+        with self.assertRaises(Exception):
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=date(2024, 6, 15),  # Same date for same rate plan
+                available_rooms=3
+            )
+    
+    def test_date_inventory_booked_validation(self):
+        """Test DateInventory booked_rooms validation."""
+        # Test booked_rooms > available_rooms
+        date_inventory = DateInventory(
+            rate_plan=self.rate_plan,
+            date=date(2024, 6, 16),
+            available_rooms=3,
+            booked_rooms=5  # Invalid: more than available
+        )
+        
+        with self.assertRaises(ValidationError):
+            date_inventory.full_clean()
+    
+    def test_date_inventory_stay_validation(self):
+        """Test DateInventory stay validation."""
+        # Test maximum_stay < minimum_stay
+        date_inventory = DateInventory(
+            rate_plan=self.rate_plan,
+            date=date(2024, 6, 16),
+            available_rooms=5,
+            booked_rooms=2,
+            minimum_stay=7,
+            maximum_stay=3  # Invalid: less than minimum_stay
+        )
+        
+        with self.assertRaises(ValidationError):
+            date_inventory.full_clean()
+    
+    def test_date_inventory_remaining_rooms(self):
+        """Test DateInventory remaining_rooms property."""
+        self.assertEqual(self.date_inventory.remaining_rooms, 3)  # 5 - 2 = 3
+        
+        # Test when booked_rooms equals available_rooms
+        self.date_inventory.booked_rooms = 5
+        self.date_inventory.save()
+        self.assertEqual(self.date_inventory.remaining_rooms, 0)
+        
+        # Test when booked_rooms exceeds available_rooms (should be 0)
+        self.date_inventory.booked_rooms = 6
+        self.date_inventory.save()
+        self.assertEqual(self.date_inventory.remaining_rooms, 0)
+    
+    def test_date_inventory_is_available_for_booking(self):
+        """Test DateInventory is_available_for_booking method."""
+        # Test available for booking
+        self.assertTrue(self.date_inventory.is_available_for_booking(nights=5))
+        
+        # Test not available due to is_available flag
+        self.date_inventory.is_available = False
+        self.date_inventory.save()
+        self.assertFalse(self.date_inventory.is_available_for_booking(nights=5))
+        
+        # Reset for other tests
+        self.date_inventory.is_available = True
+        self.date_inventory.save()
+        
+        # Test not available due to no remaining rooms
+        self.date_inventory.booked_rooms = 5
+        self.date_inventory.save()
+        self.assertFalse(self.date_inventory.is_available_for_booking(nights=5))
+        
+        # Reset for other tests
+        self.date_inventory.booked_rooms = 2
+        self.date_inventory.save()
+        
+        # Test not available due to minimum_stay constraint
+        self.assertFalse(self.date_inventory.is_available_for_booking(nights=0))  # Less than minimum_stay=1
+        
+        # Test not available due to maximum_stay constraint
+        self.assertFalse(self.date_inventory.is_available_for_booking(nights=20))  # More than maximum_stay=14
+    
+    def test_date_inventory_rate_plan_relation(self):
+        """Test DateInventory relation to RatePlan."""
+        self.assertEqual(self.date_inventory.rate_plan, self.rate_plan)
+        self.assertIn(self.date_inventory, self.rate_plan.date_inventory.all())
+    
+    def test_date_inventory_soft_delete(self):
+        """Test DateInventory soft delete functionality."""
+        self.date_inventory.soft_delete()
+        self.assertTrue(self.date_inventory.is_deleted)
+        self.assertIsNotNone(self.date_inventory.deleted_at)
+    
+    def test_date_inventory_restore(self):
+        """Test DateInventory restore functionality."""
+        self.date_inventory.soft_delete()
+        self.date_inventory.restore()
+        self.assertFalse(self.date_inventory.is_deleted)
+        self.assertIsNone(self.date_inventory.deleted_at)
+    
+    def test_date_inventory_multiple_dates(self):
+        """Test that a rate plan can have inventory for multiple dates."""
+        from datetime import date, timedelta
+        base_date = date(2024, 6, 15)
+        
+        for i in range(1, 6):
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=base_date + timedelta(days=i),
+                available_rooms=5,
+                booked_rooms=0
+            )
+        
+        self.assertEqual(self.rate_plan.date_inventory.count(), 6)  # Including the setUp date
+    
+    def test_date_inventory_cascade_deletion(self):
+        """Test that deleting a rate plan cascades to date inventory."""
+        date_inventory_id = self.date_inventory.id
+        
+        # Delete rate plan
+        self.rate_plan.delete()
+        
+        # Verify cascade deletion
+        self.assertFalse(DateInventory.objects.filter(id=date_inventory_id).exists())
+    
+    def test_date_inventory_optional_price(self):
+        """Test DateInventory optional price field."""
+        from datetime import date
+        date_inventory = DateInventory.objects.create(
+            rate_plan=self.rate_plan,
+            date=date(2024, 6, 20),
+            available_rooms=5,
+            booked_rooms=0
+        )
+        self.assertIsNone(date_inventory.price)
+        # Should use rate plan base price when date price is None
+
+
+class RoomRatePlanIntegrationTest(TestCase):
+    """Integration tests for room, rate plan, and inventory models."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='owner@example.com',
+            password='TestPassword123!',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            max_guests=4,
+            address_line1='123 Main Street',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00')
+        )
+    
+    def test_complete_room_workflow(self):
+        """Test complete room workflow with photos, amenities, rate plans, and inventory."""
+        # Create room type
+        room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('80.00'),
+            total_rooms=5
+        )
+        
+        # Add room photos
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        image = SimpleUploadedFile(
+            name='test_photo.jpg',
+            content=b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x4c\x01\x00\x3b',
+            content_type='image/jpeg'
+        )
+        
+        photo1 = RoomPhoto.objects.create(
+            room_type=room_type,
+            photo=image,
+            photo_type='bedroom',
+            is_primary=True
+        )
+        photo2 = RoomPhoto.objects.create(
+            room_type=room_type,
+            photo=image,
+            photo_type='bathroom'
+        )
+        
+        # Add room amenities
+        category = AmenityCategory.objects.create(
+            name='Kitchen',
+            slug='kitchen'
+        )
+        amenity1 = Amenity.objects.create(
+            category=category,
+            name='Microwave',
+            slug='microwave'
+        )
+        amenity2 = Amenity.objects.create(
+            category=category,
+            name='Refrigerator',
+            slug='refrigerator'
+        )
+        
+        room_amenity1 = RoomAmenity.objects.create(
+            room_type=room_type,
+            amenity=amenity1,
+            is_available=True
+        )
+        room_amenity2 = RoomAmenity.objects.create(
+            room_type=room_type,
+            amenity=amenity2,
+            is_available=True
+        )
+        
+        # Create rate plans
+        rate_plan1 = RatePlan.objects.create(
+            room_type=room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('80.00'),
+            min_nights=1
+        )
+        rate_plan2 = RatePlan.objects.create(
+            room_type=room_type,
+            name='Non-refundable Rate',
+            slug='non-refundable-rate',
+            rate_type='non_refundable',
+            base_price=Decimal('70.00'),
+            min_nights=2
+        )
+        
+        # Add date inventory
+        from datetime import date, timedelta
+        base_date = date(2024, 6, 15)
+        
+        for i in range(10):
+            DateInventory.objects.create(
+                rate_plan=rate_plan1,
+                date=base_date + timedelta(days=i),
+                available_rooms=5,
+                booked_rooms=0,
+                price=Decimal('80.00')
+            )
+        
+        # Verify all relations
+        self.assertEqual(room_type.photos.count(), 2)
+        self.assertEqual(room_type.room_amenities.count(), 2)
+        self.assertEqual(room_type.rate_plans.count(), 2)
+        self.assertEqual(rate_plan1.date_inventory.count(), 10)
+        
+        self.assertIn(photo1, room_type.photos.all())
+        self.assertIn(photo2, room_type.photos.all())
+        self.assertIn(room_amenity1, room_type.room_amenities.all())
+        self.assertIn(room_amenity2, room_type.room_amenities.all())
+        self.assertIn(rate_plan1, room_type.rate_plans.all())
+        self.assertIn(rate_plan2, room_type.rate_plans.all())
+        
+        # Verify cascade relationships
+        self.assertEqual(room_type.property, self.property)
+        self.assertIn(room_type, self.property.room_types.all())
