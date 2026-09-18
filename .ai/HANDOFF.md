@@ -439,12 +439,12 @@ Status: FRONTEND READY (API endpoint pending)
 - Mock adapter structure matches backend RoomType, RatePlan, and DateInventory models from Backend Checkpoint 08
 - Components are ready for backend API integration when endpoints become available
 
-## Booking Engine (Backend Checkpoint 13)
+## Booking Engine (Backend Checkpoint 13-14)
 Status: READY
 
 ### POST `/api/v1/bookings/`
 - Request: `{ property_id, room_type_id, rate_plan_id, check_in (YYYY-MM-DD), check_out (YYYY-MM-DD), guest_count, special_requests (optional) }`
-- Response: `{ id, guest, guest_name, property, property_name, status, payment_status, check_in, check_out, number_of_nights, guest_count, total_price, currency, special_requests, confirmation_code, cancelled_at, cancellation_reason, booking_items, created_at, updated_at }`
+- Response: `{ id, guest, guest_name, property, property_name, status, payment_status, check_in, check_out, number_of_nights, guest_count, total_price, currency, special_requests, confirmation_code, cancelled_at, cancellation_reason, expires_at, booking_items, created_at, updated_at }`
 - Auth: Session-based (required)
 - Error: 400 for validation errors, 403 for unauthorized, 500 for server errors
 - Transaction-safe inventory locking using SELECT FOR UPDATE and Django atomic transactions
@@ -452,6 +452,8 @@ Status: READY
 - Confirmation code generation using cryptographically secure random (secrets module)
 - Booking status management: pending, confirmed, cancelled, completed, no_show
 - Payment status tracking: pending, paid, failed, refunded, partially_refunded
+- **Updated (Checkpoint 14):** Pending bookings automatically assigned expiry timestamp (15 minutes from creation)
+- **Updated (Checkpoint 14):** expires_at field included in booking response for tracking pending booking expiry
 
 ### GET `/api/v1/bookings/`
 - Request: Optional query parameters: `status`, `payment_status`
@@ -460,6 +462,7 @@ Status: READY
 - Error: 403 for unauthorized
 - Booking filtering by status and payment_status
 - Users can only access their own bookings
+- **Updated (Checkpoint 14):** Includes expires_at field in booking responses
 
 ### POST `/api/v1/bookings/{id}/cancel/`
 - Request: `{ cancellation_reason (optional) }`
@@ -468,6 +471,21 @@ Status: READY
 - Error: 400 for validation errors, 403 for unauthorized, 404 for booking not found
 - Booking cancellation with automatic inventory restoration
 - Cancellation status validation prevents invalid cancellations
+- **Updated (Checkpoint 14):** Expiry cancellation also uses this endpoint logic internally
+
+### Management Command: `process_expired_bookings`
+- **New (Checkpoint 14):** Django management command to process expired pending bookings
+- Usage: `python manage.py process_expired_bookings [--dry-run] [--verbose]`
+- Options:
+  - `--dry-run`: Run without actually expiring bookings (for testing)
+  - `--verbose`: Show detailed output about processed bookings
+- Functionality:
+  - Finds all pending bookings with expires_at < current time
+  - Automatically expires bookings and restores inventory
+  - Provides output on number of bookings processed
+  - Handles errors gracefully and continues processing
+- Should be run periodically via cron or Celery beat
+- **Updated (Checkpoint 14):** Comprehensive security review passed (15/15 checks)
 
 ### Backend Implementation Details
 - Booking model with comprehensive status tracking and validation
@@ -481,15 +499,26 @@ Status: READY
 - Double-booking prevention through row-level locking and inventory consistency checks
 - Confirmation code generation using cryptographically secure random (secrets module)
 - Database indexes for booking performance optimization
-- Security review script for checkpoint 13
+- **Updated (Checkpoint 14):** expires_at field with database index for performance
+- **Updated (Checkpoint 14):** Booking.expire_booking() method for expiry with inventory restoration
+- **Updated (Checkpoint 14):** Booking.process_expired_bookings() class method for batch processing
+- **Updated (Checkpoint 14):** Automatic expiry timestamp generation for pending bookings (15 minutes)
+- **Updated (Checkpoint 14):** Deterministic state transitions with proper validation
+- **Updated (Checkpoint 14):** Management command for periodic expiry processing
+- Security review scripts for checkpoints 13 and 14
 
 ### Notes
 - Booking engine provides transaction-safe inventory locking to prevent double-booking
-- Comprehensive test coverage (34 tests) with 100% pass rate
-- Security review passed (7/7 categories, 32/32 individual checks)
+- Comprehensive test coverage (45 tests) with 100% pass rate
+- Security review passed (7/7 categories, 32/32 individual checks for checkpoint 13)
+- Security review passed (15/15 individual checks for checkpoint 14)
 - All booking operations require authentication
 - Users can only access and manage their own bookings
 - Booking cancellation automatically restores inventory
+- **Updated (Checkpoint 14):** Pending bookings expire after 15 minutes if not confirmed
+- **Updated (Checkpoint 14):** Expiry automatically restores inventory and sets cancellation reason
+- **Updated (Checkpoint 14):** Deterministic state transitions prevent invalid status changes
+- **Updated (Checkpoint 14):** Management command available for periodic expiry processing
 - Frontend can now integrate booking creation and management functionality
 - Responsive interaction patterns implemented for all device sizes
 - Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)

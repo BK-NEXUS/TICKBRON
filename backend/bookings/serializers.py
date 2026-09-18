@@ -36,11 +36,11 @@ class BookingSerializer(serializers.ModelSerializer):
             'status', 'payment_status', 'check_in', 'check_out',
             'number_of_nights', 'guest_count', 'total_price', 'currency',
             'special_requests', 'confirmation_code', 'cancelled_at',
-            'cancellation_reason', 'booking_items', 'created_at', 'updated_at'
+            'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'confirmation_code', 'cancelled_at', 'cancellation_reason',
-            'booking_items', 'created_at', 'updated_at'
+            'expires_at', 'booking_items', 'created_at', 'updated_at'
         ]
 
 

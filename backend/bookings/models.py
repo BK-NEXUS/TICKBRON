@@ -101,6 +101,9 @@ class Booking(BaseModel):
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True)
     
+    # Expiry information
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text=_('Timestamp when pending booking expires'))
+    
     class Meta:
         db_table = 'bookings'
         verbose_name = 'Booking'
@@ -113,6 +116,7 @@ class Booking(BaseModel):
             models.Index(fields=['confirmation_code']),
             models.Index(fields=['guest', 'status']),
             models.Index(fields=['property', 'status']),
+            models.Index(fields=['expires_at']),
         ]
     
     def __str__(self):
@@ -133,13 +137,18 @@ class Booking(BaseModel):
             })
     
     def save(self, *args, **kwargs):
-        """Override save to generate confirmation code if needed."""
+        """Override save to generate confirmation code and set expiry if needed."""
         if not self.confirmation_code:
             self.confirmation_code = self.generate_confirmation_code()
         
         # Calculate number of nights if not set
         if not self.number_of_nights:
             self.number_of_nights = (self.check_out - self.check_in).days
+        
+        # Set expiry time for pending bookings (15 minutes from creation)
+        if self.status == 'pending' and not self.expires_at:
+            from datetime import timedelta
+            self.expires_at = timezone.now() + timedelta(minutes=15)
         
         super().save(*args, **kwargs)
     
@@ -323,6 +332,83 @@ class Booking(BaseModel):
             self.cancelled_at = timezone.now()
             self.cancellation_reason = cancellation_reason
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
+    
+    def expire_booking(self):
+        """
+        Expire a pending booking and restore inventory.
+        
+        This method is called when a pending booking expires (typically after 15 minutes).
+        It uses transactions to ensure inventory is properly restored.
+        
+        Raises:
+            ValidationError: If booking cannot be expired
+            Exception: If database error occurs
+        """
+        from datetime import timedelta
+        
+        if self.status != 'pending':
+            raise ValidationError({
+                'status': _('Only pending bookings can be expired')
+            })
+        
+        with transaction.atomic():
+            # Get booking items
+            booking_items = self.booking_items.all()
+            
+            # Restore inventory for each booking item
+            for item in booking_items:
+                date_range = []
+                current_date = self.check_in
+                while current_date < self.check_out:
+                    date_range.append(current_date)
+                    current_date += timedelta(days=1)
+                
+                # Lock and update inventory
+                from properties.models import DateInventory
+                inventory_records = DateInventory.objects.filter(
+                    rate_plan=item.rate_plan,
+                    date__in=date_range
+                ).select_for_update()
+                
+                for inventory in inventory_records:
+                    # Decrement booked_rooms
+                    inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
+                    inventory.save(update_fields=['booked_rooms'])
+            
+            # Update booking status
+            self.status = 'cancelled'
+            self.cancelled_at = timezone.now()
+            self.cancellation_reason = 'Booking expired - payment not completed within time limit'
+            self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
+    
+    @classmethod
+    def process_expired_bookings(cls):
+        """
+        Process all expired pending bookings and restore their inventory.
+        
+        This method should be called periodically (e.g., via a management command or Celery task)
+        to clean up expired bookings and restore inventory.
+        
+        Returns:
+            int: Number of bookings processed
+        """
+        expired_bookings = cls.objects.filter(
+            status='pending',
+            expires_at__lt=timezone.now(),
+            is_deleted=False
+        )
+        
+        processed_count = 0
+        for booking in expired_bookings:
+            try:
+                booking.expire_booking()
+                processed_count += 1
+            except Exception as e:
+                # Log error but continue processing other bookings
+                # In production, this should be logged properly
+                continue
+        
+        return processed_count
 
 
 class BookingItem(BaseModel):

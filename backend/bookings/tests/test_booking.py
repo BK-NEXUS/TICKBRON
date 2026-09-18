@@ -552,6 +552,309 @@ class BookingSerializerTests(TestCase):
         self.assertIn('status', serializer.errors)
 
 
+class BookingExpiryTests(TestCase):
+    """Test cases for booking expiry functionality."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='TestPassword123!',
+            first_name='Test',
+            last_name='User'
+        )
+        
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment'
+        )
+        
+        self.property = Property.objects.create(
+            owner=self.user,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Test St',
+            city='Test City',
+            country='Test Country',
+            base_price=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('100.00'),
+            currency='USD',
+            total_rooms=5
+        )
+        
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('100.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True
+        )
+        
+        # Create date inventory for test dates
+        self.check_in = date.today() + timedelta(days=10)
+        self.check_out = date.today() + timedelta(days=12)
+        
+        current_date = self.check_in
+        while current_date < self.check_out:
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=current_date,
+                available_rooms=5,
+                booked_rooms=0,
+                price=Decimal('100.00'),
+                currency='USD',
+                is_available=True
+            )
+            current_date += timedelta(days=1)
+    
+    def test_booking_expiry_on_creation(self):
+        """Test that pending bookings are automatically assigned an expiry time."""
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        self.assertIsNotNone(booking.expires_at)
+        # Check that expiry is approximately 15 minutes from now
+        from django.utils import timezone
+        from datetime import timedelta
+        expected_expiry = timezone.now() + timedelta(minutes=15)
+        time_difference = abs((booking.expires_at - expected_expiry).total_seconds())
+        self.assertLess(time_difference, 5)  # Allow 5 seconds variance
+    
+    def test_booking_expiry_success(self):
+        """Test successful booking expiry with inventory restoration."""
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        # Verify inventory was booked
+        inventory_records = DateInventory.objects.filter(
+            rate_plan=self.rate_plan,
+            date__gte=self.check_in,
+            date__lt=self.check_out
+        )
+        for inventory in inventory_records:
+            self.assertEqual(inventory.booked_rooms, 1)
+        
+        # Expire the booking
+        booking.expire_booking()
+        
+        # Check booking status
+        self.assertEqual(booking.status, 'cancelled')
+        self.assertIsNotNone(booking.cancelled_at)
+        self.assertEqual(booking.cancellation_reason, 'Booking expired - payment not completed within time limit')
+        
+        # Check inventory was restored
+        for inventory in inventory_records:
+            inventory.refresh_from_db()
+            self.assertEqual(inventory.booked_rooms, 0)
+    
+    def test_booking_expiry_invalid_status(self):
+        """Test booking expiry fails for non-pending status."""
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        # Set status to confirmed
+        booking.status = 'confirmed'
+        booking.save()
+        
+        # Try to expire (should fail)
+        with self.assertRaises(ValidationError) as context:
+            booking.expire_booking()
+        
+        self.assertIn('status', context.exception.message_dict)
+    
+    def test_process_expired_bookings_method(self):
+        """Test the class method for processing expired bookings."""
+        # Create multiple bookings
+        booking1 = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        # Create inventory for second booking dates (different dates to avoid conflict)
+        check_in2 = date.today() + timedelta(days=20)
+        check_out2 = date.today() + timedelta(days=22)
+        
+        current_date = check_in2
+        while current_date < check_out2:
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=current_date,
+                available_rooms=5,
+                booked_rooms=0,
+                price=Decimal('100.00'),
+                currency='USD',
+                is_available=True
+            )
+            current_date += timedelta(days=1)
+        
+        booking2 = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=check_in2,
+            check_out=check_out2,
+            guest_count=2
+        )
+        
+        # Manually set expiry times to past
+        from django.utils import timezone
+        past_time = timezone.now() - timedelta(minutes=30)
+        
+        booking1.expires_at = past_time
+        booking1.save(update_fields=['expires_at'])
+        
+        booking2.expires_at = past_time
+        booking2.save(update_fields=['expires_at'])
+        
+        # Process expired bookings
+        processed_count = Booking.process_expired_bookings()
+        
+        self.assertEqual(processed_count, 2)
+        
+        # Verify both bookings are now cancelled
+        booking1.refresh_from_db()
+        booking2.refresh_from_db()
+        
+        self.assertEqual(booking1.status, 'cancelled')
+        self.assertEqual(booking2.status, 'cancelled')
+        self.assertEqual(booking1.cancellation_reason, 'Booking expired - payment not completed within time limit')
+        self.assertEqual(booking2.cancellation_reason, 'Booking expired - payment not completed within time limit')
+    
+    def test_deterministic_state_transitions(self):
+        """Test that booking state transitions are deterministic and well-defined."""
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        # Initial state: pending
+        self.assertEqual(booking.status, 'pending')
+        self.assertEqual(booking.payment_status, 'pending')
+        
+        # Transition 1: pending -> cancelled (via cancellation)
+        booking.cancel_booking('User cancelled')
+        self.assertEqual(booking.status, 'cancelled')
+        self.assertIsNotNone(booking.cancelled_at)
+        
+        # Create a new booking for expiry test
+        booking2 = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+        
+        # Transition 2: pending -> cancelled (via expiry)
+        booking2.expire_booking()
+        self.assertEqual(booking2.status, 'cancelled')
+        self.assertEqual(booking2.cancellation_reason, 'Booking expired - payment not completed within time limit')
+        
+        # Verify that cancelled bookings cannot be cancelled again
+        with self.assertRaises(ValidationError):
+            booking.cancel_booking('Try again')
+        
+        with self.assertRaises(ValidationError):
+            booking2.expire_booking()
+    
+    def test_expiry_inventory_restoration_accuracy(self):
+        """Test that expiry accurately restores inventory for multiple rooms and nights."""
+        # Create booking for 3 nights (different dates to avoid conflict with setUp)
+        check_in = date.today() + timedelta(days=30)
+        check_out = date.today() + timedelta(days=33)  # 3 nights
+        
+        current_date = check_in
+        while current_date < check_out:
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=current_date,
+                available_rooms=5,
+                booked_rooms=0,
+                price=Decimal('100.00'),
+                currency='USD',
+                is_available=True
+            )
+            current_date += timedelta(days=1)
+        
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=check_in,
+            check_out=check_out,
+            guest_count=2
+        )
+        
+        # Verify inventory was booked for 3 nights
+        inventory_records = DateInventory.objects.filter(
+            rate_plan=self.rate_plan,
+            date__gte=check_in,
+            date__lt=check_out
+        )
+        self.assertEqual(inventory_records.count(), 3)
+        for inventory in inventory_records:
+            self.assertEqual(inventory.booked_rooms, 1)
+        
+        # Expire the booking
+        booking.expire_booking()
+        
+        # Verify inventory was restored for all 3 nights
+        for inventory in inventory_records:
+            inventory.refresh_from_db()
+            self.assertEqual(inventory.booked_rooms, 0)
+
+
 class TransactionSafetyTests(TestCase):
     """Test cases for transaction safety and concurrency."""
     
