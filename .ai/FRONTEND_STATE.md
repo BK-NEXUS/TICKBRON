@@ -3,7 +3,7 @@
 Owner: Baxram
 Checkpoint sequence: 01 → 20
 Current checkpoint: 09
-Completed: 8/20
+Completed: 9/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -125,3 +125,21 @@ Commit format:
 - Security review completed - no vulnerabilities, safe pricing formatting, safe date handling, no XSS risks
 - No API calls or invented endpoints - mock adapter architecture ready for backend API integration
 - Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)
+
+## Checkpoint D1 (Completed)
+- Implemented design system tokens with full color palette (Registan Teal #0B5D66, Deep Ink #16262B, Pomegranate #B23A48, Saffron #D89B3C, Chalk Stone #F4F5F1, Cloud White #FFFFFF, Hairline #DDE0DA, Alert Red #D64545, Sprout Green #3F7A57)
+- Applied typography tokens (PT Serif for headings, PT Sans for UI/body text) with type scale
+- Applied design tokens across all existing pages/components (checkpoints 01-08) replacing placeholder colors/fonts
+- Implemented mobile bottom navigation with exactly 4 items (Search, My Bookings, Favorites, Profile) with icons and labels
+- Enforced single primary (Pomegranate) button per screen rule across error and empty states
+- Created empty-state components for Bookings and Favorites areas with clear CTAs
+- Implemented reusable coach-mark/tooltip component with local state persistence (localStorage)
+- Wired up coach-mark on filter button of search-results page as first real usage
+- Added new pages: BookingsPage, FavoritesPage, ProfilePage with proper routing
+- New components: MobileBottomNavigation, EmptyState, CoachMark with comprehensive test coverage
+- CSS custom properties maintain WCAG AA contrast ratios and accessibility
+- Font imports from Google Fonts (PT Serif, PT Sans) for typography system
+- Security review completed - no XSS risks, safe localStorage usage, no accessibility regressions
+- Comprehensive test coverage: 21 new tests (MobileBottomNavigation: 5, EmptyState: 4, CoachMark: 9, BookingsPage: 3, FavoritesPage: 3, ProfilePage: 3)
+- All 302 tests passing with no security or accessibility issues
+- Part C (Welcome flow) deferred per checkpoint requirements - focused on Parts A and B completion

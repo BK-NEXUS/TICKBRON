@@ -190,7 +190,7 @@ export function SearchResultsPage() {
                   <h2>Unable to load properties</h2>
                   <p>{error}</p>
                   <button 
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     onClick={() => window.location.reload()}
                   >
                     Try Again
@@ -204,7 +204,7 @@ export function SearchResultsPage() {
                   <h2>No properties found</h2>
                   <p>Try adjusting your search criteria or filters to find more properties.</p>
                   <button 
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     onClick={handleClearFilters}
                   >
                     Clear Filters

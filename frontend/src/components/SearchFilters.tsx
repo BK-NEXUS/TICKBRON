@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CoachMark } from './CoachMark'
 
 export interface FilterState {
   property_type?: string
@@ -68,15 +69,25 @@ export function SearchFilters({ filters, onFiltersChange, onClearFilters, proper
     <aside className="search-filters">
       <div className="search-filters-header">
         <h2 className="search-filters-title">Filters</h2>
-        {hasActiveFilters && (
-          <button 
-            className="search-filters-clear"
-            onClick={handleClearFilters}
-            aria-label="Clear all filters"
-          >
-            Clear All
-          </button>
-        )}
+        <div className="search-filters-header-button" style={{ position: 'relative' }}>
+          {hasActiveFilters && (
+            <>
+              <button 
+                className="search-filters-clear"
+                onClick={handleClearFilters}
+                aria-label="Clear all filters"
+              >
+                Clear All
+              </button>
+              <CoachMark
+                featureId="search-filters-clear"
+                title="Clear Filters"
+                message="Quickly remove all applied filters to see more results."
+                position="bottom"
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <div className={`search-filters-content ${isExpanded ? 'search-filters-content-expanded' : ''}`}>
