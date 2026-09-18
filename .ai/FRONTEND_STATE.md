@@ -3,7 +3,7 @@
 Owner: Baxram
 Checkpoint sequence: 01 → 20
 Current checkpoint: 09
-Completed: 9/20
+Completed: 10/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -143,3 +143,25 @@ Commit format:
 - Comprehensive test coverage: 21 new tests (MobileBottomNavigation: 5, EmptyState: 4, CoachMark: 9, BookingsPage: 3, FavoritesPage: 3, ProfilePage: 3)
 - All 302 tests passing with no security or accessibility issues
 - Part C (Welcome flow) deferred per checkpoint requirements - focused on Parts A and B completion
+
+## Checkpoint 09 (Completed)
+- Implemented auth API adapter with session-based authentication endpoints (register, login, logout, refresh, getCurrentUser)
+- AuthAdapter uses credentials: 'include' for session-based auth with cookies (per backend contract)
+- No JWT localStorage usage - follows session-based auth contract from backend checkpoint 03-04
+- Implemented AuthContext for centralized auth state management with useAuth hook
+- AuthContext checks authentication status on mount via getCurrentUser
+- Created LoginPage with email/password form, validation, error handling, and redirect after login
+- Created RegisterPage with full registration form (first name, last name, email, phone, password, confirm)
+- Password validation enforces 12+ character minimum (matches backend requirement)
+- Integrated auth into Header component with conditional rendering:
+  - Not authenticated: Login and Sign Up buttons
+  - Authenticated: User avatar, name, dropdown menu with My Profile, My Bookings, Favorites, Sign Out
+- Added routes for /login and /register outside MainLayout (standalone auth pages)
+- Protected redirect logic: authenticated users redirected from login/register pages
+- Location state preservation for redirect after login (from protected routes)
+- Comprehensive test coverage: 47 new tests (authAdapter: 10, AuthContext: 12, LoginPage: 8, RegisterPage: 11, Header: +6)
+- All 349 tests passing with no security issues
+- Security review completed - session-based auth compliant, no XSS risks, proper CSRF foundation
+- CSS styles for auth pages with responsive design and design system tokens
+- Proper form accessibility with labels, autocomplete attributes, error announcements
+- No API contract changes - auth endpoints already documented in HANDOFF.md from backend checkpoint 03-04

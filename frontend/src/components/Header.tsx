@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { LanguageSelector } from './LanguageSelector'
 import { CurrencySelector } from './CurrencySelector'
 import { MobileMenu } from './MobileMenu'
+import { useAuth } from '../contexts/AuthContext'
 
 interface NavLink {
   label: string
@@ -19,6 +21,10 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [currentLanguage, setCurrentLanguage] = useState('en')
   const [currentCurrency, setCurrentCurrency] = useState('USD')
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  
+  const { user, isAuthenticated, logout } = useAuth()
+  const navigate = useNavigate()
 
   const handleLanguageChange = (languageCode: string) => {
     setCurrentLanguage(languageCode)
@@ -30,6 +36,13 @@ export function Header() {
     setCurrentCurrency(currencyCode)
     // TODO: Integrate with backend API when available
     console.log('Currency changed to:', currencyCode)
+  }
+
+  const handleLogout = async () => {
+    const response = await logout()
+    if (response.success) {
+      navigate('/')
+    }
   }
 
   return (
@@ -58,9 +71,9 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="header-nav">
             {NAV_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className="nav-link">
+              <Link key={link.href} to={link.href} className="nav-link">
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -77,8 +90,51 @@ export function Header() {
               className="header-currency-selector"
             />
             <div className="header-auth-buttons">
-              <button className="btn btn-secondary btn-small">Login</button>
-              <button className="btn btn-primary btn-small">Sign Up</button>
+              {isAuthenticated ? (
+                <div className="header-user-menu">
+                  <button
+                    className="header-user-button"
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    aria-expanded={isUserMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    <span className="header-user-avatar">
+                      {user?.first_name?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                    <span className="header-user-name">
+                      {user?.first_name || 'User'}
+                    </span>
+                  </button>
+                  {isUserMenuOpen && (
+                    <div className="header-user-dropdown">
+                      <Link to="/profile" className="header-user-dropdown-item">
+                        My Profile
+                      </Link>
+                      <Link to="/bookings" className="header-user-dropdown-item">
+                        My Bookings
+                      </Link>
+                      <Link to="/favorites" className="header-user-dropdown-item">
+                        Favorites
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="header-user-dropdown-item header-user-dropdown-item--logout"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link to="/login" className="btn btn-secondary btn-small">
+                    Login
+                  </Link>
+                  <Link to="/register" className="btn btn-primary btn-small">
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
