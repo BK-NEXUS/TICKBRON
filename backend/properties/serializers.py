@@ -142,6 +142,8 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     photos = PropertyPhotoSerializer(many=True, read_only=True)
     amenities = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
+    room_types = serializers.SerializerMethodField()
     
     class Meta:
         model = Property
@@ -152,6 +154,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'approved_at', 'approved_by', 'rejection_reason',
             'translations', 'policies', 'photos', 'amenities', 'full_address',
+            'gallery', 'room_types',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'approved_at', 'approved_by', 'created_at', 'updated_at']
@@ -167,6 +170,140 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
+    
+    def get_gallery(self, obj):
+        """Get property gallery organized by photo type."""
+        photos = obj.photos.filter(
+            is_active=True,
+            is_deleted=False
+        ).order_by('display_order', 'created_at')
+        
+        gallery = {
+            'exterior': [],
+            'interior': [],
+            'amenity': [],
+            'room': [],
+            'other': []
+        }
+        
+        for photo in photos:
+            photo_data = PropertyPhotoSerializer(photo).data
+            # Handle missing photo URL gracefully
+            if not photo_data.get('photo_url'):
+                photo_data['photo_url'] = None
+            photo_type = photo.photo_type
+            if photo_type in gallery:
+                gallery[photo_type].append(photo_data)
+            else:
+                gallery['other'].append(photo_data)
+        
+        return gallery
+    
+    def get_room_types(self, obj):
+        """Get room types with rate plans for the property."""
+        from properties.models import RoomType, RatePlan
+        
+        room_types = obj.room_types.filter(
+            is_deleted=False
+        ).prefetch_related(
+            'rate_plans__date_inventory',
+            'photos',
+            'room_amenities__amenity__category'
+        )
+        
+        room_types_data = []
+        for room_type in room_types:
+            # Get active rate plans
+            active_rate_plans = room_type.rate_plans.filter(
+                is_active=True,
+                is_deleted=False
+            )
+            
+            rate_plans_data = []
+            for rate_plan in active_rate_plans:
+                rate_plan_data = {
+                    'id': rate_plan.id,
+                    'name': rate_plan.name,
+                    'slug': rate_plan.slug,
+                    'rate_type': rate_plan.rate_type,
+                    'description': rate_plan.description,
+                    'base_price': str(rate_plan.base_price),
+                    'currency': rate_plan.currency,
+                    'min_nights': rate_plan.min_nights,
+                    'max_nights': rate_plan.max_nights,
+                    'cancellation_policy': rate_plan.cancellation_policy,
+                    'deposit_required': rate_plan.deposit_required,
+                    'deposit_percentage': rate_plan.deposit_percentage,
+                    'advance_booking_days': rate_plan.advance_booking_days,
+                }
+                rate_plans_data.append(rate_plan_data)
+            
+            # Get room photos
+            room_photos = room_type.photos.filter(
+                is_active=True,
+                is_deleted=False
+            ).order_by('display_order', 'created_at')
+            
+            room_photos_data = []
+            for photo in room_photos:
+                photo_data = {
+                    'id': photo.id,
+                    'photo': photo.photo.url if photo.photo else None,
+                    'photo_type': photo.photo_type,
+                    'caption': photo.caption,
+                    'is_primary': photo.is_primary,
+                    'display_order': photo.display_order,
+                    'alt_text': photo.alt_text,
+                }
+                room_photos_data.append(photo_data)
+            
+            # Get room amenities
+            room_amenities = room_type.room_amenities.filter(
+                is_deleted=False
+            ).select_related('amenity__category')
+            
+            room_amenities_data = []
+            for room_amenity in room_amenities:
+                amenity_data = {
+                    'amenity': {
+                        'id': room_amenity.amenity.id,
+                        'name': room_amenity.amenity.name,
+                        'slug': room_amenity.amenity.slug,
+                        'description': room_amenity.amenity.description,
+                        'icon': room_amenity.amenity.icon,
+                        'is_searchable': room_amenity.amenity.is_searchable,
+                        'category': {
+                            'id': room_amenity.amenity.category.id,
+                            'name': room_amenity.amenity.category.name,
+                            'slug': room_amenity.amenity.category.slug,
+                            'description': room_amenity.amenity.category.description,
+                            'icon': room_amenity.amenity.category.icon,
+                        }
+                    },
+                    'is_available': room_amenity.is_available,
+                    'notes': room_amenity.notes,
+                }
+                room_amenities_data.append(amenity_data)
+            
+            room_type_data = {
+                'id': room_type.id,
+                'name': room_type.name,
+                'slug': room_type.slug,
+                'description': room_type.description,
+                'base_occupancy': room_type.base_occupancy,
+                'max_occupancy': room_type.max_occupancy,
+                'base_price': str(room_type.base_price),
+                'currency': room_type.currency,
+                'total_rooms': room_type.total_rooms,
+                'bed_configuration': room_type.bed_configuration,
+                'room_size': room_type.room_size,
+                'rate_plans': rate_plans_data,
+                'photos': room_photos_data,
+                'amenities': room_amenities_data,
+            }
+            room_types_data.append(room_type_data)
+        
+        return room_types_data
 
 
 class SearchParamsSerializer(serializers.Serializer):

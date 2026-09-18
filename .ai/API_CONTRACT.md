@@ -12,7 +12,7 @@ Core endpoints:
 - GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03)
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)
-- GET `/api/v1/properties/{id}/`
+- GET `/api/v1/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 11)
 - GET `/api/v1/properties/{id}/availability/`
 - POST `/api/v1/bookings/`
 - GET `/api/v1/bookings/`
@@ -71,6 +71,16 @@ Core endpoints:
 - Comprehensive error handling with standardized error responses
 - Security review passed (7/7 categories, 35/35 individual checks)
 - All 287 tests passing including comprehensive search validation tests
+
+## Checkpoint 11 Notes (Property detail aggregate API)
+- Added GET `/api/v1/properties/{id}/` endpoint with complete property details
+- Response includes all required sections: gallery, amenities, rooms/rates, policies, translations, metadata
+- Gallery organized by photo type (exterior, interior, amenity, room, other)
+- Room types with rate plans, photos, and amenities included
+- Comprehensive error handling for property not found/inactive/deleted
+- Public endpoint (no authentication required)
+- Security review passed (7/7 categories, 39/39 individual checks)
+- All 302 tests passing including 15 new property detail tests
 
 Rules:
 - Breaking API changes require `/api/v2/`.

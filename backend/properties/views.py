@@ -9,7 +9,7 @@ from django.utils import timezone
 from properties.search import PropertySearchService
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer, 
-    PaginatedSearchResponseSerializer
+    PaginatedSearchResponseSerializer, PropertyDetailSerializer
 )
 
 
@@ -132,3 +132,42 @@ def property_search_suggestions(request):
         )
     
     return Response({'suggestions': suggestions}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def property_detail(request, property_id):
+    """
+    Get detailed property information with complete sections.
+    
+    Path Parameters:
+        property_id: Property ID
+    
+    Returns:
+        Complete property details including:
+        - Basic property information
+        - Gallery (photos organized by type)
+        - Amenities with categories
+        - Room types with rate plans
+        - Policies
+        - Translations
+        - Metadata
+    """
+    from properties.models import Property
+    
+    try:
+        property = Property.objects.get(
+            id=property_id,
+            is_active=True,
+            is_deleted=False
+        )
+    except Property.DoesNotExist:
+        return Response(
+            {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Serialize property with all related data
+    serializer = PropertyDetailSerializer(property)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
