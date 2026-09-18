@@ -1,4 +1,4 @@
-import { RatePlan } from '../adapters/searchAdapter'
+import { RatePlan } from '../adapters/propertyAdapter'
 
 interface RatePlanCardProps {
   ratePlan: RatePlan

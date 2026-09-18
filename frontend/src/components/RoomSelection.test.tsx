@@ -1,45 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { RoomSelection } from './RoomSelection'
-import { RoomType } from '../adapters/searchAdapter'
-import * as searchAdapter from '../adapters/searchAdapter'
-
-// Mock the search adapter
-vi.mock('../adapters/searchAdapter')
+import { RoomType, RatePlan } from '../adapters/propertyAdapter'
 
 describe('RoomSelection', () => {
-  const mockRoomTypes: RoomType[] = [
-    {
-      id: 1,
-      property_id: 1,
-      name: 'Standard Room',
-      slug: 'standard-room',
-      description: 'Comfortable room with essential amenities',
-      base_occupancy: 2,
-      max_occupancy: 2,
-      base_price: 120,
-      currency: 'EUR',
-      total_rooms: 5,
-      bed_configuration: '1 Queen Bed',
-      room_size: 25,
-    },
-    {
-      id: 2,
-      property_id: 1,
-      name: 'Deluxe Room',
-      slug: 'deluxe-room',
-      description: 'Spacious room with city views',
-      base_occupancy: 2,
-      max_occupancy: 3,
-      base_price: 180,
-      currency: 'EUR',
-      total_rooms: 3,
-      bed_configuration: '1 King Bed',
-      room_size: 35,
-    },
-  ]
-
-  const mockRatePlans = [
+  const mockRatePlans: RatePlan[] = [
     {
       id: 1,
       room_type_id: 1,
@@ -57,25 +22,41 @@ describe('RoomSelection', () => {
     },
   ]
 
-  const mockDateInventory = [
+  const mockRoomTypes: RoomType[] = [
     {
       id: 1,
-      rate_plan_id: 1,
-      date: '2024-01-15',
-      available_rooms: 3,
-      booked_rooms: 1,
-      price: 120,
+      property_id: 1,
+      name: 'Standard Room',
+      slug: 'standard-room',
+      description: 'Comfortable room with essential amenities',
+      base_occupancy: 2,
+      max_occupancy: 2,
+      base_price: 120,
       currency: 'EUR',
-      is_available: true,
-      minimum_stay: 1,
-      maximum_stay: 30,
+      total_rooms: 5,
+      bed_configuration: '1 Queen Bed',
+      room_size: 25,
+      rate_plans: mockRatePlans,
+    },
+    {
+      id: 2,
+      property_id: 1,
+      name: 'Deluxe Room',
+      slug: 'deluxe-room',
+      description: 'Spacious room with city views',
+      base_occupancy: 2,
+      max_occupancy: 3,
+      base_price: 180,
+      currency: 'EUR',
+      total_rooms: 3,
+      bed_configuration: '1 King Bed',
+      room_size: 35,
+      rate_plans: [],
     },
   ]
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(searchAdapter.SearchAdapter.getRatePlansForRoomType).mockResolvedValue(mockRatePlans)
-    vi.mocked(searchAdapter.SearchAdapter.getDateInventoryForRatePlan).mockResolvedValue(mockDateInventory)
   })
 
   it('renders empty state when no room types provided', () => {
@@ -96,36 +77,22 @@ describe('RoomSelection', () => {
     expect(screen.getAllByText('Available Rooms').length).toBeGreaterThan(0)
   })
 
-  it('renders all room cards', () => {
+  it('renders room cards for each room type', () => {
     render(<RoomSelection roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Standard Room')).toBeInTheDocument()
     expect(screen.getByText('Deluxe Room')).toBeInTheDocument()
   })
 
-  it('loads rate plans when room is selected', async () => {
+  it('renders room card with correct information', () => {
     render(<RoomSelection roomTypes={mockRoomTypes} />)
     
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(searchAdapter.SearchAdapter.getRatePlansForRoomType).toHaveBeenCalledWith(1)
-    }, { timeout: 3000 })
+    expect(screen.getByText('Comfortable room with essential amenities')).toBeInTheDocument()
+    expect(screen.getByText('€120')).toBeInTheDocument()
+    expect(screen.getByText('2 - 2 guests')).toBeInTheDocument()
   })
 
-  it('displays rate plans section after room selection', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Rate Plans for Standard Room')).toBeInTheDocument()
-    }, { timeout: 3000 })
-  })
-
-  it('loads date inventory when rate plan is selected', async () => {
+  it('selects room when room card is clicked', async () => {
     render(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
@@ -134,12 +101,16 @@ describe('RoomSelection', () => {
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     }, { timeout: 3000 })
+  })
+
+  it('displays rate plans after room selection', async () => {
+    render(<RoomSelection roomTypes={mockRoomTypes} />)
     
-    const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
+    const standardRoom = screen.getByText('Standard Room')
+    standardRoom.click()
     
     await waitFor(() => {
-      expect(searchAdapter.SearchAdapter.getDateInventoryForRatePlan).toHaveBeenCalledWith(1)
+      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 
@@ -178,144 +149,10 @@ describe('RoomSelection', () => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
     })
     
-    // Skip the date selection test for now as it requires calendar interaction
-    // The selection summary tests would need calendar mocking
-  })
-
-  it('displays correct selection summary details', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
-    
-    const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
-    })
-    
-    // Skip detailed summary test as it requires full calendar interaction
-  })
-
-  it('displays proceed to booking button when selection is complete', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
-    
-    const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
-    })
-    
-    // Skip booking button test as it requires full calendar interaction
-  })
-
-  it('shows loading state while loading rate plans', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.getRatePlansForRoomType).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve(mockRatePlans), 100))
-    )
-    
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    // Skip loading state assertion as it's timing-dependent
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    }, { timeout: 3000 })
-  })
-
-  it('shows loading state while loading date inventory', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.getDateInventoryForRatePlan).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve(mockDateInventory), 100))
-    )
-    
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
-    
-    const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
-    
-    // Skip loading state assertion as it's timing-dependent
-    await waitFor(() => {
-      expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
-    }, { timeout: 3000 })
-  })
-
-  it('handles errors when loading rate plans', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.getRatePlansForRoomType).mockRejectedValue(
-      new Error('Failed to load rate plans')
-    )
-    
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      // Error should be logged to console, but UI should handle gracefully
-      expect(searchAdapter.SearchAdapter.getRatePlansForRoomType).toHaveBeenCalled()
-    })
-  })
-
-  it('handles errors when loading date inventory', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.getDateInventoryForRatePlan).mockRejectedValue(
-      new Error('Failed to load date inventory')
-    )
-    
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
-    
-    const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
-    
-    await waitFor(() => {
-      // Error should be logged to console, but UI should handle gracefully
-      expect(searchAdapter.SearchAdapter.getDateInventoryForRatePlan).toHaveBeenCalled()
-    })
-  })
-
-  it('resets rate plan selection when different room is selected', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
-    
-    const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
-    
-    await waitFor(() => {
-      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
-    
-    const deluxeRoom = screen.getByText('Deluxe Room')
-    deluxeRoom.click()
-    
-    await waitFor(() => {
-      expect(searchAdapter.SearchAdapter.getRatePlansForRoomType).toHaveBeenCalledWith(2)
-    })
+    // Click a date to complete selection
+    const calendar = screen.getByText('Availability Calendar')
+    // Note: Calendar interaction would require more complex test setup
+    expect(calendar).toBeInTheDocument()
   })
 
   it('resets date selection when different rate plan is selected', async () => {
@@ -326,7 +163,7 @@ describe('RoomSelection', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
     
     const standardRate = screen.getByText('Standard Rate')
     standardRate.click()

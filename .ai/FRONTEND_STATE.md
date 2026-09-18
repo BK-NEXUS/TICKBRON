@@ -2,8 +2,8 @@
 
 Owner: Baxram
 Checkpoint sequence: 01 → 20
-Current checkpoint: 09
-Completed: 10/20
+Current checkpoint: 10
+Completed: 11/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -165,3 +165,55 @@ Commit format:
 - CSS styles for auth pages with responsive design and design system tokens
 - Proper form accessibility with labels, autocomplete attributes, error announcements
 - No API contract changes - auth endpoints already documented in HANDOFF.md from backend checkpoint 03-04
+
+## Checkpoint 10 (Completed)
+- Integrated real search API endpoint from backend checkpoint 10 (GET /api/v1/properties/search/)
+- Integrated real property detail API endpoint from backend checkpoint 11 (GET /api/v1/properties/{id}/)
+- Created propertyAdapter.ts with shared TypeScript interfaces matching backend contract:
+  - Property, PropertyType, PropertyTranslation, PropertyPolicy, Amenity, PropertyAmenity
+  - PropertyPhoto, NearbyPlace, Restaurant, RoomType, RatePlan
+  - SearchParams, SearchResponse, PropertyDetailResponse, ApiError
+- Replaced mock searchAdapter with real propertyAdapter in SearchResultsPage
+- Replaced mock searchAdapter with real propertyAdapter in PropertyDetailPage
+- Updated supporting components to use propertyAdapter types:
+  - PropertyGallery, PropertyDetailHeader, RoomSelection
+- Search API integration features:
+  - Query parameter serialization with URLSearchParams (safe encoding)
+  - Pagination support (page, page_size, total_pages, next, previous)
+  - Filter parameters (location, lat/lng, radius, price range, guests, amenities, property type)
+  - Sort parameter support
+  - Loading, empty, and error states with proper user feedback
+- Property detail API integration features:
+  - Property data with gallery organized by photo type
+  - Amenities and categories
+  - Room types with rate plans
+  - Policies and translations
+  - Nearby places and restaurants
+  - Loading, not found (404), and error states
+- Room selection updated to use propertyAdapter room/rate data structures
+- Comprehensive test coverage:
+  - propertyAdapter.test.ts: 11 tests (search request construction, query serialization, success/error responses, property detail, not-found)
+  - Updated SearchResultsPage tests to mock propertyAdapter
+  - Updated PropertyDetailPage tests to mock propertyAdapter
+  - Updated RoomSelection tests to use propertyAdapter types
+  - Updated PropertyGallery tests to match real gallery contract
+  - Updated PropertyCard tests to use propertyAdapter Property type
+- Full regression suite: 352 tests passing across 36 test files
+- Security review completed:
+  - No hardcoded API keys/secrets (API_BASE_URL environment-configurable)
+  - No sensitive data in localStorage (only CoachMark UI preferences)
+  - No XSS via dangerouslySetInnerHTML
+  - URL encoding for query parameters (URLSearchParams)
+  - Session-based authentication only (credentials: 'include')
+  - No secrets in error messages
+  - Input validation before API calls (property ID validation)
+  - Safe image URL rendering (React safe by default)
+  - Pagination safety (backend validates bounds 1-100)
+- API contract compatibility verified:
+  - Search endpoint: all query parameters match backend checkpoint 10
+  - Property detail endpoint: response structure matches backend checkpoint 11
+  - Pagination metadata handled correctly
+  - Error response format matches backend standardized errors
+- No invented API endpoints or fields - strict adherence to backend contract
+- Design system and accessibility preserved (no regressions)
+

@@ -1,4 +1,4 @@
-import { Property } from '../adapters/searchAdapter'
+import { Property } from '../adapters/propertyAdapter'
 
 interface PropertyDetailHeaderProps {
   property: Property

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Property } from '../adapters/searchAdapter'
+import { Property } from '../adapters/propertyAdapter'
 
 interface PropertyGalleryProps {
   property: Property
@@ -12,21 +12,22 @@ interface PropertyGalleryProps {
 export function PropertyGallery({ property }: PropertyGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   
-  // Mock gallery images - in real implementation, these would come from the property
-  const galleryImages = [
-    property.image_url || '🏠',
-    property.image_url || '🏠',
-    property.image_url || '🏠',
-    property.image_url || '🏠',
-    property.image_url || '🏠',
-  ]
+  // Get gallery images from property.gallery organized by photo type
+  const galleryImages = property.gallery ? 
+    Object.values(property.gallery).flat().sort((a, b) => a.display_order - b.display_order) :
+    (property.primary_photo ? [property.primary_photo] : [])
+  
+  // Fallback to placeholder if no images
+  const displayImages = galleryImages.length > 0 ? 
+    galleryImages : 
+    [{ id: 0, photo: '🏠', photo_type: 'other', is_primary: true, display_order: 0 }]
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))
+    setCurrentIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))
   }
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))
+    setCurrentIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1))
   }
 
   const selectImage = (index: number) => {
@@ -53,14 +54,14 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
           className="property-gallery-nav property-gallery-nav--prev"
           onClick={goToPrevious}
           aria-label="Previous image"
-          disabled={galleryImages.length <= 1}
+          disabled={displayImages.length <= 1}
         >
           ‹
         </button>
         
         <div className="property-gallery-image">
           <div className="property-gallery-image-placeholder">
-            {galleryImages[currentIndex]}
+            {displayImages[currentIndex].photo}
           </div>
         </div>
 
@@ -68,17 +69,17 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
           className="property-gallery-nav property-gallery-nav--next"
           onClick={goToNext}
           aria-label="Next image"
-          disabled={galleryImages.length <= 1}
+          disabled={displayImages.length <= 1}
         >
           ›
         </button>
       </div>
 
-      {galleryImages.length > 1 && (
+      {displayImages.length > 1 && (
         <div className="property-gallery-thumbnails">
-          {galleryImages.map((image, index) => (
+          {displayImages.map((image, index) => (
             <button
-              key={index}
+              key={image.id}
               className={`property-gallery-thumbnail ${
                 index === currentIndex ? 'property-gallery-thumbnail--active' : ''
               }`}
@@ -87,7 +88,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
               aria-pressed={index === currentIndex}
             >
               <div className="property-gallery-thumbnail-placeholder">
-                {image}
+                {image.photo}
               </div>
             </button>
           ))}

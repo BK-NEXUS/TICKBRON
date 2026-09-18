@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DateInventory } from '../adapters/searchAdapter'
+import { DateInventory } from '../adapters/propertyAdapter'
 
 interface AvailabilityCalendarProps {
   inventory: DateInventory[]

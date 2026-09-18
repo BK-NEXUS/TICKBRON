@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { SearchAdapter, Property } from '../adapters/searchAdapter'
+import { propertyAdapter, Property } from '../adapters/propertyAdapter'
 import { PropertyGallery } from '../components/PropertyGallery'
 import { PropertyDetailHeader } from '../components/PropertyDetailHeader'
 import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
@@ -36,15 +36,18 @@ export function PropertyDetailPage() {
           return
         }
 
-        const data = await SearchAdapter.getPropertyById(propertyId)
-        if (!data) {
+        const response = await propertyAdapter.getPropertyById(propertyId)
+        
+        if (response.error) {
+          setError(response.error)
+          setLoading(false)
+        } else if (response.data) {
+          setProperty(response.data)
+          setLoading(false)
+        } else {
           setError('Property not found')
           setLoading(false)
-          return
         }
-
-        setProperty(data)
-        setLoading(false)
       } catch (err) {
         setError('Failed to load property details')
         setLoading(false)
@@ -57,7 +60,7 @@ export function PropertyDetailPage() {
   // SEO metadata
   useEffect(() => {
     if (property) {
-      const translation = property.translations[0] || { name: 'Property', description: '' }
+      const translation = property.translations[0] || { name: property.name || 'Property', description: property.description || '' }
       document.title = `${translation.name} | TICKBRON`
       
       // Update meta description
@@ -106,7 +109,7 @@ export function PropertyDetailPage() {
     )
   }
 
-  const translation = property.translations[0] || { name: 'Property', description: '' }
+  const translation = property.translations[0] || { name: property.name || 'Property', description: property.description || '' }
 
   return (
     <div className="property-detail-page">
@@ -166,11 +169,11 @@ export function PropertyDetailPage() {
           </section>
 
           <section className="property-detail-section">
-            <NearbyPlaces places={property.nearby_places} />
+            <NearbyPlaces places={property.nearby_places || []} />
           </section>
 
           <section className="property-detail-section">
-            <DiningRestaurants restaurants={property.restaurants} />
+            <DiningRestaurants restaurants={property.restaurants || []} />
           </section>
 
           {property.room_types && property.room_types.length > 0 && (

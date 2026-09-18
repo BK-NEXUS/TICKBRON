@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PropertyGallery } from './PropertyGallery'
-import { Property } from '../adapters/searchAdapter'
+import { Property } from '../adapters/propertyAdapter'
 
 describe('PropertyGallery', () => {
   const mockProperty: Property = {
@@ -30,6 +30,20 @@ describe('PropertyGallery', () => {
       },
     ],
     policies: [],
+    gallery: {
+      exterior: [
+        { id: 1, photo: '🏠', photo_type: 'exterior', is_primary: true, display_order: 1 },
+        { id: 2, photo: '🏰', photo_type: 'exterior', is_primary: false, display_order: 2 },
+        { id: 3, photo: '🌆', photo_type: 'exterior', is_primary: false, display_order: 3 },
+      ],
+    },
+    primary_photo: {
+      id: 1,
+      photo: '🏠',
+      photo_type: 'exterior',
+      is_primary: true,
+      display_order: 1,
+    },
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
   }
@@ -49,6 +63,8 @@ describe('PropertyGallery', () => {
     
     expect(prevButton).toBeInTheDocument()
     expect(nextButton).toBeInTheDocument()
+    expect(prevButton).not.toBeDisabled()
+    expect(nextButton).not.toBeDisabled()
   })
 
   it('navigates to next image when next button is clicked', () => {
@@ -74,7 +90,7 @@ describe('PropertyGallery', () => {
     render(<PropertyGallery property={mockProperty} />)
     
     const thumbnails = screen.getAllByLabelText(/View image/)
-    expect(thumbnails.length).toBeGreaterThan(1)
+    expect(thumbnails.length).toBe(3)
   })
 
   it('selects thumbnail when clicked', () => {

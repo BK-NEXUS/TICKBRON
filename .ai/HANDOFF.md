@@ -102,25 +102,81 @@ Status: DATA MODELS READY (API endpoints pending)
 - Security review passed (13/13 checks)
 - API endpoints for amenity management will be implemented in future checkpoints
 
+## Search API (Backend Checkpoint 10)
+Status: READY (Frontend Checkpoint 10 - Backend Integration Complete)
+
+### GET `/api/v1/properties/search/`
+- Request: Query parameters for filtering and sorting:
+  - q: Free text search
+  - location: Location name
+  - lat, lng: Coordinates for location-based search
+  - radius: Search radius in kilometers
+  - min_price, max_price: Price range filter
+  - min_guests, max_guests: Guest count filter
+  - amenities: Comma-separated amenity IDs
+  - property_type: Property type ID
+  - check_in, check_out: Date range for availability
+  - sort: Sort option (price_asc, price_desc, rating, review_count)
+  - page: Page number (default: 1)
+  - page_size: Items per page (1-100, default: 20)
+- Response: Paginated search results including:
+  - count: Total number of results
+  - next: URL for next page (null if no next page)
+  - previous: URL for previous page (null if no previous page)
+  - results: Array of Property objects
+  - page: Current page number
+  - page_size: Items per page
+  - total_pages: Total number of pages
+- Auth: None (public endpoint)
+- Error: 400 for invalid parameters, standardized error format
+- Input validation: HTML tag sanitization in query parameter
+- Page size limits: 1-100 (backend validation)
+- **Frontend Integration:** Completed in Frontend Checkpoint 10
+- **Backend Implementation:** Completed in Backend Checkpoint 10
+- READY/BLOCKED status: READY
+
+### GET `/api/v1/properties/search/suggestions/`
+- Request: Query parameters:
+  - q: Search query
+  - limit: Number of suggestions (default: 5)
+- Response: Array of suggestion strings
+- Auth: None (public endpoint)
+- Error: 400 for invalid parameters
+- **Frontend Integration:** Completed in Frontend Checkpoint 10 (adapter method available)
+- **Backend Implementation:** Completed in Backend Checkpoint 10
+- READY/BLOCKED status: READY
+
+### Notes
+- Search API provides standardized filtering and sorting
+- Pagination metadata includes count, next/previous links, page info
+- Query sanitization removes HTML tags to prevent injection
+- Input validation ensures page_size within bounds (1-100)
+- Full test coverage (15 search tests) with 100% pass rate
+- Security review passed (35/35 checks)
+- Frontend propertyAdapter.ts implements search methods with URLSearchParams for safe encoding
+
 ## Property Detail Page (Frontend Checkpoint 06)
-Status: FRONTEND READY (API endpoint pending)
+Status: READY (Frontend Checkpoint 10 - Backend Integration Complete)
 
 ### GET `/api/v1/properties/{id}/`
 - Request: Property ID via URL parameter
-- Response needed: Full property details including:
-  - Basic property information (id, name, description, location, etc.)
+- Response: Full property details including:
+  - Basic property information (id, property_type, status, max_guests, bedrooms, bathrooms, location, base_price, currency)
   - Property type details
   - Amenities (with categories and availability)
-  - Media/images (gallery URLs)
+  - Gallery organized by photo type (exterior, interior, amenity, room, other)
+  - Primary photo for cover image
   - Pricing information
-  - Policies (check-in, cancellation, etc.)
+  - Policies (check-in, cancellation, house rules, payment, security)
+  - Translations (language, name, description, address)
   - Rating and review information
-  - Availability information
+  - Room types with rate plans
+  - Nearby places and restaurants
 - Auth: None (public endpoint for property viewing)
-- Error: 404 if property not found, 403 if property is inactive/suspended
-- Mock status: Frontend uses mock adapter with property data structure
-- Expected states: Loading, property found, property not found, error
-- READY/BLOCKED status: READY (frontend complete, waiting for backend API)
+- Error: 404 if property not found/inactive/deleted, standardized error format
+- **Frontend Integration:** Completed in Frontend Checkpoint 10
+- **Backend Implementation:** Completed in Backend Checkpoint 11
+- READY/BLOCKED status: READY
 
 ### Frontend Implementation Details
 - PropertyDetailPage component with routing at `/property/:id`

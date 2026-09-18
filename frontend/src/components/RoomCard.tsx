@@ -1,4 +1,4 @@
-import { RoomType } from '../adapters/searchAdapter'
+import { RoomType } from '../adapters/propertyAdapter'
 
 interface RoomCardProps {
   room: RoomType

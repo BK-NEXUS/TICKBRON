@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { PropertyDetailPage } from './PropertyDetailPage'
-import { SearchAdapter } from '../adapters/searchAdapter'
+import { propertyAdapter } from '../adapters/propertyAdapter'
 
 // Mock React Router
 vi.mock('react-router-dom', () => ({
@@ -9,8 +9,8 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
 }))
 
-// Mock SearchAdapter
-vi.mock('../adapters/searchAdapter')
+// Mock propertyAdapter
+vi.mock('../adapters/propertyAdapter')
 
 describe('PropertyDetailPage', () => {
   const mockProperty = {
@@ -100,6 +100,24 @@ describe('PropertyDetailPage', () => {
         room_size: 25,
       },
     ],
+    gallery: {
+      exterior: [
+        {
+          id: 1,
+          photo: '🏠',
+          photo_type: 'exterior',
+          is_primary: true,
+          display_order: 1,
+        },
+      ],
+    },
+    primary_photo: {
+      id: 1,
+      photo: '🏠',
+      photo_type: 'exterior',
+      is_primary: true,
+      display_order: 1,
+    },
     rating: 4.5,
     review_count: 100,
     created_at: '2024-01-01T00:00:00Z',
@@ -111,7 +129,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders loading state initially', () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
     
@@ -119,7 +140,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property details after loading', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -131,7 +155,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders error state when property not found', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(null)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: null,
+      error: 'Property not found',
+    })
 
     render(<PropertyDetailPage />)
 
@@ -141,7 +168,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders error state when API call fails', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockRejectedValue(new Error('API Error'))
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: null,
+      error: 'API Error',
+    })
 
     render(<PropertyDetailPage />)
 
@@ -151,7 +181,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property gallery', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -161,7 +194,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property header', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -171,7 +207,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property description', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -181,7 +220,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property amenities', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -191,7 +233,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders property policies', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -202,7 +247,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders nearby places', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -212,7 +260,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders dining restaurants', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -222,7 +273,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders room selection when room types are available', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -233,7 +287,10 @@ describe('PropertyDetailPage', () => {
 
   it('does not render room selection when no room types are available', async () => {
     const propertyWithoutRooms = { ...mockProperty, room_types: [] }
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(propertyWithoutRooms)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: propertyWithoutRooms,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -243,7 +300,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('renders booking card with price', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -253,7 +313,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('updates document title with property name', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
@@ -263,7 +326,10 @@ describe('PropertyDetailPage', () => {
   })
 
   it('has back to search button in error state', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(null)
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: null,
+      error: 'Property not found',
+    })
 
     render(<PropertyDetailPage />)
 
@@ -273,13 +339,16 @@ describe('PropertyDetailPage', () => {
     })
   })
 
-  it('calls SearchAdapter with correct property ID', async () => {
-    vi.mocked(SearchAdapter.getPropertyById).mockResolvedValue(mockProperty)
+  it('calls propertyAdapter with correct property ID', async () => {
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
 
     render(<PropertyDetailPage />)
 
     await waitFor(() => {
-      expect(SearchAdapter.getPropertyById).toHaveBeenCalledWith(1)
+      expect(propertyAdapter.getPropertyById).toHaveBeenCalledWith(1)
     })
   })
 })

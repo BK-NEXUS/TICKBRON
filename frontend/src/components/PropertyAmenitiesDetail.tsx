@@ -1,4 +1,4 @@
-import { PropertyAmenity, AmenityCategory } from '../adapters/searchAdapter'
+import { PropertyAmenity, AmenityCategory } from '../adapters/propertyAdapter'
 
 interface PropertyAmenitiesDetailProps {
   amenities?: PropertyAmenity[]

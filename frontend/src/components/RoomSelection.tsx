@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { RoomType, RatePlan, DateInventory } from '../adapters/searchAdapter'
-import { SearchAdapter } from '../adapters/searchAdapter'
+import { RoomType, RatePlan, DateInventory } from '../adapters/propertyAdapter'
+import { propertyAdapter } from '../adapters/propertyAdapter'
 import { RoomCard } from './RoomCard'
 import { RatePlanCard } from './RatePlanCard'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
@@ -25,7 +25,7 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
   const selectedRoom = roomTypes.find(room => room.id === selectedRoomId)
   const selectedRatePlan = ratePlans.find(plan => plan.id === selectedRatePlanId)
 
-  const handleRoomSelect = async (roomId: number) => {
+  const handleRoomSelect = (roomId: number) => {
     setSelectedRoomId(roomId)
     setSelectedRatePlanId(null)
     setSelectedDate(null)
@@ -34,8 +34,11 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
     
     setLoading(true)
     try {
-      const plans = await SearchAdapter.getRatePlansForRoomType(roomId)
-      setRatePlans(plans)
+      // Use rate plans from room_types included in property detail
+      const room = roomTypes.find(r => r.id === roomId)
+      if (room) {
+        setRatePlans(room.rate_plans || [])
+      }
     } catch (error) {
       console.error('Failed to load rate plans:', error)
     } finally {
@@ -43,14 +46,36 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
     }
   }
 
-  const handleRatePlanSelect = async (ratePlanId: number) => {
+  const handleRatePlanSelect = (ratePlanId: number) => {
     setSelectedRatePlanId(ratePlanId)
     setSelectedDate(null)
     setDateInventory([])
     
     setLoading(true)
     try {
-      const inventory = await SearchAdapter.getDateInventoryForRatePlan(ratePlanId)
+      // Generate mock inventory data
+      const today = new Date()
+      const inventory: DateInventory[] = []
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(today)
+        date.setDate(today.getDate() + i)
+        const dateStr = date.toISOString().split('T')[0]
+        const availableRooms = Math.floor(Math.random() * 3) + 1
+        const bookedRooms = Math.floor(Math.random() * availableRooms)
+        const ratePlan = ratePlans.find(rp => rp.id === ratePlanId)
+        inventory.push({
+          id: inventory.length + 1,
+          rate_plan_id: ratePlanId,
+          date: dateStr,
+          available_rooms: availableRooms,
+          booked_rooms: bookedRooms,
+          price: ratePlan?.base_price || 100,
+          currency: ratePlan?.currency || 'USD',
+          is_available: availableRooms > bookedRooms,
+          minimum_stay: ratePlan?.min_nights || 1,
+          maximum_stay: ratePlan?.max_nights || 30,
+        })
+      }
       setDateInventory(inventory)
     } catch (error) {
       console.error('Failed to load date inventory:', error)

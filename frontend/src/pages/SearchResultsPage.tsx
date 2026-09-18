@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { SearchAdapter, Property, SearchParams, PropertyType } from '../adapters/searchAdapter'
+import { propertyAdapter, Property, SearchParams, PropertyType } from '../adapters/propertyAdapter'
 import { PropertyCard } from '../components/PropertyCard'
 import { SearchFilters, FilterState } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
@@ -22,6 +22,9 @@ export function SearchResultsPage() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
   const [sortBy, setSortBy] = useState('relevance')
+  const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   
   const [filters, setFilters] = useState<FilterState>({
     property_type: undefined,
@@ -33,30 +36,33 @@ export function SearchResultsPage() {
   // Get search parameters from URL
   const getSearchParams = useCallback((): SearchParams => {
     return {
-      destination: searchParams.get('destination') || undefined,
+      q: searchParams.get('destination') || undefined,
+      location: searchParams.get('destination') || undefined,
       check_in: searchParams.get('check_in') || undefined,
       check_out: searchParams.get('check_out') || undefined,
-      guests: searchParams.get('guests') ? parseInt(searchParams.get('guests')!, 10) : undefined,
-      adults: searchParams.get('adults') ? parseInt(searchParams.get('adults')!, 10) : undefined,
-      children: searchParams.get('children') ? parseInt(searchParams.get('children')!, 10) : undefined,
-      rooms: searchParams.get('rooms') ? parseInt(searchParams.get('rooms')!, 10) : undefined,
+      min_guests: searchParams.get('guests') ? parseInt(searchParams.get('guests')!, 10) : undefined,
       property_type: filters.property_type,
       min_price: filters.min_price,
       max_price: filters.max_price,
       amenities: filters.amenities,
-      sort_by: sortBy,
+      sort: sortBy === 'relevance' ? undefined : sortBy,
+      page: 1,
+      page_size: 20,
     }
   }, [searchParams, filters, sortBy])
 
   // Load property types on mount
   useEffect(() => {
     const loadPropertyTypes = async () => {
-      try {
-        const types = await SearchAdapter.getPropertyTypes()
-        setPropertyTypes(types)
-      } catch (err) {
-        console.error('Failed to load property types:', err)
-      }
+      // Mock property types for now - could be fetched from backend in future
+      const mockPropertyTypes: PropertyType[] = [
+        { id: 1, name: 'Apartment', slug: 'apartment' },
+        { id: 2, name: 'House', slug: 'house' },
+        { id: 3, name: 'Villa', slug: 'villa' },
+        { id: 4, name: 'Studio', slug: 'studio' },
+        { id: 5, name: 'Condo', slug: 'condo' },
+      ]
+      setPropertyTypes(mockPropertyTypes)
     }
     
     loadPropertyTypes()
@@ -70,9 +76,18 @@ export function SearchResultsPage() {
       
       try {
         const params = getSearchParams()
-        const response = await SearchAdapter.searchProperties(params)
-        setProperties(response.results)
-        setLoadingState('success')
+        const response = await propertyAdapter.searchProperties(params)
+        
+        if (response.error) {
+          setError(response.error)
+          setLoadingState('error')
+        } else if (response.data) {
+          setProperties(response.data.results)
+          setTotalCount(response.data.count)
+          setCurrentPage(response.data.page)
+          setTotalPages(response.data.total_pages)
+          setLoadingState('success')
+        }
       } catch (err) {
         console.error('Failed to load search results:', err)
         setError('Failed to load search results. Please try again.')
@@ -146,7 +161,7 @@ export function SearchResultsPage() {
               )}
               <div className="search-results-count">
                 {loadingState === 'success' && (
-                  <span>{properties.length} properties found</span>
+                  <span>{totalCount} properties found</span>
                 )}
               </div>
             </div>

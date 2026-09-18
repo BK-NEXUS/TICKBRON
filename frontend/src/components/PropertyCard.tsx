@@ -1,4 +1,4 @@
-import { Property } from '../adapters/searchAdapter'
+import { Property } from '../adapters/propertyAdapter'
 import { useNavigate } from 'react-router-dom'
 
 interface PropertyCardProps {
@@ -53,7 +53,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
     >
       <div className="property-card-image">
         <div className="property-card-image-placeholder">
-          {property.image_url || '🏠'}
+          {property.primary_photo?.photo || '🏠'}
         </div>
         {property.rating && (
           <div className="property-card-rating">

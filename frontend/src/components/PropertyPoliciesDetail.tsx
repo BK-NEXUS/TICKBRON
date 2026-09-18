@@ -1,4 +1,4 @@
-import { PropertyPolicy } from '../adapters/searchAdapter'
+import { PropertyPolicy } from '../adapters/propertyAdapter'
 
 interface PropertyPoliciesDetailProps {
   policies?: PropertyPolicy[]

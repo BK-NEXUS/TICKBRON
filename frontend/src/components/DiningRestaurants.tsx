@@ -1,4 +1,4 @@
-import { Restaurant } from '../adapters/searchAdapter'
+import { Restaurant } from '../adapters/propertyAdapter'
 
 interface DiningRestaurantsProps {
   restaurants?: Restaurant[]

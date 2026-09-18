@@ -1,4 +1,4 @@
-import { NearbyPlace } from '../adapters/searchAdapter'
+import { NearbyPlace } from '../adapters/propertyAdapter'
 
 interface NearbyPlacesProps {
   places?: NearbyPlace[]

@@ -2,18 +2,16 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { SearchResultsPage } from './SearchResultsPage'
-import * as searchAdapter from '../adapters/searchAdapter'
+import * as propertyAdapter from '../adapters/propertyAdapter'
 
-// Mock the search adapter
-vi.mock('../adapters/searchAdapter', () => ({
-  SearchAdapter: {
+// Mock the property adapter
+vi.mock('../adapters/propertyAdapter', () => ({
+  propertyAdapter: {
     searchProperties: vi.fn(),
-    getPropertyTypes: vi.fn(),
   },
-  default: {
-    searchProperties: vi.fn(),
-    getPropertyTypes: vi.fn(),
-  },
+  Property: {},
+  SearchParams: {},
+  PropertyType: {},
 }))
 
 describe('SearchResultsPage', () => {
@@ -59,14 +57,17 @@ describe('SearchResultsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(searchAdapter.SearchAdapter.getPropertyTypes).mockResolvedValue(mockPropertyTypes)
-    vi.mocked(searchAdapter.SearchAdapter.searchProperties).mockResolvedValue({
-      results: mockProperties,
-      total: 1,
-      page: 1,
-      per_page: 20,
-      has_next: false,
-      has_previous: false,
+    vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
+      data: {
+        count: 1,
+        next: null,
+        previous: null,
+        results: mockProperties,
+        page: 1,
+        page_size: 20,
+        total_pages: 1,
+      },
+      error: null,
     })
   })
 
@@ -129,13 +130,17 @@ describe('SearchResultsPage', () => {
   })
 
   it('displays empty state when no results found', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.searchProperties).mockResolvedValue({
-      results: [],
-      total: 0,
-      page: 1,
-      per_page: 20,
-      has_next: false,
-      has_previous: false,
+    vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
+      data: {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+        page: 1,
+        page_size: 20,
+        total_pages: 0,
+      },
+      error: null,
     })
 
     const router = createMemoryRouter(
@@ -158,9 +163,10 @@ describe('SearchResultsPage', () => {
   })
 
   it('displays error state when search fails', async () => {
-    vi.mocked(searchAdapter.SearchAdapter.searchProperties).mockRejectedValue(
-      new Error('Search failed')
-    )
+    vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
+      data: null,
+      error: 'Search failed',
+    })
 
     const router = createMemoryRouter(
       [
@@ -328,10 +334,11 @@ describe('SearchResultsPage', () => {
     render(<RouterProvider router={router} />)
 
     await waitFor(() => {
-      expect(searchAdapter.SearchAdapter.searchProperties).toHaveBeenCalledWith(
+      expect(propertyAdapter.propertyAdapter.searchProperties).toHaveBeenCalledWith(
         expect.objectContaining({
-          destination: 'Paris',
-          guests: 2,
+          q: 'Paris',
+          location: 'Paris',
+          min_guests: 2,
         })
       )
     })

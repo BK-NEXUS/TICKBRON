@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PropertyCard } from './PropertyCard'
-import { Property } from '../adapters/searchAdapter'
+import { Property } from '../adapters/propertyAdapter'
 
 // Mock React Router
 const mockNavigate = vi.fn()
@@ -42,7 +42,13 @@ describe('PropertyCard', () => {
     policies: [],
     rating: 4.8,
     review_count: 127,
-    image_url: '🏰',
+    primary_photo: {
+      id: 1,
+      photo: '🏰',
+      photo_type: 'exterior',
+      is_primary: true,
+      display_order: 1,
+    },
     created_at: '2024-01-15T10:00:00Z',
     updated_at: '2024-01-20T15:30:00Z',
   }
@@ -131,14 +137,8 @@ describe('PropertyCard', () => {
     expect(screen.getByText('Unknown Property')).toBeInTheDocument()
   })
 
-  it('displays image placeholder', () => {
-    render(<PropertyCard property={mockProperty} />)
-
-    expect(screen.getByText('🏰')).toBeInTheDocument()
-  })
-
-  it('handles missing image URL', () => {
-    const propertyWithoutImage = { ...mockProperty, image_url: undefined }
+  it('handles missing primary photo', () => {
+    const propertyWithoutImage = { ...mockProperty, primary_photo: undefined }
     render(<PropertyCard property={propertyWithoutImage} />)
 
     expect(screen.getByText('🏠')).toBeInTheDocument()
