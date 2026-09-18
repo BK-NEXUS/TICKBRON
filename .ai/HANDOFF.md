@@ -144,6 +144,44 @@ Status: FRONTEND READY (API endpoint pending)
 - No backend API dependencies for checkpoint 06 (mock adapter only)
 - Frontend can continue with checkpoint 07 independently
 
+## Availability API (Backend Checkpoint 12)
+Status: READY
+
+### GET `/api/v1/properties/{id}/availability/`
+- Request: Property ID via URL parameter, optional query parameters:
+  - check_in: Start date (YYYY-MM-DD format, optional)
+  - check_out: End date (YYYY-MM-DD format, optional)
+- Response: Property availability and pricing preview including:
+  - Basic property information (id, property_type, status, max_guests, bedrooms, bathrooms, location, base_price, currency)
+  - Room types with rate plans (id, name, slug, description, base_occupancy, max_occupancy, base_price, currency, total_rooms, bed_configuration, room_size)
+  - Rate plans with date inventory (id, name, slug, rate_type, description, base_price, currency, min_nights, max_nights, is_active, cancellation_policy, deposit_required, deposit_percentage, advance_booking_days, date_inventory)
+  - Date inventory (date, available_rooms, booked_rooms, remaining_rooms, price, currency, is_available, minimum_stay, maximum_stay, notes)
+- Auth: None (public endpoint)
+- Error: 404 if property not found/inactive/deleted, 400 for invalid date parameters
+- Deterministic behavior: same inputs = same outputs
+- Date range validation: check_out must be after check_in
+- Active rate plans only (is_active=True)
+- Soft-deleted data filtered (is_deleted=False)
+- Date inventory filtered by date range when parameters provided
+
+### Backend Implementation Details
+- PropertyAvailabilitySerializer with room_types method
+- RoomTypeAvailabilitySerializer with rate_plans method
+- RatePlanAvailabilitySerializer with date_inventory method
+- DateInventorySerializer with remaining_rooms calculation
+- AvailabilityParamsSerializer for date range validation
+- property_availability API view with comprehensive error handling
+- URL configuration for availability endpoint
+- Security review script for checkpoint 12
+
+### Notes
+- Availability API provides deterministic pricing preview for booking flow
+- Date inventory includes remaining_rooms calculation (available_rooms - booked_rooms)
+- Comprehensive test coverage (18 tests) with 100% pass rate
+- Security review passed (8/8 categories, 48/48 individual checks)
+- Frontend can now integrate real availability data for booking flow
+- Frontend mock adapter getDateInventoryForRatePlan method can be replaced with real API call
+
 ## Property Detail Extensions (Frontend Checkpoint 07)
 Status: FRONTEND READY (API endpoint pending)
 

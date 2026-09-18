@@ -2,6 +2,6 @@
 
 20 checkpoint slots reserved.
 
-Current: 12
-Completed: 11
+Current: 13
+Completed: 12
 

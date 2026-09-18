@@ -59,7 +59,7 @@ Status: READY
 - Gallery and room types properly organized and filtered
 
 ## Next checkpoint
-- Checkpoint 12: Property availability API
+- Checkpoint 12: Availability API/pricing preview (COMPLETED)
 
 ## Handoff
 - Property detail aggregate API is complete and production-ready

@@ -13,7 +13,7 @@ Core endpoints:
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 11)
-- GET `/api/v1/properties/{id}/availability/`
+- GET `/api/v1/properties/{id}/availability/` ✅ IMPLEMENTED (Checkpoint 12)
 - POST `/api/v1/bookings/`
 - GET `/api/v1/bookings/`
 - POST `/api/v1/bookings/{id}/cancel/`
@@ -81,6 +81,21 @@ Core endpoints:
 - Public endpoint (no authentication required)
 - Security review passed (7/7 categories, 39/39 individual checks)
 - All 302 tests passing including 15 new property detail tests
+
+## Checkpoint 12 Notes (Availability API/pricing preview)
+- Added GET `/api/v1/properties/{id}/availability/` endpoint with availability and pricing preview
+- Query parameters: check_in (YYYY-MM-DD format, optional), check_out (YYYY-MM-DD format, optional)
+- Response format: Property basic info + room_types with rate_plans + date_inventory
+- Date inventory includes: date, available_rooms, booked_rooms, remaining_rooms, price, currency, is_available, minimum_stay, maximum_stay, notes
+- Deterministic availability/price preview behavior (same inputs = same outputs)
+- Date range validation (check_out must be after check_in)
+- Active rate plans only (is_active=True)
+- Soft-deleted data filtered (is_deleted=False)
+- Date inventory filtered by date range when parameters provided
+- Remaining rooms calculated as available_rooms - booked_rooms
+- Public endpoint (no authentication required)
+- Security review passed (8/8 categories, 48/48 individual checks)
+- All 320 tests passing including 18 new availability tests
 
 Rules:
 - Breaking API changes require `/api/v2/`.

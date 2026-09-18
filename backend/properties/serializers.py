@@ -4,7 +4,8 @@ Serializers for TICKBRON property models and search results.
 from rest_framework import serializers
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyPolicy,
-    Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto
+    Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
+    RoomType, RatePlan, DateInventory
 )
 
 
@@ -452,3 +453,144 @@ class PaginatedSearchResponseSerializer(serializers.Serializer):
     page = serializers.IntegerField(help_text="Current page number")
     page_size = serializers.IntegerField(help_text="Results per page")
     total_pages = serializers.IntegerField(help_text="Total number of pages")
+
+
+class DateInventorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for DateInventory model.
+    
+    Represents daily availability and pricing data.
+    """
+    remaining_rooms = serializers.IntegerField(help_text="Calculated remaining available rooms")
+    
+    class Meta:
+        model = DateInventory
+        fields = [
+            'id', 'date', 'available_rooms', 'booked_rooms', 'remaining_rooms',
+            'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay', 'notes'
+        ]
+        read_only_fields = ['id']
+
+
+class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
+    """
+    Serializer for RatePlan with availability data.
+    
+    Includes rate plan details and date inventory for specified date range.
+    """
+    date_inventory = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = RatePlan
+        fields = [
+            'id', 'name', 'slug', 'rate_type', 'description', 'base_price', 'currency',
+            'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
+            'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory'
+        ]
+        read_only_fields = ['id']
+    
+    def get_date_inventory(self, obj):
+        """Get date inventory for this rate plan within the requested date range."""
+        request = self.context.get('request')
+        check_in = request.query_params.get('check_in') if request else None
+        check_out = request.query_params.get('check_out') if request else None
+        
+        # Filter date inventory by date range
+        queryset = obj.date_inventory.filter(
+            is_deleted=False
+        ).order_by('date')
+        
+        if check_in:
+            queryset = queryset.filter(date__gte=check_in)
+        if check_out:
+            queryset = queryset.filter(date__lte=check_out)
+        
+        return DateInventorySerializer(queryset, many=True).data
+
+
+class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
+    """
+    Serializer for RoomType with availability data.
+    
+    Includes room type details and rate plans with their availability.
+    """
+    rate_plans = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = RoomType
+        fields = [
+            'id', 'name', 'slug', 'description', 'base_occupancy', 'max_occupancy',
+            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'rate_plans'
+        ]
+        read_only_fields = ['id']
+    
+    def get_rate_plans(self, obj):
+        """Get active rate plans with availability data for this room type."""
+        request = self.context.get('request')
+        rate_plans = obj.rate_plans.filter(
+            is_active=True,
+            is_deleted=False
+        ).order_by('name')
+        
+        return RatePlanAvailabilitySerializer(
+            rate_plans, 
+            many=True, 
+            context={'request': request}
+        ).data
+
+
+class PropertyAvailabilitySerializer(serializers.ModelSerializer):
+    """
+    Serializer for Property availability data.
+    
+    Includes property details and room types with rate plans and date inventory.
+    """
+    room_types = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Property
+        fields = [
+            'id', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
+            'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
+            'latitude', 'longitude', 'base_price', 'currency', 'room_types'
+        ]
+        read_only_fields = ['id']
+    
+    def get_room_types(self, obj):
+        """Get room types with availability data for this property."""
+        request = self.context.get('request')
+        room_types = obj.room_types.filter(
+            is_deleted=False
+        ).order_by('name')
+        
+        return RoomTypeAvailabilitySerializer(
+            room_types,
+            many=True,
+            context={'request': request}
+        ).data
+
+
+class AvailabilityParamsSerializer(serializers.Serializer):
+    """
+    Serializer for availability endpoint request parameters.
+    
+    Validates date range parameters for availability queries.
+    """
+    check_in = serializers.DateField(
+        required=False,
+        help_text="Check-in date (YYYY-MM-DD format)"
+    )
+    check_out = serializers.DateField(
+        required=False,
+        help_text="Check-out date (YYYY-MM-DD format)"
+    )
+    
+    def validate(self, data):
+        """Validate date range parameters."""
+        check_in = data.get('check_in')
+        check_out = data.get('check_out')
+        
+        if check_in and check_out and check_out <= check_in:
+            raise serializers.ValidationError("check_out must be after check_in")
+        
+        return data

@@ -9,7 +9,8 @@ from django.utils import timezone
 from properties.search import PropertySearchService
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer, 
-    PaginatedSearchResponseSerializer, PropertyDetailSerializer
+    PaginatedSearchResponseSerializer, PropertyDetailSerializer,
+    PropertyAvailabilitySerializer, AvailabilityParamsSerializer
 )
 
 
@@ -169,5 +170,57 @@ def property_detail(request, property_id):
     
     # Serialize property with all related data
     serializer = PropertyDetailSerializer(property)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def property_availability(request, property_id):
+    """
+    Get property availability and pricing preview.
+    
+    Path Parameters:
+        property_id: Property ID
+    
+    Query Parameters:
+        check_in: Start date for availability check (YYYY-MM-DD format, optional)
+        check_out: End date for availability check (YYYY-MM-DD format, optional)
+    
+    Returns:
+        Property availability data including:
+        - Property basic information
+        - Room types with rate plans
+        - Date inventory with availability and pricing for specified date range
+        - Deterministic pricing preview (same inputs = same outputs)
+    """
+    from properties.models import Property
+    
+    # Validate date range parameters
+    params_serializer = AvailabilityParamsSerializer(data=request.query_params)
+    
+    if not params_serializer.is_valid():
+        return Response(
+            {'error': 'Invalid availability parameters', 'details': params_serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        property = Property.objects.get(
+            id=property_id,
+            is_active=True,
+            is_deleted=False
+        )
+    except Property.DoesNotExist:
+        return Response(
+            {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Serialize property with availability data
+    serializer = PropertyAvailabilitySerializer(
+        property,
+        context={'request': request}
+    )
     
     return Response(serializer.data, status=status.HTTP_200_OK)
