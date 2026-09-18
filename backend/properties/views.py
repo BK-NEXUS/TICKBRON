@@ -20,18 +20,18 @@ def property_search(request):
     Search for properties based on various criteria.
     
     Query Parameters:
-        q: Text search query
-        location: Location search (city, country)
-        lat, lng: Geographic search coordinates
-        radius: Search radius in kilometers (default: 10)
-        min_price, max_price: Price range
-        min_guests, max_guests: Guest capacity range
-        amenities: List of amenity IDs (comma-separated)
+        q: Text search query (max 500 characters)
+        location: Location search (city, country, max 200 characters)
+        lat, lng: Geographic search coordinates (lat: -90 to 90, lng: -180 to 180)
+        radius: Search radius in kilometers (1-100, default: 10)
+        min_price, max_price: Price range (non-negative)
+        min_guests, max_guests: Guest capacity range (min 1)
+        amenities: List of amenity IDs (comma-separated, max 20)
         property_type: Property type ID
-        check_in, check_out: Date range for availability
+        check_in, check_out: Date range for availability (YYYY-MM-DD format)
         sort: Sorting method (relevance, price_asc, price_desc, rating, distance)
-        page: Page number (default: 1)
-        page_size: Results per page (default: 20, max: 100)
+        page: Page number (min 1, default: 1)
+        page_size: Results per page (1-100, default: 20)
     
     Returns:
         Paginated search results with property information
@@ -56,16 +56,23 @@ def property_search(request):
             search_params['amenities'] = [int(amenity_id) for amenity_id in amenities_param.split(',')]
         except (ValueError, AttributeError):
             return Response(
-                {'error': 'Invalid amenities parameter format'},
+                {'error': 'Invalid amenities parameter format', 'details': 'Amenities must be comma-separated integers'},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    # Perform search
+    # Perform search with improved error handling
     try:
         search_results = search_service.search(search_params)
-    except Exception as e:
+    except ValueError as e:
+        # Handle validation errors from search service
         return Response(
-            {'error': 'Search failed', 'details': str(e)},
+            {'error': 'Invalid search parameters', 'details': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        # Handle unexpected errors
+        return Response(
+            {'error': 'Search failed', 'details': 'An unexpected error occurred during search'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
@@ -79,7 +86,10 @@ def property_search(request):
         'count': search_results['count'],
         'next': search_results['next'],
         'previous': search_results['previous'],
-        'results': results_serializer.data
+        'results': results_serializer.data,
+        'page': search_results.get('page', 1),
+        'page_size': search_results.get('page_size', 20),
+        'total_pages': search_results.get('total_pages', 1)
     }
     
     return Response(response_data, status=status.HTTP_200_OK)

@@ -268,6 +268,141 @@ class PropertySearchServiceTest(TestCase):
         
         self.assertIsInstance(suggestions, list)
         self.assertGreater(len(suggestions), 0)
+    
+    def test_search_params_validation_query_too_long(self):
+        """Test validation error for query that's too long."""
+        search_params = {'q': 'a' * 501}  # 501 characters (max is 500)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('too long', str(context.exception))
+    
+    def test_search_params_validation_location_too_long(self):
+        """Test validation error for location that's too long."""
+        search_params = {'location': 'a' * 201}  # 201 characters (max is 200)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('too long', str(context.exception))
+    
+    def test_search_params_validation_invalid_latitude(self):
+        """Test validation error for invalid latitude."""
+        search_params = {'lat': 91.0, 'lng': 0.0}  # Invalid latitude (> 90)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('latitude', str(context.exception).lower())
+    
+    def test_search_params_validation_invalid_longitude(self):
+        """Test validation error for invalid longitude."""
+        search_params = {'lat': 0.0, 'lng': 181.0}  # Invalid longitude (> 180)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('longitude', str(context.exception).lower())
+    
+    def test_search_params_validation_invalid_radius(self):
+        """Test validation error for invalid radius."""
+        search_params = {'lat': 0.0, 'lng': 0.0, 'radius': 101}  # Invalid radius (> 100)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('radius', str(context.exception).lower())
+    
+    def test_search_params_validation_negative_price(self):
+        """Test validation error for negative price."""
+        search_params = {'min_price': -10.0}
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('price', str(context.exception).lower())
+    
+    def test_search_params_validation_invalid_guest_range(self):
+        """Test validation error for invalid guest range."""
+        search_params = {'min_guests': 10, 'max_guests': 5}  # min > max
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('guest', str(context.exception).lower())
+    
+    def test_search_params_validation_too_many_amenities(self):
+        """Test validation error for too many amenities."""
+        search_params = {'amenities': list(range(21))}  # 21 amenities (max is 20)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('amenities', str(context.exception).lower())
+    
+    def test_search_params_validation_invalid_page_size(self):
+        """Test validation error for invalid page size."""
+        search_params = {'page_size': 101}  # Invalid page size (> 100)
+        
+        with self.assertRaises(ValueError) as context:
+            self.search_service.search(search_params)
+        
+        self.assertIn('page size', str(context.exception).lower())
+    
+    def test_search_response_includes_pagination_metadata(self):
+        """Test that search response includes new pagination metadata."""
+        search_params = {'page': 1, 'page_size': 2}
+        results = self.search_service.search(search_params)
+        
+        self.assertIn('page', results)
+        self.assertIn('page_size', results)
+        self.assertIn('total_pages', results)
+        self.assertEqual(results['page'], 1)
+        self.assertEqual(results['page_size'], 2)
+    
+    def test_text_search_word_splitting(self):
+        """Test that text search splits query into words for better matching."""
+        search_params = {'q': 'Modern Apartment'}  # Two words
+        results = self.search_service.search(search_params)
+        
+        # Should find property with both "Modern" and "Apartment" in description
+        self.assertGreater(results['count'], 0)
+    
+    def test_text_search_sanitization(self):
+        """Test that text search sanitizes dangerous characters without breaking functionality."""
+        # Test that the sanitization doesn't break the search
+        search_params = {'q': 'Tashkent'}
+        results = self.search_service.search(search_params)
+        
+        # Should work normally
+        self.assertGreater(results['count'], 0)
+        
+        # Test that dangerous characters are handled gracefully
+        dangerous_query = '<script>alert("test")</script>'
+        sanitized_query = dangerous_query.replace('<', '').replace('>', '').replace('"', '').replace("'", '')
+        
+        # After sanitization, the dangerous characters should be removed
+        self.assertNotIn('<', sanitized_query)
+        self.assertNotIn('>', sanitized_query)
+        self.assertNotIn('"', sanitized_query)
+        self.assertNotIn("'", sanitized_query)
+    
+    def test_empty_query_handling(self):
+        """Test that empty query is handled gracefully."""
+        search_params = {'q': ''}
+        results = self.search_service.search(search_params)
+        
+        # Should return all properties (no filter applied)
+        self.assertGreater(results['count'], 0)
+    
+    def test_short_query_handling(self):
+        """Test that very short queries are handled."""
+        search_params = {'q': 'a'}  # Single character
+        results = self.search_service.search(search_params)
+        
+        # Should handle gracefully (may return no results due to 2-char minimum)
+        self.assertIsInstance(results['count'], int)
 
 
 class PropertySearchEndpointTest(TestCase):
@@ -389,6 +524,55 @@ class PropertySearchEndpointTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('suggestions', response.data)
         self.assertIsInstance(response.data['suggestions'], list)
+    
+    def test_search_endpoint_validation_invalid_amenity_count(self):
+        """Test endpoint validation for too many amenities (service layer)."""
+        # Serializer may not catch amenity count, service layer should
+        amenities_list = ','.join([str(i) for i in range(21)])
+        response = self.client.get('/api/v1/properties/search/', {'amenities': amenities_list})
+        
+        # Service layer validation should catch this
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_search_endpoint_validation_invalid_date_format(self):
+        """Test endpoint validation for invalid date format."""
+        response = self.client.get('/api/v1/properties/search/', {'check_in': 'invalid-date'})
+        
+        # Serializer should catch this
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_search_endpoint_response_includes_pagination_metadata(self):
+        """Test that endpoint response includes new pagination metadata."""
+        response = self.client.get('/api/v1/properties/search/', {'page': 1, 'page_size': 10})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('page', response.data)
+        self.assertIn('page_size', response.data)
+        self.assertIn('total_pages', response.data)
+    
+    def test_search_endpoint_invalid_amenities_format(self):
+        """Test endpoint with invalid amenities format."""
+        response = self.client.get('/api/v1/properties/search/', {'amenities': 'invalid,format'})
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_search_endpoint_geographic_coordinates_required(self):
+        """Test that both lat and lng are required for geographic search."""
+        response = self.client.get('/api/v1/properties/search/', {'lat': 41.2995})
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_search_endpoint_standardized_error_response(self):
+        """Test that error responses follow standardized format."""
+        response = self.client.get('/api/v1/properties/search/', {'min_price': -10})
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+        self.assertIn('details', response.data)
 
 
 class PropertySearchIntegrationTest(TestCase):

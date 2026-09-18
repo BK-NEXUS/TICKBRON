@@ -3,8 +3,11 @@ Django==4.2.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 
-# Database
-psycopg2-binary==2.9.9
+# Database (for production - use SQLite for testing)
+# psycopg2-binary==2.9.9  # Commented out for Windows testing environment
+
+# Image handling
+Pillow
 
 # Redis & Celery
 redis==5.0.1

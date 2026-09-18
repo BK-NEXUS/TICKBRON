@@ -173,36 +173,110 @@ class SearchParamsSerializer(serializers.Serializer):
     """
     Serializer for search request parameters.
     
-    Validates and parses search parameters for the search endpoint.
+    Validates and parses search parameters for the search endpoint with standardized validation.
     """
-    q = serializers.CharField(required=False, allow_blank=True, help_text="Text search query")
-    location = serializers.CharField(required=False, allow_blank=True, help_text="Location search (city, country)")
-    lat = serializers.DecimalField(required=False, max_digits=9, decimal_places=6, help_text="Latitude for geographic search")
-    lng = serializers.DecimalField(required=False, max_digits=9, decimal_places=6, help_text="Longitude for geographic search")
-    radius = serializers.IntegerField(required=False, default=10, min_value=1, max_value=100, help_text="Search radius in kilometers")
-    min_price = serializers.DecimalField(required=False, max_digits=10, decimal_places=2, min_value=0, help_text="Minimum price")
-    max_price = serializers.DecimalField(required=False, max_digits=10, decimal_places=2, min_value=0, help_text="Maximum price")
-    min_guests = serializers.IntegerField(required=False, min_value=1, max_value=50, help_text="Minimum number of guests")
-    max_guests = serializers.IntegerField(required=False, min_value=1, max_value=50, help_text="Maximum number of guests")
+    q = serializers.CharField(
+        required=False, 
+        allow_blank=True, 
+        max_length=500,
+        help_text="Text search query (max 500 characters)"
+    )
+    location = serializers.CharField(
+        required=False, 
+        allow_blank=True, 
+        max_length=200,
+        help_text="Location search (city, country, max 200 characters)"
+    )
+    lat = serializers.DecimalField(
+        required=False, 
+        max_digits=9, 
+        decimal_places=6,
+        min_value=-90,
+        max_value=90,
+        help_text="Latitude for geographic search (-90 to 90)"
+    )
+    lng = serializers.DecimalField(
+        required=False, 
+        max_digits=9, 
+        decimal_places=6,
+        min_value=-180,
+        max_value=180,
+        help_text="Longitude for geographic search (-180 to 180)"
+    )
+    radius = serializers.IntegerField(
+        required=False, 
+        default=10, 
+        min_value=1, 
+        max_value=100, 
+        help_text="Search radius in kilometers (1-100)"
+    )
+    min_price = serializers.DecimalField(
+        required=False, 
+        max_digits=10, 
+        decimal_places=2, 
+        min_value=0,
+        help_text="Minimum price (non-negative)"
+    )
+    max_price = serializers.DecimalField(
+        required=False, 
+        max_digits=10, 
+        decimal_places=2, 
+        min_value=0,
+        help_text="Maximum price (non-negative)"
+    )
+    min_guests = serializers.IntegerField(
+        required=False, 
+        min_value=1, 
+        max_value=50,
+        help_text="Minimum number of guests (min 1)"
+    )
+    max_guests = serializers.IntegerField(
+        required=False, 
+        min_value=1, 
+        max_value=50,
+        help_text="Maximum number of guests (min 1)"
+    )
     amenities = serializers.ListField(
         required=False,
         child=serializers.IntegerField(),
-        help_text="List of amenity IDs to filter by"
+        max_length=20,
+        help_text="List of amenity IDs to filter by (max 20)"
     )
-    property_type = serializers.IntegerField(required=False, help_text="Property type ID to filter by")
-    check_in = serializers.DateField(required=False, help_text="Check-in date (YYYY-MM-DD)")
-    check_out = serializers.DateField(required=False, help_text="Check-out date (YYYY-MM-DD)")
+    property_type = serializers.IntegerField(
+        required=False, 
+        min_value=1,
+        help_text="Property type ID to filter by"
+    )
+    check_in = serializers.DateField(
+        required=False, 
+        help_text="Check-in date (YYYY-MM-DD format)"
+    )
+    check_out = serializers.DateField(
+        required=False, 
+        help_text="Check-out date (YYYY-MM-DD format)"
+    )
     sort = serializers.ChoiceField(
         required=False,
         default='relevance',
         choices=['relevance', 'price_asc', 'price_desc', 'rating', 'distance'],
         help_text="Sorting method"
     )
-    page = serializers.IntegerField(required=False, default=1, min_value=1, help_text="Page number")
-    page_size = serializers.IntegerField(required=False, default=20, min_value=1, max_value=100, help_text="Results per page")
+    page = serializers.IntegerField(
+        required=False, 
+        default=1, 
+        min_value=1,
+        help_text="Page number (min 1)"
+    )
+    page_size = serializers.IntegerField(
+        required=False, 
+        default=20, 
+        min_value=1, 
+        max_value=100,
+        help_text="Results per page (1-100)"
+    )
     
     def validate(self, data):
-        """Validate search parameters."""
+        """Validate search parameters with comprehensive checks."""
         # Validate geographic search parameters
         if (data.get('lat') and not data.get('lng')) or (data.get('lng') and not data.get('lat')):
             raise serializers.ValidationError("Both lat and lng are required for geographic search")
@@ -238,3 +312,6 @@ class PaginatedSearchResponseSerializer(serializers.Serializer):
     next = serializers.IntegerField(allow_null=True, help_text="Next page number")
     previous = serializers.IntegerField(allow_null=True, help_text="Previous page number")
     results = serializers.ListField(help_text="Search results")
+    page = serializers.IntegerField(help_text="Current page number")
+    page_size = serializers.IntegerField(help_text="Results per page")
+    total_pages = serializers.IntegerField(help_text="Total number of pages")
