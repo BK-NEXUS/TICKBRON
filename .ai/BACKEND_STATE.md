@@ -2,8 +2,8 @@
 
 Owner: Kolya
 Checkpoint sequence: 01 → 20
-Current checkpoint: 13
-Completed: 12/20
+Current checkpoint: 14
+Completed: 13/20
 
 Backend owns backend/, backend tests, backend infrastructure where explicitly assigned, and backend API contracts.
 

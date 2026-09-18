@@ -14,9 +14,9 @@ Core endpoints:
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 11)
 - GET `/api/v1/properties/{id}/availability/` ✅ IMPLEMENTED (Checkpoint 12)
-- POST `/api/v1/bookings/`
-- GET `/api/v1/bookings/`
-- POST `/api/v1/bookings/{id}/cancel/`
+- POST `/api/v1/bookings/` ✅ IMPLEMENTED (Checkpoint 13)
+- GET `/api/v1/bookings/` ✅ IMPLEMENTED (Checkpoint 13)
+- POST `/api/v1/bookings/{id}/cancel/` ✅ IMPLEMENTED (Checkpoint 13)
 - POST `/api/v1/payments/{provider}/init/`
 - POST `/api/v1/payments/{provider}/webhook/`
 - GET `/api/v1/me/favorites/`
@@ -96,6 +96,24 @@ Core endpoints:
 - Public endpoint (no authentication required)
 - Security review passed (8/8 categories, 48/48 individual checks)
 - All 320 tests passing including 18 new availability tests
+
+## Checkpoint 13 Notes (Booking engine transactional locking)
+- Added POST `/api/v1/bookings/` endpoint with transaction-safe inventory locking
+- Added GET `/api/v1/bookings/` endpoint for listing user bookings with filtering
+- Added POST `/api/v1/bookings/{id}/cancel/` endpoint for booking cancellation with inventory restoration
+- Booking creation requires authentication (IsAuthenticated permission)
+- Request body: property_id, room_type_id, rate_plan_id, check_in, check_out, guest_count, special_requests (optional)
+- Response includes: booking details, confirmation_code, booking_items, pricing information
+- Transaction-safe inventory locking using SELECT FOR UPDATE and Django atomic transactions
+- Double-booking prevention through row-level locking and inventory consistency checks
+- Confirmation code generation using cryptographically secure random (secrets module)
+- Booking status management: pending, confirmed, cancelled, completed, no_show
+- Payment status tracking: pending, paid, failed, refunded, partially_refunded
+- Booking cancellation with automatic inventory restoration
+- Booking filtering by status and payment_status
+- Comprehensive validation: date range, rate plan constraints, room type capacity, inventory availability
+- Security review passed (7/7 categories, 32/32 individual checks)
+- All 348 tests passing including 34 new booking tests
 
 Rules:
 - Breaking API changes require `/api/v2/`.

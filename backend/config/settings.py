@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'users',
     'permissions',
     'properties',
+    'bookings',
     
     # Third-party apps
     'rest_framework',

@@ -382,6 +382,59 @@ Status: FRONTEND READY (API endpoint pending)
 - All room/rate plan/availability UI components are complete and production-ready
 - Mock adapter structure matches backend RoomType, RatePlan, and DateInventory models from Backend Checkpoint 08
 - Components are ready for backend API integration when endpoints become available
+
+## Booking Engine (Backend Checkpoint 13)
+Status: READY
+
+### POST `/api/v1/bookings/`
+- Request: `{ property_id, room_type_id, rate_plan_id, check_in (YYYY-MM-DD), check_out (YYYY-MM-DD), guest_count, special_requests (optional) }`
+- Response: `{ id, guest, guest_name, property, property_name, status, payment_status, check_in, check_out, number_of_nights, guest_count, total_price, currency, special_requests, confirmation_code, cancelled_at, cancellation_reason, booking_items, created_at, updated_at }`
+- Auth: Session-based (required)
+- Error: 400 for validation errors, 403 for unauthorized, 500 for server errors
+- Transaction-safe inventory locking using SELECT FOR UPDATE and Django atomic transactions
+- Double-booking prevention through row-level locking and inventory consistency checks
+- Confirmation code generation using cryptographically secure random (secrets module)
+- Booking status management: pending, confirmed, cancelled, completed, no_show
+- Payment status tracking: pending, paid, failed, refunded, partially_refunded
+
+### GET `/api/v1/bookings/`
+- Request: Optional query parameters: `status`, `payment_status`
+- Response: List of user bookings with filtering support
+- Auth: Session-based (required)
+- Error: 403 for unauthorized
+- Booking filtering by status and payment_status
+- Users can only access their own bookings
+
+### POST `/api/v1/bookings/{id}/cancel/`
+- Request: `{ cancellation_reason (optional) }`
+- Response: Updated booking with cancelled status
+- Auth: Session-based (required)
+- Error: 400 for validation errors, 403 for unauthorized, 404 for booking not found
+- Booking cancellation with automatic inventory restoration
+- Cancellation status validation prevents invalid cancellations
+
+### Backend Implementation Details
+- Booking model with comprehensive status tracking and validation
+- BookingItem model for room type and rate plan booking details
+- BookingSerializer for booking response serialization
+- BookingCreateSerializer for booking creation with validation
+- BookingCancelSerializer for booking cancellation with validation
+- BookingViewSet with authentication and authorization
+- booking_cancel API view for cancellation endpoint
+- Transaction-safe inventory locking using SELECT FOR UPDATE and Django atomic transactions
+- Double-booking prevention through row-level locking and inventory consistency checks
+- Confirmation code generation using cryptographically secure random (secrets module)
+- Database indexes for booking performance optimization
+- Security review script for checkpoint 13
+
+### Notes
+- Booking engine provides transaction-safe inventory locking to prevent double-booking
+- Comprehensive test coverage (34 tests) with 100% pass rate
+- Security review passed (7/7 categories, 32/32 individual checks)
+- All booking operations require authentication
+- Users can only access and manage their own bookings
+- Booking cancellation automatically restores inventory
+- Frontend can now integrate booking creation and management functionality
 - Responsive interaction patterns implemented for all device sizes
 - Selection UI provides user feedback without implementing booking/payment functionality (scope-limited to checkpoint 08)
 - No backend API dependencies for checkpoint 08 (mock adapter only)
