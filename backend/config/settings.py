@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'permissions',
     'properties',
     'bookings',
+    'payments',
     
     # Third-party apps
     'rest_framework',
@@ -205,6 +206,18 @@ CELERY_TIMEZONE = TIME_ZONE
 # Database connection health check
 DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
 DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
+
+# Payment Configuration
+PAYMENT_TEST_MODE = os.getenv('PAYMENT_TEST_MODE', 'True').lower() == 'true'
+
+# Payment Provider Configuration (placeholders for production)
+PAYME_MERCHANT_ID = os.getenv('PAYME_MERCHANT_ID', '')
+PAYME_SECRET_KEY = os.getenv('PAYME_SECRET_KEY', '')
+CLICK_SERVICE_ID = os.getenv('CLICK_SERVICE_ID', '')
+CLICK_SECRET_KEY = os.getenv('CLICK_SECRET_KEY', '')
+CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
+VISA_API_KEY = os.getenv('VISA_API_KEY', '')
+VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 
 # Testing database configuration
 if 'test' in sys.argv or 'pytest' in sys.argv:
