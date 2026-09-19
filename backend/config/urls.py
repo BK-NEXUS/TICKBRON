@@ -18,4 +18,5 @@ urlpatterns = [
     path('api/v1/', include('properties.urls')),
     path('api/v1/', include('bookings.urls')),
     path('api/v1/payments/', include('payments.urls')),
+    path('api/v1/me/', include('accounts.urls')),
 ]

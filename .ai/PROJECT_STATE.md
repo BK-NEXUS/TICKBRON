@@ -8,15 +8,12 @@ Architecture: Django + Django REST Framework + PostgreSQL + Redis + Celery; Reac
 - Frontend: Baxram
 
 ## Current status
-Backend: 14/20 checkpoints
-Frontend: 12/20 checkpoints
+See .ai/BACKEND_STATE.md for backend checkpoint progress.
+See .ai/FRONTEND_STATE.md for frontend checkpoint progress.
+This file no longer tracks numeric checkpoint counts, to avoid repeated merge conflicts between the two owners.
 
 ## Shared rule
 GitHub is the shared source for code and `.ai` coordination state.
-
-## Next checkpoints
-Backend: 15
-Frontend: 12
 
 ## Important
 Do not infer completed work from chat history. Verify it in Git and `.ai`.

@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.utils import timezone
 from common.models import BaseModel
+from .state_machine import BookingStateMachine, PaymentStateMachine, BookingPaymentStateMachine, BookingState, PaymentState
 
 
 class Booking(BaseModel):
@@ -135,6 +136,21 @@ class Booking(BaseModel):
             raise ValidationError({
                 'number_of_nights': _('Number of nights must match the date range')
             })
+        
+        # Validate state transition if status is being changed
+        if self.pk:
+            try:
+                old_booking = Booking.objects.get(pk=self.pk)
+                if old_booking.status != self.status:
+                    from_state = BookingState(old_booking.status)
+                    to_state = BookingState(self.status)
+                    is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state)
+                    if not is_valid:
+                        raise ValidationError({
+                            'status': error_message
+                        })
+            except Booking.DoesNotExist:
+                pass  # New booking, no transition validation needed
     
     def save(self, *args, **kwargs):
         """Override save to generate confirmation code and set expiry if needed."""
@@ -298,9 +314,13 @@ class Booking(BaseModel):
         """
         from datetime import timedelta
         
-        if self.status in ['cancelled', 'completed', 'no_show']:
+        # Validate state transition using state machine
+        from_state = BookingState(self.status)
+        to_state = BookingState('cancelled')
+        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state)
+        if not is_valid:
             raise ValidationError({
-                'status': _('Booking cannot be cancelled in current status')
+                'status': error_message
             })
         
         with transaction.atomic():
@@ -328,10 +348,14 @@ class Booking(BaseModel):
                     inventory.save(update_fields=['booked_rooms'])
             
             # Update booking status
+            old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = cancellation_reason
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
+            
+            # Log state transition
+            self._log_state_transition(old_status, 'cancelled', cancellation_reason or 'user_cancelled')
     
     def expire_booking(self):
         """
@@ -346,9 +370,13 @@ class Booking(BaseModel):
         """
         from datetime import timedelta
         
-        if self.status != 'pending':
+        # Validate state transition using state machine
+        from_state = BookingState(self.status)
+        to_state = BookingState('cancelled')
+        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='expiry')
+        if not is_valid:
             raise ValidationError({
-                'status': _('Only pending bookings can be expired')
+                'status': error_message
             })
         
         with transaction.atomic():
@@ -376,10 +404,14 @@ class Booking(BaseModel):
                     inventory.save(update_fields=['booked_rooms'])
             
             # Update booking status
+            old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = 'Booking expired - payment not completed within time limit'
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
+            
+            # Log state transition
+            self._log_state_transition(old_status, 'cancelled', 'expiry')
     
     @classmethod
     def process_expired_bookings(cls):
@@ -409,6 +441,166 @@ class Booking(BaseModel):
                 continue
         
         return processed_count
+    
+    def confirm_booking(self):
+        """
+        Confirm a booking after successful payment.
+        
+        This method is called when payment is completed to transition the booking
+        from pending to confirmed status.
+        
+        Raises:
+            ValidationError: If booking cannot be confirmed
+            Exception: If database error occurs
+        """
+        # Validate state transition using state machine
+        from_state = BookingState(self.status)
+        to_state = BookingState('confirmed')
+        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='payment_completed')
+        if not is_valid:
+            raise ValidationError({
+                'status': error_message
+            })
+        
+        with transaction.atomic():
+            # Update booking status
+            old_status = self.status
+            self.status = 'confirmed'
+            self.payment_status = 'paid'
+            self.save(update_fields=['status', 'payment_status'])
+            
+            # Log state transition
+            self._log_state_transition(old_status, 'confirmed', 'payment_completed')
+    
+    def complete_booking(self):
+        """
+        Complete a booking after checkout.
+        
+        This method is called when guest checks out to transition the booking
+        from confirmed to completed status.
+        
+        Raises:
+            ValidationError: If booking cannot be completed
+            Exception: If database error occurs
+        """
+        # Validate state transition using state machine
+        from_state = BookingState(self.status)
+        to_state = BookingState('completed')
+        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='checkout_completed')
+        if not is_valid:
+            raise ValidationError({
+                'status': error_message
+            })
+        
+        with transaction.atomic():
+            # Update booking status
+            old_status = self.status
+            self.status = 'completed'
+            self.save(update_fields=['status'])
+            
+            # Log state transition
+            self._log_state_transition(old_status, 'completed', 'checkout_completed')
+    
+    def mark_no_show(self):
+        """
+        Mark a booking as no-show when guest doesn't arrive.
+        
+        This method is called when a confirmed booking becomes a no-show.
+        
+        Raises:
+            ValidationError: If booking cannot be marked as no-show
+            Exception: If database error occurs
+        """
+        # Validate state transition using state machine
+        from_state = BookingState(self.status)
+        to_state = BookingState('no_show')
+        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='guest_no_show')
+        if not is_valid:
+            raise ValidationError({
+                'status': error_message
+            })
+        
+        with transaction.atomic():
+            # Update booking status
+            old_status = self.status
+            self.status = 'no_show'
+            self.save(update_fields=['status'])
+            
+            # Log state transition
+            self._log_state_transition(old_status, 'no_show', 'guest_no_show')
+    
+    def update_payment_status(self, new_payment_status):
+        """
+        Update payment status with state machine validation.
+        
+        This method validates payment status transitions before updating.
+        
+        Args:
+            new_payment_status: New payment status
+        
+        Raises:
+            ValidationError: If payment status transition is invalid
+            Exception: If database error occurs
+        """
+        # Validate state transition using state machine
+        from_state = PaymentState(self.payment_status)
+        to_state = PaymentState(new_payment_status)
+        is_valid, error_message = PaymentStateMachine.validate_transition(from_state, to_state)
+        if not is_valid:
+            raise ValidationError({
+                'payment_status': error_message
+            })
+        
+        with transaction.atomic():
+            # Update payment status
+            old_payment_status = self.payment_status
+            self.payment_status = new_payment_status
+            self.save(update_fields=['payment_status'])
+            
+            # Log state transition
+            self._log_payment_status_transition(old_payment_status, new_payment_status)
+    
+    def _log_state_transition(self, old_status, new_status, reason):
+        """
+        Log booking state transition for audit purposes.
+        
+        Args:
+            old_status: Previous booking status
+            new_status: New booking status
+            reason: Reason for transition
+        """
+        try:
+            from payments.models import PaymentAuditLog
+            PaymentAuditLog.log_action(
+                action='booking_status_changed',
+                booking=self,
+                old_status=old_status,
+                new_status=new_status,
+                details={'reason': reason}
+            )
+        except Exception:
+            # Log failure but don't break the transaction
+            pass
+    
+    def _log_payment_status_transition(self, old_status, new_status):
+        """
+        Log payment status transition for audit purposes.
+        
+        Args:
+            old_status: Previous payment status
+            new_status: New payment status
+        """
+        try:
+            from payments.models import PaymentAuditLog
+            PaymentAuditLog.log_action(
+                action='payment_status_changed',
+                booking=self,
+                old_status=old_status,
+                new_status=new_status
+            )
+        except Exception:
+            # Log failure but don't break the transaction
+            pass
 
 
 class BookingItem(BaseModel):
