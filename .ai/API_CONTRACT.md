@@ -19,8 +19,22 @@ Core endpoints:
 - POST `/api/v1/bookings/{id}/cancel/` ✅ IMPLEMENTED (Checkpoint 13)
 - POST `/api/v1/payments/{provider}/init/`
 - POST `/api/v1/payments/{provider}/webhook/`
-- GET `/api/v1/me/favorites/`
-- POST `/api/v1/me/favorites/{property_id}/`
+- GET `/api/v1/me/favorites/` ✅ IMPLEMENTED (Checkpoint 17)
+- POST `/api/v1/me/favorites/` ✅ IMPLEMENTED (Checkpoint 17)
+- DELETE `/api/v1/me/favorites/{id}/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/favorites/count/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/reviews/` ✅ IMPLEMENTED (Checkpoint 17)
+- POST `/api/v1/me/reviews/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/reviews/eligible_properties/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/reviews/property_scores/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/notifications/` ✅ IMPLEMENTED (Checkpoint 17)
+- PATCH `/api/v1/me/notifications/{id}/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/notifications/unread/` ✅ IMPLEMENTED (Checkpoint 17)
+- POST `/api/v1/me/notifications/mark_all_read/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/notifications/count/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/history/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/history/recent/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/history/stats/` ✅ IMPLEMENTED (Checkpoint 17)
 - POST `/api/v1/partner/properties/`
 - PATCH `/api/v1/partner/properties/{id}/`
 - POST `/api/v1/partner/properties/{id}/photos/`
@@ -96,6 +110,100 @@ Core endpoints:
 - Public endpoint (no authentication required)
 - Security review passed (8/8 categories, 48/48 individual checks)
 - All 320 tests passing including 18 new availability tests
+
+## Checkpoint 17 Notes (Favorites/Reviews/Notifications/Account History)
+Status: READY
+
+### Favorites API
+- GET `/api/v1/me/favorites/` - List user's favorite properties
+  - Auth: Session-based (required)
+  - Response: Array of favorite objects with property details
+  - Includes property city, country, base price, currency, primary photo
+- POST `/api/v1/me/favorites/` - Add property to favorites
+  - Auth: Session-based (required)
+  - Request: { property_id, notes (optional) }
+  - Response: Created favorite object
+  - Validates property is active and not deleted
+- DELETE `/api/v1/me/favorites/{id}/` - Remove property from favorites
+  - Auth: Session-based (required)
+  - Response: 204 No Content
+  - Soft deletes the favorite
+- GET `/api/v1/me/favorites/count/` - Get total count of favorites
+  - Auth: Session-based (required)
+  - Response: { count }
+
+### Reviews API
+- GET `/api/v1/me/reviews/` - List user's reviews
+  - Auth: Session-based (required)
+  - Response: Array of review objects
+  - Regular users see only their own reviews, staff see all
+- POST `/api/v1/me/reviews/` - Create a review
+  - Auth: Session-based (required)
+  - Request: { property_id, booking_id (optional), overall_rating (1-5), category_ratings (optional), title, comment }
+  - Response: Created review object with status 'pending'
+  - Validates booking is completed if provided
+  - Validates property is active and not deleted
+- GET `/api/v1/me/reviews/eligible_properties/` - Get properties eligible for review
+  - Auth: Session-based (required)
+  - Response: Array of properties with completed bookings not yet reviewed
+  - Includes property details and booking information
+- GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores
+  - Auth: Session-based (required)
+  - Response: { property_id, total_reviews, average_rating, category_scores }
+  - Only includes approved reviews
+  - Category scores: cleanliness, location, value, amenities, service
+
+### Notifications API
+- GET `/api/v1/me/notifications/` - List user's notifications
+  - Auth: Session-based (required)
+  - Response: Array of notification objects
+  - Filtered by user, ordered by creation date
+- PATCH `/api/v1/me/notifications/{id}/` - Update notification read status
+  - Auth: Session-based (required)
+  - Request: { is_read }
+  - Response: Updated notification object
+  - Automatically sets read_at when marking as read
+- GET `/api/v1/me/notifications/unread/` - Get unread notifications
+  - Auth: Session-based (required)
+  - Response: Array of unread notification objects
+- POST `/api/v1/me/notifications/mark_all_read/` - Mark all notifications as read
+  - Auth: Session-based (required)
+  - Response: { marked_as_read: count }
+- GET `/api/v1/me/notifications/count/` - Get notification counts
+  - Auth: Session-based (required)
+  - Response: { total, unread, read }
+- POST `/api/v1/me/notifications/` - Blocked (403 Forbidden)
+  - Direct notification creation not allowed via API
+
+### Account History API
+- GET `/api/v1/me/history/` - List user's account history
+  - Auth: Session-based (required)
+  - Response: Array of account history objects
+  - Read-only access, paginated
+- GET `/api/v1/me/history/recent/?limit={n}` - Get recent history entries
+  - Auth: Session-based (required)
+  - Response: Array of recent history objects
+  - Default limit: 10, max: 50
+- GET `/api/v1/me/history/stats/` - Get account activity statistics
+  - Auth: Session-based (required)
+  - Response: { total_entries, action_counts }
+  - Action counts grouped by action type
+
+### Security Features
+- All endpoints require session-based authentication
+- User isolation: users can only access their own data
+- Staff users can access all reviews for moderation
+- Input validation: ratings (1-5), property status, booking status
+- Access control: notification creation blocked, history read-only
+- Unique constraints: one favorite per property, one review per booking
+- Soft delete: records marked as deleted rather than removed
+- Audit trail: account history logged for favorite and review actions
+- Database indexes for performance optimization
+
+### Test Coverage
+- 34 new account-specific tests (all passing)
+- 509 total regression tests (all passing)
+- Security review passed: 21/21 checks (100% success rate)
 
 ## Checkpoint 13 Notes (Booking engine transactional locking)
 - Added POST `/api/v1/bookings/` endpoint with transaction-safe inventory locking

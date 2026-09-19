@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'properties',
     'bookings',
     'payments',
+    'accounts',
     
     # Third-party apps
     'rest_framework',

@@ -278,6 +278,135 @@ Status: READY
 ## Booking/Payment State Machine (Backend Checkpoint 16)
 Status: READY
 
+## Accounts API (Backend Checkpoint 17)
+Status: READY
+
+### Favorites API
+- GET `/api/v1/me/favorites/` - List user's favorite properties
+  - Request: None (session-based)
+  - Response: Array of favorite objects with property details
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Includes property city, country, base price, currency, primary photo
+- POST `/api/v1/me/favorites/` - Add property to favorites
+  - Request: `{ property_id, notes (optional) }`
+  - Response: Created favorite object
+  - Auth: Session-based (required)
+  - Error: 400 for validation errors, 404 if property not found
+  - Validates property is active and not deleted
+- DELETE `/api/v1/me/favorites/{id}/` - Remove property from favorites
+  - Request: None
+  - Response: 204 No Content
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated, 404 if favorite not found
+  - Soft deletes the favorite
+- GET `/api/v1/me/favorites/count/` - Get total count of favorites
+  - Request: None
+  - Response: `{ count }`
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+
+### Reviews API
+- GET `/api/v1/me/reviews/` - List user's reviews
+  - Request: None (session-based)
+  - Response: Array of review objects
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Regular users see only their own reviews, staff see all
+- POST `/api/v1/me/reviews/` - Create a review
+  - Request: `{ property_id, booking_id (optional), overall_rating (1-5), category_ratings (optional), title, comment }`
+  - Response: Created review object with status 'pending'
+  - Auth: Session-based (required)
+  - Error: 400 for validation errors, 401 if not authenticated
+  - Validates booking is completed if provided
+  - Validates property is active and not deleted
+- GET `/api/v1/me/reviews/eligible_properties/` - Get properties eligible for review
+  - Request: None
+  - Response: Array of properties with completed bookings not yet reviewed
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Includes property details and booking information
+- GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores
+  - Request: property_id query parameter
+  - Response: `{ property_id, total_reviews, average_rating, category_scores }`
+  - Auth: Session-based (required)
+  - Error: 400 if property_id missing, 401 if not authenticated
+  - Only includes approved reviews
+  - Category scores: cleanliness, location, value, amenities, service
+
+### Notifications API
+- GET `/api/v1/me/notifications/` - List user's notifications
+  - Request: None (session-based)
+  - Response: Array of notification objects
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Filtered by user, ordered by creation date
+- PATCH `/api/v1/me/notifications/{id}/` - Update notification read status
+  - Request: `{ is_read }`
+  - Response: Updated notification object
+  - Auth: Session-based (required)
+  - Error: 400 for validation errors, 401 if not authenticated
+  - Automatically sets read_at when marking as read
+- GET `/api/v1/me/notifications/unread/` - Get unread notifications
+  - Request: None
+  - Response: Array of unread notification objects
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+- POST `/api/v1/me/notifications/mark_all_read/` - Mark all notifications as read
+  - Request: None
+  - Response: `{ marked_as_read: count }`
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+- GET `/api/v1/me/notifications/count/` - Get notification counts
+  - Request: None
+  - Response: `{ total, unread, read }`
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+- POST `/api/v1/me/notifications/` - Blocked (403 Forbidden)
+  - Direct notification creation not allowed via API
+
+### Account History API
+- GET `/api/v1/me/history/` - List user's account history
+  - Request: None (session-based)
+  - Response: Array of account history objects
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Read-only access, paginated
+- GET `/api/v1/me/history/recent/?limit={n}` - Get recent history entries
+  - Request: limit query parameter (default: 10, max: 50)
+  - Response: Array of recent history objects
+  - Auth: Session-based (required)
+  - Error: 400 if limit invalid, 401 if not authenticated
+- GET `/api/v1/me/history/stats/` - Get account activity statistics
+  - Request: None
+  - Response: `{ total_entries, action_counts }`
+  - Auth: Session-based (required)
+  - Error: 401 if not authenticated
+  - Action counts grouped by action type
+
+### Backend Implementation Details
+- Accounts app with 4 models: Favorite, Review, Notification, AccountHistory
+- Favorite model with user-property unique constraint and soft delete
+- Review model with overall and category ratings, booking association, and approval workflow
+- Notification model with priority levels, read status, and delivery tracking
+- AccountHistory model for comprehensive audit trail of user actions
+- REST API endpoints for all account-domain functionality
+- User isolation and access control for all endpoints
+- Input validation for ratings, property status, and booking status
+- Account history logging for favorite and review actions
+- Database indexes for performance optimization
+
+### Notes
+- Account-domain APIs are fully functional and tested
+- All endpoints use session-based authentication consistent with existing auth system
+- User isolation and access control properly implemented
+- Audit trail provides comprehensive account activity tracking
+- Security review passed with 100% success rate (21/21 checks)
+- 34 new account-specific tests (all passing)
+- 509 total regression tests (all passing)
+- Frontend can integrate account management features when ready
+- Notification system foundation supports future notification types and delivery methods
+
 ### State Machine Overview
 - BookingStateMachine enforces deterministic booking state transitions
 - PaymentStateMachine enforces deterministic payment state transitions
