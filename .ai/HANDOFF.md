@@ -227,7 +227,7 @@ Status: READY
 - Error: 400 if payment cannot be confirmed in current status
 - Confirms payment with payment provider
 - Updates transaction status to completed
-- Updates booking payment status to paid and status to confirmed
+- Updates booking payment status to paid and status to confirmed using state machine
 - Creates audit log entries for payment completion and booking status change
 
 ### POST `/api/v1/payments/transactions/{id}/refund/`
@@ -237,7 +237,7 @@ Status: READY
 - Error: 400 if payment is not completed or refund fails
 - Initiates refund with payment provider
 - Updates transaction status to refunded or partially_refunded
-- Updates booking payment status accordingly
+- Updates booking payment status accordingly using state machine
 - Creates audit log entry for payment refund
 
 ### POST `/api/v1/payments/webhooks/{provider}/`
@@ -274,6 +274,83 @@ Status: READY
 - Comprehensive test coverage (45 payment-specific tests, 415 total tests)
 - Security review passed (8/8 categories)
 - Frontend can integrate payment UI when ready
+
+## Booking/Payment State Machine (Backend Checkpoint 16)
+Status: READY
+
+### State Machine Overview
+- BookingStateMachine enforces deterministic booking state transitions
+- PaymentStateMachine enforces deterministic payment state transitions
+- BookingPaymentStateMachine ensures combined state consistency
+- All state transitions are validated before execution
+- Invalid transitions are rejected with clear error messages
+
+### Booking State Transitions
+- pending -> confirmed (payment_completed)
+- pending -> cancelled (user_cancelled, expiry)
+- confirmed -> cancelled (user_cancelled)
+- confirmed -> completed (checkout_completed)
+- confirmed -> no_show (guest_no_show)
+- Terminal states: cancelled, completed, no_show (no outgoing transitions)
+
+### Payment State Transitions
+- pending -> paid (payment_completed)
+- pending -> failed (payment_failed)
+- paid -> refunded (payment_refunded)
+- paid -> partially_refunded (payment_partially_refunded)
+- partially_refunded -> refunded (payment_fully_refunded)
+- Terminal states: failed, refunded (no outgoing transitions)
+
+### Combined State Transitions
+- (pending, pending) -> (confirmed, paid) (payment completion)
+- (pending, pending) -> (cancelled, failed) (payment failure/cancellation)
+- (confirmed, paid) -> (cancelled, refunded) (booking cancellation with refund)
+- (confirmed, paid) -> (cancelled, partially_refunded) (partial refund)
+- (confirmed, paid) -> (completed, paid) (checkout completion)
+- (confirmed, paid) -> (no_show, paid) (guest no show)
+- (confirmed, partially_refunded) -> (cancelled, refunded) (full refund)
+- (confirmed, partially_refunded) -> (completed, partially_refunded) (checkout with partial refund)
+- (confirmed, partially_refunded) -> (no_show, partially_refunded) (no show with partial refund)
+
+### State Machine Features
+- Deterministic transitions: same inputs always produce same outputs
+- Self-transition prevention: no state can transition to itself
+- Terminal state protection: terminal states have no outgoing transitions
+- Reason validation: transition reasons are validated against expected values
+- Combined state consistency: booking and payment states transition together
+- Audit logging: all state transitions are logged for audit trail
+
+### API Behavior Changes
+- POST /api/v1/payments/transactions/{id}/confirm/ now uses state machine for booking confirmation
+- POST /api/v1/payments/transactions/{id}/refund/ now uses state machine for payment status updates
+- POST /api/v1/bookings/{id}/cancel/ uses state machine for booking cancellation
+- All state transitions are validated and rejected if invalid
+- Error messages include specific reasons for transition failures
+
+### Frontend Integration Notes
+- Frontend should handle state transition validation errors gracefully
+- Display appropriate error messages when state transitions are invalid
+- Booking status can be: pending, confirmed, cancelled, completed, no_show
+- Payment status can be: pending, paid, failed, refunded, partially_refunded
+- State transitions are deterministic and follow defined rules
+- Expiry automatically transitions pending -> cancelled after 15 minutes
+
+### Backend Implementation Details
+- New state machine module with deterministic transitions
+- Updated booking model with state machine integration
+- Updated payment audit log with payment_status_changed action
+- Updated payment views to use state machine methods
+- No breaking changes to existing API endpoints
+- Enhanced validation for state transitions
+
+### Notes
+- Booking/payment state machine is fully functional with deterministic transitions
+- All state transitions are validated and audited
+- Combined state consistency between booking and payment states
+- Comprehensive test coverage (47 state machine tests, 471 total tests)
+- Security review passed (44/44 checks)
+- Frontend should handle state transition errors appropriately
+- State machine foundation supports future state extensions
 
 ## Availability API (Backend Checkpoint 12)
 Status: READY

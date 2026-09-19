@@ -349,6 +349,7 @@ class PaymentAuditLog(BaseModel):
         ('webhook_received', _('Webhook Received')),
         ('webhook_processed', _('Webhook Processed')),
         ('booking_status_changed', _('Booking Status Changed')),
+        ('payment_status_changed', _('Payment Status Changed')),
     ]
     
     # Associated entities

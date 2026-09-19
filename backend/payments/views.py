@@ -168,11 +168,9 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
             payment_transaction.provider_response = provider_response
             payment_transaction.save()
             
-            # Update booking payment status
+            # Update booking status using state machine
             booking = payment_transaction.booking
-            booking.payment_status = 'paid'
-            booking.status = 'confirmed'
-            booking.save()
+            booking.confirm_booking()
             
             # Log audit entries
             PaymentAuditLog.log_action(
@@ -184,16 +182,6 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
                 actor=request.user,
                 ip_address=self._get_client_ip(request),
                 details={'provider_response': provider_response}
-            )
-            
-            PaymentAuditLog.log_action(
-                action='booking_status_changed',
-                booking=booking,
-                old_status='pending',
-                new_status='confirmed',
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details={'trigger': 'payment_completed'}
             )
             
             return Response(
@@ -253,10 +241,10 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
             payment_transaction.provider_response = provider_response
             payment_transaction.save()
             
-            # Update booking payment status
+            # Update booking payment status using state machine
             booking = payment_transaction.booking
-            booking.payment_status = 'refunded' if refund_amount else 'partially_refunded'
-            booking.save()
+            new_payment_status = 'refunded' if refund_amount else 'partially_refunded'
+            booking.update_payment_status(new_payment_status)
             
             # Log audit entry
             PaymentAuditLog.log_action(
