@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { PropertyDetailPage } from './PropertyDetailPage'
 import { propertyAdapter } from '../adapters/propertyAdapter'
+import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
 // Mock React Router
 vi.mock('react-router-dom', () => ({
@@ -11,6 +12,22 @@ vi.mock('react-router-dom', () => ({
 
 // Mock propertyAdapter
 vi.mock('../adapters/propertyAdapter')
+
+// Mock AuthContext
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
+const mockUseAuth = useAuth as any
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      {component}
+    </AuthProvider>
+  )
+}
 
 describe('PropertyDetailPage', () => {
   const mockProperty = {
@@ -126,6 +143,15 @@ describe('PropertyDetailPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    })
   })
 
   it('renders loading state initially', () => {
@@ -134,7 +160,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
     
     expect(screen.getByText('Loading property details...')).toBeInTheDocument()
   })
@@ -145,7 +171,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.queryByText('Loading property details...')).not.toBeInTheDocument()
@@ -160,7 +186,7 @@ describe('PropertyDetailPage', () => {
       error: 'Property not found',
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Property Not Found')).toBeInTheDocument()
@@ -173,7 +199,7 @@ describe('PropertyDetailPage', () => {
       error: 'API Error',
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Property Not Found')).toBeInTheDocument()
@@ -186,7 +212,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Property image gallery' })).toBeInTheDocument()
@@ -199,7 +225,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test Property')).toBeInTheDocument()
@@ -212,7 +238,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test description')).toBeInTheDocument()
@@ -225,7 +251,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Amenities')).toBeInTheDocument()
@@ -238,7 +264,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Policies')).toBeInTheDocument()
@@ -252,7 +278,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('What\'s Nearby')).toBeInTheDocument()
@@ -265,7 +291,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Dining & Restaurants')).toBeInTheDocument()
@@ -278,7 +304,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Select Your Room')).toBeInTheDocument()
@@ -292,7 +318,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.queryByText('Select Your Room')).not.toBeInTheDocument()
@@ -305,7 +331,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test Property')).toBeInTheDocument()
@@ -318,7 +344,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(document.title).toBe('Test Property | TICKBRON')
@@ -331,7 +357,7 @@ describe('PropertyDetailPage', () => {
       error: 'Property not found',
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       const backButton = screen.getByText('Back to Search')
@@ -345,7 +371,7 @@ describe('PropertyDetailPage', () => {
       error: null,
     })
 
-    render(<PropertyDetailPage />)
+    renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
       expect(propertyAdapter.getPropertyById).toHaveBeenCalledWith(1)

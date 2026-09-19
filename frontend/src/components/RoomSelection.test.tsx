@@ -1,7 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import { BrowserRouter } from 'react-router-dom'
 import { RoomSelection } from './RoomSelection'
 import { RoomType, RatePlan } from '../adapters/propertyAdapter'
+
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(
+    <BrowserRouter>
+      {component}
+    </BrowserRouter>
+  )
+}
 
 describe('RoomSelection', () => {
   const mockRatePlans: RatePlan[] = [
@@ -60,32 +69,32 @@ describe('RoomSelection', () => {
   })
 
   it('renders empty state when no room types provided', () => {
-    render(<RoomSelection roomTypes={[]} />)
+    renderWithRouter(<RoomSelection roomTypes={[]} />)
     
     expect(screen.getByText('No rooms available for this property')).toBeInTheDocument()
   })
 
   it('renders room selection title', () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Select Your Room')).toBeInTheDocument()
   })
 
   it('renders available rooms section', () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     expect(screen.getAllByText('Available Rooms').length).toBeGreaterThan(0)
   })
 
   it('renders room cards for each room type', () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Standard Room')).toBeInTheDocument()
     expect(screen.getByText('Deluxe Room')).toBeInTheDocument()
   })
 
   it('renders room card with correct information', () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Comfortable room with essential amenities')).toBeInTheDocument()
     expect(screen.getByText('€120')).toBeInTheDocument()
@@ -93,7 +102,7 @@ describe('RoomSelection', () => {
   })
 
   it('selects room when room card is clicked', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -104,7 +113,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays rate plans after room selection', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -115,7 +124,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays availability calendar after rate plan selection', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -133,7 +142,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays selection summary when all selections are made', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -156,7 +165,7 @@ describe('RoomSelection', () => {
   })
 
   it('resets date selection when different rate plan is selected', async () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -177,7 +186,7 @@ describe('RoomSelection', () => {
   })
 
   it('uses provided currency prop', () => {
-    render(<RoomSelection roomTypes={mockRoomTypes} currency="USD" />)
+    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} currency="USD" />)
     
     // RoomCard uses the room's own currency, not the prop
     // This test validates that rooms are rendered correctly

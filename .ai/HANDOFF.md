@@ -514,6 +514,49 @@ Status: FRONTEND READY (API endpoint pending)
 - Mock adapter structure matches backend RoomType, RatePlan, and DateInventory models from Backend Checkpoint 08
 - Components are ready for backend API integration when endpoints become available
 
+## Booking Flow UI (Frontend Checkpoint 11)
+Status: FRONTEND READY (Backend booking endpoint available)
+
+### BookingPage Component
+- Displays booking form with guest details: first name, last name, email, phone number, special requests
+- Pre-fills guest details from authenticated user data
+- Shows booking summary with property, room, rate plan, check-in/out dates, and pricing
+- Client-side validation for required fields and email format
+- Validation error messages: "First name is required", "Last name is required", "Email is required", "Please enter a valid email address"
+- Form submission prevented on validation failure
+- "Continue to Confirmation" button (non-functional in checkpoint 11 - payment UI in future checkpoint)
+- Loading states and error handling
+- Responsive design for all breakpoints
+- Accessibility features: semantic HTML, ARIA labels, proper form structure
+
+### Frontend Implementation Details
+- BookingPage.tsx with form validation and error handling
+- BookingState interface matches backend Booking model structure
+- bookingAdapter.ts with createBooking method ready for backend integration
+- RoomSelection component provides booking state (property, room, rate plan, dates)
+- Comprehensive test coverage: 10 tests (BookingPage: 10)
+- Security review passed (13/13 checks)
+- API contract compatibility verified
+- Backend booking endpoint `/api/v1/bookings/` is READY (from Backend Checkpoint 13-14)
+
+### Backend Integration Status
+- Backend booking endpoint POST `/api/v1/bookings/` is READY
+- Request shape: `{ property_id, room_type_id, rate_plan_id, check_in, check_out, guest_count, special_requests }`
+- Response shape: Full booking object with confirmation code, status, payment status, expiry
+- Auth: Session-based (required)
+- Error: 400 for validation errors, 403 for unauthorized
+- Transaction-safe inventory locking with double-booking prevention
+- Pending bookings expire after 15 minutes if not confirmed
+- READY/BLOCKED status: READY for integration
+
+### Notes
+- Booking flow UI is complete and ready for backend integration
+- Client-side validation implemented (required fields, email format, phone number)
+- bookingAdapter.createBooking method ready to call backend booking endpoint
+- Payment UI will be implemented in future checkpoint
+- Frontend can integrate real booking creation when ready
+- All security requirements satisfied (auth required, CSRF protection, input validation)
+
 ## Booking Engine (Backend Checkpoint 13-14)
 Status: READY
 

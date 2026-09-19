@@ -8,6 +8,7 @@ import { PropertyPoliciesDetail } from '../components/PropertyPoliciesDetail'
 import { NearbyPlaces } from '../components/NearbyPlaces'
 import { DiningRestaurants } from '../components/DiningRestaurants'
 import { RoomSelection } from '../components/RoomSelection'
+import { useAuth } from '../contexts/AuthContext'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -16,6 +17,7 @@ import { RoomSelection } from '../components/RoomSelection'
 export function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -204,8 +206,23 @@ export function PropertyDetailPage() {
               </div>
             )}
 
-            <button className="btn btn-primary btn-large property-detail-cta">
-              Book Now
+            <button 
+              className="btn btn-primary btn-large property-detail-cta"
+              onClick={() => {
+                if (isAuthenticated) {
+                  // Scroll to room selection section
+                  const roomSelectionSection = document.querySelector('.room-selection')
+                  if (roomSelectionSection) {
+                    roomSelectionSection.scrollIntoView({ behavior: 'smooth' })
+                  }
+                } else {
+                  // Redirect to login with return state
+                  navigate('/login', { state: { from: `/property/${id}` } })
+                }
+              }}
+              aria-label={isAuthenticated ? 'Select room to book' : 'Login to book'}
+            >
+              {isAuthenticated ? 'Book Now' : 'Login to Book'}
             </button>
           </div>
         </aside>

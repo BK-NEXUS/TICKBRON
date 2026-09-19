@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RoomType, RatePlan, DateInventory } from '../adapters/propertyAdapter'
-import { propertyAdapter } from '../adapters/propertyAdapter'
 import { RoomCard } from './RoomCard'
 import { RatePlanCard } from './RatePlanCard'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
@@ -15,6 +15,7 @@ interface RoomSelectionProps {
  * Combines room cards, rate plan cards, and availability calendar
  */
 export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProps) {
+  const navigate = useNavigate()
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -86,6 +87,26 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date)
+  }
+
+  const handleProceedToBooking = () => {
+    if (selectedRoom && selectedRatePlan && selectedDate) {
+      const checkInDate = new Date(selectedDate)
+      const nightsToBook = selectedRatePlan.min_nights || 1
+      const checkOutDate = new Date(checkInDate.getTime() + nightsToBook * 24 * 60 * 60 * 1000)
+      
+      const bookingState = {
+        propertyId: selectedRoom.property_id,
+        roomTypeId: selectedRoom.id,
+        ratePlanId: selectedRatePlan.id,
+        checkIn: selectedDate,
+        checkOut: checkOutDate.toISOString().split('T')[0],
+        guestCount: selectedRoom.base_occupancy,
+        pricePerNight: selectedRatePlan.base_price,
+        currency: selectedRatePlan.currency,
+      }
+      navigate('/booking', { state: bookingState })
+    }
   }
 
   if (roomTypes.length === 0) {
@@ -196,7 +217,11 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
               </span>
             </div>
           </div>
-          <button className="btn btn-primary btn-large room-selection-cta">
+          <button 
+            className="btn btn-primary btn-large room-selection-cta"
+            onClick={handleProceedToBooking}
+            aria-label="Proceed to booking"
+          >
             Proceed to Booking
           </button>
         </div>
