@@ -35,19 +35,62 @@ Core endpoints:
 - GET `/api/v1/me/history/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/history/recent/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/history/stats/` ✅ IMPLEMENTED (Checkpoint 17)
-- POST `/api/v1/partner/properties/`
-- PATCH `/api/v1/partner/properties/{id}/`
-- POST `/api/v1/partner/properties/{id}/photos/`
-- PATCH `/api/v1/partner/rooms/{id}/`
-- PATCH `/api/v1/partner/rates/{id}/availability/`
+- POST `/api/v1/partner/properties/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/properties/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/partner/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/partner/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/rooms/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/rooms/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/partner/rooms/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/partner/rooms/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/rates/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/rates/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/properties/{id}/photos/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/partner/bookings/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/admin/properties/` ✅ IMPLEMENTED (Checkpoint 18)
-- POST `/api/v1/admin/properties/{id}/approve/` ✅ IMPLEMENTED (Checkpoint 18)
-- POST `/api/v1/admin/properties/{id}/suspend/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/admin/amenities/` ✅ IMPLEMENTED (Checkpoint 18)
-- POST `/api/v1/admin/users/create-hotel-owner/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/admin/users/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/admin/amenities/categories/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/properties/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/admin-panel/properties/{id}/approve/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/admin-panel/properties/{id}/suspend/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/users/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/admin-panel/users/create-hotel-owner/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/amenities/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/admin-panel/amenities/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/admin-panel/amenities/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/admin-panel/amenities/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/amenities/categories/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/admin-panel/amenities/categories/` ✅ IMPLEMENTED (Checkpoint 18)
+- PATCH `/api/v1/admin-panel/amenities/categories/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- DELETE `/api/v1/admin-panel/amenities/categories/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/payments/transactions/` ✅ IMPLEMENTED (Checkpoint 18)
+
+## Checkpoint 19 Changes (Observability/Performance/Security Hardening)
+
+### Security Enhancements
+- **Custom Security Headers Middleware**: Added X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, and HSTS headers
+- **Enhanced CORS Configuration**: Added explicit allowed headers and methods
+- **Rate Limiting**: DRF throttling enabled (100/hour for anonymous, 1000/hour for authenticated users)
+- **Custom Exception Handler**: Standardized error response format with proper logging
+- **Logging System**: Comprehensive logging configuration with file rotation and separate error logs
+
+### Performance Improvements
+- **Database Connection Pooling**: Persistent connections with 60-second timeout
+- **Query Optimization**: QueryOptimizationMixin and monitoring utilities
+- **Performance Monitoring Middleware**: Tracks slow requests (>2s threshold)
+- **Request Logging Middleware**: Logs all requests with timing information
+
+### Error Handling
+- **Standardized Error Format**: All errors return `{"error": {"code": "...", "message": "...", "details": "..."}}`
+- **Custom Exception Classes**: TickBronException, RateLimitException, PermissionDeniedException, etc.
+- **Detailed Logging**: All errors logged with appropriate severity levels
+
+### Admin Panel URL Change
+- **URL Path Changed**: Admin endpoints moved from `/api/v1/admin/` to `/api/v1/admin-panel/` to avoid conflict with Django's built-in admin
+- **No Breaking Changes**: All functionality preserved, only URL path updated
 - GET `/api/v1/admin/payments/transactions/` ✅ IMPLEMENTED (Checkpoint 18)
 
 ## Checkpoint 07 Notes (Property Media/Storage)

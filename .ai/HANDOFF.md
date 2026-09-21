@@ -487,33 +487,33 @@ Status: READY
 Status: READY
 
 ### Admin Property Moderation
-- GET `/api/v1/admin/properties/` - List all properties for moderation
+- GET `/api/v1/admin-panel/properties/` - List all properties for moderation
   - Request: None
   - Response: Array of all property objects with owner information
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users
   - Includes approval status, rejection reasons, and approval tracking
-- POST `/api/v1/admin/properties/{id}/approve/` - Approve or reject property
+- POST `/api/v1/admin-panel/properties/{id}/approve/` - Approve or reject property
   - Request: { rejection_reason (optional, only when rejecting) }
   - Response: Updated property object
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if property not found
   - If rejection_reason provided: sets status to 'rejected'
   - If no rejection_reason: sets status to 'active', records approver and timestamp
-- POST `/api/v1/admin/properties/{id}/suspend/` - Suspend property
+- POST `/api/v1/admin-panel/properties/{id}/suspend/` - Suspend property
   - Request: None
   - Response: Updated property object with status 'suspended'
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if property not found
 
 ### Admin User Management
-- GET `/api/v1/admin/users/` - List all users for management
+- GET `/api/v1/admin-panel/users/` - List all users for management
   - Request: None
   - Response: Array of user objects with role information
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users
   - Limited fields for admin user listing (no passwords)
-- POST `/api/v1/admin/users/create-hotel-owner/` - Create hotel-owner account (super-admin only)
+- POST `/api/v1/admin-panel/users/create-hotel-owner/` - Create hotel-owner account (super-admin only)
   - Request: { email, first_name, last_name, phone_number (optional), password, password_confirm }
   - Response: Created user object with hotel-owner role
   - Auth: Super-admin required
@@ -524,49 +524,49 @@ Status: READY
   - Staff users cannot access this endpoint
 
 ### Admin Amenity Management
-- GET `/api/v1/admin/amenities/` - List all amenities
+- GET `/api/v1/admin-panel/amenities/` - List all amenities
   - Request: None
   - Response: Array of amenity objects with category information
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users
-- POST `/api/v1/admin/amenities/` - Create amenity
+- POST `/api/v1/admin-panel/amenities/` - Create amenity
   - Request: { category, name, slug, description, icon, is_searchable, sort_order }
   - Response: Created amenity object
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 400 for validation errors
-- PATCH `/api/v1/admin/amenities/{id}/` - Update amenity
+- PATCH `/api/v1/admin-panel/amenities/{id}/` - Update amenity
   - Request: Partial amenity update
   - Response: Updated amenity object
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if amenity not found
-- DELETE `/api/v1/admin/amenities/{id}/` - Delete amenity (soft delete)
+- DELETE `/api/v1/admin-panel/amenities/{id}/` - Delete amenity (soft delete)
   - Request: None
   - Response: 204 No Content
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if amenity not found
-- GET `/api/v1/admin/amenities/categories/` - List amenity categories
+- GET `/api/v1/admin-panel/amenities/categories/` - List amenity categories
   - Request: None
   - Response: Array of amenity category objects
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users
-- POST `/api/v1/admin/amenities/categories/` - Create amenity category
+- POST `/api/v1/admin-panel/amenities/categories/` - Create amenity category
   - Request: { name, slug, description, icon, sort_order }
   - Response: Created amenity category object
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 400 for validation errors
-- PATCH `/api/v1/admin/amenities/categories/{id}/` - Update amenity category
+- PATCH `/api/v1/admin-panel/amenities/categories/{id}/` - Update amenity category
   - Request: Partial category update
   - Response: Updated amenity category object
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if category not found
-- DELETE `/api/v1/admin/amenities/categories/{id}/` - Delete amenity category (soft delete)
+- DELETE `/api/v1/admin-panel/amenities/categories/{id}/` - Delete amenity category (soft delete)
   - Request: None
   - Response: 204 No Content
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users, 404 if category not found
 
 ### Admin Payment Monitoring
-- GET `/api/v1/admin/payments/transactions/` - List payment transactions for monitoring
+- GET `/api/v1/admin-panel/payments/transactions/` - List payment transactions for monitoring
   - Request: Query parameters: status (optional), provider (optional)
   - Response: Array of payment transaction objects
   - Auth: Super-admin or staff required
@@ -584,6 +584,7 @@ Status: READY
 - Property approval tracking (approved_by, approved_at)
 - Rejection reason tracking for audit trail
 - URL configuration for admin endpoints
+- **URL Path Update**: Admin endpoints moved to `/api/v1/admin-panel/` to avoid Django admin conflict
 
 ### Notes
 - Admin APIs provide moderation and oversight capabilities
@@ -592,6 +593,40 @@ Status: READY
 - Approval workflow with audit trail for property moderation
 - All endpoints use session-based authentication
 - Frontend can integrate admin management features when ready
+- **Important**: Admin API endpoints are now at `/api/v1/admin-panel/` instead of `/api/v1/admin/`
+
+## Checkpoint 19 Notes (Observability/Performance/Security Hardening)
+Status: READY
+
+### Security Enhancements
+- **Custom Security Headers Middleware**: Added X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, and HSTS headers
+- **Enhanced CORS Configuration**: Added explicit allowed headers and methods
+- **Rate Limiting**: DRF throttling enabled (100/hour for anonymous, 1000/hour for authenticated users)
+- **Custom Exception Handler**: Standardized error response format with proper logging
+- **Logging System**: Comprehensive logging configuration with file rotation and separate error logs
+
+### Performance Improvements
+- **Database Connection Pooling**: Persistent connections with 60-second timeout
+- **Query Optimization**: QueryOptimizationMixin and monitoring utilities
+- **Performance Monitoring Middleware**: Tracks slow requests (>2s threshold)
+- **Request Logging Middleware**: Logs all requests with timing information
+
+### Error Handling
+- **Standardized Error Format**: All errors return `{"error": {"code": "...", "message": "...", "details": "..."}}`
+- **Custom Exception Classes**: TickBronException, RateLimitException, PermissionDeniedException, etc.
+- **Detailed Logging**: All errors logged with appropriate severity levels
+
+### Admin Panel URL Change
+- **URL Path Changed**: Admin endpoints moved from `/api/v1/admin/` to `/api/v1/admin-panel/` to avoid conflict with Django's built-in admin
+- **No Breaking Changes**: All functionality preserved, only URL path updated
+- **Frontend Impact**: Frontend needs to update admin API URLs to use `/api/v1/admin-panel/` instead of `/api/v1/admin/`
+
+### Notes
+- All existing functionality preserved with enhanced security and performance
+- Frontend should update admin API URLs to use new `/api/v1/admin-panel/` path
+- Error response format is now standardized across all endpoints
+- Rate limiting helps prevent abuse and protects server resources
+- Logging provides better observability for debugging and monitoring
 
 ## Accounts API (Backend Checkpoint 17)
 Status: READY

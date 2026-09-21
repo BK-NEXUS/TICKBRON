@@ -147,7 +147,22 @@ class AdminAmenityCategorySerializer(serializers.ModelSerializer):
 
 class AdminAmenitySerializer(serializers.ModelSerializer):
     """
-    Serializer for amenity management by admins.
+    Serializer for amenity management by admins (write operations).
+    """
+    category = serializers.PrimaryKeyRelatedField(queryset=AmenityCategory.objects.all())
+    
+    class Meta:
+        model = Amenity
+        fields = [
+            'id', 'category', 'name', 'slug', 'description', 'icon',
+            'is_searchable', 'sort_order'
+        ]
+        read_only_fields = ['id']
+
+
+class AdminAmenityReadSerializer(serializers.ModelSerializer):
+    """
+    Serializer for amenity read operations (includes nested category).
     """
     category = AmenityCategorySerializer(read_only=True)
     

@@ -13,10 +13,11 @@ from django.utils import timezone
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
-from admin.serializers import (
+from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer,
     AdminUserSerializer, AdminUserCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
+    AdminAmenityReadSerializer,
     AdminPaymentTransactionSerializer
 )
 
@@ -151,6 +152,12 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Return all users for management."""
         return User.objects.filter(is_deleted=False).select_related('role')
+    
+    def list(self, request, *args, **kwargs):
+        """Custom list method to handle both router and custom URL."""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -208,6 +215,13 @@ class AdminAmenityViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenitySerializer
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action in ['list', 'retrieve']:
+            # Use a serializer with nested category for read operations
+            return AdminAmenityReadSerializer
+        return AdminAmenitySerializer
     
     def get_queryset(self):
         """Return all amenities."""

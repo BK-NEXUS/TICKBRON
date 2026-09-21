@@ -1,4 +1,4 @@
-# Generated migration for admin app
+# Generated migration for admin_panel app
 from django.db import migrations
 
 
@@ -10,5 +10,5 @@ class Migration(migrations.Migration):
         ('payments', '0001_initial'),
     ]
     operations = [
-        # No new models - admin app uses existing models
+        # No new models - admin_panel app uses existing models
     ]

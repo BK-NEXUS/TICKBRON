@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from .logging_config import get_logging_config
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +28,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # 'django.contrib.admin',  # Removed - using custom admin_panel app instead
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -44,7 +45,7 @@ INSTALLED_APPS = [
     'payments',
     'accounts',
     'partner',
-    'admin',
+    'admin_panel',
     
     # Third-party apps
     'rest_framework',
@@ -61,9 +62,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'common.middleware.SecurityHeadersMiddleware',
+    'common.middleware.RequestLoggingMiddleware',
+    'common.middleware.PerformanceMonitoringMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
+
+# Logging Configuration
+LOGGING = get_logging_config()
 
 TEMPLATES = [
     {
@@ -96,6 +103,8 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', ''),
+        'CONN_MAX_AGE': 60,  # Persistent connections for 60 seconds
+        'OPTIONS': {},
     }
 }
 
@@ -103,6 +112,7 @@ DATABASES = {
 if os.getenv('DB_ENGINE') == 'django.db.backends.postgresql':
     DATABASES['default']['OPTIONS'] = {
         'connect_timeout': 10,
+        'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
     }
 
 
@@ -168,9 +178,40 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+# Additional Security Headers
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() == 'true'
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'True').lower() == 'true'
+SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
+SECURE_BROWSER_XSS_FILTER = os.getenv('SECURE_BROWSER_XSS_FILTER', 'True').lower() == 'true'
+X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
+
 # CORS Settings
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Rate Limiting Settings
+RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
+RATELIMIT_USE_CACHE = 'default'
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {
@@ -183,6 +224,15 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
 }
 
 # API Documentation
