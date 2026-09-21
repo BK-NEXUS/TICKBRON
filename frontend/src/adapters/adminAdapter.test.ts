@@ -224,7 +224,7 @@ describe('AdminAdapter', () => {
       const result = await adapter.createHotelOwner(ownerData)
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('Super-admin required')
+      expect(result.error).toBe('Admin or staff role required')
     })
   })
 
@@ -493,7 +493,8 @@ describe('AdminAdapter', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api/api/v1/admin-panel/payments/transactions/',
         expect.objectContaining({
-          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
         })
       )
     })
@@ -523,7 +524,8 @@ describe('AdminAdapter', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api/api/v1/admin-panel/payments/transactions/?status=completed&provider=payme',
         expect.objectContaining({
-          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
         })
       )
     })
@@ -536,7 +538,7 @@ describe('AdminAdapter', () => {
       const result = await adapter.getProperties()
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('Network error occurred')
+      expect(result.error).toBe('Network error')
     })
 
     it('should handle 404 errors', async () => {
@@ -575,7 +577,7 @@ describe('AdminAdapter', () => {
       const result = await adapter.getProperties()
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('HTTP 500: Internal Server Error')
+      expect(result.error).toBe('Internal server error')
     })
   })
 

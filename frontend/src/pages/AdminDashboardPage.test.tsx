@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AdminDashboardPage } from './AdminDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
+import { MemoryRouter } from 'react-router-dom'
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext')
@@ -29,7 +30,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: false,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Authentication required')).toBeInTheDocument()
     expect(screen.getByText('Please sign in to access the admin dashboard.')).toBeInTheDocument()
@@ -41,7 +46,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Access Denied')).toBeInTheDocument()
     expect(screen.getByText('You do not have permission to access the admin dashboard.')).toBeInTheDocument()
@@ -53,7 +62,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Admin Dashboard')).toBeInTheDocument()
     expect(screen.getByText(/Welcome, Admin/i)).toBeInTheDocument()
@@ -66,7 +79,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Admin Dashboard')).toBeInTheDocument()
     expect(screen.getByText(/Welcome, Admin/i)).toBeInTheDocument()
@@ -79,7 +96,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Create Owner')).toBeInTheDocument()
   })
@@ -90,7 +111,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.queryByText('Create Owner')).not.toBeInTheDocument()
   })
@@ -101,7 +126,11 @@ describe('AdminDashboardPage', () => {
       isAuthenticated: true,
     })
 
-    render(<AdminDashboardPage />)
+    render(
+      <MemoryRouter>
+        <AdminDashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Properties')).toBeInTheDocument()
     expect(screen.getByText('Amenities')).toBeInTheDocument()
