@@ -51,8 +51,9 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     for user management and profile information.
     """
     email = models.EmailField(unique=True, db_index=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
+    full_name = models.CharField(max_length=300, blank=True, null=True)
+    first_name = models.CharField(max_length=150, blank=True, null=True)
+    last_name = models.CharField(max_length=150, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     
     is_staff = models.BooleanField(default=False)
@@ -75,13 +76,19 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
     two_factor_backup_codes = models.TextField(blank=True, null=True)
     
+    # Phone OTP authentication fields
+    phone_verified = models.BooleanField(default=False)
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
+    otp_attempts = models.IntegerField(default=0)
+    
     # Role foundation (for RBAC)
     role = models.ForeignKey('permissions.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     
     objects = UserManager()
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = []
     
     class Meta:
         db_table = 'users'
@@ -94,9 +101,11 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     
     def get_full_name(self):
         """
-        Return the first_name plus the last_name, with a space in between.
+        Return the full_name if set, otherwise first_name plus last_name, with a space in between.
         """
-        full_name = f'{self.first_name} {self.last_name}'.strip()
+        if self.full_name:
+            return self.full_name
+        full_name = f'{self.first_name or ""} {self.last_name or ""}'.strip()
         return full_name if full_name else self.email
     
     def get_short_name(self):
@@ -135,3 +144,44 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.last_failed_login = None
         self.account_locked_until = None
         self.save()
+    
+    def generate_otp(self):
+        """
+        Generate a 6-digit OTP code for phone verification.
+        """
+        import random
+        from datetime import timedelta
+        
+        self.otp_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        self.otp_expires_at = timezone.now() + timedelta(minutes=5)
+        self.otp_attempts = 0
+        self.save()
+        return self.otp_code
+    
+    def verify_otp(self, code):
+        """
+        Verify the OTP code.
+        
+        Returns True if valid, False otherwise.
+        """
+        if not self.otp_code or not self.otp_expires_at:
+            return False
+        
+        if timezone.now() > self.otp_expires_at:
+            return False
+        
+        if self.otp_attempts >= 3:
+            return False
+        
+        self.otp_attempts += 1
+        self.save()
+        
+        if self.otp_code == code:
+            self.otp_code = None
+            self.otp_expires_at = None
+            self.otp_attempts = 0
+            self.phone_verified = True
+            self.save()
+            return True
+        
+        return False

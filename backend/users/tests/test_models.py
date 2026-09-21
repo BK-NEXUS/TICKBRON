@@ -73,7 +73,17 @@ class TestUserModel(TestCase):
         assert str(user) == 'test@example.com'
     
     def test_get_full_name(self):
-        """Test get_full_name method."""
+        """Test get_full_name method with full_name field."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            full_name='John Doe'
+        )
+        
+        assert user.get_full_name() == 'John Doe'
+    
+    def test_get_full_name_from_first_last(self):
+        """Test get_full_name method falling back to first_name/last_name."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -84,7 +94,7 @@ class TestUserModel(TestCase):
         assert user.get_full_name() == 'John Doe'
     
     def test_get_full_name_empty(self):
-        """Test get_full_name when names are empty."""
+        """Test get_full_name when all name fields are empty."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
@@ -131,3 +141,88 @@ class TestUserModel(TestCase):
         assert hasattr(user, 'is_active')
         assert user.is_deleted is False
         assert user.is_active is True
+    
+    def test_generate_otp(self):
+        """Test OTP generation."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890'
+        )
+        
+        otp_code = user.generate_otp()
+        
+        assert otp_code is not None
+        assert len(otp_code) == 6
+        assert otp_code.isdigit()
+        assert user.otp_code == otp_code
+        assert user.otp_expires_at is not None
+        assert user.otp_attempts == 0
+    
+    def test_verify_otp_success(self):
+        """Test successful OTP verification."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890'
+        )
+        otp_code = user.generate_otp()
+        
+        result = user.verify_otp(otp_code)
+        
+        assert result is True
+        user.refresh_from_db()
+        assert user.phone_verified is True
+        assert user.otp_code is None
+        assert user.otp_expires_at is None
+    
+    def test_verify_otp_invalid(self):
+        """Test OTP verification with invalid code."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890'
+        )
+        user.generate_otp()
+        
+        result = user.verify_otp('000000')
+        
+        assert result is False
+        user.refresh_from_db()
+        assert user.otp_attempts == 1
+    
+    def test_verify_otp_expired(self):
+        """Test OTP verification with expired code."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890'
+        )
+        otp_code = user.generate_otp()
+        
+        # Manually expire the OTP
+        from django.utils import timezone
+        from datetime import timedelta
+        user.otp_expires_at = timezone.now() - timedelta(minutes=10)
+        user.save()
+        
+        result = user.verify_otp(otp_code)
+        
+        assert result is False
+    
+    def test_verify_otp_max_attempts(self):
+        """Test OTP verification with max attempts exceeded."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890'
+        )
+        otp_code = user.generate_otp()
+        
+        # Use all attempts
+        for _ in range(3):
+            user.verify_otp('000000')
+        
+        result = user.verify_otp(otp_code)
+        
+        assert result is False

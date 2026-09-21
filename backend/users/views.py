@@ -12,7 +12,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth import authenticate, login, logout
 from users.models import User
-from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer
+from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer
+from users.services import OTPService
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
@@ -34,6 +35,27 @@ class RegisterRateThrottle(AnonRateThrottle):
     """Rate throttle for registration endpoint - 5 requests per minute per IP."""
     rate = '5/min'
     scope = 'register'
+
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
+
+class OTPRequestRateThrottle(AnonRateThrottle):
+    """Rate throttle for OTP request endpoint - 3 requests per minute per phone number."""
+    rate = '3/min'
+    scope = 'otp_request'
+
+    def get_cache_key(self, request, view):
+        """
+        Use phone number as cache key for rate limiting per phone number.
+        """
+        phone_number = request.data.get('phone_number', '')
+        if phone_number:
+            return f'otp_request_{phone_number}'
+        return super().get_cache_key(request, view)
 
     def allow_request(self, request, view):
         # Disable throttling during tests
@@ -180,3 +202,90 @@ def refresh_session(request):
         {'detail': 'No active session found.'},
         status=status.HTTP_401_UNAUTHORIZED
     )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([OTPRequestRateThrottle])
+def request_otp(request):
+    """
+    Request OTP code for phone-based authentication.
+    
+    Generates and sends an OTP code to the provided phone number.
+    In test mode, the OTP code is returned in the response.
+    Rate-limited to 3 requests per minute per phone number.
+    """
+    serializer = RequestOTPSerializer(data=request.data)
+    if serializer.is_valid():
+        phone_number = serializer.validated_data['phone_number']
+        
+        otp_service = OTPService()
+        result = otp_service.send_otp(phone_number)
+        
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_otp(request):
+    """
+    Verify OTP code and establish session.
+    
+    Verifies the OTP code for the provided phone number.
+    On successful verification, establishes a session using the same
+    mechanism as password login.
+    """
+    serializer = VerifyOTPSerializer(data=request.data)
+    if serializer.is_valid():
+        phone_number = serializer.validated_data['phone_number']
+        otp_code = serializer.validated_data['otp_code']
+        
+        otp_service = OTPService()
+        result = otp_service.verify_otp(phone_number, otp_code)
+        
+        if result['success']:
+            try:
+                user = User.objects.get(id=result['user_id'])
+                
+                # Check if account is locked
+                if user.is_account_locked():
+                    return Response(
+                        {'detail': 'Account is temporarily locked due to too many failed login attempts. Please try again later.'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Reset failed login attempts on successful login
+                user.reset_failed_login()
+                
+                # Store login IP
+                user.last_login_ip = get_client_ip(request)
+                user.save()
+                
+                # Establish session using the same mechanism as password login
+                login(request, user)
+                
+                return Response(
+                    UserSerializer(user).data,
+                    status=status.HTTP_200_OK
+                )
+            except User.DoesNotExist:
+                return Response(
+                    {'detail': 'User not found.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Increment failed login attempts for invalid OTP
+            try:
+                user = User.objects.get(phone_number=phone_number)
+                user.increment_failed_login()
+            except User.DoesNotExist:
+                pass
+            
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

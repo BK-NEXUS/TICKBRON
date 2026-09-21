@@ -34,11 +34,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'phone_number', 
+        fields = ['email', 'full_name', 'phone_number', 
                   'password', 'password_confirm']
         extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
+            'full_name': {'required': True},
+            'phone_number': {'required': True},
         }
     
     def validate_email(self, value):
@@ -46,6 +46,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
+    
+    def validate_phone_number(self, value):
+        """Validate phone number format."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Phone number is required.")
+        return value.strip()
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -73,3 +79,38 @@ class UserLoginSerializer(serializers.Serializer):
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
+
+
+class RequestOTPSerializer(serializers.Serializer):
+    """
+    Serializer for requesting OTP code.
+    """
+    phone_number = serializers.CharField()
+    
+    def validate_phone_number(self, value):
+        """Validate phone number format."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Phone number is required.")
+        return value.strip()
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    """
+    Serializer for verifying OTP code.
+    """
+    phone_number = serializers.CharField()
+    otp_code = serializers.CharField(max_length=6)
+    
+    def validate_phone_number(self, value):
+        """Validate phone number format."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Phone number is required.")
+        return value.strip()
+    
+    def validate_otp_code(self, value):
+        """Validate OTP code format."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("OTP code is required.")
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError("OTP code must be 6 digits.")
+        return value.strip()

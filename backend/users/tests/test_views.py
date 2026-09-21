@@ -19,20 +19,22 @@ class TestAuthViews(TestCase):
         self.client = APIClient()
         self.user_data = {
             'email': 'test@example.com',
-            'first_name': 'Test',
-            'last_name': 'User',
+            'full_name': 'Test User',
+            'phone_number': '+1234567890',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
     
     def test_register_user(self):
-        """Test user registration endpoint."""
+        """Test user registration endpoint with simplified fields."""
         response = self.client.post('/api/v1/auth/register/', self.user_data)
         
         assert response.status_code == status.HTTP_201_CREATED
         assert User.objects.filter(email='test@example.com').exists()
         assert 'email' in response.data
         assert response.data['email'] == 'test@example.com'
+        assert response.data['full_name'] == 'Test User'
+        assert response.data['phone_number'] == '+1234567890'
     
     def test_register_user_auto_login(self):
         """Test that user is automatically logged in after registration."""
@@ -58,7 +60,7 @@ class TestAuthViews(TestCase):
     
     def test_login_valid_credentials(self):
         """Test login with valid credentials."""
-        # Create user
+        # Create user with old format (first_name/last_name)
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -91,7 +93,8 @@ class TestAuthViews(TestCase):
         # Create inactive user
         user = User.objects.create_user(
             email='test@example.com',
-            password='SecureP@ssw0rd123'
+            password='SecureP@ssw0rd123',
+            full_name='Test User'
         )
         user.is_active = False
         user.save()
@@ -109,7 +112,8 @@ class TestAuthViews(TestCase):
         # Create and authenticate user
         user = User.objects.create_user(
             email='test@example.com',
-            password='SecureP@ssw0rd123'
+            password='SecureP@ssw0rd123',
+            full_name='Test User'
         )
         self.client.force_authenticate(user=user)
         
@@ -131,8 +135,7 @@ class TestAuthViews(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
-            first_name='Test',
-            last_name='User'
+            full_name='Test User'
         )
         self.client.force_authenticate(user=user)
         
@@ -140,7 +143,7 @@ class TestAuthViews(TestCase):
         
         assert response.status_code == status.HTTP_200_OK
         assert response.data['email'] == 'test@example.com'
-        assert response.data['first_name'] == 'Test'
+        assert response.data['full_name'] == 'Test User'
     
     def test_me_unauthenticated(self):
         """Test getting current user info when not authenticated."""
@@ -153,8 +156,7 @@ class TestAuthViews(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
-            first_name='Test',
-            last_name='User'
+            full_name='Test User'
         )
         self.client.force_authenticate(user=user)
         
@@ -175,8 +177,7 @@ class TestAuthViews(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
-            first_name='Test',
-            last_name='User'
+            full_name='Test User'
         )
         
         # Simulate 5 failed login attempts

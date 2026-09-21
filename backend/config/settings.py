@@ -275,6 +275,9 @@ CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
 VISA_API_KEY = os.getenv('VISA_API_KEY', '')
 VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 
+# SMS Configuration
+SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'True').lower() == 'true'
+
 # Testing database configuration
 if 'test' in sys.argv or 'pytest' in sys.argv:
     DATABASES['default'] = {
