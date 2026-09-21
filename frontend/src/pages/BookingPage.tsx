@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingAdapter, BookingCreateRequest, Booking } from '../adapters/bookingAdapter'
 import { propertyAdapter, Property, RoomType, RatePlan } from '../adapters/propertyAdapter'
+import { paymentAdapter, PaymentProvider, PaymentTransaction, PaymentStatus } from '../adapters/paymentAdapter'
 import { useAuth } from '../contexts/AuthContext'
+import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
+import { PaymentProcessing } from '../components/PaymentProcessing'
+import { PaymentConfirmation } from '../components/PaymentConfirmation'
+import { PaymentFailure } from '../components/PaymentFailure'
 
 interface BookingState {
   propertyId: number
@@ -48,7 +53,29 @@ export function BookingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [booking, setBooking] = useState<Booking | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [step, setStep] = useState<'details' | 'confirmation' | 'success'>('details')
+  const [step, setStep] = useState<'details' | 'payment' | 'processing' | 'confirmation' | 'success' | 'failure'>('details')
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null)
+  const [paymentTransaction, setPaymentTransaction] = useState<PaymentTransaction | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending')
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  const calculateTotalPrice = (): number => {
+    if (!bookingState) return 0
+    
+    const checkIn = new Date(bookingState.checkIn)
+    const checkOut = new Date(bookingState.checkOut)
+    const numberOfNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    
+    return numberOfNights * bookingState.pricePerNight
+  }
+
+  const calculateNumberOfNights = (): number => {
+    if (!bookingState) return 0
+    
+    const checkIn = new Date(bookingState.checkIn)
+    const checkOut = new Date(bookingState.checkOut)
+    return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+  }
 
   // Parse booking state from location state
   useEffect(() => {
@@ -110,6 +137,10 @@ export function BookingPage() {
     loadData()
   }, [bookingState])
 
+  const totalPrice = calculateTotalPrice()
+  const numberOfNights = calculateNumberOfNights()
+  const currency = bookingState?.currency || 'USD'
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !loading) {
@@ -159,24 +190,6 @@ export function BookingPage() {
     return Object.keys(errors).length === 0
   }
 
-  const calculateTotalPrice = (): number => {
-    if (!bookingState) return 0
-    
-    const checkIn = new Date(bookingState.checkIn)
-    const checkOut = new Date(bookingState.checkOut)
-    const numberOfNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-    
-    return numberOfNights * bookingState.pricePerNight
-  }
-
-  const calculateNumberOfNights = (): number => {
-    if (!bookingState) return 0
-    
-    const checkIn = new Date(bookingState.checkIn)
-    const checkOut = new Date(bookingState.checkOut)
-    return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -212,7 +225,8 @@ export function BookingPage() {
       }
 
       setBooking(response.data)
-      setStep('confirmation')
+      setStep('payment')
+      setSubmitting(false)
     } catch (err) {
       setError('Failed to create booking. Please try again.')
       setSubmitting(false)
@@ -220,20 +234,90 @@ export function BookingPage() {
   }
 
   const handleConfirmBooking = async () => {
-    if (!booking) return
+    if (!booking || !selectedProvider) {
+      setError('Missing booking or payment method')
+      return
+    }
 
     setSubmitting(true)
     setError(null)
+    setPaymentError(null)
+    setStep('processing')
+    setPaymentStatus('pending')
 
     try {
-      // In a real implementation, this would integrate with payment
-      // For now, we'll simulate confirmation
-      setStep('success')
+      // Generate idempotency key for payment
+      const idempotencyKey = paymentAdapter.generateIdempotencyKey()
+      
+      // Get client IP and user agent for audit trail
+      const clientIp = await paymentAdapter.getClientIp()
+      const userAgent = paymentAdapter.getUserAgent()
+
+      // Create payment transaction
+      const paymentRequest = {
+        idempotency_key: idempotencyKey,
+        booking: booking.id,
+        provider: selectedProvider,
+        amount: booking.total_price,
+        currency: booking.currency,
+        client_ip: clientIp || undefined,
+        user_agent: userAgent,
+      }
+
+      setPaymentStatus('processing')
+      const paymentResponse = await paymentAdapter.createPayment(paymentRequest)
+
+      if (paymentResponse.error || !paymentResponse.data) {
+        setPaymentError(paymentResponse.error || 'Failed to initiate payment')
+        setPaymentStatus('failed')
+        setStep('failure')
+        setSubmitting(false)
+        return
+      }
+
+      setPaymentTransaction(paymentResponse.data)
+      setPaymentStatus('processing')
+
+      // Confirm payment
+      const confirmResponse = await paymentAdapter.confirmPayment(paymentResponse.data.id)
+
+      if (confirmResponse.error || !confirmResponse.data) {
+        setPaymentError(confirmResponse.error || 'Failed to confirm payment')
+        setPaymentStatus('failed')
+        setStep('failure')
+        setSubmitting(false)
+        return
+      }
+
+      setPaymentTransaction(confirmResponse.data)
+      setPaymentStatus('completed')
+      setStep('confirmation')
       setSubmitting(false)
     } catch (err) {
-      setError('Failed to confirm booking. Please try again.')
+      setPaymentError('Payment processing failed. Please try again.')
+      setPaymentStatus('failed')
+      setStep('failure')
       setSubmitting(false)
     }
+  }
+
+  const handleRetryPayment = () => {
+    setPaymentError(null)
+    setPaymentTransaction(null)
+    setPaymentStatus('pending')
+    setStep('payment')
+  }
+
+  const handleTryDifferentMethod = () => {
+    setPaymentError(null)
+    setPaymentTransaction(null)
+    setPaymentStatus('pending')
+    setSelectedProvider(null)
+    setStep('payment')
+  }
+
+  const handleCancelBooking = () => {
+    navigate('/search')
   }
 
   const handleBackToProperty = () => {
@@ -352,9 +436,170 @@ export function BookingPage() {
     )
   }
 
-  const totalPrice = calculateTotalPrice()
-  const numberOfNights = calculateNumberOfNights()
-  const currency = bookingState?.currency || 'USD'
+  if (step === 'payment' && booking) {
+    return (
+      <div className="booking-page booking-page--payment">
+        <div className="container booking-page-container">
+          <div className="booking-page-main">
+            <div className="booking-page-header">
+              <button 
+                className="btn btn-link booking-page-back"
+                onClick={() => setStep('details')}
+                aria-label="Back to guest details"
+              >
+                ← Back to Details
+              </button>
+              <h1>Payment Method</h1>
+            </div>
+
+            <PaymentMethodSelector
+              selectedProvider={selectedProvider}
+              onProviderSelect={setSelectedProvider}
+              disabled={submitting}
+            />
+
+            {selectedProvider && (
+              <div className="payment-method-actions">
+                {error && (
+                  <div className="booking-form-error" role="alert" aria-live="assertive">
+                    {error}
+                  </div>
+                )}
+                <button 
+                  className="btn btn-primary btn-large"
+                  onClick={handleConfirmBooking}
+                  disabled={submitting}
+                  aria-busy={submitting}
+                >
+                  {submitting ? 'Processing...' : `Pay with ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)}`}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <aside className="booking-page-sidebar">
+            <div className="booking-summary-card">
+              <h3 className="booking-summary-title">Price Summary</h3>
+              
+              {property && (
+                <div className="booking-summary-property">
+                  <div className="booking-summary-property-name">{property.translations[0]?.name || property.name}</div>
+                  <div className="booking-summary-property-location">
+                    {property.city}, {property.country}
+                  </div>
+                </div>
+              )}
+
+              {roomType && ratePlan && (
+                <>
+                  <div className="booking-summary-room">
+                    <div className="booking-summary-room-name">{roomType.name}</div>
+                    <div className="booking-summary-rate-plan">{ratePlan.name}</div>
+                  </div>
+
+                  <div className="booking-summary-breakdown">
+                    <div className="booking-summary-item">
+                      <span className="booking-summary-label">
+                        {new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency,
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(ratePlan.base_price)} × {numberOfNights} nights
+                      </span>
+                      <span className="booking-summary-value">
+                        {new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency,
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(totalPrice)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="booking-summary-total">
+                    <span className="booking-summary-total-label">Total</span>
+                    <span className="booking-summary-total-value">
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(totalPrice)}
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {booking && booking.expires_at && (
+                <div className="booking-summary-expiry">
+                  <div className="booking-summary-expiry-icon">⏰</div>
+                  <div className="booking-summary-expiry-text">
+                    <strong>Booking expires in 15 minutes</strong>
+                    <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'processing' && booking && selectedProvider) {
+    return (
+      <div className="booking-page booking-page--processing">
+        <div className="container">
+          <PaymentProcessing
+            provider={selectedProvider}
+            amount={booking.total_price}
+            currency={booking.currency}
+            status={paymentStatus}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'confirmation' && paymentTransaction && booking) {
+    return (
+      <div className="booking-page booking-page--confirmation">
+        <div className="container">
+          <PaymentConfirmation
+            payment={paymentTransaction}
+            bookingDetails={{
+              property_name: booking.property_name,
+              check_in: booking.check_in,
+              check_out: booking.check_out,
+              confirmation_code: booking.confirmation_code,
+            }}
+            onViewBookings={() => navigate('/bookings')}
+            onBackToProperty={handleBackToProperty}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'failure' && booking && selectedProvider) {
+    return (
+      <div className="booking-page booking-page--failure">
+        <div className="container">
+          <PaymentFailure
+            provider={selectedProvider}
+            amount={booking.total_price}
+            currency={booking.currency}
+            error={paymentError || undefined}
+            onRetry={handleRetryPayment}
+            onTryDifferentMethod={handleTryDifferentMethod}
+            onCancel={handleCancelBooking}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="booking-page">
@@ -497,7 +742,7 @@ export function BookingPage() {
                 disabled={submitting}
                 aria-busy={submitting}
               >
-                {submitting ? 'Processing...' : 'Continue to Confirmation'}
+                {submitting ? 'Processing...' : 'Continue to Payment'}
               </button>
             </form>
           )}

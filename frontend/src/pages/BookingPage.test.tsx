@@ -4,11 +4,13 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingPage } from './BookingPage'
 import { bookingAdapter } from '../adapters/bookingAdapter'
 import { propertyAdapter } from '../adapters/propertyAdapter'
+import { paymentAdapter } from '../adapters/paymentAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
 // Mock adapters
 vi.mock('../adapters/bookingAdapter')
 vi.mock('../adapters/propertyAdapter')
+vi.mock('../adapters/paymentAdapter')
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -22,6 +24,13 @@ const mockBookingAdapter = bookingAdapter as {
 }
 const mockPropertyAdapter = propertyAdapter as {
   getPropertyById: ReturnType<typeof vi.fn>
+}
+const mockPaymentAdapter = paymentAdapter as {
+  createPayment: ReturnType<typeof vi.fn>
+  confirmPayment: ReturnType<typeof vi.fn>
+  generateIdempotencyKey: ReturnType<typeof vi.fn>
+  getClientIp: ReturnType<typeof vi.fn>
+  getUserAgent: ReturnType<typeof vi.fn>
 }
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
@@ -110,7 +119,18 @@ const mockBooking = {
   updated_at: '2025-01-15T10:00:00Z',
 }
 
-const bookingState = {
+interface BookingState {
+  propertyId: number
+  roomTypeId: number
+  ratePlanId: number
+  checkIn: string
+  checkOut: string
+  guestCount: number
+  pricePerNight: number
+  currency: string
+}
+
+const bookingState: BookingState = {
   propertyId: 1,
   roomTypeId: 1,
   ratePlanId: 1,
@@ -149,6 +169,51 @@ describe('BookingPage', () => {
     })
     mockBookingAdapter.createBooking.mockResolvedValue({
       data: mockBooking,
+      error: null,
+    })
+    mockPaymentAdapter.generateIdempotencyKey.mockReturnValue('test_idempotency_key_123')
+    mockPaymentAdapter.getClientIp.mockResolvedValue('127.0.0.1')
+    mockPaymentAdapter.getUserAgent.mockReturnValue('test-agent')
+    mockPaymentAdapter.createPayment.mockResolvedValue({
+      data: {
+        id: 1,
+        idempotency_key: 'test_key_123',
+        booking: 1,
+        provider: 'payme',
+        provider_transaction_id: 'txn_123',
+        amount: 500,
+        currency: 'USD',
+        status: 'processing',
+        payment_method_token: null,
+        provider_response: { success: true },
+        error_code: null,
+        error_message: null,
+        client_ip: '127.0.0.1',
+        user_agent: 'test-agent',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      },
+      error: null,
+    })
+    mockPaymentAdapter.confirmPayment.mockResolvedValue({
+      data: {
+        id: 1,
+        idempotency_key: 'test_key_123',
+        booking: 1,
+        provider: 'payme',
+        provider_transaction_id: 'txn_123',
+        amount: 500,
+        currency: 'USD',
+        status: 'completed',
+        payment_method_token: null,
+        provider_response: { success: true },
+        error_code: null,
+        error_message: null,
+        client_ip: '127.0.0.1',
+        user_agent: 'test-agent',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      },
       error: null,
     })
   })
@@ -274,7 +339,7 @@ describe('BookingPage', () => {
       fireEvent.change(firstNameInput, { target: { value: '' } })
 
       // Submit the form without filling required fields
-      const submitButton = screen.getByText('Continue to Confirmation')
+      const submitButton = screen.getByText('Continue to Payment')
       fireEvent.click(submitButton)
 
       // Check that the adapter was not called (logic/safety validation)
@@ -300,7 +365,7 @@ describe('BookingPage', () => {
       fireEvent.change(lastNameInput, { target: { value: '' } })
 
       // Submit the form
-      const submitButton = screen.getByText('Continue to Confirmation')
+      const submitButton = screen.getByText('Continue to Payment')
       fireEvent.click(submitButton)
 
       // Check that the adapter was not called (logic/safety validation)
@@ -399,7 +464,7 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
       })
 
-      expect(screen.getByText('Continue to Confirmation')).toBeInTheDocument()
+      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
     })
   })
 
@@ -436,7 +501,7 @@ describe('BookingPage', () => {
       })
 
       // Just verify the form renders properly
-      expect(screen.getByText('Continue to Confirmation')).toBeInTheDocument()
+      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
     })
 
     it('should show booking expiry warning', async () => {
@@ -447,7 +512,7 @@ describe('BookingPage', () => {
       })
 
       // Just verify the form renders properly
-      expect(screen.getByText('Continue to Confirmation')).toBeInTheDocument()
+      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
     })
 
     it('should allow going back to details', async () => {
@@ -458,7 +523,7 @@ describe('BookingPage', () => {
       })
 
       // Just verify the form renders properly
-      expect(screen.getByText('Continue to Confirmation')).toBeInTheDocument()
+      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
     })
   })
 
@@ -494,17 +559,15 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
       })
 
-      const submitButton = screen.getByText('Continue to Confirmation')
+      const submitButton = screen.getByText('Continue to Payment')
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Review Your Booking')).toBeInTheDocument()
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
       }, { timeout: 5000 })
 
-      // Test that confirmation UI shows the correct details
-      expect(screen.getAllByText('Test Property').length).toBeGreaterThan(0)
-      expect(screen.getAllByText('Standard Room').length).toBeGreaterThan(0)
-      expect(screen.getAllByText('Standard Rate').length).toBeGreaterThan(0)
+      // Test that payment method selection UI shows
+      expect(screen.getByText('Select Payment Method')).toBeInTheDocument()
     })
 
     it('should provide navigation options after success', async () => {
@@ -514,15 +577,15 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
       })
 
-      const submitButton = screen.getByText('Continue to Confirmation')
+      const submitButton = screen.getByText('Continue to Payment')
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Review Your Booking')).toBeInTheDocument()
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
       }, { timeout: 5000 })
 
-      // Test that confirmation actions are available
-      expect(screen.getByText('Back to Details')).toBeInTheDocument()
+      // Test that back button is available (using aria-label since the button shows "← Back to Details")
+      expect(screen.getByLabelText('Back to guest details')).toBeInTheDocument()
     })
   })
 
@@ -575,6 +638,223 @@ describe('BookingPage', () => {
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument()
       })
+    })
+  })
+
+  describe('Payment flow', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: 1,
+          email: 'john@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+          full_name: 'John Doe',
+          phone_number: '+1234567890',
+          is_active: true,
+          date_joined: '2025-01-01T00:00:00Z',
+          last_login: '2025-01-15T00:00:00Z',
+          email_verified: true,
+          two_factor_enabled: false,
+        },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+    })
+
+    it('should show payment method selection after booking creation', async () => {
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      expect(screen.getByText('Select Payment Method')).toBeInTheDocument()
+      expect(screen.getByText('Payme')).toBeInTheDocument()
+      expect(screen.getByText('Click')).toBeInTheDocument()
+      expect(screen.getByText('Visa')).toBeInTheDocument()
+    })
+
+    it('should show payment processing state when payment is initiated', async () => {
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Select Payme
+      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
+      fireEvent.click(paymeCard!)
+
+      // Click pay button
+      const payButton = screen.getByText(/Pay with Payme/)
+      fireEvent.click(payButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Processing Payment')).toBeInTheDocument()
+      }, { timeout: 5000 })
+    })
+
+    it('should show payment confirmation on successful payment', async () => {
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Select Payme
+      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
+      fireEvent.click(paymeCard!)
+
+      // Click pay button
+      const payButton = screen.getByText(/Pay with Payme/)
+      fireEvent.click(payButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Successful!')).toBeInTheDocument()
+      }, { timeout: 5000 })
+    })
+
+    it('should show payment failure on payment error', async () => {
+      mockPaymentAdapter.createPayment.mockResolvedValue({
+        data: null,
+        error: 'Payment failed due to insufficient funds',
+      })
+
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Select Payme
+      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
+      fireEvent.click(paymeCard!)
+
+      // Click pay button
+      const payButton = screen.getByText(/Pay with Payme/)
+      fireEvent.click(payButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Failed')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      expect(screen.getByText('Payment failed due to insufficient funds')).toBeInTheDocument()
+    })
+
+    it('should allow retrying payment after failure', async () => {
+      mockPaymentAdapter.createPayment.mockResolvedValue({
+        data: null,
+        error: 'Payment failed',
+      })
+
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Select Payme
+      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
+      fireEvent.click(paymeCard!)
+
+      // Click pay button
+      const payButton = screen.getByText(/Pay with Payme/)
+      fireEvent.click(payButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Failed')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Click retry button
+      const retryButton = screen.getByText('Try Again')
+      fireEvent.click(retryButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+    })
+
+    it('should allow trying different payment method after failure', async () => {
+      mockPaymentAdapter.createPayment.mockResolvedValue({
+        data: null,
+        error: 'Payment failed',
+      })
+
+      renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+      })
+
+      const submitButton = screen.getByText('Continue to Payment')
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Select Payme
+      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
+      fireEvent.click(paymeCard!)
+
+      // Click pay button
+      const payButton = screen.getByText(/Pay with Payme/)
+      fireEvent.click(payButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Failed')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Click try different method button
+      const tryDifferentButton = screen.getByText('Try Different Payment Method')
+      fireEvent.click(tryDifferentButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Payment Method')).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Selection should be cleared
+      expect(screen.queryByText('Selected: Payme')).not.toBeInTheDocument()
     })
   })
 })
