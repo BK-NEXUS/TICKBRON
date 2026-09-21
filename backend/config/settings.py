@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'bookings',
     'payments',
     'accounts',
+    'partner',
+    'admin',
     
     # Third-party apps
     'rest_framework',
