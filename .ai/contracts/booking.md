@@ -2,6 +2,51 @@
 
 Booking creation must be transactional and concurrency-safe. Availability/inventory must prevent double booking. Price calculations must be deterministic. Cancellation and inventory restoration must be tested.
 
+## Booking Creation with Guest Details Auto-Fill (Checkpoint 22)
+
+### Requirements
+- Guest contact details (full_name, phone, email) are pre-filled from authenticated user's profile
+- Guest can override these details for specific booking
+- Booking stores guest-specific contact information separately from user profile
+- Additional booking fields: number_of_rooms, children (list of ages), special_requests
+
+### User Profile Extensions
+- New User fields: `whatsapp`, `telegram`, `preferred_contact_method` (phone/whatsapp/telegram/email)
+- Profile update endpoint: PATCH `/api/v1/auth/me/update/`
+- Optional contact fields for user registration
+
+### Booking Creation Fields
+- Required: `property_id`, `room_type_id`, `rate_plan_id`, `check_in`, `check_out`, `guest_count`
+- Optional (auto-filled from user profile): `guest_full_name`, `guest_phone`, `guest_email`
+- Optional (booking-specific): `number_of_rooms` (default: 1), `children` (list of ages 0-17), `special_requests`
+
+### Auto-Fill Behavior
+- If guest details not provided in request, defaults to user profile:
+  - `guest_full_name` defaults to `user.get_full_name()`
+  - `guest_phone` defaults to `user.phone_number`
+  - `guest_email` defaults to `user.email`
+- Guest can provide different values for specific booking
+- Booking stores the provided or auto-filled values
+
+### Children Validation
+- Children field accepts list of integers (ages)
+- Valid age range: 0-17 years
+- Empty list allowed (no children)
+- Validation ensures all ages are within valid range
+
+### API Contract
+- POST `/api/v1/bookings/` - Create booking
+  - Request body includes optional guest details and booking-specific fields
+  - Response includes all booking fields including auto-filled values
+- GET `/api/v1/bookings/{id}/` - Retrieve booking details
+  - Includes guest_full_name, guest_phone, guest_email, number_of_rooms, children
+
+### Security Considerations
+- Guest details are stored per-booking, not modifying user profile
+- User profile remains unchanged regardless of booking-specific values
+- No sensitive information exposed beyond what user provides
+- Children ages are stored as JSON with validation
+
 ## Booking Expiry (Checkpoint 14)
 
 ### Requirements

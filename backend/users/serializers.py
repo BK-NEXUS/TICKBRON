@@ -17,7 +17,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 
-                  'phone_number', 'is_active', 'date_joined', 'last_login',
+                  'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
+                  'is_active', 'date_joined', 'last_login',
                   'email_verified', 'two_factor_enabled']
         read_only_fields = ['id', 'date_joined', 'last_login']
     
@@ -34,8 +35,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'phone_number', 
-                  'password', 'password_confirm']
+        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram', 
+                  'preferred_contact_method', 'password', 'password_confirm']
         extra_kwargs = {
             'full_name': {'required': True},
             'phone_number': {'required': True},
@@ -114,3 +115,17 @@ class VerifyOTPSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 6:
             raise serializers.ValidationError("OTP code must be 6 digits.")
         return value.strip()
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating user profile.
+    """
+    class Meta:
+        model = User
+        fields = ['full_name', 'first_name', 'last_name', 'phone_number', 
+                  'whatsapp', 'telegram', 'preferred_contact_method']
+        extra_kwargs = {
+            'full_name': {'required': False},
+            'phone_number': {'required': False},
+        }
