@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth import authenticate, login, logout
 from users.models import User
-from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer
+from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 from users.services import OTPService
 
 # Check if running in test mode
@@ -183,6 +183,22 @@ def me(request):
         {'detail': 'Authentication credentials were not provided.'},
         status=status.HTTP_401_UNAUTHORIZED
     )
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """
+    Update current user profile.
+    
+    Allows authenticated users to update their profile information including
+    contact preferences (whatsapp, telegram, preferred_contact_method).
+    """
+    serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

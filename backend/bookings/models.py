@@ -80,6 +80,19 @@ class Booking(BaseModel):
         help_text=_('Number of guests')
     )
     
+    # Guest contact details (can differ from user profile for specific booking)
+    guest_full_name = models.CharField(max_length=300, blank=True, null=True)
+    guest_phone = models.CharField(max_length=20, blank=True, null=True)
+    guest_email = models.EmailField(blank=True, null=True)
+    
+    # Room and children information
+    number_of_rooms = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        default=1,
+        help_text=_('Number of rooms booked')
+    )
+    children = models.JSONField(default=list, blank=True, help_text=_('List of children with ages'))
+    
     # Pricing information
     total_price = models.DecimalField(
         max_digits=12,
@@ -179,7 +192,7 @@ class Booking(BaseModel):
                 return code
     
     @classmethod
-    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None):
+    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None):
         """
         Create a booking with transaction-safe inventory locking.
         
@@ -195,6 +208,11 @@ class Booking(BaseModel):
             check_out: Check-out date (date object)
             guest_count: Number of guests
             special_requests: Optional special requests text
+            guest_full_name: Optional guest full name (defaults to user's full name)
+            guest_phone: Optional guest phone (defaults to user's phone)
+            guest_email: Optional guest email (defaults to user's email)
+            number_of_rooms: Number of rooms (defaults to 1)
+            children: List of children ages (defaults to empty list)
         
         Returns:
             Booking object if successful
@@ -212,6 +230,13 @@ class Booking(BaseModel):
             raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
         
         number_of_nights = (check_out - check_in).days
+        
+        # Validate children ages if provided
+        if children is None:
+            children = []
+        for age in children:
+            if not isinstance(age, int) or age < 0 or age > 17:
+                raise ValidationError({'children': _('Children ages must be integers between 0 and 17')})
         
         # Validate rate plan constraints
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
@@ -278,7 +303,12 @@ class Booking(BaseModel):
                 guest_count=guest_count,
                 total_price=total_price,
                 currency=rate_plan.currency,
-                special_requests=special_requests
+                special_requests=special_requests,
+                guest_full_name=guest_full_name or guest.get_full_name(),
+                guest_phone=guest_phone or guest.phone_number,
+                guest_email=guest_email or guest.email,
+                number_of_rooms=number_of_rooms,
+                children=children
             )
             
             # Create booking item
@@ -286,7 +316,7 @@ class Booking(BaseModel):
                 booking=booking,
                 room_type=room_type,
                 rate_plan=rate_plan,
-                number_of_rooms=1,
+                number_of_rooms=number_of_rooms,
                 price_per_night=rate_plan.base_price,
                 currency=rate_plan.currency
             )

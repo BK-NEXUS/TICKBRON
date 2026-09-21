@@ -82,6 +82,23 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     otp_expires_at = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.IntegerField(default=0)
     
+    # Contact method preferences
+    whatsapp = models.CharField(max_length=20, blank=True, null=True)
+    telegram = models.CharField(max_length=50, blank=True, null=True)
+    PREFERRED_CONTACT_CHOICES = [
+        ('phone', 'Phone'),
+        ('whatsapp', 'WhatsApp'),
+        ('telegram', 'Telegram'),
+        ('email', 'Email'),
+    ]
+    preferred_contact_method = models.CharField(
+        max_length=10,
+        choices=PREFERRED_CONTACT_CHOICES,
+        default='email',
+        blank=True,
+        null=True
+    )
+    
     # Role foundation (for RBAC)
     role = models.ForeignKey('permissions.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     

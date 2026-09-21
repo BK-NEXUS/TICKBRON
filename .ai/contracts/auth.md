@@ -7,7 +7,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 ### Password-Based Authentication
 - POST `/api/v1/auth/register/` - User registration
   - Required fields: `email`, `full_name`, `phone_number`, `password`, `password_confirm`
-  - Optional fields: `first_name`, `last_name` (nullable)
+  - Optional fields: `first_name`, `last_name` (nullable), `whatsapp`, `telegram`, `preferred_contact_method`
   - Auto-logs in user after successful registration
   - Rate limited: 5 requests/minute per IP
 
@@ -34,6 +34,10 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
 - POST `/api/v1/auth/refresh/` - Refresh session
+- PATCH `/api/v1/auth/me/update/` - Update user profile
+  - Required authentication
+  - Optional fields: `full_name`, `first_name`, `last_name`, `phone_number`, `whatsapp`, `telegram`, `preferred_contact_method`
+  - Partial updates supported
 
 ## Configuration
 - `SMS_TEST_MODE` (default: True) - Controls OTP test mode behavior

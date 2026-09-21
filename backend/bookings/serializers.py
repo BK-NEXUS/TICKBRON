@@ -36,7 +36,8 @@ class BookingSerializer(serializers.ModelSerializer):
             'status', 'payment_status', 'check_in', 'check_out',
             'number_of_nights', 'guest_count', 'total_price', 'currency',
             'special_requests', 'confirmation_code', 'cancelled_at',
-            'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at'
+            'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at',
+            'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children'
         ]
         read_only_fields = [
             'id', 'confirmation_code', 'cancelled_at', 'cancellation_reason',
@@ -54,6 +55,19 @@ class BookingCreateSerializer(serializers.Serializer):
     check_out = serializers.DateField()
     guest_count = serializers.IntegerField(min_value=1)
     special_requests = serializers.CharField(required=False, allow_blank=True)
+    
+    # Guest contact details (optional - will be pre-filled from user profile)
+    guest_full_name = serializers.CharField(required=False, allow_blank=True)
+    guest_phone = serializers.CharField(required=False, allow_blank=True)
+    guest_email = serializers.EmailField(required=False, allow_blank=True)
+    
+    # Room and children information
+    number_of_rooms = serializers.IntegerField(min_value=1, default=1)
+    children = serializers.ListField(
+        child=serializers.IntegerField(min_value=0, max_value=17),
+        required=False,
+        allow_empty=True
+    )
     
     def validate(self, data):
         """Validate booking creation parameters."""
@@ -137,6 +151,11 @@ class BookingCreateSerializer(serializers.Serializer):
         room_type = self.validated_objects['room_type']
         rate_plan = self.validated_objects['rate_plan']
         
+        # Pre-fill guest details from user profile if not provided
+        guest_full_name = validated_data.get('guest_full_name') or guest.get_full_name()
+        guest_phone = validated_data.get('guest_phone') or guest.phone_number
+        guest_email = validated_data.get('guest_email') or guest.email
+        
         try:
             booking = Booking.create_booking(
                 guest=guest,
@@ -146,7 +165,12 @@ class BookingCreateSerializer(serializers.Serializer):
                 check_in=validated_data['check_in'],
                 check_out=validated_data['check_out'],
                 guest_count=validated_data['guest_count'],
-                special_requests=validated_data.get('special_requests')
+                special_requests=validated_data.get('special_requests'),
+                guest_full_name=guest_full_name,
+                guest_phone=guest_phone,
+                guest_email=guest_email,
+                number_of_rooms=validated_data.get('number_of_rooms', 1),
+                children=validated_data.get('children', [])
             )
             return booking
         except ValidationError as e:

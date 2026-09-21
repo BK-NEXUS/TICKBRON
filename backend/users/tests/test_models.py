@@ -226,3 +226,58 @@ class TestUserModel(TestCase):
         result = user.verify_otp(otp_code)
         
         assert result is False
+    
+    def test_user_whatsapp_field(self):
+        """Test whatsapp field can be set and retrieved."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            whatsapp='+1234567890'
+        )
+        
+        assert user.whatsapp == '+1234567890'
+    
+    def test_user_telegram_field(self):
+        """Test telegram field can be set and retrieved."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            telegram='@telegramuser'
+        )
+        
+        assert user.telegram == '@telegramuser'
+    
+    def test_user_preferred_contact_method_default(self):
+        """Test preferred_contact_method defaults to email."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        
+        assert user.preferred_contact_method == 'email'
+    
+    def test_user_preferred_contact_method_choices(self):
+        """Test preferred_contact_method accepts valid choices."""
+        for method in ['phone', 'whatsapp', 'telegram', 'email']:
+            user = User.objects.create_user(
+                email=f'test{method}@example.com',
+                password='testpass123',
+                preferred_contact_method=method
+            )
+            assert user.preferred_contact_method == method
+    
+    def test_user_all_contact_fields(self):
+        """Test user with all contact fields set."""
+        user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            phone_number='+1234567890',
+            whatsapp='+1234567890',
+            telegram='@telegramuser',
+            preferred_contact_method='whatsapp'
+        )
+        
+        assert user.phone_number == '+1234567890'
+        assert user.whatsapp == '+1234567890'
+        assert user.telegram == '@telegramuser'
+        assert user.preferred_contact_method == 'whatsapp'

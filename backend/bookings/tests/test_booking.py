@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from bookings.models import Booking, BookingItem
-from bookings.serializers import BookingCreateSerializer, BookingCancelSerializer
+from bookings.serializers import BookingCreateSerializer, BookingCancelSerializer, BookingSerializer
 from rest_framework.test import APIRequestFactory
 from unittest.mock import Mock
 
@@ -492,6 +492,127 @@ class BookingSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn('guest_count', serializer.errors)
     
+    def test_booking_create_with_guest_details_autofill(self):
+        """Test booking creation auto-fills guest details from user profile."""
+        # Update user with profile details
+        self.user.full_name = 'John Doe'
+        self.user.phone_number = '+1234567890'
+        self.user.save()
+        
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertTrue(serializer.is_valid())
+        
+        booking = serializer.save()
+        self.assertEqual(booking.guest_full_name, 'John Doe')
+        self.assertEqual(booking.guest_phone, '+1234567890')
+        self.assertEqual(booking.guest_email, 'test@example.com')
+    
+    def test_booking_create_with_guest_details_override(self):
+        """Test booking creation allows overriding guest details."""
+        # Update user with profile details
+        self.user.full_name = 'John Doe'
+        self.user.phone_number = '+1234567890'
+        self.user.save()
+        
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2,
+            'guest_full_name': 'Jane Smith',
+            'guest_phone': '+9876543210',
+            'guest_email': 'jane@example.com'
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertTrue(serializer.is_valid())
+        
+        booking = serializer.save()
+        self.assertEqual(booking.guest_full_name, 'Jane Smith')
+        self.assertEqual(booking.guest_phone, '+9876543210')
+        self.assertEqual(booking.guest_email, 'jane@example.com')
+    
+    def test_booking_create_with_number_of_rooms(self):
+        """Test booking creation with custom number of rooms."""
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2,
+            'number_of_rooms': 2
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertTrue(serializer.is_valid())
+        
+        booking = serializer.save()
+        self.assertEqual(booking.number_of_rooms, 2)
+        booking_item = booking.booking_items.first()
+        self.assertEqual(booking_item.number_of_rooms, 2)
+    
+    def test_booking_create_with_children(self):
+        """Test booking creation with children ages."""
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2,
+            'children': [5, 8]
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertTrue(serializer.is_valid())
+        
+        booking = serializer.save()
+        self.assertEqual(booking.children, [5, 8])
+    
+    def test_booking_create_with_invalid_children_age(self):
+        """Test booking creation with invalid children age (negative)."""
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2,
+            'children': [-1, 5]
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('children', serializer.errors)
+    
+    def test_booking_create_with_invalid_children_age_adult(self):
+        """Test booking creation with invalid children age (adult)."""
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2,
+            'children': [18, 5]
+        }
+        
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('children', serializer.errors)
+    
     def test_booking_cancel_serializer_valid(self):
         """Test booking cancel serializer with valid data."""
         # Create booking
@@ -550,6 +671,37 @@ class BookingSerializerTests(TestCase):
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn('status', serializer.errors)
+    
+    def test_booking_serializer_includes_new_fields(self):
+        """Test BookingSerializer includes new guest and room fields."""
+        booking = Booking.create_booking(
+            guest=self.user,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2,
+            guest_full_name='Test Guest',
+            guest_phone='+1234567890',
+            guest_email='guest@example.com',
+            number_of_rooms=2,
+            children=[5, 8]
+        )
+        
+        serializer = BookingSerializer(booking)
+        data = serializer.data
+        
+        self.assertIn('guest_full_name', data)
+        self.assertIn('guest_phone', data)
+        self.assertIn('guest_email', data)
+        self.assertIn('number_of_rooms', data)
+        self.assertIn('children', data)
+        self.assertEqual(data['guest_full_name'], 'Test Guest')
+        self.assertEqual(data['guest_phone'], '+1234567890')
+        self.assertEqual(data['guest_email'], 'guest@example.com')
+        self.assertEqual(data['number_of_rooms'], 2)
+        self.assertEqual(data['children'], [5, 8])
 
 
 class BookingExpiryTests(TestCase):
