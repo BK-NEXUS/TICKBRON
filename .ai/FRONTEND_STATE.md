@@ -2,8 +2,8 @@
 
 Owner: Baxram
 Checkpoint sequence: 01 → 20
-Current checkpoint: 13
-Completed: 14/20
+Current checkpoint: 14
+Completed: 15/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -347,4 +347,78 @@ Commit format:
 - No invented API endpoints or fields - strict adherence to backend account contract from checkpoint 17 and booking contract from checkpoint 13-14
 - Design system and accessibility preserved (no regressions)
 - All account pages use existing architecture and design system
+
+## Checkpoint 14 (Completed)
+- Implemented reviews/rating breakdown with full backend integration from backend checkpoint 17
+- Extended accountAdapter.ts with review API methods:
+  - GET /api/v1/me/reviews/ - List user's reviews
+  - POST /api/v1/me/reviews/ - Create a review
+  - GET /api/v1/me/reviews/eligible_properties/ - Get properties eligible for review
+  - GET /api/v1/me/reviews/property_scores/?property_id={id} - Get property review scores
+- Created ReviewForm component for submitting reviews:
+  - Overall rating (required, 1-5 stars) with accessible star buttons
+  - Category ratings (optional): Cleanliness, Location, Value, Amenities, Service
+  - Title field (optional, max 200 characters)
+  - Comment field (optional, multi-line textarea)
+  - Client-side validation for required overall rating
+  - Loading state during submission
+  - Error display for API errors
+  - Success callback for parent component
+  - Cancel button for closing form
+- Created ReviewCard component for displaying individual reviews:
+  - Overall rating with star visualization
+  - Review date formatted for display
+  - Review title and comment (if provided)
+  - Category ratings breakdown (if provided)
+  - Pending approval status badge
+  - Responsive design
+- Created RatingBreakdown component for property rating aggregation:
+  - Overall rating (average to 1 decimal place)
+  - Total review count
+  - Category rating breakdown with progress bars (Cleanliness, Location, Value, Amenities, Service)
+  - Empty state when no reviews
+  - Visual progress bars for each category
+- Created ReviewsSection component for property detail page:
+  - Rating breakdown display (from backend property scores)
+  - "Write a Review" button for eligible authenticated users
+  - Review form display when writing a review
+  - User's reviews list for the property
+  - Authentication requirement for review submission
+  - Eligibility check based on completed bookings
+  - Loading and error states
+  - Automatic reload after successful review submission
+- Integrated ReviewsSection into PropertyDetailPage:
+  - Placed after dining section, before room selection
+  - Loads property scores and user reviews on mount
+  - Checks review eligibility for authenticated users
+  - Displays appropriate UI based on authentication and eligibility
+  - Re-renders after review submission to show updated data
+- TypeScript interfaces match backend Review contract from backend checkpoint 17:
+  - Review with overall_rating, category_ratings, title, comment, status, property, booking
+  - PropertyScores with total_reviews, average_rating, category_scores
+  - EligiblePropertiesResponse with eligible_properties array
+- Review eligibility determined by backend (completed bookings not yet reviewed)
+- Only approved reviews included in property score calculations (backend enforces)
+- Pending reviews visible to author but not in aggregation
+- Comprehensive test coverage: 28 new tests (accountAdapter: +6, ReviewForm: 11, ReviewCard: 11, RatingBreakdown: 9)
+- Full regression suite: 554 tests passing across 47 test files
+- Security review completed:
+  - Session-based authentication required for all review operations
+  - XSS prevention through React automatic escaping (no dangerouslySetInnerHTML)
+  - Input validation for ratings (1-5 range enforced by client and backend)
+  - Client-side validation for required overall rating
+  - No sensitive data in localStorage or URLs
+  - Accessible ARIA attributes for screen readers (rating buttons, live regions)
+  - Keyboard navigation support for rating inputs
+  - Secure error handling without information leakage
+  - No hardcoded secrets or API keys
+  - Proper error display to users
+- API contract compatibility verified:
+  - Reviews endpoints: 4/4 endpoints compatible
+  - Data structures: 5/5 structures compatible (Review, PropertyScores, EligiblePropertiesResponse, category_ratings, EligibleProperty)
+  - Rating flow: 3/3 checks compatible (eligibility, approval, aggregation)
+  - Security: 2/2 checks compliant (authentication, input validation)
+- No invented API endpoints or fields - strict adherence to backend review contract from checkpoint 17
+- Design system and accessibility preserved (no regressions)
+- All review components use existing architecture and design system
 

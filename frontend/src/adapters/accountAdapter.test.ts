@@ -585,4 +585,312 @@ describe('accountAdapter', () => {
       expect(result.error).toBe('Unauthorized access')
     })
   })
+
+  describe('getReviews', () => {
+    it('should fetch reviews successfully', async () => {
+      const mockReviews = [
+        {
+          id: 1,
+          user: 1,
+          property: 1,
+          overall_rating: 5,
+          cleanliness_rating: 5,
+          location_rating: 5,
+          value_rating: 5,
+          amenities_rating: 5,
+          service_rating: 5,
+          title: 'Great stay!',
+          comment: 'Amazing property',
+          status: 'approved',
+          created_at: '2025-01-15T10:00:00Z',
+          updated_at: '2025-01-15T10:00:00Z',
+        },
+      ]
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockReviews,
+      })
+
+      const result = await accountAdapter.getReviews()
+
+      expect(result.data).toEqual(mockReviews)
+      expect(result.error).toBeNull()
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/me/reviews/'),
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+    })
+
+    it('should handle 401 unauthorized error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Unauthorized' }),
+      })
+
+      const result = await accountAdapter.getReviews()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Authentication required')
+    })
+  })
+
+  describe('createReview', () => {
+    it('should create review successfully', async () => {
+      const mockReview = {
+        id: 1,
+        user: 1,
+        property: 1,
+        overall_rating: 5,
+        cleanliness_rating: 5,
+        location_rating: 5,
+        value_rating: 5,
+        amenities_rating: 5,
+        service_rating: 5,
+        title: 'Great stay!',
+        comment: 'Amazing property',
+        status: 'pending',
+        created_at: '2025-01-15T10:00:00Z',
+        updated_at: '2025-01-15T10:00:00Z',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockReview,
+      })
+
+      const reviewData = {
+        property_id: 1,
+        overall_rating: 5,
+        category_ratings: {
+          cleanliness_rating: 5,
+          location_rating: 5,
+          value_rating: 5,
+          amenities_rating: 5,
+          service_rating: 5,
+        },
+        title: 'Great stay!',
+        comment: 'Amazing property',
+      }
+
+      const result = await accountAdapter.createReview(reviewData)
+
+      expect(result.data).toEqual(mockReview)
+      expect(result.error).toBeNull()
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/me/reviews/'),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify(reviewData),
+        })
+      )
+    })
+
+    it('should create review with minimal data', async () => {
+      const mockReview = {
+        id: 1,
+        user: 1,
+        property: 1,
+        overall_rating: 4,
+        status: 'pending',
+        created_at: '2025-01-15T10:00:00Z',
+        updated_at: '2025-01-15T10:00:00Z',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockReview,
+      })
+
+      const reviewData = {
+        property_id: 1,
+        overall_rating: 4,
+      }
+
+      const result = await accountAdapter.createReview(reviewData)
+
+      expect(result.data).toEqual(mockReview)
+      expect(result.error).toBeNull()
+    })
+
+    it('should handle 401 unauthorized error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Unauthorized' }),
+      })
+
+      const result = await accountAdapter.createReview({
+        property_id: 1,
+        overall_rating: 5,
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Authentication required')
+    })
+
+    it('should handle 400 validation error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ detail: 'Invalid review data' }),
+      })
+
+      const result = await accountAdapter.createReview({
+        property_id: 1,
+        overall_rating: 6, // Invalid rating
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Invalid review data')
+    })
+
+    it('should handle 404 property not found error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ detail: 'Property not found' }),
+      })
+
+      const result = await accountAdapter.createReview({
+        property_id: 999,
+        overall_rating: 5,
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Property or booking not found')
+    })
+  })
+
+  describe('getEligibleProperties', () => {
+    it('should fetch eligible properties successfully', async () => {
+      const mockEligible = {
+        eligible_properties: [
+          {
+            property_id: 1,
+            property_city: 'Tashkent',
+            property_country: 'Uzbekistan',
+            booking_id: 1,
+            confirmation_code: 'ABC123',
+            check_in: '2025-01-20',
+            check_out: '2025-01-25',
+          },
+        ],
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockEligible,
+      })
+
+      const result = await accountAdapter.getEligibleProperties()
+
+      expect(result.data).toEqual(mockEligible)
+      expect(result.error).toBeNull()
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/me/reviews/eligible_properties/'),
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+    })
+
+    it('should handle 401 unauthorized error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Unauthorized' }),
+      })
+
+      const result = await accountAdapter.getEligibleProperties()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Authentication required')
+    })
+  })
+
+  describe('getPropertyScores', () => {
+    it('should fetch property scores successfully', async () => {
+      const mockScores = {
+        property_id: 1,
+        total_reviews: 10,
+        average_rating: 4.5,
+        category_scores: {
+          cleanliness_rating: 4.8,
+          location_rating: 4.6,
+          value_rating: 4.4,
+          amenities_rating: 4.5,
+          service_rating: 4.7,
+        },
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockScores,
+      })
+
+      const result = await accountAdapter.getPropertyScores(1)
+
+      expect(result.data).toEqual(mockScores)
+      expect(result.error).toBeNull()
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/me/reviews/property_scores/?property_id=1'),
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+    })
+
+    it('should handle property with no reviews', async () => {
+      const mockScores = {
+        property_id: 1,
+        total_reviews: 0,
+        average_rating: null,
+        category_scores: {},
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockScores,
+      })
+
+      const result = await accountAdapter.getPropertyScores(1)
+
+      expect(result.data).toEqual(mockScores)
+      expect(result.error).toBeNull()
+    })
+
+    it('should handle 401 unauthorized error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Unauthorized' }),
+      })
+
+      const result = await accountAdapter.getPropertyScores(1)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Authentication required')
+    })
+
+    it('should handle 400 missing property_id error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ detail: 'Property ID is required' }),
+      })
+
+      const result = await accountAdapter.getPropertyScores(0)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Property ID is required')
+    })
+  })
 })

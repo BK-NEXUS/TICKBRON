@@ -62,6 +62,53 @@ export interface Booking {
   updated_at: string
 }
 
+// Review types from backend contract
+export interface Review {
+  id: number
+  user: number
+  property: number
+  booking?: number
+  overall_rating: number
+  cleanliness_rating?: number
+  location_rating?: number
+  value_rating?: number
+  amenities_rating?: number
+  service_rating?: number
+  title?: string
+  comment?: string
+  status: 'pending' | 'approved' | 'rejected'
+  reviewed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface EligibleProperty {
+  property_id: number
+  property_city: string
+  property_country: string
+  booking_id: number
+  confirmation_code: string
+  check_in: string
+  check_out: string
+}
+
+export interface EligiblePropertiesResponse {
+  eligible_properties: EligibleProperty[]
+}
+
+export interface PropertyScores {
+  property_id: number
+  total_reviews: number
+  average_rating: number | null
+  category_scores: {
+    cleanliness_rating?: number
+    location_rating?: number
+    value_rating?: number
+    amenities_rating?: number
+    service_rating?: number
+  }
+}
+
 export interface BookingItem {
   id: number
   booking: number
@@ -298,6 +345,131 @@ export const accountAdapter = {
         }
         const errorData = await response.json().catch(() => ({}))
         return { data: null, error: errorData.detail || 'Failed to fetch bookings' }
+      }
+
+      const data = await response.json()
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: 'Network error occurred' }
+    }
+  },
+
+  // Reviews API methods
+  async getReviews(): Promise<ApiResponse<Review[]>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { data: null, error: 'Authentication required' }
+        }
+        const errorData = await response.json().catch(() => ({}))
+        return { data: null, error: errorData.detail || 'Failed to fetch reviews' }
+      }
+
+      const data = await response.json()
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: 'Network error occurred' }
+    }
+  },
+
+  async createReview(reviewData: {
+    property_id: number
+    booking_id?: number
+    overall_rating: number
+    category_ratings?: {
+      cleanliness_rating?: number
+      location_rating?: number
+      value_rating?: number
+      amenities_rating?: number
+      service_rating?: number
+    }
+    title?: string
+    comment?: string
+  }): Promise<ApiResponse<Review>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reviewData),
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { data: null, error: 'Authentication required' }
+        }
+        if (response.status === 400) {
+          const errorData = await response.json().catch(() => ({}))
+          return { data: null, error: errorData.detail || 'Invalid review data' }
+        }
+        if (response.status === 404) {
+          return { data: null, error: 'Property or booking not found' }
+        }
+        const errorData = await response.json().catch(() => ({}))
+        return { data: null, error: errorData.detail || 'Failed to create review' }
+      }
+
+      const data = await response.json()
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: 'Network error occurred' }
+    }
+  },
+
+  async getEligibleProperties(): Promise<ApiResponse<EligiblePropertiesResponse>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/eligible_properties/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { data: null, error: 'Authentication required' }
+        }
+        const errorData = await response.json().catch(() => ({}))
+        return { data: null, error: errorData.detail || 'Failed to fetch eligible properties' }
+      }
+
+      const data = await response.json()
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: 'Network error occurred' }
+    }
+  },
+
+  async getPropertyScores(propertyId: number): Promise<ApiResponse<PropertyScores>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/property_scores/?property_id=${propertyId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { data: null, error: 'Authentication required' }
+        }
+        if (response.status === 400) {
+          return { data: null, error: 'Property ID is required' }
+        }
+        const errorData = await response.json().catch(() => ({}))
+        return { data: null, error: errorData.detail || 'Failed to fetch property scores' }
       }
 
       const data = await response.json()

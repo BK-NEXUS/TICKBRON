@@ -8,6 +8,7 @@ import { PropertyPoliciesDetail } from '../components/PropertyPoliciesDetail'
 import { NearbyPlaces } from '../components/NearbyPlaces'
 import { DiningRestaurants } from '../components/DiningRestaurants'
 import { RoomSelection } from '../components/RoomSelection'
+import { ReviewsSection } from '../components/ReviewsSection'
 import { useAuth } from '../contexts/AuthContext'
 
 /**
@@ -176,6 +177,10 @@ export function PropertyDetailPage() {
 
           <section className="property-detail-section">
             <DiningRestaurants restaurants={property.restaurants || []} />
+          </section>
+
+          <section className="property-detail-section">
+            <ReviewsSection propertyId={property.id} />
           </section>
 
           {property.room_types && property.room_types.length > 0 && (
