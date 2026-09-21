@@ -1,43 +1,347 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProfilePage } from './ProfilePage'
+import { AuthProvider, useAuth } from '../contexts/AuthContext'
+
+// Mock AuthContext
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
+const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
+
+const mockUser = {
+  id: 1,
+  email: 'john@example.com',
+  first_name: 'John',
+  last_name: 'Doe',
+  full_name: 'John Doe',
+  phone_number: '+1234567890',
+  is_active: true,
+  date_joined: '2025-01-01T00:00:00Z',
+  last_login: '2025-01-15T00:00:00Z',
+  email_verified: true,
+  two_factor_enabled: false,
+}
+
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(
+    <MemoryRouter initialEntries={[{ pathname: '/profile' }]}>
+      <AuthProvider>
+        <Routes>
+          <Route path="/profile" element={component} />
+          <Route path="/login" element={<div>Login Page</div>} />
+          <Route path="/bookings" element={<div>Bookings Page</div>} />
+          <Route path="/favorites" element={<div>Favorites Page</div>} />
+        </Routes>
+      </AuthProvider>
+    </MemoryRouter>
+  )
+}
 
 describe('ProfilePage', () => {
-  it('renders with correct content', () => {
-    render(
-      <MemoryRouter>
-        <ProfilePage />
-      </MemoryRouter>
-    )
-
-    expect(screen.getByText('My Profile')).toBeInTheDocument()
-    expect(screen.getByText('Profile management coming soon.')).toBeInTheDocument()
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('has proper page structure', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <ProfilePage />
-      </MemoryRouter>
-    )
+  describe('Authentication redirect', () => {
+    it('should redirect to login if not authenticated', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
 
-    expect(container.querySelector('.profile-page')).toBeInTheDocument()
-    expect(container.querySelector('.container')).toBeInTheDocument()
-    expect(container.querySelector('.profile-page-content')).toBeInTheDocument()
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Sign in required')).toBeInTheDocument()
+      expect(screen.getByText('Please sign in to view your profile.')).toBeInTheDocument()
+      expect(screen.getByText('Sign In')).toBeInTheDocument()
+    })
+
+    it('should redirect to login if user is null but authenticated', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Sign in required')).toBeInTheDocument()
+    })
   })
 
-  it('applies correct CSS classes', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <ProfilePage />
-      </MemoryRouter>
-    )
+  describe('Profile display', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+    })
 
-    const title = screen.getByText('My Profile')
-    expect(title).toHaveClass('profile-page-title')
+    it('should render profile header with avatar', () => {
+      renderWithRouter(<ProfilePage />)
 
-    const message = screen.getByText('Profile management coming soon.')
-    expect(message).toHaveClass('profile-page-message')
+      expect(screen.getByText('JD')).toBeInTheDocument()
+      expect(screen.getByText('John Doe')).toBeInTheDocument()
+      expect(screen.getAllByText('john@example.com')).toHaveLength(2)
+    })
+
+    it('should display active status badge', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Active')).toBeInTheDocument()
+    })
+
+    it('should display verified status badge when email is verified', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Verified')).toBeInTheDocument()
+    })
+
+    it('should not display verified status badge when email is not verified', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, email_verified: false },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.queryByText('Verified')).not.toBeInTheDocument()
+    })
+
+    it('should display inactive status badge when user is not active', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, is_active: false },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Inactive')).toBeInTheDocument()
+    })
+  })
+
+  describe('Personal information section', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+    })
+
+    it('should display personal information section', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Personal Information')).toBeInTheDocument()
+    })
+
+    it('should display first name', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('First Name')).toBeInTheDocument()
+      expect(screen.getByText('John')).toBeInTheDocument()
+    })
+
+    it('should display last name', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Last Name')).toBeInTheDocument()
+      expect(screen.getByText('Doe')).toBeInTheDocument()
+    })
+
+    it('should display email', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Email')).toBeInTheDocument()
+      const emailLabel = screen.getByText('Email')
+      const emailValue = emailLabel.nextElementSibling
+      expect(emailValue).toBeInTheDocument()
+      expect(emailValue?.textContent).toBe('john@example.com')
+    })
+
+    it('should display phone number', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Phone Number')).toBeInTheDocument()
+      expect(screen.getByText('+1234567890')).toBeInTheDocument()
+    })
+
+    it('should display "Not provided" when phone number is missing', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, phone_number: null },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Phone Number')).toBeInTheDocument()
+      expect(screen.getByText('Not provided')).toBeInTheDocument()
+    })
+  })
+
+  describe('Account information section', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+    })
+
+    it('should display account information section', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Account Information')).toBeInTheDocument()
+    })
+
+    it('should display member since date', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Member Since')).toBeInTheDocument()
+      const memberSinceLabel = screen.getByText('Member Since')
+      const memberSinceValue = memberSinceLabel.nextElementSibling
+      expect(memberSinceValue).toBeInTheDocument()
+      expect(memberSinceValue?.textContent).toBeTruthy()
+    })
+
+    it('should display last login date', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Last Login')).toBeInTheDocument()
+      const lastLoginLabel = screen.getByText('Last Login')
+      const lastLoginValue = lastLoginLabel.nextElementSibling
+      expect(lastLoginValue).toBeInTheDocument()
+      expect(lastLoginValue?.textContent).toBeTruthy()
+    })
+
+    it('should display two-factor authentication status', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Two-Factor Authentication')).toBeInTheDocument()
+      expect(screen.getByText('Disabled')).toBeInTheDocument()
+    })
+
+    it('should display two-factor authentication as enabled when enabled', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, two_factor_enabled: true },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Enabled')).toBeInTheDocument()
+    })
+  })
+
+  describe('Quick links section', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+    })
+
+    it('should display quick links section', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Quick Links')).toBeInTheDocument()
+    })
+
+    it('should display My Bookings link', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('My Bookings')).toBeInTheDocument()
+    })
+
+    it('should display My Favorites link', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('My Favorites')).toBeInTheDocument()
+    })
+  })
+
+  describe('Avatar initials', () => {
+    it('should display first name initial when last name is missing', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, last_name: null, full_name: 'John' },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('J')).toBeInTheDocument()
+    })
+
+    it('should display U when no name is available', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, first_name: null, last_name: null, full_name: null },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('U')).toBeInTheDocument()
+    })
   })
 })

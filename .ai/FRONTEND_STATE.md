@@ -2,8 +2,8 @@
 
 Owner: Baxram
 Checkpoint sequence: 01 → 20
-Current checkpoint: 12
-Completed: 13/20
+Current checkpoint: 13
+Completed: 14/20
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -285,4 +285,66 @@ Commit format:
 - No invented API endpoints or fields - strict adherence to backend payment contract from checkpoints 15-16
 - Design system and accessibility preserved (no regressions)
 - All payment UI components use existing architecture and design system
+
+## Checkpoint 13 (Completed)
+- Implemented account adapter (accountAdapter.ts) with favorites, account history, and booking history API methods
+- Favorites API integration:
+  - GET /api/v1/me/favorites/ - List user's favorite properties
+  - POST /api/v1/me/favorites/ - Add property to favorites
+  - DELETE /api/v1/me/favorites/{id}/ - Remove property from favorites
+  - GET /api/v1/me/favorites/count/ - Get total count of favorites
+- Account history API integration:
+  - GET /api/v1/me/history/ - List user's account history
+  - GET /api/v1/me/history/recent/?limit={n} - Get recent history entries
+  - GET /api/v1/me/history/stats/ - Get account activity statistics
+- Booking history API integration:
+  - GET /api/v1/bookings/ - List user bookings with status and payment_status filtering
+- Replaced placeholder FavoritesPage with full favorites UI:
+  - Favorites list with property cards (image, name, location, price, notes)
+  - Remove favorite functionality with confirmation
+  - Empty state when no favorites
+  - Loading and error states
+  - Authentication requirement with redirect to login
+- Replaced placeholder BookingsPage with full booking history UI:
+  - Booking list with cards (property, confirmation code, status, dates, nights, guests, total, payment status)
+  - Filter tabs for All, Upcoming, Completed, Cancelled
+  - Status-based filtering calls backend with status parameter
+  - Empty state when no bookings
+  - Loading and error states
+  - Authentication requirement with redirect to login
+- Replaced placeholder ProfilePage with full account/profile view:
+  - Profile header with avatar (initials), name, email, status badges (Active, Verified)
+  - Personal information section (first name, last name, email, phone number)
+  - Account information section (member since, last login, two-factor authentication status)
+  - Quick links to My Bookings and My Favorites
+  - Authentication requirement with redirect to login
+- All pages use session-based authentication via credentials: 'include' (per backend contract)
+- User data isolation enforced by backend:
+  - Favorites API returns only authenticated user's favorites
+  - Bookings API returns only authenticated user's bookings
+  - Account history API returns only authenticated user's history
+  - Frontend does not implement client-side user ID filtering - trusts backend scoping
+- TypeScript interfaces match backend contract from backend checkpoint 17:
+  - Favorite with property details (city, country, base_price, currency, primary_photo, notes)
+  - AccountHistory with action, description, metadata, ip_address, user_agent
+  - Booking with status, payment_status, check_in, check_out, confirmation_code, expires_at
+- Comprehensive test coverage: 60 new tests (accountAdapter: 25, FavoritesPage: 9, BookingsPage: 15, ProfilePage: 11)
+- Full regression suite: 510 tests passing across 44 test files
+- Security review completed:
+  - User data isolation: Backend scopes all account/favorites/booking data to authenticated user
+  - No client-side user ID filtering or assumptions
+  - Session-based authentication required for all account operations
+  - No hardcoded secrets or sensitive data exposure
+  - XSS prevention through React automatic escaping
+  - CSRF protection via credentials: 'include'
+  - Proper error handling without information leakage
+- API contract compatibility verified:
+  - Favorites endpoints: 4/4 endpoints compatible, 2/2 data structures compatible
+  - Account history endpoints: 3/3 endpoints compatible, 2/2 data structures compatible
+  - Booking history endpoint: 1/1 endpoint compatible, 1/1 data structure compatible
+  - Booking status values match backend contract (pending, confirmed, cancelled, completed, no_show)
+  - Payment status values match backend contract (pending, paid, failed, refunded, partially_refunded)
+- No invented API endpoints or fields - strict adherence to backend account contract from checkpoint 17 and booking contract from checkpoint 13-14
+- Design system and accessibility preserved (no regressions)
+- All account pages use existing architecture and design system
 
