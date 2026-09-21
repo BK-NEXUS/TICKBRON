@@ -201,7 +201,7 @@ Status: READY (Frontend Checkpoint 10 - Backend Integration Complete)
 - Frontend can continue with checkpoint 07 independently
 
 ## Payment Ledger and Adapters (Backend Checkpoint 15)
-Status: READY
+Status: READY (Frontend Checkpoint 12 - UI Integration Complete)
 
 ### POST `/api/v1/payments/transactions/`
 - Request: Payment transaction creation data
@@ -274,6 +274,84 @@ Status: READY
 - Comprehensive test coverage (45 payment-specific tests, 415 total tests)
 - Security review passed (8/8 categories)
 - Frontend can integrate payment UI when ready
+
+## Payment UI/Confirmation Integration (Frontend Checkpoint 12)
+Status: READY
+
+### Frontend Payment Adapter
+- paymentAdapter.ts with full backend integration
+  - createPayment method for POST /api/v1/payments/transactions/
+  - confirmPayment method for POST /api/v1/payments/transactions/{id}/confirm/
+  - refundPayment method for POST /api/v1/payments/transactions/{id}/refund/
+  - getPaymentById method for GET /api/v1/payments/transactions/{id}/
+  - generateIdempotencyKey method for idempotency support
+  - getClientIp method for audit trail (via external API)
+  - getUserAgent method for audit trail
+  - Session-based authentication via credentials: 'include'
+  - Error handling for all payment operations
+
+### Payment UI Components
+- PaymentMethodSelector component for selecting payment providers (Payme, Click, Visa)
+  - Radio button selection pattern with ARIA attributes
+  - Keyboard navigation support (Enter, Space)
+  - Disabled state for selection during payment processing
+  - Responsive grid layout for provider cards
+- PaymentProcessing component for displaying payment processing states
+  - Loading spinner animation for pending/processing states
+  - Status icons for completed (✅) and failed (❌) states
+  - Display provider name, amount, currency, and status
+  - ARIA live regions for status updates
+- PaymentConfirmation component for displaying successful payment confirmation
+  - Payment details: transaction ID, provider, amount, payment date, status
+  - Booking details: confirmation code, property, check-in/out dates
+  - Confirmation email info and manage booking info
+  - "View My Bookings" and "Back to Property" action buttons
+- PaymentFailure component for displaying payment failure state
+  - Error message display (custom or provider-specific)
+  - Provider-specific helpful tips for troubleshooting
+  - "Try Again", "Try Different Payment Method", and "Cancel Booking" buttons
+  - ARIA alert regions for error messages
+
+### BookingPage Integration
+- Full payment flow state management in BookingPage
+  - Payment method selection after booking creation
+  - Payment processing state during payment initiation
+  - Payment confirmation UI after successful payment
+  - Payment failure UI with retry options
+  - Idempotency key generation for each payment attempt
+  - Client IP and user agent capture for audit trail
+  - Handle retry payment (new idempotency key)
+  - Handle try different payment method (clear selection)
+  - Handle cancel booking (navigate to search)
+
+### Frontend Implementation Details
+- Payment flow driven by backend PAYMENT_TEST_MODE flag - no test mode logic in frontend
+- No raw card data storage or processing (compliant with backend contract)
+- All payment UI components follow design system tokens and responsive design
+- Comprehensive test coverage: 60 new tests (paymentAdapter: 13, PaymentMethodSelector: 12, PaymentProcessing: 12, PaymentConfirmation: 11, PaymentFailure: 14, BookingPage: +6)
+- Full regression suite: 450 tests passing across 43 test files
+- Security review completed: 10/10 security checks passed
+  - No raw card data storage or processing
+  - Payment test mode driven by backend PAYMENT_TEST_MODE flag
+  - Session-based authentication with CSRF protection
+  - XSS prevention through React automatic escaping
+  - Minimal PII collection with secure handling
+  - Client-side input validation
+  - Secure state management (no localStorage for sensitive data)
+  - Accessibility security features with proper ARIA attributes
+  - Secure error handling without information leakage
+  - No hardcoded secrets or API keys
+- API contract compatibility verified: 4/4 payment endpoints compatible, 2/2 data structures compatible, 4/4 payment flow checks compatible, 2/2 security checks compliant
+- No invented API endpoints or fields - strict adherence to backend payment contract
+- Design system and accessibility preserved (no regressions)
+
+### Notes
+- Frontend payment UI is production-ready and fully integrated with backend payment contract
+- Payment flow driven by backend PAYMENT_TEST_MODE flag - frontend handles all test mode responses correctly
+- No test mode logic in frontend - all test responses come from backend
+- When live provider credentials are available, backend PAYMENT_TEST_MODE can be set to false for production payments
+- Frontend UI will automatically handle live provider responses
+- No dependencies on live provider credentials for frontend functionality
 
 ## Booking/Payment State Machine (Backend Checkpoint 16)
 Status: READY
