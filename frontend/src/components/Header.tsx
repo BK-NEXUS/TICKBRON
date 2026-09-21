@@ -116,6 +116,9 @@ export function Header() {
                       <Link to="/favorites" className="header-user-dropdown-item">
                         Favorites
                       </Link>
+                      <Link to="/partner" className="header-user-dropdown-item">
+                        Partner Dashboard
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="header-user-dropdown-item header-user-dropdown-item--logout"

@@ -105,6 +105,10 @@ export function ProfilePage() {
                   <span className="profile-link-icon">❤️</span>
                   <span className="profile-link-text">My Favorites</span>
                 </Link>
+                <Link to="/partner" className="profile-link">
+                  <span className="profile-link-icon">🏠</span>
+                  <span className="profile-link-text">Partner Dashboard</span>
+                </Link>
               </div>
             </div>
           </div>

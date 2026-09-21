@@ -1,0 +1,352 @@
+import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
+import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
+import { PartnerRoomsManagement } from '../components/PartnerRoomsManagement'
+import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
+import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
+import { PartnerBookingsView } from '../components/PartnerBookingsView'
+import { EmptyState } from '../components/EmptyState'
+
+type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'bookings' | 'add-property'
+
+export function PartnerDashboardPage() {
+  const { user, isAuthenticated } = useAuth()
+  const [currentView, setCurrentView] = useState<DashboardView>('properties')
+  const [properties, setProperties] = useState<PartnerProperty[]>([])
+  const [selectedProperty, setSelectedProperty] = useState<PartnerProperty | null>(null)
+  const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string } | null>(null)
+  const [selectedRatePlan, setSelectedRatePlan] = useState<{ id: number; name: string } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadProperties()
+    }
+  }, [isAuthenticated])
+
+  const loadProperties = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await partnerAdapter.getProperties()
+      
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        setProperties(response.data)
+      }
+    } catch (err) {
+      setError('Failed to load properties. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePropertyCreated = (property: PartnerProperty) => {
+    setProperties(prev => [...prev, property])
+    setCurrentView('properties')
+  }
+
+  const handlePropertySelect = (property: PartnerProperty) => {
+    setSelectedProperty(property)
+    setCurrentView('rooms')
+  }
+
+  const handleRoomTypeSelect = (roomTypeId: number, roomTypeName: string) => {
+    setSelectedRoomType({ id: roomTypeId, name: roomTypeName })
+    setCurrentView('rates')
+  }
+
+  const handleRatePlanSelect = (ratePlanId: number, ratePlanName: string) => {
+    setSelectedRatePlan({ id: ratePlanId, name: ratePlanName })
+    setCurrentView('availability')
+  }
+
+  const handleBackToProperties = () => {
+    setSelectedProperty(null)
+    setSelectedRoomType(null)
+    setSelectedRatePlan(null)
+    setCurrentView('properties')
+  }
+
+  const handleBackToRooms = () => {
+    setSelectedRoomType(null)
+    setSelectedRatePlan(null)
+    setCurrentView('rooms')
+  }
+
+  const handleBackToRates = () => {
+    setSelectedRatePlan(null)
+    setCurrentView('rates')
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="partner-dashboard-page">
+        <div className="container">
+          <EmptyState
+            icon="🔒"
+            title="Authentication required"
+            message="Please sign in to access the partner dashboard."
+            ctaText="Sign In"
+            ctaLink="/login"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const renderNavigation = () => (
+    <nav className="partner-dashboard-nav" aria-label="Partner dashboard navigation">
+      <button
+        onClick={() => setCurrentView('properties')}
+        className={`nav-item ${currentView === 'properties' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'properties' ? 'page' : undefined}
+      >
+        <span className="nav-icon">🏠</span>
+        <span className="nav-label">Properties</span>
+      </button>
+      <button
+        onClick={() => setCurrentView('bookings')}
+        className={`nav-item ${currentView === 'bookings' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'bookings' ? 'page' : undefined}
+      >
+        <span className="nav-icon">📅</span>
+        <span className="nav-label">Bookings</span>
+      </button>
+      {selectedProperty && (
+        <>
+          <button
+            onClick={() => setCurrentView('rooms')}
+            className={`nav-item ${currentView === 'rooms' ? 'nav-item--active' : ''}`}
+            aria-current={currentView === 'rooms' ? 'page' : undefined}
+          >
+            <span className="nav-icon">🛏️</span>
+            <span className="nav-label">Rooms</span>
+          </button>
+          {selectedRoomType && (
+            <>
+              <button
+                onClick={() => setCurrentView('rates')}
+                className={`nav-item ${currentView === 'rates' ? 'nav-item--active' : ''}`}
+                aria-current={currentView === 'rates' ? 'page' : undefined}
+              >
+                <span className="nav-icon">💰</span>
+                <span className="nav-label">Rates</span>
+              </button>
+              {selectedRatePlan && (
+                <button
+                  onClick={() => setCurrentView('availability')}
+                  className={`nav-item ${currentView === 'availability' ? 'nav-item--active' : ''}`}
+                  aria-current={currentView === 'availability' ? 'page' : undefined}
+                >
+                  <span className="nav-icon">📅</span>
+                  <span className="nav-label">Availability</span>
+                </button>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </nav>
+  )
+
+  const renderBreadcrumb = () => {
+    const breadcrumbs = [
+      { label: 'Properties', onClick: handleBackToProperties, active: currentView === 'properties' },
+    ]
+
+    if (selectedProperty) {
+      breadcrumbs.push({
+        label: selectedProperty.city,
+        onClick: handleBackToProperties,
+        active: currentView === 'rooms',
+      })
+    }
+
+    if (selectedRoomType) {
+      breadcrumbs.push({
+        label: selectedRoomType.name,
+        onClick: handleBackToRooms,
+        active: currentView === 'rates',
+      })
+    }
+
+    if (selectedRatePlan) {
+      breadcrumbs.push({
+        label: selectedRatePlan.name,
+        onClick: handleBackToRates,
+        active: currentView === 'availability',
+      })
+    }
+
+    if (currentView === 'bookings') {
+      breadcrumbs.push({ label: 'Bookings', onClick: () => {}, active: true })
+    }
+
+    return (
+      <nav className="breadcrumb" aria-label="Breadcrumb">
+        {breadcrumbs.map((crumb, index) => (
+          <span key={index} className="breadcrumb-item">
+            {index > 0 && <span className="breadcrumb-separator">/</span>}
+            {crumb.active ? (
+              <span className="breadcrumb-current">{crumb.label}</span>
+            ) : (
+              <button onClick={crumb.onClick} className="breadcrumb-link">
+                {crumb.label}
+              </button>
+            )}
+          </span>
+        ))}
+      </nav>
+    )
+  }
+
+  const renderPropertiesView = () => (
+    <div className="partner-properties-view">
+      <div className="properties-view-header">
+        <h1 className="properties-view-title">My Properties</h1>
+        <button
+          onClick={() => setCurrentView('add-property')}
+          className="btn btn-primary"
+          aria-label="Add new property"
+        >
+          + Add Property
+        </button>
+      </div>
+
+      {error && (
+        <div className="alert alert-error" role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="loading-state" role="status" aria-live="polite">
+          Loading properties...
+        </div>
+      ) : properties.length === 0 ? (
+        <EmptyState
+          icon="🏠"
+          title="No properties yet"
+          message="Start by listing your first property to begin accepting bookings."
+          ctaText="Add Your First Property"
+          onClick={() => setCurrentView('add-property')}
+        />
+      ) : (
+        <div className="properties-grid">
+          {properties.map(property => (
+            <div key={property.id} className="property-card">
+              <div className="property-card-header">
+                <h3 className="property-card-title">{property.city}</h3>
+                <span className={`property-status property-status--${property.status}`}>
+                  {property.status}
+                </span>
+              </div>
+              <div className="property-card-body">
+                <p className="property-address">{property.address_line1}</p>
+                {property.address_line2 && <p className="property-address">{property.address_line2}</p>}
+                <div className="property-details">
+                  <div className="property-detail">
+                    <span className="detail-label">Guests:</span>
+                    <span className="detail-value">{property.max_guests}</span>
+                  </div>
+                  <div className="property-detail">
+                    <span className="detail-label">Bedrooms:</span>
+                    <span className="detail-value">{property.bedrooms}</span>
+                  </div>
+                  <div className="property-detail">
+                    <span className="detail-label">Bathrooms:</span>
+                    <span className="detail-value">{property.bathrooms}</span>
+                  </div>
+                  <div className="property-detail">
+                    <span className="detail-label">Base Price:</span>
+                    <span className="detail-value">{property.base_price} {property.currency}</span>
+                  </div>
+                </div>
+                <div className="property-amenities">
+                  {property.has_wifi && <span className="amenity-tag">WiFi</span>}
+                  {property.has_parking && <span className="amenity-tag">Parking</span>}
+                  {property.has_ac && <span className="amenity-tag">AC</span>}
+                  {property.has_heating && <span className="amenity-tag">Heating</span>}
+                  {property.has_elevator && <span className="amenity-tag">Elevator</span>}
+                </div>
+              </div>
+              <div className="property-card-footer">
+                <button
+                  onClick={() => handlePropertySelect(property)}
+                  className="btn btn-primary"
+                  aria-label={`Manage ${property.city}`}
+                >
+                  Manage
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'properties':
+        return renderPropertiesView()
+      case 'add-property':
+        return (
+          <div className="partner-add-property-view">
+            <PartnerPropertyWizard
+              onSuccess={handlePropertyCreated}
+              onCancel={() => setCurrentView('properties')}
+            />
+          </div>
+        )
+      case 'rooms':
+        return selectedProperty ? (
+          <PartnerRoomsManagement
+            propertyId={selectedProperty.id}
+            propertyName={selectedProperty.city}
+          />
+        ) : null
+      case 'rates':
+        return selectedRoomType ? (
+          <PartnerRatesManagement
+            roomTypeId={selectedRoomType.id}
+            roomTypeName={selectedRoomType.name}
+          />
+        ) : null
+      case 'availability':
+        return selectedRatePlan ? (
+          <PartnerAvailabilityManagement
+            ratePlanId={selectedRatePlan.id}
+            ratePlanName={selectedRatePlan.name}
+          />
+        ) : null
+      case 'bookings':
+        return <PartnerBookingsView />
+      default:
+        return renderPropertiesView()
+    }
+  }
+
+  return (
+    <div className="partner-dashboard-page">
+      <div className="container">
+        <div className="dashboard-header">
+          <h1 className="dashboard-title">Partner Dashboard</h1>
+          <p className="dashboard-subtitle">Welcome, {user.first_name || user.email}</p>
+        </div>
+
+        {renderNavigation()}
+        {renderBreadcrumb()}
+
+        <div className="dashboard-content">
+          {renderCurrentView()}
+        </div>
+      </div>
+    </div>
+  )
+}
