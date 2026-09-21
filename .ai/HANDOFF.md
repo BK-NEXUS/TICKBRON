@@ -31,17 +31,19 @@ Status: READY
 - Request: `{ email, first_name, last_name, phone_number (optional), password, password_confirm }`
 - Response: `{ id, email, first_name, last_name, full_name, phone_number, is_active, date_joined, last_login, email_verified, two_factor_enabled }`
 - Auth: None (public endpoint)
-- Error: 400 for validation errors, 409 for duplicate email
+- Error: 400 for validation errors, 409 for duplicate email, 429 for rate limit exceeded
 - Auto-logs in user after successful registration (session-based)
 - **Updated (Checkpoint 04):** Password must be 12+ characters with complexity requirements, disposable emails rejected
+- **Updated (Checkpoint 19):** Rate limited to 5 requests per minute per IP to prevent registration spam
 
 ### POST `/api/v1/auth/login/`
 - Request: `{ email, password }`
 - Response: `{ id, email, first_name, last_name, full_name, phone_number, is_active, date_joined, last_login, email_verified, two_factor_enabled }`
 - Auth: None (public endpoint)
-- Error: 401 for invalid credentials or inactive account, 403 for account lockout
+- Error: 401 for invalid credentials or inactive account, 403 for account lockout, 429 for rate limit exceeded
 - Creates secure session with HttpOnly/Secure/SameSite cookies
 - **Updated (Checkpoint 04):** Account lockout after 5 failed attempts (30-minute duration), IP tracking enabled
+- **Updated (Checkpoint 19):** Rate limited to 10 requests per minute per IP to slow brute-force attempts
 
 ### POST `/api/v1/auth/logout/`
 - Request: None (session-based)
@@ -128,11 +130,12 @@ Status: READY (Frontend Checkpoint 10 - Backend Integration Complete)
   - page_size: Items per page
   - total_pages: Total number of pages
 - Auth: None (public endpoint)
-- Error: 400 for invalid parameters, standardized error format
+- Error: 400 for invalid parameters, 429 for rate limit exceeded, standardized error format
 - Input validation: HTML tag sanitization in query parameter
 - Page size limits: 1-100 (backend validation)
 - **Frontend Integration:** Completed in Frontend Checkpoint 10
 - **Backend Implementation:** Completed in Backend Checkpoint 10
+- **Updated (Checkpoint 19):** Rate limited to 100 requests per minute per IP to prevent scraping/abuse
 - READY/BLOCKED status: READY
 
 ### GET `/api/v1/properties/search/suggestions/`
@@ -215,10 +218,11 @@ Status: READY (Frontend Checkpoint 12 - UI Integration Complete)
   - user_agent (optional): User agent string for audit trail
 - Response: PaymentTransaction object with provider response
 - Auth: Session-based (required)
-- Error: 400 for validation errors, 409 for duplicate idempotency key
+- Error: 400 for validation errors, 409 for duplicate idempotency key, 429 for rate limit exceeded
 - Idempotency: Returns existing transaction if idempotency key already exists
 - Automatically initiates payment with provider adapter
 - Creates audit log entries for payment initiation
+- **Updated (Checkpoint 19):** Rate limited to 20 requests per minute per user to prevent payment flow abuse
 
 ### POST `/api/v1/payments/transactions/{id}/confirm/`
 - Request: None (transaction ID from URL)

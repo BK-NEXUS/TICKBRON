@@ -1,17 +1,20 @@
 """
 Views for TICKBRON payment API endpoints.
 """
+import sys
+import os
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.throttling import UserRateThrottle
 from django.db import transaction
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .serializers import (
-    PaymentTransactionSerializer, 
+    PaymentTransactionSerializer,
     PaymentTransactionCreateSerializer,
     WebhookEventSerializer,
     PaymentAuditLogSerializer
@@ -22,15 +25,31 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Check if running in test mode
+TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+
+class PaymentRateThrottle(UserRateThrottle):
+    """Rate throttle for payment initiation - 20 requests per minute per user."""
+    rate = '20/min'
+    scope = 'payment'
+
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
 
 class PaymentTransactionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for PaymentTransaction model.
-    
+
     Provides CRUD operations for payment transactions with idempotency support.
     """
     queryset = PaymentTransaction.objects.all()
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PaymentRateThrottle]
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""

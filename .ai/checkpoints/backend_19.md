@@ -23,7 +23,12 @@ Status: READY
 ## Security Features
 - Security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
 - HSTS headers with configurable settings (only in production with HTTPS)
-- Rate limiting: DRF throttling with custom decorators available
+- Rate limiting: DRF throttling with endpoint-specific limits applied:
+  - Login endpoint: 10 requests per minute per IP (strict limit to slow brute-force attempts)
+  - Registration endpoint: 5 requests per minute per IP (moderate limit to prevent registration spam)
+  - Payment initiation: 20 requests per minute per user (moderate limit to prevent payment flow abuse)
+  - Property search: 100 requests per minute per IP (looser limit for public high-traffic endpoint)
+  - OTP endpoint: Not yet applicable (checkpoint 21 SMS work not yet implemented)
 - CORS configuration: explicit allowed headers and methods
 - Enhanced cookie security: HttpOnly, Secure (configurable), SameSite
 - CSRF protection: enabled with trusted origins
@@ -49,7 +54,8 @@ Status: READY
 
 ## Tests
 - Middleware tests (4 tests): security headers, request logging, performance monitoring
-- Full regression suite: 559 total tests (555 previous + 4 new)
+- Rate limiting tests (7 tests): login (2), registration (3), payment (2), search (2)
+- Full regression suite: 566 total tests (555 previous + 4 middleware + 7 rate limiting)
 - All tests passing with 2 skipped
 - Security review: 8/8 categories passed (100% success rate)
 

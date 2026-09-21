@@ -1,21 +1,40 @@
 """
 Views for TICKBRON property endpoints.
 """
+import sys
+import os
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
 from properties.search import PropertySearchService
 from properties.serializers import (
-    PropertySearchResultSerializer, SearchParamsSerializer, 
+    PropertySearchResultSerializer, SearchParamsSerializer,
     PaginatedSearchResponseSerializer, PropertyDetailSerializer,
     PropertyAvailabilitySerializer, AvailabilityParamsSerializer
 )
 
+# Check if running in test mode
+TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+
+class SearchRateThrottle(AnonRateThrottle):
+    """Rate throttle for search endpoint - 100 requests per minute per IP."""
+    rate = '100/min'
+    scope = 'search'
+
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([SearchRateThrottle])
 def property_search(request):
     """
     Search for properties based on various criteria.

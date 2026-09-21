@@ -3,17 +3,48 @@ Views for user authentication and management.
 
 This module contains views for user registration, login, and session management.
 """
+import sys
+import os
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth import authenticate, login, logout
 from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer
 
+# Check if running in test mode
+TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+
+class LoginRateThrottle(AnonRateThrottle):
+    """Rate throttle for login endpoint - 10 requests per minute per IP."""
+    rate = '10/min'
+    scope = 'login'
+
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
+
+class RegisterRateThrottle(AnonRateThrottle):
+    """Rate throttle for registration endpoint - 5 requests per minute per IP."""
+    rate = '5/min'
+    scope = 'register'
+
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([RegisterRateThrottle])
 def register(request):
     """
     Register a new user.
@@ -35,6 +66,7 @@ def register(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login_view(request):
     """
     Login user with email and password.

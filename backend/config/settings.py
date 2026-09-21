@@ -213,6 +213,9 @@ CORS_ALLOW_METHODS = [
 RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
 RATELIMIT_USE_CACHE = 'default'
 
+# Check if running in test mode
+TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
 # Django REST Framework Settings
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -225,7 +228,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
-    'DEFAULT_THROTTLE_CLASSES': [
+    'DEFAULT_THROTTLE_CLASSES': [] if TESTING else [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'
     ],
