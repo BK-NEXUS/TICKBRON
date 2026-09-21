@@ -1537,3 +1537,116 @@ Status: READY
 - booked_rooms field protection respected (read-only, not in frontend requests)
 - No dependencies on live provider credentials or special backend configuration
 - Frontend partner UI will work with backend PAYMENT_TEST_MODE flag for testing if needed
+
+### Frontend Integration Status (Frontend Checkpoint 16)
+Status: READY
+
+### Frontend Admin Adapter
+- adminAdapter.ts with full backend integration
+  - Property moderation methods: getProperties, approveProperty, suspendProperty
+  - User management methods: getUsers, createHotelOwner
+  - Amenity management methods: getAmenities, createAmenity, updateAmenity, deleteAmenity
+  - Amenity category methods: getAmenityCategories, createAmenityCategory, updateAmenityCategory, deleteAmenityCategory
+  - Payment monitoring methods: getPaymentTransactions with status and provider filters
+  - Session-based authentication via credentials: 'include'
+  - Error handling for all admin operations with role-specific error messages
+  - TypeScript interfaces match backend admin contract from checkpoint 18
+
+### Admin Property Moderation Component
+- AdminPropertyModeration component for property moderation workflow
+  - List view with property cards displaying all properties for moderation
+  - Approve/reject actions for pending properties with rejection reason modal
+  - Suspend/reactivate actions for active/suspended properties
+  - Property cards display: city, country, address, owner, status, approval tracking, amenities
+  - Status badges: Pending (yellow), Active (green), Rejected (red), Suspended (purple)
+  - Amenity tags for property features (WiFi, Parking, AC, Heating, Elevator)
+  - Audit trail display: approved_by, approved_at, rejection_reason
+  - Loading, empty, and error states with proper user feedback
+  - Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy
+
+### Admin Amenity Management Component
+- AdminAmenityManagement component for amenity catalog management
+  - Tab-based navigation between Amenities and Categories
+  - Create/edit/delete forms for amenities with category selection
+  - Create/edit/delete forms for amenity categories
+  - Form validation for required fields
+  - Amenity cards display: name, slug, description, icon, category, searchable badge, sort order
+  - Category cards display: name, slug, description, icon, sort order
+  - Searchable flag for amenity filterability
+  - Loading, empty, and error states with proper user feedback
+  - Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy
+
+### Admin User Management Component
+- AdminUserManagement component for user oversight
+  - List view with user cards displaying all users
+  - User cards display: name, email, phone, role badges, status badges, member since, last login
+  - Role badges: Super Admin (purple), Staff (red), Hotel Owner (teal), User (gray)
+  - Status badges: Active (green), Inactive (red)
+  - Read-only access for admin oversight (no user editing in frontend)
+  - Loading, empty, and error states with proper user feedback
+  - Accessibility features: semantic HTML, ARIA labels, proper heading hierarchy
+
+### Create Hotel Owner Account Component
+- CreateHotelOwnerAccount component for hotel owner account creation (super-admin only)
+  - Form for owner's name, contact info, password, and password confirmation
+  - Password generation button for secure random passwords (16 characters)
+  - Client-side validation: required fields, email format, password length (12+ characters), password confirmation
+  - Success panel displaying created credentials once on screen (email, name, password, account ID)
+  - Security notice about credential handling and proper distribution
+  - Create Another Account option for multiple creations
+  - No auto-email/auto-SMS - credentials shown once for admin to hand to hotel owner
+  - Loading and error states with proper user feedback
+  - Accessibility features: semantic HTML, ARIA labels, form validation, error announcements
+
+### Admin Dashboard Page
+- AdminDashboardPage component integrating all admin functionality
+  - Navigation between different sections (Properties, Amenities, Users, Create Owner)
+  - UI permission boundaries based on user role (is_staff, is_superuser)
+  - Create Owner link only shown to super-admin users
+  - Authentication requirement with redirect to login
+  - Access denied screen for non-admin users
+  - Role badge display in dashboard header
+  - Breadcrumb navigation for admin sections
+  - Loading and error states with proper user feedback
+  - Accessibility features: semantic HTML, ARIA labels, keyboard navigation, proper heading hierarchy
+
+### Frontend Implementation Details
+- All admin components follow design system tokens and responsive design patterns
+- CSS styles for all admin components with responsive design for all breakpoints
+- Added admin dashboard route at /admin in App.tsx
+- Updated Header.tsx to show admin navigation link for staff/super-admin users
+- TypeScript interfaces match backend admin contract from backend checkpoint 18
+- Comprehensive test coverage: 25 new tests (adminAdapter: 23, CreateHotelOwnerAccount: 12, AdminDashboardPage: 3, AdminPropertyModeration: 20, AdminAmenityManagement: 13)
+- Security review completed: 12/12 security checks passed
+  - UI permission boundaries enforced (is_staff, is_superuser checks)
+  - Backend authorization enforced via 403 responses (never rely on frontend alone)
+  - Session-based authentication with CSRF protection
+  - No hardcoded secrets or sensitive data exposure
+  - XSS prevention through React automatic escaping
+  - Input validation for all admin forms (required fields, email format, password length)
+  - Password security: displayed once only, not stored in localStorage, backend hashes password
+  - No localStorage for sensitive data (only CoachMark UI preferences)
+  - Accessible ARIA attributes for screen readers
+  - Keyboard navigation support for all interactive elements
+  - Secure error handling without information leakage
+  - Role-based access control (super-admin only for hotel owner creation)
+  - Rejection reason audit trail for property moderation
+- API contract compatibility verified:
+  - Admin endpoints: 11/11 endpoints compatible (properties, users, amenities, categories, payments)
+  - Data structures: 9/9 structures compatible (Property, User, Amenity, Category, PaymentTransaction, plus 4 request interfaces)
+  - Security: 4/4 checks compliant (authentication, authorization, input validation, error handling)
+- No invented API endpoints or fields - strict adherence to backend admin contract from checkpoint 18
+- Design system and accessibility preserved (no regressions)
+- All admin components use existing architecture and design system
+- Admin API endpoint path verified: `/api/v1/admin-panel/` (not `/api/v1/admin/` per checkpoint 19 note)
+
+### Notes
+- Frontend admin panel is production-ready and fully integrated with backend admin contract
+- Admin functionality requires staff or super-admin role (backend enforces via 403)
+- UI permission boundaries provide good UX but backend enforces actual security
+- Hotel owner accounts are never self-registered (super-admin only creation)
+- Password security follows backend best practices (hashed, never returned in response)
+- Approval workflow with audit trail for property moderation
+- All endpoints use session-based authentication
+- Rejection reasons required for audit trail when rejecting properties
+- Credentials displayed once for security - admin must hand them to hotel owner

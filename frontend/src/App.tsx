@@ -11,6 +11,7 @@ import { BookingsPage } from './pages/BookingsPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PartnerDashboardPage } from './pages/PartnerDashboardPage'
+import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="favorites" element={<FavoritesPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="partner" element={<PartnerDashboardPage />} />
+            <Route path="admin" element={<AdminDashboardPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route path="/login" element={<LoginPage />} />

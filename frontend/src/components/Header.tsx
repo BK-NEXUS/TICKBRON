@@ -119,6 +119,11 @@ export function Header() {
                       <Link to="/partner" className="header-user-dropdown-item">
                         Partner Dashboard
                       </Link>
+                      {(user?.is_staff || user?.is_superuser) && (
+                        <Link to="/admin" className="header-user-dropdown-item header-user-dropdown-item--admin">
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="header-user-dropdown-item header-user-dropdown-item--logout"
