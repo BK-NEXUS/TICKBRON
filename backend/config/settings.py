@@ -16,13 +16,24 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Check if running in test mode
+TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Validate SECRET_KEY in production (when DEBUG is False), but allow default for testing
+if not DEBUG and SECRET_KEY == 'django-insecure-change-this-in-production' and not TESTING:
+    raise ValueError('SECRET_KEY environment variable must be set in production')
+
+# Validate ALLOWED_HOSTS in production (when DEBUG is False), but allow default for testing/development
+_allowed_hosts = os.getenv('ALLOWED_HOSTS', '')
+if not DEBUG and not _allowed_hosts and not TESTING:
+    raise ValueError('ALLOWED_HOSTS environment variable must be set in production')
+ALLOWED_HOSTS = _allowed_hosts.split(',') if _allowed_hosts else ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -212,9 +223,6 @@ CORS_ALLOW_METHODS = [
 # Rate Limiting Settings
 RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
 RATELIMIT_USE_CACHE = 'default'
-
-# Check if running in test mode
-TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {

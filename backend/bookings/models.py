@@ -167,8 +167,7 @@ class Booking(BaseModel):
     
     def save(self, *args, **kwargs):
         """Override save to generate confirmation code and set expiry if needed."""
-        if not self.confirmation_code:
-            self.confirmation_code = self.generate_confirmation_code()
+        from django.db import IntegrityError
         
         # Calculate number of nights if not set
         if not self.number_of_nights:
@@ -179,7 +178,22 @@ class Booking(BaseModel):
             from datetime import timedelta
             self.expires_at = timezone.now() + timedelta(minutes=15)
         
-        super().save(*args, **kwargs)
+        # Generate confirmation code if not set
+        if not self.confirmation_code:
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                self.confirmation_code = self.generate_confirmation_code()
+                try:
+                    super().save(*args, **kwargs)
+                    return  # Success, exit early
+                except IntegrityError:
+                    # Confirmation code collision, try again
+                    self.confirmation_code = None
+                    continue
+            # If we get here, all attempts failed
+            raise IntegrityError("Could not generate unique confirmation code after multiple attempts")
+        else:
+            super().save(*args, **kwargs)
     
     def generate_confirmation_code(self):
         """
@@ -187,23 +201,17 @@ class Booking(BaseModel):
         
         Uses unambiguous character set excluding: 0/O, 1/I/L to prevent confusion.
         Character set: 2-9, A-H, J-K, M-N, P, R-Z (excluding 0, 1, I, L, O)
+        
+        Note: The save() method handles collision detection via database constraint
+        and retries if IntegrityError occurs.
         """
         import secrets
         
         # Unambiguous character set (excludes 0/O, 1/I/L)
         unambiguous_chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
         
-        max_attempts = 10
-        for attempt in range(max_attempts):
-            code = ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
-            if not Booking.objects.filter(confirmation_code=code).exists():
-                return code
-        
-        # If we somehow exceed max attempts (extremely unlikely), fall back to timestamp-based
-        import time
-        timestamp = int(time.time() * 1000) % 1000000
-        code = ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
-        return code
+        # Generate a single random code - uniqueness is enforced by save() method
+        return ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
     
     @classmethod
     def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None):
