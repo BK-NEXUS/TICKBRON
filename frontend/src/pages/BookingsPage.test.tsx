@@ -97,6 +97,12 @@ const renderWithRouter = (component: React.ReactElement) => {
 describe('BookingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Mock clipboard API
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    })
   })
 
   describe('Authentication redirect', () => {
@@ -230,7 +236,8 @@ describe('BookingsPage', () => {
         expect(screen.getByText('Test Property 1')).toBeInTheDocument()
       })
 
-      expect(screen.getByText('Confirmation: ABC123')).toBeInTheDocument()
+      expect(screen.getByText('ABC123')).toBeInTheDocument()
+      expect(screen.getAllByText('Booking Reference:')).toHaveLength(3)
       expect(screen.getAllByText('Check-in:')).toHaveLength(3)
       expect(screen.getByText('2025-02-01')).toBeInTheDocument()
       expect(screen.getAllByText('Check-out:')).toHaveLength(3)
@@ -243,6 +250,45 @@ describe('BookingsPage', () => {
       expect(screen.getByText('$400 USD')).toBeInTheDocument()
     })
 
+    it('should display copy button for booking reference code', async () => {
+      renderWithRouter(<BookingsPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Property 1')).toBeInTheDocument()
+      })
+
+      const copyButtons = screen.getAllByTitle('Copy booking reference code')
+      expect(copyButtons).toHaveLength(3)
+    })
+
+    it('should copy booking reference code when copy button is clicked', async () => {
+      renderWithRouter(<BookingsPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Property 1')).toBeInTheDocument()
+      })
+
+      const copyButtons = screen.getAllByTitle('Copy booking reference code')
+      fireEvent.click(copyButtons[0])
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ABC123')
+    })
+
+    it('should show copied state after successful copy', async () => {
+      renderWithRouter(<BookingsPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Property 1')).toBeInTheDocument()
+      })
+
+      const copyButtons = screen.getAllByTitle('Copy booking reference code')
+      fireEvent.click(copyButtons[0])
+
+      await waitFor(() => {
+        expect(screen.getAllByText('✓')).toHaveLength(1)
+      })
+    })
+
     it('should display booking status', async () => {
       renderWithRouter(<BookingsPage />)
 
@@ -250,7 +296,8 @@ describe('BookingsPage', () => {
         expect(screen.getByText('Test Property 1')).toBeInTheDocument()
       })
 
-      expect(screen.getAllByRole('button')).toHaveLength(4)
+      // Filter buttons (4) + copy buttons (3) = 7 total buttons
+      expect(screen.getAllByRole('button')).toHaveLength(7)
     })
 
     it('should display payment status', async () => {
@@ -292,6 +339,10 @@ describe('BookingsPage', () => {
       expect(screen.getByText('Test Property 1')).toBeInTheDocument()
       expect(screen.getByText('Test Property 2')).toBeInTheDocument()
       expect(screen.getByText('Test Property 3')).toBeInTheDocument()
+      expect(screen.getAllByText('ABC123')).toHaveLength(1)
+      expect(screen.getAllByText('DEF456')).toHaveLength(1)
+      expect(screen.getAllByText('GHI789')).toHaveLength(1)
+      expect(screen.getAllByText('Booking Reference:')).toHaveLength(3)
     })
 
     it('should filter by upcoming bookings', async () => {

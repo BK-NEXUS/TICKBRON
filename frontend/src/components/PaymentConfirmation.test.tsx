@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PaymentConfirmation } from './PaymentConfirmation'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
 
@@ -36,6 +36,12 @@ describe('PaymentConfirmation', () => {
   beforeEach(() => {
     mockOnViewBookings.mockClear()
     mockOnBackToProperty.mockClear()
+    // Mock clipboard API
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    })
   })
 
   it('should render payment confirmation header', () => {
@@ -201,5 +207,68 @@ describe('PaymentConfirmation', () => {
     )
 
     expect(screen.getByText('€85')).toBeInTheDocument()
+  })
+
+  it('should display booking reference code prominently with monospace font', () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    expect(screen.getByText('ABC123')).toBeInTheDocument()
+    expect(screen.getByText('Booking Reference:')).toBeInTheDocument()
+  })
+
+  it('should display copy button for booking reference code', () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    const copyButton = screen.getByTitle('Copy booking reference code')
+    expect(copyButton).toBeInTheDocument()
+    expect(copyButton).toHaveAttribute('aria-label', 'Copy booking reference code')
+  })
+
+  it('should copy booking reference code when copy button is clicked', async () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    const copyButton = screen.getByTitle('Copy booking reference code')
+    fireEvent.click(copyButton)
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ABC123')
+  })
+
+  it('should show copied state after successful copy', async () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    const copyButton = screen.getByTitle('Copy booking reference code')
+    fireEvent.click(copyButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('✓ Copied')).toBeInTheDocument()
+    })
   })
 })

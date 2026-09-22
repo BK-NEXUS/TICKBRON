@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
 
 interface PaymentConfirmationProps {
@@ -22,6 +23,8 @@ export function PaymentConfirmation({
   onViewBookings, 
   onBackToProperty 
 }: PaymentConfirmationProps) {
+  const [copied, setCopied] = useState(false)
+
   const getProviderName = (provider: PaymentProvider): string => {
     const names: Record<PaymentProvider, string> = {
       payme: 'Payme',
@@ -47,6 +50,16 @@ export function PaymentConfirmation({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount)
+  }
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(bookingDetails.confirmation_code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy code:', error)
+    }
   }
 
   return (
@@ -95,11 +108,21 @@ export function PaymentConfirmation({
         <div className="payment-confirmation-section">
           <h3 className="payment-confirmation-section-title">Booking Details</h3>
           <div className="payment-confirmation-details">
-            <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Confirmation Code:</span>
-              <span className="payment-confirmation-value payment-confirmation-value--code">
-                {bookingDetails.confirmation_code}
-              </span>
+            <div className="payment-confirmation-item payment-confirmation-item--code">
+              <span className="payment-confirmation-label">Booking Reference:</span>
+              <div className="payment-confirmation-code-container">
+                <span className="payment-confirmation-value payment-confirmation-value--code payment-confirmation-value--monospace">
+                  {bookingDetails.confirmation_code}
+                </span>
+                <button
+                  className="payment-confirmation-copy-btn"
+                  onClick={handleCopyCode}
+                  aria-label="Copy booking reference code"
+                  title="Copy booking reference code"
+                >
+                  {copied ? '✓ Copied' : '📋 Copy'}
+                </button>
+              </div>
             </div>
             <div className="payment-confirmation-item">
               <span className="payment-confirmation-label">Property:</span>

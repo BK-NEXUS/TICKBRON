@@ -4,6 +4,94 @@ import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 
+interface BookingCardProps {
+  booking: Booking
+}
+
+function BookingCard({ booking }: BookingCardProps) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(booking.confirmation_code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy code:', error)
+    }
+  }
+
+  return (
+    <div className="booking-card">
+      <div className="booking-card-header">
+        <div className="booking-card-title">
+          <h3>
+            <Link to={`/property/${booking.property}`}>
+              {booking.property_name}
+            </Link>
+          </h3>
+          <div className="booking-card-confirmation-container">
+            <span className="booking-card-confirmation-label">Booking Reference:</span>
+            <div className="booking-card-confirmation-code-wrapper">
+              <span className="booking-card-confirmation-code">
+                {booking.confirmation_code}
+              </span>
+              <button
+                className="booking-card-copy-btn"
+                onClick={handleCopyCode}
+                aria-label="Copy booking reference code"
+                title="Copy booking reference code"
+              >
+                {copied ? '✓' : '📋'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className={`booking-card-status booking-card-status--${booking.status}`}>
+          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+        </div>
+      </div>
+      
+      <div className="booking-card-details">
+        <div className="booking-card-detail">
+          <span className="booking-card-detail-label">Check-in:</span>
+          <span className="booking-card-detail-value">{booking.check_in}</span>
+        </div>
+        <div className="booking-card-detail">
+          <span className="booking-card-detail-label">Check-out:</span>
+          <span className="booking-card-detail-value">{booking.check_out}</span>
+        </div>
+        <div className="booking-card-detail">
+          <span className="booking-card-detail-label">Nights:</span>
+          <span className="booking-card-detail-value">{booking.number_of_nights}</span>
+        </div>
+        <div className="booking-card-detail">
+          <span className="booking-card-detail-label">Guests:</span>
+          <span className="booking-card-detail-value">{booking.guest_count}</span>
+        </div>
+        <div className="booking-card-detail">
+          <span className="booking-card-detail-label">Total:</span>
+          <span className="booking-card-detail-value">
+            ${booking.total_price} {booking.currency}
+          </span>
+        </div>
+      </div>
+      
+      <div className="booking-card-footer">
+        <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
+          Payment: {booking.payment_status.charAt(0).toUpperCase() + booking.payment_status.slice(1)}
+        </div>
+        <Link 
+          to={`/property/${booking.property}`}
+          className="btn btn-secondary"
+        >
+          View Property
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function BookingsPage() {
@@ -162,60 +250,7 @@ export function BookingsPage() {
         
         <div className="bookings-list">
           {filteredBookings.map((booking) => (
-            <div key={booking.id} className="booking-card">
-              <div className="booking-card-header">
-                <div className="booking-card-title">
-                  <h3>
-                    <Link to={`/property/${booking.property}`}>
-                      {booking.property_name}
-                    </Link>
-                  </h3>
-                  <p className="booking-card-confirmation">
-                    Confirmation: {booking.confirmation_code}
-                  </p>
-                </div>
-                <div className={`booking-card-status booking-card-status--${booking.status}`}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                </div>
-              </div>
-              
-              <div className="booking-card-details">
-                <div className="booking-card-detail">
-                  <span className="booking-card-detail-label">Check-in:</span>
-                  <span className="booking-card-detail-value">{booking.check_in}</span>
-                </div>
-                <div className="booking-card-detail">
-                  <span className="booking-card-detail-label">Check-out:</span>
-                  <span className="booking-card-detail-value">{booking.check_out}</span>
-                </div>
-                <div className="booking-card-detail">
-                  <span className="booking-card-detail-label">Nights:</span>
-                  <span className="booking-card-detail-value">{booking.number_of_nights}</span>
-                </div>
-                <div className="booking-card-detail">
-                  <span className="booking-card-detail-label">Guests:</span>
-                  <span className="booking-card-detail-value">{booking.guest_count}</span>
-                </div>
-                <div className="booking-card-detail">
-                  <span className="booking-card-detail-label">Total:</span>
-                  <span className="booking-card-detail-value">
-                    ${booking.total_price} {booking.currency}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="booking-card-footer">
-                <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
-                  Payment: {booking.payment_status.charAt(0).toUpperCase() + booking.payment_status.slice(1)}
-                </div>
-                <Link 
-                  to={`/property/${booking.property}`}
-                  className="btn btn-secondary"
-                >
-                  View Property
-                </Link>
-              </div>
-            </div>
+            <BookingCard key={booking.id} booking={booking} />
           ))}
         </div>
       </div>

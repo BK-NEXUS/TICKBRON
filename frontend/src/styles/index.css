@@ -1713,6 +1713,15 @@ body {
   .footer-section {
     margin-bottom: var(--spacing-lg);
   }
+
+  .booking-card-confirmation-code-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .booking-card-copy-btn {
+    width: 100%;
+  }
 }
 
 /* 768–1023px: Tablet */
@@ -4352,10 +4361,60 @@ body {
   color: var(--color-pomegranate);
 }
 
-.booking-card-confirmation {
+.booking-card-confirmation-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.booking-card-confirmation-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--font-weight-medium);
+}
+
+.booking-card-confirmation-code-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.booking-card-confirmation-code {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-sprout-green);
+  font-family: 'Courier New', 'Courier', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.booking-card-copy-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.booking-card-copy-btn:hover {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-pomegranate);
+}
+
+.booking-card-copy-btn:active {
+  transform: scale(0.98);
 }
 
 .booking-card-status {
@@ -5426,9 +5485,51 @@ body {
 }
 
 .payment-confirmation-value--code {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   color: var(--color-sprout-green);
   font-weight: var(--font-weight-bold);
+}
+
+.payment-confirmation-value--monospace {
+  font-family: 'Courier New', 'Courier', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.payment-confirmation-item--code {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+}
+
+.payment-confirmation-code-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  justify-content: space-between;
+}
+
+.payment-confirmation-copy-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.payment-confirmation-copy-btn:hover {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-pomegranate);
+}
+
+.payment-confirmation-copy-btn:active {
+  transform: scale(0.98);
 }
 
 .payment-confirmation-value--status {
@@ -6089,6 +6190,15 @@ body {
   .payment-confirmation-actions .btn {
     width: 100%;
     max-width: none;
+  }
+
+  .payment-confirmation-code-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .payment-confirmation-copy-btn {
+    width: 100%;
   }
 
   .payment-failure-actions {
