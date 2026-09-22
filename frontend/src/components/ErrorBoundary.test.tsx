@@ -50,7 +50,15 @@ describe('ErrorBoundary', () => {
 
   it('refreshes page when refresh button is clicked', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {})
+    // Mock window.location.reload using Object.defineProperty
+    const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')
+    let reloadCalled = false
+    const mockLocation = { reload: () => { reloadCalled = true } }
+    Object.defineProperty(window, 'location', {
+      value: mockLocation,
+      writable: true,
+      configurable: true,
+    })
 
     render(
       <ErrorBoundary>
@@ -61,10 +69,13 @@ describe('ErrorBoundary', () => {
     const refreshButton = screen.getByText('Refresh Page')
     refreshButton.click()
 
-    expect(reloadSpy).toHaveBeenCalledTimes(1)
+    expect(reloadCalled).toBe(true)
 
     consoleSpy.mockRestore()
-    reloadSpy.mockRestore()
+    // Restore original location
+    if (locationDescriptor) {
+      Object.defineProperty(window, 'location', locationDescriptor)
+    }
   })
 
   it('logs error to console in development', () => {

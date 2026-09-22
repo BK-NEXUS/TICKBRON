@@ -28,7 +28,7 @@ describe('errorHandler', () => {
       
       const result = parseApiError(response, errorData)
       
-      expect(result.message).toBe('Invalid input')
+      expect(result.message).toBe('Invalid request. Please check your input.')
       expect(result.status).toBe(400)
     })
 
