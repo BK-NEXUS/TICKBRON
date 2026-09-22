@@ -1678,3 +1678,73 @@ Status: READY
 - All endpoints use session-based authentication
 - Rejection reasons required for audit trail when rejecting properties
 - Credentials displayed once for security - admin must hand them to hotel owner
+
+## Checkpoint 18 - Performance/Frontend Security Hardening (Frontend)
+Status: READY
+
+### Performance Optimizations
+- **Code Splitting and Lazy Loading**: Implemented React.lazy() for all page components
+  - All routes now lazy-loaded for improved initial bundle size
+  - Suspense wrapper with PageLoader component for loading states
+  - Manual chunk splitting in Vite config (react-vendor, ui-vendor chunks)
+  - Optimized dependency pre-bundling
+- **Production Build Optimizations**:
+  - Terser minification with console.log removal in production
+  - Source maps disabled for production builds
+  - Chunk size warning limit set to 1000KB
+  - Improved caching strategy through manual chunk splitting
+- **Image Loading**: Lazy loading already implemented in FavoritesPage (loading="lazy" attribute)
+
+### Security Hardening
+- **Error Boundary Component**: ErrorBoundary for catching React component errors
+  - Prevents app-wide crashes with fallback UI
+  - Logs errors to console in development
+  - Refresh button for error recovery
+  - Supports custom fallback UI
+- **Security Headers**: Enhanced HTML meta tags for security
+  - Content Security Policy (CSP) with restrictive directives
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: DENY
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: restricted access to geolocation, microphone, camera
+- **Error Handling**: Centralized errorHandler utility
+  - parseApiError for standardized API error parsing
+  - handleNetworkError for network error handling
+  - getUserErrorMessage for user-friendly error messages
+  - Helper functions: isAuthError, isNetworkError, isServerError
+  - User-friendly error messages for common HTTP status codes
+- **Environment Configuration**: Updated .env.example with security options
+  - VITE_STRICT_MODE for additional checks
+  - VITE_ENABLE_ERROR_TRACKING for production error tracking
+
+### Security Review Results
+- **XSS Prevention**: No dangerouslySetInnerHTML usage (verified via grep)
+- **Code Injection**: No eval() usage (verified via grep)
+- **LocalStorage Security**: Limited to CoachMark UI preferences only (non-sensitive data)
+- **CSP Headers**: Content Security Policy added to index.html
+- **React Security**: Automatic XSS escaping maintained
+- **Authentication**: Session-based authentication with CSRF protection
+- **Error Handling**: Secure error handling without information leakage
+- **Secrets Management**: No hardcoded secrets or API keys
+- **Input Validation**: All forms have client-side validation
+- **Accessibility**: Proper ARIA attributes maintained
+- **Production Hardening**: Console.log removal, minification enabled
+
+### API Contract Compatibility
+- No API contract changes in this checkpoint
+- All existing API integrations remain compatible
+- No new endpoints or fields invented
+- Backend admin API endpoint path verified: `/api/v1/admin-panel/`
+
+### Test Coverage
+- ErrorBoundary.test.tsx: 5 tests (rendering, error catching, custom fallback, refresh, console logging)
+- errorHandler.test.ts: 19 tests (API error parsing, network error handling, user messages, error type checks)
+- App.test.tsx: 13 tests (lazy loading, route rendering, loading states)
+- Full regression suite: 693 tests passing across 57 test files (37 new tests)
+
+### Notes
+- Performance improvements reduce initial bundle size and improve load times
+- Security hardening adds defense-in-depth layers to frontend
+- No breaking changes to existing functionality
+- All improvements use existing architecture and design system
+- Design system and accessibility preserved (no regressions)
