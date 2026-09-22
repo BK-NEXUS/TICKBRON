@@ -5,8 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 export function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
-    first_name: '',
-    last_name: '',
+    full_name: '',
     phone_number: '',
     password: '',
     password_confirm: '',
@@ -78,36 +77,19 @@ export function RegisterPage() {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="auth-field">
-              <label htmlFor="first_name" className="auth-label">
-                First Name
+              <label htmlFor="full_name" className="auth-label">
+                Full Name
               </label>
               <input
-                id="first_name"
-                name="first_name"
+                id="full_name"
+                name="full_name"
                 type="text"
                 className="auth-input"
-                value={formData.first_name}
+                value={formData.full_name}
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                autoComplete="given-name"
-              />
-            </div>
-
-            <div className="auth-field">
-              <label htmlFor="last_name" className="auth-label">
-                Last Name
-              </label>
-              <input
-                id="last_name"
-                name="last_name"
-                type="text"
-                className="auth-input"
-                value={formData.last_name}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                autoComplete="family-name"
+                autoComplete="name"
               />
             </div>
 
@@ -130,7 +112,7 @@ export function RegisterPage() {
 
             <div className="auth-field">
               <label htmlFor="phone_number" className="auth-label">
-                Phone Number (Optional)
+                Phone Number
               </label>
               <input
                 id="phone_number"
@@ -139,6 +121,7 @@ export function RegisterPage() {
                 className="auth-input"
                 value={formData.phone_number}
                 onChange={handleChange}
+                required
                 disabled={isLoading}
                 autoComplete="tel"
               />

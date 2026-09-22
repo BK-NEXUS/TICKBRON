@@ -28,13 +28,14 @@ If a dependency is missing, the agent stops at the boundary. It does not invent 
 Status: READY
 
 ### POST `/api/v1/auth/register/`
-- Request: `{ email, first_name, last_name, phone_number (optional), password, password_confirm }`
+- Request: `{ email, full_name, phone_number, password, password_confirm, first_name (optional), last_name (optional) }`
 - Response: `{ id, email, first_name, last_name, full_name, phone_number, is_active, date_joined, last_login, email_verified, two_factor_enabled }`
 - Auth: None (public endpoint)
 - Error: 400 for validation errors, 409 for duplicate email, 429 for rate limit exceeded
 - Auto-logs in user after successful registration (session-based)
 - **Updated (Checkpoint 04):** Password must be 12+ characters with complexity requirements, disposable emails rejected
 - **Updated (Checkpoint 19):** Rate limited to 5 requests per minute per IP to prevent registration spam
+- **Updated (Checkpoint 21):** Simplified registration - requires only full_name, phone_number, email (first_name, last_name optional)
 
 ### POST `/api/v1/auth/login/`
 - Request: `{ email, password }`
@@ -66,6 +67,27 @@ Status: READY
 - Error: 401 if not authenticated
 - Returns current user profile
 - **Updated (Checkpoint 04):** Includes email_verified and two_factor_enabled fields
+
+### POST `/api/v1/auth/otp/request/`
+- Request: `{ phone_number }`
+- Response: `{ success: true, otp_code: "123456" }` (when SMS_TEST_MODE=True)
+- Auth: None (public endpoint)
+- Error: 400 for invalid phone number, 429 for rate limit exceeded
+- Rate limited: 3 requests per minute per phone number
+- Creates user if phone number not registered
+- Returns OTP code in response when SMS_TEST_MODE=True (for testing)
+- **Added (Checkpoint 21):** Phone-based OTP authentication
+
+### POST `/api/v1/auth/otp/verify/`
+- Request: `{ phone_number, otp_code }` (6-digit code)
+- Response: `{ id, email, first_name, last_name, full_name, phone_number, is_active, date_joined, last_login, email_verified, two_factor_enabled }`
+- Auth: None (public endpoint)
+- Error: 400 for invalid OTP format, 401 for invalid/expired OTP, 429 for rate limit exceeded
+- Establishes session using same mechanism as password login
+- OTP expires after 5 minutes
+- Maximum 3 verification attempts per OTP
+- Account lockout protection applies (inherited from password login)
+- **Added (Checkpoint 21):** Phone-based OTP authentication
 
 ## Notes
 - All auth uses session-based authentication with secure cookies

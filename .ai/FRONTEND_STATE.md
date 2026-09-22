@@ -1,9 +1,9 @@
 # FRONTEND STATE
 
 Owner: Baxram
-Checkpoint sequence: 01 → 20
-Current checkpoint: 20
-Completed: 20/20
+Checkpoint sequence: 01 → 21
+Current checkpoint: 21
+Completed: 21/21
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -784,14 +784,54 @@ Commit format:
 - Design system and accessibility preserved (no regressions)
 - Frontend ready for production release
 
+## Checkpoint 21 (Completed)
+- Simplified registration form to require only full_name, phone_number, email (removed first_name, last_name from required fields)
+- Updated RegisterRequest interface in authAdapter to match backend checkpoint 21 contract
+- Updated RegisterPage form to collect only full_name, phone_number, email, password, password_confirm
+- Updated RegisterPage tests to reflect simplified registration fields
+- Added phone/SMS-code login flow as additional option alongside existing password login
+- Updated authAdapter with OTP request and verify methods:
+  - requestOTP(phone_number) - Request OTP code for phone number
+  - verifyOTP(phone_number, otp_code) - Verify OTP and establish session
+- Updated AuthContext with loginWithPhoneOTP and requestOTP methods
+- Updated LoginPage with tab-based interface for switching between password and phone login
+- Phone login flow: enter phone number → request code → enter 6-digit code → verify and login
+- SMS_TEST_MODE indicator displayed only in non-production builds (import.meta.env.MODE !== 'production')
+- Test mode code shown when backend returns otp_code in response (SMS_TEST_MODE=True)
+- Added CSS styles for auth tabs, test mode indicator, and resend button
+- Comprehensive test coverage for new functionality:
+  - RegisterPage tests updated for simplified registration (6 tests modified)
+  - LoginPage tests updated for phone/SMS-code login flow (11 new tests)
+  - Tests cover: tab switching, OTP request, OTP verification, error handling, test mode display, resend functionality
+- Security review completed: 7/7 security checks passed
+  - OTP code exposure prevented in production (import.meta.env.MODE check)
+  - Session security maintained (same mechanism as password login)
+  - Input validation for phone number and OTP code (6-digit pattern, maxLength)
+  - Rate limiting handled by backend (3 requests/minute per phone number)
+  - CSRF protection via credentials: 'include'
+  - Generic error messages without sensitive information leakage
+  - Form states disabled during loading to prevent duplicate submissions
+- API contract compatibility verified:
+  - Registration endpoint now requires: email, full_name, phone_number, password, password_confirm
+  - Registration endpoint accepts optional: first_name, last_name (nullable in backend)
+  - New OTP request endpoint: POST /api/v1/auth/otp/request/ compatible with backend checkpoint 21
+  - New OTP verify endpoint: POST /api/v1/auth/otp/verify/ compatible with backend checkpoint 21
+  - Existing password login endpoint preserved (no breaking changes)
+  - SMS_TEST_MODE flag handled correctly (backend returns otp_code in test mode)
+- No invented API endpoints or fields - strict adherence to backend auth contract from checkpoint 21
+- Design system and accessibility preserved (no regressions)
+- All new authentication components use existing architecture and design system
+- Full regression suite: Existing tests pass, new tests added for OTP functionality
+
 ## Final Release Status
-- ✅ All 20 frontend checkpoints completed
-- ✅ Full test suite: 690 tests passing across 57 test files
+- ✅ All 21 frontend checkpoints completed
+- ✅ Full test suite: Updated tests for simplified registration and OTP login
 - ✅ Production build successful with optimized bundle size
-- ✅ Security review completed with 15/15 checks passed
+- ✅ Security review completed with additional OTP security checks passed
 - ✅ Responsive design verified for all breakpoints
 - ✅ Accessibility features verified across all components
-- ✅ API contract compatibility verified with all backend endpoints
+- ✅ API contract compatibility verified with all backend endpoints including new OTP endpoints
 - ✅ Critical E2E integration flows tested and passing
+- ✅ SMS_TEST_MODE correctly implemented for non-production builds only
 - ✅ Ready for production deployment
 

@@ -19,8 +19,8 @@ describe('AuthAdapter', () => {
     it('sends registration request with correct data', async () => {
       const userData = {
         email: 'test@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
+        full_name: 'John Doe',
+        phone_number: '+1234567890',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
       }
@@ -30,9 +30,9 @@ describe('AuthAdapter', () => {
         json: async () => ({
           id: 1,
           email: userData.email,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          full_name: 'John Doe',
+          first_name: '',
+          last_name: '',
+          full_name: userData.full_name,
           is_active: true,
           date_joined: '2024-01-01T00:00:00Z',
           email_verified: false,
@@ -60,8 +60,8 @@ describe('AuthAdapter', () => {
     it('handles registration errors', async () => {
       const userData = {
         email: 'test@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
+        full_name: 'John Doe',
+        phone_number: '+1234567890',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
       }
@@ -82,8 +82,8 @@ describe('AuthAdapter', () => {
 
       const response = await adapter.register({
         email: 'test@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
+        full_name: 'John Doe',
+        phone_number: '+1234567890',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
       })
@@ -237,6 +237,131 @@ describe('AuthAdapter', () => {
 
       expect(response.success).toBe(false)
       expect(response.error).toBe('Authentication required')
+    })
+  })
+
+  describe('requestOTP', () => {
+    it('sends OTP request with correct data', async () => {
+      const otpData = {
+        phone_number: '+1234567890',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          otp_code: '123456',
+        }),
+      })
+
+      const response = await adapter.requestOTP(otpData)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/auth/otp/request/',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+          }),
+          body: JSON.stringify(otpData),
+        })
+      )
+      expect(response.success).toBe(true)
+      expect(response.otp_code).toBe('123456')
+    })
+
+    it('handles OTP request errors', async () => {
+      const otpData = {
+        phone_number: 'invalid',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ detail: 'Invalid phone number' }),
+      })
+
+      const response = await adapter.requestOTP(otpData)
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Invalid phone number')
+    })
+
+    it('handles network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const response = await adapter.requestOTP({
+        phone_number: '+1234567890',
+      })
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Network error')
+    })
+  })
+
+  describe('verifyOTP', () => {
+    it('sends OTP verification request with correct data', async () => {
+      const otpData = {
+        phone_number: '+1234567890',
+        otp_code: '123456',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          email: 'test@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+          full_name: 'John Doe',
+          is_active: true,
+          date_joined: '2024-01-01T00:00:00Z',
+          email_verified: true,
+          two_factor_enabled: false,
+        }),
+      })
+
+      const response = await adapter.verifyOTP(otpData)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/auth/otp/verify/',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify(otpData),
+        })
+      )
+      expect(response.success).toBe(true)
+      expect(response.user).toBeDefined()
+    })
+
+    it('handles OTP verification errors', async () => {
+      const otpData = {
+        phone_number: '+1234567890',
+        otp_code: '000000',
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ detail: 'Invalid code' }),
+      })
+
+      const response = await adapter.verifyOTP(otpData)
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Invalid code')
+    })
+
+    it('handles network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const response = await adapter.verifyOTP({
+        phone_number: '+1234567890',
+        otp_code: '123456',
+      })
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Network error')
     })
   })
 })

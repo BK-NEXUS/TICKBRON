@@ -8,6 +8,8 @@ vi.mock('../adapters/authAdapter', () => ({
   authAdapter: {
     getCurrentUser: vi.fn().mockResolvedValue({ success: false }),
     login: vi.fn(),
+    verifyOTP: vi.fn(),
+    requestOTP: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
   },
@@ -144,8 +146,8 @@ describe('AuthContext', () => {
       const mockUser = {
         id: 1,
         email: 'test@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
+        first_name: '',
+        last_name: '',
         full_name: 'John Doe',
         is_active: true,
         date_joined: '2024-01-01T00:00:00Z',
@@ -167,8 +169,8 @@ describe('AuthContext', () => {
       const response = await act(async () => {
         return await result.current.register({
           email: 'test@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
+          full_name: 'John Doe',
+          phone_number: '+1234567890',
           password: 'SecurePassword123!',
           password_confirm: 'SecurePassword123!',
         })
@@ -194,8 +196,8 @@ describe('AuthContext', () => {
       const response = await act(async () => {
         return await result.current.register({
           email: 'test@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
+          full_name: 'John Doe',
+          phone_number: '+1234567890',
           password: 'SecurePassword123!',
           password_confirm: 'SecurePassword123!',
         })
@@ -203,6 +205,104 @@ describe('AuthContext', () => {
 
       expect(response.success).toBe(false)
       expect(response.error).toBe('Email already exists')
+    })
+  })
+
+  describe('loginWithPhoneOTP', () => {
+    it('logs in user with OTP successfully', async () => {
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        full_name: 'John Doe',
+        is_active: true,
+        date_joined: '2024-01-01T00:00:00Z',
+        email_verified: true,
+        two_factor_enabled: false,
+      }
+
+      vi.mocked(authAdapter.verifyOTP).mockResolvedValue({
+        success: true,
+        user: mockUser,
+      })
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+
+      const response = await act(async () => {
+        return await result.current.loginWithPhoneOTP('+1234567890', '123456')
+      })
+
+      expect(response.success).toBe(true)
+      expect(result.current.user).toEqual(mockUser)
+      expect(result.current.isAuthenticated).toBe(true)
+    })
+
+    it('handles OTP login failure', async () => {
+      vi.mocked(authAdapter.verifyOTP).mockResolvedValue({
+        success: false,
+        error: 'Invalid code',
+      })
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+
+      const response = await act(async () => {
+        return await result.current.loginWithPhoneOTP('+1234567890', '000000')
+      })
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Invalid code')
+      expect(result.current.user).toBeNull()
+    })
+  })
+
+  describe('requestOTP', () => {
+    it('requests OTP code successfully', async () => {
+      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
+        success: true,
+        otp_code: '123456',
+      })
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+
+      const response = await act(async () => {
+        return await result.current.requestOTP('+1234567890')
+      })
+
+      expect(response.success).toBe(true)
+      expect(response.otp_code).toBe('123456')
+    })
+
+    it('handles OTP request failure', async () => {
+      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
+        success: false,
+        error: 'Invalid phone number',
+      })
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+
+      const response = await act(async () => {
+        return await result.current.requestOTP('invalid')
+      })
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Invalid phone number')
     })
   })
 

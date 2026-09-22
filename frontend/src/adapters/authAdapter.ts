@@ -21,16 +21,33 @@ export interface User {
 
 export interface RegisterRequest {
   email: string
-  first_name: string
-  last_name: string
-  phone_number?: string
+  full_name: string
+  phone_number: string
   password: string
   password_confirm: string
+  first_name?: string
+  last_name?: string
 }
 
 export interface LoginRequest {
   email: string
   password: string
+}
+
+export interface RequestOTPRequest {
+  phone_number: string
+}
+
+export interface VerifyOTPRequest {
+  phone_number: string
+  otp_code: string
+}
+
+export interface OTPResponse {
+  success: boolean
+  otp_code?: string
+  error?: string
+  detail?: string
 }
 
 export interface AuthResponse {
@@ -116,6 +133,47 @@ class AuthAdapter {
       method: 'GET',
     })
   }
+
+  async requestOTP(data: RequestOTPRequest): Promise<OTPResponse> {
+    const url = `${this.baseUrl}/api/v1/auth/otp/request/`
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error: errorData.detail || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        }
+      }
+
+      const responseData = await response.json()
+      return {
+        success: true,
+        otp_code: responseData.otp_code,
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred',
+      }
+    }
+  }
+
+  async verifyOTP(data: VerifyOTPRequest): Promise<AuthResponse> {
+    return this.request('/api/v1/auth/otp/verify/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 // Export singleton instance
@@ -123,3 +181,6 @@ export const authAdapter = new AuthAdapter()
 
 // Export class for testing
 export { AuthAdapter }
+
+// Export new types
+export type { RequestOTPRequest, VerifyOTPRequest, OTPResponse }
