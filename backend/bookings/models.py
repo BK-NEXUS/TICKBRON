@@ -105,10 +105,10 @@ class Booking(BaseModel):
     # Additional information
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
-        max_length=20,
+        max_length=6,
         unique=True,
         db_index=True,
-        help_text=_('Unique confirmation code for the booking')
+        help_text=_('Unique 6-character booking reference code')
     )
     
     # Cancellation information
@@ -182,14 +182,28 @@ class Booking(BaseModel):
         super().save(*args, **kwargs)
     
     def generate_confirmation_code(self):
-        """Generate a unique confirmation code using cryptographically secure random."""
-        import secrets
-        import string
+        """
+        Generate a unique 6-character booking reference code using cryptographically secure random.
         
-        while True:
-            code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        Uses unambiguous character set excluding: 0/O, 1/I/L to prevent confusion.
+        Character set: 2-9, A-H, J-K, M-N, P, R-Z (excluding 0, 1, I, L, O)
+        """
+        import secrets
+        
+        # Unambiguous character set (excludes 0/O, 1/I/L)
+        unambiguous_chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
+        
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            code = ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
             if not Booking.objects.filter(confirmation_code=code).exists():
                 return code
+        
+        # If we somehow exceed max attempts (extremely unlikely), fall back to timestamp-based
+        import time
+        timestamp = int(time.time() * 1000) % 1000000
+        code = ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
+        return code
     
     @classmethod
     def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None):

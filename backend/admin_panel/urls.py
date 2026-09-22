@@ -7,7 +7,8 @@ from admin_panel.views import (
     AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
     admin_property_approve, admin_property_suspend,
-    admin_create_hotel_owner, admin_payment_transactions
+    admin_create_hotel_owner, admin_payment_transactions,
+    admin_booking_lookup_by_reference
 )
 
 app_name = 'admin_panel'
@@ -24,4 +25,5 @@ urlpatterns = [
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),
     path('payments/transactions/', admin_payment_transactions, name='admin-payment-transactions'),
+    path('bookings/lookup/', admin_booking_lookup_by_reference, name='admin-booking-lookup'),
 ]

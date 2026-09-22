@@ -13,6 +13,7 @@ from django.utils import timezone
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
+from bookings.models import Booking, BookingItem
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer,
     AdminUserSerializer, AdminUserCreateSerializer,
@@ -270,3 +271,124 @@ def admin_payment_transactions(request):
         transactions_data.append(transaction_data)
     
     return Response(transactions_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_booking_lookup_by_reference(request):
+    """
+    Look up a customer's full details and booking by reference code.
+    
+    This endpoint is for staff/support use when a guest reports a problem at the property
+    and calls support with their booking reference code.
+    
+    Query Parameters:
+        reference_code: 6-character booking reference code (required)
+    
+    Returns:
+        Full booking details including:
+        - Customer information (name, contact info)
+        - Property and room details
+        - Booking dates and status
+        - Payment status
+    """
+    reference_code = request.query_params.get('reference_code')
+    
+    if not reference_code:
+        return Response(
+            {'error': 'reference_code parameter is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Look up booking by reference code
+    try:
+        booking = Booking.objects.select_related(
+            'guest', 'property', 'property__property_type', 'property__owner'
+        ).prefetch_related(
+            'booking_items__room_type', 'booking_items__rate_plan'
+        ).get(
+            confirmation_code=reference_code.upper(),
+            is_deleted=False
+        )
+    except Booking.DoesNotExist:
+        return Response(
+            {'error': 'Booking not found with this reference code'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Build comprehensive response
+    booking_items_data = []
+    for item in booking.booking_items.all():
+        booking_items_data.append({
+            'room_type': {
+                'id': item.room_type.id,
+                'name': item.room_type.name,
+                'description': item.room_type.description,
+                'base_occupancy': item.room_type.base_occupancy,
+                'max_occupancy': item.room_type.max_occupancy,
+            },
+            'rate_plan': {
+                'id': item.rate_plan.id,
+                'name': item.rate_plan.name,
+                'rate_type': item.rate_plan.rate_type,
+                'description': item.rate_plan.description,
+            },
+            'number_of_rooms': item.number_of_rooms,
+            'price_per_night': str(item.price_per_night),
+            'currency': item.currency,
+        })
+    
+    response_data = {
+        'booking': {
+            'id': booking.id,
+            'reference_code': booking.confirmation_code,
+            'status': booking.status,
+            'payment_status': booking.payment_status,
+            'check_in': booking.check_in,
+            'check_out': booking.check_out,
+            'number_of_nights': booking.number_of_nights,
+            'guest_count': booking.guest_count,
+            'total_price': str(booking.total_price),
+            'currency': booking.currency,
+            'special_requests': booking.special_requests,
+            'cancelled_at': booking.cancelled_at,
+            'cancellation_reason': booking.cancellation_reason,
+            'expires_at': booking.expires_at,
+            'created_at': booking.created_at,
+            'updated_at': booking.updated_at,
+            'guest_full_name': booking.guest_full_name,
+            'guest_phone': booking.guest_phone,
+            'guest_email': booking.guest_email,
+            'number_of_rooms': booking.number_of_rooms,
+            'children': booking.children,
+            'booking_items': booking_items_data,
+        },
+        'customer': {
+            'id': booking.guest.id,
+            'full_name': booking.guest.get_full_name(),
+            'email': booking.guest.email,
+            'phone_number': booking.guest.phone_number,
+            'whatsapp': booking.guest.whatsapp,
+            'telegram': booking.guest.telegram,
+            'preferred_contact_method': booking.guest.preferred_contact_method,
+        },
+        'property': {
+            'id': booking.property.id,
+            'name': booking.property.name,
+            'property_type': booking.property.property_type.name if booking.property.property_type else None,
+            'status': booking.property.status,
+            'address_line1': booking.property.address_line1,
+            'city': booking.property.city,
+            'state': booking.property.state,
+            'country': booking.property.country,
+            'base_price': str(booking.property.base_price),
+            'currency': booking.property.currency,
+            'owner': {
+                'id': booking.property.owner.id,
+                'full_name': booking.property.owner.get_full_name(),
+                'email': booking.property.owner.email,
+            } if booking.property.owner else None,
+        },
+    }
+    
+    return Response(response_data, status=status.HTTP_200_OK)

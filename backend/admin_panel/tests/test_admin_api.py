@@ -10,8 +10,11 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from properties.models import Property, PropertyType, Amenity, AmenityCategory
+from properties.models import Property, PropertyType, Amenity, AmenityCategory, RoomType, RatePlan
 from permissions.models import Role
+from bookings.models import Booking, BookingItem
+from decimal import Decimal
+from datetime import date, timedelta
 
 User = get_user_model()
 
@@ -539,3 +542,212 @@ class AdminPermissionTests(TestCase):
         response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminBookingLookupTests(TestCase):
+    """Tests for admin booking lookup by reference code endpoint."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        
+        # Create super-admin user
+        self.super_admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='testpassword123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Create staff user
+        self.staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password='testpassword123',
+            first_name='Staff',
+            last_name='User',
+            is_staff=True
+        )
+        
+        # Create regular user
+        self.regular_user = User.objects.create_user(
+            email='regular@example.com',
+            password='testpassword123',
+            first_name='Regular',
+            last_name='User'
+        )
+        
+        # Create property type and property
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+        
+        self.property = Property.objects.create(
+            owner=self.regular_user,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create room type and rate plan
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('100.00'),
+            currency='USD',
+            total_rooms=5
+        )
+        
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('100.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True
+        )
+        
+        # Create booking
+        self.booking = Booking.objects.create(
+            guest=self.regular_user,
+            property=self.property,
+            status='confirmed',
+            payment_status='paid',
+            check_in=date.today() + timedelta(days=10),
+            check_out=date.today() + timedelta(days=12),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='Regular User',
+            guest_phone='+998901234567',
+            guest_email='regular@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        # Create booking item
+        BookingItem.objects.create(
+            booking=self.booking,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+    
+    def test_super_admin_can_lookup_booking_by_reference_code(self):
+        """Test that super-admin can lookup booking by reference code."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('booking', response.data)
+        self.assertIn('customer', response.data)
+        self.assertIn('property', response.data)
+        
+        # Verify booking details
+        booking_data = response.data['booking']
+        self.assertEqual(booking_data['reference_code'], self.booking.confirmation_code)
+        self.assertEqual(booking_data['status'], 'confirmed')
+        self.assertEqual(booking_data['payment_status'], 'paid')
+        
+        # Verify customer details
+        customer_data = response.data['customer']
+        self.assertEqual(customer_data['email'], 'regular@example.com')
+        self.assertEqual(customer_data['full_name'], 'Regular User')
+        
+        # Verify property details
+        property_data = response.data['property']
+        self.assertEqual(property_data['id'], self.property.id)
+        self.assertEqual(property_data['name'], self.property.name)
+    
+    def test_staff_can_lookup_booking_by_reference_code(self):
+        """Test that staff can lookup booking by reference code."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('booking', response.data)
+    
+    def test_regular_user_cannot_lookup_booking_by_reference_code(self):
+        """Test that regular user cannot access booking lookup endpoint."""
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_unauthenticated_user_cannot_lookup_booking(self):
+        """Test that unauthenticated user cannot access booking lookup endpoint."""
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_lookup_with_missing_reference_code_parameter(self):
+        """Test that missing reference_code parameter returns 400 error."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/bookings/lookup/')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_lookup_with_invalid_reference_code(self):
+        """Test that invalid reference code returns 404 error."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/bookings/lookup/?reference_code=INVALID')
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('error', response.data)
+    
+    def test_lookup_case_insensitive(self):
+        """Test that reference code lookup is case-insensitive."""
+        self.client.force_authenticate(user=self.super_admin)
+        
+        # Test with lowercase
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code.lower()}')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['booking']['reference_code'], self.booking.confirmation_code)
+    
+    def test_lookup_returns_all_required_fields(self):
+        """Test that lookup returns all required customer and booking details."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check booking fields
+        booking_data = response.data['booking']
+        required_booking_fields = [
+            'id', 'reference_code', 'status', 'payment_status', 'check_in', 'check_out',
+            'number_of_nights', 'guest_count', 'total_price', 'currency', 'special_requests',
+            'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children', 'booking_items'
+        ]
+        for field in required_booking_fields:
+            self.assertIn(field, booking_data)
+        
+        # Check customer fields
+        customer_data = response.data['customer']
+        required_customer_fields = ['id', 'full_name', 'email', 'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method']
+        for field in required_customer_fields:
+            self.assertIn(field, customer_data)
+        
+        # Check property fields
+        property_data = response.data['property']
+        required_property_fields = ['id', 'name', 'property_type', 'status', 'address_line1', 'city', 'state', 'country', 'base_price', 'currency', 'owner']
+        for field in required_property_fields:
+            self.assertIn(field, property_data)

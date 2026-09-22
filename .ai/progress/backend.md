@@ -2,8 +2,8 @@
 
 20 checkpoint slots reserved for main plan, plus addendum checkpoints.
 
-Current: 22
-Completed: 22
+Current: 23
+Completed: 23
 
 ## Final Status
 Backend main plan (checkpoints 1-20) is complete and ready for production deployment.
@@ -28,4 +28,17 @@ Checkpoints 21-26 (SMS functionality, advanced features)
   - Guest can override details for specific booking
   - Children field accepts list of ages (0-17) with validation
   - Full test coverage for new profile and booking fields
+- Checkpoint 23: Booking reference code + support lookup API ✅
+  - Updated booking reference code generation to use 6-character unambiguous code
+  - Character set excludes: 0/O, 1/I/L to prevent confusion
+  - Uses cryptographically secure random with retry-on-collision strategy
+  - Database unique constraint ensures uniqueness
+  - Migration 0004: Changed confirmation_code max_length from 20 to 6
+  - Reference code returned in booking confirmation response
+  - Implemented staff-only admin API endpoint for support lookup
+  - GET /api/v1/admin-panel/bookings/lookup/?reference_code={code}
+  - Returns full customer, booking, and property details
+  - Protected with IsSuperAdminOrStaff permission
+  - Case-insensitive lookup for user convenience
+  - Full test coverage for reference code generation and admin lookup
 

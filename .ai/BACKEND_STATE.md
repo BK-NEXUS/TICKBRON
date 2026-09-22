@@ -1,9 +1,9 @@
 # BACKEND STATE
 
 Owner: Kolya
-Checkpoint sequence: 01 → 20
-Current checkpoint: 20
-Completed: 20
+Checkpoint sequence: 01 → 20 + CRM addendum 21-26
+Current checkpoint: 23
+Completed: 23
 
 Backend owns backend/, backend tests, backend infrastructure where explicitly assigned, and backend API contracts.
 
@@ -18,8 +18,9 @@ Commit format:
 `kolya NN project`
 
 ## Final Release Status
-- ✅ All 20 checkpoints completed
-- ✅ Full test suite: 568 tests passed, 2 skipped
+- ✅ All 20 main checkpoints completed
+- ✅ CRM addendum checkpoints 21-23 completed
+- ✅ Full test suite: 614 tests passed, 2 skipped (as of checkpoint 22)
 - ✅ Clean migration history
 - ✅ Comprehensive security measures
 - ✅ Permission boundaries enforced
@@ -27,5 +28,10 @@ Commit format:
 - ✅ OpenAPI schema documented
 - ✅ Ready for production deployment
 
+## CRM Addendum Progress
+- Checkpoint 21: Simplified registration + phone/SMS OTP authentication ✅
+- Checkpoint 22: Customer profile extensions + booking auto-fill ✅
+- Checkpoint 23: Booking reference code + support lookup API ✅
+
 ## Remaining Work
-- CRM addendum checkpoints 21-26 (SMS functionality, advanced features)
+- CRM addendum checkpoints 24-26 (additional CRM features)

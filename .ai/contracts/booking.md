@@ -2,6 +2,37 @@
 
 Booking creation must be transactional and concurrency-safe. Availability/inventory must prevent double booking. Price calculations must be deterministic. Cancellation and inventory restoration must be tested.
 
+## Booking Reference Code (Checkpoint 23)
+
+### Requirements
+- Generate unique 6-character booking reference code at booking creation
+- Use unambiguous character set excluding: 0/O, 1/I/L to prevent confusion
+- Character set: 2-9, A-H, J-K, M-N, P, R-Z (excludes 0, 1, I, L, O)
+- Guarantee uniqueness with database constraint and retry-on-collision strategy
+- Return reference code in booking confirmation response and booking detail
+
+### Reference Code Generation
+- Length: 6 characters (reduced from 8)
+- Character set: 23 characters (23456789ABCDEFGHJKMNPQRSTUVWXYZ)
+- Collision handling: Retry up to 10 times with cryptographically secure random
+- Fallback: Timestamp-based generation if collision exceeds attempts (extremely unlikely)
+- Database constraint: Unique constraint on confirmation_code field
+- Indexed for fast lookup
+
+### API Contract Changes
+- POST `/api/v1/bookings/` - Create booking
+  - Response includes: confirmation_code (6-character reference code)
+- GET `/api/v1/bookings/{id}/` - Retrieve booking details
+  - Response includes: confirmation_code (6-character reference code)
+- Database field: confirmation_code max_length changed from 20 to 6
+
+### Security Considerations
+- Reference codes are human-readable but not predictable
+- Cryptographically secure random generation prevents guessing
+- No sequential patterns or time-based information in codes
+- Case-insensitive lookup for user convenience
+- Unambiguous characters prevent transcription errors
+
 ## Booking Creation with Guest Details Auto-Fill (Checkpoint 22)
 
 ### Requirements

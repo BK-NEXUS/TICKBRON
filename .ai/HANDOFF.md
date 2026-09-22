@@ -490,6 +490,34 @@ Status: READY
 ## Admin APIs (Backend Checkpoint 18)
 Status: READY
 
+### Admin Support Lookup (Backend Checkpoint 23)
+Status: READY
+
+### GET `/api/v1/admin-panel/bookings/lookup/` - Lookup booking by reference code
+- Request: Query parameter `reference_code` (6-character booking reference code)
+- Response: Full booking details including:
+  - Booking information: id, reference_code, status, payment_status, dates, pricing, guest details
+  - Customer information: name, contact info (email, phone, whatsapp, telegram, preferred contact method)
+  - Property information: name, type, status, address, owner details
+  - Booking items: room types, rate plans, pricing
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 404 if reference code not found, 400 if reference_code parameter missing
+- Case-insensitive lookup for user convenience
+- Use case: Support staff can quickly look up customer details when guest reports problem at property
+
+### Backend Implementation Details
+- admin_booking_lookup_by_reference view in admin_panel/views.py
+- Uses Booking.objects.select_related() and prefetch_related() for optimal query performance
+- Returns comprehensive customer, booking, and property information in single response
+- Staff-only permission check via IsSuperAdminOrStaff custom permission class
+- URL: /api/v1/admin-panel/bookings/lookup/
+
+### Notes
+- Reference codes are 6-character unambiguous codes (no 0/O, 1/I/L)
+- Designed for support workflow where guest provides code at property
+- Staff can access full booking details without needing booking ID or customer login
+- Comprehensive test coverage for permission checks and response structure
+
 ### Admin Property Moderation
 - GET `/api/v1/admin-panel/properties/` - List all properties for moderation
   - Request: None
