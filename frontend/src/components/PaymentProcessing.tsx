@@ -50,7 +50,6 @@ export function PaymentProcessing({ provider, amount, currency, status, message 
 
   const isProcessing = status === 'pending' || status === 'processing'
   const isSuccess = status === 'completed'
-  const isError = status === 'failed'
 
   return (
     <div className="payment-processing">

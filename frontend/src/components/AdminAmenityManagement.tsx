@@ -260,22 +260,24 @@ export function AdminAmenityManagement() {
     setFormMode('edit')
     setSelectedItem(item)
     if (viewMode === 'amenities' && !('category_name' in item)) {
+      const amenity = item as AdminAmenity
       setAmenityForm({
-        category: item.category,
-        name: item.name,
-        slug: item.slug,
-        description: item.description,
-        icon: item.icon,
-        is_searchable: item.is_searchable,
-        sort_order: item.sort_order,
+        category: amenity.category,
+        name: amenity.name,
+        slug: amenity.slug,
+        description: amenity.description,
+        icon: amenity.icon,
+        is_searchable: amenity.is_searchable,
+        sort_order: amenity.sort_order,
       })
     } else if ('category_name' in item) {
+      const category = item as AdminAmenityCategory
       setCategoryForm({
-        name: item.name,
-        slug: item.slug,
-        description: item.description,
-        icon: item.icon,
-        sort_order: item.sort_order,
+        name: category.name,
+        slug: category.slug,
+        description: category.description,
+        icon: category.icon,
+        sort_order: category.sort_order,
       })
     }
   }

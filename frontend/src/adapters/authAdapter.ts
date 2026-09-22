@@ -15,6 +15,8 @@ export interface User {
   last_login?: string
   email_verified: boolean
   two_factor_enabled: boolean
+  is_staff?: boolean
+  is_superuser?: boolean
 }
 
 export interface RegisterRequest {

@@ -11,7 +11,7 @@ interface RoomCardProps {
  * RoomCard component for displaying room information
  * Shows room details, occupancy, bed configuration, size, and pricing
  */
-export function RoomCard({ room, currency = 'USD', onSelect, isSelected = false }: RoomCardProps) {
+export function RoomCard({ room, currency: _currency = 'USD', onSelect, isSelected = false }: RoomCardProps) {
   const formatPrice = (price: number, currencyCode: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

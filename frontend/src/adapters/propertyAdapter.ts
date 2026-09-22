@@ -117,6 +117,20 @@ export interface RatePlan {
   advance_booking_days?: number
 }
 
+export interface DateInventory {
+  id: number
+  date: string
+  status: string
+  available_rooms: number
+  booked_rooms: number
+  price: number
+  currency: string
+  min_stay: number
+  max_stay: number
+  is_available: boolean
+  rate_plan_id?: number
+}
+
 export interface Property {
   id: number
   owner_id: number

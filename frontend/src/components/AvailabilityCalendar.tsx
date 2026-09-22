@@ -14,7 +14,7 @@ interface AvailabilityCalendarProps {
  */
 export function AvailabilityCalendar({ 
   inventory, 
-  currency = 'USD', 
+  currency = 'USD',
   onDateSelect, 
   selectedDate 
 }: AvailabilityCalendarProps) {
@@ -27,11 +27,6 @@ export function AvailabilityCalendar({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price)
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
   const getDaysInMonth = (date: Date) => {

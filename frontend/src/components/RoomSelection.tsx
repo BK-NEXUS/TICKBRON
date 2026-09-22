@@ -68,13 +68,14 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
           id: inventory.length + 1,
           rate_plan_id: ratePlanId,
           date: dateStr,
+          status: availableRooms > bookedRooms ? 'available' : 'fully_booked',
           available_rooms: availableRooms,
           booked_rooms: bookedRooms,
           price: ratePlan?.base_price || 100,
           currency: ratePlan?.currency || 'USD',
+          min_stay: ratePlan?.min_nights || 1,
+          max_stay: ratePlan?.max_nights || 30,
           is_available: availableRooms > bookedRooms,
-          minimum_stay: ratePlan?.min_nights || 1,
-          maximum_stay: ratePlan?.max_nights || 30,
         })
       }
       setDateInventory(inventory)

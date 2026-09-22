@@ -55,16 +55,6 @@ export function PartnerDashboardPage() {
     setCurrentView('rooms')
   }
 
-  const handleRoomTypeSelect = (roomTypeId: number, roomTypeName: string) => {
-    setSelectedRoomType({ id: roomTypeId, name: roomTypeName })
-    setCurrentView('rates')
-  }
-
-  const handleRatePlanSelect = (ratePlanId: number, ratePlanName: string) => {
-    setSelectedRatePlan({ id: ratePlanId, name: ratePlanName })
-    setCurrentView('availability')
-  }
-
   const handleBackToProperties = () => {
     setSelectedProperty(null)
     setSelectedRoomType(null)
