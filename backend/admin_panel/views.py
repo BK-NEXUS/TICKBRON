@@ -17,13 +17,19 @@ from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
 from bookings.models import Booking, BookingItem
+from admin_panel.models import InternalNote
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer,
     AdminUserSerializer, AdminUserCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
     AdminPaymentTransactionSerializer,
-    AdminCustomerSerializer
+    AdminCustomerSerializer,
+    AdminCustomerDetailSerializer,
+    AdminBookingSummarySerializer,
+    AdminPaymentSummarySerializer,
+    AdminInternalNoteSerializer,
+    AdminInternalNoteCreateSerializer
 )
 
 
@@ -533,3 +539,187 @@ def admin_customers_directory(request):
     serializer = AdminCustomerSerializer(paginated_data, many=True)
     
     return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_customer_detail(request, customer_id):
+    """
+    Admin API for a single customer's full profile.
+    
+    Returns:
+    - Contact information (full profile)
+    - All bookings filterable by all/upcoming/completed/cancelled
+    - All payments (amount, date, payment status)
+    - Last activity timestamp
+    - Internal notes (staff-only)
+    
+    Query Parameters:
+        booking_filter: Filter bookings by status (all, upcoming, completed, cancelled)
+    
+    Path Parameters:
+        customer_id: Customer ID
+    """
+    # Get customer
+    customer = get_object_or_404(User, id=customer_id, is_deleted=False)
+    
+    # Get booking filter
+    booking_filter = request.query_params.get('booking_filter', 'all')
+    
+    # Build bookings query
+    bookings = Booking.objects.filter(
+        guest=customer,
+        is_deleted=False
+    ).select_related('property').order_by('-created_at')
+    
+    # Apply booking filter
+    if booking_filter == 'upcoming':
+        bookings = bookings.filter(
+            status='confirmed',
+            check_in__gte=timezone.now().date()
+        )
+    elif booking_filter == 'completed':
+        bookings = bookings.filter(status='completed')
+    elif booking_filter == 'cancelled':
+        bookings = bookings.filter(status='cancelled')
+    # 'all' returns all bookings
+    
+    # Serialize bookings
+    bookings_data = []
+    for booking in bookings:
+        bookings_data.append({
+            'id': booking.id,
+            'reference_code': booking.confirmation_code,
+            'status': booking.status,
+            'payment_status': booking.payment_status,
+            'check_in': booking.check_in,
+            'check_out': booking.check_out,
+            'number_of_nights': booking.number_of_nights,
+            'total_price': str(booking.total_price),
+            'currency': booking.currency,
+            'property_name': booking.property.name,
+            'property_city': booking.property.city,
+            'created_at': booking.created_at
+        })
+    
+    bookings_serializer = AdminBookingSummarySerializer(bookings_data, many=True)
+    
+    # Get payments
+    payments = PaymentTransaction.objects.filter(
+        booking__guest=customer,
+        is_deleted=False
+    ).select_related('booking').order_by('-created_at')
+    
+    payments_data = []
+    for payment in payments:
+        payments_data.append({
+            'id': payment.id,
+            'booking_id': payment.booking.id if payment.booking else None,
+            'provider': payment.provider,
+            'amount': str(payment.amount),
+            'currency': payment.currency,
+            'status': payment.status,
+            'created_at': payment.created_at
+        })
+    
+    payments_serializer = AdminPaymentSummarySerializer(payments_data, many=True)
+    
+    # Get internal notes
+    internal_notes = InternalNote.objects.filter(
+        customer=customer,
+        is_deleted=False
+    ).select_related('author').order_by('-created_at')
+    
+    internal_notes_serializer = AdminInternalNoteSerializer(internal_notes, many=True)
+    
+    # Calculate last activity timestamp
+    # Last activity is the most recent of: last_login, last booking created_at, last payment created_at
+    last_activities = []
+    if customer.last_login:
+        last_activities.append(customer.last_login)
+    if bookings.exists():
+        last_activities.append(bookings.first().created_at)
+    if payments.exists():
+        last_activities.append(payments.first().created_at)
+    
+    last_activity = max(last_activities) if last_activities else None
+    
+    # Build response
+    response_data = {
+        'customer': AdminCustomerDetailSerializer(customer).data,
+        'bookings': bookings_serializer.data,
+        'payments': payments_serializer.data,
+        'internal_notes': internal_notes_serializer.data,
+        'last_activity': last_activity
+    }
+    
+    return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_internal_note_create(request, customer_id):
+    """
+    Create an internal note for a customer.
+    
+    Path Parameters:
+        customer_id: Customer ID
+    
+    Request Body:
+        note: Note content (required)
+    
+    Returns:
+        Created internal note
+    """
+    customer = get_object_or_404(User, id=customer_id, is_deleted=False)
+    
+    serializer = AdminInternalNoteCreateSerializer(
+        data=request.data,
+        context={'request': request}
+    )
+    
+    if serializer.is_valid():
+        serializer.validated_data['customer'] = customer
+        note = serializer.save()
+        return Response(
+            AdminInternalNoteSerializer(note).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_internal_note_detail(request, customer_id, note_id):
+    """
+    Update or delete an internal note.
+    
+    Path Parameters:
+        customer_id: Customer ID
+        note_id: Note ID
+    
+    Request Body (for PUT):
+        note: Updated note content (required)
+    
+    Returns:
+        Updated note (for PUT) or 204 No Content (for DELETE)
+    """
+    customer = get_object_or_404(User, id=customer_id, is_deleted=False)
+    note = get_object_or_404(
+        InternalNote,
+        id=note_id,
+        customer=customer,
+        is_deleted=False
+    )
+    
+    if request.method == 'PUT':
+        serializer = AdminInternalNoteSerializer(note, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        note.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

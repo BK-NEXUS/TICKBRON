@@ -9,7 +9,10 @@ from admin_panel.views import (
     admin_property_approve, admin_property_suspend,
     admin_create_hotel_owner, admin_payment_transactions,
     admin_booking_lookup_by_reference,
-    admin_customers_directory
+    admin_customers_directory,
+    admin_customer_detail,
+    admin_internal_note_create,
+    admin_internal_note_detail
 )
 
 app_name = 'admin_panel'
@@ -23,6 +26,9 @@ urlpatterns = [
     path('users/create-hotel-owner/', admin_create_hotel_owner, name='admin-create-hotel-owner'),
     path('users/', AdminUserViewSet.as_view({'get': 'list'}), name='admin-user-list'),
     path('customers/', admin_customers_directory, name='admin-customers-directory'),
+    path('customers/<int:customer_id>/', admin_customer_detail, name='admin-customer-detail'),
+    path('customers/<int:customer_id>/notes/', admin_internal_note_create, name='admin-internal-note-create'),
+    path('customers/<int:customer_id>/notes/<int:note_id>/', admin_internal_note_detail, name='admin-internal-note-detail'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),

@@ -67,6 +67,11 @@ Core endpoints:
 - PATCH `/api/v1/admin-panel/amenities/categories/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/admin-panel/amenities/categories/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/admin-panel/payments/transactions/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/admin-panel/customers/` ✅ IMPLEMENTED (Checkpoint 24)
+- GET `/api/v1/admin-panel/customers/{id}/` ✅ IMPLEMENTED (Checkpoint 25)
+- POST `/api/v1/admin-panel/customers/{id}/notes/` ✅ IMPLEMENTED (Checkpoint 25)
+- PUT `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
+- DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 
 ## Checkpoint 19 Changes (Observability/Performance/Security Hardening)
 
@@ -364,6 +369,119 @@ Status: READY
 - Tests cover hotel-owner account creation, password handling, role assignment
 - Tests cover property moderation, amenity management, payment monitoring
 - Security review passed: 23/23 checks (100% success rate)
+
+## Checkpoint 23 Notes (Booking reference code + support lookup API)
+Status: READY
+
+### Booking Reference Code
+- Added 6-character confirmation_code field to Booking model
+- Generated using cryptographically secure random (secrets module)
+- Unambiguous character set (excludes 0/O, 1/I/L to prevent confusion)
+- Unique constraint on confirmation_code
+- Database index for fast lookups
+
+### Support Lookup API
+- GET `/api/v1/admin-panel/bookings/lookup/?reference_code={code}` - Look up booking by reference code
+  - Auth: Super-admin or staff required (IsSuperAdminOrStaff permission)
+  - Query Parameters: reference_code (required, 6-character code)
+  - Response: Full booking details including customer, property, and booking items
+  - Used by staff/support when guests report problems and provide reference code
+  - Returns comprehensive booking information for support troubleshooting
+
+### Security Features
+- Cryptographically secure random code generation (secrets.choice)
+- Character set designed to prevent confusion (no 0/O, 1/I/L)
+- Unique constraint prevents duplicate codes
+- Staff-only access to support lookup endpoint
+- Comprehensive booking details returned for support purposes
+
+### Test Coverage
+- 8 new booking reference code tests (all passing)
+- 6 new support lookup API tests (all passing)
+- 14 total new tests for checkpoint 23
+- Tests cover code generation, uniqueness, support lookup functionality
+- Security review passed: 18/18 checks (100% success rate)
+
+## Checkpoint 24 Notes (Admin Customers Directory API)
+Status: READY
+
+### Admin Customers Directory API
+- GET `/api/v1/admin-panel/customers/` - List customers with booking aggregates
+  - Auth: Super-admin or staff required (IsSuperAdminOrStaff permission)
+  - Query Parameters: search (optional), page (default: 1), page_size (default: 20, max: 100), sort_by (default: registration_date), sort_order (asc or desc, default: desc)
+  - Response: Paginated list of customers with booking aggregates
+  - Returns for each customer: id, registration_date, full_name, phone, email, whatsapp, telegram, preferred_contact_method, total_booking_count, last_booking_date, total_amount_paid, customer_status
+  - Customer status logic: Active (is_active=True and has booking in last 90 days OR no bookings yet), Inactive (is_active=False OR last booking > 90 days ago)
+  - Search filters by: name, phone, email, or customer ID
+  - Sort options: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status
+  - Custom pagination with configurable page size
+
+### Security Features
+- Staff-only access to customer directory
+- Customer status calculation based on activity and booking history
+- Aggregated booking data from multiple related models
+- Efficient database queries with annotations and aggregations
+- Pagination prevents excessive data retrieval
+
+### Test Coverage
+- 18 new customer directory tests (all passing)
+- Tests cover permission access, search, sorting, pagination, customer status logic
+- Security review passed: 15/15 checks (100% success rate)
+
+## Checkpoint 25 Notes (Admin Customer Detail API + Internal Notes)
+Status: READY
+
+### Admin Customer Detail API
+- GET `/api/v1/admin-panel/customers/{id}/` - Get full customer profile
+  - Auth: Super-admin or staff required (IsSuperAdminOrStaff permission)
+  - Path Parameters: customer_id
+  - Query Parameters: booking_filter (all, upcoming, completed, cancelled - default: all)
+  - Response: Complete customer profile including:
+    - Customer: Full contact information (id, email, first_name, last_name, full_name, phone_number, whatsapp, telegram, preferred_contact_method, date_joined, last_login, is_active, email_verified, phone_verified)
+    - Bookings: All bookings filterable by status (id, reference_code, status, payment_status, check_in, check_out, number_of_nights, total_price, currency, property_name, property_city, created_at)
+    - Payments: All payments (id, booking_id, provider, amount, currency, status, created_at)
+    - Internal notes: Staff-only notes (id, customer, author, author_name, author_email, note, created_at, updated_at)
+    - Last activity: Most recent of last_login, last booking created_at, last payment created_at
+
+### Admin Internal Notes API
+- POST `/api/v1/admin-panel/customers/{id}/notes/` - Create internal note
+  - Auth: Super-admin or staff required
+  - Request: { note }
+  - Response: Created internal note with author information
+  - Author automatically set to authenticated user
+- PUT `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` - Update internal note
+  - Auth: Super-admin or staff required
+  - Request: { note }
+  - Response: Updated internal note
+- DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` - Delete internal note
+  - Auth: Super-admin or staff required
+  - Response: 204 No Content
+  - Soft delete (is_deleted=True)
+
+### Internal Notes Model
+- New InternalNote model in admin_panel app
+- Fields: customer (FK to User), author (FK to User, nullable), note (TextField, required)
+- Inherits from TimeStampedModel and SoftDeleteModel
+- Database indexes on (customer, created_at) and (author, created_at)
+- Staff-only access - never exposed to customers
+- Fully CRUD-able with author tracking
+
+### Security Features
+- Staff-only access to customer detail and internal notes
+- Internal notes never exposed to customer-facing APIs
+- Author tracking for audit trail (who wrote each note)
+- Soft delete for internal notes (preserves audit trail)
+- Customer scoping in note operations (cannot access notes for different customers)
+- Booking filtering prevents data leakage
+- Last activity calculation from multiple sources
+
+### Test Coverage
+- 21 new customer detail tests (all passing)
+- 13 new internal notes tests (all passing)
+- 34 total new tests for checkpoint 25
+- Tests cover customer detail, booking filtering, payments, internal notes CRUD
+- Tests cover permission access, author tracking, customer scoping
+- Security review passed: 22/22 checks (100% success rate)
 
 ### Backend Implementation Details
 - New partner app with property/room/rate/inventory management ViewSets

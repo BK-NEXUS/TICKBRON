@@ -13,6 +13,7 @@ from rest_framework import status
 from properties.models import Property, PropertyType, Amenity, AmenityCategory, RoomType, RatePlan
 from permissions.models import Role
 from bookings.models import Booking, BookingItem
+from admin_panel.models import InternalNote
 from decimal import Decimal
 from datetime import date, timedelta
 
@@ -1116,3 +1117,469 @@ class AdminCustomersDirectoryTests(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Should still return results with default sorting
+
+
+class AdminCustomerDetailTests(TestCase):
+    """Tests for admin customer detail API endpoint."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        
+        # Create super-admin user
+        self.super_admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='testpassword123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Create staff user
+        self.staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password='testpassword123',
+            first_name='Staff',
+            last_name='User',
+            is_staff=True
+        )
+        
+        # Create regular user (customer)
+        self.customer = User.objects.create_user(
+            email='customer@example.com',
+            password='testpassword123',
+            first_name='Customer',
+            last_name='Test',
+            phone_number='+998901234567',
+            whatsapp='+998901234567',
+            telegram='@customer',
+            preferred_contact_method='whatsapp'
+        )
+        
+        # Create property type and property
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+        
+        self.property = Property.objects.create(
+            owner=self.super_admin,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create room type and rate plan
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('100.00'),
+            currency='USD',
+            total_rooms=5
+        )
+        
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('100.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True
+        )
+        
+        # Create bookings with different statuses
+        self.booking_confirmed = Booking.objects.create(
+            guest=self.customer,
+            property=self.property,
+            status='confirmed',
+            payment_status='paid',
+            check_in=date.today() + timedelta(days=10),
+            check_out=date.today() + timedelta(days=12),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='Customer Test',
+            guest_phone='+998901234567',
+            guest_email='customer@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking_confirmed,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        self.booking_completed = Booking.objects.create(
+            guest=self.customer,
+            property=self.property,
+            status='completed',
+            payment_status='paid',
+            check_in=date.today() - timedelta(days=20),
+            check_out=date.today() - timedelta(days=18),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='Customer Test',
+            guest_phone='+998901234567',
+            guest_email='customer@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking_completed,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        self.booking_cancelled = Booking.objects.create(
+            guest=self.customer,
+            property=self.property,
+            status='cancelled',
+            payment_status='refunded',
+            check_in=date.today() - timedelta(days=30),
+            check_out=date.today() - timedelta(days=28),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='Customer Test',
+            guest_phone='+998901234567',
+            guest_email='customer@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking_cancelled,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create payment transactions
+        from payments.models import PaymentTransaction
+        self.payment1 = PaymentTransaction.objects.create(
+            idempotency_key='test-payment-1',
+            booking=self.booking_confirmed,
+            provider='payme',
+            amount=Decimal('200.00'),
+            currency='USD',
+            status='completed'
+        )
+        
+        self.payment2 = PaymentTransaction.objects.create(
+            idempotency_key='test-payment-2',
+            booking=self.booking_completed,
+            provider='click',
+            amount=Decimal('200.00'),
+            currency='USD',
+            status='completed'
+        )
+        
+        # Create internal notes
+        self.note1 = InternalNote.objects.create(
+            customer=self.customer,
+            author=self.super_admin,
+            note='VIP customer - treat with special care'
+        )
+        
+        self.note2 = InternalNote.objects.create(
+            customer=self.customer,
+            author=self.staff_user,
+            note='Prefers WhatsApp communication'
+        )
+    
+    def test_super_admin_can_access_customer_detail(self):
+        """Test that super-admin can access customer detail."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('customer', response.data)
+        self.assertIn('bookings', response.data)
+        self.assertIn('payments', response.data)
+        self.assertIn('internal_notes', response.data)
+        self.assertIn('last_activity', response.data)
+    
+    def test_staff_can_access_customer_detail(self):
+        """Test that staff can access customer detail."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('customer', response.data)
+    
+    def test_regular_user_cannot_access_customer_detail(self):
+        """Test that regular user cannot access customer detail."""
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_customer_detail_returns_contact_info(self):
+        """Test that customer detail returns full contact information."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        customer_data = response.data['customer']
+        self.assertEqual(customer_data['id'], self.customer.id)
+        self.assertEqual(customer_data['email'], 'customer@example.com')
+        self.assertEqual(customer_data['phone_number'], '+998901234567')
+        self.assertEqual(customer_data['whatsapp'], '+998901234567')
+        self.assertEqual(customer_data['telegram'], '@customer')
+        self.assertEqual(customer_data['preferred_contact_method'], 'whatsapp')
+    
+    def test_customer_detail_returns_all_bookings(self):
+        """Test that customer detail returns all bookings by default."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        bookings = response.data['bookings']
+        self.assertEqual(len(bookings), 3)
+    
+    def test_customer_detail_filters_upcoming_bookings(self):
+        """Test that customer detail can filter upcoming bookings."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=upcoming')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        bookings = response.data['bookings']
+        self.assertEqual(len(bookings), 1)
+        self.assertEqual(bookings[0]['status'], 'confirmed')
+    
+    def test_customer_detail_filters_completed_bookings(self):
+        """Test that customer detail can filter completed bookings."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=completed')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        bookings = response.data['bookings']
+        self.assertEqual(len(bookings), 1)
+        self.assertEqual(bookings[0]['status'], 'completed')
+    
+    def test_customer_detail_filters_cancelled_bookings(self):
+        """Test that customer detail can filter cancelled bookings."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=cancelled')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        bookings = response.data['bookings']
+        self.assertEqual(len(bookings), 1)
+        self.assertEqual(bookings[0]['status'], 'cancelled')
+    
+    def test_customer_detail_returns_payments(self):
+        """Test that customer detail returns all payments."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payments = response.data['payments']
+        self.assertEqual(len(payments), 2)
+        self.assertEqual(payments[0]['amount'], '200.00')
+    
+    def test_customer_detail_returns_internal_notes(self):
+        """Test that customer detail returns internal notes."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        notes = response.data['internal_notes']
+        self.assertEqual(len(notes), 2)
+        self.assertIn('VIP customer', notes[0]['note'])
+    
+    def test_customer_detail_returns_last_activity(self):
+        """Test that customer detail returns last activity timestamp."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('last_activity', response.data)
+        self.assertIsNotNone(response.data['last_activity'])
+    
+    def test_customer_detail_not_found(self):
+        """Test that customer detail returns 404 for non-existent customer."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/99999/')
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class AdminInternalNotesTests(TestCase):
+    """Tests for admin internal notes CRUD operations."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        
+        # Create super-admin user
+        self.super_admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='testpassword123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Create staff user
+        self.staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password='testpassword123',
+            first_name='Staff',
+            last_name='User',
+            is_staff=True
+        )
+        
+        # Create regular user (customer)
+        self.customer = User.objects.create_user(
+            email='customer@example.com',
+            password='testpassword123',
+            first_name='Customer',
+            last_name='Test'
+        )
+        
+        # Create initial internal note
+        self.note = InternalNote.objects.create(
+            customer=self.customer,
+            author=self.super_admin,
+            note='Initial note'
+        )
+    
+    def test_staff_can_create_internal_note(self):
+        """Test that staff can create internal note."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.post(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
+            {'note': 'New note from staff'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['note'], 'New note from staff')
+        self.assertEqual(response.data['author_email'], 'staff@example.com')
+    
+    def test_super_admin_can_create_internal_note(self):
+        """Test that super-admin can create internal note."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.post(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
+            {'note': 'New note from admin'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['note'], 'New note from admin')
+    
+    def test_regular_user_cannot_create_internal_note(self):
+        """Test that regular user cannot create internal note."""
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.post(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
+            {'note': 'Should not work'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_create_note_requires_note_content(self):
+        """Test that creating note requires note content."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.post(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
+            {}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_staff_can_update_internal_note(self):
+        """Test that staff can update internal note."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
+            {'note': 'Updated note content'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['note'], 'Updated note content')
+    
+    def test_staff_can_delete_internal_note(self):
+        """Test that staff can delete internal note."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.delete(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        
+        # Verify note is soft-deleted
+        self.note.refresh_from_db()
+        self.assertTrue(self.note.is_deleted)
+    
+    def test_regular_user_cannot_update_internal_note(self):
+        """Test that regular user cannot update internal note."""
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
+            {'note': 'Should not work'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_regular_user_cannot_delete_internal_note(self):
+        """Test that regular user cannot delete internal note."""
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.delete(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_cannot_access_note_for_different_customer(self):
+        """Test that user cannot access note for different customer."""
+        other_customer = User.objects.create_user(
+            email='other@example.com',
+            password='testpassword123',
+            first_name='Other',
+            last_name='Customer'
+        )
+        
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{other_customer.id}/notes/{self.note.id}/',
+            {'note': 'Should not work'}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    
+    def test_author_name_in_note_response(self):
+        """Test that note response includes author name."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        notes = response.data['internal_notes']
+        self.assertEqual(notes[0]['author_name'], 'Admin User')
+        self.assertEqual(notes[0]['author_email'], 'admin@example.com')

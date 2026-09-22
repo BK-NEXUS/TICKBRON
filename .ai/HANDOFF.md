@@ -518,6 +518,85 @@ Status: READY
   - Search filters: full_name, first_name, last_name, phone_number, email, id
   - URL: /api/v1/admin-panel/customers/
 
+### GET `/api/v1/admin-panel/customers/{id}/` - Admin customer detail
+Status: READY
+
+- Request: Path parameter `customer_id`, Query parameter `booking_filter` (all, upcoming, completed, cancelled - default: all)
+- Response: Complete customer profile including:
+  - Customer: Full contact information (id, email, first_name, last_name, full_name, phone_number, whatsapp, telegram, preferred_contact_method, date_joined, last_login, is_active, email_verified, phone_verified)
+  - Bookings: All bookings filterable by status (id, reference_code, status, payment_status, check_in, check_out, number_of_nights, total_price, currency, property_name, property_city, created_at)
+  - Payments: All payments (id, booking_id, provider, amount, currency, status, created_at)
+  - Internal notes: Staff-only notes (id, customer, author, author_name, author_email, note, created_at, updated_at)
+  - Last activity: Most recent of last_login, last booking created_at, last payment created_at
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 404 if customer not found
+- Booking filter options: all (default), upcoming (confirmed with future check-in), completed, cancelled
+- **Backend Implementation Details:**
+  - admin_customer_detail view in admin_panel/views.py
+  - AdminCustomerDetailSerializer for customer information
+  - AdminBookingSummarySerializer for booking information
+  - AdminPaymentSummarySerializer for payment information
+  - AdminInternalNoteSerializer for internal notes
+  - Last activity calculated from multiple sources (login, bookings, payments)
+  - URL: /api/v1/admin-panel/customers/{id}/
+
+### POST `/api/v1/admin-panel/customers/{id}/notes/` - Create internal note
+Status: READY
+
+- Request: Path parameter `customer_id`, Request body: `{ note }`
+- Response: Created internal note with author information (id, customer, author, author_name, author_email, note, created_at, updated_at)
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 404 if customer not found, 400 for validation errors
+- Author automatically set to authenticated user
+- **Backend Implementation Details:**
+  - admin_internal_note_create view in admin_panel/views.py
+  - AdminInternalNoteCreateSerializer for note creation
+  - InternalNote model with customer and author fields
+  - URL: /api/v1/admin-panel/customers/{id}/notes/
+
+### PUT `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` - Update internal note
+Status: READY
+
+- Request: Path parameters `customer_id`, `note_id`, Request body: `{ note }`
+- Response: Updated internal note (id, customer, author, author_name, author_email, note, created_at, updated_at)
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 404 if customer or note not found, 400 for validation errors
+- Customer scoping enforced (cannot access notes for different customers)
+- **Backend Implementation Details:**
+  - admin_internal_note_detail view in admin_panel/views.py
+  - AdminInternalNoteSerializer for note update
+  - Soft delete support (is_deleted field)
+  - URL: /api/v1/admin-panel/customers/{id}/notes/{note_id}/
+
+### DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` - Delete internal note
+Status: READY
+
+- Request: Path parameters `customer_id`, `note_id`
+- Response: 204 No Content
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 404 if customer or note not found
+- Soft delete (is_deleted=True) - preserves audit trail
+- Customer scoping enforced (cannot access notes for different customers)
+- **Backend Implementation Details:**
+  - admin_internal_note_detail view in admin_panel/views.py
+  - Uses soft_delete() method from SoftDeleteModel
+  - URL: /api/v1/admin-panel/customers/{id}/notes/{note_id}/
+
+### Internal Notes Model
+Status: READY
+
+- New InternalNote model in admin_panel app
+- Fields: customer (FK to User), author (FK to User, nullable), note (TextField, required)
+- Inherits from TimeStampedModel and SoftDeleteModel
+- Database indexes on (customer, created_at) and (author, created_at)
+- Staff-only access - never exposed to customers
+- Fully CRUD-able with author tracking
+- **Backend Implementation Details:**
+  - admin_panel/models.py with InternalNote model
+  - Migration 0002_internalnote.py for database schema
+  - Author tracking for audit trail (who wrote each note)
+  - Soft delete for internal notes (preserves audit trail)
+
 ### GET `/api/v1/admin-panel/bookings/lookup/` - Lookup booking by reference code
 - Request: Query parameter `reference_code` (6-character booking reference code)
 - Response: Full booking details including:

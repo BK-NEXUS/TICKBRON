@@ -9,6 +9,7 @@ from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
 from users.serializers import UserSerializer
+from admin_panel.models import InternalNote
 
 
 class AdminPropertySerializer(serializers.ModelSerializer):
@@ -209,3 +210,94 @@ class AdminCustomerSerializer(serializers.Serializer):
     last_booking_date = serializers.DateTimeField(allow_null=True)
     total_amount_paid = serializers.DecimalField(max_digits=12, decimal_places=2)
     customer_status = serializers.CharField()
+
+
+class AdminCustomerDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for detailed customer profile in admin panel.
+    
+    Returns full customer contact information.
+    """
+    full_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'full_name', 'phone_number',
+            'whatsapp', 'telegram', 'preferred_contact_method', 'date_joined',
+            'last_login', 'is_active', 'email_verified', 'phone_verified'
+        ]
+        read_only_fields = ['id', 'email', 'date_joined', 'last_login']
+    
+    def get_full_name(self, obj):
+        """Get user full name."""
+        return obj.get_full_name()
+
+
+class AdminBookingSummarySerializer(serializers.Serializer):
+    """
+    Serializer for booking summary in customer detail.
+    """
+    id = serializers.IntegerField()
+    reference_code = serializers.CharField()
+    status = serializers.CharField()
+    payment_status = serializers.CharField()
+    check_in = serializers.DateField()
+    check_out = serializers.DateField()
+    number_of_nights = serializers.IntegerField()
+    total_price = serializers.DecimalField(max_digits=12, decimal_places=2)
+    currency = serializers.CharField()
+    property_name = serializers.CharField()
+    property_city = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class AdminPaymentSummarySerializer(serializers.Serializer):
+    """
+    Serializer for payment summary in customer detail.
+    """
+    id = serializers.IntegerField()
+    booking_id = serializers.IntegerField()
+    provider = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    currency = serializers.CharField()
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class AdminInternalNoteSerializer(serializers.ModelSerializer):
+    """
+    Serializer for internal notes (staff-only).
+    """
+    author_name = serializers.SerializerMethodField()
+    author_email = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = InternalNote
+        fields = [
+            'id', 'customer', 'author', 'author_name', 'author_email',
+            'note', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_author_name(self, obj):
+        """Get author full name."""
+        return obj.author.get_full_name() if obj.author else None
+    
+    def get_author_email(self, obj):
+        """Get author email."""
+        return obj.author.email if obj.author else None
+
+
+class AdminInternalNoteCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating internal notes.
+    """
+    class Meta:
+        model = InternalNote
+        fields = ['customer', 'note']
+    
+    def create(self, validated_data):
+        """Create internal note with current user as author."""
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
