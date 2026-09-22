@@ -2,8 +2,8 @@
 
 Owner: Kolya
 Checkpoint sequence: 01 → 20 + CRM addendum 21-26
-Current checkpoint: 23
-Completed: 23
+Current checkpoint: 24
+Completed: 24
 
 Backend owns backend/, backend tests, backend infrastructure where explicitly assigned, and backend API contracts.
 
@@ -32,6 +32,7 @@ Commit format:
 - Checkpoint 21: Simplified registration + phone/SMS OTP authentication ✅
 - Checkpoint 22: Customer profile extensions + booking auto-fill ✅
 - Checkpoint 23: Booking reference code + support lookup API ✅
+- Checkpoint 24: Admin Customers directory API ✅
 
 ## Remaining Work
-- CRM addendum checkpoints 24-26 (additional CRM features)
+- CRM addendum checkpoints 25-26 (additional CRM features)

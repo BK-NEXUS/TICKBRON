@@ -8,7 +8,8 @@ from admin_panel.views import (
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
     admin_property_approve, admin_property_suspend,
     admin_create_hotel_owner, admin_payment_transactions,
-    admin_booking_lookup_by_reference
+    admin_booking_lookup_by_reference,
+    admin_customers_directory
 )
 
 app_name = 'admin_panel'
@@ -21,6 +22,7 @@ router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 urlpatterns = [
     path('users/create-hotel-owner/', admin_create_hotel_owner, name='admin-create-hotel-owner'),
     path('users/', AdminUserViewSet.as_view({'get': 'list'}), name='admin-user-list'),
+    path('customers/', admin_customers_directory, name='admin-customers-directory'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),

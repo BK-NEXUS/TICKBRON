@@ -493,6 +493,31 @@ Status: READY
 ### Admin Support Lookup (Backend Checkpoint 23)
 Status: READY
 
+### GET `/api/v1/admin-panel/customers/` - Admin customers directory
+Status: READY
+
+- Request: Query parameters:
+  - search: Search by name, phone, email, or customer ID (optional)
+  - page: Page number (default: 1)
+  - page_size: Items per page (default: 20, max: 100)
+  - sort_by: Sort field (default: registration_date)
+  - sort_order: Sort order (asc or desc, default: desc)
+- Response: Paginated list of customers with booking aggregates including:
+  - Customer information: id, registration_date, full_name, phone, email, whatsapp, telegram, preferred_contact_method
+  - Booking aggregates: total_booking_count, last_booking_date, total_amount_paid
+  - Customer status: customer_status (active/inactive)
+- Auth: Staff or super-admin required (IsSuperAdminOrStaff permission)
+- Error: 403 for non-staff users, 400 for invalid pagination parameters
+- Sort fields: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status
+- Customer status logic: Active if is_active=True and (has booking in last 90 days OR no bookings yet), Inactive otherwise
+- **Backend Implementation Details:**
+  - admin_customers_directory view in admin_panel/views.py
+  - Uses Django ORM annotations for booking aggregates (Count, Sum, Max)
+  - AdminCustomerPagination class for pagination (default 20, max 100)
+  - AdminCustomerSerializer for response structure
+  - Search filters: full_name, first_name, last_name, phone_number, email, id
+  - URL: /api/v1/admin-panel/customers/
+
 ### GET `/api/v1/admin-panel/bookings/lookup/` - Lookup booking by reference code
 - Request: Query parameter `reference_code` (6-character booking reference code)
 - Response: Full booking details including:

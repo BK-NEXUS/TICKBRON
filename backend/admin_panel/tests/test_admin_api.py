@@ -751,3 +751,368 @@ class AdminBookingLookupTests(TestCase):
         required_property_fields = ['id', 'name', 'property_type', 'status', 'address_line1', 'city', 'state', 'country', 'base_price', 'currency', 'owner']
         for field in required_property_fields:
             self.assertIn(field, property_data)
+
+
+class AdminCustomersDirectoryTests(TestCase):
+    """Tests for admin customers directory API endpoint."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        
+        # Create super-admin user
+        self.super_admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='testpassword123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Create staff user
+        self.staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password='testpassword123',
+            first_name='Staff',
+            last_name='User',
+            is_staff=True
+        )
+        
+        # Create regular user
+        self.regular_user = User.objects.create_user(
+            email='regular@example.com',
+            password='testpassword123',
+            first_name='Regular',
+            last_name='User',
+            phone_number='+998901234567',
+            whatsapp='+998901234567',
+            telegram='@regularuser',
+            preferred_contact_method='whatsapp'
+        )
+        
+        # Create another customer user
+        self.customer2 = User.objects.create_user(
+            email='customer2@example.com',
+            password='testpassword123',
+            first_name='Customer',
+            last_name='Two',
+            phone_number='+998901234568'
+        )
+        
+        # Create property type and property
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+        
+        self.property = Property.objects.create(
+            owner=self.super_admin,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create room type and rate plan
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('100.00'),
+            currency='USD',
+            total_rooms=5
+        )
+        
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('100.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True
+        )
+        
+        # Create booking for regular_user
+        self.booking1 = Booking.objects.create(
+            guest=self.regular_user,
+            property=self.property,
+            status='confirmed',
+            payment_status='paid',
+            check_in=date.today() + timedelta(days=10),
+            check_out=date.today() + timedelta(days=12),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='Regular User',
+            guest_phone='+998901234567',
+            guest_email='regular@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking1,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create payment transaction for booking1
+        from payments.models import PaymentTransaction
+        self.payment1 = PaymentTransaction.objects.create(
+            idempotency_key='test-payment-1',
+            booking=self.booking1,
+            provider='payme',
+            amount=Decimal('200.00'),
+            currency='USD',
+            status='completed'
+        )
+    
+    def test_super_admin_can_access_customers_directory(self):
+        """Test that super-admin can access customers directory."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertIsInstance(response.data['results'], list)
+    
+    def test_staff_can_access_customers_directory(self):
+        """Test that staff can access customers directory."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+    
+    def test_regular_user_cannot_access_customers_directory(self):
+        """Test that regular user cannot access customers directory."""
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_unauthenticated_user_cannot_access_customers_directory(self):
+        """Test that unauthenticated user cannot access customers directory."""
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_customers_directory_returns_required_fields(self):
+        """Test that customers directory returns all required fields."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check first customer has all required fields
+        if response.data['results']:
+            customer_data = response.data['results'][0]
+            required_fields = [
+                'id', 'registration_date', 'full_name', 'phone', 'email',
+                'whatsapp', 'telegram', 'preferred_contact_method',
+                'total_booking_count', 'last_booking_date', 'total_amount_paid', 'customer_status'
+            ]
+            for field in required_fields:
+                self.assertIn(field, customer_data)
+    
+    def test_customers_directory_includes_booking_aggregates(self):
+        """Test that customers directory includes booking aggregates."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Find regular_user in results
+        regular_user_data = None
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                regular_user_data = customer
+                break
+        
+        self.assertIsNotNone(regular_user_data)
+        self.assertEqual(regular_user_data['total_booking_count'], 1)
+        self.assertEqual(regular_user_data['total_amount_paid'], Decimal('200.00'))
+        self.assertIsNotNone(regular_user_data['last_booking_date'])
+    
+    def test_search_by_name(self):
+        """Test searching customers by name."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?search=Regular')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should find regular_user
+        found = False
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                found = True
+                break
+        self.assertTrue(found)
+    
+    def test_search_by_email(self):
+        """Test searching customers by email."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?search=regular@example.com')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should find regular_user
+        found = False
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                found = True
+                break
+        self.assertTrue(found)
+    
+    def test_search_by_phone(self):
+        """Test searching customers by phone."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?search=+998901234567')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should find regular_user
+        found = False
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                found = True
+                break
+        self.assertTrue(found)
+    
+    def test_search_by_customer_id(self):
+        """Test searching customers by customer ID."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/?search={self.regular_user.id}')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should find regular_user
+        found = False
+        for customer in response.data['results']:
+            if customer['id'] == self.regular_user.id:
+                found = True
+                break
+        self.assertTrue(found)
+    
+    def test_pagination_works(self):
+        """Test that pagination works correctly."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?page_size=1')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('count', response.data)
+        self.assertIn('next', response.data)
+        self.assertIn('previous', response.data)
+        self.assertIn('results', response.data)
+        self.assertLessEqual(len(response.data['results']), 1)
+    
+    def test_sorting_by_registration_date(self):
+        """Test sorting by registration date."""
+        self.client.force_authenticate(user=self.super_admin)
+        
+        # Sort ascending
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=registration_date&sort_order=asc')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Sort descending
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=registration_date&sort_order=desc')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_sorting_by_total_booking_count(self):
+        """Test sorting by total booking count."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=total_booking_count&sort_order=desc')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_sorting_by_total_amount_paid(self):
+        """Test sorting by total amount paid."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=total_amount_paid&sort_order=desc')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_customer_status_active_for_recent_booking(self):
+        """Test that customer with recent booking is marked as active."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Find regular_user in results
+        regular_user_data = None
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                regular_user_data = customer
+                break
+        
+        self.assertIsNotNone(regular_user_data)
+        self.assertEqual(regular_user_data['customer_status'], 'active')
+    
+    def test_customer_status_inactive_for_no_booking(self):
+        """Test that customer with no bookings is marked as active (new customer)."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Find customer2 in results (has no bookings)
+        customer2_data = None
+        for customer in response.data['results']:
+            if customer['email'] == 'customer2@example.com':
+                customer2_data = customer
+                break
+        
+        self.assertIsNotNone(customer2_data)
+        # Customer with no bookings should be active (new customer)
+        self.assertEqual(customer2_data['customer_status'], 'active')
+    
+    def test_contact_method_fields_returned(self):
+        """Test that contact method fields are returned correctly."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Find regular_user in results
+        regular_user_data = None
+        for customer in response.data['results']:
+            if customer['email'] == 'regular@example.com':
+                regular_user_data = customer
+                break
+        
+        self.assertIsNotNone(regular_user_data)
+        self.assertEqual(regular_user_data['whatsapp'], '+998901234567')
+        self.assertEqual(regular_user_data['telegram'], '@regularuser')
+        self.assertEqual(regular_user_data['preferred_contact_method'], 'whatsapp')
+    
+    def test_invalid_sort_field_defaults_to_registration_date(self):
+        """Test that invalid sort field defaults to registration_date."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=invalid_field')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Should still return results with default sorting
+    
+    def test_invalid_sort_order_defaults_to_desc(self):
+        """Test that invalid sort order defaults to desc."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?sort_order=invalid')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Should still return results with default sorting

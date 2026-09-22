@@ -8,8 +8,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, Sum, Max, Q
+from datetime import timedelta
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
@@ -19,7 +22,8 @@ from admin_panel.serializers import (
     AdminUserSerializer, AdminUserCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
-    AdminPaymentTransactionSerializer
+    AdminPaymentTransactionSerializer,
+    AdminCustomerSerializer
 )
 
 
@@ -392,3 +396,140 @@ def admin_booking_lookup_by_reference(request):
     }
     
     return Response(response_data, status=status.HTTP_200_OK)
+
+
+class AdminCustomerPagination(PageNumberPagination):
+    """
+    Custom pagination for admin customers directory.
+    """
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_customers_directory(request):
+    """
+    Admin API for customers directory with booking aggregates.
+    
+    Returns for each customer:
+    - customer ID, registration date, full name, phone, email, whatsapp, telegram, preferred contact method
+    - total booking count, last booking date, total amount paid, customer status
+    
+    Query Parameters:
+        search: Search by name, phone, email, or customer ID (optional)
+        page: Page number (default: 1)
+        page_size: Items per page (default: 20, max: 100)
+        sort_by: Sort field (default: registration_date)
+        sort_order: Sort order (asc or desc, default: desc)
+    
+    Returns:
+        Paginated list of customers with booking aggregates
+    """
+    # Get query parameters
+    search = request.query_params.get('search', '').strip()
+    page = request.query_params.get('page', 1)
+    page_size = request.query_params.get('page_size', 20)
+    sort_by = request.query_params.get('sort_by', 'registration_date')
+    sort_order = request.query_params.get('sort_order', 'desc')
+    
+    # Validate sort_order
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'desc'
+    
+    # Validate sort_by field
+    valid_sort_fields = [
+        'registration_date', 'full_name', 'email', 'total_booking_count',
+        'last_booking_date', 'total_amount_paid', 'customer_status'
+    ]
+    if sort_by not in valid_sort_fields:
+        sort_by = 'registration_date'
+    
+    # Build sort string
+    sort_prefix = '' if sort_order == 'asc' else '-'
+    sort_string = f'{sort_prefix}{sort_by}'
+    
+    # Annotate users with booking aggregates
+    users = User.objects.filter(is_deleted=False).annotate(
+        total_booking_count=Count('bookings', filter=Q(bookings__is_deleted=False)),
+        last_booking_date=Max('bookings__created_at', filter=Q(bookings__is_deleted=False)),
+        total_amount_paid=Sum(
+            'bookings__payment_transactions__amount',
+            filter=Q(
+                bookings__is_deleted=False,
+                bookings__payment_transactions__status='completed'
+            )
+        )
+    )
+    
+    # Apply search filter
+    if search:
+        users = users.filter(
+            Q(full_name__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(phone_number__icontains=search) |
+            Q(email__icontains=search) |
+            Q(id__icontains=search)
+        )
+    
+    # Calculate customer status
+    # Active: is_active=True and (has booking in last 90 days OR no bookings yet)
+    # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
+    threshold_date = timezone.now() - timedelta(days=90)
+    
+    customers_data = []
+    for user in users:
+        # Determine customer status
+        if not user.is_active:
+            customer_status = 'inactive'
+        elif user.last_booking_date and user.last_booking_date < threshold_date:
+            customer_status = 'inactive'
+        else:
+            customer_status = 'active'
+        
+        customer_data = {
+            'id': user.id,
+            'registration_date': user.date_joined,
+            'full_name': user.get_full_name(),
+            'phone': user.phone_number,
+            'email': user.email,
+            'whatsapp': user.whatsapp,
+            'telegram': user.telegram,
+            'preferred_contact_method': user.preferred_contact_method,
+            'total_booking_count': user.total_booking_count or 0,
+            'last_booking_date': user.last_booking_date,
+            'total_amount_paid': user.total_amount_paid or 0,
+            'customer_status': customer_status
+        }
+        customers_data.append(customer_data)
+    
+    # Sort the results
+    if sort_by == 'registration_date':
+        customers_data.sort(key=lambda x: x['registration_date'], reverse=(sort_order == 'desc'))
+    elif sort_by == 'full_name':
+        customers_data.sort(key=lambda x: x['full_name'] or '', reverse=(sort_order == 'desc'))
+    elif sort_by == 'email':
+        customers_data.sort(key=lambda x: x['email'], reverse=(sort_order == 'desc'))
+    elif sort_by == 'total_booking_count':
+        customers_data.sort(key=lambda x: x['total_booking_count'], reverse=(sort_order == 'desc'))
+    elif sort_by == 'last_booking_date':
+        # Handle None values - put them last
+        customers_data.sort(
+            key=lambda x: (x['last_booking_date'] is None, x['last_booking_date'] or timezone.now()),
+            reverse=(sort_order == 'desc')
+        )
+    elif sort_by == 'total_amount_paid':
+        customers_data.sort(key=lambda x: x['total_amount_paid'], reverse=(sort_order == 'desc'))
+    elif sort_by == 'customer_status':
+        customers_data.sort(key=lambda x: x['customer_status'], reverse=(sort_order == 'desc'))
+    
+    # Apply pagination
+    paginator = AdminCustomerPagination()
+    paginated_data = paginator.paginate_queryset(customers_data, request)
+    
+    # Serialize paginated data
+    serializer = AdminCustomerSerializer(paginated_data, many=True)
+    
+    return paginator.get_paginated_response(serializer.data)

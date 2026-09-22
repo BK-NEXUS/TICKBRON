@@ -189,3 +189,23 @@ class AdminPaymentTransactionSerializer(serializers.Serializer):
     status = serializers.CharField()
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
+
+
+class AdminCustomerSerializer(serializers.Serializer):
+    """
+    Serializer for admin customers directory.
+    
+    Returns customer information with booking aggregates.
+    """
+    id = serializers.IntegerField()
+    registration_date = serializers.DateTimeField()
+    full_name = serializers.CharField()
+    phone = serializers.CharField(allow_null=True)
+    email = serializers.EmailField()
+    whatsapp = serializers.CharField(allow_null=True)
+    telegram = serializers.CharField(allow_null=True)
+    preferred_contact_method = serializers.CharField(allow_null=True)
+    total_booking_count = serializers.IntegerField()
+    last_booking_date = serializers.DateTimeField(allow_null=True)
+    total_amount_paid = serializers.DecimalField(max_digits=12, decimal_places=2)
+    customer_status = serializers.CharField()
