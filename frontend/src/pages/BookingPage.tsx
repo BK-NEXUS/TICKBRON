@@ -25,6 +25,8 @@ interface GuestDetails {
   last_name: string
   email: string
   phone_number?: string
+  number_of_rooms: number
+  children: number[]
   special_requests?: string
 }
 
@@ -46,6 +48,8 @@ export function BookingPage() {
     last_name: '',
     email: '',
     phone_number: '',
+    number_of_rooms: 1,
+    children: [],
     special_requests: '',
   })
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
@@ -94,6 +98,7 @@ export function BookingPage() {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
+        phone_number: user.phone_number || '',
       }))
     }
   }, [location.state, user])
@@ -161,6 +166,30 @@ export function BookingPage() {
     }
   }
 
+  const handleChildrenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const ages = value.split(',').map(age => parseInt(age.trim())).filter(age => !isNaN(age) && age >= 0)
+    setGuestDetails(prev => ({ ...prev, children: ages }))
+  }
+
+  const addChild = () => {
+    setGuestDetails(prev => ({ ...prev, children: [...prev.children, 0] }))
+  }
+
+  const removeChild = (index: number) => {
+    setGuestDetails(prev => ({
+      ...prev,
+      children: prev.children.filter((_, i) => i !== index)
+    }))
+  }
+
+  const updateChildAge = (index: number, age: number) => {
+    setGuestDetails(prev => ({
+      ...prev,
+      children: prev.children.map((a, i) => i === index ? age : a)
+    }))
+  }
+
   const validateGuestDetails = (): boolean => {
     const errors: Record<string, string> = {}
 
@@ -184,6 +213,14 @@ export function BookingPage() {
 
     if (guestDetails.phone_number && guestDetails.phone_number.trim().length < 10) {
       errors.phone_number = 'Phone number must be at least 10 characters'
+    }
+
+    if (guestDetails.number_of_rooms < 1) {
+      errors.number_of_rooms = 'Number of rooms must be at least 1'
+    }
+
+    if (guestDetails.children.some(age => age < 0 || age > 17)) {
+      errors.children = 'Children ages must be between 0 and 17'
     }
 
     setValidationErrors(errors)
@@ -213,6 +250,11 @@ export function BookingPage() {
         check_in: bookingState.checkIn,
         check_out: bookingState.checkOut,
         guest_count: bookingState.guestCount,
+        guest_full_name: `${guestDetails.first_name} ${guestDetails.last_name}`,
+        guest_phone: guestDetails.phone_number || undefined,
+        guest_email: guestDetails.email,
+        number_of_rooms: guestDetails.number_of_rooms,
+        children: guestDetails.children.length > 0 ? guestDetails.children : undefined,
         special_requests: guestDetails.special_requests || undefined,
       }
 
@@ -710,6 +752,71 @@ export function BookingPage() {
                   {validationErrors.phone_number && (
                     <span id="phone_number-error" className="booking-form-error" role="alert">
                       {validationErrors.phone_number}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="number_of_rooms" className="booking-form-label">
+                    Number of Rooms <span className="required">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="number_of_rooms"
+                    name="number_of_rooms"
+                    value={guestDetails.number_of_rooms}
+                    onChange={handleInputChange}
+                    min="1"
+                    className={`booking-form-input ${validationErrors.number_of_rooms ? 'booking-form-input--error' : ''}`}
+                    aria-invalid={!!validationErrors.number_of_rooms}
+                    aria-describedby={validationErrors.number_of_rooms ? 'number_of_rooms-error' : undefined}
+                    required
+                  />
+                  {validationErrors.number_of_rooms && (
+                    <span id="number_of_rooms-error" className="booking-form-error" role="alert">
+                      {validationErrors.number_of_rooms}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label className="booking-form-label">Children (Ages 0-17)</label>
+                  <div className="booking-form-children">
+                    {guestDetails.children.map((age, index) => (
+                      <div key={index} className="booking-form-child-item">
+                        <label htmlFor={`child_age_${index}`} className="booking-form-child-label">
+                          Child {index + 1}
+                        </label>
+                        <input
+                          type="number"
+                          id={`child_age_${index}`}
+                          value={age}
+                          onChange={(e) => updateChildAge(index, parseInt(e.target.value) || 0)}
+                          min="0"
+                          max="17"
+                          className="booking-form-input booking-form-child-input"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-link booking-form-child-remove"
+                          onClick={() => removeChild(index)}
+                          aria-label={`Remove child ${index + 1}`}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="btn btn-secondary booking-form-child-add"
+                      onClick={addChild}
+                    >
+                      + Add Child
+                    </button>
+                  </div>
+                  {validationErrors.children && (
+                    <span className="booking-form-error" role="alert">
+                      {validationErrors.children}
                     </span>
                   )}
                 </div>

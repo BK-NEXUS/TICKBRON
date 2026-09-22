@@ -19,6 +19,15 @@ interface AuthContextType {
   }) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<{ success: boolean; error?: string }>
   refreshUser: () => Promise<void>
+  updateProfile: (data: {
+    full_name?: string
+    first_name?: string
+    last_name?: string
+    phone_number?: string
+    whatsapp?: string
+    telegram?: string
+    preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
+  }) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -99,6 +108,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateProfile = async (data: {
+    full_name?: string
+    first_name?: string
+    last_name?: string
+    phone_number?: string
+    whatsapp?: string
+    telegram?: string
+    preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
+  }) => {
+    const response = await authAdapter.updateProfile(data)
+    if (response.success && response.user) {
+      setUser(response.user)
+    }
+    return response
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -109,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     logout,
     refreshUser,
+    updateProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

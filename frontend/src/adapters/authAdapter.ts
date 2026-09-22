@@ -10,6 +10,9 @@ export interface User {
   last_name: string
   full_name: string
   phone_number?: string
+  whatsapp?: string
+  telegram?: string
+  preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
   is_active: boolean
   date_joined: string
   last_login?: string
@@ -27,6 +30,19 @@ export interface RegisterRequest {
   password_confirm: string
   first_name?: string
   last_name?: string
+  whatsapp?: string
+  telegram?: string
+  preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
+}
+
+export interface UpdateProfileRequest {
+  full_name?: string
+  first_name?: string
+  last_name?: string
+  phone_number?: string
+  whatsapp?: string
+  telegram?: string
+  preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
 }
 
 export interface LoginRequest {
@@ -131,6 +147,13 @@ class AuthAdapter {
   async getCurrentUser(): Promise<AuthResponse> {
     return this.request('/api/v1/auth/me/', {
       method: 'GET',
+    })
+  }
+
+  async updateProfile(data: UpdateProfileRequest): Promise<AuthResponse> {
+    return this.request('/api/v1/auth/me/update/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     })
   }
 

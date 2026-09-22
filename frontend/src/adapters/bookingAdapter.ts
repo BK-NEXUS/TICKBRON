@@ -18,6 +18,9 @@ export interface Booking {
   id: number
   guest: number
   guest_name: string
+  guest_full_name?: string
+  guest_phone?: string
+  guest_email?: string
   property: number
   property_name: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
@@ -26,6 +29,8 @@ export interface Booking {
   check_out: string
   number_of_nights: number
   guest_count: number
+  number_of_rooms: number
+  children: number[]
   total_price: number
   currency: string
   special_requests?: string
@@ -45,6 +50,11 @@ export interface BookingCreateRequest {
   check_in: string
   check_out: string
   guest_count: number
+  guest_full_name?: string
+  guest_phone?: string
+  guest_email?: string
+  number_of_rooms?: number
+  children?: number[]
   special_requests?: string
 }
 

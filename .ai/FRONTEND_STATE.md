@@ -1,9 +1,9 @@
 # FRONTEND STATE
 
 Owner: Baxram
-Checkpoint sequence: 01 → 21
-Current checkpoint: 21
-Completed: 21/21
+Checkpoint sequence: 01 → 22
+Current checkpoint: 22
+Completed: 22/22
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -822,6 +822,47 @@ Commit format:
 - Design system and accessibility preserved (no regressions)
 - All new authentication components use existing architecture and design system
 - Full regression suite: Existing tests pass, new tests added for OTP functionality
+
+## Checkpoint 22 (Completed)
+- Extended User interface in authAdapter with optional contact fields: whatsapp, telegram, preferred_contact_method
+- Added updateProfile method to authAdapter targeting PATCH /api/v1/auth/me/update/
+- UpdateProfileRequest interface supports: full_name, first_name, last_name, phone_number, whatsapp, telegram, preferred_contact_method
+- Updated AuthContext to expose updateProfile method that calls adapter and updates user state on success
+- Updated ProfilePage to display new contact fields (WhatsApp, Telegram, Preferred Contact Method)
+- ProfilePage edit mode now includes all editable fields: first_name, last_name, phone_number, whatsapp, telegram, preferred_contact_method
+- Profile edit UI includes: edit/save/cancel buttons, saving state, success message, error message
+- Fallback display for missing optional contact values (displays "Not provided" for empty whatsapp/telegram)
+- Preferred contact method defaults to "Email" when not set
+- Updated BookingPage to pre-fill phone_number from authenticated user profile (in addition to existing first_name, last_name, email prefill)
+- All booking guest details remain editable per booking (do not mutate user profile)
+- Added number_of_rooms field to booking form with minimum value of 1
+- Added children (ages 0-17) section to booking form with dynamic add/remove functionality
+- Added special_requests textarea to booking form
+- Updated booking request to include new fields: guest_full_name, guest_phone, guest_email, number_of_rooms, children, special_requests
+- Children ages validated on client side against 0-17 range
+- CSS styles added for profile edit controls, messages, and new booking form fields
+- Comprehensive test coverage:
+  - ProfilePage tests updated: 36 tests for new contact fields, edit mode, save/cancel, success/error handling
+  - BookingPage tests updated: 33 tests for phone prefill, new fields, validation, booking payload
+  - AuthContext tests: updateProfile method coverage
+- Full regression suite: 729 tests passing across 57 test files
+- Security review completed: 8/8 security checks passed
+  - Profile update uses session-based authentication (credentials: 'include')
+  - No localStorage JWT usage maintained
+  - Booking-specific guest data does not mutate user profile
+  - XSS prevention through React automatic escaping
+  - Input validation for children ages (0-17) and number of rooms (min 1)
+  - CSRF protection via credentials: 'include'
+  - No secrets or sensitive data added to codebase
+  - Accessible form labels and controls for all new fields
+- API contract compatibility verified:
+  - Profile update endpoint PATCH /api/v1/auth/me/update/ compatible with backend checkpoint 22
+  - User profile fields match backend contract (whatsapp, telegram, preferred_contact_method)
+  - Booking request fields match backend checkpoint 22 contract (guest_full_name, guest_phone, guest_email, number_of_rooms, children, special_requests)
+  - Backend auto-fill behavior confirmed (missing guest fields default to user profile values)
+  - No invented API endpoints or fields - strict adherence to backend checkpoint 22 contract
+- Design system and accessibility preserved (no regressions)
+- All new profile and booking components use existing architecture and design system
 
 ## Final Release Status
 - ✅ All 21 frontend checkpoints completed

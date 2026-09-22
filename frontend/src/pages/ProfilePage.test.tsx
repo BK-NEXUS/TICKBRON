@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProfilePage } from './ProfilePage'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
@@ -19,6 +19,9 @@ const mockUser = {
   last_name: 'Doe',
   full_name: 'John Doe',
   phone_number: '+1234567890',
+  whatsapp: '+9876543210',
+  telegram: '@johndoe',
+  preferred_contact_method: 'whatsapp' as const,
   is_active: true,
   date_joined: '2025-01-01T00:00:00Z',
   last_login: '2025-01-15T00:00:00Z',
@@ -56,6 +59,8 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -74,6 +79,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -92,6 +98,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
     })
 
@@ -124,6 +131,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -140,6 +148,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -158,6 +167,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
     })
 
@@ -207,12 +217,90 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
 
       expect(screen.getByText('Phone Number')).toBeInTheDocument()
       expect(screen.getByText('Not provided')).toBeInTheDocument()
+    })
+
+    it('should display WhatsApp', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('+9876543210')).toBeInTheDocument()
+    })
+
+    it('should display "Not provided" when WhatsApp is missing', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, whatsapp: null },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('Not provided')).toBeInTheDocument()
+    })
+
+    it('should display Telegram', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Telegram')).toBeInTheDocument()
+      expect(screen.getByText('@johndoe')).toBeInTheDocument()
+    })
+
+    it('should display "Not provided" when Telegram is missing', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, telegram: null },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Telegram')).toBeInTheDocument()
+      expect(screen.getByText('Not provided')).toBeInTheDocument()
+    })
+
+    it('should display preferred contact method', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Preferred Contact Method')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+    })
+
+    it('should display "Email" as default when preferred contact method is missing', () => {
+      mockUseAuth.mockReturnValue({
+        user: { ...mockUser, preferred_contact_method: null },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Preferred Contact Method')).toBeInTheDocument()
+      const allEmailElements = screen.getAllByText('Email')
+      const emailValue = allEmailElements.find(el => el.tagName === 'P')
+      expect(emailValue).toBeInTheDocument()
     })
   })
 
@@ -226,6 +314,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
     })
 
@@ -271,6 +360,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -289,6 +379,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
     })
 
@@ -321,6 +412,7 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
@@ -337,11 +429,160 @@ describe('ProfilePage', () => {
         register: vi.fn(),
         logout: vi.fn(),
         refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
       })
 
       renderWithRouter(<ProfilePage />)
 
       expect(screen.getByText('U')).toBeInTheDocument()
+    })
+  })
+
+  describe('Profile edit functionality', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: vi.fn(),
+      })
+    })
+
+    it('should display edit button', () => {
+      renderWithRouter(<ProfilePage />)
+
+      expect(screen.getByText('Edit Profile')).toBeInTheDocument()
+    })
+
+    it('should open edit form when edit button is clicked', () => {
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      expect(screen.getByText('Edit Profile')).toBeInTheDocument()
+      expect(screen.getByLabelText('First Name')).toBeInTheDocument()
+      expect(screen.getByLabelText('Last Name')).toBeInTheDocument()
+      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
+      expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByLabelText('Telegram')).toBeInTheDocument()
+      expect(screen.getByLabelText('Preferred Contact Method')).toBeInTheDocument()
+    })
+
+    it('should pre-fill edit form with current user data', () => {
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      expect(screen.getByLabelText('First Name')).toHaveValue('John')
+      expect(screen.getByLabelText('Last Name')).toHaveValue('Doe')
+      expect(screen.getByLabelText('Phone Number')).toHaveValue('+1234567890')
+      expect(screen.getByLabelText('WhatsApp')).toHaveValue('+9876543210')
+      expect(screen.getByLabelText('Telegram')).toHaveValue('@johndoe')
+    })
+
+    it('should close edit form when cancel button is clicked', () => {
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      const cancelButton = screen.getByText('Cancel')
+      fireEvent.click(cancelButton)
+
+      expect(screen.queryByLabelText('First Name')).not.toBeInTheDocument()
+    })
+
+    it('should call updateProfile when save button is clicked', async () => {
+      const mockUpdateProfile = vi.fn().mockResolvedValue({ success: true, user: mockUser })
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: mockUpdateProfile,
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      const firstNameInput = screen.getByLabelText('First Name')
+      fireEvent.change(firstNameInput, { target: { value: 'Jane' } })
+
+      const saveButton = screen.getByText('Save Changes')
+      fireEvent.click(saveButton)
+
+      await waitFor(() => {
+        expect(mockUpdateProfile).toHaveBeenCalledWith({
+          first_name: 'Jane',
+          last_name: 'Doe',
+          phone_number: '+1234567890',
+          whatsapp: '+9876543210',
+          telegram: '@johndoe',
+          preferred_contact_method: 'whatsapp',
+        })
+      })
+    })
+
+    it('should display success message after successful profile update', async () => {
+      const mockUpdateProfile = vi.fn().mockResolvedValue({ success: true, user: mockUser })
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: mockUpdateProfile,
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      const saveButton = screen.getByText('Save Changes')
+      fireEvent.click(saveButton)
+
+      // Verify that updateProfile was called
+      expect(mockUpdateProfile).toHaveBeenCalled()
+    })
+
+    it('should display error message when profile update fails', async () => {
+      const mockUpdateProfile = vi.fn().mockResolvedValue({ success: false, error: 'Update failed' })
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+        updateProfile: mockUpdateProfile,
+      })
+
+      renderWithRouter(<ProfilePage />)
+
+      const editButton = screen.getByText('Edit Profile')
+      fireEvent.click(editButton)
+
+      const saveButton = screen.getByText('Save Changes')
+      fireEvent.click(saveButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Update failed')).toBeInTheDocument()
+      })
     })
   })
 })

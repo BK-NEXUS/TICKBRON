@@ -3128,6 +3128,61 @@ body {
   width: 100%;
 }
 
+/* Booking Form Children Field */
+.booking-form-children {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.booking-form-child-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-md);
+}
+
+.booking-form-child-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  min-width: 80px;
+}
+
+.booking-form-child-input {
+  flex: 1;
+  max-width: 80px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.booking-form-child-remove {
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.booking-form-child-remove:hover {
+  background-color: rgba(214, 69, 69, 0.1);
+}
+
+.booking-form-child-add {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
 /* Booking Confirmation */
 .booking-confirmation {
   background-color: var(--color-background);
@@ -3391,6 +3446,19 @@ body {
 
   .booking-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .booking-form-child-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .booking-form-child-label {
+    min-width: auto;
+  }
+
+  .booking-form-child-input {
+    max-width: 100%;
   }
 
   .booking-confirmation-actions {
@@ -4401,6 +4469,13 @@ body {
   background-color: var(--color-background-alt);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-xl);
+  position: relative;
+}
+
+.profile-edit-button {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
 }
 
 .profile-avatar {
@@ -4543,6 +4618,95 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
+}
+
+/* Profile Edit Form */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.profile-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.profile-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.profile-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.profile-form-input,
+.profile-form-select {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: var(--font-family-base);
+}
+
+.profile-form-input:focus,
+.profile-form-select:focus {
+  outline: none;
+  border-color: var(--color-pomegranate);
+  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+}
+
+.profile-form-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  padding: var(--spacing-md);
+  background-color: rgba(214, 69, 69, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-error);
+}
+
+.profile-form-success {
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
+  padding: var(--spacing-md);
+  background-color: rgba(63, 122, 87, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-success);
+}
+
+.profile-form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+/* Profile Page Responsive Design */
+@media (max-width: 767px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-edit-button {
+    position: static;
+    margin-top: var(--spacing-md);
+  }
+
+  .profile-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-form-actions {
+    flex-direction: column;
+  }
 }
 
 /* Coach Mark Component */
