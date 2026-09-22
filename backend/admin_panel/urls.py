@@ -12,7 +12,9 @@ from admin_panel.views import (
     admin_customers_directory,
     admin_customer_detail,
     admin_internal_note_create,
-    admin_internal_note_detail
+    admin_internal_note_detail,
+    admin_registration_statistics,
+    admin_top_bookers_leaderboard
 )
 
 app_name = 'admin_panel'
@@ -29,6 +31,8 @@ urlpatterns = [
     path('customers/<int:customer_id>/', admin_customer_detail, name='admin-customer-detail'),
     path('customers/<int:customer_id>/notes/', admin_internal_note_create, name='admin-internal-note-create'),
     path('customers/<int:customer_id>/notes/<int:note_id>/', admin_internal_note_detail, name='admin-internal-note-detail'),
+    path('statistics/registrations/', admin_registration_statistics, name='admin-registration-statistics'),
+    path('statistics/top-bookers/', admin_top_bookers_leaderboard, name='admin-top-bookers-leaderboard'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),

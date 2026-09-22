@@ -11,8 +11,9 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Count, Sum, Max, Q
-from datetime import timedelta
+from django.db.models import Count, Sum, Max, Q, F
+from django.db.models.functions import TruncMonth, ExtractYear
+from datetime import timedelta, date
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
@@ -723,3 +724,158 @@ def admin_internal_note_detail(request, customer_id, note_id):
     elif request.method == 'DELETE':
         note.soft_delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_registration_statistics(request):
+    """
+    Admin API for registration statistics.
+    
+    Returns new-registration counts broken down by:
+    - Rolling 12-month window (month-by-month)
+    - Calendar year (year-by-year)
+    
+    Query Parameters:
+        type: Type of breakdown (rolling_12_months or calendar_year, default: rolling_12_months)
+    
+    Returns:
+        Registration statistics with counts and period labels
+    """
+    stats_type = request.query_params.get('type', 'rolling_12_months')
+    
+    if stats_type == 'calendar_year':
+        # Get registration counts by calendar year
+        yearly_stats = User.objects.filter(
+            is_deleted=False
+        ).annotate(
+            year=ExtractYear('date_joined')
+        ).values('year').annotate(
+            count=Count('id')
+        ).order_by('year')
+        
+        # Format response
+        stats_data = [
+            {
+                'period': str(item['year']),
+                'count': item['count']
+            }
+            for item in yearly_stats
+        ]
+        
+        return Response({
+            'type': 'calendar_year',
+            'statistics': stats_data
+        }, status=status.HTTP_200_OK)
+    
+    else:  # rolling_12_months (default)
+        # Get rolling 12-month window
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=365)
+        
+        # Get registration counts by month for the rolling window
+        monthly_stats = User.objects.filter(
+            is_deleted=False,
+            date_joined__gte=start_date,
+            date_joined__lte=end_date
+        ).annotate(
+            month=TruncMonth('date_joined')
+        ).values('month').annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        # Format response with month labels
+        stats_data = []
+        for item in monthly_stats:
+            month_date = item['month']
+            stats_data.append({
+                'period': month_date.strftime('%Y-%m'),
+                'count': item['count']
+            })
+        
+        return Response({
+            'type': 'rolling_12_months',
+            'start_date': start_date,
+            'end_date': end_date,
+            'statistics': stats_data
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_top_bookers_leaderboard(request):
+    """
+    Admin API for top-bookers leaderboard.
+    
+    Returns customers ranked by number of completed bookings within a selectable period.
+    Intended to support customer-reward/loyalty programs.
+    
+    Query Parameters:
+        period: Time period for the leaderboard (this_month, this_year, all_time, default: all_time)
+        limit: Maximum number of top bookers to return (default: 10, max: 100)
+    
+    Returns:
+        Leaderboard with customer name, booking count, and rank
+    """
+    period = request.query_params.get('period', 'all_time')
+    limit = request.query_params.get('limit', 10)
+    
+    # Validate and sanitize limit
+    try:
+        limit = int(limit)
+        if limit < 1:
+            limit = 10
+        elif limit > 100:
+            limit = 100
+    except (ValueError, TypeError):
+        limit = 10
+    
+    # Build date filter based on period
+    now = timezone.now()
+    
+    if period == 'this_month':
+        # First day of current month
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        booking_filter = Q(
+            bookings__is_deleted=False,
+            bookings__status='completed',
+            bookings__created_at__gte=start_date
+        )
+    elif period == 'this_year':
+        # First day of current year
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        booking_filter = Q(
+            bookings__is_deleted=False,
+            bookings__status='completed',
+            bookings__created_at__gte=start_date
+        )
+    else:  # 'all_time' has no date filter
+        booking_filter = Q(
+            bookings__is_deleted=False,
+            bookings__status='completed'
+        )
+    
+    # Get top bookers with completed booking counts
+    top_bookers = User.objects.filter(
+        is_deleted=False
+    ).annotate(
+        completed_booking_count=Count('bookings', filter=booking_filter)
+    ).filter(
+        completed_booking_count__gt=0
+    ).order_by('-completed_booking_count')[:limit]
+    
+    # Build leaderboard response
+    leaderboard_data = []
+    for rank, user in enumerate(top_bookers, start=1):
+        leaderboard_data.append({
+            'rank': rank,
+            'customer_id': user.id,
+            'customer_name': user.get_full_name(),
+            'completed_booking_count': user.completed_booking_count
+        })
+    
+    return Response({
+        'period': period,
+        'limit': limit,
+        'leaderboard': leaderboard_data
+    }, status=status.HTTP_200_OK)

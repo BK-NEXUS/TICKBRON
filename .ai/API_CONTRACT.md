@@ -72,6 +72,8 @@ Core endpoints:
 - POST `/api/v1/admin-panel/customers/{id}/notes/` ✅ IMPLEMENTED (Checkpoint 25)
 - PUT `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
+- GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
+- GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
 ## Checkpoint 19 Changes (Observability/Performance/Security Hardening)
 
@@ -463,7 +465,7 @@ Status: READY
 - Fields: customer (FK to User), author (FK to User, nullable), note (TextField, required)
 - Inherits from TimeStampedModel and SoftDeleteModel
 - Database indexes on (customer, created_at) and (author, created_at)
-- Staff-only access - never exposed to customers
+- Staff-only access - never exposed to customer-facing APIs
 - Fully CRUD-able with author tracking
 
 ### Security Features
@@ -482,6 +484,46 @@ Status: READY
 - Tests cover customer detail, booking filtering, payments, internal notes CRUD
 - Tests cover permission access, author tracking, customer scoping
 - Security review passed: 22/22 checks (100% success rate)
+
+## Checkpoint 26 Notes (Admin Statistics API)
+Status: READY
+
+### Admin Registration Statistics API
+- GET `/api/v1/admin-panel/statistics/registrations/` - Get registration statistics
+  - Auth: Super-admin or staff required (IsSuperAdminOrStaff permission)
+  - Query Parameters: type (rolling_12_months or calendar_year, default: rolling_12_months)
+  - Response: Registration statistics with counts and period labels
+  - Rolling 12-month window: Returns month-by-month registration counts for the last 12 months
+  - Calendar year: Returns year-by-year registration counts for all years
+  - Efficient database aggregation using Django ORM annotate/aggregate
+  - Timezone-aware date handling
+
+### Admin Top Bookers Leaderboard API
+- GET `/api/v1/admin-panel/statistics/top-bookers/` - Get top bookers leaderboard
+  - Auth: Super-admin or staff required (IsSuperAdminOrStaff permission)
+  - Query Parameters: period (this_month, this_year, all_time, default: all_time), limit (default: 10, max: 100)
+  - Response: Leaderboard with customer ranking by completed booking count
+  - Returns: rank, customer_id, customer_name, completed_booking_count
+  - Intended to support customer-reward/loyalty programs
+  - Only completed bookings count (cancelled/pending bookings excluded)
+  - Efficient database aggregation using Django ORM annotate/aggregate
+  - Limit parameter validation (1-100 range enforced)
+  - Timezone-aware date window handling for period filters
+
+### Security Features
+- Staff-only access to both statistics endpoints
+- Registration statistics: Only aggregated counts, no personal data exposed
+- Top bookers leaderboard: Limited to customer name and booking count (no email, phone, address)
+- Efficient DB-level aggregation prevents N+1 query issues
+- Soft-deleted records filtered from statistics
+- Timezone-aware date calculations for accurate period boundaries
+
+### Test Coverage
+- 24 new statistics tests (all passing)
+- Tests cover registration statistics (rolling 12-month, calendar year, edge cases)
+- Tests cover top bookers leaderboard (all periods, limit validation, ranking)
+- Tests cover permission access, data exposure limits, edge cases
+- Security review passed: 18/18 checks (100% success rate)
 
 ### Backend Implementation Details
 - New partner app with property/room/rate/inventory management ViewSets

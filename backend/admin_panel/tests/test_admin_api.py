@@ -16,6 +16,7 @@ from bookings.models import Booking, BookingItem
 from admin_panel.models import InternalNote
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -1583,3 +1584,472 @@ class AdminInternalNotesTests(TestCase):
         notes = response.data['internal_notes']
         self.assertEqual(notes[0]['author_name'], 'Admin User')
         self.assertEqual(notes[0]['author_email'], 'admin@example.com')
+
+
+class AdminStatisticsTests(TestCase):
+    """Tests for admin statistics endpoints."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        
+        # Create super-admin user
+        self.super_admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='testpassword123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Create staff user
+        self.staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password='testpassword123',
+            first_name='Staff',
+            last_name='User',
+            is_staff=True
+        )
+        
+        # Create regular user
+        self.regular_user = User.objects.create_user(
+            email='regular@example.com',
+            password='testpassword123',
+            first_name='Regular',
+            last_name='User'
+        )
+        
+        # Create property type and property
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+        
+        self.property = Property.objects.create(
+            owner=self.super_admin,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create room type and rate plan
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=Decimal('100.00'),
+            currency='USD',
+            total_rooms=5
+        )
+        
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=Decimal('100.00'),
+            currency='USD',
+            min_nights=1,
+            max_nights=30,
+            is_active=True
+        )
+        
+        # Create users with different registration dates for statistics
+        self.user1 = User.objects.create_user(
+            email='user1@example.com',
+            password='testpassword123',
+            first_name='User',
+            last_name='One'
+        )
+        self.user1.date_joined = timezone.now() - timedelta(days=30)
+        self.user1.save()
+        
+        self.user2 = User.objects.create_user(
+            email='user2@example.com',
+            password='testpassword123',
+            first_name='User',
+            last_name='Two'
+        )
+        self.user2.date_joined = timezone.now() - timedelta(days=60)
+        self.user2.save()
+        
+        self.user3 = User.objects.create_user(
+            email='user3@example.com',
+            password='testpassword123',
+            first_name='User',
+            last_name='Three'
+        )
+        self.user3.date_joined = timezone.now() - timedelta(days=400)  # Over a year ago
+        self.user3.save()
+        
+        # Create bookings for leaderboard tests
+        self.booking1 = Booking.objects.create(
+            guest=self.user1,
+            property=self.property,
+            status='completed',
+            payment_status='paid',
+            check_in=date.today() - timedelta(days=5),
+            check_out=date.today() - timedelta(days=3),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='User One',
+            guest_phone='+998901234567',
+            guest_email='user1@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking1,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        self.booking2 = Booking.objects.create(
+            guest=self.user1,
+            property=self.property,
+            status='completed',
+            payment_status='paid',
+            check_in=date.today() - timedelta(days=10),
+            check_out=date.today() - timedelta(days=8),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='User One',
+            guest_phone='+998901234567',
+            guest_email='user1@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking2,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        self.booking3 = Booking.objects.create(
+            guest=self.user2,
+            property=self.property,
+            status='completed',
+            payment_status='paid',
+            check_in=date.today() - timedelta(days=15),
+            check_out=date.today() - timedelta(days=13),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='User Two',
+            guest_phone='+998901234568',
+            guest_email='user2@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking3,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+        
+        # Create a cancelled booking (should not count in leaderboard)
+        self.booking_cancelled = Booking.objects.create(
+            guest=self.user2,
+            property=self.property,
+            status='cancelled',
+            payment_status='refunded',
+            check_in=date.today() - timedelta(days=20),
+            check_out=date.today() - timedelta(days=18),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('200.00'),
+            currency='USD',
+            guest_full_name='User Two',
+            guest_phone='+998901234568',
+            guest_email='user2@example.com',
+            number_of_rooms=1,
+            children=[]
+        )
+        
+        BookingItem.objects.create(
+            booking=self.booking_cancelled,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            number_of_rooms=1,
+            price_per_night=Decimal('100.00'),
+            currency='USD'
+        )
+    
+    def test_super_admin_can_access_registration_statistics(self):
+        """Test that super-admin can access registration statistics."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('type', response.data)
+        self.assertIn('statistics', response.data)
+    
+    def test_staff_can_access_registration_statistics(self):
+        """Test that staff can access registration statistics."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_regular_user_cannot_access_registration_statistics(self):
+        """Test that regular user cannot access registration statistics."""
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_unauthenticated_user_cannot_access_registration_statistics(self):
+        """Test that unauthenticated user cannot access registration statistics."""
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_registration_statistics_rolling_12_months(self):
+        """Test registration statistics for rolling 12-month window."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=rolling_12_months')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['type'], 'rolling_12_months')
+        self.assertIn('start_date', response.data)
+        self.assertIn('end_date', response.data)
+        self.assertIn('statistics', response.data)
+        self.assertIsInstance(response.data['statistics'], list)
+    
+    def test_registration_statistics_calendar_year(self):
+        """Test registration statistics for calendar year."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=calendar_year')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['type'], 'calendar_year')
+        self.assertIn('statistics', response.data)
+        self.assertIsInstance(response.data['statistics'], list)
+    
+    def test_registration_statistics_defaults_to_rolling_12_months(self):
+        """Test that registration statistics defaults to rolling 12-month window."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['type'], 'rolling_12_months')
+    
+    def test_registration_statistics_no_registrations_in_period(self):
+        """Test registration statistics when no registrations in period."""
+        self.client.force_authenticate(user=self.super_admin)
+        
+        # Create a user that was deleted
+        deleted_user = User.objects.create_user(
+            email='deleted@example.com',
+            password='testpassword123',
+            first_name='Deleted',
+            last_name='User'
+        )
+        deleted_user.soft_delete()
+        
+        # Get statistics for a period where no active registrations exist
+        # This tests the edge case of empty statistics
+        response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=calendar_year')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data['statistics'], list)
+    
+    def test_super_admin_can_access_top_bookers_leaderboard(self):
+        """Test that super-admin can access top bookers leaderboard."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('period', response.data)
+        self.assertIn('limit', response.data)
+        self.assertIn('leaderboard', response.data)
+    
+    def test_staff_can_access_top_bookers_leaderboard(self):
+        """Test that staff can access top bookers leaderboard."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_regular_user_cannot_access_top_bookers_leaderboard(self):
+        """Test that regular user cannot access top bookers leaderboard."""
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_unauthenticated_user_cannot_access_top_bookers_leaderboard(self):
+        """Test that unauthenticated user cannot access top bookers leaderboard."""
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_top_bookers_leaderboard_all_time(self):
+        """Test top bookers leaderboard for all time period."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['period'], 'all_time')
+        self.assertIn('leaderboard', response.data)
+        self.assertIsInstance(response.data['leaderboard'], list)
+        
+        # Check that user1 is at the top (2 completed bookings)
+        if response.data['leaderboard']:
+            self.assertEqual(response.data['leaderboard'][0]['customer_name'], 'User One')
+            self.assertEqual(response.data['leaderboard'][0]['completed_booking_count'], 2)
+    
+    def test_top_bookers_leaderboard_this_month(self):
+        """Test top bookers leaderboard for this month period."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_month')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['period'], 'this_month')
+        self.assertIn('leaderboard', response.data)
+    
+    def test_top_bookers_leaderboard_this_year(self):
+        """Test top bookers leaderboard for this year period."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_year')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['period'], 'this_year')
+        self.assertIn('leaderboard', response.data)
+    
+    def test_top_bookers_leaderboard_defaults_to_all_time(self):
+        """Test that top bookers leaderboard defaults to all time."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['period'], 'all_time')
+    
+    def test_top_bookers_leaderboard_limit_parameter(self):
+        """Test that limit parameter works correctly."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=2')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 2)
+        self.assertLessEqual(len(response.data['leaderboard']), 2)
+    
+    def test_top_bookers_leaderboard_limit_max_constraint(self):
+        """Test that limit parameter respects max constraint of 100."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=200')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 100)
+    
+    def test_top_bookers_leaderboard_invalid_limit_defaults(self):
+        """Test that invalid limit parameter defaults to 10."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=invalid')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['limit'], 10)
+    
+    def test_top_bookers_leaderboard_only_completed_bookings(self):
+        """Test that only completed bookings count in leaderboard."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # user2 has 1 completed booking and 1 cancelled booking
+        # Should only count the completed one
+        user2_entry = None
+        for entry in response.data['leaderboard']:
+            if entry['customer_name'] == 'User Two':
+                user2_entry = entry
+                break
+        
+        self.assertIsNotNone(user2_entry)
+        self.assertEqual(user2_entry['completed_booking_count'], 1)
+    
+    def test_top_bookers_leaderboard_no_bookings_in_period(self):
+        """Test leaderboard when no bookings in period."""
+        self.client.force_authenticate(user=self.super_admin)
+        
+        # Request leaderboard for this month when we have no bookings this month
+        # (our test bookings are from previous days/months)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_month')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data['leaderboard'], list)
+        # May be empty if no bookings this month
+    
+    def test_top_bookers_leaderboard_ranking_order(self):
+        """Test that leaderboard is correctly ranked by booking count."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check that entries are in descending order of booking count
+        leaderboard = response.data['leaderboard']
+        for i in range(len(leaderboard) - 1):
+            self.assertGreaterEqual(
+                leaderboard[i]['completed_booking_count'],
+                leaderboard[i + 1]['completed_booking_count']
+            )
+    
+    def test_top_bookers_leaderboard_rank_field(self):
+        """Test that leaderboard entries include rank field."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check that entries have rank field starting from 1
+        if response.data['leaderboard']:
+            self.assertEqual(response.data['leaderboard'][0]['rank'], 1)
+            if len(response.data['leaderboard']) > 1:
+                self.assertEqual(response.data['leaderboard'][1]['rank'], 2)
+    
+    def test_top_bookers_leaderboard_sensitive_data_not_leaked(self):
+        """Test that leaderboard doesn't leak sensitive customer data."""
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check that only necessary fields are returned
+        if response.data['leaderboard']:
+            entry = response.data['leaderboard'][0]
+            self.assertIn('rank', entry)
+            self.assertIn('customer_id', entry)
+            self.assertIn('customer_name', entry)
+            self.assertIn('completed_booking_count', entry)
+            
+            # Should NOT include sensitive data
+            self.assertNotIn('email', entry)
+            self.assertNotIn('phone_number', entry)
+            self.assertNotIn('address', entry)
