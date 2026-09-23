@@ -145,6 +145,47 @@ class PartnerPropertyTests(TestCase):
         self.assertEqual(self.property.max_guests, 5)
         self.assertEqual(float(self.property.base_price), 120.00)
     
+    def test_hotel_owner_cannot_change_property_status(self):
+        """Status comes from admin moderation; the owner cannot self-approve."""
+        Property.objects.filter(pk=self.property.pk).update(status='pending_approval')
+        self.client.force_authenticate(user=self.hotel_owner)
+        
+        for new_status in ('active', 'suspended', 'rejected'):
+            response = self.client.patch(
+                f'/api/v1/partner/properties/{self.property.id}/', {'status': new_status}, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.property.refresh_from_db()
+            self.assertEqual(self.property.status, 'pending_approval')
+    
+    def test_hotel_owner_cannot_reactivate_suspended_property(self):
+        """A suspended owner cannot lift the suspension while editing other fields."""
+        Property.objects.filter(pk=self.property.pk).update(status='suspended')
+        self.client.force_authenticate(user=self.hotel_owner)
+        
+        response = self.client.patch(
+            f'/api/v1/partner/properties/{self.property.id}/', {'status': 'active', 'max_guests': 6}, format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.property.refresh_from_db()
+        self.assertEqual(self.property.status, 'suspended')
+        self.assertEqual(self.property.max_guests, 6)
+    
+    def test_new_property_starts_as_draft(self):
+        """Creating a property never makes it public, even if status is sent."""
+        self.client.force_authenticate(user=self.hotel_owner)
+        data = {
+            'property_type': self.property.property_type_id, 'status': 'active', 'max_guests': 2,
+            'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Status Test St', 'city': 'Samarkand',
+            'country': 'Uzbekistan', 'base_price': '80.00', 'currency': 'USD'
+        }
+        
+        response = self.client.post('/api/v1/partner/properties/', data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Property.objects.get(address_line1='1 Status Test St').status, 'draft')
+    
     def test_hotel_owner_cannot_update_other_property(self):
         """Test that hotel-owner cannot update other users' property."""
         self.client.force_authenticate(user=self.hotel_owner)

@@ -28,7 +28,8 @@ class PartnerPropertySerializer(serializers.ModelSerializer):
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'full_address', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'owner', 'created_at', 'updated_at']
+        # status is set by admin moderation (approve/suspend), never by the owner
+        read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
     
     def get_full_address(self, obj):
         """Get the full address as a string."""

@@ -183,6 +183,7 @@ Status: READY
   - Request: Partial property update
   - Response: Updated property object
   - Only accessible for properties owned by the user
+  - `status` is read-only: it is set only by admin moderation (approve/suspend); a sent value is ignored (audit #12). New properties start as `draft`
 - DELETE `/api/v1/partner/properties/{id}/` - Delete property (soft delete)
   - Auth: Hotel-owner role required
   - Response: 204 No Content
