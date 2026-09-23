@@ -58,30 +58,24 @@ class WebhookProcessorTests(TestCase):
             self.assertTrue(webhook_event.timestamp_valid)
     
     def test_process_webhook_replay_attack(self):
-        """Test replay attack detection."""
+        """A replayed (validly signed) event is acknowledged but not processed again."""
         payload = {
             'id': 'event_123',
             'transaction_id': 'txn_456',
             'status': 'completed',
             'timestamp': int(timezone.now().timestamp())
         }
-        signature = 'test_signature'
-        
-        # Create initial webhook
-        WebhookEvent.objects.create(
-            provider='payme',
-            provider_event_id='event_123',
-            payload=payload,
-            signature=signature,
-            status='processed'
-        )
-        
         processor = WebhookProcessor('payme')
+        signature = processor.adapter.generate_signature(payload, 'test_secret')
         
-        with self.assertRaises(ValueError) as context:
-            processor.process_webhook(payload, signature)
+        with patch.object(processor.adapter, 'secret_key', 'test_secret'):
+            first_event, first_is_new = processor.process_webhook(payload, signature)
+            replayed_event, replay_is_new = processor.process_webhook(payload, signature)
         
-        self.assertIn('Replay attack', str(context.exception))
+        self.assertTrue(first_is_new)
+        self.assertFalse(replay_is_new)
+        self.assertEqual(replayed_event.id, first_event.id)
+        self.assertEqual(WebhookEvent.objects.filter(provider_event_id='event_123').count(), 1)
     
     def test_process_webhook_invalid_signature(self):
         """Test webhook processing with invalid signature."""
@@ -93,7 +87,7 @@ class WebhookProcessorTests(TestCase):
         
         processor = WebhookProcessor('payme')
         
-        with patch.object(processor.adapter, 'verify_webhook_signature', return_value=False):
+        with patch.object(processor.adapter, 'secret_key', 'test_secret'),                 patch.object(processor.adapter, 'verify_webhook_signature', return_value=False):
             with self.assertRaises(AdapterSignatureValidationError):
                 processor.process_webhook(payload, signature)
     
@@ -107,7 +101,7 @@ class WebhookProcessorTests(TestCase):
         
         processor = WebhookProcessor('payme')
         
-        with patch.object(processor.adapter, 'verify_webhook_signature', return_value=True):
+        with patch.object(processor.adapter, 'secret_key', 'test_secret'),                 patch.object(processor.adapter, 'verify_webhook_signature', return_value=True):
             with self.assertRaises(AdapterSignatureValidationError):
                 processor.process_webhook(payload, signature)
     

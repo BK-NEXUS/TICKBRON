@@ -48,6 +48,10 @@ class BasePaymentAdapter:
         """Check if payment test mode is enabled."""
         return self.test_mode
     
+    def has_webhook_secret(self) -> bool:
+        """True if a non-blank webhook secret is configured (webhooks fail closed otherwise)."""
+        return bool(str(getattr(self, 'secret_key', '') or '').strip())
+    
     def _log_test_mode_call(self, method_name: str, **kwargs):
         """Log a call that's being routed through test mode."""
         logger.info(

@@ -3,6 +3,7 @@ Security tests for the payment API (audit findings #4, #5, #6, #14, #15, #16).
 """
 from datetime import timedelta
 from decimal import Decimal
+from unittest import mock
 
 from django.test import TestCase
 from django.utils import timezone
@@ -224,3 +225,78 @@ class TestClientConfirm(PaymentSecurityTestBase):
         tx = PaymentTransaction.objects.get(idempotency_key='k-c5')
         assert tx.status == 'failed'
         assert tx.error_code == 'PROVIDER_UNAVAILABLE'
+
+
+class TestWebhookSignatureFirst(TestCase):
+    """#6: unsigned requests cannot claim real event IDs; secrets fail closed."""
+
+    def setUp(self):
+        from payments.webhooks import WebhookProcessor
+
+        self.processor = WebhookProcessor('payme')
+        self.payload = {'id': 'evt-real-1', 'transaction_id': 'txn-1', 'status': 'completed',
+                        'timestamp': int(timezone.now().timestamp())}
+
+    def _sign(self, payload, secret='test_secret'):
+        return self.processor.adapter.generate_signature(payload, secret)
+
+    def test_forged_request_does_not_block_genuine_event(self):
+        from payments.adapters import SignatureValidationError
+        from payments.models import WebhookEvent
+
+        with mock.patch.object(self.processor.adapter, 'secret_key', 'test_secret'):
+            with self.assertRaises(SignatureValidationError):
+                self.processor.process_webhook(self.payload, 'forged-signature')
+
+            event, is_new = self.processor.process_webhook(self.payload, self._sign(self.payload))
+
+        assert is_new is True
+        assert event.provider_event_id == 'evt-real-1'
+        assert event.signature_valid is True
+        forged = WebhookEvent.objects.get(status='invalid_signature')
+        assert forged.provider_event_id.startswith('invalid_')
+        assert forged.signature_valid is False
+
+    def test_replayed_event_is_not_processed_twice(self):
+        from payments.models import PaymentAuditLog
+
+        with mock.patch.object(self.processor.adapter, 'secret_key', 'test_secret'):
+            self.processor.process_webhook(self.payload, self._sign(self.payload))
+            _, is_new = self.processor.process_webhook(self.payload, self._sign(self.payload))
+
+        assert is_new is False
+        assert PaymentAuditLog.objects.filter(action='webhook_processed').count() == 1
+
+
+class TestWebhookSecretFailsClosed(TestCase):
+    """Webhooks are always rejected when the provider secret is missing or blank."""
+
+    def setUp(self):
+        self.payload = {'id': 'evt-nosecret', 'transaction_id': 'txn-9', 'status': 'completed',
+                        'timestamp': int(timezone.now().timestamp())}
+
+    def _assert_rejected(self, provider, secret_setting, secret_value):
+        from payments.adapters import get_payment_adapter
+        from payments.models import WebhookEvent
+        from payments.webhooks import WebhookNotConfiguredError, WebhookProcessor
+
+        with self.settings(**{secret_setting: secret_value}):
+            processor = WebhookProcessor(provider)
+            # A signature an attacker can compute when the key is empty
+            signature = get_payment_adapter(provider).generate_signature(self.payload, secret_value)
+            with self.assertRaises(WebhookNotConfiguredError):
+                processor.process_webhook(self.payload, signature)
+
+        assert not WebhookEvent.objects.exists()
+
+    def test_payme_empty_secret_rejects(self):
+        self._assert_rejected('payme', 'PAYME_SECRET_KEY', '')
+
+    def test_payme_blank_secret_rejects(self):
+        self._assert_rejected('payme', 'PAYME_SECRET_KEY', '   ')
+
+    def test_click_empty_secret_rejects(self):
+        self._assert_rejected('click', 'CLICK_SECRET_KEY', '')
+
+    def test_visa_empty_secret_rejects(self):
+        self._assert_rejected('visa', 'VISA_SECRET_KEY', '')

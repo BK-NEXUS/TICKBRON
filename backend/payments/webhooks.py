@@ -7,7 +7,9 @@ with signature validation, replay protection, and idempotency.
 import json
 import logging
 import hashlib
+import uuid
 from datetime import datetime, timezone as dt_timezone
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.conf import settings
 from typing import Dict, Optional, Tuple
@@ -15,6 +17,14 @@ from .adapters import get_payment_adapter, SignatureValidationError
 from .models import WebhookEvent, PaymentTransaction, PaymentAuditLog
 
 logger = logging.getLogger(__name__)
+
+
+class WebhookNotConfiguredError(Exception):
+    """Raised when a provider's webhook secret is missing, so no webhook can be trusted."""
+
+
+class WebhookNotSupportedError(Exception):
+    """Raised for providers whose webhook handling is not implemented yet."""
 
 
 class WebhookProcessor:
@@ -48,37 +58,54 @@ class WebhookProcessor:
             tuple: (webhook_event, is_new) where is_new is True if this is a new webhook
         
         Raises:
-            SignatureValidationError: If signature validation fails
-            ValueError: If webhook is a replay attack
+            WebhookNotConfiguredError: If the provider's webhook secret is not set
+            WebhookNotSupportedError: If the provider has no webhook handling yet
+            SignatureValidationError: If signature or timestamp validation fails
+        
+        A replay of an already recorded event returns (existing_event, False).
         """
+        # Fail closed: without a configured secret no signature can be trusted
+        if not self.adapter.has_webhook_secret():
+            logger.error(f"Webhook secret not configured for {self.provider}; rejecting webhook")
+            raise WebhookNotConfiguredError(f"Webhook secret not configured for {self.provider}")
+
         # Extract provider event ID
         provider_event_id = self._extract_event_id(payload)
-        
-        # Check for replay attack
-        if self._is_replay_attack(provider_event_id):
-            logger.warning(f"Replay attack detected for event {provider_event_id}")
-            raise ValueError(f"Replay attack detected for event {provider_event_id}")
-        
-        # Create webhook event record
-        webhook_event = WebhookEvent.objects.create(
-            provider=self.provider,
-            provider_event_id=provider_event_id,
-            payload=payload,
-            signature=signature,
-            status='received'
-        )
-        
+
+        # Verify the signature BEFORE recording the event under its ID. Otherwise
+        # an unsigned request could claim a real event ID and get the genuine
+        # webhook rejected as a replay later.
         try:
-            # Verify signature
             is_valid = self.adapter.verify_webhook_signature(payload, signature)
-            webhook_event.signature_valid = is_valid
-            
-            if not is_valid:
-                webhook_event.status = 'invalid_signature'
-                webhook_event.error_message = 'Invalid webhook signature'
-                webhook_event.save()
-                raise SignatureValidationError("Invalid webhook signature")
-            
+        except NotImplementedError:
+            raise WebhookNotSupportedError(f"Webhooks are not supported for {self.provider}")
+
+        if not is_valid:
+            self._record_invalid_signature(payload, signature, provider_event_id)
+            raise SignatureValidationError("Invalid webhook signature")
+
+        # Replay of an already recorded (validly signed) event: acknowledge it
+        # without processing it again, so providers stop retrying
+        existing_event = self._find_existing_event(provider_event_id)
+        if existing_event is not None:
+            logger.info(f"Webhook event {provider_event_id} already processed")
+            return existing_event, False
+
+        try:
+            with transaction.atomic():
+                webhook_event = WebhookEvent.objects.create(
+                    provider=self.provider,
+                    provider_event_id=provider_event_id,
+                    payload=payload,
+                    signature=signature,
+                    signature_valid=True,
+                    status='received'
+                )
+        except IntegrityError:
+            # A concurrent delivery of the same event won the race
+            return self._find_existing_event(provider_event_id), False
+
+        try:
             # Validate timestamp
             timestamp = self._extract_timestamp(payload)
             webhook_event.timestamp = timestamp
@@ -187,20 +214,41 @@ class WebhookProcessor:
         
         return None
     
-    def _is_replay_attack(self, provider_event_id: str) -> bool:
+    def _find_existing_event(self, provider_event_id: str) -> Optional[WebhookEvent]:
         """
-        Check if this is a replay attack.
-        
-        Args:
-            provider_event_id: Provider event ID
-        
-        Returns:
-            bool: True if this is a replay attack
+        Return the already recorded event with this ID, if any.
+
+        Only validly signed events are stored under their real provider ID,
+        so a match means the same genuine webhook was delivered again.
         """
         return WebhookEvent.objects.filter(
             provider=self.provider,
             provider_event_id=provider_event_id
-        ).exists()
+        ).first()
+
+    def _record_invalid_signature(self, payload: Dict[str, any], signature: str,
+                                  claimed_event_id: str) -> WebhookEvent:
+        """
+        Keep a record of a rejected webhook for security monitoring.
+
+        It is stored under a synthetic ID so it never occupies the real
+        provider event ID.
+        """
+        webhook_event = WebhookEvent.objects.create(
+            provider=self.provider,
+            provider_event_id=f"invalid_{uuid.uuid4().hex}",
+            payload=payload,
+            signature=signature,
+            signature_valid=False,
+            status='invalid_signature',
+            error_message=f"Invalid webhook signature (claimed event id: {claimed_event_id[:100]})"
+        )
+        PaymentAuditLog.log_action(
+            action='webhook_received',
+            webhook_event=webhook_event,
+            details={'error': 'Invalid webhook signature'}
+        )
+        return webhook_event
     
     def _link_to_payment_transaction(self, processed_data: Dict[str, any]) -> Optional[PaymentTransaction]:
         """

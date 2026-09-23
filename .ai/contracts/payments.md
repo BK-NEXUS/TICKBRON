@@ -119,11 +119,12 @@ Status: READY
   - X-Signature or X-Webhook-Signature header required
 - Response: Success/error message
 - Auth: None (public endpoint with signature validation)
-- Error: 400 for invalid signature, timestamp, or replay attack
-- Signature validation: Provider-specific signature verification
+- Error: 400 for invalid signature or stale timestamp; 400 for providers without webhook support yet (Visa); 503 when the provider's webhook secret is not configured
+- Fail closed: if the provider secret (PAYME_SECRET_KEY / CLICK_SECRET_KEY / VISA_SECRET_KEY) is empty or blank, every webhook is rejected and nothing is stored
+- Signature validation: Provider-specific signature verification, done BEFORE the event is recorded under its provider event ID
 - Timestamp validation: Webhook must be within acceptable age (5 minutes)
-- Replay protection: Duplicate event IDs are rejected
-- Idempotency: Same event ID is only processed once
+- Replay / idempotency: a validly signed event ID already recorded returns 200 "already processed" and is not processed again
+- Rejected (invalid signature) attempts are stored for monitoring under a synthetic `invalid_<uuid>` ID, so they never block the genuine event
 - Creates WebhookEvent record with processing status
 - Links webhook to payment transaction when possible
 - Creates audit log entries for webhook processing

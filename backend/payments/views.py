@@ -23,7 +23,10 @@ from .serializers import (
     PaymentAuditLogSerializer
 )
 from .adapters import get_payment_adapter, PaymentAdapterError
-from .webhooks import validate_webhook_request, get_webhook_processor, SignatureValidationError
+from .webhooks import (
+    validate_webhook_request, get_webhook_processor, SignatureValidationError,
+    WebhookNotConfiguredError, WebhookNotSupportedError
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -444,6 +447,19 @@ def webhook_endpoint(request, provider):
                 status=status.HTTP_200_OK
             )
             
+    except WebhookNotConfiguredError as e:
+        # Fail closed; 503 so the provider retries once the secret is configured
+        logger.error(f"Webhook rejected: {e}")
+        return Response(
+            {'error': 'Webhook verification is not configured'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    except WebhookNotSupportedError as e:
+        logger.error(f"Webhook rejected: {e}")
+        return Response(
+            {'error': 'Webhooks are not supported for this provider'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     except SignatureValidationError as e:
         logger.error(f"Webhook signature validation failed: {e}")
         return Response(
