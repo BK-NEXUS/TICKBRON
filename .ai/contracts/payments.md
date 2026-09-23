@@ -124,7 +124,7 @@ Status: READY
 Status: READY
 
 ### Environment Variables
-- PAYMENT_TEST_MODE: Enable/disable payment test mode (default: True)
+- PAYMENT_TEST_MODE: Enable/disable payment test mode (default: False)
 - PAYME_MERCHANT_ID: Payme merchant ID (production)
 - PAYME_SECRET_KEY: Payme secret key for signature verification (production)
 - CLICK_SERVICE_ID: Click service ID (production)

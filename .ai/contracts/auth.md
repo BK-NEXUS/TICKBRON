@@ -21,6 +21,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Required fields: `phone_number`
   - Rate limited: 3 requests/minute per phone number
   - Returns OTP code in response when `SMS_TEST_MODE=True`
+  - `SMS_TEST_MODE` defaults to `False`; with it off and no SMS provider configured, returns 503
   - Creates user if phone number not registered
 
 - POST `/api/v1/auth/otp/verify/` - Verify OTP and login

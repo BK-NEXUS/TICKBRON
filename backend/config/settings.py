@@ -272,7 +272,8 @@ DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True
 DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
 
 # Payment Configuration
-PAYMENT_TEST_MODE = os.getenv('PAYMENT_TEST_MODE', 'True').lower() == 'true'
+# Defaults to False: test mode confirms payments without a real provider.
+PAYMENT_TEST_MODE = os.getenv('PAYMENT_TEST_MODE', 'False').lower() == 'true'
 
 # Payment Provider Configuration (placeholders for production)
 PAYME_MERCHANT_ID = os.getenv('PAYME_MERCHANT_ID', '')
@@ -284,7 +285,8 @@ VISA_API_KEY = os.getenv('VISA_API_KEY', '')
 VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 
 # SMS Configuration
-SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'True').lower() == 'true'
+# Defaults to False: test mode returns the OTP code in the API response.
+SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'False').lower() == 'true'
 
 # Testing database configuration
 if 'test' in sys.argv or 'pytest' in sys.argv:

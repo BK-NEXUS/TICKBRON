@@ -234,3 +234,25 @@ class TestOTPViews(TestCase):
         me_response = self.client.get('/api/v1/auth/me/')
         assert me_response.status_code == 200
         assert me_response.data['phone_number'] == self.phone_number
+
+class TestOTPWithoutSMSTestMode(TestCase):
+    """OTP behaviour when SMS test mode is off (the production default)."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.phone_number = '+998901110001'
+        User.objects.create_user(
+            email='prod@example.com',
+            phone_number=self.phone_number,
+            password='testpass123'
+        )
+
+    def test_request_otp_returns_503_without_code(self):
+        """Without an SMS provider the API returns 503 and never leaks the code."""
+        with self.settings(SMS_TEST_MODE=False):
+            response = self.client.post('/api/v1/auth/otp/request/', {
+                'phone_number': self.phone_number
+            })
+
+        assert response.status_code == 503
+        assert 'otp_code' not in response.content.decode()

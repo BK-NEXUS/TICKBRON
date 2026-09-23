@@ -5,6 +5,7 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
+from common.exceptions import ExternalServiceException
 from users.models import User
 
 logger = logging.getLogger(__name__)
@@ -46,9 +47,8 @@ class OTPService:
             self._log_test_mode_call('send_otp', phone_number=phone_number)
             return self._mock_send_otp(phone_number)
         
-        # In production, integrate with real SMS provider here
-        # For now, this is a placeholder
-        raise NotImplementedError("Real SMS provider not integrated yet")
+        # No real SMS provider is integrated yet; surface a 503 instead of a 500
+        raise ExternalServiceException('SMS provider is not configured.', service_name='SMS')
     
     def _mock_send_otp(self, phone_number: str) -> dict:
         """
