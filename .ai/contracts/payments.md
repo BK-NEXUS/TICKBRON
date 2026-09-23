@@ -113,12 +113,13 @@ Status: READY
 - Read-only list / detail of received webhook events
 - Auth: staff only (`is_staff`); other users get 403 — payloads contain payment details and guest PII
 
-### POST `/api/v1/payments/webhooks/{provider}/`
+### POST `/api/v1/payments/webhook/{provider}/`
+- Note: the path is singular `webhook/`. `webhooks/` is the staff-only event list above; this contract previously listed the POST under `webhooks/`, which never matched the code
 - Request: Webhook payload from payment provider
   - JSON payload with provider-specific data
   - X-Signature or X-Webhook-Signature header required
 - Response: Success/error message
-- Auth: None (public endpoint with signature validation)
+- Auth: None — no session or CSRF; the signature is the only authentication
 - Error: 400 for invalid signature or stale timestamp; 400 for providers without webhook support yet (Visa); 503 when the provider's webhook secret is not configured
 - Fail closed: if the provider secret (PAYME_SECRET_KEY / CLICK_SECRET_KEY / VISA_SECRET_KEY) is empty or blank, every webhook is rejected and nothing is stored
 - Signature validation: Provider-specific signature verification, done BEFORE the event is recorded under its provider event ID
@@ -126,7 +127,11 @@ Status: READY
 - Replay / idempotency: a validly signed event ID already recorded returns 200 "already processed" and is not processed again
 - Rejected (invalid signature) attempts are stored for monitoring under a synthetic `invalid_<uuid>` ID, so they never block the genuine event
 - Creates WebhookEvent record with processing status
-- Links webhook to payment transaction when possible
+- Links webhook to payment transaction (by provider_transaction_id) and applies the outcome; only pending/processing transactions change:
+  - status `completed` / `success` / `paid` with an amount equal to the transaction amount → transaction `completed`, booking `confirmed` / payment status `paid` (booking row locked). Amount mismatch → nothing changes, event error noted
+  - status `failed` / `cancelled` / `canceled` / `error` → transaction `failed`, booking unchanged
+  - if the booking can no longer be confirmed (e.g. already cancelled), the transaction is still `completed` (money was captured) and the audit log flags "manual refund required"
+  - status vocabulary matches our adapters' mock format; real Payme/Click statuses must be mapped when production integration is done
 - Creates audit log entries for webhook processing
 
 ## Payment Configuration (Backend Checkpoint 15)

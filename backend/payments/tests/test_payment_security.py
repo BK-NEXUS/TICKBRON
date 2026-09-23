@@ -300,3 +300,95 @@ class TestWebhookSecretFailsClosed(TestCase):
 
     def test_visa_empty_secret_rejects(self):
         self._assert_rejected('visa', 'VISA_SECRET_KEY', '')
+
+
+class TestWebhookAppliesPayment(PaymentSecurityTestBase):
+    """#5: signed provider webhooks reach the endpoint without a session and settle payments."""
+
+    SECRET = 'webhook-test-secret'
+
+    def setUp(self):
+        super().setUp()
+        self.tx = self._create_transaction(self.booking, 'k-wh', provider_transaction_id='txn-wh-1')
+        self.provider_client = APIClient()  # no session, like a real provider
+
+    def _post_webhook(self, event_id, provider_status='completed', amount='300.00'):
+        from payments.adapters import get_payment_adapter
+
+        payload = {'id': event_id, 'transaction_id': 'txn-wh-1', 'status': provider_status,
+                   'amount': amount, 'currency': 'USD', 'timestamp': int(timezone.now().timestamp())}
+        signature = get_payment_adapter('payme').generate_signature(payload, self.SECRET)
+        with self.settings(PAYME_SECRET_KEY=self.SECRET):
+            return self.provider_client.post(
+                '/api/v1/payments/webhook/payme/', payload, format='json', HTTP_X_SIGNATURE=signature
+            )
+
+    def test_unauthenticated_signed_webhook_confirms_booking(self):
+        response = self._post_webhook('evt-ok')
+
+        assert response.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'completed'
+        assert self.booking.status == 'confirmed'
+        assert self.booking.payment_status == 'paid'
+
+    def test_amount_mismatch_does_not_confirm(self):
+        response = self._post_webhook('evt-cheap', amount='0.01')
+
+        assert response.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'processing'
+        assert self.booking.status == 'pending'
+
+    def test_failed_status_marks_transaction_failed(self):
+        self._post_webhook('evt-fail', provider_status='failed')
+
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'failed'
+        assert self.booking.status == 'pending'
+
+    def test_late_failure_cannot_undo_completed_payment(self):
+        self._post_webhook('evt-ok-2')
+        self._post_webhook('evt-late-fail', provider_status='failed')
+
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'completed'
+
+    def test_replayed_webhook_is_acknowledged_without_reprocessing(self):
+        from payments.models import PaymentAuditLog
+
+        first = self._post_webhook('evt-dup')
+        second = self._post_webhook('evt-dup')
+
+        assert first.status_code == second.status_code == status.HTTP_200_OK
+        assert 'already processed' in second.data['message']
+        assert PaymentAuditLog.objects.filter(action='payment_completed').count() == 1
+
+    def test_payment_for_cancelled_booking_is_recorded_and_flagged(self):
+        from payments.models import PaymentAuditLog
+
+        Booking.objects.filter(pk=self.booking.pk).update(status='cancelled')
+
+        self._post_webhook('evt-cancelled')
+
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'completed'
+        assert self.booking.status == 'cancelled'
+        log = PaymentAuditLog.objects.get(action='payment_completed')
+        assert 'manual refund' in log.details['error']
+
+    def test_forged_webhook_is_rejected(self):
+        with self.settings(PAYME_SECRET_KEY=self.SECRET):
+            response = self.provider_client.post(
+                '/api/v1/payments/webhook/payme/',
+                {'id': 'evt-forged', 'transaction_id': 'txn-wh-1', 'status': 'completed', 'amount': '300.00'},
+                format='json', HTTP_X_SIGNATURE='forged'
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'processing'

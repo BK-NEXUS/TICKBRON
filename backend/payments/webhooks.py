@@ -9,14 +9,22 @@ import logging
 import hashlib
 import uuid
 from datetime import datetime, timezone as dt_timezone
+from decimal import Decimal, InvalidOperation
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.conf import settings
 from typing import Dict, Optional, Tuple
 from .adapters import get_payment_adapter, SignatureValidationError
+from bookings.models import Booking
 from .models import WebhookEvent, PaymentTransaction, PaymentAuditLog
 
 logger = logging.getLogger(__name__)
+
+# Provider statuses as delivered by our adapters' process_webhook(). The real
+# Payme/Click vocabularies must be mapped here when production integration lands.
+PROVIDER_SUCCESS_STATUSES = {'completed', 'success', 'paid'}
+PROVIDER_FAILURE_STATUSES = {'failed', 'cancelled', 'canceled', 'error'}
 
 
 class WebhookNotConfiguredError(Exception):
@@ -126,11 +134,12 @@ class WebhookProcessor:
             webhook_event.status = 'processed'
             webhook_event.processed_at = timezone.now()
             
-            # Link to payment transaction if possible
+            # Link to payment transaction if possible, then apply the outcome
             payment_transaction = self._link_to_payment_transaction(processed_data)
             if payment_transaction:
                 webhook_event.payment_transaction = payment_transaction
-            
+                self._apply_payment_status(payment_transaction, processed_data, webhook_event)
+
             webhook_event.save()
             
             # Create audit log
@@ -250,6 +259,71 @@ class WebhookProcessor:
         )
         return webhook_event
     
+    def _apply_payment_status(self, payment_transaction: PaymentTransaction,
+                              processed_data: Dict[str, any], webhook_event: WebhookEvent) -> None:
+        """
+        Move the transaction (and its booking) to the outcome the provider reported.
+
+        Only transactions still pending/processing are changed, so a repeated or
+        late webhook cannot flip a finished payment. A success with an amount
+        that does not match the transaction is ignored and logged.
+        """
+        provider_status = str(processed_data.get('status') or '').lower()
+        if provider_status not in PROVIDER_SUCCESS_STATUSES | PROVIDER_FAILURE_STATUSES:
+            return
+
+        with transaction.atomic():
+            tx = PaymentTransaction.objects.select_for_update().get(pk=payment_transaction.pk)
+            if tx.status not in ('pending', 'processing'):
+                return
+            old_status = tx.status
+
+            if provider_status in PROVIDER_FAILURE_STATUSES:
+                tx.status = 'failed'
+                tx.error_code = 'PROVIDER_FAILED'
+                tx.error_message = f'Provider reported status: {provider_status}'
+                tx.save()
+                PaymentAuditLog.log_action(
+                    action='payment_failed', payment_transaction=tx, booking=tx.booking,
+                    webhook_event=webhook_event, old_status=old_status, new_status='failed',
+                    details={'provider_status': provider_status}
+                )
+                return
+
+            if not self._amount_matches(processed_data.get('amount'), tx.amount):
+                logger.error(
+                    f"Webhook amount {processed_data.get('amount')!r} does not match "
+                    f"transaction {tx.pk} amount {tx.amount}; not confirming"
+                )
+                webhook_event.error_message = 'Amount mismatch; payment not applied'
+                return
+
+            # The provider captured the money, so the transaction is completed
+            # even if the booking can no longer be confirmed (e.g. it was
+            # cancelled meanwhile); that case is flagged for a manual refund.
+            tx.status = 'completed'
+            tx.save()
+            booking = Booking.objects.select_for_update().get(pk=tx.booking_id)
+            details = {'provider_status': provider_status}
+            try:
+                with transaction.atomic():
+                    booking.confirm_booking()
+            except DjangoValidationError as e:
+                logger.error(f"Paid transaction {tx.pk} but booking {booking.pk} could not be confirmed: {e}")
+                details['error'] = 'Booking could not be confirmed; manual refund required'
+            PaymentAuditLog.log_action(
+                action='payment_completed', payment_transaction=tx, booking=booking,
+                webhook_event=webhook_event, old_status=old_status, new_status='completed',
+                details=details
+            )
+
+    @staticmethod
+    def _amount_matches(reported_amount, expected: Decimal) -> bool:
+        try:
+            return Decimal(str(reported_amount)) == expected
+        except (InvalidOperation, TypeError, ValueError):
+            return False
+
     def _link_to_payment_transaction(self, processed_data: Dict[str, any]) -> Optional[PaymentTransaction]:
         """
         Link webhook to payment transaction if possible.
