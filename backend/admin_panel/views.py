@@ -680,8 +680,7 @@ def admin_internal_note_create(request, customer_id):
     )
     
     if serializer.is_valid():
-        serializer.validated_data['customer'] = customer
-        note = serializer.save()
+        note = serializer.save(customer=customer)
         return Response(
             AdminInternalNoteSerializer(note).data,
             status=status.HTTP_201_CREATED

@@ -278,7 +278,8 @@ class AdminInternalNoteSerializer(serializers.ModelSerializer):
             'id', 'customer', 'author', 'author_name', 'author_email',
             'note', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        # A note belongs to the customer in its URL; it cannot be moved by editing
+        read_only_fields = ['id', 'customer', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
         """Get author full name."""
@@ -296,6 +297,8 @@ class AdminInternalNoteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternalNote
         fields = ['customer', 'note']
+        # Taken from the URL by the view (serializer.save(customer=...)), not the body
+        read_only_fields = ['customer']
     
     def create(self, validated_data):
         """Create internal note with current user as author."""

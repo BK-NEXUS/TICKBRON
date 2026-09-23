@@ -1495,6 +1495,33 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['note'], 'New note from admin')
     
+    def test_note_is_created_for_customer_in_url_not_body(self):
+        """The customer comes from the URL; a customer id in the body is ignored."""
+        other_customer = User.objects.create_user(email='other-customer@example.com', password='testpassword123')
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.post(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
+            {'note': 'Body names another customer', 'customer': other_customer.id}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['customer'], self.customer.id)
+        self.assertFalse(InternalNote.objects.filter(customer=other_customer).exists())
+    
+    def test_note_cannot_be_moved_to_another_customer(self):
+        """Editing a note cannot reassign it to a different customer."""
+        other_customer = User.objects.create_user(email='other-customer@example.com', password='testpassword123')
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
+            {'note': 'Edited', 'customer': other_customer.id}
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.customer_id, self.customer.id)
+        self.assertEqual(self.note.note, 'Edited')
+    
     def test_regular_user_cannot_create_internal_note(self):
         """Test that regular user cannot create internal note."""
         self.client.force_authenticate(user=self.customer)
