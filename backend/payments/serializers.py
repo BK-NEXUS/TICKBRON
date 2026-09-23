@@ -1,6 +1,7 @@
 """
 Serializers for TICKBRON payment models.
 """
+from django.utils import timezone
 from rest_framework import serializers
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 
@@ -61,6 +62,13 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
         if booking.status != 'pending':
             raise serializers.ValidationError(
                 {'booking': 'Payment can only be initiated for pending bookings'}
+            )
+        
+        # A pending booking past its payment window is about to be expired and
+        # its rooms released; paying for it now would pay for rooms we may resell
+        if booking.expires_at and booking.expires_at <= timezone.now():
+            raise serializers.ValidationError(
+                {'booking': 'Booking has expired; please create a new booking'}
             )
         
         # Validate amount matches booking total

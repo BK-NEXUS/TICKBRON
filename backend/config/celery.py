@@ -18,5 +18,5 @@ try:
     # Auto-discover tasks in all installed apps
     app.autodiscover_tasks()
 except ImportError:
-    # Celery not installed yet - this is expected during initial setup
-    pass
+    # Celery not installed (e.g. a minimal environment): run without a worker app
+    app = None

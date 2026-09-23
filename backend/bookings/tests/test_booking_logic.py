@@ -258,3 +258,58 @@ class TestOnlyActivePropertiesArePublic(BookingLogicTestBase):
         assert public.get(f'/api/v1/properties/{self.property.id}/availability/').status_code == status.HTTP_200_OK
         assert 'Tashkent' in public.get('/api/v1/properties/search/suggestions/', {'q': 'Tashk'}).data['suggestions']
         assert self.post_booking().status_code == status.HTTP_201_CREATED
+
+
+class TestExpiredBookingTask(BookingLogicTestBase):
+    """#17: a Celery beat task expires pending bookings; expired bookings cannot be paid."""
+
+    def test_task_expires_overdue_bookings_and_releases_rooms(self):
+        from bookings.tasks import expire_pending_bookings
+
+        overdue = self.create_booking(day_offset=0, number_of_rooms=2)
+        fresh = self.create_booking(day_offset=0)
+        self.expire_now(overdue)
+
+        processed = expire_pending_bookings.apply().get()
+
+        assert processed == 1
+        overdue.refresh_from_db()
+        fresh.refresh_from_db()
+        assert overdue.status == 'cancelled'
+        assert fresh.status == 'pending'
+        assert self.inventory(0).booked_rooms == 1
+
+    def test_task_is_scheduled_in_celery_beat(self):
+        from django.conf import settings
+
+        from config.celery import app
+
+        schedule = settings.CELERY_BEAT_SCHEDULE['expire-pending-bookings']
+        assert schedule['task'] == 'bookings.tasks.expire_pending_bookings'
+        assert schedule['schedule'] <= 15 * 60  # bookings expire after 15 minutes
+        assert app.conf.beat_schedule['expire-pending-bookings']['task'] == schedule['task']
+
+    def test_task_fails_visibly_when_a_booking_cannot_be_expired(self):
+        from bookings.tasks import expire_pending_bookings
+
+        booking = self.create_booking()
+        self.expire_now(booking)
+
+        with mock.patch.object(Booking, 'expire_booking', side_effect=RuntimeError('boom')):
+            with self.assertLogs('bookings.models', level='ERROR'):
+                result = expire_pending_bookings.apply()
+
+        assert result.failed()
+        assert isinstance(result.result, ExpiredBookingProcessingError)
+
+    def test_payment_cannot_start_for_expired_booking(self):
+        booking = self.create_booking()
+        self.expire_now(booking)
+
+        response = self.client.post('/api/v1/payments/transactions/', {
+            'idempotency_key': 'k-expired', 'booking': booking.id, 'provider': 'payme',
+            'amount': str(booking.total_price), 'currency': 'USD',
+        }, format='json')
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'booking' in response.data['error']['details']

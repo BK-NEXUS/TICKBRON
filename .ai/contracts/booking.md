@@ -213,3 +213,8 @@ Status: READY
 - Only properties with `status='active'` (and `is_active`, not deleted) can be booked; others return 400 "Property not found or not available"
 - GET `/api/v1/properties/{id}/` and `/api/v1/properties/{id}/availability/` return 404 for draft, pending_approval, suspended and rejected properties (same response as a missing property)
 - Search suggestions only include active properties (search results already did)
+
+### Pending booking expiry (#17)
+- A pending booking expires 15 minutes after creation (`expires_at`)
+- Celery beat task `bookings.tasks.expire_pending_bookings` runs every `EXPIRED_BOOKINGS_INTERVAL_SECONDS` (default 60) and cancels expired pending bookings, releasing their rooms. Requires a Celery worker and beat (`celery -A config worker -l info`, `celery -A config beat -l info`) with Redis
+- POST `/api/v1/payments/transactions/` returns 400 for a booking whose `expires_at` has passed, even before the task has cancelled it

@@ -267,6 +267,16 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Periodic tasks (run with: celery -A config beat -l info)
+EXPIRED_BOOKINGS_INTERVAL_SECONDS = int(os.getenv('EXPIRED_BOOKINGS_INTERVAL_SECONDS', '60'))
+CELERY_BEAT_SCHEDULE = {
+    # Pending bookings expire after 15 minutes; release their inventory promptly
+    'expire-pending-bookings': {
+        'task': 'bookings.tasks.expire_pending_bookings',
+        'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
+    },
+}
+
 # Database connection health check
 DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
 DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
