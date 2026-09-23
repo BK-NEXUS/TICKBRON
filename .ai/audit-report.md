@@ -18,9 +18,9 @@
 | 7 | number_of_rooms: 1 xona narxi/inventari, bekor qilishda N | Kritik | ✅ Tuzatildi — `7be6a8d` |
 | 8 | phone_number unikal emas | Yuqori | ✅ Tuzatildi — `f050dcd` |
 | 9 | OTP brute-force (throttle yo'q, random, lock tekshiruvi keyin) | Yuqori | ✅ Tuzatildi — `73b0247` |
-| 10 | X-Forwarded-For orqali throttle chetlab o'tiladi, LocMem cache | Yuqori | Ochiq |
-| 11 | Akkaunt bloklash DoS, user enumeration | Yuqori | Ochiq |
-| 12 | Partner mulk statusini o'zi `active` qiladi | Yuqori | Ochiq |
+| 10 | X-Forwarded-For orqali throttle chetlab o'tiladi, LocMem cache | Yuqori | ✅ Tuzatildi — `9f0601d` (NUM_PROXIES deploy'ga qarab sozlanishi kerak) |
+| 11 | Akkaunt bloklash DoS, user enumeration | Yuqori | ✅ Tuzatildi — `d51bd96` (login va OTP; `register` hali email/telefon mavjudligini oshkor qiladi) |
+| 12 | Partner mulk statusini o'zi `active` qiladi | Yuqori | ✅ Tuzatildi — `6506d30` |
 | 13 | Suspended/rejected mulk bronlanadi va ommaga ko'rinadi | Yuqori | ✅ Tuzatildi — `758a4bc` |
 | 14 | Har qanday foydalanuvchi barcha webhook event'larini ko'radi | Yuqori | ✅ Tuzatildi — `23cb13d` |
 | 15 | Refund: mehmon o'zi qiladi, mantiq teskari, summa tekshirilmaydi | Yuqori | ✅ Tuzatildi — `40558e8` (admin "bekor qilish + refund" amali hali yo'q) |
@@ -132,7 +132,7 @@
 
 ## Boshqa kuzatuvlar
 
-- Test to'plami (izolyatsiyalangan bazada): 35 ta eski muvaffaqiyatsiz test — 27 tasi `/api/v1/admin/` yo'li (haqiqiy yo'l `/api/v1/admin-panel/`), 2 tasi InternalNote yaratishda body'da `customer` talab qilinishi (kod xatosi), qolganlari eskirgan test kutishlari (reference code uzunligi, Decimal/string, `Property.name`).
+- Test to'plami endi PostgreSQL'da ishlaydi (`82d9cb3`; SQLite faqat `ALLOW_SQLITE_TESTS=1` bilan). Bron kodi fixture'lari (`d2bc3b5`) va admin test yo'llari (`76c8044`) tuzatilgach: 790 passed, 5 failed. Qolgan 5 ta `admin_panel` xatosi: (1) InternalNote yaratish 400 — serializer body'da `customer` ni talab qiladi, view uni URL'dan oladi (**kod xatosi**, 2 test); (2) booking lookup testi mavjud bo'lmagan `Property.name` ga murojaat qiladi (test eskirgan); (3) mijozlar ro'yxati testi `total_amount_paid` ni Decimal kutadi, API string qaytaradi (test eskirgan); (4) mijoz tafsilotida izohlar tartibi testi — `created_at` bo'yicha tartibga tayanadi (test yoki tartib aniqlanishi kerak).
 - `admin_panel` index nomlari migratsiyasi yetishmasdi — `7f589d1` da qo'shildi.
 - To'lov qismidagi tuzatishlardan keyin (`0dce737`..`40558e8`):
   - Provayder pulni olgan-u, bron allaqachon bekor qilingan bo'lsa, tranzaksiya `completed` bo'ladi, bron o'zgarmaydi va audit log'da "manual refund required" belgisi qo'yiladi — admin refund qilishi kerak.
@@ -143,4 +143,9 @@
   - O'tgan sana faqat bron yaratishda tekshiriladi; tugagan bronlar o'tmishda bo'lgani uchun `Booking.clean()` o'zgartirilmadi.
   - Holat mashinasi `confirmed → cancelled` ga ruxsat beradi, shuning uchun parallel "to'lov + bekor qilish" navbatma-navbat ikkalasi ham muvaffaqiyatli bo'lishi mumkin: natija — to'langan, lekin bekor qilingan bron (refund kerak). Bu qulflash xatosi emas, biznes oqimi; admin "bekor qilish + refund" amali (#15 eslatmasi) shu holatni ham qamrab olishi kerak.
   - Celery beat task sinovdan faqat to'g'ridan-to'g'ri chaqirish orqali o'tgan; lokal muhitda Redis ishlamaydi, shuning uchun worker/beat jonli ishga tushirilmagan.
+- #10/#11/#12 tuzatishlaridan keyin (`6506d30`..`d51bd96`):
+  - Production'da `NUM_PROXIES` ni haqiqiy proxy soniga moslash kerak (masalan, bitta nginx orqasida 1); aks holda barcha foydalanuvchilar proxy IP'si bilan ko'rinadi va bitta umumiy throttle'ga tushadi.
+  - `USE_REDIS_CACHE` sukut bo'yicha `DEBUG=False` da yoqiladi — production'da Redis ishlamasa, throttle/lockout so'rovlari xato beradi (jimgina LocMem'ga o'tmaydi).
+  - Bitta hujumchi bitta OTP kodining 3 ta urinishini yoqib yuborishi mumkin (egasi yangi kod so'raydi); `otp/request` throttle'i raqam bo'yicha 3/min.
+  - `otp/request` ro'yxatdan o'tmagan raqamga ham 200 qaytaradi: frontend bunday foydalanuvchiga ham kod kiritish ekranini ko'rsatadi.
 - To'liq test to'plami PostgreSQL'da: SQLite'dagi 35 ta eski xatodan tashqari yana 38 ta test yiqiladi. Hammasining sababi bitta: test fixture'lari `confirmation_code='TEST1234'`/`'TEST12345'` (8–9 belgi) beradi, maydon esa checkpoint 23 (`c63437b`) dan beri `varchar(6)`. SQLite uzunlikni tekshirmagani uchun bu yashirin qolgan. Tuzatish: testlarda 6 belgili kod ishlatish (alohida ish, hali qilinmagan).
