@@ -8,27 +8,43 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
+# Variables that must come from each test, not from the developer's shell or
+# from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
+ISOLATED_ENV_VARS = (
+    'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
+)
+
 # Load settings in a clean interpreter with .env loading disabled, so the
 # values reflect the code defaults rather than the developer's .env file.
 LOAD_SETTINGS = (
     "import dotenv; dotenv.load_dotenv = lambda *a, **k: None\n"
     "import django; django.setup()\n"
     "from django.conf import settings\n"
-    "print(settings.SMS_TEST_MODE, settings.PAYMENT_TEST_MODE)\n"
+    "print({expression})\n"
 )
 
 
-def _load_test_mode_settings(**env_overrides):
-    env = {k: v for k, v in os.environ.items()
-           if k not in ('SMS_TEST_MODE', 'PAYMENT_TEST_MODE')}
+def _load_settings(expression, **env_overrides):
+    env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS}
     env.update({'DJANGO_SETTINGS_MODULE': 'config.settings', 'DEBUG': 'True'})
     env.update(env_overrides)
     result = subprocess.run(
-        [sys.executable, '-c', LOAD_SETTINGS],
+        [sys.executable, '-c', LOAD_SETTINGS.format(expression=expression)],
         cwd=BACKEND_DIR, env=env, capture_output=True, text=True, timeout=120,
     )
     assert result.returncode == 0, result.stderr
     return result.stdout.strip().splitlines()[-1]
+
+
+def _load_test_mode_settings(**env_overrides):
+    return _load_settings('settings.SMS_TEST_MODE, settings.PAYMENT_TEST_MODE', **env_overrides)
+
+
+def _cache_backend(**env_overrides):
+    return _load_settings("settings.CACHES['default']['BACKEND']", **env_overrides)
+
+
+PRODUCTION_ENV = {'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key', 'ALLOWED_HOSTS': 'example.com'}
 
 
 def test_provider_test_modes_default_to_false():
@@ -37,3 +53,21 @@ def test_provider_test_modes_default_to_false():
 
 def test_provider_test_modes_can_be_enabled_explicitly():
     assert _load_test_mode_settings(SMS_TEST_MODE='True', PAYMENT_TEST_MODE='True') == 'True True'
+
+
+def test_production_uses_redis_cache_by_default():
+    assert _cache_backend(**PRODUCTION_ENV) == 'django_redis.cache.RedisCache'
+
+
+def test_debug_uses_local_memory_cache_by_default():
+    assert _cache_backend(DEBUG='True') == 'django.core.cache.backends.locmem.LocMemCache'
+
+
+def test_cache_backend_can_be_chosen_explicitly():
+    assert _cache_backend(DEBUG='True', USE_REDIS_CACHE='True') == 'django_redis.cache.RedisCache'
+    assert _cache_backend(USE_REDIS_CACHE='False', **PRODUCTION_ENV) == \
+        'django.core.cache.backends.locmem.LocMemCache'
+
+
+def test_forwarded_for_is_ignored_by_default():
+    assert _load_settings("settings.NUM_PROXIES, settings.REST_FRAMEWORK['NUM_PROXIES']") == '0 0'

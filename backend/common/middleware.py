@@ -6,6 +6,7 @@ Provides security headers, request logging, and performance monitoring.
 import time
 import logging
 from django.conf import settings
+from common.request import get_client_ip
 
 logger = logging.getLogger('tickbron')
 
@@ -90,12 +91,7 @@ class RequestLoggingMiddleware:
         
         Handles proxied requests (X-Forwarded-For header).
         """
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+        return get_client_ip(request)
 
 
 class PerformanceMonitoringMiddleware:
@@ -126,9 +122,4 @@ class PerformanceMonitoringMiddleware:
     
     def get_client_ip(self, request):
         """Get the client IP address from the request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+        return get_client_ip(request)

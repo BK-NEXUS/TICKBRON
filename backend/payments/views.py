@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from bookings.models import Booking
+from common.request import get_client_ip
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .serializers import (
     PaymentTransactionSerializer,
@@ -410,12 +411,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
 
     def _get_client_ip(self, request):
         """Get client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+        return get_client_ip(request)
 
 
 class WebhookEventViewSet(viewsets.ReadOnlyModelViewSet):

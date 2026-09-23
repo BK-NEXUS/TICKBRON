@@ -4,6 +4,7 @@ Custom decorators for TICKBRON Backend.
 Provides rate limiting, caching, and other utility decorators.
 """
 from django.core.cache import cache
+from common.request import get_client_ip as _get_client_ip
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from functools import wraps
@@ -70,12 +71,7 @@ def rate_limit(limit='100/h', key_func=None):
 
 def get_client_ip(request):
     """Get the client IP address from the request."""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+    return _get_client_ip(request)
 
 
 def class_rate_limit(limit='100/h', key_func=None):

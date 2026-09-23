@@ -14,6 +14,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 - POST `/api/v1/auth/login/` - Password login
   - Required fields: `email`, `password`
   - Rate limited: 10 requests/minute per IP
+  - Client IP for rate limits and audit fields is `REMOTE_ADDR`; `X-Forwarded-For` is trusted only for `NUM_PROXIES` reverse proxies (default 0 = ignored). Rate-limit counters are shared through Redis when `USE_REDIS_CACHE` is on (default when `DEBUG=False`)
   - Account lockout after 5 failed attempts (30 min lockout)
 
 ### Phone-Based OTP Authentication

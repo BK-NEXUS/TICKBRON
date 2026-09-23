@@ -224,8 +224,14 @@ CORS_ALLOW_METHODS = [
 RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
 RATELIMIT_USE_CACHE = 'default'
 
+# Number of trusted reverse proxies in front of the app that append to
+# X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
+# set it to match the deployment (e.g. 1 behind a single nginx/load balancer).
+NUM_PROXIES = int(os.getenv('NUM_PROXIES', '0'))
+
 # Django REST Framework Settings
 REST_FRAMEWORK = {
+    'NUM_PROXIES': NUM_PROXIES,  # client IP for throttling; see common.request.get_client_ip
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -258,6 +264,27 @@ SPECTACULAR_SETTINGS = {
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_URL = os.getenv('REDIS_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
+
+# Cache (throttling and rate-limit counters live here). Redis shares them
+# across all workers; LocMem is per process and only suitable for local
+# development. Defaults to Redis when DEBUG is off; tests always use LocMem.
+USE_REDIS_CACHE = os.getenv('USE_REDIS_CACHE', str(not DEBUG)).lower() == 'true' and not TESTING
+if USE_REDIS_CACHE:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tickbron-local',
+        }
+    }
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')

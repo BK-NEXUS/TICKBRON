@@ -14,6 +14,7 @@ from django.contrib.auth import authenticate, login, logout
 from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 from users.services import OTPService
+from common.request import get_client_ip
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
@@ -154,17 +155,6 @@ def login_view(request):
             )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-def get_client_ip(request):
-    """
-    Get the client's IP address from the request.
-    """
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
 
 
 @api_view(['POST'])
