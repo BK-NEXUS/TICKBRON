@@ -4,6 +4,8 @@ Booking models for TICKBRON.
 This module contains models for bookings, booking items, and related structures
 with transaction-safe inventory locking and double-booking prevention.
 """
+import logging
+
 from django.db import models, transaction
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -12,6 +14,12 @@ from django.db.models import F
 from django.utils import timezone
 from common.models import BaseModel
 from .state_machine import BookingStateMachine, PaymentStateMachine, BookingPaymentStateMachine, BookingState, PaymentState
+
+logger = logging.getLogger(__name__)
+
+
+class ExpiredBookingProcessingError(Exception):
+    """Raised after an expiry run in which one or more bookings could not be expired."""
 
 
 class Booking(BaseModel):
@@ -466,12 +474,16 @@ class Booking(BaseModel):
             self._log_state_transition(old_status, 'cancelled', 'expiry')
     
     @classmethod
-    def process_expired_bookings(cls):
+    def process_expired_bookings(cls, raise_on_error=False):
         """
         Process all expired pending bookings and restore their inventory.
         
         This method should be called periodically (e.g., via a management command or Celery task)
         to clean up expired bookings and restore inventory.
+        
+        A booking that fails to expire is logged and skipped so the rest are
+        still processed. With raise_on_error=True, ExpiredBookingProcessingError
+        is raised after the run if any booking failed.
         
         Returns:
             int: Number of bookings processed
@@ -483,15 +495,20 @@ class Booking(BaseModel):
         )
         
         processed_count = 0
+        failed_ids = []
         for booking in expired_bookings:
             try:
                 booking.expire_booking()
                 processed_count += 1
-            except Exception as e:
-                # Log error but continue processing other bookings
-                # In production, this should be logged properly
-                continue
+            except Exception:
+                # Keep going so one bad booking does not block the others
+                logger.exception(f"Failed to expire booking {booking.pk}")
+                failed_ids.append(booking.pk)
         
+        if failed_ids and raise_on_error:
+            raise ExpiredBookingProcessingError(
+                f"{len(failed_ids)} expired booking(s) could not be processed: {failed_ids}"
+            )
         return processed_count
     
     def confirm_booking(self):

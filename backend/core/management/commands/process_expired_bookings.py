@@ -4,9 +4,14 @@ Django management command to process expired bookings.
 This command should be run periodically (e.g., via cron or Celery beat)
 to clean up expired pending bookings and restore their inventory.
 """
-from django.core.management.base import BaseCommand
+import logging
+
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from bookings.models import Booking
+
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -56,6 +61,7 @@ class Command(BaseCommand):
 
         # Process expired bookings
         processed_count = 0
+        failed_count = 0
         for booking in expired_bookings:
             try:
                 booking.expire_booking()
@@ -67,6 +73,8 @@ class Command(BaseCommand):
                         )
                     )
             except Exception as e:
+                failed_count += 1
+                logger.exception(f"Failed to expire booking {booking.pk}")
                 self.stdout.write(
                     self.style.ERROR(
                         f'Failed to expire booking {booking.confirmation_code} (ID: {booking.id}): {str(e)}'
@@ -78,3 +86,7 @@ class Command(BaseCommand):
                 f'Successfully processed {processed_count}/{count} expired booking(s).'
             )
         )
+
+        # Non-zero exit status so cron/monitoring notices failures
+        if failed_count:
+            raise CommandError(f'{failed_count} expired booking(s) could not be processed.')
