@@ -157,6 +157,37 @@ export interface AdminPaymentTransaction {
   updated_at: string
 }
 
+// Admin Customer types from backend contract (Checkpoint 24)
+export interface AdminCustomer {
+  id: number
+  registration_date: string
+  full_name: string
+  phone: string
+  email: string
+  whatsapp?: string
+  telegram?: string
+  preferred_contact_method: string
+  total_booking_count: number
+  last_booking_date?: string
+  total_amount_paid: number
+  customer_status: string
+}
+
+export interface AdminCustomersResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: AdminCustomer[]
+}
+
+export interface GetCustomersParams {
+  search?: string
+  page?: number
+  page_size?: number
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T | null
@@ -377,6 +408,24 @@ class AdminAdapter {
 
     const endpoint = `/api/v1/admin-panel/payments/transactions/${params.toString() ? `?${params.toString()}` : ''}`
     return this.request<AdminPaymentTransaction[]>(endpoint)
+  }
+
+  // Admin Customers Directory Methods (Checkpoint 24)
+
+  /**
+   * List customers directory with search, pagination, and sorting
+   * Integrates with GET /api/v1/admin-panel/customers/ endpoint
+   */
+  async getCustomers(params?: GetCustomersParams): Promise<ApiResponse<AdminCustomersResponse>> {
+    const queryParams = new URLSearchParams()
+    if (params?.search) queryParams.append('search', params.search)
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.page_size) queryParams.append('page_size', params.page_size.toString())
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by)
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order)
+
+    const endpoint = `/api/v1/admin-panel/customers/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return this.request<AdminCustomersResponse>(endpoint)
   }
 }
 

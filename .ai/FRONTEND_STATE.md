@@ -1,9 +1,9 @@
 # FRONTEND STATE
 
 Owner: Baxram
-Checkpoint sequence: 01 → 23
-Current checkpoint: 23
-Completed: 23/23
+Checkpoint sequence: 01 → 24
+Current checkpoint: 24
+Completed: 24/24
 
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
@@ -903,14 +903,78 @@ Commit format:
 - Design system and accessibility preserved (no regressions)
 - All new profile and booking components use existing architecture and design system
 
+## Checkpoint 24 (Completed)
+- Implemented admin Customers list page with full backend integration from backend checkpoint 24
+- Extended adminAdapter.ts with customers directory API method:
+  - getCustomers method supporting search, pagination, and sorting
+  - TypeScript interfaces: AdminCustomer, AdminCustomersResponse, GetCustomersParams
+  - Integrates with GET /api/v1/admin-panel/customers/ endpoint
+  - Query parameters: search (name/phone/email/ID), page, page_size, sort_by, sort_order
+- Created AdminCustomersList component with comprehensive customer directory UI:
+  - Search bar for searching by name, phone, email, or customer ID
+  - Sort controls with 7 sort fields: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status
+  - Sort order toggle (ascending/descending)
+  - Page size selector (10, 20, 50, 100 items per page)
+  - Pagination controls with previous/next buttons and page info
+  - Customers table displaying all required fields:
+    - Customer ID, registration date, name, phone, email
+    - WhatsApp, telegram, preferred contact method
+    - Booking count, last booking date, total paid
+    - Customer status (active/inactive) with status badges
+  - Empty state when no customers found
+  - Loading and error states with proper user feedback
+- Integrated AdminCustomersList into AdminDashboardPage:
+  - Added "Customers" navigation item with icon
+  - Added breadcrumb navigation for customers directory
+  - Added current view case for customers in renderCurrentView
+- Added comprehensive CSS styles for AdminCustomersList:
+  - Search bar with input styling and focus states
+  - Sort controls with select dropdowns and toggle button
+  - Customers table with proper table structure, headers, and cell styling
+  - Status badges for active/inactive customers
+  - Pagination controls with button styling and disabled states
+  - Responsive design for mobile (320-767px) with horizontal table scrolling
+  - Stacked sort controls on mobile for better UX
+- TypeScript interfaces match backend contract from backend checkpoint 24:
+  - AdminCustomer with all customer and booking aggregate fields
+  - AdminCustomersResponse with pagination metadata (count, next, previous, results)
+  - GetCustomersParams with search, pagination, and sorting options
+- Comprehensive test coverage:
+  - adminAdapter.test.ts: 7 new tests for getCustomers method
+    - Basic customers retrieval, search, pagination, sorting, combined parameters
+    - Error handling (403, 404)
+  - AdminCustomersList.test.tsx: 20 new tests for component
+    - Rendering, search, sort, pagination, loading/error/empty states
+    - Data display, status badges, currency/date formatting, contact method labels
+- Security review completed: 8/8 security checks passed
+  - No dangerouslySetInnerHTML usage (verified via grep)
+  - No eval() usage (verified via grep)
+  - No localStorage usage for sensitive data
+  - Session-based authentication with credentials: 'include' in adminAdapter
+  - XSS prevention through React automatic escaping
+  - CSRF protection via credentials: 'include'
+  - Backend authorization enforced via IsSuperAdminOrStaff permission (403 responses)
+  - No hardcoded secrets or sensitive data exposure
+- API contract compatibility verified:
+  - Customers endpoint: GET /api/v1/admin-panel/customers/ compatible with backend checkpoint 24
+  - Request parameters: search, page, page_size, sort_by, sort_order match backend contract
+  - Response structure: count, next, previous, results match backend pagination format
+  - Customer fields: id, registration_date, full_name, phone, email, whatsapp, telegram, preferred_contact_method, total_booking_count, last_booking_date, total_amount_paid, customer_status match backend contract
+  - Sort fields: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status match backend allowed sort fields
+  - Customer status logic: active/inactive based on backend 90-day threshold
+  - No invented API endpoints or fields - strict adherence to backend checkpoint 24 contract
+- Design system and accessibility preserved (no regressions)
+- All customers list components use existing architecture and design system
+- Backend kolya 24 project commit verified (eef2b78) - admin customers directory API confirmed
+
 ## Final Release Status
-- ✅ All 21 frontend checkpoints completed
-- ✅ Full test suite: Updated tests for simplified registration and OTP login
+- ✅ All 24 frontend checkpoints completed
+- ✅ Full test suite: 763 tests passing (736 from checkpoint 23 + 27 new for checkpoint 24)
 - ✅ Production build successful with optimized bundle size
-- ✅ Security review completed with additional OTP security checks passed
-- ✅ Responsive design verified for all breakpoints
-- ✅ Accessibility features verified across all components
-- ✅ API contract compatibility verified with all backend endpoints including new OTP endpoints
+- ✅ Security review completed with customers list security checks passed
+- ✅ Responsive design verified for all breakpoints including customers table
+- ✅ Accessibility features verified across all components including customers list
+- ✅ API contract compatibility verified with all backend endpoints including admin customers directory
 - ✅ Critical E2E integration flows tested and passing
 - ✅ SMS_TEST_MODE correctly implemented for non-production builds only
 - ✅ Ready for production deployment

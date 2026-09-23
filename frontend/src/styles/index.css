@@ -6931,6 +6931,258 @@ body {
   margin: 0;
 }
 
+/* Admin Customers List */
+.admin-customers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.customers-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.search-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.search-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.search-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-base);
+  transition: border-color var(--transition-fast);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-registan-teal);
+  box-shadow: 0 0 0 3px rgba(11, 93, 102, 0.1);
+}
+
+.sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.sort-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sort-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.sort-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-base);
+  background-color: var(--color-background);
+  cursor: pointer;
+}
+
+.sort-order-toggle {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-registan-teal);
+  color: var(--color-cloud-white);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.sort-order-toggle:hover {
+  background-color: var(--color-secondary-dark);
+}
+
+.page-size-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.page-size-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.page-size-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-base);
+  background-color: var(--color-background);
+  cursor: pointer;
+}
+
+.customers-table-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.customers-count {
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.customers-count p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.customers-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-background);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.customers-table thead {
+  background-color: var(--color-background-alt);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.customers-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.customers-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.customers-table tbody tr:hover {
+  background-color: var(--color-background-alt);
+}
+
+.customers-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.customers-table td {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.customer-id {
+  font-family: monospace;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.customer-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.customer-email {
+  color: var(--color-text-secondary);
+}
+
+.customer-phone {
+  font-family: monospace;
+  color: var(--color-text-secondary);
+}
+
+.customer-whatsapp,
+.customer-telegram {
+  color: var(--color-text-secondary);
+}
+
+.customer-booking-count {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-registan-teal);
+  text-align: center;
+}
+
+.customer-last-booking-date {
+  color: var(--color-text-secondary);
+}
+
+.customer-total-paid {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-sprout-green);
+  text-align: right;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.pagination-button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-registan-teal);
+  color: var(--color-cloud-white);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark);
+}
+
+.pagination-button:disabled {
+  background-color: var(--color-border);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
 /* Create Hotel Owner Account */
 .create-hotel-owner-account {
   display: flex;
@@ -7196,6 +7448,34 @@ body {
 
   .success-actions {
     flex-direction: column;
+  }
+
+  /* Customers Table Mobile Responsive */
+  .customers-table-container {
+    overflow-x: auto;
+  }
+
+  .customers-table {
+    min-width: 800px;
+  }
+
+  .sort-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sort-field,
+  .page-size-control {
+    width: 100%;
+  }
+
+  .sort-select,
+  .page-size-select {
+    width: 100%;
+  }
+
+  .sort-order-toggle {
+    width: 100%;
   }
 
   .success-actions .btn {

@@ -3,10 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
 import { AdminAmenityManagement } from '../components/AdminAmenityManagement'
 import { AdminUserManagement } from '../components/AdminUserManagement'
+import { AdminCustomersList } from '../components/AdminCustomersList'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth()
@@ -92,6 +93,14 @@ export function AdminDashboardPage() {
         <span className="nav-icon">👥</span>
         <span className="nav-label">Users</span>
       </button>
+      <button
+        onClick={() => setCurrentView('customers')}
+        className={`nav-item ${currentView === 'customers' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'customers' ? 'page' : undefined}
+      >
+        <span className="nav-icon">👤</span>
+        <span className="nav-label">Customers</span>
+      </button>
       {user.is_superuser && (
         <button
           onClick={() => setShowCreateOwner(true)}
@@ -120,6 +129,9 @@ export function AdminDashboardPage() {
           break
         case 'users':
           breadcrumbs.push({ label: 'User Management', onClick: () => {}, active: true })
+          break
+        case 'customers':
+          breadcrumbs.push({ label: 'Customers Directory', onClick: () => {}, active: true })
           break
       }
     }
@@ -161,6 +173,8 @@ export function AdminDashboardPage() {
         return <AdminAmenityManagement />
       case 'users':
         return <AdminUserManagement />
+      case 'customers':
+        return <AdminCustomersList />
       default:
         return <AdminPropertyModeration />
     }

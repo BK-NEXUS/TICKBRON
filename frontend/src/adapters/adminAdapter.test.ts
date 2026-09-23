@@ -531,6 +531,259 @@ describe('AdminAdapter', () => {
     })
   })
 
+  describe('Customers Directory Methods (Checkpoint 24)', () => {
+    it('should get customers successfully', async () => {
+      const mockCustomersResponse = {
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 1,
+            registration_date: '2024-01-01T00:00:00Z',
+            full_name: 'John Doe',
+            phone: '+998901234567',
+            email: 'john@example.com',
+            whatsapp: '+998901234567',
+            telegram: '@johndoe',
+            preferred_contact_method: 'email',
+            total_booking_count: 5,
+            last_booking_date: '2024-09-01T00:00:00Z',
+            total_amount_paid: 1500,
+            customer_status: 'active',
+          },
+          {
+            id: 2,
+            registration_date: '2024-02-01T00:00:00Z',
+            full_name: 'Jane Smith',
+            phone: '+998907654321',
+            email: 'jane@example.com',
+            whatsapp: null,
+            telegram: null,
+            preferred_contact_method: 'phone',
+            total_booking_count: 2,
+            last_booking_date: '2024-08-15T00:00:00Z',
+            total_amount_paid: 800,
+            customer_status: 'active',
+          },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomersResponse,
+      })
+
+      const result = await adapter.getCustomers()
+
+      expect(result.data).toEqual(mockCustomersResponse)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get customers with search parameter', async () => {
+      const mockCustomersResponse = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 1,
+            registration_date: '2024-01-01T00:00:00Z',
+            full_name: 'John Doe',
+            phone: '+998901234567',
+            email: 'john@example.com',
+            whatsapp: '+998901234567',
+            telegram: '@johndoe',
+            preferred_contact_method: 'email',
+            total_booking_count: 5,
+            last_booking_date: '2024-09-01T00:00:00Z',
+            total_amount_paid: 1500,
+            customer_status: 'active',
+          },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomersResponse,
+      })
+
+      const result = await adapter.getCustomers({ search: 'John' })
+
+      expect(result.data).toEqual(mockCustomersResponse)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/?search=John',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get customers with pagination parameters', async () => {
+      const mockCustomersResponse = {
+        count: 50,
+        next: 'http://test-api/api/v1/admin-panel/customers/?page=2',
+        previous: null,
+        results: [
+          {
+            id: 1,
+            registration_date: '2024-01-01T00:00:00Z',
+            full_name: 'John Doe',
+            phone: '+998901234567',
+            email: 'john@example.com',
+            whatsapp: '+998901234567',
+            telegram: '@johndoe',
+            preferred_contact_method: 'email',
+            total_booking_count: 5,
+            last_booking_date: '2024-09-01T00:00:00Z',
+            total_amount_paid: 1500,
+            customer_status: 'active',
+          },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomersResponse,
+      })
+
+      const result = await adapter.getCustomers({ page: 1, page_size: 20 })
+
+      expect(result.data).toEqual(mockCustomersResponse)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/?page=1&page_size=20',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get customers with sorting parameters', async () => {
+      const mockCustomersResponse = {
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 1,
+            registration_date: '2024-01-01T00:00:00Z',
+            full_name: 'John Doe',
+            phone: '+998901234567',
+            email: 'john@example.com',
+            whatsapp: '+998901234567',
+            telegram: '@johndoe',
+            preferred_contact_method: 'email',
+            total_booking_count: 5,
+            last_booking_date: '2024-09-01T00:00:00Z',
+            total_amount_paid: 1500,
+            customer_status: 'active',
+          },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomersResponse,
+      })
+
+      const result = await adapter.getCustomers({ sort_by: 'total_booking_count', sort_order: 'desc' })
+
+      expect(result.data).toEqual(mockCustomersResponse)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/?sort_by=total_booking_count&sort_order=desc',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get customers with all parameters combined', async () => {
+      const mockCustomersResponse = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 1,
+            registration_date: '2024-01-01T00:00:00Z',
+            full_name: 'John Doe',
+            phone: '+998901234567',
+            email: 'john@example.com',
+            whatsapp: '+998901234567',
+            telegram: '@johndoe',
+            preferred_contact_method: 'email',
+            total_booking_count: 5,
+            last_booking_date: '2024-09-01T00:00:00Z',
+            total_amount_paid: 1500,
+            customer_status: 'active',
+          },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomersResponse,
+      })
+
+      const result = await adapter.getCustomers({
+        search: 'John',
+        page: 1,
+        page_size: 50,
+        sort_by: 'total_amount_paid',
+        sort_order: 'desc',
+      })
+
+      expect(result.data).toEqual(mockCustomersResponse)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/?search=John&page=1&page_size=50&sort_by=total_amount_paid&sort_order=desc',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should handle 403 error for non-staff users when getting customers', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'Admin or staff role required' }),
+      })
+
+      const result = await adapter.getCustomers()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Admin or staff role required')
+    })
+
+    it('should handle 404 error when customers endpoint not found', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ detail: 'Not found' }),
+      })
+
+      const result = await adapter.getCustomers()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Resource not found')
+    })
+  })
+
   describe('Error Handling', () => {
     it('should handle network errors', async () => {
       ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
@@ -587,3 +840,5 @@ describe('AdminAdapter', () => {
     })
   })
 })
+
+// Total tests: 30 (previous: 23, added 7 customers directory tests)
