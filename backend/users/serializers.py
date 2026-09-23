@@ -8,6 +8,21 @@ from users.models import User
 from users.validators import EmailFormatValidator
 
 
+def validate_unique_phone_number(value, instance=None):
+    """
+    Check phone number uniqueness after normalization.
+
+    The model's UniqueValidator runs on the raw input, so a number with extra
+    whitespace would slip past it and fail at the database instead.
+    """
+    users = User.objects.filter(phone_number=value)
+    if instance is not None:
+        users = users.exclude(pk=instance.pk)
+    if users.exists():
+        raise serializers.ValidationError("A user with this phone number already exists.")
+    return value
+
+
 class UserSerializer(serializers.ModelSerializer):
     """
     Base serializer for User model.
@@ -49,10 +64,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
     
     def validate_phone_number(self, value):
-        """Validate phone number format."""
+        """Validate phone number format and uniqueness."""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone number is required.")
-        return value.strip()
+        return validate_unique_phone_number(value.strip())
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -129,3 +144,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'full_name': {'required': False},
             'phone_number': {'required': False},
         }
+    
+    def validate_phone_number(self, value):
+        """Normalize and check uniqueness; blank clears the number."""
+        value = (value or '').strip() or None
+        if value is None:
+            return None
+        return validate_unique_phone_number(value, instance=self.instance)
+    
+    def update(self, instance, validated_data):
+        # A changed number has not been verified by OTP yet
+        if 'phone_number' in validated_data and validated_data['phone_number'] != instance.phone_number:
+            instance.phone_verified = False
+        return super().update(instance, validated_data)

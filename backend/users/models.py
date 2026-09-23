@@ -54,7 +54,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     full_name = models.CharField(max_length=300, blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    # Unique: phone OTP login looks users up by this number. Blank is stored as NULL.
+    phone_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
     
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -115,6 +116,12 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     
     def __str__(self):
         return self.email
+    
+    def save(self, *args, **kwargs):
+        # Store a missing phone number as NULL so the unique constraint allows many
+        if self.phone_number is not None:
+            self.phone_number = self.phone_number.strip() or None
+        super().save(*args, **kwargs)
     
     def get_full_name(self):
         """
