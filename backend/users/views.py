@@ -11,13 +11,19 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import make_password
 from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
+from users import lockout
 from users.services import OTPService
 from common.request import get_client_ip
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+# One message for every failed login, so responses do not reveal whether an
+# email exists or an account is locked
+LOGIN_FAILED_MESSAGE = 'Invalid credentials. If you have made several failed attempts, please try again later.'
 
 
 class LoginRateThrottle(AnonRateThrottle):
@@ -109,51 +115,42 @@ def login_view(request):
     Login user with email and password.
     
     Authenticates user and creates a session using secure cookies.
-    Includes account lockout protection after failed login attempts.
+    Includes lockout protection after failed attempts (see users.lockout).
+    
+    Unknown email, wrong password, inactive and locked accounts all get the
+    same 401 response, so the endpoint does not reveal which emails exist.
     """
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
+        client_ip = get_client_ip(request)
         
-        try:
-            user = User.objects.get(email=email)
-            
-            # Check if account is locked
-            if user.is_account_locked():
-                return Response(
-                    {'detail': 'Account is temporarily locked due to too many failed login attempts. Please try again later.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Authenticate user
-            authenticated_user = authenticate(request, username=email, password=password)
-            if authenticated_user is not None and authenticated_user.is_active:
-                # Reset failed login attempts on successful login
-                authenticated_user.reset_failed_login()
-                
-                # Store login IP
-                authenticated_user.last_login_ip = get_client_ip(request)
-                authenticated_user.save()
-                
-                login(request, authenticated_user)
-                return Response(
-                    UserSerializer(authenticated_user).data,
-                    status=status.HTTP_200_OK
-                )
-            else:
-                # Increment failed login attempts
-                user.increment_failed_login()
-                return Response(
-                    {'detail': 'Invalid credentials or account inactive.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-        except User.DoesNotExist:
-            return Response(
-                {'detail': 'Invalid credentials or account inactive.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        user = User.objects.filter(email=email).first()
+        if user is None or lockout.is_locked(user, client_ip):
+            # Hash anyway so the response time does not reveal which case this is
+            make_password(password)
+            return _login_failed_response()
+        
+        authenticated_user = authenticate(request, username=email, password=password)
+        if authenticated_user is None or not authenticated_user.is_active:
+            lockout.record_failure(user, client_ip)
+            return _login_failed_response()
+        
+        lockout.record_success(authenticated_user, client_ip)
+        authenticated_user.last_login_ip = client_ip
+        authenticated_user.save(update_fields=['last_login_ip'])
+        
+        login(request, authenticated_user)
+        return Response(
+            UserSerializer(authenticated_user).data,
+            status=status.HTTP_200_OK
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _login_failed_response():
+    return Response({'detail': LOGIN_FAILED_MESSAGE}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 
@@ -234,18 +231,17 @@ def request_otp(request):
     Generates and sends an OTP code to the provided phone number.
     In test mode, the OTP code is returned in the response.
     Rate-limited to 3 requests per minute per phone number.
+    Registered, unknown and locked numbers get the same 200 response.
     """
     serializer = RequestOTPSerializer(data=request.data)
     if serializer.is_valid():
         phone_number = serializer.validated_data['phone_number']
-        
+
         otp_service = OTPService()
-        result = otp_service.send_otp(phone_number)
-        
+        result = otp_service.send_otp(phone_number, client_ip=get_client_ip(request))
+
         if result['success']:
             return Response(result, status=status.HTTP_200_OK)
-        if result.get('locked'):
-            return Response({'detail': result['message']}, status=status.HTTP_403_FORBIDDEN)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -262,26 +258,27 @@ def verify_otp(request):
     On successful verification, establishes a session using the same
     mechanism as password login.
     Rate-limited to 5 attempts per minute per phone number; locked accounts
-    get 403 without the code being checked.
+    get the same 400 as a wrong code, without the code being checked.
     """
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():
         phone_number = serializer.validated_data['phone_number']
         otp_code = serializer.validated_data['otp_code']
         
+        client_ip = get_client_ip(request)
         otp_service = OTPService()
-        result = otp_service.verify_otp(phone_number, otp_code)
-        
+        result = otp_service.verify_otp(phone_number, otp_code, client_ip=client_ip)
+
         if result['success']:
             try:
                 user = User.objects.get(id=result['user_id'])
-                
-                # Reset failed login attempts on successful login
-                user.reset_failed_login()
-                
+
+                # Clear failure counters on successful login
+                lockout.record_success(user, client_ip)
+
                 # Store login IP
-                user.last_login_ip = get_client_ip(request)
-                user.save()
+                user.last_login_ip = client_ip
+                user.save(update_fields=['last_login_ip'])
                 
                 # Establish session using the same mechanism as password login
                 login(request, user)
@@ -295,9 +292,8 @@ def verify_otp(request):
                     {'detail': 'User not found.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-        # Lock checks and failed-attempt counting happen inside OTPService.verify_otp
-        if result.get('locked'):
-            return Response({'detail': result['message']}, status=status.HTTP_403_FORBIDDEN)
+        # Lock checks and failure counting happen inside OTPService.verify_otp;
+        # unknown numbers, wrong codes and locked accounts look the same here
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

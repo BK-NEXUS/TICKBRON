@@ -57,15 +57,24 @@ class TestOTPGeneration(OTPTestBase):
 
 
 class TestOTPLockout(OTPTestBase):
+    CLIENT_IP = '127.0.0.1'  # APIClient's REMOTE_ADDR
+
+    def lock_for_client_ip(self):
+        from users import lockout
+
+        self.user.refresh_from_db()
+        for _ in range(lockout.IP_FAILURE_LIMIT):
+            lockout.record_failure(self.user, self.CLIENT_IP)
+
     def test_locked_account_rejects_correct_code_without_consuming_it(self):
         code = self.request_code().data['otp_code']
-        self.user.refresh_from_db()
-        for _ in range(5):
-            self.user.increment_failed_login()
+        self.lock_for_client_ip()
 
         response = self.verify(code)
 
-        assert response.status_code == 403
+        # Same response as a wrong code: the lock is not revealed
+        assert response.status_code == 400
+        assert response.data['message'] == 'Invalid or expired OTP code'
         self.user.refresh_from_db()
         assert self.user.otp_code == code
         assert self.user.otp_attempts == 0
@@ -73,18 +82,20 @@ class TestOTPLockout(OTPTestBase):
         assert '_auth_user_id' not in self.client.session
 
     def test_locked_account_gets_no_new_code(self):
-        for _ in range(5):
-            self.user.increment_failed_login()
+        self.lock_for_client_ip()
 
         response = self.request_code()
 
-        assert response.status_code == 403
+        # Same response as an unknown number: the lock is not revealed
+        assert response.status_code == 200
         assert 'otp_code' not in response.data
         self.user.refresh_from_db()
         assert self.user.otp_code is None
 
     def test_requesting_new_code_does_not_reset_failed_attempts(self):
-        """Five wrong guesses spread over several codes still lock the account."""
+        """Five wrong guesses spread over several codes still lock this client out."""
+        from users import lockout
+
         for _ in range(2):
             self.request_code()
             self.verify(self.wrong_code())
@@ -94,8 +105,8 @@ class TestOTPLockout(OTPTestBase):
 
         self.user.refresh_from_db()
         assert self.user.failed_login_attempts == 5
-        assert self.user.is_account_locked()
-        assert self.verify(code).status_code == 403
+        assert lockout.is_locked(self.user, self.CLIENT_IP)
+        assert self.verify(code).status_code == 400
 
     def test_successful_login_resets_failed_attempts(self):
         self.request_code()

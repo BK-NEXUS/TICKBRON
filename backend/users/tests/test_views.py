@@ -188,12 +188,13 @@ class TestAuthViews(TestCase):
             }
             self.client.post('/api/v1/auth/login/', login_data)
         
-        # Try to login with correct password (should be locked)
+        # Try to login with correct password from the same IP (locked for this IP;
+        # the response is the generic failure so it does not reveal the lock)
         login_data = {
             'email': 'test@example.com',
             'password': 'SecureP@ssw0rd123'
         }
         response = self.client.post('/api/v1/auth/login/', login_data)
         
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert 'locked' in response.data['detail'].lower()
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert 'locked' not in response.data['detail'].lower()

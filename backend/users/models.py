@@ -148,19 +148,33 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
             return True
         return False
     
+    # Account-wide lockout (all IPs together); per-IP lockout is in users.lockout
+    ACCOUNT_FAILURE_LIMIT = 20
+    ACCOUNT_FAILURE_WINDOW_MINUTES = 30
+    ACCOUNT_LOCK_MINUTES = 15
+    
     def increment_failed_login(self):
         """
         Increment failed login attempts and lock account if threshold reached.
+        
+        Failures older than the window no longer count, so occasional typos
+        never add up to a lock. The threshold is high on purpose: a low
+        account-wide limit lets anyone lock out any user (see users.lockout).
         """
+        from datetime import timedelta
+        now = timezone.now()
+        window_start = now - timedelta(minutes=self.ACCOUNT_FAILURE_WINDOW_MINUTES)
+        if self.last_failed_login is None or self.last_failed_login < window_start:
+            self.failed_login_attempts = 0
+        
         self.failed_login_attempts += 1
-        self.last_failed_login = timezone.now()
+        self.last_failed_login = now
         
-        # Lock account after 5 failed attempts for 30 minutes
-        if self.failed_login_attempts >= 5:
-            from datetime import timedelta
-            self.account_locked_until = timezone.now() + timedelta(minutes=30)
+        if self.failed_login_attempts >= self.ACCOUNT_FAILURE_LIMIT:
+            self.account_locked_until = now + timedelta(minutes=self.ACCOUNT_LOCK_MINUTES)
         
-        self.save()
+        # Only these fields: a stale in-memory user must not overwrite others (e.g. otp_code)
+        self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
     
     def reset_failed_login(self):
         """
@@ -169,7 +183,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.failed_login_attempts = 0
         self.last_failed_login = None
         self.account_locked_until = None
-        self.save()
+        self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
     
     def generate_otp(self):
         """

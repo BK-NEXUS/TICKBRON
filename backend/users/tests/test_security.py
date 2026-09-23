@@ -48,11 +48,14 @@ class TestUserSecurity(TestCase):
         assert self.user.failed_login_attempts == initial_attempts + 1
         assert self.user.last_failed_login is not None
     
-    def test_account_lockout_after_5_failed_attempts(self):
-        """Test that account is locked after 5 failed attempts."""
-        for _ in range(5):
+    def test_account_lockout_after_account_failure_limit(self):
+        """The account-wide lock needs many failures (per-IP locks handle the rest)."""
+        for _ in range(User.ACCOUNT_FAILURE_LIMIT - 1):
             self.user.increment_failed_login()
+        self.user.refresh_from_db()
+        assert self.user.is_account_locked() is False
         
+        self.user.increment_failed_login()
         self.user.refresh_from_db()
         
         assert self.user.account_locked_until is not None

@@ -15,7 +15,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Required fields: `email`, `password`
   - Rate limited: 10 requests/minute per IP
   - Client IP for rate limits and audit fields is `REMOTE_ADDR`; `X-Forwarded-For` is trusted only for `NUM_PROXIES` reverse proxies (default 0 = ignored). Rate-limit counters are shared through Redis when `USE_REDIS_CACHE` is on (default when `DEBUG=False`)
-  - Account lockout after 5 failed attempts (30 min lockout)
+  - Lockout: 5 failures from one client IP lock that IP out of the account for 30 min; 20 failures across all IPs within 30 min lock the account for 15 min (`users/lockout.py`)
+  - Every failure (unknown email, wrong password, inactive or locked account) returns the same 401 `{"detail": "Invalid credentials. If you have made several failed attempts, please try again later."}`
 
 ### Phone-Based OTP Authentication
 - POST `/api/v1/auth/otp/request/` - Request OTP code
@@ -23,7 +24,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Rate limited: 3 requests/minute per phone number
   - Returns OTP code in response when `SMS_TEST_MODE=True`
   - `SMS_TEST_MODE` defaults to `False`; with it off and no SMS provider configured, returns 503
-  - Creates user if phone number not registered
+  - Always 200 `{"success": true, "message": "If this phone number is registered, a verification code has been sent."}` for registered, unknown and locked numbers (no account enumeration); only registered, unlocked numbers get a code. Does not create users
 
 - POST `/api/v1/auth/otp/verify/` - Verify OTP and login
   - Required fields: `phone_number`, `otp_code` (6 digits)
@@ -31,7 +32,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - OTP expires after 5 minutes
   - Maximum 3 verification attempts per OTP
   - Rate limited: 5 requests/minute per phone number (429 when exceeded)
-  - Account lockout protection applies: 5 failed attempts (across all issued codes) lock the account for 30 min; while locked, both OTP endpoints return 403 and the code is not checked
+  - Same lockout as password login (per IP and account-wide), counted across all issued codes; while locked the code is not checked
+  - Unknown number, wrong/expired code and locked account all return the same 400 `{"success": false, "message": "Invalid or expired OTP code"}`
 
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session

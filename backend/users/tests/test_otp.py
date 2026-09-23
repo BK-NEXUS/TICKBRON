@@ -36,11 +36,12 @@ class TestOTPService(TestCase):
         assert User.objects.filter(phone_number=self.phone_number).count() == 1
     
     def test_send_otp_user_not_found(self):
-        """Test that sending OTP for non-existent user fails."""
+        """Unknown numbers get the generic response and no code (no enumeration)."""
         result = self.otp_service.send_otp(self.phone_number)
         
-        assert result['success'] is False
-        assert 'not found' in result['message'].lower()
+        assert result['success'] is True
+        assert 'otp_code' not in result
+        assert 'not found' not in result['message'].lower()
     
     def test_verify_otp_success(self):
         """Test successful OTP verification."""

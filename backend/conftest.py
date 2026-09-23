@@ -51,6 +51,16 @@ def provider_test_modes(settings):
     settings.PAYMENT_TEST_MODE = True
 
 
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Start every test with an empty cache (throttle and lockout counters live there)."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture
 def sample_system_settings():
     """
