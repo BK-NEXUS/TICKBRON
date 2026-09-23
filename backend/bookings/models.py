@@ -358,6 +358,17 @@ class Booking(BaseModel):
             
             return booking
     
+    def _lock_row(self):
+        """
+        Lock this booking's row and reload its mutable state from it.
+
+        Must be called inside transaction.atomic(); state-machine checks made
+        afterwards see the latest committed status, not a stale in-memory copy.
+        """
+        locked = type(self).objects.select_for_update().get(pk=self.pk)
+        for field in ('status', 'payment_status', 'cancelled_at', 'cancellation_reason', 'expires_at'):
+            setattr(self, field, getattr(locked, field))
+
     def cancel_booking(self, cancellation_reason=None):
         """
         Cancel a booking and restore inventory.
@@ -374,16 +385,19 @@ class Booking(BaseModel):
         """
         from datetime import timedelta
         
-        # Validate state transition using state machine
-        from_state = BookingState(self.status)
-        to_state = BookingState('cancelled')
-        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state)
-        if not is_valid:
-            raise ValidationError({
-                'status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = BookingState(self.status)
+            to_state = BookingState('cancelled')
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state)
+            if not is_valid:
+                raise ValidationError({
+                    'status': error_message
+                })
+            
             # Get booking items
             booking_items = self.booking_items.all()
             
@@ -430,16 +444,19 @@ class Booking(BaseModel):
         """
         from datetime import timedelta
         
-        # Validate state transition using state machine
-        from_state = BookingState(self.status)
-        to_state = BookingState('cancelled')
-        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='expiry')
-        if not is_valid:
-            raise ValidationError({
-                'status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = BookingState(self.status)
+            to_state = BookingState('cancelled')
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='expiry')
+            if not is_valid:
+                raise ValidationError({
+                    'status': error_message
+                })
+            
             # Get booking items
             booking_items = self.booking_items.all()
             
@@ -500,6 +517,13 @@ class Booking(BaseModel):
             try:
                 booking.expire_booking()
                 processed_count += 1
+            except ValidationError:
+                # Paid or cancelled by another request after this run listed it:
+                # nothing left to expire, so not a failure
+                if booking.status != 'pending':
+                    continue
+                logger.exception(f"Failed to expire booking {booking.pk}")
+                failed_ids.append(booking.pk)
             except Exception:
                 # Keep going so one bad booking does not block the others
                 logger.exception(f"Failed to expire booking {booking.pk}")
@@ -522,16 +546,19 @@ class Booking(BaseModel):
             ValidationError: If booking cannot be confirmed
             Exception: If database error occurs
         """
-        # Validate state transition using state machine
-        from_state = BookingState(self.status)
-        to_state = BookingState('confirmed')
-        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='payment_completed')
-        if not is_valid:
-            raise ValidationError({
-                'status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = BookingState(self.status)
+            to_state = BookingState('confirmed')
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='payment_completed')
+            if not is_valid:
+                raise ValidationError({
+                    'status': error_message
+                })
+            
             # Update booking status
             old_status = self.status
             self.status = 'confirmed'
@@ -552,16 +579,19 @@ class Booking(BaseModel):
             ValidationError: If booking cannot be completed
             Exception: If database error occurs
         """
-        # Validate state transition using state machine
-        from_state = BookingState(self.status)
-        to_state = BookingState('completed')
-        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='checkout_completed')
-        if not is_valid:
-            raise ValidationError({
-                'status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = BookingState(self.status)
+            to_state = BookingState('completed')
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='checkout_completed')
+            if not is_valid:
+                raise ValidationError({
+                    'status': error_message
+                })
+            
             # Update booking status
             old_status = self.status
             self.status = 'completed'
@@ -580,16 +610,19 @@ class Booking(BaseModel):
             ValidationError: If booking cannot be marked as no-show
             Exception: If database error occurs
         """
-        # Validate state transition using state machine
-        from_state = BookingState(self.status)
-        to_state = BookingState('no_show')
-        is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='guest_no_show')
-        if not is_valid:
-            raise ValidationError({
-                'status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = BookingState(self.status)
+            to_state = BookingState('no_show')
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='guest_no_show')
+            if not is_valid:
+                raise ValidationError({
+                    'status': error_message
+                })
+            
             # Update booking status
             old_status = self.status
             self.status = 'no_show'
@@ -611,16 +644,19 @@ class Booking(BaseModel):
             ValidationError: If payment status transition is invalid
             Exception: If database error occurs
         """
-        # Validate state transition using state machine
-        from_state = PaymentState(self.payment_status)
-        to_state = PaymentState(new_payment_status)
-        is_valid, error_message = PaymentStateMachine.validate_transition(from_state, to_state)
-        if not is_valid:
-            raise ValidationError({
-                'payment_status': error_message
-            })
-        
         with transaction.atomic():
+            # Lock the row and re-read its state so concurrent transitions
+            # (e.g. cancel vs. expire vs. payment) are serialized
+            self._lock_row()
+            # Validate state transition using state machine
+            from_state = PaymentState(self.payment_status)
+            to_state = PaymentState(new_payment_status)
+            is_valid, error_message = PaymentStateMachine.validate_transition(from_state, to_state)
+            if not is_valid:
+                raise ValidationError({
+                    'payment_status': error_message
+                })
+            
             # Update payment status
             old_payment_status = self.payment_status
             self.payment_status = new_payment_status
