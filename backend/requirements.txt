@@ -3,8 +3,8 @@ Django==4.2.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 
-# Database (for production - use SQLite for testing)
-# psycopg2-binary==2.9.9  # Commented out for Windows testing environment
+# Database (PostgreSQL; 2.9.10+ ships Python 3.13 wheels for Windows)
+psycopg2-binary==2.9.10
 
 # Image handling
 Pillow
