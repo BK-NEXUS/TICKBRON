@@ -75,15 +75,18 @@ Status: READY
   - provider (required): Payment provider (payme, click, visa)
   - amount (required): Payment amount
   - currency (required): Currency code (default: USD)
-  - payment_method_token (optional): Tokenized payment method from provider
-  - client_ip (optional): Client IP address for audit trail
-  - user_agent (optional): User agent string for audit trail
+  - payment_method_token (optional, write-only): Tokenized payment method from provider; never returned in responses
+  - client_ip / user_agent: ignored if sent; recorded server-side from the request for the audit trail
 - Response: PaymentTransaction object with provider response
-- Auth: Session-based (required)
-- Error: 400 for validation errors, 409 for duplicate idempotency key
-- Idempotency: Returns existing transaction if idempotency key already exists
+- Auth: Session-based (required); the booking must belong to the requesting user (otherwise 400 "Booking not found")
+- Error: 400 for validation errors, or when the idempotency key was already used by another user
+- Idempotency: the same user repeating a key gets their existing transaction back (200)
 - Automatically initiates payment with provider adapter
 - Creates audit log entries for payment initiation
+
+### GET `/api/v1/payments/transactions/` and `/api/v1/payments/transactions/{id}/`
+- Lists / retrieves the requesting user's own transactions
+- Transactions cannot be updated or deleted through the API (PUT/PATCH/DELETE return 405)
 
 ### POST `/api/v1/payments/transactions/{id}/confirm/`
 - Request: None (transaction ID from URL)

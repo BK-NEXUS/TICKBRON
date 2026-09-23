@@ -8,36 +8,50 @@ from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 class PaymentTransactionSerializer(serializers.ModelSerializer):
     """
     Serializer for PaymentTransaction model.
+
+    Output-only: transactions change only through the payment flow, and the
+    payment method token is never returned.
     """
-    
+
     class Meta:
         model = PaymentTransaction
         fields = [
-            'id', 'idempotency_key', 'booking', 'provider', 
-            'provider_transaction_id', 'amount', 'currency', 
-            'status', 'payment_method_token', 'provider_response',
+            'id', 'idempotency_key', 'booking', 'provider',
+            'provider_transaction_id', 'amount', 'currency',
+            'status', 'provider_response',
             'error_code', 'error_message', 'client_ip', 'user_agent',
             'created_at', 'updated_at'
         ]
-        read_only_fields = [
-            'id', 'provider_transaction_id', 'status', 
-            'provider_response', 'error_code', 'error_message',
-            'created_at', 'updated_at'
-        ]
+        read_only_fields = fields
 
 
 class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating payment transactions.
+
+    client_ip and user_agent are taken from the request by the view, not from
+    the body. Idempotency-key reuse is handled by the view, so the automatic
+    unique validator is disabled here.
     """
-    
+
     class Meta:
         model = PaymentTransaction
         fields = [
-            'idempotency_key', 'booking', 'provider', 'amount', 
-            'currency', 'payment_method_token', 'client_ip', 'user_agent'
+            'idempotency_key', 'booking', 'provider', 'amount',
+            'currency', 'payment_method_token'
         ]
-    
+        extra_kwargs = {
+            'idempotency_key': {'validators': []},
+            'payment_method_token': {'write_only': True},
+        }
+
+    def validate_booking(self, value):
+        """Only the booking's guest may pay for it; others see it as not found."""
+        request = self.context.get('request')
+        if request is None or value.guest_id != request.user.id:
+            raise serializers.ValidationError('Booking not found.')
+        return value
+
     def validate(self, attrs):
         """Validate payment transaction creation."""
         booking = attrs.get('booking')

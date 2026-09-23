@@ -3,12 +3,13 @@ Views for TICKBRON payment API endpoints.
 """
 import sys
 import os
-from rest_framework import viewsets, status
+from rest_framework import mixins, serializers, viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.throttling import UserRateThrottle
-from django.db import transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -41,11 +42,16 @@ class PaymentRateThrottle(UserRateThrottle):
         return super().allow_request(request, view)
 
 
-class PaymentTransactionViewSet(viewsets.ModelViewSet):
+class PaymentTransactionViewSet(mixins.CreateModelMixin,
+                                mixins.ListModelMixin,
+                                mixins.RetrieveModelMixin,
+                                viewsets.GenericViewSet):
     """
     ViewSet for PaymentTransaction model.
 
-    Provides CRUD operations for payment transactions with idempotency support.
+    Create, list and retrieve with idempotency support, plus the confirm and
+    refund actions. Transactions are never updated or deleted through the API,
+    so the payment audit trail stays intact (PUT/PATCH/DELETE return 405).
     """
     queryset = PaymentTransaction.objects.all()
     permission_classes = [IsAuthenticated]
@@ -68,98 +74,102 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
         
         Uses idempotency key to prevent duplicate payment attempts.
         """
+        # Idempotent replay is checked before validation: once the original
+        # request has gone through, the booking may no longer be 'pending'
+        existing_response = self._existing_transaction_response(request.data.get('idempotency_key'))
+        if existing_response is not None:
+            return existing_response
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        idempotency_key = serializer.validated_data['idempotency_key']
-        
-        # Check for existing transaction with same idempotency key
+
+        transaction_data = serializer.validated_data.copy()
+        transaction_data['status'] = 'pending'
+        # Audit fields come from the request itself, never from the body
+        transaction_data['client_ip'] = self._get_client_ip(request)
+        transaction_data['user_agent'] = request.META.get('HTTP_USER_AGENT', '')
+
+        # A concurrent request with the same key loses the unique-constraint
+        # race and gets the winner's transaction back (model save() runs
+        # full_clean, so the clash can surface as either error type)
         try:
-            existing_transaction = PaymentTransaction.objects.get(
-                idempotency_key=idempotency_key
+            with transaction.atomic():
+                payment_transaction = PaymentTransaction.objects.create(**transaction_data)
+        except (IntegrityError, DjangoValidationError):
+            existing_response = self._existing_transaction_response(transaction_data['idempotency_key'])
+            if existing_response is not None:
+                return existing_response
+            raise
+
+        # Log audit entry
+        PaymentAuditLog.log_action(
+            action='payment_initiated',
+            payment_transaction=payment_transaction,
+            booking=payment_transaction.booking,
+            old_status=None,
+            new_status='pending',
+            actor=request.user,
+            ip_address=self._get_client_ip(request),
+            details={'user_agent': request.META.get('HTTP_USER_AGENT', '')}
+        )
+
+        # Initiate payment with provider
+        try:
+            adapter = get_payment_adapter(payment_transaction.provider)
+            provider_response = adapter.initiate_payment(
+                booking=payment_transaction.booking,
+                amount=payment_transaction.amount,
+                currency=payment_transaction.currency,
+                payment_method_token=payment_transaction.payment_method_token
             )
-            # Return existing transaction
-            return Response(
-                PaymentTransactionSerializer(existing_transaction).data,
-                status=status.HTTP_200_OK
-            )
-        except PaymentTransaction.DoesNotExist:
-            # Create new transaction
-            transaction_data = serializer.validated_data.copy()
-            transaction_data['status'] = 'pending'
-            
-            # Create payment transaction
-            payment_transaction = PaymentTransaction.objects.create(**transaction_data)
-            
+
+            # Update transaction with provider response
+            payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
+            payment_transaction.provider_response = provider_response
+            payment_transaction.status = 'processing'
+            payment_transaction.save()
+
             # Log audit entry
             PaymentAuditLog.log_action(
                 action='payment_initiated',
                 payment_transaction=payment_transaction,
                 booking=payment_transaction.booking,
-                old_status=None,
-                new_status='pending',
+                old_status='pending',
+                new_status='processing',
                 actor=request.user,
                 ip_address=self._get_client_ip(request),
-                details={'user_agent': request.META.get('HTTP_USER_AGENT', '')}
+                details={'provider_response': provider_response}
             )
-            
-            # Initiate payment with provider
-            try:
-                adapter = get_payment_adapter(payment_transaction.provider)
-                provider_response = adapter.initiate_payment(
-                    booking=payment_transaction.booking,
-                    amount=payment_transaction.amount,
-                    currency=payment_transaction.currency,
-                    payment_method_token=payment_transaction.payment_method_token
-                )
-                
-                # Update transaction with provider response
-                payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
-                payment_transaction.provider_response = provider_response
-                payment_transaction.status = 'processing'
-                payment_transaction.save()
-                
-                # Log audit entry
-                PaymentAuditLog.log_action(
-                    action='payment_initiated',
-                    payment_transaction=payment_transaction,
-                    booking=payment_transaction.booking,
-                    old_status='pending',
-                    new_status='processing',
-                    actor=request.user,
-                    ip_address=self._get_client_ip(request),
-                    details={'provider_response': provider_response}
-                )
-                
-                return Response(
-                    PaymentTransactionSerializer(payment_transaction).data,
-                    status=status.HTTP_201_CREATED
-                )
-                
-            except PaymentAdapterError as e:
-                # Handle payment adapter error
-                payment_transaction.status = 'failed'
-                payment_transaction.error_code = 'ADAPTER_ERROR'
-                payment_transaction.error_message = str(e)
-                payment_transaction.save()
-                
-                # Log audit entry
-                PaymentAuditLog.log_action(
-                    action='payment_failed',
-                    payment_transaction=payment_transaction,
-                    booking=payment_transaction.booking,
-                    old_status='pending',
-                    new_status='failed',
-                    actor=request.user,
-                    ip_address=self._get_client_ip(request),
-                    details={'error': str(e)}
-                )
-                
-                return Response(
-                    {'error': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-    
+
+            return Response(
+                PaymentTransactionSerializer(payment_transaction).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        except PaymentAdapterError as e:
+            # Handle payment adapter error
+            payment_transaction.status = 'failed'
+            payment_transaction.error_code = 'ADAPTER_ERROR'
+            payment_transaction.error_message = str(e)
+            payment_transaction.save()
+
+            # Log audit entry
+            PaymentAuditLog.log_action(
+                action='payment_failed',
+                payment_transaction=payment_transaction,
+                booking=payment_transaction.booking,
+                old_status='pending',
+                new_status='failed',
+                actor=request.user,
+                ip_address=self._get_client_ip(request),
+                details={'error': str(e)}
+            )
+
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         """
@@ -303,6 +313,26 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    def _existing_transaction_response(self, idempotency_key):
+        """
+        Response for a reused idempotency key, or None if the key is unused.
+
+        The owner gets their original transaction back; a key belonging to
+        another user is rejected without revealing that transaction.
+        """
+        if not idempotency_key:
+            return None
+        existing = PaymentTransaction.objects.select_related('booking').filter(
+            idempotency_key=idempotency_key
+        ).first()
+        if existing is None:
+            return None
+        if existing.booking.guest_id != self.request.user.id:
+            raise serializers.ValidationError(
+                {'idempotency_key': ['This idempotency key has already been used.']}
+            )
+        return Response(PaymentTransactionSerializer(existing).data, status=status.HTTP_200_OK)
+
     def _get_client_ip(self, request):
         """Get client IP address from request."""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
