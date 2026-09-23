@@ -12,9 +12,9 @@
 | 1 | OTP kodi API javobida (SMS_TEST_MODE sukut bo'yicha True) | Kritik | ✅ Tuzatildi — `d6ff853` |
 | 2 | Mehmon bronni PATCH/PUT bilan o'zgartira oladi | Kritik | ✅ Tuzatildi — `10f9f39` |
 | 3 | Mehmon bronni DELETE bilan o'chiradi, inventar qaytmaydi | Kritik | ✅ Tuzatildi — `10f9f39` |
-| 4 | To'lovni klient bepul tasdiqlaydi (/confirm/, PAYMENT_TEST_MODE) | Kritik | Ochiq (sukut qiymati `d6ff853` da False qilingan, endpoint hali ochiq) |
-| 5 | Webhook'lar ishlamaydi (auth talab qilinadi, holat yangilanmaydi) | Kritik | Ochiq |
-| 6 | Webhook event imzodan oldin yoziladi — haqiqiy event bloklanadi | Kritik | Ochiq |
+| 4 | To'lovni klient bepul tasdiqlaydi (/confirm/, PAYMENT_TEST_MODE) | Kritik | ✅ Tuzatildi — `d6ff853`, `4e20acf` (confirm faqat PAYMENT_TEST_MODE + DEBUG) |
+| 5 | Webhook'lar ishlamaydi (auth talab qilinadi, holat yangilanmaydi) | Kritik | ✅ Tuzatildi — `0def054` (status mapping mock formatda, haqiqiy integratsiyada moslash kerak) |
+| 6 | Webhook event imzodan oldin yoziladi — haqiqiy event bloklanadi | Kritik | ✅ Tuzatildi — `4843b9c` (+ secret bo'sh bo'lsa fail closed) |
 | 7 | number_of_rooms: 1 xona narxi/inventari, bekor qilishda N | Kritik | Ochiq |
 | 8 | phone_number unikal emas | Yuqori | ✅ Tuzatildi — `f050dcd` |
 | 9 | OTP brute-force (throttle yo'q, random, lock tekshiruvi keyin) | Yuqori | ✅ Tuzatildi — `73b0247` |
@@ -22,9 +22,9 @@
 | 11 | Akkaunt bloklash DoS, user enumeration | Yuqori | Ochiq |
 | 12 | Partner mulk statusini o'zi `active` qiladi | Yuqori | Ochiq |
 | 13 | Suspended/rejected mulk bronlanadi va ommaga ko'rinadi | Yuqori | Ochiq |
-| 14 | Har qanday foydalanuvchi barcha webhook event'larini ko'radi | Yuqori | Ochiq |
-| 15 | Refund: mehmon o'zi qiladi, mantiq teskari, summa tekshirilmaydi | Yuqori | Ochiq |
-| 16 | Begona bronga to'lov tranzaksiyasi; tranzaksiya PATCH/DELETE ochiq | Yuqori | Ochiq |
+| 14 | Har qanday foydalanuvchi barcha webhook event'larini ko'radi | Yuqori | ✅ Tuzatildi — `23cb13d` |
+| 15 | Refund: mehmon o'zi qiladi, mantiq teskari, summa tekshirilmaydi | Yuqori | ✅ Tuzatildi — `40558e8` (admin "bekor qilish + refund" amali hali yo'q) |
+| 16 | Begona bronga to'lov tranzaksiyasi; tranzaksiya PATCH/DELETE ochiq | Yuqori | ✅ Tuzatildi — `0dce737` |
 | 17 | Muddati o'tgan bronlar avtomatik bekor qilinmaydi (Celery yo'q) | Yuqori | Ochiq |
 | 18 | Race condition: cancel/expire/confirm bron qatorini qulflamaydi | Yuqori | Ochiq |
 | 19 | O'tgan sanaga bron, guest_count/xona tekshiruvi, narx yozuvi | O'rta | Ochiq |
@@ -40,7 +40,7 @@
 | 29 | `process_expired_bookings` xatolarni yutadi | Kichik | Ochiq |
 | 30 | `conftest.py` testlarni sozlangan (dev) bazada ishlatadi | Kichik | ✅ Tuzatildi — `c98a48f` |
 | 31 | Inventar rate_plan bo'yicha, room_type bo'yicha emas | Kichik | Ochiq |
-| 32 | To'lov idempotency ishlamaydi (auditdan keyin topildi) | Yuqori | Ochiq |
+| 32 | To'lov idempotency ishlamaydi (auditdan keyin topildi) | Yuqori | ✅ Tuzatildi — `0dce737` |
 
 ## Topilmalar tafsiloti
 
@@ -127,3 +127,7 @@
 
 - Test to'plami (izolyatsiyalangan bazada): 35 ta eski muvaffaqiyatsiz test — 27 tasi `/api/v1/admin/` yo'li (haqiqiy yo'l `/api/v1/admin-panel/`), 2 tasi InternalNote yaratishda body'da `customer` talab qilinishi (kod xatosi), qolganlari eskirgan test kutishlari (reference code uzunligi, Decimal/string, `Property.name`).
 - `admin_panel` index nomlari migratsiyasi yetishmasdi — `7f589d1` da qo'shildi.
+- To'lov qismidagi tuzatishlardan keyin (`0dce737`..`40558e8`):
+  - Provayder pulni olgan-u, bron allaqachon bekor qilingan bo'lsa, tranzaksiya `completed` bo'ladi, bron o'zgarmaydi va audit log'da "manual refund required" belgisi qo'yiladi — admin refund qilishi kerak.
+  - `.ai/contracts/payments.md` webhook yo'lini `webhooks/{provider}/` deb ko'rsatardi; haqiqiy yo'l `webhook/{provider}/` — kontrakt tuzatildi.
+  - Haqiqiy Payme/Click/Visa integratsiyasi hali yo'q: test rejimi o'chiq bo'lsa to'lov yaratish 503 qaytaradi.
