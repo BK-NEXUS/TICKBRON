@@ -7,6 +7,7 @@ from io import StringIO
 from unittest import mock
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.core.management import CommandError, call_command
 from django.test import TestCase
 from django.utils import timezone
@@ -114,3 +115,45 @@ class TestExpiredBookingErrors(BookingLogicTestBase):
         with self.assertLogs('core.management.commands.process_expired_bookings', level='ERROR'):
             with pytest.raises(CommandError):
                 call_command('process_expired_bookings', stdout=StringIO())
+
+
+class TestMultiRoomBooking(BookingLogicTestBase):
+    """#7: every booked room is priced and taken from inventory."""
+
+    def test_price_and_inventory_scale_with_room_count(self):
+        response = self.post_booking(nights=2, number_of_rooms=3)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Decimal(response.data['total_price']) == Decimal('600.00')  # 2 nights x 100 x 3 rooms
+        assert self.inventory(0).booked_rooms == 3
+        assert self.inventory(1).booked_rooms == 3
+
+    def test_cancelling_multi_room_booking_releases_all_rooms(self):
+        booking_id = self.post_booking(nights=2, number_of_rooms=3).data['id']
+
+        response = self.client.post(f'{BOOKINGS_URL}{booking_id}/cancel/', {}, format='json')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert self.inventory(0).booked_rooms == 0
+        assert self.inventory(1).booked_rooms == 0
+
+    def test_expiring_multi_room_booking_releases_all_rooms(self):
+        booking = self.create_booking(nights=1, number_of_rooms=2)
+        self.expire_now(booking)
+
+        Booking.process_expired_bookings(raise_on_error=True)
+
+        assert self.inventory(0).booked_rooms == 0
+
+    def test_more_rooms_than_remaining_is_rejected(self):
+        self.create_booking(nights=1, number_of_rooms=4)  # 1 room left
+
+        response = self.post_booking(nights=1, number_of_rooms=2)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert self.inventory(0).booked_rooms == 4
+
+    def test_zero_rooms_is_rejected(self):
+        with pytest.raises(ValidationError):
+            self.create_booking(nights=1, number_of_rooms=0)
+        assert self.inventory(0).booked_rooms == 0

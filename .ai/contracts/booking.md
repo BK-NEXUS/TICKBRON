@@ -195,3 +195,11 @@ Status: READY
 - Combined state consistency tests
 - Model integration tests
 - Audit logging tests
+
+## Booking Validation and Pricing (audit fixes, `.ai/audit-report.md`)
+
+### Multi-room bookings (#7)
+- `total_price` = sum of the nightly prices for one room x `number_of_rooms`
+- Every night must have at least `number_of_rooms` remaining rooms (otherwise 400)
+- Inventory reserves `number_of_rooms` per night; cancellation and expiry release the same number
+- `number_of_rooms` must be at least 1

@@ -268,6 +268,9 @@ class Booking(BaseModel):
             if not isinstance(age, int) or age < 0 or age > 17:
                 raise ValidationError({'children': _('Children ages must be integers between 0 and 17')})
         
+        if number_of_rooms < 1:
+            raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
+        
         # Validate rate plan constraints
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
             raise ValidationError({
@@ -303,7 +306,7 @@ class Booking(BaseModel):
                 })
             
             # Check availability for each date
-            total_price = Decimal('0')
+            nightly_total = Decimal('0')  # price of one room for the whole stay
             for inventory in inventory_records:
                 # Check if date is available for booking
                 if not inventory.is_available_for_booking(number_of_nights):
@@ -311,16 +314,18 @@ class Booking(BaseModel):
                         'availability': _(f'Date {inventory.date} is not available for booking')
                     })
                 
-                # Check if there are enough rooms
-                if inventory.remaining_rooms < 1:
+                # Check if there are enough rooms for the whole party
+                if inventory.remaining_rooms < number_of_rooms:
                     raise ValidationError({
-                        'availability': _(f'No rooms available for date {inventory.date}')
+                        'availability': _(f'Not enough rooms available for date {inventory.date}')
                     })
                 
                 # Add price (use inventory price if set, otherwise rate plan base price)
                 price = inventory.price if inventory.price is not None else rate_plan.base_price
-                total_price += price
+                nightly_total += price
             
+            total_price = nightly_total * number_of_rooms
+
             # Create the booking
             booking = cls.objects.create(
                 guest=guest,
@@ -351,9 +356,9 @@ class Booking(BaseModel):
                 currency=rate_plan.currency
             )
             
-            # Update inventory - atomically increment booked_rooms
+            # Update inventory - atomically reserve every booked room
             for inventory in inventory_records:
-                inventory.booked_rooms = F('booked_rooms') + 1
+                inventory.booked_rooms = F('booked_rooms') + number_of_rooms
                 inventory.save(update_fields=['booked_rooms'])
             
             return booking
