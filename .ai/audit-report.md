@@ -15,19 +15,19 @@
 | 4 | To'lovni klient bepul tasdiqlaydi (/confirm/, PAYMENT_TEST_MODE) | Kritik | ✅ Tuzatildi — `d6ff853`, `4e20acf` (confirm faqat PAYMENT_TEST_MODE + DEBUG) |
 | 5 | Webhook'lar ishlamaydi (auth talab qilinadi, holat yangilanmaydi) | Kritik | ✅ Tuzatildi — `0def054` (status mapping mock formatda, haqiqiy integratsiyada moslash kerak) |
 | 6 | Webhook event imzodan oldin yoziladi — haqiqiy event bloklanadi | Kritik | ✅ Tuzatildi — `4843b9c` (+ secret bo'sh bo'lsa fail closed) |
-| 7 | number_of_rooms: 1 xona narxi/inventari, bekor qilishda N | Kritik | Ochiq |
+| 7 | number_of_rooms: 1 xona narxi/inventari, bekor qilishda N | Kritik | ✅ Tuzatildi — `7be6a8d` |
 | 8 | phone_number unikal emas | Yuqori | ✅ Tuzatildi — `f050dcd` |
 | 9 | OTP brute-force (throttle yo'q, random, lock tekshiruvi keyin) | Yuqori | ✅ Tuzatildi — `73b0247` |
 | 10 | X-Forwarded-For orqali throttle chetlab o'tiladi, LocMem cache | Yuqori | Ochiq |
 | 11 | Akkaunt bloklash DoS, user enumeration | Yuqori | Ochiq |
 | 12 | Partner mulk statusini o'zi `active` qiladi | Yuqori | Ochiq |
-| 13 | Suspended/rejected mulk bronlanadi va ommaga ko'rinadi | Yuqori | Ochiq |
+| 13 | Suspended/rejected mulk bronlanadi va ommaga ko'rinadi | Yuqori | ✅ Tuzatildi — `758a4bc` |
 | 14 | Har qanday foydalanuvchi barcha webhook event'larini ko'radi | Yuqori | ✅ Tuzatildi — `23cb13d` |
 | 15 | Refund: mehmon o'zi qiladi, mantiq teskari, summa tekshirilmaydi | Yuqori | ✅ Tuzatildi — `40558e8` (admin "bekor qilish + refund" amali hali yo'q) |
 | 16 | Begona bronga to'lov tranzaksiyasi; tranzaksiya PATCH/DELETE ochiq | Yuqori | ✅ Tuzatildi — `0dce737` |
-| 17 | Muddati o'tgan bronlar avtomatik bekor qilinmaydi (Celery yo'q) | Yuqori | Ochiq |
-| 18 | Race condition: cancel/expire/confirm bron qatorini qulflamaydi | Yuqori | Ochiq |
-| 19 | O'tgan sanaga bron, guest_count/xona tekshiruvi, narx yozuvi | O'rta | Ochiq |
+| 17 | Muddati o'tgan bronlar avtomatik bekor qilinmaydi (Celery yo'q) | Yuqori | ✅ Tuzatildi — `4fe3296` (beat jonli sinalmagan: lokal Redis yo'q) |
+| 18 | Race condition: cancel/expire/confirm bron qatorini qulflamaydi | Yuqori | ✅ Tuzatildi — `94f96c6` (PostgreSQL parallel testlari bilan) |
+| 19 | O'tgan sanaga bron, guest_count/xona tekshiruvi, narx yozuvi | O'rta | ✅ Tuzatildi — `a48c00e` |
 | 20 | Bronsiz sharh; sharhda booking/property almashtirish | O'rta | Ochiq |
 | 21 | Admin RBAC ishlatilmaydi, audit log yo'q, InternalNote author yoziladi | O'rta | Ochiq |
 | 22 | Mijozlar ro'yxati xotirada saralanadi, aggregat join xatosi | O'rta | Ochiq |
@@ -37,9 +37,9 @@
 | 26 | Partner bronlar ro'yxati 500 (`booking.guest_name`) | Kichik | Ochiq |
 | 27 | Sevimlini o'chirib qayta qo'shish 500 | Kichik | Ochiq |
 | 28 | Noto'g'ri query parametrlarida 500 | Kichik | Ochiq |
-| 29 | `process_expired_bookings` xatolarni yutadi | Kichik | Ochiq |
+| 29 | `process_expired_bookings` xatolarni yutadi | Kichik | ✅ Tuzatildi — `c07f409` |
 | 30 | `conftest.py` testlarni sozlangan (dev) bazada ishlatadi | Kichik | ✅ Tuzatildi — `c98a48f` |
-| 31 | Inventar rate_plan bo'yicha, room_type bo'yicha emas | Kichik | Ochiq |
+| 31 | Inventar rate_plan bo'yicha, room_type bo'yicha emas | Kichik | Ochiq — yechim variantlari quyida, tuzatilmagan |
 | 32 | To'lov idempotency ishlamaydi (auditdan keyin topildi) | Yuqori | ✅ Tuzatildi — `0dce737` |
 
 ## Topilmalar tafsiloti
@@ -123,6 +123,13 @@
 
 **#31** Inventar `rate_plan` bo'yicha yuritiladi — bitta xona turining ikki tarifi bitta jismoniy xonani ikki marta sotishi mumkin.
 
+> **#31 yechim variantlari** (hali tuzatilmagan):
+> - **A. Inventarni `room_type + date` ga ko'chirish,** narx esa `rate_plan + date` da qoladi. Bitta xona to'plami bitta joyda hisoblanadi, bu to'g'ri model. Lekin ma'lumot migratsiyasi (tariflar bo'yicha inventarni birlashtirish), partner inventory API va frontend o'zgarishi kerak. Eng katta ish.
+> - **B. Sxemani o'zgartirmay, bron vaqtida umumiy bandlikni tekshirish:** har bir sana uchun xona turining barcha tariflari bo'yicha `sum(booked_rooms) + yangi xonalar ≤ room_type.total_rooms`. Tez qilinadi, lekin barcha tariflarning inventar qatorlarini qulflash kerak, `available_rooms` esa chalkash ma'noda qoladi (tarif limiti va jismoniy limit aralashadi).
+> - **C. Bitta xona turiga faqat bitta inventarli tarif,** qolgan tariflar narx modifikatori bo'ladi. Oddiy, lekin mahsulot imkoniyatini cheklaydi.
+>
+> Tavsiya: **A**, alohida checkpoint sifatida, Baxram bilan (partner va frontend ta'siri) kelishilgan holda. Tezkor vaqtinchalik himoya kerak bo'lsa, B.
+
 ## Boshqa kuzatuvlar
 
 - Test to'plami (izolyatsiyalangan bazada): 35 ta eski muvaffaqiyatsiz test — 27 tasi `/api/v1/admin/` yo'li (haqiqiy yo'l `/api/v1/admin-panel/`), 2 tasi InternalNote yaratishda body'da `customer` talab qilinishi (kod xatosi), qolganlari eskirgan test kutishlari (reference code uzunligi, Decimal/string, `Property.name`).
@@ -131,3 +138,9 @@
   - Provayder pulni olgan-u, bron allaqachon bekor qilingan bo'lsa, tranzaksiya `completed` bo'ladi, bron o'zgarmaydi va audit log'da "manual refund required" belgisi qo'yiladi — admin refund qilishi kerak.
   - `.ai/contracts/payments.md` webhook yo'lini `webhooks/{provider}/` deb ko'rsatardi; haqiqiy yo'l `webhook/{provider}/` — kontrakt tuzatildi.
   - Haqiqiy Payme/Click/Visa integratsiyasi hali yo'q: test rejimi o'chiq bo'lsa to'lov yaratish 503 qaytaradi.
+- Bron mantiqi tuzatishlaridan keyin (`c07f409`..`4fe3296`):
+  - `BookingItem.price_per_night` endi bir xonaning o'rtacha kechalik narxi (inventar narxlari kechama-kecha farq qilishi mumkin).
+  - O'tgan sana faqat bron yaratishda tekshiriladi; tugagan bronlar o'tmishda bo'lgani uchun `Booking.clean()` o'zgartirilmadi.
+  - Holat mashinasi `confirmed → cancelled` ga ruxsat beradi, shuning uchun parallel "to'lov + bekor qilish" navbatma-navbat ikkalasi ham muvaffaqiyatli bo'lishi mumkin: natija — to'langan, lekin bekor qilingan bron (refund kerak). Bu qulflash xatosi emas, biznes oqimi; admin "bekor qilish + refund" amali (#15 eslatmasi) shu holatni ham qamrab olishi kerak.
+  - Celery beat task sinovdan faqat to'g'ridan-to'g'ri chaqirish orqali o'tgan; lokal muhitda Redis ishlamaydi, shuning uchun worker/beat jonli ishga tushirilmagan.
+- To'liq test to'plami PostgreSQL'da: SQLite'dagi 35 ta eski xatodan tashqari yana 38 ta test yiqiladi. Hammasining sababi bitta: test fixture'lari `confirmation_code='TEST1234'`/`'TEST12345'` (8–9 belgi) beradi, maydon esa checkpoint 23 (`c63437b`) dan beri `varchar(6)`. SQLite uzunlikni tekshirmagani uchun bu yashirin qolgan. Tuzatish: testlarda 6 belgili kod ishlatish (alohida ish, hali qilinmagan).
