@@ -77,7 +77,7 @@ class AdminPropertyTests(TestCase):
     def test_super_admin_can_list_all_properties(self):
         """Test that super-admin can list all properties."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/properties/')
+        response = self.client.get('/api/v1/admin-panel/properties/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check that at least our test property is in the list (paginated response)
@@ -88,7 +88,7 @@ class AdminPropertyTests(TestCase):
     def test_staff_can_list_all_properties(self):
         """Test that staff can list all properties."""
         self.client.force_authenticate(user=self.staff_user)
-        response = self.client.get('/api/v1/admin/properties/')
+        response = self.client.get('/api/v1/admin-panel/properties/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check that at least our test property is in the list (paginated response)
@@ -99,14 +99,14 @@ class AdminPropertyTests(TestCase):
     def test_regular_user_cannot_list_admin_properties(self):
         """Test that regular user cannot access admin property endpoints."""
         self.client.force_authenticate(user=self.regular_user)
-        response = self.client.get('/api/v1/admin/properties/')
+        response = self.client.get('/api/v1/admin-panel/properties/')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     
     def test_super_admin_can_approve_property(self):
         """Test that super-admin can approve property."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.post(f'/api/v1/admin/properties/{self.property.id}/approve/')
+        response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.property.refresh_from_db()
@@ -117,7 +117,7 @@ class AdminPropertyTests(TestCase):
     def test_staff_can_approve_property(self):
         """Test that staff can approve property."""
         self.client.force_authenticate(user=self.staff_user)
-        response = self.client.post(f'/api/v1/admin/properties/{self.property.id}/approve/')
+        response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.property.refresh_from_db()
@@ -127,7 +127,7 @@ class AdminPropertyTests(TestCase):
         """Test that admin can reject property with reason."""
         self.client.force_authenticate(user=self.super_admin)
         data = {'rejection_reason': 'Property does not meet standards'}
-        response = self.client.post(f'/api/v1/admin/properties/{self.property.id}/approve/', data)
+        response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/', data)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.property.refresh_from_db()
@@ -137,7 +137,7 @@ class AdminPropertyTests(TestCase):
     def test_admin_can_suspend_property(self):
         """Test that admin can suspend property."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.post(f'/api/v1/admin/properties/{self.property.id}/suspend/')
+        response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/suspend/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.property.refresh_from_db()
@@ -179,7 +179,7 @@ class AdminUserTests(TestCase):
     def test_super_admin_can_list_all_users(self):
         """Test that super-admin can list all users."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/users/')
+        response = self.client.get('/api/v1/admin-panel/users/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
@@ -187,7 +187,7 @@ class AdminUserTests(TestCase):
     def test_staff_can_list_all_users(self):
         """Test that staff can list all users."""
         self.client.force_authenticate(user=self.staff_user)
-        response = self.client.get('/api/v1/admin/users/')
+        response = self.client.get('/api/v1/admin-panel/users/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
@@ -195,7 +195,7 @@ class AdminUserTests(TestCase):
     def test_regular_user_cannot_list_admin_users(self):
         """Test that regular user cannot access admin user endpoints."""
         self.client.force_authenticate(user=self.regular_user)
-        response = self.client.get('/api/v1/admin/users/')
+        response = self.client.get('/api/v1/admin-panel/users/')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     
@@ -210,7 +210,7 @@ class AdminUserTests(TestCase):
             'password': 'testpassword123',
             'password_confirm': 'testpassword123'
         }
-        response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), 4)
@@ -229,7 +229,7 @@ class AdminUserTests(TestCase):
             'password': 'testpassword123',
             'password_confirm': 'testpassword123'
         }
-        response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(User.objects.count(), 3)
@@ -244,7 +244,7 @@ class AdminUserTests(TestCase):
             'password': 'testpassword123',
             'password_confirm': 'differentpassword'
         }
-        response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password_confirm', response.data)
@@ -259,7 +259,7 @@ class AdminUserTests(TestCase):
             'password': 'testpassword123',
             'password_confirm': 'testpassword123'
         }
-        response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotIn('password', response.data)
@@ -319,7 +319,7 @@ class AdminAmenityTests(TestCase):
     def test_super_admin_can_list_all_amenities(self):
         """Test that super-admin can list all amenities."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/amenities/')
+        response = self.client.get('/api/v1/admin-panel/amenities/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check that at least our test amenity is in the list (paginated response)
@@ -330,7 +330,7 @@ class AdminAmenityTests(TestCase):
     def test_staff_can_list_all_amenities(self):
         """Test that staff can list all amenities."""
         self.client.force_authenticate(user=self.staff_user)
-        response = self.client.get('/api/v1/admin/amenities/')
+        response = self.client.get('/api/v1/admin-panel/amenities/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check that at least our test amenity is in the list (paginated response)
@@ -341,7 +341,7 @@ class AdminAmenityTests(TestCase):
     def test_regular_user_cannot_list_admin_amenities(self):
         """Test that regular user cannot access admin amenity endpoints."""
         self.client.force_authenticate(user=self.regular_user)
-        response = self.client.get('/api/v1/admin/amenities/')
+        response = self.client.get('/api/v1/admin-panel/amenities/')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     
@@ -356,7 +356,7 @@ class AdminAmenityTests(TestCase):
             'is_searchable': True,
             'sort_order': 2
         }
-        response = self.client.post('/api/v1/admin/amenities/', data)
+        response = self.client.post('/api/v1/admin-panel/amenities/', data)
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Amenity.objects.count(), 2)
@@ -368,7 +368,7 @@ class AdminAmenityTests(TestCase):
             'name': 'Wireless Internet',
             'description': 'High-speed wireless internet'
         }
-        response = self.client.patch(f'/api/v1/admin/amenities/{self.amenity.id}/', data)
+        response = self.client.patch(f'/api/v1/admin-panel/amenities/{self.amenity.id}/', data)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.amenity.refresh_from_db()
@@ -378,7 +378,7 @@ class AdminAmenityTests(TestCase):
         """Test that super-admin can delete amenity (soft delete)."""
         self.client.force_authenticate(user=self.super_admin)
         amenity_id = self.amenity.id
-        response = self.client.delete(f'/api/v1/admin/amenities/{amenity_id}/')
+        response = self.client.delete(f'/api/v1/admin-panel/amenities/{amenity_id}/')
         
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         # Check that amenity is no longer in the active queryset
@@ -395,7 +395,7 @@ class AdminAmenityTests(TestCase):
             'description': 'Bathroom amenities',
             'sort_order': 2
         }
-        response = self.client.post('/api/v1/admin/amenities/categories/', data)
+        response = self.client.post('/api/v1/admin-panel/amenities/categories/', data)
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(AmenityCategory.objects.count(), 2)
@@ -436,7 +436,7 @@ class AdminPaymentTests(TestCase):
     def test_super_admin_can_list_payment_transactions(self):
         """Test that super-admin can list payment transactions."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/payments/transactions/')
+        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Should return empty list if no transactions exist
@@ -445,28 +445,28 @@ class AdminPaymentTests(TestCase):
     def test_staff_can_list_payment_transactions(self):
         """Test that staff can list payment transactions."""
         self.client.force_authenticate(user=self.staff_user)
-        response = self.client.get('/api/v1/admin/payments/transactions/')
+        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
     def test_regular_user_cannot_list_payment_transactions(self):
         """Test that regular user cannot access admin payment endpoints."""
         self.client.force_authenticate(user=self.regular_user)
-        response = self.client.get('/api/v1/admin/payments/transactions/')
+        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     
     def test_admin_can_filter_transactions_by_status(self):
         """Test that admin can filter transactions by status."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/payments/transactions/?status=completed')
+        response = self.client.get('/api/v1/admin-panel/payments/transactions/?status=completed')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
     def test_admin_can_filter_transactions_by_provider(self):
         """Test that admin can filter transactions by provider."""
         self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin/payments/transactions/?provider=payme')
+        response = self.client.get('/api/v1/admin-panel/payments/transactions/?provider=payme')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -506,10 +506,10 @@ class AdminPermissionTests(TestCase):
     def test_unauthenticated_user_cannot_access_admin_endpoints(self):
         """Test that unauthenticated users cannot access admin endpoints."""
         endpoints = [
-            '/api/v1/admin/properties/',
-            '/api/v1/admin/users/',
-            '/api/v1/admin/amenities/',
-            '/api/v1/admin/payments/transactions/'
+            '/api/v1/admin-panel/properties/',
+            '/api/v1/admin-panel/users/',
+            '/api/v1/admin-panel/amenities/',
+            '/api/v1/admin-panel/payments/transactions/'
         ]
         
         for endpoint in endpoints:
@@ -521,10 +521,10 @@ class AdminPermissionTests(TestCase):
         """Test that non-staff users cannot access admin endpoints."""
         self.client.force_authenticate(user=self.regular_user)
         endpoints = [
-            '/api/v1/admin/properties/',
-            '/api/v1/admin/users/',
-            '/api/v1/admin/amenities/',
-            '/api/v1/admin/payments/transactions/'
+            '/api/v1/admin-panel/properties/',
+            '/api/v1/admin-panel/users/',
+            '/api/v1/admin-panel/amenities/',
+            '/api/v1/admin-panel/payments/transactions/'
         ]
         
         for endpoint in endpoints:
@@ -541,7 +541,7 @@ class AdminPermissionTests(TestCase):
             'password': 'testpassword123',
             'password_confirm': 'testpassword123'
         }
-        response = self.client.post('/api/v1/admin/users/create-hotel-owner/', data, format='json')
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
