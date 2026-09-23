@@ -218,3 +218,43 @@ class TestBookingInputValidation(BookingLogicTestBase):
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestOnlyActivePropertiesArePublic(BookingLogicTestBase):
+    """#13: only approved (status='active') properties can be booked or seen publicly."""
+
+    NON_ACTIVE_STATUSES = ('draft', 'pending_approval', 'suspended', 'rejected')
+
+    def set_status(self, value):
+        Property.objects.filter(pk=self.property.pk).update(status=value)
+        self.property.refresh_from_db()
+
+    def test_non_active_property_cannot_be_booked(self):
+        for value in self.NON_ACTIVE_STATUSES:
+            self.set_status(value)
+
+            assert self.post_booking().status_code == status.HTTP_400_BAD_REQUEST, value
+            with pytest.raises(ValidationError):
+                self.create_booking()
+        assert not Booking.objects.exists()
+
+    def test_non_active_property_is_hidden_from_public_endpoints(self):
+        public = APIClient()
+        for value in self.NON_ACTIVE_STATUSES:
+            self.set_status(value)
+
+            detail = public.get(f'/api/v1/properties/{self.property.id}/')
+            availability = public.get(f'/api/v1/properties/{self.property.id}/availability/')
+            suggestions = public.get('/api/v1/properties/search/suggestions/', {'q': 'Tashk'})
+
+            assert detail.status_code == status.HTTP_404_NOT_FOUND, value
+            assert availability.status_code == status.HTTP_404_NOT_FOUND, value
+            assert 'Tashkent' not in suggestions.data['suggestions'], value
+
+    def test_active_property_is_still_public_and_bookable(self):
+        public = APIClient()
+
+        assert public.get(f'/api/v1/properties/{self.property.id}/').status_code == status.HTTP_200_OK
+        assert public.get(f'/api/v1/properties/{self.property.id}/availability/').status_code == status.HTTP_200_OK
+        assert 'Tashkent' in public.get('/api/v1/properties/search/suggestions/', {'q': 'Tashk'}).data['suggestions']
+        assert self.post_booking().status_code == status.HTTP_201_CREATED

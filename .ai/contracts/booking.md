@@ -208,3 +208,8 @@ Status: READY
 - `check_in` before today (server local date) is rejected with 400; today is allowed. Also applies to GET `/api/v1/properties/{id}/availability/`
 - `guest_count` must not exceed `room_type.max_occupancy x number_of_rooms`
 - `booking_items[].price_per_night` is the average nightly price of one room over the stay (inventory prices can differ per night), not the rate plan base price
+
+### Only approved properties (#13)
+- Only properties with `status='active'` (and `is_active`, not deleted) can be booked; others return 400 "Property not found or not available"
+- GET `/api/v1/properties/{id}/` and `/api/v1/properties/{id}/availability/` return 404 for draft, pending_approval, suspended and rejected properties (same response as a missing property)
+- Search suggestions only include active properties (search results already did)

@@ -268,6 +268,9 @@ class Booking(BaseModel):
             if not isinstance(age, int) or age < 0 or age > 17:
                 raise ValidationError({'children': _('Children ages must be integers between 0 and 17')})
         
+        if property_obj.status != 'active' or not property_obj.is_active or property_obj.is_deleted:
+            raise ValidationError({'property_id': _('Property not found or not available')})
+        
         if number_of_rooms < 1:
             raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
         

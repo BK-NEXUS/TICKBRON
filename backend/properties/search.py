@@ -541,15 +541,18 @@ class PropertySearchService:
             return []
         
         # Get matching cities and countries
+        # Only approved properties, matching the search base queryset
         cities = Property.objects.filter(
             is_active=True,
             is_deleted=False,
+            status='active',
             city__icontains=query
         ).values_list('city', flat=True).distinct()[:limit]
         
         countries = Property.objects.filter(
             is_active=True,
             is_deleted=False,
+            status='active',
             country__icontains=query
         ).values_list('country', flat=True).distinct()[:limit]
         

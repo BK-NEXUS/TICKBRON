@@ -176,8 +176,10 @@ def property_detail(request, property_id):
     from properties.models import Property
     
     try:
+        # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
             id=property_id,
+            status='active',
             is_active=True,
             is_deleted=False
         )
@@ -225,8 +227,10 @@ def property_availability(request, property_id):
         )
     
     try:
+        # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
             id=property_id,
+            status='active',
             is_active=True,
             is_deleted=False
         )

@@ -85,8 +85,10 @@ class BookingCreateSerializer(serializers.Serializer):
         
         # Validate property exists and is active
         try:
+            # Only approved (status='active') properties can be booked
             property_obj = Property.objects.get(
                 id=data['property_id'],
+                status='active',
                 is_active=True,
                 is_deleted=False
             )
