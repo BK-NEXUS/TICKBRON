@@ -100,13 +100,13 @@ Status: READY
 - Creates audit log entries for payment completion and booking status change
 
 ### POST `/api/v1/payments/transactions/{id}/refund/`
-- Request: Optional refund amount in request body
+- Request: Optional `amount` in request body. Omitted, or equal to the payment amount → full refund (`refunded`); smaller positive amount → `partially_refunded`
 - Response: Updated PaymentTransaction object
-- Auth: Session-based (required)
-- Error: 400 if payment is not completed or refund fails
+- Auth: **staff only** (`is_staff`); guests get 403. Staff can refund any user's transaction
+- Error: 400 if payment is not completed, the amount is not a positive number, exceeds the payment amount, or the refund fails; 503 if the provider is not integrated
 - Initiates refund with payment provider
-- Updates transaction status to refunded or partially_refunded
-- Updates booking payment status accordingly
+- Updates transaction status and booking payment status together; if the booking was never marked paid (e.g. payment captured after cancellation), its payment status is left unchanged and noted in the audit log
+- Does NOT cancel the booking. An admin "cancel + refund" action does not exist yet (tracked in `.ai/audit-report.md`)
 - Creates audit log entry for payment refund
 
 ### GET `/api/v1/payments/webhooks/` and `/api/v1/payments/webhooks/{id}/`

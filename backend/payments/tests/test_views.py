@@ -194,6 +194,10 @@ class PaymentTransactionViewSetTests(TestCase):
     
     def test_refund_payment_updates_booking_payment_state(self):
         """Test that refunding payment updates booking payment state using state machine."""
+        # Refunds are staff-only
+        self.client.force_authenticate(user=User.objects.create_user(
+            email='staff_refund_payment_updates_booking_payment_state@example.com', password='testpass123', is_staff=True
+        ))
         # Create and confirm payment
         transaction = PaymentTransaction.objects.create(
             idempotency_key='test_key_refund',
@@ -230,6 +234,10 @@ class PaymentTransactionViewSetTests(TestCase):
     
     def test_refund_payment_invalid_status(self):
         """Test that refunding payment fails for invalid payment status."""
+        # Refunds are staff-only
+        self.client.force_authenticate(user=User.objects.create_user(
+            email='staff_refund_payment_invalid_status@example.com', password='testpass123', is_staff=True
+        ))
         # Create payment transaction with pending status
         transaction = PaymentTransaction.objects.create(
             idempotency_key='test_key_refund_invalid',

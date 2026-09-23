@@ -3,6 +3,7 @@ Views for TICKBRON payment API endpoints.
 """
 import sys
 import os
+from decimal import Decimal, InvalidOperation
 from rest_framework import mixins, serializers, viewsets, status
 from rest_framework.decorators import (
     action, api_view, authentication_classes, permission_classes, throttle_classes
@@ -73,7 +74,27 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         """Filter queryset to only show user's own payment transactions."""
         user = self.request.user
+        if self.action == 'refund' and user.is_staff:
+            # Staff refund other users' payments
+            return PaymentTransaction.objects.all()
         return PaymentTransaction.objects.filter(booking__guest=user)
+
+    @staticmethod
+    def _parse_refund_amount(raw_amount, paid_amount):
+        """
+        Return (refund_amount, error). A missing amount means a full refund.
+        """
+        if raw_amount in (None, ''):
+            return paid_amount, None
+        try:
+            amount = Decimal(str(raw_amount))
+        except (InvalidOperation, ValueError):
+            return None, 'Refund amount must be a number'
+        if not amount.is_finite() or amount <= 0:
+            return None, 'Refund amount must be greater than zero'
+        if amount > paid_amount:
+            return None, 'Refund amount cannot exceed the payment amount'
+        return amount, None
     
     def create(self, request, *args, **kwargs):
         """
@@ -273,41 +294,53 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def refund(self, request, pk=None):
         """
-        Refund a payment transaction.
-        
-        Initiates refund with the payment provider.
+        Refund a payment transaction (staff only).
+
+        Request body: optional `amount`. Omitted means a full refund; a smaller
+        positive amount is a partial refund; more than the payment is rejected.
+        Refunding changes payment status only: the booking itself is not
+        cancelled (cancel it separately if needed).
         """
         payment_transaction = self.get_object()
-        
+
         if payment_transaction.status != 'completed':
             return Response(
                 {'error': 'Only completed payments can be refunded'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        refund_amount = request.data.get('amount')
-        
+
+        refund_amount, error = self._parse_refund_amount(request.data.get('amount'), payment_transaction.amount)
+        if error:
+            return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+        new_status = 'refunded' if refund_amount == payment_transaction.amount else 'partially_refunded'
+
         try:
             adapter = get_payment_adapter(payment_transaction.provider)
             provider_response = adapter.refund_payment(
                 provider_transaction_id=payment_transaction.provider_transaction_id,
                 amount=refund_amount
             )
-            
-            # Update transaction status
+
             old_status = payment_transaction.status
-            payment_transaction.status = 'refunded' if refund_amount else 'partially_refunded'
-            payment_transaction.provider_response = provider_response
-            payment_transaction.save()
-            
-            # Update booking payment status using state machine
-            booking = payment_transaction.booking
-            new_payment_status = 'refunded' if refund_amount else 'partially_refunded'
-            booking.update_payment_status(new_payment_status)
-            
+            details = {'provider_response': provider_response, 'refund_amount': str(refund_amount)}
+            with transaction.atomic():
+                payment_transaction.status = new_status
+                payment_transaction.provider_response = provider_response
+                payment_transaction.save()
+
+                # Update booking payment status using state machine. A booking
+                # that was never marked paid (e.g. payment captured after it was
+                # cancelled) keeps its status; the refund itself still stands.
+                booking = Booking.objects.select_for_update().get(pk=payment_transaction.booking_id)
+                try:
+                    with transaction.atomic():
+                        booking.update_payment_status(new_status)
+                except DjangoValidationError:
+                    details['booking_payment_status'] = f'unchanged ({booking.payment_status})'
+
             # Log audit entry
             PaymentAuditLog.log_action(
                 action='payment_refunded',
@@ -317,14 +350,16 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 new_status=payment_transaction.status,
                 actor=request.user,
                 ip_address=self._get_client_ip(request),
-                details={'provider_response': provider_response, 'refund_amount': refund_amount}
+                details=details
             )
-            
+
             return Response(
                 PaymentTransactionSerializer(payment_transaction).data,
                 status=status.HTTP_200_OK
             )
-            
+
+        except NotImplementedError:
+            return self._provider_unavailable_response()
         except PaymentAdapterError as e:
             payment_transaction.error_code = 'REFUND_ERROR'
             payment_transaction.error_message = str(e)

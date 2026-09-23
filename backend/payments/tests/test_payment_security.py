@@ -392,3 +392,74 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         self.tx.refresh_from_db()
         assert self.tx.status == 'processing'
+
+
+class TestRefunds(PaymentSecurityTestBase):
+    """#15: refunds are staff-only and record the right status."""
+
+    def setUp(self):
+        super().setUp()
+        Booking.objects.filter(pk=self.booking.pk).update(status='confirmed', payment_status='paid')
+        self.tx = self._create_transaction(self.booking, 'k-refund', tx_status='completed')
+        self.url = f'{TRANSACTIONS_URL}{self.tx.id}/refund/'
+
+    def _refund_as_staff(self, data=None):
+        self.client.force_authenticate(user=self.staff)
+        return self.client.post(self.url, data or {}, format='json')
+
+    def test_guest_cannot_refund_own_payment(self):
+        response = self.client.post(self.url, {}, format='json')
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'completed'
+
+    def test_full_refund_when_amount_omitted(self):
+        response = self._refund_as_staff()
+
+        assert response.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'refunded'
+        assert self.booking.payment_status == 'refunded'
+
+    def test_full_refund_when_amount_equals_payment(self):
+        self._refund_as_staff({'amount': '300.00'})
+
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'refunded'
+
+    def test_partial_refund(self):
+        response = self._refund_as_staff({'amount': '100.00'})
+
+        assert response.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'partially_refunded'
+        assert self.booking.payment_status == 'partially_refunded'
+
+    def test_refund_does_not_cancel_booking(self):
+        self._refund_as_staff()
+
+        self.booking.refresh_from_db()
+        assert self.booking.status == 'confirmed'
+
+    def test_invalid_refund_amounts_are_rejected(self):
+        for amount in ('300.01', '0', '-5', 'abc', 'NaN'):
+            response = self._refund_as_staff({'amount': amount})
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, amount
+
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'completed'
+
+    def test_refund_of_payment_for_unpaid_booking_still_recorded(self):
+        """Money captured after the booking was cancelled can still be refunded."""
+        Booking.objects.filter(pk=self.booking.pk).update(status='cancelled', payment_status='pending')
+
+        response = self._refund_as_staff()
+
+        assert response.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'refunded'
+        assert self.booking.payment_status == 'pending'
