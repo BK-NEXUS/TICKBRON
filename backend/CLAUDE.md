@@ -29,6 +29,7 @@ pytest bookings/tests/test_views.py      # single file
 pytest bookings/tests/test_views.py::TestClass::test_name
 pytest -m "not slow"                     # markers: slow, integration, unit (--strict-markers is on)
 pytest --cov=. --cov-report=html
+ALLOW_SQLITE_TESTS=1 DB_ENGINE=django.db.backends.sqlite3 DB_NAME=:memory: pytest   # opt-in SQLite run
 
 black . && isort . && flake8
 
@@ -38,12 +39,13 @@ celery -A config beat -l info
 python scripts/smoke_test.py             # register→login→book→favorites chain against a local DB
 ```
 
+- Tests require PostgreSQL (the `DB_*` settings in `backend/.env`); `conftest.py` stops the run otherwise. pytest-django creates a separate `test_<DB_NAME>` database. SQLite is opt-in only (`ALLOW_SQLITE_TESTS=1`): it ignores varchar lengths and has no row locks, so `bookings/tests/test_concurrency.py` skips there.
 - API docs: `/api/docs/` (Swagger), `/api/redoc/`, `/api/schema/`.
 - `config/*security_check*.py` and `config/contract_check.py` are standalone per-checkpoint verification scripts (`python config/<name>.py`). They are not pytest tests.
 
 ## Architecture
 
-- **Settings** (`config/settings.py`) are one env-driven module with no split settings files. SQLite is the default. PostgreSQL is enabled with `DB_ENGINE=django.db.backends.postgresql`. Without `DEBUG=true`, `SECRET_KEY` and `ALLOWED_HOSTS` must be set or startup fails. A `TESTING` flag (set when pytest is loaded) turns off DRF throttling, so rate-limit tests have to enable throttling themselves. `PAYMENT_TEST_MODE` and `SMS_TEST_MODE` default to test behaviour.
+- **Settings** (`config/settings.py`) are one env-driven module with no split settings files. SQLite is the default. PostgreSQL is enabled with `DB_ENGINE=django.db.backends.postgresql`. Without `DEBUG=true`, `SECRET_KEY` and `ALLOWED_HOSTS` must be set or startup fails. A `TESTING` flag (set when pytest is loaded) turns off DRF throttling, so rate-limit tests have to enable throttling themselves. `PAYMENT_TEST_MODE` and `SMS_TEST_MODE` default to `False` (an autouse fixture in `conftest.py` turns both on for tests).
 - **Auth** uses DRF `SessionAuthentication` (session cookies plus CSRF, no tokens). `IsAuthenticated` is the default permission, so public endpoints must opt out explicitly. `users.User` is the custom user model. Login is by phone/SMS OTP (checkpoint 21). Roles come from `permissions.Role` / `Permission` / `RolePermission` through the `User.role` FK. Partner and admin endpoints use their own `has_permission` classes in `partner/views.py` and `admin_panel/views.py`.
 - **URL layout** (`config/urls.py`), all under `/api/v1/`: `auth/` → users, root → properties and bookings, `payments/`, `me/` → accounts (customer profile), `partner/`, `admin-panel/` (CRM: customers, internal notes, statistics).
 - **Base models**: most models inherit `common.models.BaseModel`, which combines timestamps, soft delete (`is_deleted`, via `soft_delete()`/`restore()`), and an active flag, with `BaseQuerySet` / `SoftDeleteManager`. Expect soft-deleted rows to be filtered out by default.

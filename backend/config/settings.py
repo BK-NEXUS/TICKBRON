@@ -297,10 +297,3 @@ VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 # SMS Configuration
 # Defaults to False: test mode returns the OTP code in the API response.
 SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'False').lower() == 'true'
-
-# Testing database configuration
-if 'test' in sys.argv or 'pytest' in sys.argv:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
