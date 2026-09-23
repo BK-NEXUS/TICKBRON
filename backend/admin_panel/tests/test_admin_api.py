@@ -676,7 +676,11 @@ class AdminBookingLookupTests(TestCase):
         # Verify property details
         property_data = response.data['property']
         self.assertEqual(property_data['id'], self.property.id)
-        self.assertEqual(property_data['name'], self.property.name)
+        # Property has no name field; the lookup builds a display name
+        self.assertEqual(
+            property_data['name'],
+            f"Property {self.property.id} - {self.property.city}, {self.property.country}"
+        )
     
     def test_staff_can_lookup_booking_by_reference_code(self):
         """Test that staff can lookup booking by reference code."""
@@ -948,7 +952,7 @@ class AdminCustomersDirectoryTests(TestCase):
         
         self.assertIsNotNone(regular_user_data)
         self.assertEqual(regular_user_data['total_booking_count'], 1)
-        self.assertEqual(regular_user_data['total_amount_paid'], Decimal('200.00'))
+        self.assertEqual(regular_user_data['total_amount_paid'], '200.00')  # DRF renders decimals as strings
         self.assertIsNotNone(regular_user_data['last_booking_date'])
     
     def test_search_by_name(self):
@@ -1408,13 +1412,17 @@ class AdminCustomerDetailTests(TestCase):
     
     def test_customer_detail_returns_internal_notes(self):
         """Test that customer detail returns internal notes."""
+        # Make the creation order unambiguous (both notes are created in setUp)
+        InternalNote.objects.filter(pk=self.note1.pk).update(created_at=timezone.now() - timedelta(hours=1))
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         notes = response.data['internal_notes']
         self.assertEqual(len(notes), 2)
-        self.assertIn('VIP customer', notes[0]['note'])
+        # Newest first: the WhatsApp note (note2) was added after the VIP note
+        self.assertIn('Prefers WhatsApp', notes[0]['note'])
+        self.assertIn('VIP customer', notes[1]['note'])
     
     def test_customer_detail_returns_last_activity(self):
         """Test that customer detail returns last activity timestamp."""
