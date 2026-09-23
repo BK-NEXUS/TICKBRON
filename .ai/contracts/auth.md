@@ -29,7 +29,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Establishes session using same mechanism as password login
   - OTP expires after 5 minutes
   - Maximum 3 verification attempts per OTP
-  - Account lockout protection applies
+  - Rate limited: 5 requests/minute per phone number (429 when exceeded)
+  - Account lockout protection applies: 5 failed attempts (across all issued codes) lock the account for 30 min; while locked, both OTP endpoints return 403 and the code is not checked
 
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session

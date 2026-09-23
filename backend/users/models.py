@@ -3,6 +3,8 @@ User models for TICKBRON.
 
 This module contains the custom User model and related user management models.
 """
+import hmac
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -173,10 +175,11 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         """
         Generate a 6-digit OTP code for phone verification.
         """
-        import random
+        import secrets
         from datetime import timedelta
         
-        self.otp_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        # CSPRNG: the code is a login credential
+        self.otp_code = f'{secrets.randbelow(10**6):06d}'
         self.otp_expires_at = timezone.now() + timedelta(minutes=5)
         self.otp_attempts = 0
         self.save()
@@ -200,7 +203,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.otp_attempts += 1
         self.save()
         
-        if self.otp_code == code:
+        if hmac.compare_digest(self.otp_code.encode(), str(code).encode()):
             self.otp_code = None
             self.otp_expires_at = None
             self.otp_attempts = 0

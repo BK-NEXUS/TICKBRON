@@ -43,18 +43,20 @@ class RegisterRateThrottle(AnonRateThrottle):
         return super().allow_request(request, view)
 
 
-class OTPRequestRateThrottle(AnonRateThrottle):
-    """Rate throttle for OTP request endpoint - 3 requests per minute per phone number."""
-    rate = '3/min'
-    scope = 'otp_request'
+class PhoneNumberRateThrottle(AnonRateThrottle):
+    """
+    Base throttle keyed by the phone number in the request body.
+
+    The number is trimmed the same way the serializers trim it, so padding it
+    with whitespace does not produce a fresh throttle bucket.
+    """
 
     def get_cache_key(self, request, view):
-        """
-        Use phone number as cache key for rate limiting per phone number.
-        """
-        phone_number = request.data.get('phone_number', '')
+        phone_number = ''
+        if hasattr(request.data, 'get'):
+            phone_number = str(request.data.get('phone_number') or '').strip()
         if phone_number:
-            return f'otp_request_{phone_number}'
+            return self.cache_format % {'scope': self.scope, 'ident': phone_number}
         return super().get_cache_key(request, view)
 
     def allow_request(self, request, view):
@@ -62,6 +64,18 @@ class OTPRequestRateThrottle(AnonRateThrottle):
         if TESTING:
             return True
         return super().allow_request(request, view)
+
+
+class OTPRequestRateThrottle(PhoneNumberRateThrottle):
+    """Rate throttle for OTP request endpoint - 3 requests per minute per phone number."""
+    rate = '3/min'
+    scope = 'otp_request'
+
+
+class OTPVerifyRateThrottle(PhoneNumberRateThrottle):
+    """Rate throttle for OTP verify endpoint - 5 attempts per minute per phone number."""
+    rate = '5/min'
+    scope = 'otp_verify'
 
 
 @api_view(['POST'])
@@ -240,14 +254,16 @@ def request_otp(request):
         
         if result['success']:
             return Response(result, status=status.HTTP_200_OK)
-        else:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        if result.get('locked'):
+            return Response({'detail': result['message']}, status=status.HTTP_403_FORBIDDEN)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([OTPVerifyRateThrottle])
 def verify_otp(request):
     """
     Verify OTP code and establish session.
@@ -255,6 +271,8 @@ def verify_otp(request):
     Verifies the OTP code for the provided phone number.
     On successful verification, establishes a session using the same
     mechanism as password login.
+    Rate-limited to 5 attempts per minute per phone number; locked accounts
+    get 403 without the code being checked.
     """
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():
@@ -267,13 +285,6 @@ def verify_otp(request):
         if result['success']:
             try:
                 user = User.objects.get(id=result['user_id'])
-                
-                # Check if account is locked
-                if user.is_account_locked():
-                    return Response(
-                        {'detail': 'Account is temporarily locked due to too many failed login attempts. Please try again later.'},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
                 
                 # Reset failed login attempts on successful login
                 user.reset_failed_login()
@@ -294,14 +305,9 @@ def verify_otp(request):
                     {'detail': 'User not found.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-        else:
-            # Increment failed login attempts for invalid OTP
-            try:
-                user = User.objects.get(phone_number=phone_number)
-                user.increment_failed_login()
-            except User.DoesNotExist:
-                pass
-            
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        # Lock checks and failed-attempt counting happen inside OTPService.verify_otp
+        if result.get('locked'):
+            return Response({'detail': result['message']}, status=status.HTTP_403_FORBIDDEN)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

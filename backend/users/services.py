@@ -5,10 +5,17 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
+from django.db import transaction
 from common.exceptions import ExternalServiceException
 from users.models import User
 
 logger = logging.getLogger(__name__)
+
+
+ACCOUNT_LOCKED_MESSAGE = (
+    'Account is temporarily locked due to too many failed login attempts. '
+    'Please try again later.'
+)
 
 
 class OTPService:
@@ -67,10 +74,14 @@ class OTPService:
                     'message': 'User not found with this phone number. Please register first.'
                 }
             
-            # Generate OTP
+            # A locked account gets no new code, so re-requesting cannot restart guessing
+            if user.is_account_locked():
+                return {'success': False, 'locked': True, 'message': ACCOUNT_LOCKED_MESSAGE}
+            
+            # Generate OTP (the code itself is never logged)
             otp_code = user.generate_otp()
             
-            logger.info(f"[SMS_TEST_MODE] OTP generated for {phone_number}: {otp_code}")
+            logger.info(f"[SMS_TEST_MODE] OTP generated for {phone_number}")
             
             return {
                 'success': True,
@@ -96,16 +107,26 @@ class OTPService:
             dict: Response with success status and user info if valid
         """
         try:
-            user = User.objects.get(phone_number=phone_number)
-            
-            if user.verify_otp(otp_code):
-                logger.info(f"OTP verified successfully for {phone_number}")
-                return {
-                    'success': True,
-                    'message': 'OTP verified successfully',
-                    'user_id': user.id
-                }
-            else:
+            # Row lock serializes concurrent guesses so attempt counters cannot be raced
+            with transaction.atomic():
+                user = User.objects.select_for_update().get(phone_number=phone_number)
+                
+                # Check the lock before looking at the code, so a locked account
+                # never reveals whether a guess was correct
+                if user.is_account_locked():
+                    return {'success': False, 'locked': True, 'message': ACCOUNT_LOCKED_MESSAGE}
+                
+                if user.verify_otp(otp_code):
+                    logger.info(f"OTP verified successfully for {phone_number}")
+                    return {
+                        'success': True,
+                        'message': 'OTP verified successfully',
+                        'user_id': user.id
+                    }
+                
+                # Failures count toward the account lockout across all issued
+                # codes, so requesting a new code does not reset the budget
+                user.increment_failed_login()
                 logger.warning(f"OTP verification failed for {phone_number}")
                 return {
                     'success': False,
