@@ -17,6 +17,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminCustomerProfile = lazy(() => import('./components/AdminCustomerProfile'))
+const SupportLookupPage = lazy(() => import('./pages/SupportLookupPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 // Loading component for Suspense fallback
@@ -53,6 +54,7 @@ function App() {
                 <Route path="partner" element={<PartnerDashboardPage />} />
                 <Route path="admin" element={<AdminDashboardPage />} />
                 <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
+                <Route path="admin/support" element={<SupportLookupPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
               <Route path="/login" element={<LoginPage />} />

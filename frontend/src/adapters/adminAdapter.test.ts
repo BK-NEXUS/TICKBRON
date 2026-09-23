@@ -1061,6 +1061,276 @@ describe('AdminAdapter', () => {
     })
   })
 
+  describe('Statistics Methods (Checkpoint 26)', () => {
+    it('should get registration statistics successfully', async () => {
+      const mockStatistics = {
+        type: 'rolling_12_months',
+        data: [
+          { period: '2024-01', count: 15 },
+          { period: '2024-02', count: 23 },
+          { period: '2024-03', count: 18 },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockStatistics,
+      })
+
+      const result = await adapter.getRegistrationStatistics()
+
+      expect(result.data).toEqual(mockStatistics)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/registrations/',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get registration statistics with type parameter', async () => {
+      const mockStatistics = {
+        type: 'calendar_year',
+        data: [
+          { period: '2023', count: 150 },
+          { period: '2024', count: 200 },
+        ],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockStatistics,
+      })
+
+      const result = await adapter.getRegistrationStatistics({ type: 'calendar_year' })
+
+      expect(result.data).toEqual(mockStatistics)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/registrations/?type=calendar_year',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get top bookers leaderboard successfully', async () => {
+      const mockTopBookers = [
+        {
+          rank: 1,
+          customer_id: 1,
+          customer_name: 'John Doe',
+          completed_booking_count: 15,
+        },
+        {
+          rank: 2,
+          customer_id: 2,
+          customer_name: 'Jane Smith',
+          completed_booking_count: 12,
+        },
+      ]
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTopBookers,
+      })
+
+      const result = await adapter.getTopBookers()
+
+      expect(result.data).toEqual(mockTopBookers)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/top-bookers/',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get top bookers leaderboard with period parameter', async () => {
+      const mockTopBookers = [
+        {
+          rank: 1,
+          customer_id: 1,
+          customer_name: 'John Doe',
+          completed_booking_count: 5,
+        },
+      ]
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTopBookers,
+      })
+
+      const result = await adapter.getTopBookers({ period: 'this_month' })
+
+      expect(result.data).toEqual(mockTopBookers)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/top-bookers/?period=this_month',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get top bookers leaderboard with limit parameter', async () => {
+      const mockTopBookers = [
+        {
+          rank: 1,
+          customer_id: 1,
+          customer_name: 'John Doe',
+          completed_booking_count: 15,
+        },
+      ]
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTopBookers,
+      })
+
+      const result = await adapter.getTopBookers({ limit: 5 })
+
+      expect(result.data).toEqual(mockTopBookers)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/top-bookers/?limit=5',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get top bookers leaderboard with all parameters', async () => {
+      const mockTopBookers = [
+        {
+          rank: 1,
+          customer_id: 1,
+          customer_name: 'John Doe',
+          completed_booking_count: 3,
+        },
+      ]
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTopBookers,
+      })
+
+      const result = await adapter.getTopBookers({ period: 'this_year', limit: 20 })
+
+      expect(result.data).toEqual(mockTopBookers)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/statistics/top-bookers/?period=this_year&limit=20',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should handle 403 error for non-staff users when getting statistics', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'Admin or staff role required' }),
+      })
+
+      const result = await adapter.getRegistrationStatistics()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Admin or staff role required')
+    })
+  })
+
+  describe('Support Lookup Methods (Checkpoint 23)', () => {
+    it('should look up booking by reference code successfully', async () => {
+      const mockBooking = {
+        id: 1,
+        reference_code: 'ABC123',
+        status: 'confirmed',
+        payment_status: 'paid',
+        check_in: '2024-10-01T00:00:00Z',
+        check_out: '2024-10-03T00:00:00Z',
+        number_of_nights: 2,
+        total_price: 200,
+        currency: 'USD',
+        property: {
+          id: 1,
+          name: 'Tashkent Hotel',
+          city: 'Tashkent',
+          country: 'Uzbekistan',
+          address_line1: '123 Main St',
+        },
+        room: {
+          id: 1,
+          name: 'Deluxe Room',
+          room_type: 'deluxe',
+        },
+        customer: {
+          id: 1,
+          full_name: 'John Doe',
+          email: 'john@example.com',
+          phone_number: '+998901234567',
+          whatsapp: '+998901234567',
+          telegram: '@johndoe',
+          preferred_contact_method: 'email',
+        },
+        created_at: '2024-09-01T00:00:00Z',
+        updated_at: '2024-09-01T00:00:00Z',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockBooking,
+      })
+
+      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'ABC123' })
+
+      expect(result.data).toEqual(mockBooking)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/bookings/lookup/?reference_code=ABC123',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should handle 404 error when booking not found', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ detail: 'Booking not found' }),
+      })
+
+      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'INVALID' })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Resource not found')
+    })
+
+    it('should handle 403 error for non-staff users when looking up booking', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'Admin or staff role required' }),
+      })
+
+      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'ABC123' })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Admin or staff role required')
+    })
+  })
+
   describe('Singleton Instance', () => {
     it('should export singleton instance', () => {
       expect(adminAdapter).toBeInstanceOf(AdminAdapter)
@@ -1068,4 +1338,4 @@ describe('AdminAdapter', () => {
   })
 })
 
-// Total tests: 37 (previous: 30, added 7 customer profile tests)
+// Total tests: 48 (previous: 37, added 11 statistics + support lookup tests)

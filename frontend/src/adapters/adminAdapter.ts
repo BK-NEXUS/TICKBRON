@@ -265,6 +265,71 @@ export interface UpdateNoteRequest {
   note: string
 }
 
+// Admin Statistics types from backend contract (Checkpoint 26)
+export interface RegistrationStatistics {
+  type: 'rolling_12_months' | 'calendar_year'
+  data: Array<{
+    period: string
+    count: number
+  }>
+}
+
+export interface GetRegistrationStatisticsParams {
+  type?: 'rolling_12_months' | 'calendar_year'
+}
+
+export interface TopBooker {
+  rank: number
+  customer_id: number
+  customer_name: string
+  completed_booking_count: number
+}
+
+export interface GetTopBookersParams {
+  period?: 'this_month' | 'this_year' | 'all_time'
+  limit?: number
+}
+
+// Admin Support Lookup types from backend contract (Checkpoint 23)
+export interface SupportLookupBooking {
+  id: number
+  reference_code: string
+  status: string
+  payment_status: string
+  check_in: string
+  check_out: string
+  number_of_nights: number
+  total_price: number
+  currency: string
+  property: {
+    id: number
+    name: string
+    city: string
+    country: string
+    address_line1: string
+  }
+  room: {
+    id: number
+    name: string
+    room_type: string
+  }
+  customer: {
+    id: number
+    full_name: string
+    email: string
+    phone_number: string
+    whatsapp?: string
+    telegram?: string
+    preferred_contact_method: string
+  }
+  created_at: string
+  updated_at: string
+}
+
+export interface GetSupportLookupParams {
+  reference_code: string
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T | null
@@ -549,6 +614,47 @@ class AdminAdapter {
     return this.request<null>(`/api/v1/admin-panel/customers/${customerId}/notes/${noteId}/`, {
       method: 'DELETE',
     })
+  }
+
+  // Admin Statistics Methods (Checkpoint 26)
+
+  /**
+   * Get registration statistics
+   * Integrates with GET /api/v1/admin-panel/statistics/registrations/ endpoint
+   */
+  async getRegistrationStatistics(params?: GetRegistrationStatisticsParams): Promise<ApiResponse<RegistrationStatistics>> {
+    const queryParams = new URLSearchParams()
+    if (params?.type) queryParams.append('type', params.type)
+
+    const endpoint = `/api/v1/admin-panel/statistics/registrations/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return this.request<RegistrationStatistics>(endpoint)
+  }
+
+  /**
+   * Get top bookers leaderboard
+   * Integrates with GET /api/v1/admin-panel/statistics/top-bookers/ endpoint
+   */
+  async getTopBookers(params?: GetTopBookersParams): Promise<ApiResponse<TopBooker[]>> {
+    const queryParams = new URLSearchParams()
+    if (params?.period) queryParams.append('period', params.period)
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+
+    const endpoint = `/api/v1/admin-panel/statistics/top-bookers/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return this.request<TopBooker[]>(endpoint)
+  }
+
+  // Admin Support Lookup Methods (Checkpoint 23)
+
+  /**
+   * Look up booking by reference code for support
+   * Integrates with GET /api/v1/admin-panel/bookings/lookup/ endpoint
+   */
+  async lookupBookingByReferenceCode(params: GetSupportLookupParams): Promise<ApiResponse<SupportLookupBooking>> {
+    const queryParams = new URLSearchParams()
+    queryParams.append('reference_code', params.reference_code)
+
+    const endpoint = `/api/v1/admin-panel/bookings/lookup/?${queryParams.toString()}`
+    return this.request<SupportLookupBooking>(endpoint)
   }
 }
 

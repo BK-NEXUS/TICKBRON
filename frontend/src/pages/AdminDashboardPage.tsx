@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
 import { AdminAmenityManagement } from '../components/AdminAmenityManagement'
 import { AdminUserManagement } from '../components/AdminUserManagement'
 import { AdminCustomersList } from '../components/AdminCustomersList'
+import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'create-owner'
 
 export function AdminDashboardPage() {
+  const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const [currentView, setCurrentView] = useState<AdminView>('properties')
   const [showCreateOwner, setShowCreateOwner] = useState(false)
@@ -101,6 +104,21 @@ export function AdminDashboardPage() {
         <span className="nav-icon">👤</span>
         <span className="nav-label">Customers</span>
       </button>
+      <button
+        onClick={() => setCurrentView('statistics')}
+        className={`nav-item ${currentView === 'statistics' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'statistics' ? 'page' : undefined}
+      >
+        <span className="nav-icon">📊</span>
+        <span className="nav-label">Statistics</span>
+      </button>
+      <button
+        onClick={() => navigate('/admin/support')}
+        className="nav-item"
+      >
+        <span className="nav-icon">🔍</span>
+        <span className="nav-label">Support Lookup</span>
+      </button>
       {user.is_superuser && (
         <button
           onClick={() => setShowCreateOwner(true)}
@@ -132,6 +150,9 @@ export function AdminDashboardPage() {
           break
         case 'customers':
           breadcrumbs.push({ label: 'Customers Directory', onClick: () => {}, active: true })
+          break
+        case 'statistics':
+          breadcrumbs.push({ label: 'Statistics Dashboard', onClick: () => {}, active: true })
           break
       }
     }
@@ -175,6 +196,8 @@ export function AdminDashboardPage() {
         return <AdminUserManagement />
       case 'customers':
         return <AdminCustomersList />
+      case 'statistics':
+        return <AdminStatisticsDashboard />
       default:
         return <AdminPropertyModeration />
     }
