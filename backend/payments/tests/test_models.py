@@ -92,7 +92,7 @@ class PaymentTransactionModelTests(TestCase):
             guest_count=2,
             total_price=Decimal('300.00'),
             currency='USD',
-            confirmation_code='TEST12345'
+            confirmation_code='TST345'
         )
         
         BookingItem.objects.create(
@@ -250,7 +250,7 @@ class WebhookEventModelTests(TestCase):
             guest_count=2,
             total_price=Decimal('300.00'),
             currency='USD',
-            confirmation_code='TEST12345'
+            confirmation_code='TST345'
         )
         
         self.payment_transaction = PaymentTransaction.objects.create(
@@ -382,7 +382,7 @@ class PaymentAuditLogModelTests(TestCase):
             guest_count=2,
             total_price=Decimal('300.00'),
             currency='USD',
-            confirmation_code='TEST12345'
+            confirmation_code='TST345'
         )
         
         self.payment_transaction = PaymentTransaction.objects.create(

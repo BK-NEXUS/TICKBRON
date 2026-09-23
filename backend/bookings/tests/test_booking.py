@@ -347,8 +347,8 @@ class BookingModelTests(TestCase):
         )
         
         self.assertNotEqual(booking1.confirmation_code, booking2.confirmation_code)
-        self.assertEqual(len(booking1.confirmation_code), 8)
-        self.assertEqual(len(booking2.confirmation_code), 8)
+        self.assertEqual(len(booking1.confirmation_code), 6)  # reference code length since checkpoint 23
+        self.assertEqual(len(booking2.confirmation_code), 6)
 
 
 class BookingSerializerTests(TestCase):

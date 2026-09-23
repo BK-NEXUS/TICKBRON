@@ -77,10 +77,10 @@ class BookingModelBasicTests(TestCase):
             guest_count=2,
             total_price=Decimal('200.00'),
             currency='USD',
-            confirmation_code='TEST1234'
+            confirmation_code='TST234'
         )
         
-        expected_str = f"Booking TEST1234 - {self.property}"
+        expected_str = f"Booking TST234 - {self.property}"
         self.assertEqual(str(booking), expected_str)
     
     def test_booking_item_string_representation(self):
@@ -95,7 +95,7 @@ class BookingModelBasicTests(TestCase):
             guest_count=2,
             total_price=Decimal('200.00'),
             currency='USD',
-            confirmation_code='TEST1234'
+            confirmation_code='TST234'
         )
         
         booking_item = BookingItem.objects.create(
@@ -107,7 +107,7 @@ class BookingModelBasicTests(TestCase):
             currency='USD'
         )
         
-        expected_str = f"TEST1234 - {self.room_type.name}"
+        expected_str = f"TST234 - {self.room_type.name}"
         self.assertEqual(str(booking_item), expected_str)
     
     def test_booking_validation_invalid_date_range(self):
@@ -122,7 +122,7 @@ class BookingModelBasicTests(TestCase):
             guest_count=2,
             total_price=Decimal('200.00'),
             currency='USD',
-            confirmation_code='TEST1234'
+            confirmation_code='TST234'
         )
         
         with self.assertRaises(ValidationError) as context:

@@ -132,7 +132,7 @@ class BasePaymentAdapterTests(TestCase):
             guest_count=2,
             total_price=Decimal('300.00'),
             currency='USD',
-            confirmation_code='TEST12345'
+            confirmation_code='TST345'
         )
         
         response = self.adapter.initiate_payment(
