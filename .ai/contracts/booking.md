@@ -203,3 +203,8 @@ Status: READY
 - Every night must have at least `number_of_rooms` remaining rooms (otherwise 400)
 - Inventory reserves `number_of_rooms` per night; cancellation and expiry release the same number
 - `number_of_rooms` must be at least 1
+
+### Input validation (#19)
+- `check_in` before today (server local date) is rejected with 400; today is allowed. Also applies to GET `/api/v1/properties/{id}/availability/`
+- `guest_count` must not exceed `room_type.max_occupancy x number_of_rooms`
+- `booking_items[].price_per_night` is the average nightly price of one room over the stay (inventory prices can differ per night), not the rate plan base price

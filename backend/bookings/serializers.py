@@ -78,6 +78,11 @@ class BookingCreateSerializer(serializers.Serializer):
                 'check_out': 'Check-out date must be after check-in date'
             })
         
+        if data['check_in'] < timezone.localdate():
+            raise ValidationError({
+                'check_in': 'Check-in date cannot be in the past'
+            })
+        
         # Validate property exists and is active
         try:
             property_obj = Property.objects.get(
@@ -115,10 +120,11 @@ class BookingCreateSerializer(serializers.Serializer):
                 'rate_plan_id': 'Rate plan not found or does not belong to this room type'
             })
         
-        # Validate guest count against room type capacity
-        if data['guest_count'] > room_type.max_occupancy:
+        # Validate guest count against the capacity of all booked rooms
+        capacity = room_type.max_occupancy * data.get('number_of_rooms', 1)
+        if data['guest_count'] > capacity:
             raise ValidationError({
-                'guest_count': f'Guest count exceeds maximum occupancy of {room_type.max_occupancy}'
+                'guest_count': f'Guest count exceeds maximum occupancy of {capacity} for the booked rooms'
             })
         
         # Validate rate plan constraints

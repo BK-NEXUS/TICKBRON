@@ -1,6 +1,7 @@
 """
 Serializers for TICKBRON property models and search results.
 """
+from django.utils import timezone
 from rest_framework import serializers
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyPolicy,
@@ -592,5 +593,8 @@ class AvailabilityParamsSerializer(serializers.Serializer):
         
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError("check_out must be after check_in")
+        
+        if check_in and check_in < timezone.localdate():
+            raise serializers.ValidationError("check_in cannot be in the past")
         
         return data

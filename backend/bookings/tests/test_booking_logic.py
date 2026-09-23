@@ -157,3 +157,64 @@ class TestMultiRoomBooking(BookingLogicTestBase):
         with pytest.raises(ValidationError):
             self.create_booking(nights=1, number_of_rooms=0)
         assert self.inventory(0).booked_rooms == 0
+
+
+class TestBookingInputValidation(BookingLogicTestBase):
+    """#19: past dates, room capacity and the stored nightly price."""
+
+    def test_past_check_in_is_rejected(self):
+        yesterday = timezone.localdate() - timedelta(days=1)
+        DateInventory.objects.create(
+            rate_plan=self.rate_plan, date=yesterday, available_rooms=5, booked_rooms=0,
+            price=Decimal('100.00'), currency='USD', is_available=True
+        )
+
+        response = self.post_booking(check_in=yesterday)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        with pytest.raises(ValidationError):
+            self.create_booking(day_offset=-(self.start - yesterday).days)
+        assert not Booking.objects.exists()
+
+    def test_check_in_today_is_allowed(self):
+        today = timezone.localdate()
+        DateInventory.objects.create(
+            rate_plan=self.rate_plan, date=today, available_rooms=5, booked_rooms=0,
+            price=Decimal('100.00'), currency='USD', is_available=True
+        )
+
+        response = self.post_booking(check_in=today)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_guest_count_is_checked_against_all_booked_rooms(self):
+        # max_occupancy is 4 per room
+        assert self.post_booking(number_of_rooms=2, guest_count=8).status_code == status.HTTP_201_CREATED
+        assert self.post_booking(number_of_rooms=2, guest_count=9).status_code == status.HTTP_400_BAD_REQUEST
+        with pytest.raises(ValidationError):
+            self.create_booking(number_of_rooms=1, guest_count=5)
+
+    def test_price_per_night_is_average_inventory_price(self):
+        DateInventory.objects.filter(rate_plan=self.rate_plan, date=self.start).update(price=Decimal('100.00'))
+        DateInventory.objects.filter(
+            rate_plan=self.rate_plan, date=self.start + timedelta(days=1)
+        ).update(price=Decimal('150.00'))
+        DateInventory.objects.filter(
+            rate_plan=self.rate_plan, date=self.start + timedelta(days=2)
+        ).update(price=Decimal('155.00'))
+
+        booking = self.create_booking(nights=3, number_of_rooms=2)
+
+        item = booking.booking_items.get()
+        assert item.price_per_night == Decimal('135.00')  # (100 + 150 + 155) / 3
+        assert booking.total_price == Decimal('810.00')  # 405 x 2 rooms
+
+    def test_availability_rejects_past_dates(self):
+        yesterday = timezone.localdate() - timedelta(days=1)
+
+        response = self.client.get(
+            f'/api/v1/properties/{self.property.id}/availability/',
+            {'check_in': str(yesterday), 'check_out': str(self.start)}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -271,6 +271,12 @@ class Booking(BaseModel):
         if number_of_rooms < 1:
             raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
         
+        if check_in < timezone.localdate():
+            raise ValidationError({'check_in': _('Check-in date cannot be in the past')})
+        
+        if guest_count > room_type.max_occupancy * number_of_rooms:
+            raise ValidationError({'guest_count': _('Guest count exceeds the capacity of the booked rooms')})
+        
         # Validate rate plan constraints
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
             raise ValidationError({
@@ -352,7 +358,8 @@ class Booking(BaseModel):
                 room_type=room_type,
                 rate_plan=rate_plan,
                 number_of_rooms=number_of_rooms,
-                price_per_night=rate_plan.base_price,
+                # Average nightly price of one room (nightly prices may differ)
+                price_per_night=(nightly_total / number_of_nights).quantize(Decimal('0.01')),
                 currency=rate_plan.currency
             )
             
