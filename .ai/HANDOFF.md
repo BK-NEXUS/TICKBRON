@@ -635,6 +635,41 @@ Status: READY
   - Author tracking for audit trail (who wrote each note)
   - Soft delete for internal notes (preserves audit trail)
 
+### Frontend Implementation (Checkpoint 25)
+Status: READY
+
+- AdminCustomerProfile component with full customer profile UI
+  - Customer header with contact info and quick-contact buttons (tel:, mailto:, WhatsApp, Telegram)
+  - Tabs for bookings (with filter: all/upcoming/completed/cancelled), payments, and internal notes
+  - Internal notes panel with add/edit/delete functionality
+  - Back button navigation to admin dashboard
+  - Loading, empty, and error states with proper user feedback
+  - Responsive design for mobile with horizontal table scrolling
+- adminAdapter methods:
+  - getCustomerProfile(customerId, params) for GET /api/v1/admin-panel/customers/{id}/
+  - createInternalNote(customerId, noteData) for POST /api/v1/admin-panel/customers/{id}/notes/
+  - updateInternalNote(customerId, noteId, noteData) for PUT /api/v1/admin-panel/customers/{id}/notes/{note_id}/
+  - deleteInternalNote(customerId, noteId) for DELETE /api/v1/admin-panel/customers/{id}/notes/{note_id}/
+- TypeScript interfaces: AdminCustomerProfile, InternalNote, CreateNoteRequest, UpdateNoteRequest, GetCustomerProfileParams
+- Session-based authentication via credentials: 'include'
+- Routing: /admin/customers/:customerId in App.tsx
+- Link from AdminCustomersList to customer profile (customer ID and name as clickable links)
+- Comprehensive test coverage: 28 new tests (adminAdapter: 7, AdminCustomerProfile: 21)
+- Security review completed: 12/12 security checks passed
+  - Quick-contact links implemented securely with proper sanitization (tel:, mailto:, https://wa.me/, https://t.me/)
+  - External links include rel="noopener noreferrer" for security
+  - Contact phone numbers sanitized for tel: and WhatsApp links (non-digit removal)
+  - Telegram usernames sanitized (removes @ prefix if present)
+  - No JavaScript injection in contact links (URI schemes only)
+  - Internal notes staff-only access enforced by backend
+  - Author tracking for audit trail
+  - Delete confirmation dialogs for user safety
+  - XSS prevention through React automatic escaping
+  - No hardcoded secrets or sensitive data
+  - Proper ARIA attributes for accessibility
+- No invented API endpoints or fields - strict adherence to backend contract
+- READY/BLOCKED status: READY
+
 ### GET `/api/v1/admin-panel/bookings/lookup/` - Lookup booking by reference code
 - Request: Query parameter `reference_code` (6-character booking reference code)
 - Response: Full booking details including:

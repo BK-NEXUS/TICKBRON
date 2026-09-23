@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { adminAdapter, AdminCustomer, GetCustomersParams } from '../adapters/adminAdapter'
 
 const SORT_FIELDS = [
@@ -243,9 +244,17 @@ export function AdminCustomersList() {
               <tbody>
                 {customers.map(customer => (
                   <tr key={customer.id}>
-                    <td className="customer-id">{customer.id}</td>
+                    <td className="customer-id">
+                      <Link to={`/admin/customers/${customer.id}`} className="customer-link">
+                        {customer.id}
+                      </Link>
+                    </td>
                     <td className="customer-registration-date">{formatDate(customer.registration_date)}</td>
-                    <td className="customer-name">{customer.full_name}</td>
+                    <td className="customer-name">
+                      <Link to={`/admin/customers/${customer.id}`} className="customer-link">
+                        {customer.full_name}
+                      </Link>
+                    </td>
                     <td className="customer-phone">{customer.phone}</td>
                     <td className="customer-email">{customer.email}</td>
                     <td className="customer-whatsapp">{customer.whatsapp || 'N/A'}</td>

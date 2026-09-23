@@ -1,7 +1,7 @@
 # FRONTEND PROGRESS
 
-23 checkpoint slots reserved.
+25 checkpoint slots reserved.
 
-Current: 23
-Completed: 23/23
+Current: 25
+Completed: 25/25
 

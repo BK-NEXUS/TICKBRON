@@ -188,6 +188,83 @@ export interface GetCustomersParams {
   sort_order?: 'asc' | 'desc'
 }
 
+// Admin Customer Profile types from backend contract (Checkpoint 25)
+export interface AdminCustomerProfile {
+  customer: {
+    id: number
+    email: string
+    first_name: string
+    last_name: string
+    full_name: string
+    phone_number: string
+    whatsapp?: string
+    telegram?: string
+    preferred_contact_method: string
+    date_joined: string
+    last_login?: string
+    is_active: boolean
+    email_verified: boolean
+    phone_verified: boolean
+  }
+  bookings: Array<{
+    id: number
+    reference_code: string
+    status: string
+    payment_status: string
+    check_in: string
+    check_out: string
+    number_of_nights: number
+    total_price: number
+    currency: string
+    property_name: string
+    property_city: string
+    created_at: string
+  }>
+  payments: Array<{
+    id: number
+    booking_id: number
+    provider: string
+    amount: number
+    currency: string
+    status: string
+    created_at: string
+  }>
+  internal_notes: Array<{
+    id: number
+    customer: number
+    author: number
+    author_name: string
+    author_email: string
+    note: string
+    created_at: string
+    updated_at: string
+  }>
+  last_activity?: string
+}
+
+export interface GetCustomerProfileParams {
+  booking_filter?: 'all' | 'upcoming' | 'completed' | 'cancelled'
+}
+
+export interface InternalNote {
+  id: number
+  customer: number
+  author: number
+  author_name: string
+  author_email: string
+  note: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateNoteRequest {
+  note: string
+}
+
+export interface UpdateNoteRequest {
+  note: string
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T | null
@@ -426,6 +503,52 @@ class AdminAdapter {
 
     const endpoint = `/api/v1/admin-panel/customers/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
     return this.request<AdminCustomersResponse>(endpoint)
+  }
+
+  // Admin Customer Profile Methods (Checkpoint 25)
+
+  /**
+   * Get customer profile with bookings, payments, and internal notes
+   * Integrates with GET /api/v1/admin-panel/customers/{id}/ endpoint
+   */
+  async getCustomerProfile(customerId: number, params?: GetCustomerProfileParams): Promise<ApiResponse<AdminCustomerProfile>> {
+    const queryParams = new URLSearchParams()
+    if (params?.booking_filter) queryParams.append('booking_filter', params.booking_filter)
+
+    const endpoint = `/api/v1/admin-panel/customers/${customerId}/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return this.request<AdminCustomerProfile>(endpoint)
+  }
+
+  /**
+   * Create internal note for customer
+   * Integrates with POST /api/v1/admin-panel/customers/{id}/notes/ endpoint
+   */
+  async createInternalNote(customerId: number, noteData: CreateNoteRequest): Promise<ApiResponse<InternalNote>> {
+    return this.request<InternalNote>(`/api/v1/admin-panel/customers/${customerId}/notes/`, {
+      method: 'POST',
+      body: JSON.stringify(noteData),
+    })
+  }
+
+  /**
+   * Update internal note
+   * Integrates with PUT /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint
+   */
+  async updateInternalNote(customerId: number, noteId: number, noteData: UpdateNoteRequest): Promise<ApiResponse<InternalNote>> {
+    return this.request<InternalNote>(`/api/v1/admin-panel/customers/${customerId}/notes/${noteId}/`, {
+      method: 'PUT',
+      body: JSON.stringify(noteData),
+    })
+  }
+
+  /**
+   * Delete internal note (soft delete)
+   * Integrates with DELETE /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint
+   */
+  async deleteInternalNote(customerId: number, noteId: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/admin-panel/customers/${customerId}/notes/${noteId}/`, {
+      method: 'DELETE',
+    })
   }
 }
 

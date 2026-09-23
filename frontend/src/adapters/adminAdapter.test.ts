@@ -834,6 +834,233 @@ describe('AdminAdapter', () => {
     })
   })
 
+  describe('Admin Customer Profile Methods (Checkpoint 25)', () => {
+    it('should get customer profile successfully', async () => {
+      const mockCustomerProfile = {
+        customer: {
+          id: 1,
+          email: 'john@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+          full_name: 'John Doe',
+          phone_number: '+998901234567',
+          whatsapp: '+998901234567',
+          telegram: '@johndoe',
+          preferred_contact_method: 'email',
+          date_joined: '2024-01-01T00:00:00Z',
+          last_login: '2024-09-15T10:30:00Z',
+          is_active: true,
+          email_verified: true,
+          phone_verified: true,
+        },
+        bookings: [
+          {
+            id: 1,
+            reference_code: 'ABC123',
+            status: 'confirmed',
+            payment_status: 'paid',
+            check_in: '2024-10-01T00:00:00Z',
+            check_out: '2024-10-03T00:00:00Z',
+            number_of_nights: 2,
+            total_price: 200,
+            currency: 'USD',
+            property_name: 'Tashkent Hotel',
+            property_city: 'Tashkent',
+            created_at: '2024-09-01T00:00:00Z',
+          },
+        ],
+        payments: [
+          {
+            id: 1,
+            booking_id: 1,
+            provider: 'payme',
+            amount: 200,
+            currency: 'USD',
+            status: 'paid',
+            created_at: '2024-09-01T00:00:00Z',
+          },
+        ],
+        internal_notes: [
+          {
+            id: 1,
+            customer: 1,
+            author: 10,
+            author_name: 'Admin User',
+            author_email: 'admin@example.com',
+            note: 'VIP customer',
+            created_at: '2024-09-10T10:00:00Z',
+            updated_at: '2024-09-10T10:00:00Z',
+          },
+        ],
+        last_activity: '2024-09-15T10:30:00Z',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomerProfile,
+      })
+
+      const result = await adapter.getCustomerProfile(1)
+
+      expect(result.data).toEqual(mockCustomerProfile)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/1/',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should get customer profile with booking filter', async () => {
+      const mockCustomerProfile = {
+        customer: {
+          id: 1,
+          email: 'john@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+          full_name: 'John Doe',
+          phone_number: '+998901234567',
+          whatsapp: '+998901234567',
+          telegram: '@johndoe',
+          preferred_contact_method: 'email',
+          date_joined: '2024-01-01T00:00:00Z',
+          last_login: '2024-09-15T10:30:00Z',
+          is_active: true,
+          email_verified: true,
+          phone_verified: true,
+        },
+        bookings: [],
+        payments: [],
+        internal_notes: [],
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockCustomerProfile,
+      })
+
+      const result = await adapter.getCustomerProfile(1, { booking_filter: 'upcoming' })
+
+      expect(result.data).toEqual(mockCustomerProfile)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/1/?booking_filter=upcoming',
+        expect.objectContaining({
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should create internal note successfully', async () => {
+      const mockNote = {
+        id: 1,
+        customer: 1,
+        author: 10,
+        author_name: 'Admin User',
+        author_email: 'admin@example.com',
+        note: 'VIP customer',
+        created_at: '2024-09-10T10:00:00Z',
+        updated_at: '2024-09-10T10:00:00Z',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockNote,
+      })
+
+      const noteData = { note: 'VIP customer' }
+      const result = await adapter.createInternalNote(1, noteData)
+
+      expect(result.data).toEqual(mockNote)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/1/notes/',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(noteData),
+        })
+      )
+    })
+
+    it('should update internal note successfully', async () => {
+      const mockNote = {
+        id: 1,
+        customer: 1,
+        author: 10,
+        author_name: 'Admin User',
+        author_email: 'admin@example.com',
+        note: 'Updated note',
+        created_at: '2024-09-10T10:00:00Z',
+        updated_at: '2024-09-16T10:00:00Z',
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockNote,
+      })
+
+      const noteData = { note: 'Updated note' }
+      const result = await adapter.updateInternalNote(1, 1, noteData)
+
+      expect(result.data).toEqual(mockNote)
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/1/notes/1/',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify(noteData),
+        })
+      )
+    })
+
+    it('should delete internal note successfully', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+      })
+
+      const result = await adapter.deleteInternalNote(1, 1)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/customers/1/notes/1/',
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      )
+    })
+
+    it('should handle 403 error for non-staff users when getting customer profile', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: 'Admin or staff role required' }),
+      })
+
+      const result = await adapter.getCustomerProfile(1)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Admin or staff role required')
+    })
+
+    it('should handle 404 error when customer not found', async () => {
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ detail: 'Not found' }),
+      })
+
+      const result = await adapter.getCustomerProfile(999)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Resource not found')
+    })
+  })
+
   describe('Singleton Instance', () => {
     it('should export singleton instance', () => {
       expect(adminAdapter).toBeInstanceOf(AdminAdapter)
@@ -841,4 +1068,4 @@ describe('AdminAdapter', () => {
   })
 })
 
-// Total tests: 30 (previous: 23, added 7 customers directory tests)
+// Total tests: 37 (previous: 30, added 7 customer profile tests)
