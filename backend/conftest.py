@@ -15,22 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 
-@pytest.fixture(scope='session')
-def django_db_setup():
-    """
-    Set up the test database for the entire test session.
-    This ensures database is created once and reused across tests.
-    """
-    pass
-
-
-@pytest.fixture(scope='function')
-def test_db():
-    """
-    Provide a clean database for each test function.
-    Tests are isolated and database is cleaned up after each test.
-    """
-    pass
+# Test database: pytest-django's built-in django_db_setup creates a separate
+# test database and runs migrations. Do not override it with a no-op, or tests
+# run against the configured development database instead.
 
 
 @pytest.fixture
