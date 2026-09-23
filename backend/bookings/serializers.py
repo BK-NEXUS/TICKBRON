@@ -39,10 +39,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at',
             'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children'
         ]
-        read_only_fields = [
-            'id', 'confirmation_code', 'cancelled_at', 'cancellation_reason',
-            'expires_at', 'booking_items', 'created_at', 'updated_at'
-        ]
+        # Output-only serializer: bookings are created via BookingCreateSerializer
+        # and changed only through model methods, never written from request data.
+        read_only_fields = fields
 
 
 class BookingCreateSerializer(serializers.Serializer):

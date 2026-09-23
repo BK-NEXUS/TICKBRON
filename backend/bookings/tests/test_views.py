@@ -320,3 +320,56 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['status'], 'cancelled')
+
+    def _create_booking_via_api(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/v1/bookings/', {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return Booking.objects.get(id=response.data['id'])
+
+    def test_guest_cannot_patch_or_put_booking(self):
+        """Guests cannot rewrite status, payment status or price via PUT/PATCH."""
+        booking = self._create_booking_via_api()
+        tampered = {'status': 'confirmed', 'payment_status': 'paid', 'total_price': '0.01'}
+
+        patch_response = self.client.patch(f'/api/v1/bookings/{booking.id}/', tampered, format='json')
+        put_response = self.client.put(f'/api/v1/bookings/{booking.id}/', tampered, format='json')
+
+        self.assertEqual(patch_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(put_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'pending')
+        self.assertEqual(booking.payment_status, 'pending')
+        self.assertEqual(booking.total_price, Decimal('200.00'))
+
+    def test_guest_cannot_delete_booking(self):
+        """DELETE is not allowed; the booking and its inventory hold stay intact."""
+        booking = self._create_booking_via_api()
+
+        response = self.client.delete(f'/api/v1/bookings/{booking.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(Booking.objects.filter(id=booking.id).exists())
+        inventory = DateInventory.objects.get(rate_plan=self.rate_plan, date=self.check_in)
+        self.assertEqual(inventory.booked_rooms, 1)
+
+    def test_booking_serializer_fields_are_read_only(self):
+        """BookingSerializer ignores all input, so it cannot be used to write bookings."""
+        from bookings.serializers import BookingSerializer
+
+        booking = self._create_booking_via_api()
+        serializer = BookingSerializer(
+            booking,
+            data={'status': 'confirmed', 'payment_status': 'paid', 'total_price': '0.01', 'guest': 999},
+            partial=True
+        )
+
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data, {})

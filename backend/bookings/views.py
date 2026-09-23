@@ -1,7 +1,7 @@
 """
 Views for TICKBRON booking endpoints.
 """
-from rest_framework import viewsets, status
+from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -11,11 +11,16 @@ from .models import Booking
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
 
-class BookingViewSet(viewsets.ModelViewSet):
+class BookingViewSet(mixins.CreateModelMixin,
+                     mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
     """
     ViewSet for booking management.
     
-    Provides CRUD operations for bookings with proper authentication and permissions.
+    Supports create, list and retrieve only. Bookings are never updated or
+    deleted directly by guests: status changes go through the state machine
+    (e.g. the cancel endpoint), so PUT/PATCH/DELETE return 405.
     """
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
