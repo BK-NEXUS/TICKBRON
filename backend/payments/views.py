@@ -6,7 +6,7 @@ import os
 from rest_framework import mixins, serializers, viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.throttling import UserRateThrottle
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
@@ -345,11 +345,14 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
 
 class WebhookEventViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for WebhookEvent model (read-only for admin purposes).
+    ViewSet for WebhookEvent model (read-only, staff only).
+    
+    Webhook payloads contain payment details and guest PII from every
+    booking, so regular users must not see them.
     """
     queryset = WebhookEvent.objects.all()
     serializer_class = WebhookEventSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
 
 class PaymentAuditLogViewSet(viewsets.ReadOnlyModelViewSet):

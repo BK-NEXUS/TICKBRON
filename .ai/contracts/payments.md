@@ -108,6 +108,10 @@ Status: READY
 - Updates booking payment status accordingly
 - Creates audit log entry for payment refund
 
+### GET `/api/v1/payments/webhooks/` and `/api/v1/payments/webhooks/{id}/`
+- Read-only list / detail of received webhook events
+- Auth: staff only (`is_staff`); other users get 403 — payloads contain payment details and guest PII
+
 ### POST `/api/v1/payments/webhooks/{provider}/`
 - Request: Webhook payload from payment provider
   - JSON payload with provider-specific data

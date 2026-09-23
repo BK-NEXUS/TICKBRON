@@ -136,3 +136,31 @@ class TestIdempotency(PaymentSecurityTestBase):
         assert 'idempotency_key' in error_details(response)
         assert str(other_tx.id) not in str(response.data)
         assert 'provider_transaction_id' not in response.data
+
+
+class TestWebhookEventVisibility(PaymentSecurityTestBase):
+    """#14: webhook events (payloads with PII) are visible to staff only."""
+
+    def setUp(self):
+        super().setUp()
+        from payments.models import WebhookEvent
+
+        self.event = WebhookEvent.objects.create(
+            provider='payme', provider_event_id='evt-1', payload={'phone': '+998900000000'},
+            signature='sig', status='processed'
+        )
+
+    def test_regular_user_cannot_list_or_read_webhook_events(self):
+        listing = self.client.get('/api/v1/payments/webhooks/')
+        detail = self.client.get(f'/api/v1/payments/webhooks/{self.event.id}/')
+
+        assert listing.status_code == status.HTTP_403_FORBIDDEN
+        assert detail.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_staff_can_list_webhook_events(self):
+        self.client.force_authenticate(user=self.staff)
+
+        response = self.client.get('/api/v1/payments/webhooks/')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert self.event.id in [event['id'] for event in response.data['results']]
