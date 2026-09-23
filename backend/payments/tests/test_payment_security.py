@@ -164,3 +164,63 @@ class TestWebhookEventVisibility(PaymentSecurityTestBase):
 
         assert response.status_code == status.HTTP_200_OK
         assert self.event.id in [event['id'] for event in response.data['results']]
+
+
+class TestClientConfirm(PaymentSecurityTestBase):
+    """#4: the client-side confirm is a local development mock only."""
+
+    def _confirm(self, tx):
+        return self.client.post(f'{TRANSACTIONS_URL}{tx.id}/confirm/')
+
+    def test_confirm_forbidden_without_test_mode(self):
+        tx = self._create_transaction(self.booking, 'k-c1')
+
+        with self.settings(PAYMENT_TEST_MODE=False, DEBUG=True):
+            response = self._confirm(tx)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        self.booking.refresh_from_db()
+        tx.refresh_from_db()
+        assert self.booking.status == 'pending'
+        assert tx.status == 'processing'
+
+    def test_confirm_forbidden_without_debug(self):
+        tx = self._create_transaction(self.booking, 'k-c2')
+
+        with self.settings(PAYMENT_TEST_MODE=True, DEBUG=False):
+            response = self._confirm(tx)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        self.booking.refresh_from_db()
+        assert self.booking.status == 'pending'
+
+    def test_confirm_works_in_test_mode_with_debug(self):
+        tx = self._create_transaction(self.booking, 'k-c3')
+
+        with self.settings(PAYMENT_TEST_MODE=True, DEBUG=True):
+            response = self._confirm(tx)
+
+        assert response.status_code == status.HTTP_200_OK
+        self.booking.refresh_from_db()
+        assert self.booking.status == 'confirmed'
+
+    def test_failed_booking_confirmation_leaves_payment_unchanged(self):
+        """If the booking cannot be confirmed, the payment is not marked completed."""
+        tx = self._create_transaction(self.booking, 'k-c4')
+        Booking.objects.filter(pk=self.booking.pk).update(status='cancelled')
+
+        with self.settings(PAYMENT_TEST_MODE=True, DEBUG=True):
+            response = self._confirm(tx)
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        tx.refresh_from_db()
+        assert tx.status == 'processing'
+
+    def test_create_returns_503_when_provider_not_integrated(self):
+        with self.settings(PAYMENT_TEST_MODE=False):
+            response = self.client.post(TRANSACTIONS_URL, self._payment_data(self.booking, 'k-c5'), format='json')
+
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        tx = PaymentTransaction.objects.get(idempotency_key='k-c5')
+        assert tx.status == 'failed'
+        assert tx.error_code == 'PROVIDER_UNAVAILABLE'

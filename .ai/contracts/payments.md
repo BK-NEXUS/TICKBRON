@@ -82,6 +82,7 @@ Status: READY
 - Error: 400 for validation errors, or when the idempotency key was already used by another user
 - Idempotency: the same user repeating a key gets their existing transaction back (200)
 - Automatically initiates payment with provider adapter
+- Error: 503 when the provider has no production integration yet (transaction is marked failed, error_code `PROVIDER_UNAVAILABLE`)
 - Creates audit log entries for payment initiation
 
 ### GET `/api/v1/payments/transactions/` and `/api/v1/payments/transactions/{id}/`
@@ -89,13 +90,13 @@ Status: READY
 - Transactions cannot be updated or deleted through the API (PUT/PATCH/DELETE return 405)
 
 ### POST `/api/v1/payments/transactions/{id}/confirm/`
+- **Local development mock flow only.** Works only when `PAYMENT_TEST_MODE=True` AND `DEBUG=True`; otherwise 403. In production, payments are confirmed by the provider webhook, never by the client.
 - Request: None (transaction ID from URL)
 - Response: Updated PaymentTransaction object
 - Auth: Session-based (required)
-- Error: 400 if payment cannot be confirmed in current status
+- Error: 400 if payment cannot be confirmed in current status; 409 if the booking can no longer be confirmed (the transaction is then left unchanged); 503 if the provider is not integrated
 - Confirms payment with payment provider
-- Updates transaction status to completed
-- Updates booking payment status to paid and status to confirmed
+- Updates transaction status to completed and the booking (payment status paid, status confirmed) in one database transaction
 - Creates audit log entries for payment completion and booking status change
 
 ### POST `/api/v1/payments/transactions/{id}/refund/`

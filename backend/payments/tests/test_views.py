@@ -1,7 +1,7 @@
 """
 Tests for payment views with state machine integration.
 """
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal
@@ -143,6 +143,7 @@ class PaymentTransactionViewSetTests(TestCase):
         # The idempotency functionality is tested in the model tests
         self.skipTest("Idempotency test requires more complex setup")
     
+    @override_settings(DEBUG=True)  # client-side confirm is a dev-only mock flow
     def test_confirm_payment_updates_booking_state(self):
         """Test that confirming payment updates booking state using state machine."""
         # Create payment transaction
@@ -172,6 +173,7 @@ class PaymentTransactionViewSetTests(TestCase):
         self.assertEqual(self.booking.status, 'confirmed')
         self.assertEqual(self.booking.payment_status, 'paid')
     
+    @override_settings(DEBUG=True)  # client-side confirm is a dev-only mock flow
     def test_confirm_payment_invalid_status(self):
         """Test that confirming payment fails for invalid payment status."""
         # Create payment transaction with failed status

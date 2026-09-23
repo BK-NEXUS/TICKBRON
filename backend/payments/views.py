@@ -8,11 +8,13 @@ from rest_framework.decorators import action, api_view, permission_classes, thro
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.throttling import UserRateThrottle
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from bookings.models import Booking
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .serializers import (
     PaymentTransactionSerializer,
@@ -146,6 +148,14 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_201_CREATED
             )
 
+        except NotImplementedError:
+            # No production integration for this provider yet
+            payment_transaction.status = 'failed'
+            payment_transaction.error_code = 'PROVIDER_UNAVAILABLE'
+            payment_transaction.error_message = 'Payment provider is not configured.'
+            payment_transaction.save()
+            return self._provider_unavailable_response()
+
         except PaymentAdapterError as e:
             # Handle payment adapter error
             payment_transaction.status = 'failed'
@@ -173,34 +183,50 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         """
-        Confirm a payment transaction.
-        
-        Initiates confirmation with the payment provider.
+        Confirm a payment transaction (local development mock flow only).
+
+        Real payments are confirmed by the provider webhook, never by the
+        client. This endpoint only works when both PAYMENT_TEST_MODE and
+        DEBUG are enabled; otherwise it returns 403.
         """
+        if not (settings.PAYMENT_TEST_MODE and settings.DEBUG):
+            return Response(
+                {'error': 'Payments are confirmed by the payment provider, not by the client.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         payment_transaction = self.get_object()
-        
+
         if payment_transaction.status not in ['pending', 'processing']:
             return Response(
                 {'error': 'Payment cannot be confirmed in current status'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             adapter = get_payment_adapter(payment_transaction.provider)
             provider_response = adapter.confirm_payment(
                 provider_transaction_id=payment_transaction.provider_transaction_id
             )
-            
-            # Update transaction status
+
+            # Transaction and booking change together: if the booking can no
+            # longer be confirmed (e.g. it was cancelled), the payment is not
+            # left marked as completed
             old_status = payment_transaction.status
-            payment_transaction.status = 'completed'
-            payment_transaction.provider_response = provider_response
-            payment_transaction.save()
-            
-            # Update booking status using state machine
-            booking = payment_transaction.booking
-            booking.confirm_booking()
-            
+            try:
+                with transaction.atomic():
+                    booking = Booking.objects.select_for_update().get(pk=payment_transaction.booking_id)
+                    booking.confirm_booking()
+                    payment_transaction.status = 'completed'
+                    payment_transaction.provider_response = provider_response
+                    payment_transaction.save()
+            except DjangoValidationError:
+                payment_transaction.refresh_from_db()
+                return Response(
+                    {'error': 'Booking can no longer be confirmed'},
+                    status=status.HTTP_409_CONFLICT
+                )
+
             # Log audit entries
             PaymentAuditLog.log_action(
                 action='payment_completed',
@@ -212,12 +238,14 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 ip_address=self._get_client_ip(request),
                 details={'provider_response': provider_response}
             )
-            
+
             return Response(
                 PaymentTransactionSerializer(payment_transaction).data,
                 status=status.HTTP_200_OK
             )
-            
+
+        except NotImplementedError:
+            return self._provider_unavailable_response()
         except PaymentAdapterError as e:
             payment_transaction.status = 'failed'
             payment_transaction.error_code = 'CONFIRM_ERROR'
@@ -313,6 +341,13 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    def _provider_unavailable_response(self):
+        """503 for providers whose production integration is not implemented yet."""
+        return Response(
+            {'error': 'Payment provider is not configured.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
     def _existing_transaction_response(self, idempotency_key):
         """
         Response for a reused idempotency key, or None if the key is unused.
