@@ -10,12 +10,12 @@
 
 | # | Topilma | Jiddiylik | Kim |
 |---|---|---|---|
-| F1 | Birorta sahifada `default` export yo'q, `React.lazy` hamma marshrutda yiqiladi, ilova ochilmaydi | Kritik | frontend |
-| F2 | CSRF token yuborilmaydi: login'dan keyin barcha POST/PATCH/DELETE 403 qaytaradi (logout ham) | Kritik | frontend + [backend] |
-| F3 | Yagona xato formatidagi `error` obyekt sifatida JSX'ga tushadi, sahifa ErrorBoundary'ga yiqiladi | Kritik | frontend |
-| F4 | Sharh yaratish har doim 400: maydon nomlari backend bilan mos emas | Kritik | frontend + [backend] kontrakt |
+| F1 | Birorta sahifada `default` export yo'q, `React.lazy` hamma marshrutda yiqiladi, ilova ochilmaydi | Kritik | frontend — **tuzatildi** `3b17b25` |
+| F2 | CSRF token yuborilmaydi: login'dan keyin barcha POST/PATCH/DELETE 403 qaytaradi (logout ham) | Kritik | frontend + [backend] — **tuzatildi** backend `668e91b`, frontend `37ddad8` |
+| F3 | Yagona xato formatidagi `error` obyekt sifatida JSX'ga tushadi, sahifa ErrorBoundary'ga yiqiladi | Kritik | frontend — **tuzatildi** `3eeb9c3` |
+| F4 | Sharh yaratish har doim 400: maydon nomlari backend bilan mos emas | Kritik | frontend — **tuzatildi** `d043043` ([backend] kontrakt matni hali ochiq) |
 | F5 | To'lov oqimi `/confirm/` ni chaqiradi, production'da doim "to'lov muvaffaqiyatsiz" bo'ladi | Yuqori | frontend (+ provayder integratsiyasi) |
-| F6 | `/auth/me` `is_staff`/`is_superuser` qaytarmaydi, admin panel va support lookup haqiqiy staff'ga "access denied" ko'rsatadi | Yuqori | [backend] + frontend |
+| F6 | `/auth/me` `is_staff`/`is_superuser` qaytarmaydi, admin panel va support lookup haqiqiy staff'ga "access denied" ko'rsatadi | Yuqori | [backend] + frontend — backend qismi **tuzatildi** `668e91b` (`is_staff`), `is_superuser` qaytarilmaydi |
 | F7 | Narx xulosasi xonalar sonini va kechalik inventar narxini hisobga olmaydi | Yuqori | frontend |
 | F8 | Bron validatsiya xatolari (o'tgan sana, sig'im, inventar) foydalanuvchiga ko'rsatilmaydi | Yuqori | frontend |
 | F9 | OTP oqimi: noto'g'ri kodda "HTTP 400: Bad Request", ro'yxatdan o'tmagan raqamga tushuntirish yo'q | O'rta | frontend |
@@ -167,3 +167,72 @@ Faol bo'lmagan mulk: `GET /properties/{id}/` 404 tekis `{error: 'Property not fo
 - Hech bir kuzatiladigan fayl o'zgartirilmadi. Faqat shu hisobot qo'shildi.
 - Tekshiruvlar uchun `frontend/node_modules/` (`npm ci`) va `frontend/dist/` (`npm run build`) yaratildi. Ikkalasi ham `.gitignore`da.
 - F2 tekshiruvi backend'da in-memory SQLite bilan alohida skript orqali qilindi (dev bazaga tegilmadi). Skript repodan tashqarida saqlangan.
+
+---
+
+## 2-bosqich: tuzatishlar, API solishtiruvi va e2e (2026-09-24)
+
+Branch: `fix/frontend-audit`. Baxram ruxsati bilan frontend o'zgartirildi. Faqat F1–F4 tuzatildi. Quyidagi F20–F32 **faqat hisobot**, ular uchun kod o'zgarmagan.
+
+### Tuzatilganlar
+
+| # | Nima qilindi | Commit | Test |
+|---|---|---|---|
+| F2 [backend] | `GET /api/v1/auth/csrf/` (`{"csrf_token"}`), `/auth/me` ga read-only `is_staff`. Kontrakt: `contracts/auth.md`, `API_CONTRACT.md` | `668e91b` (master) | `users/tests/test_csrf.py` (7). Backend to'liq to'plami PostgreSQL'da: 855 passed, 2 skipped |
+| F1 | 13 sahifa + `AdminCustomerProfile`ga `export default` | `3b17b25` | `App.test.tsx`: har bir lazy modul + 3 marshrut render. Tuzatishsiz 17/17 yiqiladi |
+| F3 | `errorHandler.readApiError`: 4 xil backend shakli, field xatolari o'qiladigan matnga aylanadi, 400/401/403/404/429 (Retry-After)/503 va CSRF uchun alohida xabar. Hamma adapterlar shundan foydalanadi | `3eeb9c3` | `errorHandler.test.ts` (+19), adapter testlari |
+| F2 | `utils/api.ts` `apiFetch`: token `/auth/csrf/`dan olinadi va keshlanadi, POST/PUT/PATCH/DELETE'da `X-CSRFToken`, CSRF 403'da bir marta yangi token bilan qayta urinadi; login/OTP/register/logout'dan keyin kesh tozalanadi. Hamma adapterlar `apiFetch` ishlatadi | `37ddad8` | `utils/api.test.ts` (15) |
+| 4-band | `build` = `tsc && vite build` (`build:check` olib tashlandi). Qolgan 4 ta tsc xatosi tuzatildi, `App.tsx` tsconfig exclude'dan chiqarildi | `b9edde1` | `build.test.ts`; ataylab kiritilgan tip xatosida build exit 2 bilan to'xtashi tekshirildi |
+| F4 | `CreateReviewRequest` = `{property, booking, overall_rating, *_rating?, title?, comment?}`; bronsiz forma yuborilmaydi | `d043043` | `ReviewForm.test.tsx`, `accountAdapter.test.ts` |
+
+Yakuniy holat: `tsc` 0 xato, `npm run build` o'tadi, `npm test` 863 passed / 19 failed. 19 tasi avvaldan bor, o'sha 4 faylda (Router'siz render). Lint 276 (avval 277), yangi muammo yo'q.
+
+### E2E (✅, haqiqiy backend + brauzer)
+
+Muhit: alohida PostgreSQL `tickbron_e2e` (dev bazaga tegilmadi), `runserver` `DEBUG/SMS_TEST_MODE/PAYMENT_TEST_MODE=True` bilan, `vite` dev :3000, Chrome.
+
+| Oqim | Natija |
+|---|---|
+| Ilova ochilishi (F1) | ✅ `/login`, `/`, `/property/1` ochiladi |
+| OTP login (UI) | ✅ kod so'rash → test kodi → verify 200 → bosh sahifa, sessiya bor |
+| Bron (UI) | ❌ **F21** tufayli: "Proceed to booking" → `GET /properties/undefined/` 404. Xato endi o'qiladigan matn sifatida chiqadi ("The requested resource was not found."), sahifa yiqilmaydi (F3 ✓) |
+| Bron (ilovaning o'z adapteri orqali, sessiya + CSRF) | ✅ `POST /bookings/` 201 (2 kecha, 220.00; F7 tasdiqlandi, UI 100 × kecha hisoblaydi). O'tgan sana → "Invalid booking parameters. Check in: Check-in date cannot be in the past". To'lov yaratish 201, confirm → `completed` |
+| Sharh (UI) | ❌ **F20** tufayli: `ReviewsSection` "Failed to load reviews" ko'rsatadi, forma chiqmaydi |
+| Sharh (adapter orqali) | ✅ 201, kategoriya baholari saqlandi (bazada tekshirildi). Pending bronga → "Booking: You can only review completed bookings.", takroriy → "Booking: This booking has already been reviewed." |
+| Logout | ✅ 200, keyin `/auth/me` → "Authentication required. Please log in." |
+| CSRF | ✅ butun sessiya davomida backend logida 0 ta 403 |
+
+### Frontend ↔ backend nomuvofiqliklari (yangi, tuzatilmagan)
+
+Usul: har bir adapter chaqiruvi backend URL, serializer va view bilan solishtirildi. E2e bazada rol bo'yicha (guest/staff/owner) haqiqiy javoblar olindi (✅).
+
+| # | Topilma | Jiddiylik | Kim |
+|---|---|---|---|
+| F20 | Global `PageNumberPagination` (PAGE_SIZE 20): ViewSet ro'yxatlari `{count,next,previous,results}` qaytaradi, frontend massiv kutadi | Kritik | frontend (+[backend] kontrakt) |
+| F21 | Mulk javobidagi `room_types[]`da `property_id` yo'q, shuning uchun bron UI'da `propertyId` undefined | Kritik | frontend |
+| F22 | Sevimlilarga qo'shish har doim 400 qaytaradi (`property_id` yuboriladi, `property` kerak); ro'yxat maydonlari boshqa nomda | Kritik | frontend + [backend] |
+| F23 | Qidiruv natijalarida `translations` yo'q, `PropertyCard` `translations[0]`da yiqiladi | Kritik | frontend + [backend] |
+| F24 | Support lookup javobi ichma-ich (`booking`/`customer`/`property`), frontend tekis + `room` kutadi, sahifa yiqiladi | Yuqori | frontend |
+| F25 | Admin statistika: registrations `statistics` qaytaradi (frontend `data` kutadi), top-bookers `{period,limit,leaderboard}` (frontend massiv kutadi) | Yuqori | frontend |
+| F26 | `AdminUser`: backend `role_name` qaytaradi, `is_superuser` yo'q; frontend `role`, `is_superuser` kutadi | O'rta | frontend |
+| F27 | Admin to'lovlar: backend `booking_id` (frontend `booking`), `provider_response`/`payment_method_token`/`client_ip` yo'q | O'rta | frontend |
+| F28 | `AdminAmenity`: `category_name`, `created_at`, `updated_at` qaytmaydi; kategoriyada ham sanalar yo'q | Kichik | frontend |
+| F29 | Partner tiplari: `owner`, `approved_*`, `created_at/updated_at` qaytmaydi; inventardagi `remaining_rooms` tipda yo'q; bronlarda `guest`, `property`, `special_requests` yo'q; foto javobida `photo_url` bor. Partner mulkka nom (translation) berolmaydi | O'rta | frontend + [backend] |
+| F30 | Sharh yaratish javobida faqat kiritilgan maydonlar bor (`id`, `status` yo'q); `Review` tipidagi `updated_at` qaytmaydi | Kichik | [backend] + frontend |
+| F31 | Decimal maydonlar satr bo'lib keladi (`"100.00"`), tiplarda esa `number` (`base_price`, `total_price`, `amount`, `price`, `total_amount_paid`) | Kichik | frontend |
+| F32 | Header `first_name`ni ko'rsatadi; checkpoint 21'dan beri u ko'pincha `null`, shuning uchun "User" chiqadi | Kichik | frontend |
+
+**F20 tafsiloti.** Paginatsiyalangan (✅): `me/favorites/`, `me/reviews/`, `me/history/`, `admin-panel/properties/`, `admin-panel/amenities/`, `admin-panel/amenities/categories/`, `partner/properties/`, `partner/rooms/`, `partner/rates/`, `partner/inventory/`, `payments/transactions/`. Massiv qaytaradiganlar (✅): `bookings/`, `admin-panel/users/`, `admin-panel/payments/transactions/`, `partner/bookings/`, `me/history/recent/`. Ta'siri: `FavoritesPage` obyektni `setFavorites`ga beradi va `.map`da yiqiladi; `ReviewsSection` `.filter`da xato beradi va "Failed to load reviews" ko'rsatadi (✅ e2e); `AdminPropertyModeration`, `AdminAmenityManagement`, `PartnerRoomsManagement`, `PartnerRatesManagement` `[...data]`/`.filter`da TypeError beradi; `PartnerDashboardPage` `setProperties(obj)` qiladi. Inventar 20 yozuvdan keyin kesiladi (`next` bor). *Tuzatish:* adapterlarda `results`ni ochish va `next` bo'yicha yurish, yoki [backend] bu endpointlar uchun paginatsiyani o'chirib, kontraktda yozish.
+
+**F21.** `RoomSelection.tsx:100` `propertyId: selectedRoom.property_id` qiladi, lekin `PropertySerializer.room_types` elementlarida `property_id` ham, `property` ham yo'q (✅). `rate_plans` elementlarida `room_type_id` va `is_active` ham yo'q. *Tuzatish:* `propertyId`ni sahifadagi `property.id`dan olish.
+
+**F22.** `accountAdapter.addFavorite` `{property_id}` yuboradi → 400 `{"property":["This field is required."]}` (✅). `{property}` bilan 201 qaytadi, lekin javob faqat `{"property":1,"notes":null}` (`id` yo'q, [backend]). Ro'yxat maydonlari: backend `property_city`, `property_country`, `property_base_price`, `property_currency`, `property_primary_photo` qaytaradi; frontend `city`, `country`, `base_price`, `currency`, `primary_photo`, `property_name` kutadi (nom umuman qaytmaydi).
+
+**F23.** `PropertySearchResultSerializer` natijalarida `translations`, `rating`, `review_count` yo'q (✅). `PropertyCard.tsx:15` `property.translations[0]`ni o'qiydi, shuning uchun natija bo'lsa qidiruv sahifasi ErrorBoundary'ga tushadi (koddan). *Tuzatish:* [backend] nom/translation qo'shish yoki frontend'da himoya.
+
+**F24.** `admin_booking_lookup_by_reference` `{booking:{id, reference_code, status, …, booking_items}, customer:{…}, property:{…}}` qaytaradi. `SupportLookupPage.tsx` `booking.reference_code`, `booking.status` (yuqori darajada) va `booking.room.name`ni o'qiydi; `room` yo'q, TypeError.
+
+**F25.** `AdminStatisticsDashboard.tsx:90` `statistics.data.length`ni o'qiydi, backend esa `statistics` qaytaradi, `data` undefined, sahifa yiqiladi. `TopBookersLeaderboard` obyektni massiv sifatida saqlaydi.
+
+### Keyingi qadam uchun tavsiya
+F20–F23 bron, sharh, sevimlilar va qidiruv oqimlarini UI'da to'sib turibdi. Keyingi checkpoint'da avval shu to'rttasi, keyin F24–F25 (admin sahifalari yiqiladi).
