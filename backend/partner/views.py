@@ -201,7 +201,7 @@ def partner_bookings(request):
         
         booking_data = {
             'id': booking.id,
-            'guest_name': booking.guest_name,
+            'guest_name': booking.guest_full_name,
             'property_name': property_name,
             'status': booking.status,
             'payment_status': booking.payment_status,

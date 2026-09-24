@@ -726,3 +726,109 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('photo', response.data)
+
+
+class PartnerBookingListTests(TestCase):
+    """Tests for the partner bookings list endpoint (audit #26)."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+
+        self.hotel_owner_role, _ = Role.objects.get_or_create(
+            name='hotel-owner',
+            defaults={'description': 'Hotel owner role', 'is_system_role': True}
+        )
+
+        self.hotel_owner = User.objects.create_user(
+            email='hotelowner@example.com',
+            password='testpassword123',
+            first_name='John',
+            last_name='Doe',
+            role=self.hotel_owner_role
+        )
+
+        self.guest = User.objects.create_user(
+            email='guest@example.com',
+            password='testpassword123',
+            first_name='Alice',
+            last_name='Guest'
+        )
+
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+
+        self.property = Property.objects.create(
+            owner=self.hotel_owner,
+            property_type=self.property_type,
+            status='active',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=100.00,
+            currency='USD'
+        )
+
+        self.room_type = RoomType.objects.create(
+            property=self.property,
+            name='Standard Room',
+            slug='standard-room',
+            base_occupancy=2,
+            max_occupancy=4,
+            base_price=100.00,
+            currency='USD',
+            total_rooms=5
+        )
+
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type,
+            name='Standard Rate',
+            slug='standard-rate',
+            rate_type='standard',
+            base_price=100.00,
+            currency='USD',
+            min_nights=1,
+            is_active=True
+        )
+
+        from datetime import date, timedelta
+        self.check_in = date.today() + timedelta(days=10)
+        self.check_out = date.today() + timedelta(days=12)
+        current_date = self.check_in
+        while current_date < self.check_out:
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan,
+                date=current_date,
+                available_rooms=5,
+                booked_rooms=0,
+                price=100.00,
+                currency='USD',
+                is_available=True
+            )
+            current_date += timedelta(days=1)
+
+        from bookings.models import Booking
+        self.booking = Booking.create_booking(
+            guest=self.guest,
+            property_obj=self.property,
+            room_type=self.room_type,
+            rate_plan=self.rate_plan,
+            check_in=self.check_in,
+            check_out=self.check_out,
+            guest_count=2
+        )
+
+    def test_hotel_owner_can_list_bookings_with_guest_name(self):
+        """booking.guest_name doesn't exist on the model -- must not 500."""
+        self.client.force_authenticate(user=self.hotel_owner)
+        response = self.client.get('/api/v1/partner/bookings/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['guest_name'], self.booking.guest_full_name)
