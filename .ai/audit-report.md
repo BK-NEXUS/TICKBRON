@@ -28,12 +28,12 @@
 | 17 | Muddati o'tgan bronlar avtomatik bekor qilinmaydi (Celery yo'q) | Yuqori | ✅ Tuzatildi — `4fe3296` (beat jonli sinalmagan: lokal Redis yo'q) |
 | 18 | Race condition: cancel/expire/confirm bron qatorini qulflamaydi | Yuqori | ✅ Tuzatildi — `94f96c6` (PostgreSQL parallel testlari bilan) |
 | 19 | O'tgan sanaga bron, guest_count/xona tekshiruvi, narx yozuvi | O'rta | ✅ Tuzatildi — `a48c00e` |
-| 20 | Bronsiz sharh; sharhda booking/property almashtirish | O'rta | Ochiq |
-| 21 | Admin RBAC ishlatilmaydi, audit log yo'q, InternalNote author yoziladi | O'rta | Ochiq |
-| 22 | Mijozlar ro'yxati xotirada saralanadi, aggregat join xatosi | O'rta | Ochiq |
+| 20 | Bronsiz sharh; sharhda booking/property almashtirish | O'rta | ✅ Tuzatildi — `68ec591` (+ eligible_properties har bir bron alohida) |
+| 21 | Admin RBAC ishlatilmaydi, audit log yo'q, InternalNote author yoziladi | O'rta | Qisman — InternalNote author read-only (`6b732ac`); RBAC, audit log va staff'ning begona sharhni PATCH qilishi ochiq |
+| 22 | Mijozlar ro'yxati xotirada saralanadi, aggregat join xatosi | O'rta | ✅ Tuzatildi — `f55ff3e` |
 | 23 | Rasm yuklash validatsiyasi DRF orqali chaqirilmaydi | O'rta | Ochiq |
 | 24 | Ichki xatolar (`str(e)`) klientga, OTP va email loglarda | O'rta | Qisman — OTP kodi logdan olib tashlandi (`73b0247`), qolgani ochiq |
-| 25 | SESSION/CSRF cookie secure sukut bo'yicha False | O'rta | Ochiq |
+| 25 | SESSION/CSRF cookie secure sukut bo'yicha False | O'rta | ✅ Tuzatildi — `50a8a26` |
 | 26 | Partner bronlar ro'yxati 500 (`booking.guest_name`) | Kichik | Ochiq |
 | 27 | Sevimlini o'chirib qayta qo'shish 500 | Kichik | Ochiq |
 | 28 | Noto'g'ri query parametrlarida 500 | Kichik | Ochiq |
@@ -97,16 +97,24 @@
 **#19** O'tgan sanaga bron qabul qilinadi ✅; `guest_count` xonalar soniga nisbatan tekshirilmaydi; `BookingItem.price_per_night` inventar narxini emas `base_price` ni yozadi.
 
 **#20** Bronsiz sharh qabul qilinadi ✅ (`accounts/serializers.py:100`); `PATCH` bilan `booking`/`property` almashtiriladi; tasdiqlangan sharh tahrirlanganda `approved` qoladi.
+*Tuzatish (`68ec591`):* `booking` majburiy — o'zining `completed` broni bo'lishi va `property` shu bronning mulki bo'lishi kerak. Bir bronga bitta sharh: takroriy so'rov 500 o'rniga 400 qaytaradi, o'chirilgan sharh ham hisobga olinadi. `booking`/`property` PATCH/PUT'da read-only. Har qanday tahrir sharhni `pending` ga qaytaradi (`reviewed_at=null`), shuning uchun u `property_scores` dan chiqadi. `eligible_properties` endi sharhsiz har bir tugallangan bronni `booking_id` bilan alohida ko'rsatadi; oldin bir mulkka sharh yozilsa, o'sha mulkdagi hamma bronlar yashirinardi. Migratsiya yo'q: `booking` ustuni nullable qoldi (eski bronsiz sharhlar bo'lishi mumkin), qoida serializer'da. Kontrakt: `contracts/booking.md` "Reviews", `API_CONTRACT.md`, `HANDOFF.md`.
 
 **#21** `Role`/`Permission` modellari ishlatilmaydi — har qanday `is_staff` hamma narsaga kiradi; admin amallari audit log'ga yozilmaydi; `InternalNote` da `author`/`customer` yoziladi.
+*Qisman tuzatildi:* `customer` URL'dan olinadi (`e961b9a`), `author` read-only (`6b732ac`).
+*Ochiq:*
+- RBAC.
+- Admin audit log.
+- Staff boshqa foydalanuvchining sharhini `PATCH /api/v1/me/reviews/{id}/` bilan tahrirlay oladi (`ReviewViewSet.get_queryset` staff'ga hamma sharhlarni beradi). Matn o'zgarsa sharh `pending` ga qaytadi (#20), lekin muallif nomidan yozilgan matn qoladi. Moderatsiya uchun alohida admin amali kerak, staff esa `/me/reviews/` orqali faqat o'z sharhini tahrirlashi kerak — RBAC bilan birga hal qilinadi.
 
 **#22** Mijozlar ro'yxati barcha foydalanuvchilarni xotiraga yuklab saralaydi; `Count('bookings')` + `Sum(payment_transactions)` join sonlarni ko'paytirishi mumkin; staff ham ro'yxatda.
+*Tuzatish (`f55ff3e`):* staff va super-admin ro'yxatga kirmaydi. Aggregatlar correlated subquery bilan hisoblanadi: oldin bir nechta to'lovi bor bron to'lovlar soni marta sanalardi (✅ 2 bron → 4). `customer_status` va ko'rsatiladigan ism annotate qilinadi, saralash va sahifalash DB'da (`LIMIT/OFFSET`). Bo'sh `last_booking_date` ikkala yo'nalishda ham oxirida; `full_name` registrdan qat'i nazar saralanadi.
 
 **#23** Rasm hajmi/kengaytma tekshiruvi `model.clean()` da — DRF uni chaqirmaydi.
 
 **#24** `str(e)` klientga qaytadi (bron yaratish/bekor qilish — ✅ SQL CHECK matni ko'rindi, OTP, search suggestions, webhook); OTP kodlari (tuzatildi) va har so'rovda foydalanuvchi email'i loglarga yoziladi (ochiq).
 
 **#25** `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` sukut `False`.
+*Tuzatish (`50a8a26`):* sukut qiymati `not DEBUG` (production'da `True`, lokal http'da `False`), env bilan o'zgartirish mumkin. `.env.example` ularni endi `False` ga qo'ymaydi.
 
 ### 🟢 Kichik
 
@@ -148,4 +156,8 @@
   - `USE_REDIS_CACHE` sukut bo'yicha `DEBUG=False` da yoqiladi — production'da Redis ishlamasa, throttle/lockout so'rovlari xato beradi (jimgina LocMem'ga o'tmaydi).
   - Bitta hujumchi bitta OTP kodining 3 ta urinishini yoqib yuborishi mumkin (egasi yangi kod so'raydi); `otp/request` throttle'i raqam bo'yicha 3/min.
   - `otp/request` ro'yxatdan o'tmagan raqamga ham 200 qaytaradi: frontend bunday foydalanuvchiga ham kod kiritish ekranini ko'rsatadi.
-- To'liq test to'plami PostgreSQL'da: SQLite'dagi 35 ta eski xatodan tashqari yana 38 ta test yiqiladi. Hammasining sababi bitta: test fixture'lari `confirmation_code='TEST1234'`/`'TEST12345'` (8–9 belgi) beradi, maydon esa checkpoint 23 (`c63437b`) dan beri `varchar(6)`. SQLite uzunlikni tekshirmagani uchun bu yashirin qolgan. Tuzatish: testlarda 6 belgili kod ishlatish (alohida ish, hali qilinmagan).
+- To'liq test to'plami PostgreSQL'da: SQLite'dagi 35 ta eski xatodan tashqari yana 38 ta test yiqiladi. Hammasining sababi bitta: test fixture'lari `confirmation_code='TEST1234'`/`'TEST12345'` (8–9 belgi) beradi, maydon esa checkpoint 23 (`c63437b`) dan beri `varchar(6)`. SQLite uzunlikni tekshirmagani uchun bu yashirin qolgan. *Keyin tuzatildi — `d2bc3b5`.*
+- #20/#21/#22/#25 tuzatishlaridan keyin (`68ec591`..`50a8a26`), 2026-09-24:
+  - To'liq to'plam PostgreSQL'da (`--create-db`): **822 passed, 2 skipped, 0 failed**. Oldin 797 passed edi, 25 ta yangi test qo'shildi. Har bir yangi test avval eski kodda ishga tushirildi. Qoidani buzuvchi holatlar (bronsiz yoki takroriy sharh, approved sharhni tahrirlash, author almashtirish, staff ro'yxatda, join ko'paytirishi, cookie sukuti) eski kodda yiqildi. Allaqachon ishlayotgan qoidalar uchun qo'shilgan himoya testlari (begona/tugallanmagan bron, env override) eski kodda ham o'tdi. `LIMIT` testi eski kodda staff tekshiruvida oldinroq yiqiladi.
+  - `booking` majburiy bo'lgani API uchun breaking change. Frontend (`ReviewsSection.tsx`) `booking_id` ni allaqachon `eligible_properties` dan `property_id` bo'yicha `find` qilib oladi. Ro'yxatda faqat sharhsiz bronlar bo'lgani uchun u o'sha mulkning sharhsiz eng yangi bronini topadi, ya'ni o'zgarishsiz ishlaydi. Tahrir `pending` ga qaytishini UI'da ko'rsatish — `HANDOFF.md` da Baxram uchun qayd qoldirildi.
+  - Mavjud bazada bronsiz yoki bir bronga bir nechta sharhlar bo'lsa, ular o'zgarmay qoladi; yangi qoida faqat yangi yozuvlarga qo'llanadi.
