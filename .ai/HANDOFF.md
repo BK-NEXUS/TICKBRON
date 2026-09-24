@@ -532,9 +532,10 @@ Status: READY (Frontend Checkpoint 24 - UI Integration Complete)
 - Error: 403 for non-staff users, 400 for invalid pagination parameters
 - Sort fields: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status
 - Customer status logic: Active if is_active=True and (has booking in last 90 days OR no bookings yet), Inactive otherwise
+- **Updated (audit #22):** staff and super-admin accounts no longer appear in the list. `last_booking_date` null (no bookings) sorts last in both directions; `full_name` sorting is case-insensitive. Response shape unchanged
 - **Backend Implementation Details:**
   - admin_customers_directory view in admin_panel/views.py
-  - Uses Django ORM annotations for booking aggregates (Count, Sum, Max)
+  - Booking aggregates come from correlated subqueries (no join inflation); sorting and pagination run in the database
   - AdminCustomerPagination class for pagination (default 20, max 100)
   - AdminCustomerSerializer for response structure
   - Search filters: full_name, first_name, last_name, phone_number, email, id

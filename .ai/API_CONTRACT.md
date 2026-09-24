@@ -418,6 +418,7 @@ Status: READY
   - Search filters by: name, phone, email, or customer ID
   - Sort options: registration_date, full_name, email, total_booking_count, last_booking_date, total_amount_paid, customer_status
   - Custom pagination with configurable page size
+  - **Updated (audit #22):** staff and super-admin accounts are not listed (customers only). Sorting and pagination run in the database. `full_name` sorts by the displayed name, case-insensitively. Customers without bookings (`last_booking_date` null) sort last in both directions. Ties are broken by id. `total_booking_count` counts each booking once, however many payments it has
 
 ### Security Features
 - Staff-only access to customer directory

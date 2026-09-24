@@ -11,9 +11,12 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Count, Sum, Max, Q, F
-from django.db.models.functions import TruncMonth, ExtractYear
+from django.db.models import (
+    Count, Sum, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField, DecimalField
+)
+from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat, Lower, NullIf, Trim
 from datetime import timedelta, date
+from decimal import Decimal
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
@@ -453,23 +456,48 @@ def admin_customers_directory(request):
     if sort_by not in valid_sort_fields:
         sort_by = 'registration_date'
     
-    # Build sort string
-    sort_prefix = '' if sort_order == 'asc' else '-'
-    sort_string = f'{sort_prefix}{sort_by}'
-    
-    # Annotate users with booking aggregates
-    users = User.objects.filter(is_deleted=False).annotate(
-        total_booking_count=Count('bookings', filter=Q(bookings__is_deleted=False)),
-        last_booking_date=Max('bookings__created_at', filter=Q(bookings__is_deleted=False)),
-        total_amount_paid=Sum(
-            'bookings__payment_transactions__amount',
-            filter=Q(
-                bookings__is_deleted=False,
-                bookings__payment_transactions__status='completed'
-            )
-        )
+    # Aggregates come from correlated subqueries: joining bookings and their payments
+    # in one query would count a booking once per payment row
+    customer_bookings = Booking.objects.filter(
+        guest=OuterRef('pk'), is_deleted=False
+    ).order_by().values('guest')
+    completed_payments = PaymentTransaction.objects.filter(
+        booking__guest=OuterRef('pk'), booking__is_deleted=False, status='completed'
+    ).order_by().values('booking__guest')
+
+    # Active: is_active=True and (has booking in last 90 days OR no bookings yet)
+    # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
+    threshold_date = timezone.now() - timedelta(days=90)
+
+    # Staff and super-admins are not customers
+    users = User.objects.filter(
+        is_deleted=False, is_staff=False, is_superuser=False
+    ).annotate(
+        total_booking_count=Coalesce(
+            Subquery(customer_bookings.annotate(c=Count('id')).values('c')), 0
+        ),
+        last_booking_date=Subquery(customer_bookings.annotate(m=Max('created_at')).values('m')),
+        total_amount_paid=Coalesce(
+            Subquery(completed_payments.annotate(s=Sum('amount')).values('s')),
+            Value(Decimal('0')),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        ),
+        # Same fallback as User.get_full_name(): full_name, else first + last, else email
+        display_name=Coalesce(
+            NullIf('full_name', Value('')),
+            NullIf(Trim(Concat('first_name', Value(' '), 'last_name')), Value('')),
+            'email',
+            output_field=CharField(),
+        ),
+    ).annotate(
+        customer_status=Case(
+            When(is_active=False, then=Value('inactive')),
+            When(last_booking_date__lt=threshold_date, then=Value('inactive')),
+            default=Value('active'),
+            output_field=CharField(),
+        ),
     )
-    
+
     # Apply search filter
     if search:
         users = users.filter(
@@ -481,22 +509,28 @@ def admin_customers_directory(request):
             Q(id__icontains=search)
         )
     
-    # Calculate customer status
-    # Active: is_active=True and (has booking in last 90 days OR no bookings yet)
-    # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
-    threshold_date = timezone.now() - timedelta(days=90)
-    
-    customers_data = []
-    for user in users:
-        # Determine customer status
-        if not user.is_active:
-            customer_status = 'inactive'
-        elif user.last_booking_date and user.last_booking_date < threshold_date:
-            customer_status = 'inactive'
-        else:
-            customer_status = 'active'
-        
-        customer_data = {
+    # Sort in the database; id breaks ties so pages are stable
+    sort_expressions = {
+        'registration_date': F('date_joined'),
+        'full_name': Lower('display_name'),
+        'email': F('email'),
+        'total_booking_count': F('total_booking_count'),
+        'last_booking_date': F('last_booking_date'),
+        'total_amount_paid': F('total_amount_paid'),
+        'customer_status': F('customer_status'),
+    }
+    sort_expression = sort_expressions[sort_by]
+    if sort_order == 'asc':
+        users = users.order_by(sort_expression.asc(nulls_last=True), 'id')
+    else:
+        users = users.order_by(sort_expression.desc(nulls_last=True), '-id')
+
+    # Paginate the queryset, so only one page of users is loaded
+    paginator = AdminCustomerPagination()
+    page = paginator.paginate_queryset(users, request)
+
+    paginated_data = [
+        {
             'id': user.id,
             'registration_date': user.date_joined,
             'full_name': user.get_full_name(),
@@ -505,37 +539,14 @@ def admin_customers_directory(request):
             'whatsapp': user.whatsapp,
             'telegram': user.telegram,
             'preferred_contact_method': user.preferred_contact_method,
-            'total_booking_count': user.total_booking_count or 0,
+            'total_booking_count': user.total_booking_count,
             'last_booking_date': user.last_booking_date,
-            'total_amount_paid': user.total_amount_paid or 0,
-            'customer_status': customer_status
+            'total_amount_paid': user.total_amount_paid,
+            'customer_status': user.customer_status,
         }
-        customers_data.append(customer_data)
-    
-    # Sort the results
-    if sort_by == 'registration_date':
-        customers_data.sort(key=lambda x: x['registration_date'], reverse=(sort_order == 'desc'))
-    elif sort_by == 'full_name':
-        customers_data.sort(key=lambda x: x['full_name'] or '', reverse=(sort_order == 'desc'))
-    elif sort_by == 'email':
-        customers_data.sort(key=lambda x: x['email'], reverse=(sort_order == 'desc'))
-    elif sort_by == 'total_booking_count':
-        customers_data.sort(key=lambda x: x['total_booking_count'], reverse=(sort_order == 'desc'))
-    elif sort_by == 'last_booking_date':
-        # Handle None values - put them last
-        customers_data.sort(
-            key=lambda x: (x['last_booking_date'] is None, x['last_booking_date'] or timezone.now()),
-            reverse=(sort_order == 'desc')
-        )
-    elif sort_by == 'total_amount_paid':
-        customers_data.sort(key=lambda x: x['total_amount_paid'], reverse=(sort_order == 'desc'))
-    elif sort_by == 'customer_status':
-        customers_data.sort(key=lambda x: x['customer_status'], reverse=(sort_order == 'desc'))
-    
-    # Apply pagination
-    paginator = AdminCustomerPagination()
-    paginated_data = paginator.paginate_queryset(customers_data, request)
-    
+        for user in page
+    ]
+
     # Serialize paginated data
     serializer = AdminCustomerSerializer(paginated_data, many=True)
     

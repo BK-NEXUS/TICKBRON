@@ -1119,8 +1119,108 @@ class AdminCustomersDirectoryTests(TestCase):
         """Test that invalid sort order defaults to desc."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?sort_order=invalid')
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def _directory_emails(self, query=''):
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get(f'/api/v1/admin-panel/customers/{query}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return [customer['email'] for customer in response.data['results']]
+
+    def test_staff_and_superusers_are_not_listed(self):
+        """Only customers are listed; staff and super-admins are not."""
+        superuser_only = User.objects.create_user(
+            email='root@example.com', password='testpassword123', is_superuser=True
+        )
+
+        emails = self._directory_emails('?page_size=100')
+
+        self.assertIn('regular@example.com', emails)
+        self.assertIn('customer2@example.com', emails)
+        self.assertNotIn('admin@example.com', emails)
+        self.assertNotIn('staff@example.com', emails)
+        self.assertNotIn(superuser_only.email, emails)
+        self.assertEqual(len(emails), 2)
+
+    def test_aggregates_are_not_multiplied_by_joins(self):
+        """Several payments on one booking must not inflate the booking count or the total."""
+        from payments.models import PaymentTransaction
+        booking2 = Booking.objects.create(
+            guest=self.regular_user,
+            property=self.property,
+            status='confirmed',
+            payment_status='paid',
+            check_in=date.today() + timedelta(days=20),
+            check_out=date.today() + timedelta(days=22),
+            number_of_nights=2,
+            guest_count=2,
+            total_price=Decimal('150.00'),
+            currency='USD',
+        )
+        # A failed attempt and two completed charges (e.g. a provider double charge)
+        for key, txn_status in [
+            ('test-payment-2a', 'failed'),
+            ('test-payment-2b', 'completed'),
+            ('test-payment-2c', 'completed'),
+        ]:
+            PaymentTransaction.objects.create(
+                idempotency_key=key, booking=booking2, provider='payme',
+                amount=Decimal('150.00'), currency='USD', status=txn_status,
+            )
+
+        self.client.force_authenticate(user=self.super_admin)
+        response = self.client.get('/api/v1/admin-panel/customers/?search=regular@example.com')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        customer = response.data['results'][0]
+        self.assertEqual(customer['total_booking_count'], 2)
+        # booking1: 200; booking2: two completed charges of 150
+        self.assertEqual(customer['total_amount_paid'], '500.00')
+
+    def test_sorting_and_pagination_happen_in_the_database(self):
+        """The page is fetched with LIMIT instead of loading every user into memory."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        self.client.force_authenticate(user=self.super_admin)
+
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(
+                '/api/v1/admin-panel/customers/?page_size=1&sort_by=total_booking_count'
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+        self.assertEqual([c['email'] for c in response.data['results']], ['regular@example.com'])
+        user_queries = [q['sql'] for q in ctx.captured_queries if 'FROM "users"' in q['sql']]
+        self.assertTrue(any('LIMIT' in sql for sql in user_queries), user_queries)
+
+    def test_sorting_by_full_name_uses_display_name(self):
+        """full_name sorting follows the displayed name (full_name, else first + last, else email), case-insensitively."""
+        User.objects.create_user(email='zed@example.com', password='testpassword123', full_name='Aaron Zed')
+        User.objects.create_user(email='anon@example.com', password='testpassword123')
+
+        emails = self._directory_emails('?sort_by=full_name&sort_order=asc')
+
+        # Display names: 'Aaron Zed', 'anon@example.com', 'Customer Two', 'Regular User'
+        self.assertEqual(
+            emails,
+            ['zed@example.com', 'anon@example.com', 'customer2@example.com', 'regular@example.com'],
+        )
+
+    def test_sorting_by_customer_status(self):
+        """Inactive customers sort after active ones in ascending order."""
+        self.customer2.is_active = False
+        self.customer2.save()
+
+        self.assertEqual(
+            self._directory_emails('?sort_by=customer_status&sort_order=asc'),
+            ['regular@example.com', 'customer2@example.com'],
+        )
+        self.assertEqual(
+            self._directory_emails('?sort_by=customer_status&sort_order=desc'),
+            ['customer2@example.com', 'regular@example.com'],
+        )
         # Should still return results with default sorting
 
 
