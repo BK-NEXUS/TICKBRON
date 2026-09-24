@@ -43,11 +43,28 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         return FavoriteSerializer
     
     def perform_create(self, serializer):
-        """Create favorite for the current user."""
-        serializer.save(user=self.request.user)
-        
-        # Log account history
+        """
+        Create favorite for the current user.
+
+        unique_together on (user, property) does not know about is_deleted, so a
+        previously soft-deleted favorite for the same property would otherwise
+        make a plain create() 500 on an IntegrityError. Restore it instead.
+        """
         property_obj = serializer.validated_data.get('property')
+        existing = Favorite.objects.filter(user=self.request.user, property=property_obj).first()
+
+        if existing is not None:
+            if not existing.is_deleted:
+                raise ValidationError({'non_field_errors': 'This property is already in your favorites.'})
+            existing.is_deleted = False
+            existing.deleted_at = None
+            existing.notes = serializer.validated_data.get('notes', existing.notes)
+            existing.save()
+            serializer.instance = existing
+        else:
+            serializer.save(user=self.request.user)
+
+        # Log account history
         AccountHistory.objects.create(
             user=self.request.user,
             action='favorite_added',

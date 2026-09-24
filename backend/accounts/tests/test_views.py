@@ -82,9 +82,38 @@ class FavoriteViewSetTest(TestCase):
         """Test that inactive properties cannot be favorited."""
         self.property.is_active = False
         self.property.save()
-        
+
         data = {'property': self.property.id}
         response = self.client.post('/api/v1/me/favorites/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_re_favorite_after_removing(self):
+        """Removing then re-adding the same property must not 500 (audit #27)."""
+        data = {'property': self.property.id, 'notes': 'first time'}
+        first_response = self.client.post('/api/v1/me/favorites/', data, format='json')
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        favorite_id = Favorite.objects.get(user=self.user, property=self.property).id
+
+        delete_response = self.client.delete(f'/api/v1/me/favorites/{favorite_id}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+
+        second_response = self.client.post(
+            '/api/v1/me/favorites/', {'property': self.property.id, 'notes': 'second time'}, format='json'
+        )
+
+        self.assertEqual(second_response.status_code, status.HTTP_201_CREATED)
+        favorite = Favorite.objects.get(user=self.user, property=self.property)
+        self.assertFalse(favorite.is_deleted)
+        self.assertEqual(favorite.notes, 'second time')
+        # Re-adding restores the existing row rather than creating a duplicate
+        self.assertEqual(Favorite.objects.filter(user=self.user, property=self.property).count(), 1)
+
+    def test_cannot_favorite_already_favorited_property_twice(self):
+        """A second, non-deleted favorite for the same property is rejected, not a 500."""
+        Favorite.objects.create(user=self.user, property=self.property)
+
+        response = self.client.post('/api/v1/me/favorites/', {'property': self.property.id}, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
