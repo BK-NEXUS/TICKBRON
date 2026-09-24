@@ -107,14 +107,29 @@ def custom_exception_handler(exc, context):
     
     # Standardize error response format
     if hasattr(response, 'data'):
+        original_data = response.data
         # Wrap existing data in error format if not already wrapped
-        if not isinstance(response.data, dict) or 'error' not in response.data:
+        if not isinstance(original_data, dict) or 'error' not in original_data:
+            if isinstance(original_data, dict):
+                code = original_data.get('code', 'error')
+                message = original_data.get('detail', str(original_data))
+                details = original_data
+            else:
+                # A ValidationError raised with a plain string/list (e.g.
+                # raise serializers.ValidationError('some message')) leaves
+                # response.data as a bare list of ErrorDetail, not a dict.
+                # original_data.get(...) would raise AttributeError here and
+                # turn this 400 into an unhandled 500.
+                items = original_data if isinstance(original_data, list) else [original_data]
+                code = 'error'
+                message = ' '.join(str(item) for item in items)
+                details = {'non_field_errors': items}
             response.data = {
                 'error': {
-                    'code': response.data.get('code', 'error'),
-                    'message': response.data.get('detail', str(response.data)),
-                    'details': response.data
+                    'code': code,
+                    'message': message,
+                    'details': details
                 }
             }
-    
+
     return response
