@@ -664,15 +664,14 @@ describe('accountAdapter', () => {
       })
 
       const reviewData = {
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 5,
-        category_ratings: {
-          cleanliness_rating: 5,
-          location_rating: 5,
-          value_rating: 5,
-          amenities_rating: 5,
-          service_rating: 5,
-        },
+        cleanliness_rating: 5,
+        location_rating: 5,
+        value_rating: 5,
+        amenities_rating: 5,
+        service_rating: 5,
         title: 'Great stay!',
         comment: 'Amazing property',
       }
@@ -708,7 +707,8 @@ describe('accountAdapter', () => {
       })
 
       const reviewData = {
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 4,
       }
 
@@ -726,7 +726,8 @@ describe('accountAdapter', () => {
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 5,
       })
 
@@ -738,16 +739,35 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ detail: 'Invalid review data' }),
+        json: async () => ({}),
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 6, // Invalid rating
       })
 
       expect(result.data).toBeNull()
       expect(result.error).toBe('Invalid review data')
+    })
+
+    it('shows the field errors the backend returns', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          error: {
+            code: 'error',
+            message: "{'booking': [ErrorDetail(string='You can only review completed bookings.', code='invalid')]}",
+            details: { booking: ['You can only review completed bookings.'] },
+          },
+        }),
+      })
+
+      const result = await accountAdapter.createReview({ property: 1, booking: 7, overall_rating: 5 })
+
+      expect(result.error).toBe('Booking: You can only review completed bookings.')
     })
 
     it('should handle 404 property not found error', async () => {
@@ -758,7 +778,8 @@ describe('accountAdapter', () => {
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 999,
+        property: 999,
+        booking: 7,
         overall_rating: 5,
       })
 

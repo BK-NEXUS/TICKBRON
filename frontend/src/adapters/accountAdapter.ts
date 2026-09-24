@@ -85,6 +85,21 @@ export interface Review {
   updated_at: string
 }
 
+// Mirrors backend ReviewCreateSerializer: flat category ratings, `property` and `booking` ids.
+// The booking must be the user's own completed, not yet reviewed stay at that property.
+export interface CreateReviewRequest {
+  property: number
+  booking: number
+  overall_rating: number
+  cleanliness_rating?: number
+  location_rating?: number
+  value_rating?: number
+  amenities_rating?: number
+  service_rating?: number
+  title?: string
+  comment?: string
+}
+
 export interface EligibleProperty {
   property_id: number
   property_city: string
@@ -344,20 +359,7 @@ export const accountAdapter = {
     }
   },
 
-  async createReview(reviewData: {
-    property_id: number
-    booking_id?: number
-    overall_rating: number
-    category_ratings?: {
-      cleanliness_rating?: number
-      location_rating?: number
-      value_rating?: number
-      amenities_rating?: number
-      service_rating?: number
-    }
-    title?: string
-    comment?: string
-  }): Promise<ApiResponse<Review>> {
+  async createReview(reviewData: CreateReviewRequest): Promise<ApiResponse<Review>> {
     try {
       const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
         method: 'POST',

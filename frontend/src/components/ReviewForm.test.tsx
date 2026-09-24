@@ -12,7 +12,7 @@ vi.mock('../adapters/accountAdapter', () => ({
 
 describe('ReviewForm', () => {
   it('should render review form', () => {
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     expect(screen.getByText('Write a Review')).toBeInTheDocument()
     expect(screen.getByText('Overall Rating')).toBeInTheDocument()
@@ -24,14 +24,14 @@ describe('ReviewForm', () => {
   })
 
   it('should render title and comment fields', () => {
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     expect(screen.getByLabelText('Title (Optional)')).toBeInTheDocument()
     expect(screen.getByLabelText('Comment (Optional)')).toBeInTheDocument()
   })
 
   it('should allow star rating selection', () => {
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     const starButtons = screen.getAllByRole('button')
     expect(starButtons.length).toBeGreaterThan(0)
@@ -55,7 +55,7 @@ describe('ReviewForm', () => {
     })
 
     const onSubmitSuccess = vi.fn()
-    render(<ReviewForm propertyId={1} onSubmitSuccess={onSubmitSuccess} />)
+    render(<ReviewForm propertyId={1} bookingId={7} onSubmitSuccess={onSubmitSuccess} />)
 
     const stars = screen.getAllByLabelText(/Overall Rating \d stars/)
     fireEvent.click(stars[4]) // Select 5 stars
@@ -67,11 +67,9 @@ describe('ReviewForm', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(mockCreateReview).toHaveBeenCalledWith({
-      property_id: 1,
+      property: 1,
+      booking: 7,
       overall_rating: 5,
-      category_ratings: undefined,
-      title: undefined,
-      comment: undefined,
     })
   })
 
@@ -92,7 +90,7 @@ describe('ReviewForm', () => {
     })
 
     const onSubmitSuccess = vi.fn()
-    render(<ReviewForm propertyId={1} onSubmitSuccess={onSubmitSuccess} />)
+    render(<ReviewForm propertyId={1} bookingId={7} onSubmitSuccess={onSubmitSuccess} />)
 
     // Select overall rating
     const overallStars = screen.getAllByLabelText(/Overall Rating \d stars/)
@@ -111,15 +109,13 @@ describe('ReviewForm', () => {
     // Wait for async operations to complete
     await new Promise(resolve => setTimeout(resolve, 0))
 
+    // Flat fields, as ReviewCreateSerializer expects; unrated categories are not sent
     expect(mockCreateReview).toHaveBeenCalledWith({
-      property_id: 1,
+      property: 1,
+      booking: 7,
       overall_rating: 5,
-      category_ratings: {
-        cleanliness_rating: 5,
-        location_rating: 4,
-      },
-      title: undefined,
-      comment: undefined,
+      cleanliness_rating: 5,
+      location_rating: 4,
     })
   })
 
@@ -140,7 +136,7 @@ describe('ReviewForm', () => {
     })
 
     const onSubmitSuccess = vi.fn()
-    render(<ReviewForm propertyId={1} onSubmitSuccess={onSubmitSuccess} />)
+    render(<ReviewForm propertyId={1} bookingId={7} onSubmitSuccess={onSubmitSuccess} />)
 
     // Select overall rating
     const overallStars = screen.getAllByLabelText(/Overall Rating \d stars/)
@@ -161,16 +157,16 @@ describe('ReviewForm', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(mockCreateReview).toHaveBeenCalledWith({
-      property_id: 1,
+      property: 1,
+      booking: 7,
       overall_rating: 5,
-      category_ratings: undefined,
       title: 'Great stay!',
       comment: 'Amazing property',
     })
   })
 
   it('should show validation error when overall rating is missing', async () => {
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
@@ -184,7 +180,7 @@ describe('ReviewForm', () => {
       error: 'Invalid review data',
     })
 
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     // Select overall rating
     const overallStars = screen.getAllByLabelText(/Overall Rating \d stars/)
@@ -214,7 +210,7 @@ describe('ReviewForm', () => {
       () => new Promise(() => {}) // Never resolves
     )
 
-    render(<ReviewForm propertyId={1} />)
+    render(<ReviewForm propertyId={1} bookingId={7} />)
 
     // Select overall rating
     const overallStars = screen.getAllByLabelText(/Overall Rating \d stars/)
@@ -227,7 +223,18 @@ describe('ReviewForm', () => {
     expect(screen.getByText('Submitting...')).toBeInTheDocument()
   })
 
-  it('should include booking_id when provided', async () => {
+  it('should not submit without a booking', async () => {
+    vi.mocked(accountAdapter.createReview).mockClear()
+    render(<ReviewForm propertyId={1} />)
+
+    fireEvent.click(screen.getAllByLabelText(/Overall Rating \d stars/)[4])
+    fireEvent.click(screen.getByText('Submit Review'))
+
+    expect(screen.getByText('You can review this property after a completed stay.')).toBeInTheDocument()
+    expect(accountAdapter.createReview).not.toHaveBeenCalled()
+  })
+
+  it('should send the booking id as booking', async () => {
     const mockCreateReview = vi.mocked(accountAdapter.createReview).mockResolvedValueOnce({
       data: {
         id: 1,
@@ -243,7 +250,7 @@ describe('ReviewForm', () => {
     })
 
     const onSubmitSuccess = vi.fn()
-    render(<ReviewForm propertyId={1} bookingId={1} onSubmitSuccess={onSubmitSuccess} />)
+    render(<ReviewForm propertyId={1} bookingId={3} onSubmitSuccess={onSubmitSuccess} />)
 
     // Select overall rating
     const overallStars = screen.getAllByLabelText(/Overall Rating \d stars/)
@@ -256,12 +263,9 @@ describe('ReviewForm', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(mockCreateReview).toHaveBeenCalledWith({
-      property_id: 1,
-      booking_id: 1,
+      property: 1,
+      booking: 3,
       overall_rating: 5,
-      category_ratings: undefined,
-      title: undefined,
-      comment: undefined,
     })
   })
 })

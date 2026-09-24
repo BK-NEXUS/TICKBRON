@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { accountAdapter } from '../adapters/accountAdapter'
+import { accountAdapter, CreateReviewRequest } from '../adapters/accountAdapter'
 
 interface ReviewFormProps {
   propertyId: number
@@ -51,21 +51,28 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
       return
     }
 
-    const category_ratings: Record<string, number> = {}
-    if (cleanlinessRating > 0) category_ratings.cleanliness_rating = cleanlinessRating
-    if (locationRating > 0) category_ratings.location_rating = locationRating
-    if (valueRating > 0) category_ratings.value_rating = valueRating
-    if (amenitiesRating > 0) category_ratings.amenities_rating = amenitiesRating
-    if (serviceRating > 0) category_ratings.service_rating = serviceRating
+    // The backend ties every review to a completed stay (booking)
+    if (!bookingId) {
+      setError('You can review this property after a completed stay.')
+      setIsLoading(false)
+      return
+    }
 
-    const response = await accountAdapter.createReview({
-      property_id: propertyId,
-      booking_id: bookingId,
+    const request: CreateReviewRequest = {
+      property: propertyId,
+      booking: bookingId,
       overall_rating: overallRating,
-      category_ratings: Object.keys(category_ratings).length > 0 ? category_ratings : undefined,
-      title: title || undefined,
-      comment: comment || undefined,
-    })
+    }
+    // Category ratings are optional; 0 means "not rated" and is not sent
+    if (cleanlinessRating > 0) request.cleanliness_rating = cleanlinessRating
+    if (locationRating > 0) request.location_rating = locationRating
+    if (valueRating > 0) request.value_rating = valueRating
+    if (amenitiesRating > 0) request.amenities_rating = amenitiesRating
+    if (serviceRating > 0) request.service_rating = serviceRating
+    if (title) request.title = title
+    if (comment) request.comment = comment
+
+    const response = await accountAdapter.createReview(request)
 
     setIsLoading(false)
 
