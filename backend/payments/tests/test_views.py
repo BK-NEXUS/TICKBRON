@@ -142,6 +142,75 @@ class PaymentTransactionViewSetTests(TestCase):
         # Skip this test for now as it requires more complex setup
         # The idempotency functionality is tested in the model tests
         self.skipTest("Idempotency test requires more complex setup")
+
+    def test_create_payment_adapter_error_does_not_leak_details(self):
+        """audit #24: a PaymentAdapterError must not echo str(e) to the client."""
+        from unittest.mock import patch
+        from payments.adapters import PaymentAdapterError
+
+        secret = 'internal adapter detail: provider account internal-acct-9f2 misconfigured'
+        data = {
+            'idempotency_key': 'test_key_adapter_error',
+            'booking': self.booking.id,
+            'provider': 'payme',
+            'amount': '300.00',
+            'currency': 'USD',
+            'payment_method_token': 'test_token'
+        }
+
+        with patch('payments.adapters.PaymeAdapter.initiate_payment', side_effect=PaymentAdapterError(secret)):
+            response = self.client.post('/api/v1/payments/transactions/', data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn(secret, str(response.data))
+
+    @override_settings(DEBUG=True)  # client-side confirm is a dev-only mock flow
+    def test_confirm_payment_adapter_error_does_not_leak_details(self):
+        """audit #24: a PaymentAdapterError must not echo str(e) to the client."""
+        from unittest.mock import patch
+        from payments.adapters import PaymentAdapterError
+
+        transaction = PaymentTransaction.objects.create(
+            idempotency_key='test_key_confirm_adapter_error',
+            booking=self.booking,
+            provider='payme',
+            amount=Decimal('300.00'),
+            currency='USD',
+            status='processing',
+            provider_transaction_id='test_txn_confirm_adapter_error'
+        )
+        secret = 'internal adapter detail: provider account internal-acct-9f2 misconfigured'
+
+        with patch('payments.adapters.PaymeAdapter.confirm_payment', side_effect=PaymentAdapterError(secret)):
+            response = self.client.post(f'/api/v1/payments/transactions/{transaction.id}/confirm/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn(secret, str(response.data))
+
+    def test_refund_payment_adapter_error_does_not_leak_details(self):
+        """audit #24: a PaymentAdapterError must not echo str(e) to the client."""
+        from unittest.mock import patch
+        from payments.adapters import PaymentAdapterError
+
+        self.client.force_authenticate(user=User.objects.create_user(
+            email='staff_refund_adapter_error@example.com', password='testpass123', is_staff=True
+        ))
+        transaction = PaymentTransaction.objects.create(
+            idempotency_key='test_key_refund_adapter_error',
+            booking=self.booking,
+            provider='payme',
+            amount=Decimal('300.00'),
+            currency='USD',
+            status='completed',
+            provider_transaction_id='test_txn_refund_adapter_error'
+        )
+        secret = 'internal adapter detail: provider account internal-acct-9f2 misconfigured'
+
+        with patch('payments.adapters.PaymeAdapter.refund_payment', side_effect=PaymentAdapterError(secret)):
+            response = self.client.post(f'/api/v1/payments/transactions/{transaction.id}/refund/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn(secret, str(response.data))
     
     @override_settings(DEBUG=True)  # client-side confirm is a dev-only mock flow
     def test_confirm_payment_updates_booking_state(self):

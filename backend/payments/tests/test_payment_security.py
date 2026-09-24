@@ -393,6 +393,44 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
         self.tx.refresh_from_db()
         assert self.tx.status == 'processing'
 
+    def test_webhook_signature_error_does_not_leak_details(self):
+        """audit #24: SignatureValidationError branch must not echo str(e) to the caller."""
+        from payments.adapters import SignatureValidationError
+
+        secret = 'internal signature parsing detail: key=sk_live_abcdef'
+        with mock.patch('payments.views.get_webhook_processor') as mock_get_processor:
+            mock_get_processor.return_value.process_webhook.side_effect = SignatureValidationError(secret)
+            response = self.provider_client.post(
+                '/api/v1/payments/webhook/payme/', {'id': 'evt-x'}, format='json', HTTP_X_SIGNATURE='sig'
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert secret not in str(response.data)
+
+    def test_webhook_value_error_does_not_leak_details(self):
+        """audit #24: ValueError branch must not echo str(e) to the caller."""
+        secret = 'internal parsing detail: unexpected token at offset 42'
+        with mock.patch('payments.views.get_webhook_processor') as mock_get_processor:
+            mock_get_processor.return_value.process_webhook.side_effect = ValueError(secret)
+            response = self.provider_client.post(
+                '/api/v1/payments/webhook/payme/', {'id': 'evt-y'}, format='json', HTTP_X_SIGNATURE='sig'
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert secret not in str(response.data)
+
+    def test_webhook_unexpected_error_does_not_leak_details(self):
+        """audit #24: the generic Exception branch must not echo str(e) to the caller."""
+        secret = 'psycopg2.OperationalError: connection to internal-db-host failed'
+        with mock.patch('payments.views.get_webhook_processor') as mock_get_processor:
+            mock_get_processor.return_value.process_webhook.side_effect = Exception(secret)
+            response = self.provider_client.post(
+                '/api/v1/payments/webhook/payme/', {'id': 'evt-z'}, format='json', HTTP_X_SIGNATURE='sig'
+            )
+
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert secret not in str(response.data)
+
 
 class TestRefunds(PaymentSecurityTestBase):
     """#15: refunds are staff-only and record the right status."""

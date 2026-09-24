@@ -73,9 +73,46 @@ class TestOTPService(TestCase):
         user.generate_otp()
         
         result = self.otp_service.verify_otp(self.phone_number, '000000')
-        
+
         assert result['success'] is False
         assert 'Invalid or expired OTP code' in result['message']
+
+    def test_send_otp_internal_error_does_not_leak_details(self):
+        """An unexpected internal error must not surface str(e) to the caller (audit #24)."""
+        from unittest.mock import patch
+
+        User.objects.create_user(
+            email='test@example.com',
+            phone_number=self.phone_number,
+            full_name='Test User',
+            password='testpass123'
+        )
+        secret = 'psycopg2.OperationalError: connection to server failed on internal-db-host'
+
+        with patch('users.models.User.generate_otp', side_effect=Exception(secret)):
+            result = self.otp_service.send_otp(self.phone_number)
+
+        assert result['success'] is False
+        assert secret not in result['message']
+
+    def test_verify_otp_internal_error_does_not_leak_details(self):
+        """An unexpected internal error must not surface str(e) to the caller (audit #24)."""
+        from unittest.mock import patch
+
+        user = User.objects.create_user(
+            email='test@example.com',
+            phone_number=self.phone_number,
+            full_name='Test User',
+            password='testpass123'
+        )
+        otp_code = user.generate_otp()
+        secret = 'psycopg2.OperationalError: connection to server failed on internal-db-host'
+
+        with patch('users.models.User.verify_otp', side_effect=Exception(secret)):
+            result = self.otp_service.verify_otp(self.phone_number, otp_code)
+
+        assert result['success'] is False
+        assert secret not in result['message']
     
     def test_verify_otp_expired(self):
         """Test OTP verification with expired code."""

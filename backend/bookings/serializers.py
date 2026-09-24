@@ -1,10 +1,13 @@
 """
 Serializers for TICKBRON booking endpoints.
 """
+import logging
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Booking, BookingItem
+
+logger = logging.getLogger('tickbron')
 
 
 class BookingItemSerializer(serializers.ModelSerializer):
@@ -187,8 +190,11 @@ class BookingCreateSerializer(serializers.Serializer):
             else:
                 raise serializers.ValidationError({'non_field_errors': str(e)})
         except Exception as e:
+            # Unexpected/internal error (e.g. a raw DB error): never echo str(e) to
+            # the client, only log it server-side.
+            logger.exception('Unexpected error creating booking')
             raise serializers.ValidationError({
-                'non_field_errors': f'Failed to create booking: {str(e)}'
+                'non_field_errors': 'Failed to create booking. Please try again.'
             })
 
 
@@ -218,6 +224,7 @@ class BookingCancelSerializer(serializers.Serializer):
         except ValidationError as e:
             raise serializers.ValidationError(e.message_dict)
         except Exception as e:
+            logger.exception('Unexpected error cancelling booking')
             raise serializers.ValidationError({
-                'non_field_errors': f'Failed to cancel booking: {str(e)}'
+                'non_field_errors': 'Failed to cancel booking. Please try again.'
             })

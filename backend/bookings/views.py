@@ -1,14 +1,18 @@
 """
 Views for TICKBRON booking endpoints.
 """
+import logging
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from .models import Booking
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
+
+logger = logging.getLogger('tickbron')
 
 
 class BookingViewSet(mixins.CreateModelMixin,
@@ -72,19 +76,21 @@ class BookingViewSet(mixins.CreateModelMixin,
                 {'error': 'Booking validation failed', 'details': e.message_dict},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except DRFValidationError as e:
+            # BookingCreateSerializer.create() raises this for both business-rule
+            # violations and unexpected internal errors; either way e.detail is
+            # already a safe, non-leaking message by the time it gets here.
+            return Response(
+                {'error': 'Booking validation failed', 'details': e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            # Handle other exceptions - check if it's a validation-like error
-            error_str = str(e)
-            if 'availability' in error_str or 'validation' in error_str.lower():
-                return Response(
-                    {'error': 'Booking validation failed', 'details': error_str},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            else:
-                return Response(
-                    {'error': 'Failed to create booking', 'details': str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            # Truly unexpected error: never echo str(e) to the client.
+            logger.exception('Unexpected error creating booking')
+            return Response(
+                {'error': 'Failed to create booking'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def retrieve(self, request, *args, **kwargs):
         """
@@ -165,8 +171,16 @@ def booking_cancel(request, booking_id):
         updated_booking = serializer.save()
         response_serializer = BookingSerializer(updated_booking)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
-    except Exception as e:
+    except DRFValidationError as e:
+        # BookingCancelSerializer.update() raises this for both business-rule
+        # violations and unexpected internal errors; e.detail is already safe.
         return Response(
-            {'error': 'Failed to cancel booking', 'details': str(e)},
+            {'error': 'Failed to cancel booking', 'details': e.detail},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        logger.exception('Unexpected error cancelling booking')
+        return Response(
+            {'error': 'Failed to cancel booking'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

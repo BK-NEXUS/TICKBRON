@@ -569,10 +569,32 @@ class PropertySearchEndpointTest(TestCase):
     def test_search_endpoint_standardized_error_response(self):
         """Test that error responses follow standardized format."""
         response = self.client.get('/api/v1/properties/search/', {'min_price': -10})
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         self.assertIn('details', response.data)
+
+    def test_search_endpoint_internal_error_does_not_leak_details(self):
+        """An unexpected internal error from the search service must not leak str(e) (audit #24)."""
+        from unittest.mock import patch
+
+        secret = "psycopg2.errors.SyntaxError: near 'internal-query-fragment'"
+        with patch('properties.search.PropertySearchService.search', side_effect=ValueError(secret)):
+            response = self.client.get('/api/v1/properties/search/', {'q': 'Tashkent'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn(secret, str(response.data))
+
+    def test_search_suggestions_endpoint_internal_error_does_not_leak_details(self):
+        """An unexpected internal error from suggestions must not leak str(e) (audit #24)."""
+        from unittest.mock import patch
+
+        secret = "psycopg2.OperationalError: connection to internal-db-host failed"
+        with patch('properties.search.PropertySearchService.get_search_suggestions', side_effect=Exception(secret)):
+            response = self.client.get('/api/v1/properties/search/suggestions/', {'q': 'Tash'})
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertNotIn(secret, str(response.data))
 
 
 class PropertySearchIntegrationTest(TestCase):

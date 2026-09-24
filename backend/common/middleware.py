@@ -57,10 +57,11 @@ class RequestLoggingMiddleware:
     def __call__(self, request):
         start_time = time.time()
         
-        # Log request
+        # Log request. Use the user's id, not str(user) (the user's email), so
+        # PII does not end up in every request log line.
         user_info = 'Anonymous'
-        if hasattr(request, 'user'):
-            user_info = str(request.user) if request.user.is_authenticated else 'Anonymous'
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            user_info = f'user:{request.user.id}'
         
         logger.info(
             f"Request: {request.method} {request.path} - "

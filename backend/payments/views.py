@@ -184,7 +184,9 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             return self._provider_unavailable_response()
 
         except PaymentAdapterError as e:
-            # Handle payment adapter error
+            # Handle payment adapter error. error_message/audit details are
+            # internal records (staff-only), but the client response must not
+            # echo str(e) -- it may carry adapter/provider internals.
             payment_transaction.status = 'failed'
             payment_transaction.error_code = 'ADAPTER_ERROR'
             payment_transaction.error_message = str(e)
@@ -203,7 +205,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             )
 
             return Response(
-                {'error': str(e)},
+                {'error': 'Payment could not be processed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -278,7 +280,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             payment_transaction.error_code = 'CONFIRM_ERROR'
             payment_transaction.error_message = str(e)
             payment_transaction.save()
-            
+
             PaymentAuditLog.log_action(
                 action='payment_failed',
                 payment_transaction=payment_transaction,
@@ -289,12 +291,12 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 ip_address=self._get_client_ip(request),
                 details={'error': str(e)}
             )
-            
+
             return Response(
-                {'error': str(e)},
+                {'error': 'Payment could not be confirmed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def refund(self, request, pk=None):
         """
@@ -365,7 +367,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             payment_transaction.error_code = 'REFUND_ERROR'
             payment_transaction.error_message = str(e)
             payment_transaction.save()
-            
+
             PaymentAuditLog.log_action(
                 action='payment_failed',
                 payment_transaction=payment_transaction,
@@ -376,9 +378,9 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 ip_address=self._get_client_ip(request),
                 details={'error': str(e)}
             )
-            
+
             return Response(
-                {'error': str(e)},
+                {'error': 'Payment could not be refunded.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -498,18 +500,18 @@ def webhook_endpoint(request, provider):
     except SignatureValidationError as e:
         logger.error(f"Webhook signature validation failed: {e}")
         return Response(
-            {'error': 'Invalid signature', 'message': str(e)},
+            {'error': 'Invalid signature'},
             status=status.HTTP_400_BAD_REQUEST
         )
     except ValueError as e:
         logger.error(f"Webhook validation error: {e}")
         return Response(
-            {'error': 'Invalid request', 'message': str(e)},
+            {'error': 'Invalid request'},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception as e:
-        logger.error(f"Webhook processing error: {e}")
+        logger.error(f"Webhook processing error: {e}", exc_info=True)
         return Response(
-            {'error': 'Processing error', 'message': str(e)},
+            {'error': 'Processing error'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

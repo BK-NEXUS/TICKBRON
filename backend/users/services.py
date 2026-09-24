@@ -87,7 +87,7 @@ class OTPService:
             logger.error(f"Error generating OTP: {e}")
             return {
                 'success': False,
-                'message': f'Error generating OTP: {str(e)}'
+                'message': 'An error occurred while generating the OTP code.'
             }
     
     def verify_otp(self, phone_number: str, otp_code: str, client_ip: str = None) -> dict:
@@ -131,5 +131,5 @@ class OTPService:
             logger.error(f"Error verifying OTP: {e}")
             return {
                 'success': False,
-                'message': f'Error verifying OTP: {str(e)}'
+                'message': 'An error occurred while verifying the OTP code.'
             }

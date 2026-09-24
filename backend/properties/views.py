@@ -3,6 +3,7 @@ Views for TICKBRON property endpoints.
 """
 import sys
 import os
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
@@ -18,6 +19,8 @@ from properties.serializers import (
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+logger = logging.getLogger('tickbron')
 
 
 class SearchRateThrottle(AnonRateThrottle):
@@ -85,12 +88,14 @@ def property_search(request):
         search_results = search_service.search(search_params)
     except ValueError as e:
         # Handle validation errors from search service
+        logger.warning(f"Invalid search parameters: {e}")
         return Response(
-            {'error': 'Invalid search parameters', 'details': str(e)},
+            {'error': 'Invalid search parameters', 'details': 'One or more search parameters are invalid.'},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception as e:
         # Handle unexpected errors
+        logger.exception('Unexpected error during property search')
         return Response(
             {'error': 'Search failed', 'details': 'An unexpected error occurred during search'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -146,8 +151,9 @@ def property_search_suggestions(request):
     try:
         suggestions = search_service.get_search_suggestions(query, limit)
     except Exception as e:
+        logger.exception('Unexpected error getting search suggestions')
         return Response(
-            {'error': 'Failed to get suggestions', 'details': str(e)},
+            {'error': 'Failed to get suggestions'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     

@@ -373,3 +373,37 @@ class BookingViewTests(APITestCase):
 
         self.assertTrue(serializer.is_valid())
         self.assertEqual(serializer.validated_data, {})
+
+    def test_create_booking_internal_error_does_not_leak_details(self):
+        """An unexpected internal error (e.g. a raw DB error) must not reach the client (audit #24)."""
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.user)
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 2
+        }
+
+        secret = 'CHECK constraint "chk_secret_internal_detail" violated on table bookings_x7f2'
+        with patch('bookings.models.Booking.create_booking', side_effect=Exception(secret)):
+            response = self.client.post('/api/v1/bookings/', data, format='json')
+
+        self.assertIn(response.status_code, (status.HTTP_400_BAD_REQUEST, status.HTTP_500_INTERNAL_SERVER_ERROR))
+        self.assertNotIn(secret, str(response.data))
+
+    def test_cancel_booking_internal_error_does_not_leak_details(self):
+        """An unexpected internal error while cancelling must not reach the client (audit #24)."""
+        from unittest.mock import patch
+
+        booking = self._create_booking_via_api()
+        secret = 'psycopg2.errors.CheckViolation: internal constraint xyz failed'
+
+        with patch('bookings.models.Booking.cancel_booking', side_effect=Exception(secret)):
+            response = self.client.post(f'/api/v1/bookings/{booking.id}/cancel/', {}, format='json')
+
+        self.assertIn(response.status_code, (status.HTTP_400_BAD_REQUEST, status.HTTP_500_INTERNAL_SERVER_ERROR))
+        self.assertNotIn(secret, str(response.data))
