@@ -214,6 +214,3 @@ export const authAdapter = new AuthAdapter()
 
 // Export class for testing
 export { AuthAdapter }
-
-// Export new types
-export type { RequestOTPRequest, VerifyOTPRequest, OTPResponse }

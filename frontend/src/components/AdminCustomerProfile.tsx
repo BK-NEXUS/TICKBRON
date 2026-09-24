@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { adminAdapter, AdminCustomerProfile, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
+import { adminAdapter } from '../adapters/adminAdapter'
+import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
 
 type TabType = 'bookings' | 'payments' | 'notes'
 type BookingFilterType = 'all' | 'upcoming' | 'completed' | 'cancelled'
@@ -11,7 +12,7 @@ export function AdminCustomerProfile() {
   const [activeTab, setActiveTab] = useState<TabType>('bookings')
   const [bookingFilter, setBookingFilter] = useState<BookingFilterType>('all')
   
-  const [profile, setProfile] = useState<AdminCustomerProfile | null>(null)
+  const [profile, setProfile] = useState<AdminCustomerProfileData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
