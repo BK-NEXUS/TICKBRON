@@ -571,3 +571,158 @@ class PartnerDateInventoryTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.date_inventory.refresh_from_db()
         self.assertEqual(self.date_inventory.booked_rooms, 0)  # Should remain unchanged
+
+
+class PartnerPropertyPhotoUploadTests(TestCase):
+    """Tests for partner property photo upload validation (audit #23)."""
+
+    # Minimal valid 1x1 GIF, matches the fixture used in properties/tests/test_models.py
+    VALID_IMAGE_BYTES = (
+        b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
+        b'\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
+        b'\x02\x4c\x01\x00\x3b'
+    )
+
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+
+        self.hotel_owner_role, _ = Role.objects.get_or_create(
+            name='hotel-owner',
+            defaults={'description': 'Hotel owner role', 'is_system_role': True}
+        )
+
+        self.hotel_owner = User.objects.create_user(
+            email='hotelowner@example.com',
+            password='testpassword123',
+            first_name='John',
+            last_name='Doe',
+            role=self.hotel_owner_role
+        )
+
+        self.property_type = PropertyType.objects.create(
+            name='Apartment',
+            slug='apartment',
+            description='Apartment property type'
+        )
+
+        self.property = Property.objects.create(
+            owner=self.hotel_owner,
+            property_type=self.property_type,
+            status='draft',
+            max_guests=4,
+            bedrooms=2,
+            bathrooms=1,
+            address_line1='123 Main St',
+            city='Tashkent',
+            country='Uzbekistan',
+            base_price=100.00,
+            currency='USD'
+        )
+
+        self.upload_url = f'/api/v1/partner/properties/{self.property.id}/photos/'
+
+    def test_hotel_owner_can_upload_valid_photo(self):
+        """A genuine, small, correctly-typed image is accepted."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.hotel_owner)
+        image = SimpleUploadedFile(
+            name='photo.gif',
+            content=self.VALID_IMAGE_BYTES,
+            content_type='image/gif'
+        )
+        response = self.client.post(
+            self.upload_url,
+            {'photo': image, 'photo_type': 'exterior'},
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_hotel_owner_cannot_upload_fake_image(self):
+        """
+        A non-image file disguised with an image extension/content-type must be rejected.
+
+        DRF's ImageField already verifies the payload with Pillow before it reaches our
+        code, so this passes even pre-fix -- it documents that existing coverage rather
+        than testing the audit #23 gap itself (see the extension/size tests below for that).
+        """
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.hotel_owner)
+        fake_image = SimpleUploadedFile(
+            name='photo.jpg',
+            content=b'this is definitely not image data, just plain bytes' * 10,
+            content_type='image/jpeg'
+        )
+        response = self.client.post(
+            self.upload_url,
+            {'photo': fake_image, 'photo_type': 'exterior'},
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', response.data)
+
+    def test_hotel_owner_cannot_upload_disallowed_extension(self):
+        """
+        A genuinely valid image (Pillow opens it fine) in a format outside our whitelist
+        (jpg/jpeg/png/gif/webp) must still be rejected. model.clean() enforces this, but
+        DRF never calls it -- audit #23's actual gap.
+        """
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        import io
+
+        img = Image.new('RGB', (10, 10), color=(255, 0, 0))
+        buf = io.BytesIO()
+        img.save(buf, format='BMP')
+
+        self.client.force_authenticate(user=self.hotel_owner)
+        bmp_file = SimpleUploadedFile(
+            name='photo.bmp',
+            content=buf.getvalue(),
+            content_type='image/bmp'
+        )
+        response = self.client.post(
+            self.upload_url,
+            {'photo': bmp_file, 'photo_type': 'exterior'},
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', response.data)
+
+    def test_hotel_owner_cannot_upload_oversized_photo(self):
+        """
+        A genuinely valid image larger than the 10MB limit must be rejected by the API,
+        not just by model.clean() (which DRF never calls).
+        """
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+        import io
+        import os
+
+        width, height = 2000, 1800  # random-noise pixels compress poorly -> file stays > 10MB
+        raw_pixels = os.urandom(width * height * 3)
+        img = Image.frombytes('RGB', (width, height), raw_pixels)
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        content = buf.getvalue()
+        self.assertGreater(len(content), 10 * 1024 * 1024)
+
+        self.client.force_authenticate(user=self.hotel_owner)
+        oversized_file = SimpleUploadedFile(
+            name='photo.png',
+            content=content,
+            content_type='image/png'
+        )
+        response = self.client.post(
+            self.upload_url,
+            {'photo': oversized_file, 'photo_type': 'exterior'},
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', response.data)

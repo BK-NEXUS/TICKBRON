@@ -5,6 +5,7 @@ This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
 from rest_framework import serializers
+from common.storage import validate_image_file
 from properties.models import Property, RoomType, RatePlan, DateInventory, PropertyPhoto
 from properties.serializers import (
     PropertyPhotoSerializer, AmenitySerializer, PropertyAmenitySerializer
@@ -156,7 +157,17 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
         if obj.photo:
             return obj.photo.url
         return None
-    
+
+    def validate_photo(self, value):
+        """
+        Enforce the size/extension/content-type rules from model.clean() here too,
+        since DRF's create/update flow never calls full_clean().
+        """
+        is_valid, error_message = validate_image_file(value)
+        if not is_valid:
+            raise serializers.ValidationError(error_message)
+        return value
+
     def validate_property(self, value):
         """Ensure the property belongs to the authenticated hotel-owner."""
         request = self.context.get('request')
