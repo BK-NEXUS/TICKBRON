@@ -1,3 +1,5 @@
+import { readApiError } from '../utils/errorHandler'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Favorite types from backend contract
@@ -144,11 +146,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch favorites' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -173,14 +172,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Property not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to add favorite' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Property not found' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -201,14 +194,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Favorite not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to remove favorite' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Favorite not found' })
+        return { data: null, error: apiError.message }
       }
 
       return { data: null, error: null }
@@ -228,11 +215,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch favorite count' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -254,11 +238,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch account history' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -279,14 +260,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          return { data: null, error: 'Invalid limit parameter' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch recent history' }
+        const apiError = await readApiError(response, { 400: 'Invalid limit parameter', 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -307,11 +282,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch account history stats' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -337,14 +309,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 403) {
-          return { data: null, error: 'Unauthorized access' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch bookings' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Unauthorized access' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -366,11 +332,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch reviews' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -405,18 +368,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          const errorData = await response.json().catch(() => ({}))
-          return { data: null, error: errorData.detail || 'Invalid review data' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Property or booking not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to create review' }
+        const apiError = await readApiError(response, { 400: 'Invalid review data', 401: 'Authentication required', 404: 'Property or booking not found' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -437,11 +390,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch eligible properties' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -462,14 +412,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          return { data: null, error: 'Property ID is required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch property scores' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()

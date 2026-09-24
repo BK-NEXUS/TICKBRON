@@ -124,7 +124,29 @@ describe('BookingAdapter', () => {
       const result = await adapter.createBooking(request)
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('Invalid booking parameters')
+      expect(result.error).toBe('Invalid booking parameters. Check in: Invalid date')
+    })
+
+    it('returns a string, not the error object, for the uniform error envelope', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({
+          error: { code: 'permission_denied', message: 'You do not have permission to perform this action.', details: {} },
+        }),
+      })
+
+      const result = await adapter.createBooking({
+        property_id: 1,
+        room_type_id: 1,
+        rate_plan_id: 1,
+        check_in: '2030-01-20',
+        check_out: '2030-01-25',
+        guest_count: 2,
+      })
+
+      expect(typeof result.error).toBe('string')
+      expect(result.error).toBe('You do not have permission to perform this action.')
     })
 
     it('should handle network errors', async () => {

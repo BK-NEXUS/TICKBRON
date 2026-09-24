@@ -1,6 +1,8 @@
 // Auth API adapter for session-based authentication
 // Integrates with backend auth endpoints from Checkpoint 03-04
 
+import { readApiError } from '../utils/errorHandler'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface User {
@@ -98,10 +100,10 @@ class AuthAdapter {
       const response = await fetch(url, defaultOptions)
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const apiError = await readApiError(response)
         return {
           success: false,
-          error: errorData.detail || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          error: apiError.message,
         }
       }
 
@@ -171,10 +173,10 @@ class AuthAdapter {
       })
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const apiError = await readApiError(response)
         return {
           success: false,
-          error: errorData.detail || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          error: apiError.message,
         }
       }
 

@@ -287,6 +287,36 @@ describe('AuthAdapter', () => {
       expect(response.error).toBe('Invalid phone number')
     })
 
+    it('returns a string message for a throttled request in the uniform envelope', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'Retry-After': '30' }),
+        json: async () => ({
+          error: { code: 'throttled', message: 'Request was throttled. Expected available in 30 seconds.', details: {} },
+        }),
+      })
+
+      const response = await adapter.requestOTP({ phone_number: '+998901234567' })
+
+      expect(response.success).toBe(false)
+      expect(response.error).toBe('Too many requests. Please try again in 30 seconds.')
+    })
+
+    it('returns a string message when the SMS provider is unavailable', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({
+          error: { code: 'external_service_error', message: 'SMS service unavailable', details: null },
+        }),
+      })
+
+      const response = await adapter.requestOTP({ phone_number: '+998901234567' })
+
+      expect(response.error).toBe('Service temporarily unavailable. Please try again later.')
+    })
+
     it('handles network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 

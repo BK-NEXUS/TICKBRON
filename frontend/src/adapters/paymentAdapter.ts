@@ -1,6 +1,8 @@
 // Payment API adapter for payment endpoints
 // Integrates with backend payment endpoints from Checkpoint 15-16
 
+import { readApiError } from '../utils/errorHandler'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'partially_refunded'
@@ -74,12 +76,8 @@ class PaymentAdapter {
       const response = await fetch(url, defaultOptions)
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = 
-          errorData.detail || 
-          errorData.error || 
-          `HTTP ${response.status}: ${response.statusText}`
-        return { data: null, error: errorMessage }
+        const apiError = await readApiError(response)
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()

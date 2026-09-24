@@ -218,7 +218,7 @@ describe('AdminAdapter', () => {
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 403,
-        json: async () => ({ detail: 'Super-admin required' }),
+        json: async () => ({ detail: 'You do not have permission to perform this action.' }),
       })
 
       const result = await adapter.createHotelOwner(ownerData)
@@ -774,7 +774,7 @@ describe('AdminAdapter', () => {
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: async () => ({ detail: 'Not found' }),
+        json: async () => ({ detail: 'Not found.' }),
       })
 
       const result = await adapter.getCustomers()
@@ -798,7 +798,7 @@ describe('AdminAdapter', () => {
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: async () => ({ detail: 'Not found' }),
+        json: async () => ({ detail: 'Not found.' }),
       })
 
       const result = await adapter.getProperties()
@@ -830,7 +830,7 @@ describe('AdminAdapter', () => {
       const result = await adapter.getProperties()
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('Internal server error')
+      expect(result.error).toBe('Server error. Please try again later.')
     })
   })
 
@@ -1051,7 +1051,7 @@ describe('AdminAdapter', () => {
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: async () => ({ detail: 'Not found' }),
+        json: async () => ({ detail: 'Not found.' }),
       })
 
       const result = await adapter.getCustomerProfile(999)
@@ -1314,7 +1314,7 @@ describe('AdminAdapter', () => {
       const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'INVALID' })
 
       expect(result.data).toBeNull()
-      expect(result.error).toBe('Resource not found')
+      expect(result.error).toBe('Booking not found')
     })
 
     it('should handle 403 error for non-staff users when looking up booking', async () => {

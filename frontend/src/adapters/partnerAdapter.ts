@@ -1,6 +1,8 @@
 // Partner API adapter for hotel-owner property management
 // Integrates with backend partner endpoints from Checkpoint 18
 
+import { readApiError } from '../utils/errorHandler'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Property types from backend contract
@@ -296,21 +298,8 @@ class PartnerAdapter {
       const response = await fetch(url, defaultOptions)
       
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 403) {
-          return { data: null, error: 'Hotel-owner role required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Resource not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = 
-          errorData.detail || 
-          errorData.error || 
-          `HTTP ${response.status}: ${response.statusText}`
-        return { data: null, error: errorMessage }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Resource not found' })
+        return { data: null, error: apiError.message }
       }
 
       // Handle 204 No Content (DELETE operations)
@@ -529,21 +518,8 @@ class PartnerAdapter {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 403) {
-          return { data: null, error: 'Hotel-owner role required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Property not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = 
-          errorData.detail || 
-          errorData.error || 
-          `HTTP ${response.status}: ${response.statusText}`
-        return { data: null, error: errorMessage }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Property not found' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
