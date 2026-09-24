@@ -593,3 +593,5 @@ export function AdminCustomerProfile() {
     </div>
   )
 }
+
+export default AdminCustomerProfile

@@ -282,3 +282,5 @@ export function SupportLookupPage() {
     </div>
   )
 }
+
+export default SupportLookupPage

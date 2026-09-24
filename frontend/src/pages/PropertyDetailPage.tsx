@@ -235,3 +235,4 @@ export function PropertyDetailPage() {
     </div>
   )
 }
+export default PropertyDetailPage
