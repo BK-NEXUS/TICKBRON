@@ -1529,7 +1529,33 @@ class AdminInternalNotesTests(TestCase):
         self.note.refresh_from_db()
         self.assertEqual(self.note.customer_id, self.customer.id)
         self.assertEqual(self.note.note, 'Edited')
-    
+
+    def test_note_author_cannot_be_changed(self):
+        """Editing a note cannot rewrite who wrote it."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
+            {'note': 'Edited', 'author': self.staff_user.id}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.author_id, self.super_admin.id)
+        self.assertEqual(self.note.note, 'Edited')
+
+    def test_note_author_only_update_leaves_note_untouched(self):
+        """The note PUT is partial; a body with only author must not change the author."""
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put(
+            f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
+            {'author': self.staff_user.id}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.author_id, self.super_admin.id)
+        self.assertEqual(response.data['author_email'], 'admin@example.com')
+
     def test_regular_user_cannot_create_internal_note(self):
         """Test that regular user cannot create internal note."""
         self.client.force_authenticate(user=self.customer)

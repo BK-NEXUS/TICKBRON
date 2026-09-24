@@ -278,8 +278,9 @@ class AdminInternalNoteSerializer(serializers.ModelSerializer):
             'id', 'customer', 'author', 'author_name', 'author_email',
             'note', 'created_at', 'updated_at'
         ]
-        # A note belongs to the customer in its URL; it cannot be moved by editing
-        read_only_fields = ['id', 'customer', 'created_at', 'updated_at']
+        # A note belongs to the customer in its URL and keeps its original author;
+        # neither can be changed by editing
+        read_only_fields = ['id', 'customer', 'author', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
         """Get author full name."""
