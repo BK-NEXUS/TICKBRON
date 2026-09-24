@@ -1928,3 +1928,17 @@ Status: READY
 - No breaking changes to existing functionality
 - All improvements use existing architecture and design system
 - Design system and accessibility preserved (no regressions)
+
+---
+
+## Note for Baxram: frontend audit fixes (2026-09-24, Kolya)
+
+With your OK, I changed `frontend/` on branch `fix/frontend-audit` (not merged; merging is your call).
+- F1: pages now `export default` as well; the app opens again
+- F3: every adapter reads errors through `readApiError` (utils/errorHandler.ts); `error` is always a string
+- F2: every adapter calls `apiFetch` (utils/api.ts), which adds `X-CSRFToken`. New backend endpoint `GET /api/v1/auth/csrf/` is on master. New adapters must use `apiFetch`, not plain `fetch`
+- `npm run build` now runs tsc first (`build:check` removed)
+- F4: review create sends `property`, `booking` and flat `*_rating` fields
+- `/auth/me` now returns `is_staff`
+- Still broken (report only, see `.ai/frontend-audit-report.md` F20–F32): paginated lists handled as arrays (favorites, reviews, admin and partner lists), `room_types[].property_id` missing (UI booking stops with 404), favorites add sends `property_id`, search cards need `translations`, support lookup and admin statistics shapes
+- Details: `.ai/checkpoints/frontend_audit_fix.md`

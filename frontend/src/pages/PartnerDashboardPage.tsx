@@ -340,3 +340,5 @@ export function PartnerDashboardPage() {
     </div>
   )
 }
+
+export default PartnerDashboardPage

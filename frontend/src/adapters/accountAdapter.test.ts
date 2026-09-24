@@ -54,7 +54,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getFavorites()
@@ -157,7 +157,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.addFavorite(1)
@@ -204,7 +204,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.removeFavorite(1)
@@ -240,7 +240,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getFavoriteCount()
@@ -284,7 +284,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getAccountHistory()
@@ -328,7 +328,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ detail: 'Invalid limit' }),
+        json: async () => ({}),
       })
 
       const result = await accountAdapter.getRecentHistory(999)
@@ -341,7 +341,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getRecentHistory(10)
@@ -384,7 +384,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getAccountHistoryStats()
@@ -563,7 +563,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getBookings()
@@ -576,7 +576,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 403,
-        json: async () => ({ detail: 'Forbidden' }),
+        json: async () => ({ detail: 'You do not have permission to perform this action.' }),
       })
 
       const result = await accountAdapter.getBookings()
@@ -629,7 +629,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getReviews()
@@ -664,15 +664,14 @@ describe('accountAdapter', () => {
       })
 
       const reviewData = {
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 5,
-        category_ratings: {
-          cleanliness_rating: 5,
-          location_rating: 5,
-          value_rating: 5,
-          amenities_rating: 5,
-          service_rating: 5,
-        },
+        cleanliness_rating: 5,
+        location_rating: 5,
+        value_rating: 5,
+        amenities_rating: 5,
+        service_rating: 5,
         title: 'Great stay!',
         comment: 'Amazing property',
       }
@@ -708,7 +707,8 @@ describe('accountAdapter', () => {
       })
 
       const reviewData = {
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 4,
       }
 
@@ -722,11 +722,12 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 5,
       })
 
@@ -738,11 +739,12 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ detail: 'Invalid review data' }),
+        json: async () => ({}),
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 1,
+        property: 1,
+        booking: 7,
         overall_rating: 6, // Invalid rating
       })
 
@@ -750,15 +752,34 @@ describe('accountAdapter', () => {
       expect(result.error).toBe('Invalid review data')
     })
 
+    it('shows the field errors the backend returns', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          error: {
+            code: 'error',
+            message: "{'booking': [ErrorDetail(string='You can only review completed bookings.', code='invalid')]}",
+            details: { booking: ['You can only review completed bookings.'] },
+          },
+        }),
+      })
+
+      const result = await accountAdapter.createReview({ property: 1, booking: 7, overall_rating: 5 })
+
+      expect(result.error).toBe('Booking: You can only review completed bookings.')
+    })
+
     it('should handle 404 property not found error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: async () => ({ detail: 'Property not found' }),
+        json: async () => ({ detail: 'No Property matches the given query.' }),
       })
 
       const result = await accountAdapter.createReview({
-        property_id: 999,
+        property: 999,
+        booking: 7,
         overall_rating: 5,
       })
 
@@ -805,7 +826,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getEligibleProperties()
@@ -871,7 +892,7 @@ describe('accountAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ detail: 'Unauthorized' }),
+        json: async () => ({ detail: 'Authentication credentials were not provided.' }),
       })
 
       const result = await accountAdapter.getPropertyScores(1)

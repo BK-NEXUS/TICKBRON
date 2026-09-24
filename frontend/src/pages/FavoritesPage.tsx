@@ -164,3 +164,5 @@ export function FavoritesPage() {
     </div>
   )
 }
+
+export default FavoritesPage

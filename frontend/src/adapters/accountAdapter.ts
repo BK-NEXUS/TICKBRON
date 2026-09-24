@@ -1,3 +1,6 @@
+import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Favorite types from backend contract
@@ -82,6 +85,21 @@ export interface Review {
   updated_at: string
 }
 
+// Mirrors backend ReviewCreateSerializer: flat category ratings, `property` and `booking` ids.
+// The booking must be the user's own completed, not yet reviewed stay at that property.
+export interface CreateReviewRequest {
+  property: number
+  booking: number
+  overall_rating: number
+  cleanliness_rating?: number
+  location_rating?: number
+  value_rating?: number
+  amenities_rating?: number
+  service_rating?: number
+  title?: string
+  comment?: string
+}
+
 export interface EligibleProperty {
   property_id: number
   property_city: string
@@ -135,7 +153,7 @@ export const accountAdapter = {
   // Favorites API methods
   async getFavorites(): Promise<ApiResponse<Favorite[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -144,11 +162,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch favorites' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -160,7 +175,7 @@ export const accountAdapter = {
 
   async addFavorite(propertyId: number, notes?: string): Promise<ApiResponse<Favorite>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -173,14 +188,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Property not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to add favorite' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Property not found' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -192,7 +201,7 @@ export const accountAdapter = {
 
   async removeFavorite(favoriteId: number): Promise<ApiResponse<null>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/${favoriteId}/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/${favoriteId}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -201,14 +210,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Favorite not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to remove favorite' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Favorite not found' })
+        return { data: null, error: apiError.message }
       }
 
       return { data: null, error: null }
@@ -219,7 +222,7 @@ export const accountAdapter = {
 
   async getFavoriteCount(): Promise<ApiResponse<FavoriteCount>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/count/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/count/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -228,11 +231,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch favorite count' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -245,7 +245,7 @@ export const accountAdapter = {
   // Account History API methods
   async getAccountHistory(): Promise<ApiResponse<AccountHistory[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -254,11 +254,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch account history' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -270,7 +267,7 @@ export const accountAdapter = {
 
   async getRecentHistory(limit: number = 10): Promise<ApiResponse<AccountHistory[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/recent/?limit=${limit}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/recent/?limit=${limit}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -279,14 +276,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          return { data: null, error: 'Invalid limit parameter' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch recent history' }
+        const apiError = await readApiError(response, { 400: 'Invalid limit parameter', 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -298,7 +289,7 @@ export const accountAdapter = {
 
   async getAccountHistoryStats(): Promise<ApiResponse<AccountHistoryStats>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/stats/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/stats/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -307,11 +298,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch account history stats' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -328,7 +316,7 @@ export const accountAdapter = {
       if (status) params.append('status', status)
       if (paymentStatus) params.append('payment_status', paymentStatus)
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/bookings/?${params.toString()}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/bookings/?${params.toString()}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -337,14 +325,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 403) {
-          return { data: null, error: 'Unauthorized access' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch bookings' }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Unauthorized access' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -357,7 +339,7 @@ export const accountAdapter = {
   // Reviews API methods
   async getReviews(): Promise<ApiResponse<Review[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -366,11 +348,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch reviews' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -380,22 +359,9 @@ export const accountAdapter = {
     }
   },
 
-  async createReview(reviewData: {
-    property_id: number
-    booking_id?: number
-    overall_rating: number
-    category_ratings?: {
-      cleanliness_rating?: number
-      location_rating?: number
-      value_rating?: number
-      amenities_rating?: number
-      service_rating?: number
-    }
-    title?: string
-    comment?: string
-  }): Promise<ApiResponse<Review>> {
+  async createReview(reviewData: CreateReviewRequest): Promise<ApiResponse<Review>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -405,18 +371,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          const errorData = await response.json().catch(() => ({}))
-          return { data: null, error: errorData.detail || 'Invalid review data' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Property or booking not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to create review' }
+        const apiError = await readApiError(response, { 400: 'Invalid review data', 401: 'Authentication required', 404: 'Property or booking not found' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -428,7 +384,7 @@ export const accountAdapter = {
 
   async getEligibleProperties(): Promise<ApiResponse<EligiblePropertiesResponse>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/eligible_properties/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/eligible_properties/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -437,11 +393,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch eligible properties' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
@@ -453,7 +406,7 @@ export const accountAdapter = {
 
   async getPropertyScores(propertyId: number): Promise<ApiResponse<PropertyScores>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/property_scores/?property_id=${propertyId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/property_scores/?property_id=${propertyId}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -462,14 +415,8 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 400) {
-          return { data: null, error: 'Property ID is required' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        return { data: null, error: errorData.detail || 'Failed to fetch property scores' }
+        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()

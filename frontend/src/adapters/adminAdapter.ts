@@ -1,6 +1,9 @@
 // Admin API adapter for admin moderation and management
 // Integrates with backend admin endpoints from Checkpoint 18
 
+import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Admin Property types from backend contract
@@ -358,24 +361,11 @@ class AdminAdapter {
     }
 
     try {
-      const response = await fetch(url, defaultOptions)
+      const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
-        if (response.status === 401) {
-          return { data: null, error: 'Authentication required' }
-        }
-        if (response.status === 403) {
-          return { data: null, error: 'Admin or staff role required' }
-        }
-        if (response.status === 404) {
-          return { data: null, error: 'Resource not found' }
-        }
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = 
-          errorData.detail || 
-          errorData.error || 
-          `HTTP ${response.status}: ${response.statusText}`
-        return { data: null, error: errorMessage }
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Resource not found' })
+        return { data: null, error: apiError.message }
       }
 
       // Handle 204 No Content (DELETE operations)

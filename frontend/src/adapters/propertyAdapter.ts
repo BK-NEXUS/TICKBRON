@@ -1,6 +1,9 @@
 // Property API adapter for search and property detail endpoints
 // Integrates with backend property endpoints from Checkpoint 10-11
 
+import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface PropertyType {
@@ -236,15 +239,11 @@ class PropertyAdapter {
     }
 
     try {
-      const response = await fetch(url, defaultOptions)
+      const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = 
-          errorData.detail || 
-          errorData.error || 
-          `HTTP ${response.status}: ${response.statusText}`
-        return { data: null, error: errorMessage }
+        const apiError = await readApiError(response)
+        return { data: null, error: apiError.message }
       }
 
       const data = await response.json()

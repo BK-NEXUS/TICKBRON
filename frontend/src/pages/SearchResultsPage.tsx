@@ -261,3 +261,4 @@ export function SearchResultsPage() {
     </div>
   )
 }
+export default SearchResultsPage
