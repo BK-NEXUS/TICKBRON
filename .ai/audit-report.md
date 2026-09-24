@@ -31,12 +31,12 @@
 | 20 | Bronsiz sharh; sharhda booking/property almashtirish | O'rta | ✅ Tuzatildi — `68ec591` (+ eligible_properties har bir bron alohida) |
 | 21 | Admin RBAC ishlatilmaydi, audit log yo'q, InternalNote author yoziladi | O'rta | Qisman — InternalNote author read-only (`6b732ac`); RBAC, audit log va staff'ning begona sharhni PATCH qilishi ochiq |
 | 22 | Mijozlar ro'yxati xotirada saralanadi, aggregat join xatosi | O'rta | ✅ Tuzatildi — `f55ff3e` |
-| 23 | Rasm yuklash validatsiyasi DRF orqali chaqirilmaydi | O'rta | Ochiq |
-| 24 | Ichki xatolar (`str(e)`) klientga, OTP va email loglarda | O'rta | Qisman — OTP kodi logdan olib tashlandi (`73b0247`), qolgani ochiq |
+| 23 | Rasm yuklash validatsiyasi DRF orqali chaqirilmaydi | O'rta | ✅ Tuzatildi — `d6a3839` |
+| 24 | Ichki xatolar (`str(e)`) klientga, OTP va email loglarda | O'rta | ✅ Tuzatildi — `f05ab83` |
 | 25 | SESSION/CSRF cookie secure sukut bo'yicha False | O'rta | ✅ Tuzatildi — `50a8a26` |
-| 26 | Partner bronlar ro'yxati 500 (`booking.guest_name`) | Kichik | Ochiq |
-| 27 | Sevimlini o'chirib qayta qo'shish 500 | Kichik | Ochiq |
-| 28 | Noto'g'ri query parametrlarida 500 | Kichik | Ochiq |
+| 26 | Partner bronlar ro'yxati 500 (`booking.guest_name`) | Kichik | ✅ Tuzatildi — `d78fee0` |
+| 27 | Sevimlini o'chirib qayta qo'shish 500 | Kichik | ✅ Tuzatildi — `8c4f558` |
+| 28 | Noto'g'ri query parametrlarida 500 | Kichik | ✅ Tuzatildi — `c651754` |
 | 29 | `process_expired_bookings` xatolarni yutadi | Kichik | ✅ Tuzatildi — `c07f409` |
 | 30 | `conftest.py` testlarni sozlangan (dev) bazada ishlatadi | Kichik | ✅ Tuzatildi — `c98a48f` |
 | 31 | Inventar rate_plan bo'yicha, room_type bo'yicha emas | Kichik | Ochiq — yechim variantlari quyida, tuzatilmagan |
@@ -109,9 +109,12 @@
 **#22** Mijozlar ro'yxati barcha foydalanuvchilarni xotiraga yuklab saralaydi; `Count('bookings')` + `Sum(payment_transactions)` join sonlarni ko'paytirishi mumkin; staff ham ro'yxatda.
 *Tuzatish (`f55ff3e`):* staff va super-admin ro'yxatga kirmaydi. Aggregatlar correlated subquery bilan hisoblanadi: oldin bir nechta to'lovi bor bron to'lovlar soni marta sanalardi (✅ 2 bron → 4). `customer_status` va ko'rsatiladigan ism annotate qilinadi, saralash va sahifalash DB'da (`LIMIT/OFFSET`). Bo'sh `last_booking_date` ikkala yo'nalishda ham oxirida; `full_name` registrdan qat'i nazar saralanadi.
 
-**#23** Rasm hajmi/kengaytma tekshiruvi `model.clean()` da — DRF uni chaqirmaydi.
+**#23** Rasm hajmi/kengaytma tekshiruvi `model.clean()` da edi — DRF uni chaqirmaydi. ✅
+*Tuzatish (`d6a3839`):* `PartnerPropertyPhotoSerializer.validate_photo()` `common/storage.validate_image_file()` ni chaqiradi (10MB limit, `.jpg/.jpeg/.png/.gif/.webp` ro'yxati, content-type). DRF'ning o'zi ImageField orqali Pillow bilan "bu haqiqiy rasmmi" tekshiruvini allaqachon qilar edi (soxta rasm fayli avvaldan ham 400 qaytarardi) — asosiy teshik faqat hajm/kengaytma edi.
 
-**#24** `str(e)` klientga qaytadi (bron yaratish/bekor qilish — ✅ SQL CHECK matni ko'rindi, OTP, search suggestions, webhook); OTP kodlari (tuzatildi) va har so'rovda foydalanuvchi email'i loglarga yoziladi (ochiq).
+**#24** `str(e)` klientga qaytardi (bron yaratish/bekor qilish — SQL CHECK matni ko'rinardi, OTP, search/suggestions, webhook, payment confirm/refund/create); har so'rovda foydalanuvchi email'i (`str(request.user)`) loglarga yozilardi. ✅
+*Tuzatish (`f05ab83`):* `bookings/views.py` va `bookings/serializers.py`dagi generic `except Exception` filiallari endi generic xabar qaytaradi, tafsilot `logger.exception` bilan logga yoziladi; xuddi shu qoida `users/services.py` (OTP), `properties/views.py` (search/suggestions), `payments/views.py` (webhook_endpoint + create/confirm/refund'dagi `PaymentAdapterError` filiallari) uchun qo'llandi. `common/middleware.py` `RequestLoggingMiddleware` endi `request.user.id` ni logga yozadi, email emas. Butun backend `str(e)` bo'yicha grep qilib tekshirildi: qolgan joylar yo faqat serverga yoziladigan audit-log/model maydonlari (`PaymentTransaction.error_message`, `PaymentAuditLog.details` — staff-only), yo `bookings/serializers.py`dagi Django `ValidationError.message_dict`siz filial (bu — kod ichida ataylab ko'tarilgan xavfsiz validatsiya matni, ichki xato emas).
+*Yon topilma:* shu ishni qilayotganda `common/exception_handlers.py:114` da alohida xato topildi — agar `serializers.ValidationError` string bilan (dict emas) ko'tarilsa, `response.data` list bo'lib qoladi va handler'ning fallback wrapping qismi (`response.data.get('code', ...)`) `AttributeError` bilan 500 beradi. Bu joyni tuzatishda `raise ValidationError({'non_field_errors': ...})` (dict) shaklidan foydalanib chetlab o'tildi; `exception_handlers.py`ning o'zi hali tuzatilmagan — alohida ish sifatida ko'rib chiqilishi kerak.
 
 **#25** `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` sukut `False`.
 *Tuzatish (`50a8a26`):* sukut qiymati `not DEBUG` (production'da `True`, lokal http'da `False`), env bilan o'zgartirish mumkin. `.env.example` ularni endi `False` ga qo'ymaydi.
@@ -119,10 +122,13 @@
 ### 🟢 Kichik
 
 **#26** Partner bronlar ro'yxati har doim 500: `booking.guest_name` yo'q (`partner/views.py:204`). ✅
+*Tuzatish (`d78fee0`):* `booking.guest_full_name` ishlatiladi (bron paytida saqlangan ism, qo'shimcha query kerak emas).
 
 **#27** Sevimlini o'chirib qayta qo'shish 500 (soft delete + `unique_together`). ✅
+*Tuzatish (`8c4f558`):* `FavoriteViewSet.perform_create()` avval mavjud (garchi o'chirilgan bo'lsa ham) yozuvni qidiradi: o'chirilgan bo'lsa tiklaydi (`is_deleted=False`, notes yangilanadi), faol bo'lsa 400 qaytaradi, aks holda oddiy create.
 
-**#28** `history/recent?limit=abc`, `reviews/property_scores?property_id=abc` → 500.
+**#28** `history/recent?limit=abc`, `reviews/property_scores?property_id=abc` → 500. ✅
+*Tuzatish (`c651754`):* `AccountHistoryViewSet.recent` — `limit` butun son emas yoki manfiy bo'lsa 400 (manfiy `limit` Django queryset slice'da "Negative indexing is not supported" bilan ham 500 berardi). `ReviewViewSet.property_scores` — `property_id` butun songa aylantirilib tekshiriladi, bo'lmasa 400.
 
 **#29** `process_expired_bookings` xatolarni jimgina yutadi (`bookings/models.py:490`).
 
@@ -161,3 +167,6 @@
   - To'liq to'plam PostgreSQL'da (`--create-db`): **822 passed, 2 skipped, 0 failed**. Oldin 797 passed edi, 25 ta yangi test qo'shildi. Har bir yangi test avval eski kodda ishga tushirildi. Qoidani buzuvchi holatlar (bronsiz yoki takroriy sharh, approved sharhni tahrirlash, author almashtirish, staff ro'yxatda, join ko'paytirishi, cookie sukuti) eski kodda yiqildi. Allaqachon ishlayotgan qoidalar uchun qo'shilgan himoya testlari (begona/tugallanmagan bron, env override) eski kodda ham o'tdi. `LIMIT` testi eski kodda staff tekshiruvida oldinroq yiqiladi.
   - `booking` majburiy bo'lgani API uchun breaking change. Frontend (`ReviewsSection.tsx`) `booking_id` ni allaqachon `eligible_properties` dan `property_id` bo'yicha `find` qilib oladi. Ro'yxatda faqat sharhsiz bronlar bo'lgani uchun u o'sha mulkning sharhsiz eng yangi bronini topadi, ya'ni o'zgarishsiz ishlaydi. Tahrir `pending` ga qaytishini UI'da ko'rsatish — `HANDOFF.md` da Baxram uchun qayd qoldirildi.
   - Mavjud bazada bronsiz yoki bir bronga bir nechta sharhlar bo'lsa, ular o'zgarmay qoladi; yangi qoida faqat yangi yozuvlarga qo'llanadi.
+- #23/#24/#26/#27/#28 tuzatishlaridan keyin (`d6a3839`..`c651754`), 2026-09-24:
+  - To'liq to'plam PostgreSQL'da (`--create-db`): **845 passed, 2 skipped, 0 failed**. Oldin 822 passed edi, 23 ta yangi test qo'shildi (rasm validatsiyasi 4, str(e)/email log 13, guest_name 1, sevimli 2, query param 3). Har bir yangi test avval eski kodda ishga tushirilib yiqilgani tasdiqlandi (soxta-rasm testi bundan mustasno — u DRF'ning tayyor Pillow tekshiruvi tufayli eski kodda ham o'tgan, shuning uchun mavjud xatti-harakatni hujjatlashtiradi).
+  - `common/exception_handlers.py:114` dagi list/dict `AttributeError` topilmasi (#24 tafsilotiga qarang) tuzatilmagan qoldi — alohida ko'rib chiqish kerak: serializer/view kodi `serializers.ValidationError`ni har doim dict shaklida (`{'field': ...}` yoki `{'non_field_errors': ...}`) ko'tarishi kerak, aks holda umumiy xato handler'i 500 beradi.
