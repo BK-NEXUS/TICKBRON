@@ -131,10 +131,11 @@ class ReviewViewSetTest(TestCase):
             status='completed'
         )
     
-    def test_create_review_without_booking(self):
-        """Test creating a review without booking."""
+    def test_create_review_for_completed_booking(self):
+        """Test creating a review for a completed booking (a booking is required)."""
         data = {
             'property': self.property.id,
+            'booking': self.booking.id,
             'overall_rating': 5,
             'title': 'Great stay!',
             'comment': 'Excellent property'

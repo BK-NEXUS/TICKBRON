@@ -218,3 +218,23 @@ Status: READY
 - A pending booking expires 15 minutes after creation (`expires_at`)
 - Celery beat task `bookings.tasks.expire_pending_bookings` runs every `EXPIRED_BOOKINGS_INTERVAL_SECONDS` (default 60) and cancels expired pending bookings, releasing their rooms. Requires a Celery worker and beat (`celery -A config worker -l info`, `celery -A config beat -l info`) with Redis
 - POST `/api/v1/payments/transactions/` returns 400 for a booking whose `expires_at` has passed, even before the task has cancelled it
+
+## Reviews (audit #20)
+
+A review is tied to one completed stay. Endpoints: `/api/v1/me/reviews/` (full list in `API_CONTRACT.md`, "Reviews API").
+
+### Create — POST `/api/v1/me/reviews/`
+- `booking` is required (missing or null → 400)
+- The booking must belong to the current user and have `status='completed'` (otherwise 400)
+- `property` must be the booking's property (otherwise 400 on `property`)
+- One review per booking: a second review for the same booking returns 400 on `booking`, also when the first review was deleted
+- New reviews start as `pending`
+
+### Edit — PATCH/PUT `/api/v1/me/reviews/{id}/`
+- `booking` and `property` are read-only; values sent in the body are ignored
+- Every edit sets `status='pending'` and `reviewed_at=null`. An approved review stops counting in `property_scores` (approved only) until it is approved again
+
+### Eligible bookings — GET `/api/v1/me/reviews/eligible_properties/`
+- One entry per completed, unreviewed booking of the current user, each with its `booking_id`; two stays at the same property give two entries
+- A booking whose review was deleted is not listed (it cannot be reviewed again)
+- Ordered by `check_out` descending

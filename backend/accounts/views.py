@@ -5,14 +5,16 @@ This module contains views for favorites, reviews, notifications, and account hi
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db import IntegrityError, transaction
 from django.db.models import Q, Count, Avg, Prefetch
 from .models import Favorite, Review, Notification, AccountHistory
 from .serializers import (
     FavoriteSerializer, FavoriteCreateSerializer,
-    ReviewSerializer, ReviewCreateSerializer,
+    ReviewSerializer, ReviewCreateSerializer, ReviewUpdateSerializer,
     NotificationSerializer, NotificationUpdateSerializer,
     AccountHistorySerializer, AccountHistoryCreateSerializer
 )
@@ -105,12 +107,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
             return ReviewCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return ReviewUpdateSerializer
         return ReviewSerializer
-    
+
     def perform_create(self, serializer):
         """Create review for the current user."""
-        serializer.save(user=self.request.user, status='pending')
-        
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user, status='pending')
+        except IntegrityError:
+            # A concurrent request reviewed the same booking after validation
+            raise ValidationError({'booking': ["This booking has already been reviewed."]})
+
         # Log account history
         property_obj = serializer.validated_data.get('property')
         AccountHistory.objects.create(
@@ -122,42 +131,41 @@ class ReviewViewSet(viewsets.ModelViewSet):
             property=property_obj,
             booking=serializer.validated_data.get('booking')
         )
-    
+
+    def perform_update(self, serializer):
+        """Send an edited review back to moderation so unchecked text is not shown as approved."""
+        serializer.save(status='pending', reviewed_at=None)
+
     @action(detail=False, methods=['get'])
     def eligible_properties(self, request):
         """
-        Get properties the user is eligible to review.
-        
-        Users can review properties they have completed bookings for and haven't reviewed yet.
+        Get bookings the user is eligible to review.
+
+        Every completed booking without a review is listed separately, so two stays
+        at the same property are two entries.
         """
         user = request.user
-        
-        # Get completed bookings without reviews
+
+        # Soft-deleted reviews still count: the booking cannot be reviewed again
         completed_bookings = Booking.objects.filter(
             guest=user,
             status='completed',
             is_deleted=False
-        ).select_related('property')
-        
-        # Get properties already reviewed
-        reviewed_properties = Review.objects.filter(
-            user=user,
-            is_deleted=False
-        ).values_list('property_id', flat=True)
-        
-        # Get eligible properties
+        ).exclude(
+            reviews__isnull=False
+        ).select_related('property').order_by('-check_out', '-id')
+
         eligible_properties = []
         for booking in completed_bookings:
-            if booking.property_id not in reviewed_properties:
-                eligible_properties.append({
-                    'property_id': booking.property_id,
-                    'property_city': booking.property.city,
-                    'property_country': booking.property.country,
-                    'booking_id': booking.id,
-                    'confirmation_code': booking.confirmation_code,
-                    'check_in': booking.check_in,
-                    'check_out': booking.check_out
-                })
+            eligible_properties.append({
+                'property_id': booking.property_id,
+                'property_city': booking.property.city,
+                'property_country': booking.property.country,
+                'booking_id': booking.id,
+                'confirmation_code': booking.confirmation_code,
+                'check_in': booking.check_in,
+                'check_out': booking.check_out
+            })
         
         return Response({'eligible_properties': eligible_properties})
     

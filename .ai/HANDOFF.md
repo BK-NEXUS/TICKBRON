@@ -873,18 +873,20 @@ Status: READY
   - Error: 401 if not authenticated
   - Regular users see only their own reviews, staff see all
 - POST `/api/v1/me/reviews/` - Create a review
-  - Request: `{ property_id, booking_id (optional), overall_rating (1-5), category_ratings (optional), title, comment }`
+  - Request: `{ property, booking, overall_rating (1-5), category_ratings (optional), title, comment }`
   - Response: Created review object with status 'pending'
   - Auth: Session-based (required)
   - Error: 400 for validation errors, 401 if not authenticated
-  - Validates booking is completed if provided
+  - **Updated (audit #20, BREAKING):** `booking` is now required. It must be the user's own completed booking, `property` must be that booking's property, and a booking can have only one review. All violations return 400. Take `booking_id` and `property_id` from `eligible_properties`. Rules: `.ai/contracts/booking.md` "Reviews"
   - Validates property is active and not deleted
-- GET `/api/v1/me/reviews/eligible_properties/` - Get properties eligible for review
+- PATCH/PUT `/api/v1/me/reviews/{id}/` - Edit a review
+  - **Updated (audit #20):** `booking` and `property` are read-only. Any edit returns the review to `pending` (an approved review disappears from `property_scores` until re-approved). The UI should say the edit goes to moderation
+- GET `/api/v1/me/reviews/eligible_properties/` - Get bookings eligible for review
   - Request: None
-  - Response: Array of properties with completed bookings not yet reviewed
+  - Response: `{ eligible_properties: [{ property_id, property_city, property_country, booking_id, confirmation_code, check_in, check_out }] }`
   - Auth: Session-based (required)
   - Error: 401 if not authenticated
-  - Includes property details and booking information
+  - **Updated (audit #20):** one entry per completed booking without a review. Two stays at the same property are two entries, so key list items by `booking_id`, not `property_id`
 - GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores
   - Request: property_id query parameter
   - Response: `{ property_id, total_reviews, average_rating, category_scores }`

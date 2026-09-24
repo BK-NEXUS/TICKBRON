@@ -574,14 +574,17 @@ Status: READY
   - Regular users see only their own reviews, staff see all
 - POST `/api/v1/me/reviews/` - Create a review
   - Auth: Session-based (required)
-  - Request: { property_id, booking_id (optional), overall_rating (1-5), category_ratings (optional), title, comment }
+  - Request: { property, booking (required), overall_rating (1-5), category_ratings (optional), title, comment }
   - Response: Created review object with status 'pending'
-  - Validates booking is completed if provided
+  - Rules (audit #20, see `.ai/contracts/booking.md` "Reviews"): booking is required, must be the user's own and `completed`; `property` must be the booking's property; one review per booking. Otherwise 400
   - Validates property is active and not deleted
-- GET `/api/v1/me/reviews/eligible_properties/` - Get properties eligible for review
+- PATCH/PUT `/api/v1/me/reviews/{id}/` - Edit a review
+  - `booking` and `property` are read-only (ignored if sent)
+  - Any edit sets `status` back to 'pending' and clears `reviewed_at`, so an approved review leaves `property_scores` until re-approved
+- GET `/api/v1/me/reviews/eligible_properties/` - Get bookings eligible for review
   - Auth: Session-based (required)
-  - Response: Array of properties with completed bookings not yet reviewed
-  - Includes property details and booking information
+  - Response: { eligible_properties: [...] }, one entry per completed booking without a review (two stays at the same property are two entries), newest check_out first
+  - Entry: { property_id, property_city, property_country, booking_id, confirmation_code, check_in, check_out }
 - GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores
   - Auth: Session-based (required)
   - Response: { property_id, total_reviews, average_rating, category_scores }

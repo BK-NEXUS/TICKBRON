@@ -4,6 +4,7 @@ Serializers for the accounts app.
 This module contains serializers for favorites, reviews, notifications, and account history.
 """
 from rest_framework import serializers
+from bookings.models import Booking
 from .models import Favorite, Review, Notification, AccountHistory
 
 
@@ -87,31 +88,56 @@ class ReviewSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ReviewUpdateSerializer(ReviewSerializer):
+    """
+    Serializer for editing a review. The booking and property are fixed at creation.
+    """
+    class Meta(ReviewSerializer.Meta):
+        read_only_fields = ReviewSerializer.Meta.read_only_fields + ['property', 'booking']
+
+
 class ReviewCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating a review.
     """
+    # A review is always tied to one of the reviewer's completed stays
+    booking = serializers.PrimaryKeyRelatedField(
+        queryset=Booking.objects.all(), required=True, allow_null=False
+    )
+
     class Meta:
         model = Review
-        fields = ['property', 'booking', 'overall_rating', 'cleanliness_rating', 
+        fields = ['property', 'booking', 'overall_rating', 'cleanliness_rating',
                   'location_rating', 'value_rating', 'amenities_rating', 'service_rating',
                   'title', 'comment']
-    
+
     def validate_booking(self, value):
-        """Validate that the booking belongs to the user and is completed."""
-        if value and value.guest != self.context['request'].user:
+        """Validate that the booking belongs to the user, is completed and is not reviewed yet."""
+        if value.guest != self.context['request'].user:
             raise serializers.ValidationError("You can only review your own bookings.")
-        
-        if value and value.status != 'completed':
+
+        if value.status != 'completed':
             raise serializers.ValidationError("You can only review completed bookings.")
-        
+
+        # Soft-deleted reviews count too: they still hold the unique (user, booking) row
+        if Review.objects.filter(booking=value).exists():
+            raise serializers.ValidationError("This booking has already been reviewed.")
+
         return value
-    
+
     def validate_property(self, value):
         """Validate that the property exists and is active."""
         if not value.is_active or value.is_deleted:
             raise serializers.ValidationError("Property is not available for review.")
         return value
+
+    def validate(self, attrs):
+        """Validate that the review is for the booked property."""
+        if attrs['property'].id != attrs['booking'].property_id:
+            raise serializers.ValidationError(
+                {'property': "The review must be for the property of the booking."}
+            )
+        return attrs
 
 
 class NotificationSerializer(serializers.ModelSerializer):
