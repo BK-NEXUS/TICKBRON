@@ -35,9 +35,17 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Same lockout as password login (per IP and account-wide), counted across all issued codes; while locked the code is not checked
   - Unknown number, wrong/expired code and locked account all return the same 400 `{"success": false, "message": "Invalid or expired OTP code"}`
 
+## CSRF
+- GET `/api/v1/auth/csrf/` - Get a CSRF token (public, no auth)
+  - Response 200 `{"csrf_token": "<token>"}`; also sets the `csrftoken` cookie if missing
+  - The `csrftoken` cookie is HttpOnly, so the SPA cannot read it; it takes the token from this endpoint instead
+  - Every POST/PUT/PATCH/DELETE from a logged-in session must send it as the `X-CSRFToken` header, otherwise 403 `{"error": {"code": "error", "message": "CSRF Failed: CSRF token missing.", ...}}`
+  - Django rotates the token on login (password, OTP verify, register auto-login); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write
+
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
+  - Includes read-only `is_staff` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; the backend still checks permissions on every request. `is_superuser` is not returned
 - POST `/api/v1/auth/refresh/` - Refresh session
 - PATCH `/api/v1/auth/me/update/` - Update user profile
   - Required authentication

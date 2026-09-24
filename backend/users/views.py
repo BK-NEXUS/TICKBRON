@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
+from django.middleware.csrf import get_token
 from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 from users import lockout
@@ -167,6 +168,19 @@ def logout_view(request):
         {'detail': 'Successfully logged out.'},
         status=status.HTTP_200_OK
     )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def csrf_token(request):
+    """
+    Return a CSRF token for the X-CSRFToken header.
+
+    The csrftoken cookie is HttpOnly, so the SPA cannot read it and asks here
+    instead. get_token() also sets the cookie if the browser has none yet.
+    Django rotates the token on login, so clients fetch a new one after it.
+    """
+    return Response({'csrf_token': get_token(request)}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
