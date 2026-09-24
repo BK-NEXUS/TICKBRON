@@ -1,7 +1,9 @@
 """
 Tests for property search functionality.
 """
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -595,6 +597,59 @@ class PropertySearchEndpointTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertNotIn(secret, str(response.data))
+
+
+class PropertySearchTranslationsTest(TestCase):
+    """Search results carry the property's translations (its name) without an N+1."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.owner = User.objects.create_user(email='owner@example.com', password='testpass123')
+        self.property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
+
+    def _create_property(self, name):
+        prop = Property.objects.create(
+            owner=self.owner, property_type=self.property_type, status='active',
+            max_guests=2, bedrooms=1, bathrooms=1, address_line1='1 Street',
+            city='Samarkand', country='Uzbekistan', base_price=80, currency='USD',
+        )
+        PropertyTranslation.objects.create(property=prop, language='en', name=name)
+        PropertyTranslation.objects.create(property=prop, language='uz', name=f'{name} uz')
+        return prop
+
+    def _translation_queries(self, count):
+        for i in range(count):
+            self._create_property(f'Hotel {len(Property.objects.all())}-{i}')
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get('/api/v1/properties/search/', {'city': 'Samarkand'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response, [q for q in ctx.captured_queries if 'property_translations' in q['sql']]
+
+    def test_results_include_translations(self):
+        prop = self._create_property('Registan Hotel')
+        response = self.client.get('/api/v1/properties/search/', {'city': 'Samarkand'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        result = next(r for r in response.data['results'] if r['id'] == prop.id)
+        names = {t['language']: t['name'] for t in result['translations']}
+        self.assertEqual(names, {'en': 'Registan Hotel', 'uz': 'Registan Hotel uz'})
+
+    def test_soft_deleted_translations_are_left_out(self):
+        prop = self._create_property('Old Name')
+        prop.translations.filter(language='uz').update(is_deleted=True)
+
+        response = self.client.get('/api/v1/properties/search/', {'city': 'Samarkand'})
+        result = next(r for r in response.data['results'] if r['id'] == prop.id)
+        self.assertEqual([t['language'] for t in result['translations']], ['en'])
+
+    def test_translations_are_loaded_in_one_query_whatever_the_result_count(self):
+        response, queries = self._translation_queries(1)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(len(queries), 1)
+
+        response, queries = self._translation_queries(5)
+        self.assertEqual(response.data['count'], 6)
+        self.assertEqual(len(queries), 1)
 
 
 class PropertySearchIntegrationTest(TestCase):

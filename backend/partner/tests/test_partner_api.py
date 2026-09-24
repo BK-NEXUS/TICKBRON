@@ -573,6 +573,76 @@ class PartnerDateInventoryTests(TestCase):
         self.assertEqual(self.date_inventory.booked_rooms, 0)  # Should remain unchanged
 
 
+class PartnerDateInventoryFilterTests(TestCase):
+    """?rate_plan, ?date_from and ?date_to narrow the inventory list."""
+
+    def setUp(self):
+        PartnerDateInventoryTests.setUp(self)
+        from datetime import date, timedelta
+        self.today = date.today()
+        self.other_plan = RatePlan.objects.create(
+            room_type=self.room_type, name='Flexible', slug='flexible', rate_type='standard',
+            base_price=120.00, currency='USD', min_nights=1, is_active=True,
+        )
+        for offset in range(1, 40):
+            DateInventory.objects.create(
+                rate_plan=self.rate_plan, date=self.today + timedelta(days=offset),
+                available_rooms=5, booked_rooms=0, price=100.00, currency='USD',
+            )
+        self.other_row = DateInventory.objects.create(
+            rate_plan=self.other_plan, date=self.today + timedelta(days=2),
+            available_rooms=3, booked_rooms=0, price=120.00, currency='USD',
+        )
+        self.client.force_authenticate(user=self.hotel_owner)
+
+    def _get(self, **params):
+        return self.client.get('/api/v1/partner/inventory/', params)
+
+    def test_date_range_and_rate_plan_filter(self):
+        from datetime import timedelta
+        response = self._get(
+            rate_plan=self.rate_plan.id,
+            date_from=(self.today + timedelta(days=1)).isoformat(),
+            date_to=(self.today + timedelta(days=7)).isoformat(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 7)
+        dates = [row['date'] for row in response.data['results']]
+        self.assertEqual(dates, sorted(dates))
+        self.assertEqual(dates[0], (self.today + timedelta(days=1)).isoformat())
+        self.assertEqual(dates[-1], (self.today + timedelta(days=7)).isoformat())
+        self.assertTrue(all(row['rate_plan'] == self.rate_plan.id for row in response.data['results']))
+
+    def test_rate_plan_filter_alone(self):
+        response = self._get(rate_plan=self.other_plan.id)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['id'], self.other_row.id)
+
+    def test_no_filters_keeps_the_old_behaviour(self):
+        response = self._get()
+        self.assertEqual(response.data['count'], 41)
+        self.assertIsNotNone(response.data['next'])
+
+    def test_invalid_filters_are_rejected(self):
+        for params, field in [
+            ({'rate_plan': 'abc'}, 'rate_plan'),
+            ({'date_from': '24-09-2026'}, 'date_from'),
+            ({'date_to': '2026-02-30'}, 'date_to'),
+            ({'date_from': '2026-10-10', 'date_to': '2026-10-01'}, 'date_to'),
+        ]:
+            response = self._get(**params)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, params)
+            self.assertIn(field, str(response.data), params)
+
+    def test_filters_never_show_another_owners_inventory(self):
+        other_owner = User.objects.create_user(
+            email='other-owner@example.com', password='testpassword123', role=self.hotel_owner_role
+        )
+        self.client.force_authenticate(user=other_owner)
+        response = self._get(rate_plan=self.rate_plan.id)
+        self.assertEqual(response.data['count'], 0)
+
+
 class PartnerPropertyPhotoUploadTests(TestCase):
     """Tests for partner property photo upload validation (audit #23)."""
 

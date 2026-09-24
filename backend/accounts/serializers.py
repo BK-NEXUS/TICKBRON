@@ -5,6 +5,7 @@ This module contains serializers for favorites, reviews, notifications, and acco
 """
 from rest_framework import serializers
 from bookings.models import Booking
+from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
 
 
@@ -17,11 +18,15 @@ class FavoriteSerializer(serializers.ModelSerializer):
     property_base_price = serializers.DecimalField(source='property.base_price', read_only=True, max_digits=10, decimal_places=2)
     property_currency = serializers.CharField(source='property.currency', read_only=True)
     property_primary_photo = serializers.SerializerMethodField()
+    # The property's name lives in its translations; FavoriteViewSet prefetches them
+    property_translations = PropertyTranslationSerializer(
+        source='property.translations', many=True, read_only=True
+    )
     
     class Meta:
         model = Favorite
-        fields = ['id', 'user', 'property', 'property_city', 'property_country', 
-                  'property_base_price', 'property_currency', 
+        fields = ['id', 'user', 'property', 'property_translations', 'property_city',
+                  'property_country', 'property_base_price', 'property_currency', 
                   'property_primary_photo', 'notes', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
     

@@ -1,12 +1,14 @@
 """
 Tests for accounts views.
 """
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from users.models import User
-from properties.models import Property, PropertyType
+from properties.models import Property, PropertyType, PropertyTranslation
 from bookings.models import Booking
 from accounts.models import Favorite, Review, Notification, AccountHistory
 
@@ -115,6 +117,56 @@ class FavoriteViewSetTest(TestCase):
         response = self.client.post('/api/v1/me/favorites/', {'property': self.property.id}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class FavoritePropertyNameTest(TestCase):
+    """The favorites list carries each property's translations, loaded in one query."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(email='fav@example.com', password='testpass123')
+        self.client.force_authenticate(user=self.user)
+        self.property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
+
+    def _favorite(self, name):
+        prop = Property.objects.create(
+            owner=self.user, property_type=self.property_type, status='active',
+            max_guests=2, bedrooms=1, bathrooms=1, address_line1='1 Street',
+            city='Bukhara', country='Uzbekistan', base_price=60, currency='USD',
+        )
+        PropertyTranslation.objects.create(property=prop, language='en', name=name)
+        return Favorite.objects.create(user=self.user, property=prop)
+
+    def _list(self):
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get('/api/v1/me/favorites/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response, [q for q in ctx.captured_queries if 'property_translations' in q['sql']]
+
+    def test_list_includes_property_translations(self):
+        favorite = self._favorite('Silk Road Inn')
+        deleted = PropertyTranslation.objects.create(
+            property=favorite.property, language='uz', name='Old', is_deleted=True
+        )
+
+        response, _ = self._list()
+        item = response.data['results'][0]
+        self.assertEqual(
+            [(t['language'], t['name']) for t in item['property_translations']],
+            [('en', 'Silk Road Inn')],
+        )
+        self.assertNotEqual(deleted.name, item['property_translations'][0]['name'])
+
+    def test_translations_are_loaded_in_one_query_whatever_the_list_size(self):
+        self._favorite('One')
+        _, queries = self._list()
+        self.assertEqual(len(queries), 1)
+
+        for i in range(4):
+            self._favorite(f'More {i}')
+        response, queries = self._list()
+        self.assertEqual(response.data['count'], 5)
+        self.assertEqual(len(queries), 1)
 
 
 class ReviewViewSetTest(TestCase):

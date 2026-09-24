@@ -1942,3 +1942,11 @@ With your OK, I changed `frontend/` on branch `fix/frontend-audit` (not merged; 
 - `/auth/me` now returns `is_staff`
 - Still broken (report only, see `.ai/frontend-audit-report.md` F20–F32): paginated lists handled as arrays (favorites, reviews, admin and partner lists), `room_types[].property_id` missing (UI booking stops with 404), favorites add sends `property_id`, search cards need `translations`, support lookup and admin statistics shapes
 - Details: `.ai/checkpoints/frontend_audit_fix.md`
+
+## Backend additions for the frontend audit (2026-09-24, Kolya, master)
+
+Additive only, no migration. See the "2026-09-24 frontend audit follow-up" section in `API_CONTRACT.md`.
+- `GET /properties/search/` results carry `translations` (property name), prefetched in one query (F23)
+- `GET /me/favorites/` items carry `property_translations` (F22). Favorite create takes `{property, notes}` and answers `{property, notes}` without `id`
+- `GET /partner/inventory/` takes optional `rate_plan`, `date_from`, `date_to` (YYYY-MM-DD, inclusive); bad values are a 400
+- The list of which endpoints are paginated `{count, next, previous, results}` and which return plain arrays is in the same section (F20)

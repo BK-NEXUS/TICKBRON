@@ -5,7 +5,7 @@ This module provides text search, geographic search, and comprehensive filtering
 using database features that work with both SQLite (development) and PostgreSQL (production).
 """
 from django.db import models
-from django.db.models import Q, F, Value, FloatField
+from django.db.models import Q, F, Value, FloatField, Prefetch
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
@@ -26,7 +26,7 @@ class PropertySearchService:
     
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
-        from properties.models import Property
+        from properties.models import Property, PropertyTranslation
         
         return Property.objects.filter(
             is_active=True,
@@ -36,7 +36,8 @@ class PropertySearchService:
             'owner',
             'property_type'
         ).prefetch_related(
-            'translations',
+            # One query for every result's translations (serialized as `translations`)
+            Prefetch('translations', queryset=PropertyTranslation.objects.filter(is_deleted=False)),
             'property_amenities__amenity',
             'photos'
         )

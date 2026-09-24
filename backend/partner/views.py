@@ -7,8 +7,10 @@ management scoped to hotel-owner accounts.
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, PropertyPhoto
 from bookings.models import Booking, BookingItem
 from partner.serializers import (
@@ -112,10 +114,53 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset to date inventory in properties owned by the authenticated user."""
-        return DateInventory.objects.filter(
+        queryset = DateInventory.objects.filter(
             rate_plan__room_type__property__owner=self.request.user,
             is_deleted=False
         ).select_related('rate_plan__room_type__property')
+        if self.action == 'list':
+            queryset = self._filter_list(queryset).order_by('date', 'id')
+        return queryset
+
+    def _filter_list(self, queryset):
+        """
+        Optional list filters: ?rate_plan=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+        (both dates inclusive). Invalid values are a 400, not a silently ignored filter.
+        """
+        params = self.request.query_params
+        errors = {}
+
+        rate_plan = params.get('rate_plan')
+        if rate_plan:
+            if rate_plan.isdigit():
+                queryset = queryset.filter(rate_plan_id=int(rate_plan))
+            else:
+                errors['rate_plan'] = ['Must be a rate plan id.']
+
+        dates = {}
+        for name in ('date_from', 'date_to'):
+            value = params.get(name)
+            if not value:
+                continue
+            try:
+                parsed = parse_date(value) if len(value) == 10 else None
+            except ValueError:  # well formed but impossible, e.g. 2026-02-30
+                parsed = None
+            if parsed is None:
+                errors[name] = ['Must be a date in YYYY-MM-DD format.']
+            else:
+                dates[name] = parsed
+
+        if 'date_from' in dates and 'date_to' in dates and dates['date_from'] > dates['date_to']:
+            errors['date_to'] = ['Must not be before date_from.']
+        if errors:
+            raise ValidationError(errors)
+
+        if 'date_from' in dates:
+            queryset = queryset.filter(date__gte=dates['date_from'])
+        if 'date_to' in dates:
+            queryset = queryset.filter(date__lte=dates['date_to'])
+        return queryset
 
 
 @api_view(['POST'])

@@ -11,7 +11,7 @@ Core endpoints:
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
 - GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24)
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
-- GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10)
+- GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24)
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 11)
 - GET `/api/v1/properties/{id}/availability/` ✅ IMPLEMENTED (Checkpoint 12)
@@ -20,7 +20,7 @@ Core endpoints:
 - POST `/api/v1/bookings/{id}/cancel/` ✅ IMPLEMENTED (Checkpoint 13)
 - POST `/api/v1/payments/{provider}/init/`
 - POST `/api/v1/payments/{provider}/webhook/`
-- GET `/api/v1/me/favorites/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/favorites/` ✅ IMPLEMENTED (Checkpoint 17; `property_translations` added 2026-09-24)
 - POST `/api/v1/me/favorites/` ✅ IMPLEMENTED (Checkpoint 17)
 - DELETE `/api/v1/me/favorites/{id}/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/favorites/count/` ✅ IMPLEMENTED (Checkpoint 17)
@@ -49,7 +49,7 @@ Core endpoints:
 - PATCH `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - POST `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18; `rate_plan`/`date_from`/`date_to` filters added 2026-09-24)
 - PATCH `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - POST `/api/v1/partner/properties/{id}/photos/` ✅ IMPLEMENTED (Checkpoint 18)
@@ -75,6 +75,13 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-24 frontend audit follow-up (F20, F22, F23)
+- DRF `PageNumberPagination` (PAGE_SIZE 20) is global. These lists are paginated `{ count, next, previous, results }`: `me/favorites/`, `me/reviews/`, `me/history/`, `admin-panel/properties/`, `admin-panel/amenities/`, `admin-panel/amenities/categories/`, `partner/properties/`, `partner/rooms/`, `partner/rates/`, `partner/inventory/`, `payments/transactions/`. These return a plain array: `bookings/`, `admin-panel/users/`, `admin-panel/payments/transactions/`, `partner/bookings/`, `me/history/recent/`
+- `GET /properties/search/` results now include `translations` (same shape as property detail), prefetched in one query
+- `GET /me/favorites/` items now include `property_translations`, prefetched in one query
+- `GET /partner/inventory/` accepts `rate_plan`, `date_from`, `date_to`
+- Additive only: no field was removed or renamed, no migration
 
 ## Checkpoint 19 Changes (Observability/Performance/Security Hardening)
 
@@ -239,7 +246,8 @@ Status: READY
   - booked_rooms field is read-only (cannot be modified by hotel-owner)
 - GET `/api/v1/partner/inventory/` - List hotel-owner's date inventory
   - Auth: Hotel-owner role required
-  - Response: Array of date inventory objects
+  - Response: paginated `{ count, next, previous, results: [date inventory objects] }` (20 per page), sorted by `date`
+  - Optional query (2026-09-24): `rate_plan=<id>`, `date_from=YYYY-MM-DD`, `date_to=YYYY-MM-DD` (both inclusive). An invalid value, or `date_to` before `date_from`, is a 400 with the field name in `details`
   - Scoped to date inventory in properties owned by the user
 - PATCH `/api/v1/partner/inventory/{id}/` - Update date inventory
   - Auth: Hotel-owner role required
@@ -554,12 +562,12 @@ Status: READY
 ### Favorites API
 - GET `/api/v1/me/favorites/` - List user's favorite properties
   - Auth: Session-based (required)
-  - Response: Array of favorite objects with property details
-  - Includes property city, country, base price, currency, primary photo
+  - Response: paginated `{ count, next, previous, results }` (20 per page). Each item: `{ id, user, property, property_translations: [{ language, name, description, address_line1, address_line2, city }], property_city, property_country, property_base_price, property_currency, property_primary_photo, notes, created_at }`
+  - `property_translations` (2026-09-24) carries the property name; soft-deleted translations are left out
 - POST `/api/v1/me/favorites/` - Add property to favorites
   - Auth: Session-based (required)
-  - Request: { property_id, notes (optional) }
-  - Response: Created favorite object
+  - Request: { property, notes (optional) } (`property` is the property id)
+  - Response: 201 `{ property, notes }` (no `id`; list the favorites again to get it)
   - Validates property is active and not deleted
 - DELETE `/api/v1/me/favorites/{id}/` - Remove property from favorites
   - Auth: Session-based (required)

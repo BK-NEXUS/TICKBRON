@@ -89,6 +89,8 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
     Includes essential property information for search results display.
     """
     property_type = PropertyTypeSerializer(read_only=True)
+    # The search queryset prefetches these, so there is no query per result
+    translations = PropertyTranslationSerializer(many=True, read_only=True)
     primary_photo = serializers.SerializerMethodField()
     amenities = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
@@ -96,7 +98,7 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = [
-            'id', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
+            'id', 'translations', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',

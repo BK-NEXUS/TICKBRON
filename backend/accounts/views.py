@@ -18,7 +18,7 @@ from .serializers import (
     NotificationSerializer, NotificationUpdateSerializer,
     AccountHistorySerializer, AccountHistoryCreateSerializer
 )
-from properties.models import Property, PropertyPhoto
+from properties.models import Property, PropertyPhoto, PropertyTranslation
 from bookings.models import Booking
 from common.request import get_client_ip
 
@@ -34,7 +34,12 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         return Favorite.objects.filter(
             user=self.request.user,
             is_deleted=False
-        ).select_related('property')
+        ).select_related('property').prefetch_related(
+            Prefetch(
+                'property__translations',
+                queryset=PropertyTranslation.objects.filter(is_deleted=False),
+            )
+        )
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
