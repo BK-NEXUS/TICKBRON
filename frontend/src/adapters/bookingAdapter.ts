@@ -2,6 +2,7 @@
 // Integrates with backend booking endpoints from Checkpoint 13-14
 
 import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -103,7 +104,7 @@ class BookingAdapter {
     }
 
     try {
-      const response = await fetch(url, defaultOptions)
+      const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
         const apiError = await readApiError(response)

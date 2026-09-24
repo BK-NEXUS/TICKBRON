@@ -2,6 +2,7 @@
 // Integrates with backend payment endpoints from Checkpoint 15-16
 
 import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -73,7 +74,7 @@ class PaymentAdapter {
     }
 
     try {
-      const response = await fetch(url, defaultOptions)
+      const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
         const apiError = await readApiError(response)

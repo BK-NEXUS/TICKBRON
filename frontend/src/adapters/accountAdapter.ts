@@ -1,4 +1,5 @@
 import { readApiError } from '../utils/errorHandler'
+import { apiFetch } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -137,7 +138,7 @@ export const accountAdapter = {
   // Favorites API methods
   async getFavorites(): Promise<ApiResponse<Favorite[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -159,7 +160,7 @@ export const accountAdapter = {
 
   async addFavorite(propertyId: number, notes?: string): Promise<ApiResponse<Favorite>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -185,7 +186,7 @@ export const accountAdapter = {
 
   async removeFavorite(favoriteId: number): Promise<ApiResponse<null>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/${favoriteId}/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/${favoriteId}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -206,7 +207,7 @@ export const accountAdapter = {
 
   async getFavoriteCount(): Promise<ApiResponse<FavoriteCount>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/favorites/count/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/count/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -229,7 +230,7 @@ export const accountAdapter = {
   // Account History API methods
   async getAccountHistory(): Promise<ApiResponse<AccountHistory[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -251,7 +252,7 @@ export const accountAdapter = {
 
   async getRecentHistory(limit: number = 10): Promise<ApiResponse<AccountHistory[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/recent/?limit=${limit}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/recent/?limit=${limit}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -273,7 +274,7 @@ export const accountAdapter = {
 
   async getAccountHistoryStats(): Promise<ApiResponse<AccountHistoryStats>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/history/stats/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/stats/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -300,7 +301,7 @@ export const accountAdapter = {
       if (status) params.append('status', status)
       if (paymentStatus) params.append('payment_status', paymentStatus)
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/bookings/?${params.toString()}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/bookings/?${params.toString()}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -323,7 +324,7 @@ export const accountAdapter = {
   // Reviews API methods
   async getReviews(): Promise<ApiResponse<Review[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -358,7 +359,7 @@ export const accountAdapter = {
     comment?: string
   }): Promise<ApiResponse<Review>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -381,7 +382,7 @@ export const accountAdapter = {
 
   async getEligibleProperties(): Promise<ApiResponse<EligiblePropertiesResponse>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/eligible_properties/`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/eligible_properties/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -403,7 +404,7 @@ export const accountAdapter = {
 
   async getPropertyScores(propertyId: number): Promise<ApiResponse<PropertyScores>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/reviews/property_scores/?property_id=${propertyId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/property_scores/?property_id=${propertyId}`, {
         method: 'GET',
         credentials: 'include',
         headers: {

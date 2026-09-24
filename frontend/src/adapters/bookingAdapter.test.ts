@@ -54,7 +54,7 @@ describe('BookingAdapter', () => {
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': 'test-csrf-token' },
           body: JSON.stringify(request),
         })
       )

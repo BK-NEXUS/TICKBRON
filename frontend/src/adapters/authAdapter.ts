@@ -2,6 +2,7 @@
 // Integrates with backend auth endpoints from Checkpoint 03-04
 
 import { readApiError } from '../utils/errorHandler'
+import { apiFetch, clearCsrfToken } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -97,7 +98,7 @@ class AuthAdapter {
     }
 
     try {
-      const response = await fetch(url, defaultOptions)
+      const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
         const apiError = await readApiError(response)
@@ -120,22 +121,29 @@ class AuthAdapter {
     }
   }
 
+  // Django rotates the CSRF token when a session starts or ends, so the cached one is dropped
+  private async changeSession(endpoint: string, options: RequestInit): Promise<AuthResponse> {
+    const response = await this.request(endpoint, options)
+    clearCsrfToken()
+    return response
+  }
+
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    return this.request('/api/v1/auth/register/', {
+    return this.changeSession('/api/v1/auth/register/', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
-    return this.request('/api/v1/auth/login/', {
+    return this.changeSession('/api/v1/auth/login/', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   async logout(): Promise<AuthResponse> {
-    return this.request('/api/v1/auth/logout/', {
+    return this.changeSession('/api/v1/auth/logout/', {
       method: 'POST',
     })
   }
@@ -163,7 +171,7 @@ class AuthAdapter {
     const url = `${this.baseUrl}/api/v1/auth/otp/request/`
     
     try {
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -194,7 +202,7 @@ class AuthAdapter {
   }
 
   async verifyOTP(data: VerifyOTPRequest): Promise<AuthResponse> {
-    return this.request('/api/v1/auth/otp/verify/', {
+    return this.changeSession('/api/v1/auth/otp/verify/', {
       method: 'POST',
       body: JSON.stringify(data),
     })
