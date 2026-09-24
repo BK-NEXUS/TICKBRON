@@ -200,7 +200,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 {'detail': 'property_id parameter is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        try:
+            property_id = int(property_id)
+        except (TypeError, ValueError):
+            return Response(
+                {'detail': 'property_id must be an integer'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Get approved reviews for the property
         reviews = Review.objects.filter(
             property_id=property_id,
@@ -316,7 +324,19 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def recent(self, request):
         """Get recent account history entries."""
-        limit = min(int(request.query_params.get('limit', 10)), 50)
+        try:
+            limit = int(request.query_params.get('limit', 10))
+        except (TypeError, ValueError):
+            return Response(
+                {'detail': 'limit must be a positive integer'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if limit < 1:
+            return Response(
+                {'detail': 'limit must be a positive integer'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        limit = min(limit, 50)
         recent = self.get_queryset()[:limit]
         serializer = self.get_serializer(recent, many=True)
         return Response(serializer.data)

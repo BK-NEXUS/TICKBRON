@@ -216,6 +216,11 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(response.data['total_reviews'], 0)
         self.assertIsNone(response.data['average_rating'])
 
+    def test_property_scores_invalid_property_id(self):
+        """A non-numeric property_id must return 400, not 500 (audit #28)."""
+        response = self.client.get('/api/v1/me/reviews/property_scores/?property_id=abc')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class NotificationViewSetTest(TestCase):
     """Test cases for NotificationViewSet."""
@@ -322,6 +327,16 @@ class AccountHistoryViewSetTest(TestCase):
         response = self.client.get('/api/v1/me/history/recent/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+    def test_recent_history_invalid_limit(self):
+        """A non-numeric limit must return 400, not 500 (audit #28)."""
+        response = self.client.get('/api/v1/me/history/recent/?limit=abc')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_recent_history_negative_limit(self):
+        """A negative limit must return 400, not a slice error (audit #28)."""
+        response = self.client.get('/api/v1/me/history/recent/?limit=-5')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_history_stats(self):
         """Test getting history statistics."""
