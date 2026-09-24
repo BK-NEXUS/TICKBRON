@@ -12,6 +12,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 # from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
 ISOLATED_ENV_VARS = (
     'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
+    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -71,3 +72,23 @@ def test_cache_backend_can_be_chosen_explicitly():
 
 def test_forwarded_for_is_ignored_by_default():
     assert _load_settings("settings.NUM_PROXIES, settings.REST_FRAMEWORK['NUM_PROXIES']") == '0 0'
+
+
+def _secure_cookies(**env_overrides):
+    return _load_settings('settings.SESSION_COOKIE_SECURE, settings.CSRF_COOKIE_SECURE', **env_overrides)
+
+
+def test_production_cookies_are_secure_by_default():
+    assert _secure_cookies(**PRODUCTION_ENV) == 'True True'
+
+
+def test_debug_cookies_are_not_secure_by_default():
+    # Local development runs over plain http
+    assert _secure_cookies(DEBUG='True') == 'False False'
+
+
+def test_cookie_security_can_be_set_explicitly():
+    assert _secure_cookies(SESSION_COOKIE_SECURE='False', CSRF_COOKIE_SECURE='False', **PRODUCTION_ENV) == \
+        'False False'
+    assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='True', CSRF_COOKIE_SECURE='True') == \
+        'True True'
