@@ -1,10 +1,50 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { SearchForm } from './SearchForm'
 
 describe('SearchForm', () => {
+  describe('optional dates (E2E BUG 1)', () => {
+    const SearchResultsProbe = () => {
+      const location = useLocation()
+      return <div data-testid="search-query">Search results page {location.search}</div>
+    }
+    const renderWithSearchRoute = () =>
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route path="/" element={<SearchForm />} />
+            <Route path="/search" element={<SearchResultsProbe />} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+    it('searches by city without dates', async () => {
+      renderWithSearchRoute()
+      fireEvent.change(screen.getByLabelText('Destination'), { target: { value: 'Tashkent' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+
+      const probe = await screen.findByTestId('search-query')
+      const params = new URLSearchParams(probe.textContent?.split('Search results page ')[1] ?? '')
+      expect(params.get('destination')).toBe('Tashkent')
+      expect(params.has('check_in')).toBe(false)
+      expect(params.has('check_out')).toBe(false)
+    })
+
+    it('asks for check-out when only check-in is given', async () => {
+      renderWithSearchRoute()
+      const future = new Date()
+      future.setDate(future.getDate() + 5)
+      fireEvent.change(screen.getByLabelText('Destination'), { target: { value: 'Tashkent' } })
+      fireEvent.change(screen.getByLabelText('Check-in'), { target: { value: future.toISOString().split('T')[0] } })
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+
+      expect(await screen.findByText('Check-out date is required')).toBeInTheDocument()
+      expect(screen.queryByTestId('search-query')).not.toBeInTheDocument()
+    })
+  })
+
   const mockNavigate = vi.fn()
 
   beforeEach(() => {

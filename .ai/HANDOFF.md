@@ -1968,3 +1968,17 @@ Additive only, no migration. See the "2026-09-24 frontend audit follow-up" secti
 - New helper `fetchAllPages()` in `frontend/src/utils/api.ts`: follows DRF `next` links (same origin only, max 50 pages) and also accepts plain arrays. Use it for any new list endpoint that is paginated
 - Adapters map backend shapes to the frontend types: statistics (`statistics` -> `data`, `leaderboard` -> array), support lookup (nested -> flat, `room` from the first booking item, `total_price` as a number)
 - `npm test`: 925 passed, 0 failed
+
+## E2E bug-fix queue (2026-09-25, Kolya's agent)
+
+Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE (commit). Not in scope yet: i18n (BUG 8), visual redesign.
+
+- DONE: 1 search with dates 500 + city-only search
+- TODO: 2 booking form price = backend price
+- TODO: 3 partner Rates/Availability views
+- TODO: 4 anonymous throttle
+- TODO: 5 public property rating scores
+- TODO: 6 pre-fill first/last name
+- TODO: 7 favorite button + favorite cards
+- TODO: 8 self-host fonts (CSP)
+- TODO: 9 hotel names, human dates, user name in header

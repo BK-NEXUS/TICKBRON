@@ -9,7 +9,7 @@ from django.db.models import Q, F, Value, FloatField, Prefetch
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import math
 import re
 
@@ -218,6 +218,9 @@ class PropertySearchService:
         """
         if not date_str:
             return None
+        # SearchParamsSerializer has already turned the query value into a date
+        if isinstance(date_str, date):
+            return date_str
         
         try:
             # Try YYYY-MM-DD format first

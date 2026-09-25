@@ -94,10 +94,10 @@ export function SearchForm() {
       newErrors.destination = 'Destination must be less than 100 characters'
     }
 
-    // Check-in date validation
-    if (!data.checkIn) {
+    // Dates are optional (search by city only), but a range needs both ends
+    if (!data.checkIn && data.checkOut) {
       newErrors.checkIn = 'Check-in date is required'
-    } else {
+    } else if (data.checkIn) {
       const checkInDate = new Date(data.checkIn)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -108,9 +108,9 @@ export function SearchForm() {
     }
 
     // Check-out date validation
-    if (!data.checkOut) {
+    if (!data.checkOut && data.checkIn) {
       newErrors.checkOut = 'Check-out date is required'
-    } else if (data.checkIn) {
+    } else if (data.checkOut && data.checkIn) {
       const checkInDate = new Date(data.checkIn)
       const checkOutDate = new Date(data.checkOut)
       
