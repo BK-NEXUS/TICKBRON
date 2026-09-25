@@ -495,6 +495,58 @@ describe('BookingPage', () => {
         expect(screen.getByText('Price Summary')).toBeInTheDocument()
       })
     })
+
+    describe('nightly prices from availability (E2E BUG 2)', () => {
+      // Nights 2025-01-20..24 (check-out 25th). Friday the 24th costs more; the 25th is not a night.
+      const availability = (prices: Array<string | null>) => ({
+        data: {
+          id: 1,
+          room_types: [{ id: 1, rate_plans: [{ id: 1, date_inventory: [
+            ...prices.map((price, index) => ({
+              id: index + 1, date: `2025-01-${20 + index}`, available_rooms: 5, booked_rooms: 0, remaining_rooms: 5,
+              price, currency: 'USD', is_available: true, minimum_stay: null, maximum_stay: null, notes: null,
+            })),
+            { id: 99, date: '2025-01-25', available_rooms: 5, booked_rooms: 0, remaining_rooms: 5, price: '999.00',
+              currency: 'USD', is_available: true, minimum_stay: null, maximum_stay: null, notes: null },
+          ] }] }],
+        },
+        error: null,
+      })
+      const totalText = (container: HTMLElement) =>
+        container.querySelector('.booking-summary-total-value')?.textContent
+
+      it('adds up the price of each night, like the backend', async () => {
+        vi.mocked(propertyAdapter.getAvailability).mockResolvedValue(availability(['100.00', '100.00', '100.00', '100.00', '115.00']))
+        const { container } = renderWithRouter(<BookingPage />)
+
+        await waitFor(() => {
+          expect(totalText(container)).toBe('$515')
+        })
+        expect(propertyAdapter.getAvailability).toHaveBeenCalledWith(1, { check_in: '2025-01-20', check_out: '2025-01-24' })
+      })
+
+      it('uses the rate plan base price for nights without their own price', async () => {
+        vi.mocked(propertyAdapter.getAvailability).mockResolvedValue(availability([null, null, null, null, '130.00']))
+        const { container } = renderWithRouter(<BookingPage />)
+
+        await waitFor(() => {
+          expect(totalText(container)).toBe('$530')
+        })
+      })
+
+      it('multiplies by the number of rooms', async () => {
+        vi.mocked(propertyAdapter.getAvailability).mockResolvedValue(availability(['100.00', '100.00', '100.00', '100.00', '115.00']))
+        const { container } = renderWithRouter(<BookingPage />)
+
+        await waitFor(() => {
+          expect(totalText(container)).toBe('$515')
+        })
+        fireEvent.change(screen.getByLabelText(/Number of Rooms/), { target: { value: '2' } })
+        await waitFor(() => {
+          expect(totalText(container)).toBe('$1,030')
+        })
+      })
+    })
   })
 
   describe('Booking submission', () => {
