@@ -1063,9 +1063,12 @@ describe('AdminAdapter', () => {
 
   describe('Statistics Methods (Checkpoint 26)', () => {
     it('should get registration statistics successfully', async () => {
-      const mockStatistics = {
+      // Backend shape (admin_registration_statistics): the series is under `statistics`
+      const backendResponse = {
         type: 'rolling_12_months',
-        data: [
+        start_date: '2023-10-01',
+        end_date: '2024-09-30',
+        statistics: [
           { period: '2024-01', count: 15 },
           { period: '2024-02', count: 23 },
           { period: '2024-03', count: 18 },
@@ -1074,12 +1077,12 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockStatistics,
+        json: async () => backendResponse,
       })
 
       const result = await adapter.getRegistrationStatistics()
 
-      expect(result.data).toEqual(mockStatistics)
+      expect(result.data).toEqual({ type: 'rolling_12_months', data: backendResponse.statistics })
       expect(result.error).toBeNull()
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api/api/v1/admin-panel/statistics/registrations/',
@@ -1091,9 +1094,9 @@ describe('AdminAdapter', () => {
     })
 
     it('should get registration statistics with type parameter', async () => {
-      const mockStatistics = {
+      const backendResponse = {
         type: 'calendar_year',
-        data: [
+        statistics: [
           { period: '2023', count: 150 },
           { period: '2024', count: 200 },
         ],
@@ -1101,12 +1104,12 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockStatistics,
+        json: async () => backendResponse,
       })
 
       const result = await adapter.getRegistrationStatistics({ type: 'calendar_year' })
 
-      expect(result.data).toEqual(mockStatistics)
+      expect(result.data).toEqual({ type: 'calendar_year', data: backendResponse.statistics })
       expect(result.error).toBeNull()
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api/api/v1/admin-panel/statistics/registrations/?type=calendar_year',
@@ -1135,7 +1138,7 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockTopBookers,
+        json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
 
       const result = await adapter.getTopBookers()
@@ -1163,7 +1166,7 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockTopBookers,
+        json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
 
       const result = await adapter.getTopBookers({ period: 'this_month' })
@@ -1191,7 +1194,7 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockTopBookers,
+        json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
 
       const result = await adapter.getTopBookers({ limit: 5 })
@@ -1219,7 +1222,7 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockTopBookers,
+        json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
 
       const result = await adapter.getTopBookers({ period: 'this_year', limit: 20 })
@@ -1251,13 +1254,79 @@ describe('AdminAdapter', () => {
 
   describe('Support Lookup Methods (Checkpoint 23)', () => {
     it('should look up booking by reference code successfully', async () => {
-      const mockBooking = {
+      // Backend shape (admin_booking_lookup_by_reference): nested booking / customer / property
+      const customer = {
+        id: 1,
+        full_name: 'John Doe',
+        email: 'john@example.com',
+        phone_number: '+998901234567',
+        whatsapp: '+998901234567',
+        telegram: '@johndoe',
+        preferred_contact_method: 'email',
+      }
+      const backendResponse = {
+        booking: {
+          id: 1,
+          reference_code: 'ABC123',
+          status: 'confirmed',
+          payment_status: 'paid',
+          check_in: '2024-10-01',
+          check_out: '2024-10-03',
+          number_of_nights: 2,
+          guest_count: 2,
+          total_price: '200.00',
+          currency: 'USD',
+          special_requests: null,
+          cancelled_at: null,
+          cancellation_reason: null,
+          expires_at: null,
+          created_at: '2024-09-01T00:00:00Z',
+          updated_at: '2024-09-01T00:00:00Z',
+          guest_full_name: 'John Doe',
+          guest_phone: '+998901234567',
+          guest_email: 'john@example.com',
+          number_of_rooms: 1,
+          children: [],
+          booking_items: [
+            {
+              room_type: { id: 4, name: 'Deluxe Room', description: '', base_occupancy: 2, max_occupancy: 3 },
+              rate_plan: { id: 9, name: 'Standard Rate', rate_type: 'standard', description: '' },
+              number_of_rooms: 1,
+              price_per_night: '100.00',
+              currency: 'USD',
+            },
+          ],
+        },
+        customer,
+        property: {
+          id: 1,
+          name: 'Tashkent Hotel',
+          property_type: 'Hotel',
+          status: 'active',
+          address_line1: '123 Main St',
+          city: 'Tashkent',
+          state: null,
+          country: 'Uzbekistan',
+          base_price: '100.00',
+          currency: 'USD',
+          owner: { id: 5, full_name: 'Owner', email: 'owner@example.com' },
+        },
+      }
+
+      ;(global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => backendResponse,
+      })
+
+      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'ABC123' })
+
+      expect(result.data).toEqual({
         id: 1,
         reference_code: 'ABC123',
         status: 'confirmed',
         payment_status: 'paid',
-        check_in: '2024-10-01T00:00:00Z',
-        check_out: '2024-10-03T00:00:00Z',
+        check_in: '2024-10-01',
+        check_out: '2024-10-03',
         number_of_nights: 2,
         total_price: 200,
         currency: 'USD',
@@ -1268,32 +1337,11 @@ describe('AdminAdapter', () => {
           country: 'Uzbekistan',
           address_line1: '123 Main St',
         },
-        room: {
-          id: 1,
-          name: 'Deluxe Room',
-          room_type: 'deluxe',
-        },
-        customer: {
-          id: 1,
-          full_name: 'John Doe',
-          email: 'john@example.com',
-          phone_number: '+998901234567',
-          whatsapp: '+998901234567',
-          telegram: '@johndoe',
-          preferred_contact_method: 'email',
-        },
+        room: { id: 4, name: 'Deluxe Room', rate_plan: 'Standard Rate' },
+        customer,
         created_at: '2024-09-01T00:00:00Z',
         updated_at: '2024-09-01T00:00:00Z',
-      }
-
-      ;(global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockBooking,
       })
-
-      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'ABC123' })
-
-      expect(result.data).toEqual(mockBooking)
       expect(result.error).toBeNull()
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api/api/v1/admin-panel/bookings/lookup/?reference_code=ABC123',
@@ -1302,6 +1350,28 @@ describe('AdminAdapter', () => {
           headers: { 'Content-Type': 'application/json' },
         })
       )
+    })
+
+    it('returns room null when the booking has no items', async () => {
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          booking: {
+            id: 2, reference_code: 'XYZ789', status: 'pending', payment_status: 'pending',
+            check_in: '2024-10-01', check_out: '2024-10-02', number_of_nights: 1, total_price: '50.00',
+            currency: 'USD', created_at: '2024-09-01T00:00:00Z', updated_at: '2024-09-01T00:00:00Z',
+            booking_items: [],
+          },
+          customer: { id: 1, full_name: 'A', email: 'a@example.com', phone_number: '+1', preferred_contact_method: 'email' },
+          property: { id: 1, name: 'P', city: 'C', country: 'U', address_line1: 'L' },
+        }),
+      } as unknown as Response)
+
+      const result = await adapter.lookupBookingByReferenceCode({ reference_code: 'XYZ789' })
+
+      expect(result.error).toBeNull()
+      expect(result.data?.room).toBeNull()
+      expect(result.data?.total_price).toBe(50)
     })
 
     it('should handle 404 error when booking not found', async () => {

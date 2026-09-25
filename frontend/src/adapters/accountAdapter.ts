@@ -1,5 +1,5 @@
 import { readApiError } from '../utils/errorHandler'
-import { apiFetch } from '../utils/api'
+import { apiFetch, fetchAllPages } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -149,28 +149,17 @@ export interface ApiResponse<T> {
   error: string | null
 }
 
+const ACCOUNT_LIST_OPTIONS = {
+  errorMessages: { 401: 'Authentication required' },
+  networkErrorMessage: 'Network error occurred',
+}
+
 export const accountAdapter = {
   // Favorites API methods
+  // Paginated on the backend: returns the items of every page
   async getFavorites(): Promise<ApiResponse<Favorite[]>> {
-    try {
-      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/favorites/`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
-        return { data: null, error: apiError.message }
-      }
-
-      const data = await response.json()
-      return { data, error: null }
-    } catch (error) {
-      return { data: null, error: 'Network error occurred' }
-    }
+    const { data, error } = await fetchAllPages<Favorite>(`${API_BASE_URL}/api/v1/me/favorites/`, ACCOUNT_LIST_OPTIONS)
+    return { data, error }
   },
 
   async addFavorite(propertyId: number, notes?: string): Promise<ApiResponse<Favorite>> {
@@ -243,26 +232,10 @@ export const accountAdapter = {
   },
 
   // Account History API methods
+  // Paginated on the backend: returns the items of every page
   async getAccountHistory(): Promise<ApiResponse<AccountHistory[]>> {
-    try {
-      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/history/`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
-        return { data: null, error: apiError.message }
-      }
-
-      const data = await response.json()
-      return { data, error: null }
-    } catch (error) {
-      return { data: null, error: 'Network error occurred' }
-    }
+    const { data, error } = await fetchAllPages<AccountHistory>(`${API_BASE_URL}/api/v1/me/history/`, ACCOUNT_LIST_OPTIONS)
+    return { data, error }
   },
 
   async getRecentHistory(limit: number = 10): Promise<ApiResponse<AccountHistory[]>> {
@@ -337,26 +310,10 @@ export const accountAdapter = {
   },
 
   // Reviews API methods
+  // Paginated on the backend: returns the items of every page
   async getReviews(): Promise<ApiResponse<Review[]>> {
-    try {
-      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
-        return { data: null, error: apiError.message }
-      }
-
-      const data = await response.json()
-      return { data, error: null }
-    } catch (error) {
-      return { data: null, error: 'Network error occurred' }
-    }
+    const { data, error } = await fetchAllPages<Review>(`${API_BASE_URL}/api/v1/me/reviews/`, ACCOUNT_LIST_OPTIONS)
+    return { data, error }
   },
 
   async createReview(reviewData: CreateReviewRequest): Promise<ApiResponse<Review>> {

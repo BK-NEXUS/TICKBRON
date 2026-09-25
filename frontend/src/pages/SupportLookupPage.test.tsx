@@ -164,7 +164,7 @@ describe('SupportLookupPage', () => {
       room: {
         id: 1,
         name: 'Deluxe Room',
-        room_type: 'deluxe',
+        rate_plan: 'Standard Rate',
       },
       customer: {
         id: 1,
@@ -302,7 +302,7 @@ describe('SupportLookupPage', () => {
       room: {
         id: 1,
         name: 'Deluxe Room',
-        room_type: 'deluxe',
+        rate_plan: 'Standard Rate',
       },
       customer: {
         id: 1,

@@ -5,6 +5,8 @@
 // so the token comes from GET /api/v1/auth/csrf/ (see .ai/contracts/auth.md).
 // Django rotates the token on login and logout, so authAdapter clears the cache then.
 
+import { readApiError } from './errorHandler'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -93,4 +95,77 @@ export async function apiFetch(url: string, init: RequestInit = {}): Promise<Res
 
   clearCsrfToken()
   return fetch(url, withCsrfHeader(options, await getCsrfToken()))
+}
+
+/** DRF PageNumberPagination envelope (PAGE_SIZE 20 on the backend). */
+export interface Paginated<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
+/** Upper bound on pages fetched by fetchAllPages (20 items per page -> 1000 items). */
+export const DEFAULT_MAX_PAGES = 50
+
+export interface FetchAllPagesOptions {
+  /** Stop after this many pages and report truncated: true */
+  maxPages?: number
+  /** Per-status messages passed to readApiError */
+  errorMessages?: Record<number, string>
+  /** Message for network failures; defaults to the thrown error's text */
+  networkErrorMessage?: string
+}
+
+export interface FetchAllPagesResult<T> {
+  data: T[] | null
+  error: string | null
+  /** True when more pages existed than were fetched (maxPages, or a next link to another origin) */
+  truncated: boolean
+}
+
+function isPaginated<T>(body: unknown): body is Paginated<T> {
+  return typeof body === 'object' && body !== null && Array.isArray((body as Paginated<T>).results)
+}
+
+/**
+ * GET a list endpoint and return every item, following DRF `next` links.
+ * Plain-array responses (non-paginated endpoints) are returned as they are.
+ * Only same-origin `next` links are followed.
+ */
+export async function fetchAllPages<T>(url: string, options: FetchAllPagesOptions = {}): Promise<FetchAllPagesResult<T>> {
+  const { maxPages = DEFAULT_MAX_PAGES, errorMessages = {}, networkErrorMessage } = options
+  const origin = new URL(url).origin
+  const items: T[] = []
+  let nextUrl: string | null = url
+  let pages = 0
+
+  try {
+    while (nextUrl && pages < maxPages) {
+      const response = await apiFetch(nextUrl, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!response.ok) {
+        const apiError = await readApiError(response, errorMessages)
+        return { data: null, error: apiError.message, truncated: false }
+      }
+      const body: unknown = await response.json()
+      pages += 1
+      if (!isPaginated<T>(body)) {
+        return { data: Array.isArray(body) ? (body as T[]) : [], error: null, truncated: false }
+      }
+      items.push(...body.results)
+      nextUrl = body.next
+      if (nextUrl && new URL(nextUrl, url).origin !== origin) {
+        return { data: items, error: null, truncated: true }
+      }
+    }
+  } catch (error) {
+    const message = networkErrorMessage ?? (error instanceof Error ? error.message : 'Network error occurred')
+    return { data: null, error: message, truncated: false }
+  }
+
+  return { data: items, error: null, truncated: nextUrl !== null }
 }

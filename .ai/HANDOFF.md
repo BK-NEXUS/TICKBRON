@@ -1961,3 +1961,10 @@ Additive only, no migration. See the "2026-09-24 frontend audit follow-up" secti
 - Palette from the client logo (gold, ink, cream) applied through the existing CSS tokens in `frontend/src/styles/index.css`; token names unchanged. Primary buttons are gold with ink text; links and accents use a darker text-safe gold `#715A2C`. Error and success stay red/green. Contrast table: `.ai/checkpoints/frontend_brand.md`
 - New `BrandLogo` component (single image reference `BRAND_LOGO_SRC`) in header, footer, login and register. Temporary favicon from the logo mark. Site title: "TICKBRON — Online Booking"
 - Waiting on the client: vector favicon, transparent/SVG logo, horizontal logo, smaller image sizes
+
+## Frontend fixes from the fix plan (2026-09-25, Kolya's agent)
+
+- Fixed from the "Still broken" list above: F20 (paginated lists), F21 (`room_types[].property_id`), F24 (support lookup shape), F25 (statistics shapes). Also: the 19 failing tests, and the calendar in `RoomSelection` now uses `GET /properties/{id}/availability/` instead of `Math.random()` data
+- New helper `fetchAllPages()` in `frontend/src/utils/api.ts`: follows DRF `next` links (same origin only, max 50 pages) and also accepts plain arrays. Use it for any new list endpoint that is paginated
+- Adapters map backend shapes to the frontend types: statistics (`statistics` -> `data`, `leaderboard` -> array), support lookup (nested -> flat, `room` from the first booking item, `total_price` as a number)
+- `npm test`: 925 passed, 0 failed

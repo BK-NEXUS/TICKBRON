@@ -2,7 +2,7 @@
 // Integrates with backend partner endpoints from Checkpoint 18
 
 import { readApiError } from '../utils/errorHandler'
-import { apiFetch } from '../utils/api'
+import { apiFetch, fetchAllPages } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -281,6 +281,14 @@ class PartnerAdapter {
     this.baseUrl = baseUrl
   }
 
+  /** GET a paginated list endpoint and return the items of every page */
+  private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
+    const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
+      errorMessages: { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Resource not found' },
+    })
+    return { data, error }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -336,9 +344,7 @@ class PartnerAdapter {
    * Integrates with GET /api/v1/partner/properties/ endpoint
    */
   async getProperties(): Promise<ApiResponse<PartnerProperty[]>> {
-    return this.request<PartnerProperty[]>('/api/v1/partner/properties/', {
-      method: 'GET',
-    })
+    return this.requestAll<PartnerProperty>('/api/v1/partner/properties/')
   }
 
   /**
@@ -380,9 +386,7 @@ class PartnerAdapter {
    * Integrates with GET /api/v1/partner/rooms/ endpoint
    */
   async getRoomTypes(): Promise<ApiResponse<PartnerRoomType[]>> {
-    return this.request<PartnerRoomType[]>('/api/v1/partner/rooms/', {
-      method: 'GET',
-    })
+    return this.requestAll<PartnerRoomType>('/api/v1/partner/rooms/')
   }
 
   /**
@@ -424,9 +428,7 @@ class PartnerAdapter {
    * Integrates with GET /api/v1/partner/rates/ endpoint
    */
   async getRatePlans(): Promise<ApiResponse<PartnerRatePlan[]>> {
-    return this.request<PartnerRatePlan[]>('/api/v1/partner/rates/', {
-      method: 'GET',
-    })
+    return this.requestAll<PartnerRatePlan>('/api/v1/partner/rates/')
   }
 
   /**
@@ -468,9 +470,7 @@ class PartnerAdapter {
    * Integrates with GET /api/v1/partner/inventory/ endpoint
    */
   async getDateInventory(): Promise<ApiResponse<PartnerDateInventory[]>> {
-    return this.request<PartnerDateInventory[]>('/api/v1/partner/inventory/', {
-      method: 'GET',
-    })
+    return this.requestAll<PartnerDateInventory>('/api/v1/partner/inventory/')
   }
 
   /**

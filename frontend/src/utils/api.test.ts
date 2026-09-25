@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { apiFetch, clearCsrfToken, getCsrfToken, setCsrfToken } from './api'
+import { apiFetch, clearCsrfToken, getCsrfToken, setCsrfToken, fetchAllPages } from './api'
 import { AuthAdapter } from '../adapters/authAdapter'
 
 const CSRF_URL = 'http://localhost:8000/api/v1/auth/csrf/'
@@ -177,5 +177,91 @@ describe('CSRF token and session changes', () => {
 
     mockFetch.mockResolvedValueOnce(jsonResponse({ csrf_token: 'new' }))
     expect(await getCsrfToken()).toBe('new')
+  })
+})
+
+describe('fetchAllPages', () => {
+  let mockFetch: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    mockFetch = vi.fn()
+    vi.stubGlobal('fetch', mockFetch)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const page = (results: unknown[], next: string | null) => jsonResponse({ count: 99, next, previous: null, results })
+
+  it('follows next links and concatenates results', async () => {
+    mockFetch
+      .mockResolvedValueOnce(page([1, 2], 'http://api/items/?page=2'))
+      .mockResolvedValueOnce(page([3], 'http://api/items/?page=3'))
+      .mockResolvedValueOnce(page([4], null))
+
+    const result = await fetchAllPages<number>('http://api/items/')
+
+    expect(result).toEqual({ data: [1, 2, 3, 4], error: null, truncated: false })
+    expect(mockFetch.mock.calls.map(call => call[0])).toEqual([
+      'http://api/items/', 'http://api/items/?page=2', 'http://api/items/?page=3',
+    ])
+    expect(mockFetch.mock.calls[0][1]).toEqual(expect.objectContaining({ method: 'GET', credentials: 'include' }))
+  })
+
+  it('accepts a plain array (non-paginated endpoint)', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse([1, 2]))
+
+    const result = await fetchAllPages<number>('http://api/items/')
+
+    expect(result).toEqual({ data: [1, 2], error: null, truncated: false })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops at maxPages and reports truncation', async () => {
+    mockFetch
+      .mockResolvedValueOnce(page([1], 'http://api/items/?page=2'))
+      .mockResolvedValueOnce(page([2], 'http://api/items/?page=3'))
+      .mockResolvedValueOnce(page([3], null))
+
+    const result = await fetchAllPages<number>('http://api/items/', { maxPages: 2 })
+
+    expect(result).toEqual({ data: [1, 2], error: null, truncated: true })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not follow a next link to another origin', async () => {
+    mockFetch.mockResolvedValueOnce(page([1], 'http://evil.example/steal/?page=2'))
+
+    const result = await fetchAllPages<number>('http://api/items/')
+
+    expect(result).toEqual({ data: [1], error: null, truncated: true })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns the parsed error of a failed page', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ error: { code: 'error', message: 'Nope', details: {} } }, 400))
+
+    const result = await fetchAllPages<number>('http://api/items/', { errorMessages: { 401: 'Authentication required' } })
+
+    expect(result.data).toBeNull()
+    expect(result.error).toBe('Nope')
+  })
+
+  it('uses the status override message', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({}, 401))
+
+    const result = await fetchAllPages<number>('http://api/items/', { errorMessages: { 401: 'Authentication required' } })
+
+    expect(result).toEqual({ data: null, error: 'Authentication required', truncated: false })
+  })
+
+  it('reports network errors with the given message, or the error text by default', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('offline'))
+    expect((await fetchAllPages('http://api/items/', { networkErrorMessage: 'Network error occurred' })).error)
+      .toBe('Network error occurred')
+
+    mockFetch.mockRejectedValueOnce(new Error('offline'))
+    expect((await fetchAllPages('http://api/items/')).error).toBe('offline')
   })
 })

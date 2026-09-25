@@ -2,7 +2,7 @@
 // Integrates with backend admin endpoints from Checkpoint 18
 
 import { readApiError } from '../utils/errorHandler'
-import { apiFetch } from '../utils/api'
+import { apiFetch, fetchAllPages } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -277,6 +277,42 @@ export interface RegistrationStatistics {
   }>
 }
 
+// Backend responses (admin_panel/views.py); the adapter maps them to the shapes above
+interface RegistrationStatisticsResponse {
+  type: 'rolling_12_months' | 'calendar_year'
+  start_date?: string
+  end_date?: string
+  statistics: Array<{ period: string; count: number }>
+}
+
+interface TopBookersResponse {
+  period: string
+  limit: number
+  leaderboard: TopBooker[]
+}
+
+interface SupportLookupResponse {
+  booking: {
+    id: number
+    reference_code: string
+    status: string
+    payment_status: string
+    check_in: string
+    check_out: string
+    number_of_nights: number
+    total_price: string
+    currency: string
+    created_at: string
+    updated_at: string
+    booking_items: Array<{
+      room_type: { id: number; name: string }
+      rate_plan: { id: number; name: string }
+    }>
+  }
+  customer: SupportLookupBooking['customer']
+  property: SupportLookupBooking['property'] & Record<string, unknown>
+}
+
 export interface GetRegistrationStatisticsParams {
   type?: 'rolling_12_months' | 'calendar_year'
 }
@@ -311,11 +347,12 @@ export interface SupportLookupBooking {
     country: string
     address_line1: string
   }
+  /** First booking item's room type and rate plan; null when the booking has no items */
   room: {
     id: number
     name: string
-    room_type: string
-  }
+    rate_plan: string
+  } | null
   customer: {
     id: number
     full_name: string
@@ -344,6 +381,14 @@ class AdminAdapter {
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl
+  }
+
+  /** GET a paginated list endpoint and return the items of every page */
+  private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
+    const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
+      errorMessages: { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Resource not found' },
+    })
+    return { data, error }
   }
 
   private async request<T>(
@@ -390,9 +435,7 @@ class AdminAdapter {
    * Integrates with GET /api/v1/admin-panel/properties/ endpoint
    */
   async getProperties(): Promise<ApiResponse<AdminProperty[]>> {
-    return this.request<AdminProperty[]>('/api/v1/admin-panel/properties/', {
-      method: 'GET',
-    })
+    return this.requestAll<AdminProperty>('/api/v1/admin-panel/properties/')
   }
 
   /**
@@ -446,9 +489,7 @@ class AdminAdapter {
    * Integrates with GET /api/v1/admin-panel/amenities/ endpoint
    */
   async getAmenities(): Promise<ApiResponse<AdminAmenity[]>> {
-    return this.request<AdminAmenity[]>('/api/v1/admin-panel/amenities/', {
-      method: 'GET',
-    })
+    return this.requestAll<AdminAmenity>('/api/v1/admin-panel/amenities/')
   }
 
   /**
@@ -490,9 +531,7 @@ class AdminAdapter {
    * Integrates with GET /api/v1/admin-panel/amenities/categories/ endpoint
    */
   async getAmenityCategories(): Promise<ApiResponse<AdminAmenityCategory[]>> {
-    return this.request<AdminAmenityCategory[]>('/api/v1/admin-panel/amenities/categories/', {
-      method: 'GET',
-    })
+    return this.requestAll<AdminAmenityCategory>('/api/v1/admin-panel/amenities/categories/')
   }
 
   /**
@@ -617,7 +656,9 @@ class AdminAdapter {
     if (params?.type) queryParams.append('type', params.type)
 
     const endpoint = `/api/v1/admin-panel/statistics/registrations/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
-    return this.request<RegistrationStatistics>(endpoint)
+    const { data, error } = await this.request<RegistrationStatisticsResponse>(endpoint)
+    if (!data) return { data: null, error }
+    return { data: { type: data.type, data: data.statistics }, error: null }
   }
 
   /**
@@ -630,7 +671,9 @@ class AdminAdapter {
     if (params?.limit) queryParams.append('limit', params.limit.toString())
 
     const endpoint = `/api/v1/admin-panel/statistics/top-bookers/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
-    return this.request<TopBooker[]>(endpoint)
+    const { data, error } = await this.request<TopBookersResponse>(endpoint)
+    if (!data) return { data: null, error }
+    return { data: data.leaderboard, error: null }
   }
 
   // Admin Support Lookup Methods (Checkpoint 23)
@@ -644,7 +687,38 @@ class AdminAdapter {
     queryParams.append('reference_code', params.reference_code)
 
     const endpoint = `/api/v1/admin-panel/bookings/lookup/?${queryParams.toString()}`
-    return this.request<SupportLookupBooking>(endpoint)
+    const { data, error } = await this.request<SupportLookupResponse>(endpoint)
+    if (!data) return { data: null, error }
+
+    const { booking, customer, property } = data
+    const firstItem = booking.booking_items[0]
+    return {
+      data: {
+        id: booking.id,
+        reference_code: booking.reference_code,
+        status: booking.status,
+        payment_status: booking.payment_status,
+        check_in: booking.check_in,
+        check_out: booking.check_out,
+        number_of_nights: booking.number_of_nights,
+        total_price: Number(booking.total_price),
+        currency: booking.currency,
+        property: {
+          id: property.id,
+          name: property.name,
+          city: property.city,
+          country: property.country,
+          address_line1: property.address_line1,
+        },
+        room: firstItem
+          ? { id: firstItem.room_type.id, name: firstItem.room_type.name, rate_plan: firstItem.rate_plan.name }
+          : null,
+        customer,
+        created_at: booking.created_at,
+        updated_at: booking.updated_at,
+      },
+      error: null,
+    }
   }
 }
 

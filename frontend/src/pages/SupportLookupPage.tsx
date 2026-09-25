@@ -245,7 +245,7 @@ export function SupportLookupPage() {
                   </div>
                   <div className="detail-item">
                     <dt>Room</dt>
-                    <dd>{booking.room.name} ({booking.room.room_type})</dd>
+                    <dd>{booking.room ? `${booking.room.name} (${booking.room.rate_plan})` : 'N/A'}</dd>
                   </div>
                 </dl>
               </div>
