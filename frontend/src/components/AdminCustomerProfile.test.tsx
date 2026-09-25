@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { AdminCustomerProfile } from './AdminCustomerProfile'
 import { adminAdapter } from '../adapters/adminAdapter'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -121,7 +121,11 @@ describe('AdminCustomerProfile', () => {
 
     expect(screen.getByText('ID: 1')).toBeInTheDocument()
     expect(screen.getByText('john@example.com')).toBeInTheDocument()
-    expect(screen.getByText('+998901234567')).toBeInTheDocument()
+    // The mock uses the same number for phone and WhatsApp, so check each row
+    const phoneRow = screen.getByText('Phone:').closest('.contact-item') as HTMLElement
+    expect(within(phoneRow).getByText('+998901234567')).toBeInTheDocument()
+    const whatsappRow = screen.getByText('WhatsApp:').closest('.contact-item') as HTMLElement
+    expect(within(whatsappRow).getByText('+998901234567')).toBeInTheDocument()
   })
 
   it('should render back button and navigate to admin dashboard', async () => {
@@ -188,8 +192,10 @@ describe('AdminCustomerProfile', () => {
     })
 
     expect(screen.getByText('Active')).toBeInTheDocument()
-    expect(screen.getByText('Verified')).toBeInTheDocument()
-    expect(screen.getByText('Verified')).toBeInTheDocument()
+    const emailStatus = screen.getByText('Email Verified:').closest('.status-item') as HTMLElement
+    expect(within(emailStatus).getByText('Verified')).toBeInTheDocument()
+    const phoneStatus = screen.getByText('Phone Verified:').closest('.status-item') as HTMLElement
+    expect(within(phoneStatus).getByText('Verified')).toBeInTheDocument()
   })
 
   it('should render tabs with correct counts', async () => {
@@ -291,7 +297,7 @@ describe('AdminCustomerProfile', () => {
       expect(screen.getByText('Bookings (1)')).toBeInTheDocument()
     })
 
-    const filterSelect = screen.getByLabelText('Filter bookings by')
+    const filterSelect = screen.getByLabelText('Filter bookings by status')
     fireEvent.change(filterSelect, { target: { value: 'upcoming' } })
 
     await waitFor(() => {
@@ -572,7 +578,7 @@ describe('AdminCustomerProfile', () => {
     expect(screen.queryByLabelText(/Open Telegram chat/)).not.toBeInTheDocument()
   })
 
-  it('should display note validation error when adding empty note', async () => {
+  it('should not allow adding an empty note', async () => {
     ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
@@ -592,12 +598,13 @@ describe('AdminCustomerProfile', () => {
       expect(screen.getByLabelText('New internal note')).toBeInTheDocument()
     })
 
+    // An empty or whitespace-only note cannot be submitted: the button stays disabled
     const addButton = screen.getByLabelText('Add note')
+    expect(addButton).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('New internal note'), { target: { value: '   ' } })
+    expect(addButton).toBeDisabled()
     fireEvent.click(addButton)
-
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a note')).toBeInTheDocument()
-    })
+    expect(adminAdapter.createInternalNote).not.toHaveBeenCalled()
   })
 })
 

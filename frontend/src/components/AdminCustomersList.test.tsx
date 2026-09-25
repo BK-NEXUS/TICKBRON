@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render as rtlRender, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { AdminCustomersList } from './AdminCustomersList'
 import { adminAdapter } from '../adapters/adminAdapter'
+
+// Components render <Link>, which needs a router
+const render = (ui: React.ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
 
 // Mock the admin adapter
 vi.mock('../adapters/adminAdapter', () => ({
@@ -12,8 +16,12 @@ vi.mock('../adapters/adminAdapter', () => ({
 
 describe('AdminCustomersList', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    // Reset (not just clear): unused mockResolvedValueOnce values must not leak into the next test
+    vi.resetAllMocks()
   })
+
+  const columnTexts = (container: HTMLElement, cellClass: string) =>
+    Array.from(container.querySelectorAll(`td.${cellClass}`)).map(cell => cell.textContent)
 
   const mockCustomersResponse = {
     count: 2,
@@ -82,7 +90,7 @@ describe('AdminCustomersList', () => {
       error: null,
     })
 
-    render(<AdminCustomersList />)
+    const { container } = render(<AdminCustomersList />)
 
     await waitFor(() => {
       expect(screen.getByText('Total customers: 2')).toBeInTheDocument()
@@ -90,8 +98,8 @@ describe('AdminCustomersList', () => {
 
     expect(screen.getByText('John Doe')).toBeInTheDocument()
     expect(screen.getByText('jane@example.com')).toBeInTheDocument()
-    expect(screen.getByText('5')).toBeInTheDocument() // booking count
-    expect(screen.getByText('2')).toBeInTheDocument() // booking count
+    // "2" is also customer 2's ID, so check the booking count column itself
+    expect(columnTexts(container, 'customer-booking-count')).toEqual(['5', '2'])
   })
 
   it('should render loading state', () => {
@@ -230,25 +238,31 @@ describe('AdminCustomersList', () => {
   })
 
   it('should handle pagination - previous page', async () => {
-    const paginatedResponse = {
+    const firstPage = {
       count: 50,
-      next: null,
+      next: 'http://test-api/api/v1/admin-panel/customers/?page=2',
+      previous: null,
+      results: mockCustomersResponse.results,
+    }
+    const secondPage = {
+      count: 50,
+      next: 'http://test-api/api/v1/admin-panel/customers/?page=3',
       previous: 'http://test-api/api/v1/admin-panel/customers/?page=1',
       results: mockCustomersResponse.results,
     }
 
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
-      data: paginatedResponse,
-      error: null,
-    })
+    ;(adminAdapter.getCustomers as any)
+      .mockResolvedValueOnce({ data: firstPage, error: null })
+      .mockResolvedValueOnce({ data: secondPage, error: null })
+      .mockResolvedValueOnce({ data: firstPage, error: null })
 
     render(<AdminCustomersList />)
 
-    // Start on page 2
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
-      data: paginatedResponse,
-      error: null,
+    // The list starts on page 1; go to page 2 first
+    await waitFor(() => {
+      expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
     })
+    fireEvent.click(screen.getByLabelText('Next page'))
 
     await waitFor(() => {
       expect(screen.getByText('Page 2 of 3')).toBeInTheDocument()
@@ -258,10 +272,11 @@ describe('AdminCustomersList', () => {
     fireEvent.click(prevButton)
 
     await waitFor(() => {
-      expect(adminAdapter.getCustomers).toHaveBeenCalledWith(
+      expect(adminAdapter.getCustomers).toHaveBeenLastCalledWith(
         expect.objectContaining({ page: 1 })
       )
     })
+    expect(adminAdapter.getCustomers).toHaveBeenCalledTimes(3)
   })
 
   it('should disable pagination buttons when on first/last page', async () => {
@@ -302,19 +317,14 @@ describe('AdminCustomersList', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument()
     })
 
-    // Check table headers
-    expect(screen.getByText('ID')).toBeInTheDocument()
-    expect(screen.getByText('Registration Date')).toBeInTheDocument()
-    expect(screen.getByText('Name')).toBeInTheDocument()
-    expect(screen.getByText('Phone')).toBeInTheDocument()
-    expect(screen.getByText('Email')).toBeInTheDocument()
-    expect(screen.getByText('WhatsApp')).toBeInTheDocument()
-    expect(screen.getByText('Telegram')).toBeInTheDocument()
-    expect(screen.getByText('Preferred Contact')).toBeInTheDocument()
-    expect(screen.getByText('Booking Count')).toBeInTheDocument()
-    expect(screen.getByText('Last Booking Date')).toBeInTheDocument()
-    expect(screen.getByText('Total Paid')).toBeInTheDocument()
-    expect(screen.getByText('Status')).toBeInTheDocument()
+    // Check table headers (the sort <select> repeats several labels, so look only at the table)
+    const headers = within(screen.getByRole('table', { name: 'Customers directory' }))
+      .getAllByRole('columnheader')
+      .map(header => header.textContent)
+    expect(headers).toEqual([
+      'ID', 'Registration Date', 'Name', 'Phone', 'Email', 'WhatsApp', 'Telegram',
+      'Preferred Contact', 'Booking Count', 'Last Booking Date', 'Total Paid', 'Status',
+    ])
   })
 
   it('should display N/A for missing contact information', async () => {
@@ -345,11 +355,15 @@ describe('AdminCustomersList', () => {
       error: null,
     })
 
-    render(<AdminCustomersList />)
+    const { container } = render(<AdminCustomersList />)
 
     await waitFor(() => {
-      expect(screen.getByText('N/A')).toBeInTheDocument()
+      expect(screen.getByText('John Doe')).toBeInTheDocument()
     })
+    // This customer has no WhatsApp, Telegram or last booking: each cell shows N/A
+    expect(columnTexts(container, 'customer-whatsapp')).toEqual(['N/A'])
+    expect(columnTexts(container, 'customer-telegram')).toEqual(['N/A'])
+    expect(columnTexts(container, 'customer-last-booking-date')).toEqual(['N/A'])
   })
 
   it('should display correct status badges', async () => {
@@ -436,12 +450,13 @@ describe('AdminCustomersList', () => {
       error: null,
     })
 
-    render(<AdminCustomersList />)
+    const { container } = render(<AdminCustomersList />)
 
     await waitFor(() => {
-      expect(screen.getByText('Email')).toBeInTheDocument()
-      expect(screen.getByText('Phone')).toBeInTheDocument()
+      expect(screen.getByText('John Doe')).toBeInTheDocument()
     })
+    // "Email"/"Phone" are also column headers and sort options, so check the column itself
+    expect(columnTexts(container, 'customer-preferred-contact')).toEqual(['Email', 'Phone'])
   })
 })
 

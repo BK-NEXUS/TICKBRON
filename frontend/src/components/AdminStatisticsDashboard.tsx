@@ -119,7 +119,7 @@ export function AdminStatisticsDashboard() {
         </div>
 
         <div className="statistics-section">
-          <h2 className="statistics-section-title">Top Bookers Leaderboard</h2>
+          {/* TopBookersLeaderboard renders its own "Top Bookers Leaderboard" heading */}
           <TopBookersLeaderboard period="all_time" limit={10} />
         </div>
       </div>

@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render as rtlRender, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { SupportLookupPage } from './SupportLookupPage'
 import { AuthProvider } from '../contexts/AuthContext'
 import { adminAdapter } from '../adapters/adminAdapter'
+
+// Components render <Link>, which needs a router
+const render = (ui: React.ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
 
 // Mock the admin adapter
 vi.mock('../adapters/adminAdapter', () => ({
@@ -193,7 +197,7 @@ describe('SupportLookupPage', () => {
     await userEvent.click(searchButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Booking Details')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 2, name: 'Booking Details' })).toBeInTheDocument()
       expect(screen.getByText('ABC123')).toBeInTheDocument()
       expect(screen.getByText('John Doe')).toBeInTheDocument()
       expect(screen.getByText('Tashkent Hotel')).toBeInTheDocument()
@@ -223,13 +227,14 @@ describe('SupportLookupPage', () => {
     )
 
     const referenceInput = screen.getByLabelText('Reference Code')
-    await userEvent.type(referenceInput, 'INVALID')
+    // The input accepts at most 6 characters, like a real reference code
+    await userEvent.type(referenceInput, 'ZZZ999')
 
     const searchButton = screen.getByRole('button', { name: 'Look Up Booking' })
     await userEvent.click(searchButton)
 
     await waitFor(() => {
-      expect(screen.getByText('No booking found with reference code "INVALID"')).toBeInTheDocument()
+      expect(screen.getByText('No booking found with reference code "ZZZ999"')).toBeInTheDocument()
     })
   })
 
