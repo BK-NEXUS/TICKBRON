@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { RoomSelection } from './RoomSelection'
 import { RoomType, RatePlan } from '../adapters/propertyAdapter'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
@@ -16,7 +22,6 @@ describe('RoomSelection', () => {
   const mockRatePlans: RatePlan[] = [
     {
       id: 1,
-      room_type_id: 1,
       name: 'Standard Rate',
       slug: 'standard-rate',
       rate_type: 'standard',
@@ -34,7 +39,6 @@ describe('RoomSelection', () => {
   const mockRoomTypes: RoomType[] = [
     {
       id: 1,
-      property_id: 1,
       name: 'Standard Room',
       slug: 'standard-room',
       description: 'Comfortable room with essential amenities',
@@ -49,7 +53,6 @@ describe('RoomSelection', () => {
     },
     {
       id: 2,
-      property_id: 1,
       name: 'Deluxe Room',
       slug: 'deluxe-room',
       description: 'Spacious room with city views',
@@ -69,32 +72,32 @@ describe('RoomSelection', () => {
   })
 
   it('renders empty state when no room types provided', () => {
-    renderWithRouter(<RoomSelection roomTypes={[]} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={[]} />)
     
     expect(screen.getByText('No rooms available for this property')).toBeInTheDocument()
   })
 
   it('renders room selection title', () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Select Your Room')).toBeInTheDocument()
   })
 
   it('renders available rooms section', () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     expect(screen.getAllByText('Available Rooms').length).toBeGreaterThan(0)
   })
 
   it('renders room cards for each room type', () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Standard Room')).toBeInTheDocument()
     expect(screen.getByText('Deluxe Room')).toBeInTheDocument()
   })
 
   it('renders room card with correct information', () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     expect(screen.getByText('Comfortable room with essential amenities')).toBeInTheDocument()
     expect(screen.getByText('€120')).toBeInTheDocument()
@@ -102,7 +105,7 @@ describe('RoomSelection', () => {
   })
 
   it('selects room when room card is clicked', async () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -113,7 +116,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays rate plans after room selection', async () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -124,7 +127,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays availability calendar after rate plan selection', async () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -142,7 +145,7 @@ describe('RoomSelection', () => {
   })
 
   it('displays selection summary when all selections are made', async () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -165,7 +168,7 @@ describe('RoomSelection', () => {
   })
 
   it('resets date selection when different rate plan is selected', async () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
     standardRoom.click()
@@ -185,8 +188,32 @@ describe('RoomSelection', () => {
     // Skipping as we only have one rate plan in mock data
   })
 
+  it('sends the property id from the page to the booking page (F21)', async () => {
+    // The backend's room_types[] have no property_id; the page passes the property id down
+    const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+
+    fireEvent.click(screen.getByText('Standard Room'))
+    await waitFor(() => {
+      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Standard Rate'))
+    await waitFor(() => {
+      expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
+    })
+
+    const availableDay = container.querySelector('.availability-calendar-day[aria-disabled="false"]') as HTMLElement
+    expect(availableDay).not.toBeNull()
+    fireEvent.click(availableDay)
+    fireEvent.click(screen.getByLabelText('Proceed to booking'))
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/booking',
+      { state: expect.objectContaining({ propertyId: 42, roomTypeId: 1, ratePlanId: 1 }) }
+    )
+  })
+
   it('uses provided currency prop', () => {
-    renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} currency="USD" />)
+    renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} currency="USD" />)
     
     // RoomCard uses the room's own currency, not the prop
     // This test validates that rooms are rendered correctly

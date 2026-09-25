@@ -6,7 +6,6 @@ import { RatePlan } from '../adapters/searchAdapter'
 describe('RatePlanCard', () => {
   const mockRatePlan: RatePlan = {
     id: 1,
-    room_type_id: 1,
     name: 'Standard Rate',
     slug: 'standard-rate',
     rate_type: 'standard',

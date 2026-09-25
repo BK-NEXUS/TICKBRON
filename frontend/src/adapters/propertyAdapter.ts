@@ -86,7 +86,6 @@ export interface Restaurant {
 
 export interface RoomType {
   id: number
-  property_id: number
   name: string
   slug: string
   description: string
@@ -104,7 +103,6 @@ export interface RoomType {
 
 export interface RatePlan {
   id: number
-  room_type_id: number
   name: string
   slug: string
   rate_type: string

@@ -6,7 +6,6 @@ import { RoomType } from '../adapters/searchAdapter'
 describe('RoomCard', () => {
   const mockRoom: RoomType = {
     id: 1,
-    property_id: 1,
     name: 'Standard Room',
     slug: 'standard-room',
     description: 'Comfortable room with essential amenities',

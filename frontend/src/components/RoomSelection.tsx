@@ -7,6 +7,8 @@ import { AvailabilityCalendar } from './AvailabilityCalendar'
 
 interface RoomSelectionProps {
   roomTypes: RoomType[]
+  /** Id of the property being viewed; the backend's room_types[] do not carry it */
+  propertyId: number
   currency?: string
 }
 
@@ -14,7 +16,7 @@ interface RoomSelectionProps {
  * RoomSelection component for room/rate selection UI
  * Combines room cards, rate plan cards, and availability calendar
  */
-export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProps) {
+export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomSelectionProps) {
   const navigate = useNavigate()
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null)
@@ -97,7 +99,7 @@ export function RoomSelection({ roomTypes, currency = 'USD' }: RoomSelectionProp
       const checkOutDate = new Date(checkInDate.getTime() + nightsToBook * 24 * 60 * 60 * 1000)
       
       const bookingState = {
-        propertyId: selectedRoom.property_id,
+        propertyId,
         roomTypeId: selectedRoom.id,
         ratePlanId: selectedRatePlan.id,
         checkIn: selectedDate,

@@ -185,7 +185,7 @@ export function PropertyDetailPage() {
 
           {property.room_types && property.room_types.length > 0 && (
             <section className="property-detail-section">
-              <RoomSelection roomTypes={property.room_types} currency={property.currency} />
+              <RoomSelection roomTypes={property.room_types} propertyId={property.id} currency={property.currency} />
             </section>
           )}
         </div>
