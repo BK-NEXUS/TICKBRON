@@ -96,10 +96,12 @@ export function BookingPage() {
     
     // Pre-fill guest details from user if authenticated
     if (user) {
+      // Since checkpoint 21 most profiles only have full_name: first word = first name, rest = last name
+      const [nameFromFull = '', ...restOfName] = (user.full_name || '').trim().split(/\s+/)
       setGuestDetails(prev => ({
         ...prev,
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
+        first_name: user.first_name || nameFromFull,
+        last_name: user.last_name || restOfName.join(' '),
         email: user.email || '',
         phone_number: user.phone_number || '',
       }))

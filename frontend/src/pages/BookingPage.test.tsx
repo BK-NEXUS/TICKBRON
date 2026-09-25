@@ -300,6 +300,37 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/phone number/i)).toHaveValue('+1234567890')
       })
     })
+
+    describe('name from full_name (E2E BUG 6)', () => {
+      const renderForUser = (fullName: string) => {
+        mockUseAuth.mockReturnValue({
+          user: {
+            id: 3, email: 'guest@example.com', first_name: null, last_name: null, full_name: fullName,
+            phone_number: '+998900000003', is_active: true, date_joined: '2025-01-01T00:00:00Z',
+            last_login: null, email_verified: true, two_factor_enabled: false,
+          },
+          isAuthenticated: true, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn(),
+          refreshUser: vi.fn(), updateProfile: vi.fn(),
+        })
+        renderWithRouter(<BookingPage />)
+      }
+
+      it('splits full_name into first and last name', async () => {
+        renderForUser('Demo Guest')
+        await waitFor(() => {
+          expect(screen.getByLabelText(/first name/i)).toHaveValue('Demo')
+          expect(screen.getByLabelText(/last name/i)).toHaveValue('Guest')
+        })
+      })
+
+      it('keeps every word after the first as the last name', async () => {
+        renderForUser('Anna Maria de la Cruz')
+        await waitFor(() => {
+          expect(screen.getByLabelText(/first name/i)).toHaveValue('Anna')
+          expect(screen.getByLabelText(/last name/i)).toHaveValue('Maria de la Cruz')
+        })
+      })
+    })
   })
 
   describe('Guest details form', () => {
