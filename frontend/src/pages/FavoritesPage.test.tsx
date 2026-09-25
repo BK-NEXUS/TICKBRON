@@ -18,32 +18,33 @@ const mockAccountAdapter = accountAdapter as {
 }
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
+// Backend shape of GET /api/v1/me/favorites/ (FavoriteSerializer)
 const mockFavorites = [
   {
     id: 1,
     user: 1,
     property: 1,
-    property_name: 'Test Property 1',
-    city: 'Tashkent',
-    country: 'Uzbekistan',
-    base_price: 100,
-    currency: 'USD',
-    primary_photo: 'http://example.com/photo1.jpg',
+    property_translations: [{ language: 'en', name: 'Test Property 1', description: '', address_line1: '1 Main St', city: 'Tashkent' }],
+    property_city: 'Tashkent',
+    property_country: 'Uzbekistan',
+    property_base_price: '100.00',
+    property_currency: 'USD',
+    property_primary_photo: 'http://example.com/photo1.jpg',
     notes: 'Great place!',
     created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-15T10:00:00Z',
   },
   {
     id: 2,
     user: 1,
     property: 2,
-    property_name: 'Test Property 2',
-    city: 'Samarkand',
-    country: 'Uzbekistan',
-    base_price: 150,
-    currency: 'USD',
+    property_translations: [{ language: 'en', name: 'Test Property 2', description: '', address_line1: '2 Main St', city: 'Samarkand' }],
+    property_city: 'Samarkand',
+    property_country: 'Uzbekistan',
+    property_base_price: '150.00',
+    property_currency: 'USD',
+    property_primary_photo: null,
+    notes: null,
     created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-15T10:00:00Z',
   },
 ]
 

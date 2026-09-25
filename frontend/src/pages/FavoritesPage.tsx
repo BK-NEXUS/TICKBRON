@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom'
 import { accountAdapter, Favorite } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
+import { markFavoriteRemoved } from '../hooks/useFavorites'
+
+/** Display name of a favorite: its first translation, else the city */
+const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
+
+/** "100.00" -> "$100", "99.50" -> "$99.5" */
+const favoritePrice = (favorite: Favorite) => `$${Number(favorite.property_base_price)}`
 
 export function FavoritesPage() {
   const { isAuthenticated } = useAuth()
@@ -38,6 +45,8 @@ export function FavoritesPage() {
     if (result.error) {
       setError(result.error)
     } else {
+      const removed = favorites.find(fav => fav.id === favoriteId)
+      if (removed) markFavoriteRemoved(removed.property)
       setFavorites(favorites.filter(fav => fav.id !== favoriteId))
     }
   }
@@ -117,10 +126,10 @@ export function FavoritesPage() {
           {favorites.map((favorite) => (
             <div key={favorite.id} className="favorite-card">
               <div className="favorite-card-image">
-                {favorite.primary_photo ? (
+                {favorite.property_primary_photo ? (
                   <img 
-                    src={favorite.primary_photo} 
-                    alt={favorite.property_name}
+                    src={favorite.property_primary_photo} 
+                    alt={favoriteName(favorite)}
                     loading="lazy"
                   />
                 ) : (
@@ -131,16 +140,16 @@ export function FavoritesPage() {
               <div className="favorite-card-content">
                 <h3 className="favorite-card-title">
                   <Link to={`/property/${favorite.property}`}>
-                    {favorite.property_name}
+                    {favoriteName(favorite)}
                   </Link>
                 </h3>
                 
                 <p className="favorite-card-location">
-                  {favorite.city}, {favorite.country}
+                  {favorite.property_city}, {favorite.property_country}
                 </p>
                 
                 <p className="favorite-card-price">
-                  ${favorite.base_price} {favorite.currency} / night
+                  {favoritePrice(favorite)} {favorite.property_currency} / night
                 </p>
                 
                 {favorite.notes && (
@@ -152,7 +161,7 @@ export function FavoritesPage() {
                 <button
                   onClick={() => handleRemoveFavorite(favorite.id)}
                   className="btn btn-danger"
-                  aria-label={`Remove ${favorite.property_name} from favorites`}
+                  aria-label={`Remove ${favoriteName(favorite)} from favorites`}
                 >
                   Remove
                 </button>

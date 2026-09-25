@@ -4,19 +4,19 @@ import { apiFetch, fetchAllPages } from '../utils/api'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Favorite types from backend contract
+// GET /api/v1/me/favorites/ item (backend FavoriteSerializer). Decimals arrive as strings.
 export interface Favorite {
   id: number
   user: number
   property: number
-  property_name: string
-  city: string
-  country: string
-  base_price: number
-  currency: string
-  primary_photo?: string
-  notes?: string
+  property_translations: Array<{ language: string; name: string; description?: string; city?: string | null }>
+  property_city: string
+  property_country: string
+  property_base_price: string
+  property_currency: string
+  property_primary_photo: string | null
+  notes: string | null
   created_at: string
-  updated_at: string
 }
 
 export interface FavoriteCount {
@@ -171,7 +171,7 @@ export const accountAdapter = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          property_id: propertyId,
+          property: propertyId,
           notes: notes || undefined,
         }),
       })

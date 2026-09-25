@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
 import { PropertyDetailHeader } from './PropertyDetailHeader'
 import { Property } from '../adapters/searchAdapter'
+import { MemoryRouter } from 'react-router-dom'
+
+// The header contains the favorite button, which needs a router (as in the app)
+const render = (ui: React.ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('PropertyDetailHeader', () => {
   const mockProperty: Property = {

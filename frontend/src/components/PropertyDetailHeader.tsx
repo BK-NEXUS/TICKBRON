@@ -1,4 +1,5 @@
 import { Property } from '../adapters/propertyAdapter'
+import { FavoriteButton } from './FavoriteButton'
 
 interface PropertyDetailHeaderProps {
   property: Property
@@ -23,7 +24,10 @@ export function PropertyDetailHeader({ property }: PropertyDetailHeaderProps) {
       <div className="container">
         <div className="property-detail-header-content">
           <div className="property-detail-header-main">
-            <h1 className="property-detail-header-title">{translation.name}</h1>
+            <div className="property-detail-header-title-row">
+              <h1 className="property-detail-header-title">{translation.name}</h1>
+              <FavoriteButton propertyId={property.id} propertyName={translation.name} variant="detail" />
+            </div>
             <p className="property-detail-header-location">{getLocationString()}</p>
             
             {property.rating && (

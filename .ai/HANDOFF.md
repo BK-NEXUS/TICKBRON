@@ -1978,7 +1978,7 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 - DONE: 3 partner Rates/Availability views (160fcc4)
 - DONE: 4 anonymous throttle (fcd6261)
 - DONE: 5 public property rating scores (b7646b1)
-- DONE: 6 pre-fill first/last name
-- TODO: 7 favorite button + favorite cards
+- DONE: 6 pre-fill first/last name (16c18b6)
+- DONE: 7 favorite button + favorite cards
 - TODO: 8 self-host fonts (CSP)
 - TODO: 9 hotel names, human dates, user name in header

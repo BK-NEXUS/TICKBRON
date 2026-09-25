@@ -102,7 +102,7 @@ describe('accountAdapter', () => {
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',
-          body: JSON.stringify({ property_id: 1, notes: 'Great property!' }),
+          body: JSON.stringify({ property: 1, notes: 'Great property!' }),
         })
       )
     })
@@ -135,7 +135,7 @@ describe('accountAdapter', () => {
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',
-          body: JSON.stringify({ property_id: 1 }),
+          body: JSON.stringify({ property: 1 }),
         })
       )
     })

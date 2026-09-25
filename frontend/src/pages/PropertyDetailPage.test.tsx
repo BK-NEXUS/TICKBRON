@@ -154,6 +154,17 @@ describe('PropertyDetailPage', () => {
     })
   })
 
+  it('shows a save-to-favorites button next to the title (E2E BUG 4)', async () => {
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
+      data: mockProperty,
+      error: null,
+    })
+
+    renderWithProviders(<PropertyDetailPage />)
+
+    expect(await screen.findByRole('button', { name: 'Save Test Property to favorites' })).toBeInTheDocument()
+  })
+
   it('renders loading state initially', () => {
     vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
       data: mockProperty,

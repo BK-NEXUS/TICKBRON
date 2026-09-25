@@ -65,6 +65,15 @@ describe('PropertyCard', () => {
     expect(screen.getByText('per night')).toBeInTheDocument()
   })
 
+  it('has a save-to-favorites button that does not open the property (E2E BUG 4)', () => {
+    render(<PropertyCard property={mockProperty} />)
+
+    // Not logged in (no AuthProvider): the heart sends the visitor to the login page
+    fireEvent.click(screen.getByRole('button', { name: 'Save Charming Paris Apartment to favorites' }))
+    expect(mockNavigate).toHaveBeenCalledWith('/login', expect.anything())
+    expect(mockNavigate).not.toHaveBeenCalledWith('/property/1')
+  })
+
   it('displays rating when available', () => {
     render(<PropertyCard property={mockProperty} />)
 

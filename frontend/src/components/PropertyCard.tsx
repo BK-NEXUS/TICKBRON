@@ -1,5 +1,6 @@
 import { Property } from '../adapters/propertyAdapter'
 import { useNavigate } from 'react-router-dom'
+import { FavoriteButton } from './FavoriteButton'
 
 interface PropertyCardProps {
   property: Property
@@ -55,6 +56,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         <div className="property-card-image-placeholder">
           {property.primary_photo?.photo || '🏠'}
         </div>
+        <FavoriteButton propertyId={property.id} propertyName={translation.name} />
         {property.rating && (
           <div className="property-card-rating">
             <span className="property-card-rating-value">★ {rating.toFixed(1)}</span>
