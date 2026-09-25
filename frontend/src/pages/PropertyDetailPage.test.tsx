@@ -346,7 +346,7 @@ describe('PropertyDetailPage', () => {
     renderWithProviders(<PropertyDetailPage />)
 
     await waitFor(() => {
-      expect(document.title).toBe('Test Property | TICKBRON')
+      expect(document.title).toBe('Test Property | TICKBRON — Online Booking')
     })
   })
 

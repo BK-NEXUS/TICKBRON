@@ -29,7 +29,7 @@ function PageLoader() {
       alignItems: 'center', 
       minHeight: '100vh',
       fontSize: '18px',
-      color: '#16262B'
+      color: '#3E382D'
     }}>
       Loading...
     </div>

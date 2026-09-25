@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { LanguageSelector } from './LanguageSelector'
 import { CurrencySelector } from './CurrencySelector'
 import { MobileMenu } from './MobileMenu'
+import { BrandLogo } from './BrandLogo'
 import { useAuth } from '../contexts/AuthContext'
 
 interface NavLink {
@@ -65,6 +66,7 @@ export function Header() {
 
           {/* Logo */}
           <div className="header-logo">
+            <BrandLogo variant="header" decorative />
             <h1>TICKBRON</h1>
           </div>
 

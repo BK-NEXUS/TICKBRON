@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { BrandLogo } from '../components/BrandLogo'
 
 type LoginMethod = 'password' | 'phone'
 
@@ -95,6 +96,7 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <div className="container">
+        <BrandLogo variant="auth" />
         <div className="auth-container">
           <div className="auth-header">
             <h1 className="auth-title">Welcome Back</h1>

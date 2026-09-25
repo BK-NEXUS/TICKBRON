@@ -50,6 +50,14 @@ describe('LoginPage', () => {
       expect(screen.getByText('Sign in to your TICKBRON account')).toBeInTheDocument()
     })
 
+    it('renders the client logo above the form', () => {
+      renderWithRouter(<LoginPage />)
+
+      const logo = screen.getByRole('img', { name: 'TICKBRON — Online Booking' })
+      expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+      expect(logo).toHaveClass('brand-logo--auth')
+    })
+
     it('renders link to register page', () => {
       renderWithRouter(<LoginPage />)
 

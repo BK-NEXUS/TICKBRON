@@ -27,6 +27,14 @@ describe('Header', () => {
     expect(screen.getByText('TICKBRON')).toBeInTheDocument()
   })
 
+  it('renders the client logo image next to the site name', () => {
+    const { container } = renderWithAuthProvider(<Header />)
+    const logo = container.querySelector('.header-logo img.brand-logo--header')
+    expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+    // Decorative: the visible "TICKBRON" heading already names the site
+    expect(logo).toHaveAttribute('alt', '')
+  })
+
   it('renders navigation links', () => {
     renderWithAuthProvider(<Header />)
     expect(screen.getByText('Home')).toBeInTheDocument()

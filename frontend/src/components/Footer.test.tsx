@@ -13,6 +13,17 @@ describe('Footer', () => {
     expect(screen.getByText('TICKBRON')).toBeInTheDocument()
   })
 
+  it('renders the client logo image', () => {
+    const { container } = render(
+      <BrowserRouter>
+        <Footer />
+      </BrowserRouter>
+    )
+    const logo = container.querySelector('.footer img.brand-logo--footer')
+    expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+    expect(logo).toHaveAttribute('alt', '')
+  })
+
   it('renders footer sections', () => {
     render(
       <BrowserRouter>

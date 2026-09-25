@@ -1955,3 +1955,9 @@ Additive only, no migration. See the "2026-09-24 frontend audit follow-up" secti
 
 - F6: `/auth/me` (and every response that returns the user: register, login, OTP verify, refresh, profile update) now includes read-only `is_superuser`. The frontend already reads `user.is_superuser` (`AdminDashboardPage.tsx`), so the "Create hotel owner" item now appears for real super-admins with no frontend change. `PATCH /auth/me/update/` cannot set it. Tests: `users/tests/test_csrf.py::TestMeIsSuperuser`
 - PII: OTP logs in `users/services.py` (5 places, including the test-mode call log) now carry the phone number masked with `common.privacy.mask_phone` (`+998*******67`), never the full number. `backend/.env.example` now sets `SMS_TEST_MODE=False` and `PAYMENT_TEST_MODE=False`, so a copied `.env` no longer returns OTP codes or allows client-side `/confirm/`. For local development, set both to `True` in your own `.env`. `scripts/smoke_test.py` turns them on for itself. Tests: `users/tests/test_otp_logging.py`, `core/tests/test_settings_defaults.py::test_env_example_keeps_provider_test_modes_off`
+
+## Frontend: client logo and brand colors (2026-09-25, Kolya's agent)
+
+- Palette from the client logo (gold, ink, cream) applied through the existing CSS tokens in `frontend/src/styles/index.css`; token names unchanged. Primary buttons are gold with ink text; links and accents use a darker text-safe gold `#715A2C`. Error and success stay red/green. Contrast table: `.ai/checkpoints/frontend_brand.md`
+- New `BrandLogo` component (single image reference `BRAND_LOGO_SRC`) in header, footer, login and register. Temporary favicon from the logo mark. Site title: "TICKBRON — Online Booking"
+- Waiting on the client: vector favicon, transparent/SVG logo, horizontal logo, smaller image sizes

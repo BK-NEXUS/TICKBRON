@@ -2,38 +2,48 @@
 @import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Serif:wght@400;700&display=swap');
 
 :root {
-  /* TickBron Design System Colors */
-  --color-registan-teal: #0B5D66;
-  --color-deep-ink: #16262B;
-  --color-pomegranate: #B23A48;
-  --color-saffron: #D89B3C;
-  --color-chalk-stone: #F4F5F1;
+  /* TICKBRON brand palette (measured from the client logo, 2026-09-25).
+     Legacy token names are kept so components need no changes.
+     Contrast (WCAG 2.1): see .ai/checkpoints/frontend_brand.md */
+  --color-gold-bright: #DCB969;   /* fills only: never text on light backgrounds */
+  --color-gold: #BC9C59;          /* decorative only: borders, bars, tints */
+  --color-gold-dark: #715A2C;     /* text-safe gold: links, accents, selected states */
+  --color-ink: #3E382D;
+  --color-cream: #F2EDE7;
+
+  --color-registan-teal: #4F4637;   /* secondary: warm dark ink */
+  --color-deep-ink: var(--color-ink);
+  --color-pomegranate: var(--color-gold-dark);
+  --color-saffron: #7D5518;         /* warning / pending: dark amber */
+  --color-chalk-stone: var(--color-cream);
   --color-cloud-white: #FFFFFF;
-  --color-hairline: #DDE0DA;
-  --color-alert-red: #D64545;
-  --color-sprout-green: #3F7A57;
+  --color-hairline: #E2D8C8;
+  --color-alert-red: #B02626;
+  --color-sprout-green: #386D4D;
 
   /* Legacy color mapping for backward compatibility */
-  --color-primary: var(--color-pomegranate);
-  --color-primary-dark: #8A2D38;
-  --color-primary-light: #C94D5D;
-  
+  --color-primary: var(--color-gold-bright);
+  --color-primary-hover: #C9AD6E;
+  --color-primary-dark: #5A4722;
+  --color-primary-light: #E8D29D;
+  --color-on-primary: var(--color-ink);
+
   --color-secondary: var(--color-registan-teal);
-  --color-secondary-dark: #08444B;
-  --color-secondary-light: #0E7A85;
-  
+  --color-secondary-dark: #2B261E;
+  --color-secondary-light: #6B6150;
+
   --color-text-primary: var(--color-deep-ink);
-  --color-text-secondary: #5A6A6F;
-  --color-text-tertiary: #8A9A9F;
-  
+  --color-text-secondary: #655D4F;
+  --color-text-tertiary: #726858;
+
   --color-background: var(--color-cloud-white);
   --color-background-alt: var(--color-chalk-stone);
   --color-border: var(--color-hairline);
-  
+
   --color-success: var(--color-sprout-green);
   --color-warning: var(--color-saffron);
   --color-error: var(--color-alert-red);
-  
+
   /* Spacing */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -166,7 +176,7 @@ body {
 
 /* Header */
 .header {
-  background-color: var(--color-background);
+  background-color: var(--color-background-alt);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
@@ -182,10 +192,41 @@ body {
   margin: 0 auto;
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Brand logo (components/BrandLogo.tsx). The JPG has a cream background, so every
+   place it appears sits on --color-background-alt (cream). */
+.brand-logo {
+  display: block;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand-logo--header {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+}
+
+.brand-logo--footer {
+  width: 112px;
+  margin-bottom: var(--spacing-md);
+}
+
+.brand-logo--auth {
+  width: 168px;
+  margin: 0 auto var(--spacing-lg);
+}
+
 .header-logo h1 {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  color: var(--color-text-primary);
+  letter-spacing: 0.08em;
   margin: 0;
   font-family: var(--font-family-heading);
 }
@@ -595,12 +636,12 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--color-pomegranate);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .btn-primary:hover {
-  background-color: #8A2D38;
+  background-color: var(--color-primary-hover);
 }
 
 .btn-secondary {
@@ -620,8 +661,8 @@ body {
 }
 
 .btn-danger:hover {
-  background-color: #b03a3a;
-  border-color: #b03a3a;
+  background-color: #8F1E1E;
+  border-color: #8F1E1E;
 }
 
 .btn-large {
@@ -748,7 +789,7 @@ body {
 .search-form-input:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .search-form-input-error {
@@ -757,7 +798,7 @@ body {
 
 .search-form-input-error:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(176, 38, 38, 0.1);
 }
 
 .search-form-error {
@@ -1904,6 +1945,11 @@ body {
   .header-logo h1 {
     font-size: var(--font-size-lg);
   }
+
+  .brand-logo--header {
+    width: 36px;
+    height: 36px;
+  }
   
   .hero-title {
     font-size: var(--font-size-lg);
@@ -2568,7 +2614,7 @@ body {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-error);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   margin-left: auto;
@@ -2904,7 +2950,7 @@ body {
 
 .room-card--selected {
   border-color: var(--color-pomegranate);
-  background-color: rgba(178, 58, 72, 0.05);
+  background-color: rgba(188, 156, 89, 0.05);
   box-shadow: var(--shadow-md);
 }
 
@@ -3107,7 +3153,7 @@ body {
 .booking-form-textarea:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .booking-form-input--error {
@@ -3116,7 +3162,7 @@ body {
 
 .booking-form-input--error:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.1);
+  box-shadow: 0 0 0 3px rgba(176, 38, 38, 0.1);
 }
 
 .booking-form-textarea {
@@ -3128,7 +3174,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-error);
   padding: var(--spacing-md);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-error);
 }
@@ -3183,7 +3229,7 @@ body {
 }
 
 .booking-form-child-remove:hover {
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
 }
 
 .booking-form-child-add {
@@ -3244,7 +3290,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-error);
   padding: var(--spacing-md);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-error);
   margin-bottom: var(--spacing-lg);
@@ -3417,7 +3463,7 @@ body {
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  background-color: rgba(216, 155, 60, 0.1);
+  background-color: rgba(125, 85, 24, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-saffron);
 }
@@ -3516,7 +3562,7 @@ body {
 
 .rate-plan-card--selected {
   border-color: var(--color-pomegranate);
-  background-color: rgba(178, 58, 72, 0.05);
+  background-color: rgba(188, 156, 89, 0.05);
   box-shadow: var(--shadow-md);
 }
 
@@ -3545,7 +3591,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-pomegranate);
   font-weight: var(--font-weight-medium);
-  background-color: rgba(178, 58, 72, 0.1);
+  background-color: rgba(188, 156, 89, 0.1);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   align-self: flex-start;
@@ -3727,7 +3773,7 @@ body {
 
 .availability-calendar-day--selected {
   border-color: var(--color-pomegranate);
-  background-color: rgba(178, 58, 72, 0.1);
+  background-color: rgba(188, 156, 89, 0.1);
   box-shadow: var(--shadow-sm);
 }
 
@@ -4720,14 +4766,14 @@ body {
 .profile-form-select:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .profile-form-error {
   font-size: var(--font-size-sm);
   color: var(--color-error);
   padding: var(--spacing-md);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-error);
 }
@@ -4736,7 +4782,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-success);
   padding: var(--spacing-md);
-  background-color: rgba(63, 122, 87, 0.1);
+  background-color: rgba(56, 109, 77, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-success);
 }
@@ -4890,6 +4936,7 @@ body {
 .auth-container {
   max-width: 480px;
   width: 100%;
+  margin: 0 auto;
   background-color: var(--color-background);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -4916,7 +4963,7 @@ body {
 }
 
 .auth-error {
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   color: var(--color-error);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
@@ -4957,7 +5004,7 @@ body {
 .auth-input:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .auth-input:disabled {
@@ -5036,7 +5083,7 @@ body {
 
 .auth-test-mode {
   background-color: var(--color-warning);
-  color: var(--color-text-primary);
+  color: var(--color-cloud-white);
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md);
@@ -5150,7 +5197,7 @@ body {
 }
 
 .header-user-dropdown-item--logout:hover {
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
 }
 
 /* Payment Method Selector */
@@ -5200,7 +5247,7 @@ body {
 
 .payment-method-card--selected {
   border-color: var(--color-pomegranate);
-  background-color: rgba(178, 58, 72, 0.05);
+  background-color: rgba(188, 156, 89, 0.05);
   box-shadow: var(--shadow-md);
 }
 
@@ -5239,7 +5286,7 @@ body {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-pomegranate);
-  background-color: rgba(178, 58, 72, 0.1);
+  background-color: rgba(188, 156, 89, 0.1);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
 }
@@ -5257,7 +5304,7 @@ body {
 
 .payment-method-selector-selected {
   padding: var(--spacing-md);
-  background-color: rgba(63, 122, 87, 0.1);
+  background-color: rgba(56, 109, 77, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-sprout-green);
 }
@@ -5634,7 +5681,7 @@ body {
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-error);
 }
@@ -5769,7 +5816,7 @@ body {
 }
 
 .review-form-error {
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   color: var(--color-error);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
@@ -5858,7 +5905,7 @@ body {
 .review-form-textarea:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .review-form-textarea {
@@ -6517,7 +6564,7 @@ body {
 
 .property-rejection-reason {
   padding: var(--spacing-md);
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-error);
 }
@@ -6651,7 +6698,7 @@ body {
 .form-control:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.1);
+  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
 }
 
 .form-hint {
@@ -6972,7 +7019,7 @@ body {
 .search-input:focus {
   outline: none;
   border-color: var(--color-registan-teal);
-  box-shadow: 0 0 0 3px rgba(11, 93, 102, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 55, 0.1);
 }
 
 .sort-controls {
@@ -7173,7 +7220,7 @@ body {
 
 .pagination-button:disabled {
   background-color: var(--color-border);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   cursor: not-allowed;
 }
 
@@ -7265,7 +7312,7 @@ body {
 
 .security-notice {
   padding: var(--spacing-lg);
-  background-color: rgba(216, 155, 60, 0.1);
+  background-color: rgba(125, 85, 24, 0.1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-saffron);
   margin-bottom: var(--spacing-xl);
@@ -7416,7 +7463,7 @@ body {
 }
 
 .header-user-dropdown-item--admin:hover {
-  background-color: rgba(11, 93, 102, 0.1);
+  background-color: rgba(79, 70, 55, 0.1);
 }
 
 /* Admin Customer Profile */
@@ -7541,7 +7588,7 @@ body {
 }
 
 .contact-link--email:hover {
-  background-color: #0f1a1e;
+  background-color: var(--color-secondary-dark);
 }
 
 .contact-link--phone {
@@ -7549,23 +7596,23 @@ body {
 }
 
 .contact-link--phone:hover {
-  background-color: #356a4a;
+  background-color: #2C5A3E;
 }
 
 .contact-link--whatsapp {
-  background-color: #25D366;
+  background-color: #075E54;
 }
 
 .contact-link--whatsapp:hover {
-  background-color: #1ebc5c;
+  background-color: #054C44;
 }
 
 .contact-link--telegram {
-  background-color: #0088cc;
+  background-color: #0068A5;
 }
 
 .contact-link--telegram:hover {
-  background-color: #0077b3;
+  background-color: #00578A;
 }
 
 .customer-status {
@@ -7768,7 +7815,7 @@ body {
 .note-textarea:focus {
   outline: none;
   border-color: var(--color-registan-teal);
-  box-shadow: 0 0 0 3px rgba(11, 93, 102, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 55, 0.1);
 }
 
 .note-textarea--edit {
@@ -7911,7 +7958,7 @@ body {
 }
 
 .note-action-button--danger:hover {
-  background-color: rgba(214, 69, 69, 0.1);
+  background-color: rgba(176, 38, 38, 0.1);
 }
 
 .note-edit-form {

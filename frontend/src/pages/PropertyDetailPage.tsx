@@ -64,7 +64,7 @@ export function PropertyDetailPage() {
   useEffect(() => {
     if (property) {
       const translation = property.translations[0] || { name: property.name || 'Property', description: property.description || '' }
-      document.title = `${translation.name} | TICKBRON`
+      document.title = `${translation.name} | TICKBRON — Online Booking`
       
       // Update meta description
       const metaDescription = document.querySelector('meta[name="description"]')

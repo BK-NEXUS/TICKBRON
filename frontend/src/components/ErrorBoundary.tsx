@@ -48,20 +48,20 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           minHeight: '100vh',
           padding: '20px',
           textAlign: 'center',
-          backgroundColor: '#F4F5F1'
+          backgroundColor: '#F2EDE7'
         }}>
-          <h1 style={{ color: '#16262B', marginBottom: '16px' }}>
+          <h1 style={{ color: '#3E382D', marginBottom: '16px' }}>
             Something went wrong
           </h1>
-          <p style={{ color: '#16262B', marginBottom: '24px' }}>
+          <p style={{ color: '#3E382D', marginBottom: '24px' }}>
             We apologize for the inconvenience. Please refresh the page or try again later.
           </p>
           <button
             onClick={() => window.location.reload()}
             style={{
               padding: '12px 24px',
-              backgroundColor: '#B23A48',
-              color: '#FFFFFF',
+              backgroundColor: '#DCB969',
+              color: '#3E382D',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',

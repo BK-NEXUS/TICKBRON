@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { BrandLogo } from '../components/BrandLogo'
 
 export function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -63,6 +64,7 @@ export function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="container">
+        <BrandLogo variant="auth" />
         <div className="auth-container">
           <div className="auth-header">
             <h1 className="auth-title">Create Account</h1>

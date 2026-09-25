@@ -1,8 +1,11 @@
+import { BrandLogo } from './BrandLogo'
+
 export function Footer() {
   return (
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-section">
+          <BrandLogo variant="footer" decorative />
           <h3>TICKBRON</h3>
           <p>Your trusted short-term rental platform</p>
         </div>
