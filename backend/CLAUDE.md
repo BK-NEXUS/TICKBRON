@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository context
 
-TICKBRON is a hotel/property booking platform. The git root (`TICKBRON/`) holds `backend/` (this Django project), `frontend/`, and `.ai/`, the coordination layer shared by the AI agents working on the project. Backend owner: Kolya. Frontend owner: Baxram. GitHub (`BK-NEXUS/TICKBRON`, branch `master`) is where the two sync. Do not edit `frontend/` unless the task is explicitly shared contract work.
+TICKBRON is a hotel/property booking platform. The git root (`TICKBRON/`) holds `backend/` (this Django project), `frontend/`, and `.ai/`, the coordination layer shared by the AI agents working on the project. Backend owner: Kolya. Frontend owner: Baxram. GitHub (`BK-NEXUS/TICKBRON`, branch `master`) is where the two sync. Since 2026-09-25, Kolya's agent may work on both `backend/` and `frontend/` without asking first; commit naming is in `.ai/README.md`.
 
 ### `.ai/` workflow (read before changing code)
 - Git history plus `.ai/` is the persistent memory. Chat history is not assumed. Start with `.ai/README.md`, `.ai/BACKEND_STATE.md`, `.ai/HANDOFF.md`, and `.ai/API_CONTRACT.md` (plus `.ai/contracts/{auth,booking,payments}.md`).
 - Each task is one checkpoint: READ → SYNC (`git pull`) → AUDIT → SCOPE LOCK → IMPLEMENT → TEST → SECURITY CHECK → CONTRACT CHECK → update `.ai` checkpoint/state/handoff → COMMIT → PUSH → STOP. Never roll into the next checkpoint without being asked.
 - Hard stops (report BLOCKED rather than guessing): merge/rebase conflicts, a missing contract or dependency, an unexplained regression, a high/critical security issue, an unsafe migration, or any change that would overwrite the other owner's work.
-- Backend checkpoint commits are named `kolya NN project`, optionally followed by ` - <summary>` (e.g. `kolya 23 project - Booking reference code + support lookup API`). Commits outside a checkpoint have used `kolya - <summary>`.
+- Backend checkpoint commits are named `kolya NN project`, optionally followed by ` - <summary>` (e.g. `kolya 23 project - Booking reference code + support lookup API`). Commits outside a checkpoint have used `kolya - <summary>`. From 2026-09-25, use `kolya - backend: <short description>` (frontend: `kolya - frontend: …`, docs only: `kolya - docs: …`).
 - Changes to the protected coordination files (`.ai/API_CONTRACT.md`, `HANDOFF.md`, `PROJECT_STATE.md`, `BACKEND_STATE.md`, `FRONTEND_STATE.md`) must be intentional and documented. Do not invent API contracts; the frontend depends on them.
 - Checkpoint notes go in `.ai/checkpoints/backend_NN.md` (template: `CHECKPOINT_TEMPLATE.md`).
 

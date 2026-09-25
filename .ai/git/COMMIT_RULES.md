@@ -47,3 +47,11 @@ Checkpoint commits are mandatory and use exactly these names.
 20 → `kolya 20 project`
 
 Do not use a different checkpoint commit name.
+
+## From 2026-09-25: Kolya's agent
+Kolya's agent works on both backend and frontend and uses:
+- `kolya - backend: <short description>`
+- `kolya - frontend: <short description>`
+- `kolya - docs: <short description>` (documentation / `.ai` only)
+
+The historical `baxram NN` and `kolya NN project` commits above stay as they are.

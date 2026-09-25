@@ -15,9 +15,9 @@ READ → SYNC → AUDIT → SCOPE LOCK → IMPLEMENT → TEST → SECURITY CHECK
 
 An agent must never silently continue into another checkpoint.
 
-## Two-computer workflow
-- Backend owner: Kolya
-- Frontend owner: Baxram
+## Ownership and workflow
+- Backend owner: Kolya. Frontend owner: Baxram.
+- Since 2026-09-25 (approved by Kolya and Baxram), Kolya's agent may work on both `backend/` and `frontend/` without asking first.
 - GitHub is the shared synchronization point.
 - Each agent must pull the latest remote changes before starting.
 - Agents must inspect recent commits and `.ai` state before changing code.
@@ -25,13 +25,12 @@ An agent must never silently continue into another checkpoint.
 - If a merge/rebase conflict appears, STOP and report BLOCKED. Do not guess a conflict resolution.
 
 ## Commit identity
-Frontend commits MUST use:
-`baxram 01`, `baxram 02`, ... `baxram 20`
+From 2026-09-25, commits by Kolya's agent use:
+- Backend work: `kolya - backend: <short description>`
+- Frontend work: `kolya - frontend: <short description>`
+- Documentation / `.ai` only: `kolya - docs: <short description>`
 
-Backend commits MUST use:
-`kolya 01 project`, `kolya 02 project`, ... `kolya 20 project`
-
-No alternative commit message is allowed for checkpoint commits.
+Earlier commits keep their names: `baxram NN` (frontend checkpoints), `kolya NN project` (backend checkpoints) and `kolya - <summary>`. Do not rewrite them.
 
 ## Protected coordination files
 Changes to shared contracts/state must be intentional and documented:
