@@ -6,7 +6,7 @@ This module contains views for favorites, reviews, notifications, and account hi
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import IntegrityError, transaction
@@ -191,7 +191,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         return Response({'eligible_properties': eligible_properties})
     
-    @action(detail=False, methods=['get'])
+    # Public and read-only: aggregate scores of approved reviews are shown on every property page
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def property_scores(self, request):
         """
         Get review scores for a specific property.

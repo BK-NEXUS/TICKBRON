@@ -27,7 +27,7 @@ Core endpoints:
 - GET `/api/v1/me/reviews/` ✅ IMPLEMENTED (Checkpoint 17)
 - POST `/api/v1/me/reviews/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/reviews/eligible_properties/` ✅ IMPLEMENTED (Checkpoint 17)
-- GET `/api/v1/me/reviews/property_scores/` ✅ IMPLEMENTED (Checkpoint 17)
+- GET `/api/v1/me/reviews/property_scores/` ✅ IMPLEMENTED (Checkpoint 17); public (no login) since 2026-09-25
 - GET `/api/v1/me/notifications/` ✅ IMPLEMENTED (Checkpoint 17)
 - PATCH `/api/v1/me/notifications/{id}/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/notifications/unread/` ✅ IMPLEMENTED (Checkpoint 17)
@@ -595,7 +595,7 @@ Status: READY
   - Auth: Session-based (required)
   - Response: { eligible_properties: [...] }, one entry per completed booking without a review (two stays at the same property are two entries), newest check_out first
   - Entry: { property_id, property_city, property_country, booking_id, confirmation_code, check_in, check_out }
-- GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores
+- GET `/api/v1/me/reviews/property_scores/?property_id={id}` - Get property review scores (public, read-only: anonymous visitors get 200; approved reviews only)
   - Auth: Session-based (required)
   - Response: { property_id, total_reviews, average_rating, category_scores }
   - Only includes approved reviews
