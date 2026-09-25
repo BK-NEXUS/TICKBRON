@@ -1975,8 +1975,8 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 
 - DONE: 1 search with dates 500 + city-only search (aac3cfa)
 - DONE: 2 booking form price = backend price (e7a47ef)
-- DONE: 3 partner Rates/Availability views
-- TODO: 4 anonymous throttle
+- DONE: 3 partner Rates/Availability views (160fcc4)
+- DONE: 4 anonymous throttle
 - TODO: 5 public property rating scores
 - TODO: 6 pre-fill first/last name
 - TODO: 7 favorite button + favorite cards

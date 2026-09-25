@@ -12,7 +12,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 # from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
 ISOLATED_ENV_VARS = (
     'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
-    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE',
+    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -109,3 +109,28 @@ def test_cookie_security_can_be_set_explicitly():
         'False False'
     assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='True', CSRF_COOKIE_SECURE='True') == \
         'True True'
+
+def _throttle_rates(**env_overrides):
+    return _load_settings("settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']", **env_overrides)
+
+
+def test_anonymous_browsing_limit_allows_normal_use():
+    # One property page makes ~6 anonymous requests; 100/hour blocked visitors after ~15 pages (E2E BUG 7)
+    assert _throttle_rates() == "{'anon': '2000/hour', 'user': '1000/hour'}"
+
+
+def test_anonymous_limit_can_be_set_from_the_environment():
+    assert "'anon': '300/hour'" in _throttle_rates(THROTTLE_ANON_RATE='300/hour')
+
+
+def test_sensitive_endpoints_keep_their_strict_limits():
+    from payments.views import PaymentRateThrottle
+    from users.views import (
+        LoginRateThrottle, OTPRequestRateThrottle, OTPVerifyRateThrottle, RegisterRateThrottle,
+    )
+
+    assert LoginRateThrottle.rate == '10/min'
+    assert RegisterRateThrottle.rate == '5/min'
+    assert OTPRequestRateThrottle.rate == '3/min'
+    assert OTPVerifyRateThrottle.rate == '5/min'
+    assert PaymentRateThrottle.rate == '20/min'

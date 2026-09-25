@@ -248,7 +248,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
+        # Per IP for anonymous visitors. One property page makes ~6 API calls, and
+        # many users can share one IP (mobile carriers, offices), so this must not
+        # be tight. Login, register, OTP and payment keep their own strict limits.
+        'anon': os.getenv('THROTTLE_ANON_RATE', '2000/hour'),
         'user': '1000/hour',
     },
 }
