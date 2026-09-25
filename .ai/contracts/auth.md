@@ -54,6 +54,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Partial updates supported
 
 ## Configuration
-- `SMS_TEST_MODE` (default: True) - Controls OTP test mode behavior
+- `SMS_TEST_MODE` (default: False; `backend/.env.example` also sets False) - Controls OTP test mode behavior. Set it to True only for local development
+- OTP logs never contain the full phone number; `users/services.py` logs it masked with `common.privacy.mask_phone` (`+998901234567` -> `+998*******67`)
 - In test mode, OTP codes returned in API response for testing
 - In production, integrate with real SMS provider

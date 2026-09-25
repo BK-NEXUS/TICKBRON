@@ -52,6 +52,23 @@ def test_provider_test_modes_default_to_false():
     assert _load_test_mode_settings() == 'False False'
 
 
+def _env_example_values():
+    values = {}
+    for line in (BACKEND_DIR / '.env.example').read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            values[key.strip()] = value.split('#', 1)[0].strip()
+    return values
+
+
+def test_env_example_keeps_provider_test_modes_off():
+    # Copying .env.example must not turn on OTP codes in responses or client-side payment confirmation
+    values = _env_example_values()
+    assert values.get('SMS_TEST_MODE', 'False').lower() == 'false'
+    assert values.get('PAYMENT_TEST_MODE', 'False').lower() == 'false'
+
+
 def test_provider_test_modes_can_be_enabled_explicitly():
     assert _load_test_mode_settings(SMS_TEST_MODE='True', PAYMENT_TEST_MODE='True') == 'True True'
 

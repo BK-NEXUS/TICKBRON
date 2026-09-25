@@ -16,7 +16,7 @@ TICKBRON is a hotel/property booking platform. The git root (`TICKBRON/`) holds 
 
 ## Commands
 
-Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config.
+Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config. It keeps `SMS_TEST_MODE` and `PAYMENT_TEST_MODE` off; set them to `True` in your local `.env` to get OTP codes in responses and the mock payment flow.
 
 ```bash
 python manage.py runserver

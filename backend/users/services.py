@@ -7,6 +7,7 @@ import logging
 from django.conf import settings
 from django.db import transaction
 from common.exceptions import ExternalServiceException
+from common.privacy import mask_phone
 from users import lockout
 from users.models import User
 
@@ -52,7 +53,7 @@ class OTPService:
             dict: Response with success status and OTP code (in test mode)
         """
         if self._is_test_mode():
-            self._log_test_mode_call('send_otp', phone_number=phone_number)
+            self._log_test_mode_call('send_otp', phone_number=mask_phone(phone_number))
             return self._mock_send_otp(phone_number, client_ip)
         
         # No real SMS provider is integrated yet; surface a 503 instead of a 500
@@ -76,7 +77,7 @@ class OTPService:
             # Generate OTP (the code itself is never logged)
             otp_code = user.generate_otp()
 
-            logger.info(f"[SMS_TEST_MODE] OTP generated for {phone_number}")
+            logger.info(f"[SMS_TEST_MODE] OTP generated for {mask_phone(phone_number)}")
 
             return {
                 'success': True,
@@ -112,7 +113,7 @@ class OTPService:
                     return {'success': False, 'message': OTP_INVALID_MESSAGE}
                 
                 if user.verify_otp(otp_code):
-                    logger.info(f"OTP verified successfully for {phone_number}")
+                    logger.info(f"OTP verified successfully for {mask_phone(phone_number)}")
                     return {
                         'success': True,
                         'message': 'OTP verified successfully',
@@ -122,10 +123,10 @@ class OTPService:
                 # Failures count toward the lockout across all issued codes,
                 # so requesting a new code does not reset the budget
                 lockout.record_failure(user, client_ip)
-                logger.warning(f"OTP verification failed for {phone_number}")
+                logger.warning(f"OTP verification failed for {mask_phone(phone_number)}")
                 return {'success': False, 'message': OTP_INVALID_MESSAGE}
         except User.DoesNotExist:
-            logger.warning(f"OTP verification for unknown phone number: {phone_number}")
+            logger.warning(f"OTP verification for unknown phone number: {mask_phone(phone_number)}")
             return {'success': False, 'message': OTP_INVALID_MESSAGE}
         except Exception as e:
             logger.error(f"Error verifying OTP: {e}")
