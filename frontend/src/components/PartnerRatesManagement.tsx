@@ -4,11 +4,13 @@ import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanR
 interface PartnerRatesManagementProps {
   roomTypeId: number
   roomTypeName: string
+  /** Open the per-date availability of a rate plan */
+  onManageAvailability?: (ratePlan: { id: number; name: string }) => void
 }
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-export function PartnerRatesManagement({ roomTypeId, roomTypeName }: PartnerRatesManagementProps) {
+export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvailability }: PartnerRatesManagementProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [ratePlans, setRatePlans] = useState<PartnerRatePlan[]>([])
   const [selectedRatePlan, setSelectedRatePlan] = useState<PartnerRatePlan | null>(null)
@@ -309,6 +311,15 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName }: PartnerRate
                 </div>
               </div>
               <div className="rate-plan-card-footer">
+                {onManageAvailability && (
+                  <button
+                    onClick={() => onManageAvailability({ id: ratePlan.id, name: ratePlan.name })}
+                    className="btn btn-primary"
+                    aria-label={`Manage availability for ${ratePlan.name}`}
+                  >
+                    Availability
+                  </button>
+                )}
                 <button
                   onClick={() => handleEdit(ratePlan)}
                   className="btn btn-secondary"

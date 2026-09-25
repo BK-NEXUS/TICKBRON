@@ -4,11 +4,13 @@ import { partnerAdapter, PartnerRoomType, CreateRoomTypeRequest, UpdateRoomTypeR
 interface PartnerRoomsManagementProps {
   propertyId: number
   propertyName: string
+  /** Open the rate plans (and from there availability) of a room type */
+  onManageRates?: (roomType: { id: number; name: string }) => void
 }
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-export function PartnerRoomsManagement({ propertyId, propertyName }: PartnerRoomsManagementProps) {
+export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates }: PartnerRoomsManagementProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [roomTypes, setRoomTypes] = useState<PartnerRoomType[]>([])
   const [selectedRoomType, setSelectedRoomType] = useState<PartnerRoomType | null>(null)
@@ -288,6 +290,15 @@ export function PartnerRoomsManagement({ propertyId, propertyName }: PartnerRoom
                 </div>
               </div>
               <div className="room-type-card-footer">
+                {onManageRates && (
+                  <button
+                    onClick={() => onManageRates({ id: roomType.id, name: roomType.name })}
+                    className="btn btn-primary"
+                    aria-label={`Manage rates and availability for ${roomType.name}`}
+                  >
+                    Rates &amp; availability
+                  </button>
+                )}
                 <button
                   onClick={() => handleEdit(roomType)}
                   className="btn btn-secondary"

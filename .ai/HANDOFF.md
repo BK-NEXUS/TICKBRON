@@ -1974,8 +1974,8 @@ Additive only, no migration. See the "2026-09-24 frontend audit follow-up" secti
 Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE (commit). Not in scope yet: i18n (BUG 8), visual redesign.
 
 - DONE: 1 search with dates 500 + city-only search (aac3cfa)
-- DONE: 2 booking form price = backend price
-- TODO: 3 partner Rates/Availability views
+- DONE: 2 booking form price = backend price (e7a47ef)
+- DONE: 3 partner Rates/Availability views
 - TODO: 4 anonymous throttle
 - TODO: 5 public property rating scores
 - TODO: 6 pre-fill first/last name

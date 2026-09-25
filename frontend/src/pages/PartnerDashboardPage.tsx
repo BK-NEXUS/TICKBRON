@@ -62,6 +62,17 @@ export function PartnerDashboardPage() {
     setCurrentView('properties')
   }
 
+  const handleRoomTypeSelect = (roomType: { id: number; name: string }) => {
+    setSelectedRoomType(roomType)
+    setSelectedRatePlan(null)
+    setCurrentView('rates')
+  }
+
+  const handleRatePlanSelect = (ratePlan: { id: number; name: string }) => {
+    setSelectedRatePlan(ratePlan)
+    setCurrentView('availability')
+  }
+
   const handleBackToRooms = () => {
     setSelectedRoomType(null)
     setSelectedRatePlan(null)
@@ -299,6 +310,7 @@ export function PartnerDashboardPage() {
           <PartnerRoomsManagement
             propertyId={selectedProperty.id}
             propertyName={selectedProperty.city}
+            onManageRates={handleRoomTypeSelect}
           />
         ) : null
       case 'rates':
@@ -306,6 +318,7 @@ export function PartnerDashboardPage() {
           <PartnerRatesManagement
             roomTypeId={selectedRoomType.id}
             roomTypeName={selectedRoomType.name}
+            onManageAvailability={handleRatePlanSelect}
           />
         ) : null
       case 'availability':
