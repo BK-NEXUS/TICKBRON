@@ -1,5 +1,4 @@
-/* TickBron Design System - Font Imports */
-@import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Serif:wght@400;700&display=swap');
+/* TickBron Design System - fonts are self-hosted via @fontsource (imported in main.tsx) */
 
 :root {
   /* TICKBRON brand palette (measured from the client logo, 2026-09-25).
