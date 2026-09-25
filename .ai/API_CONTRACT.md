@@ -9,7 +9,7 @@ Core endpoints:
 - POST `/api/v1/auth/login/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
-- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24)
+- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25)
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24)
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)

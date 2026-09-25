@@ -1950,3 +1950,7 @@ Additive only, no migration. See the "2026-09-24 frontend audit follow-up" secti
 - `GET /me/favorites/` items carry `property_translations` (F22). Favorite create takes `{property, notes}` and answers `{property, notes}` without `id`
 - `GET /partner/inventory/` takes optional `rate_plan`, `date_from`, `date_to` (YYYY-MM-DD, inclusive); bad values are a 400
 - The list of which endpoints are paginated `{count, next, previous, results}` and which return plain arrays is in the same section (F20)
+
+## Backend fixes from the onboarding fix plan (2026-09-25, Kolya, master)
+
+- F6: `/auth/me` (and every response that returns the user: register, login, OTP verify, refresh, profile update) now includes read-only `is_superuser`. The frontend already reads `user.is_superuser` (`AdminDashboardPage.tsx`), so the "Create hotel owner" item now appears for real super-admins with no frontend change. `PATCH /auth/me/update/` cannot set it. Tests: `users/tests/test_csrf.py::TestMeIsSuperuser`

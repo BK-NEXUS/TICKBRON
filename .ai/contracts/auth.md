@@ -45,7 +45,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
-  - Includes read-only `is_staff` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; the backend still checks permissions on every request. `is_superuser` is not returned
+  - Includes read-only `is_staff` and `is_superuser` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; only super-admins can use `POST /admin-panel/users/create-hotel-owner/`. The flags only drive the UI: the backend still checks permissions on every request, and `PATCH /auth/me/update/` cannot change them
+  - The same user object (with both flags) is returned by register, login, OTP verify, refresh and `PATCH /auth/me/update/`
 - POST `/api/v1/auth/refresh/` - Refresh session
 - PATCH `/api/v1/auth/me/update/` - Update user profile
   - Required authentication

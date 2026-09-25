@@ -1,5 +1,5 @@
 """
-Tests for GET /api/v1/auth/csrf/ and the is_staff flag on /auth/me/.
+Tests for GET /api/v1/auth/csrf/ and the is_staff / is_superuser flags on /auth/me/.
 
 The client enforces CSRF like a browser would, so these cover the full SPA
 flow: fetch token -> send it in X-CSRFToken -> refetch after login.
@@ -103,3 +103,37 @@ class TestMeIsStaff:
 
         user.refresh_from_db()
         assert user.is_staff is False
+
+
+@pytest.mark.django_db
+class TestMeIsSuperuser:
+    """F6: the admin UI shows super-admin actions from /auth/me is_superuser."""
+
+    def test_regular_user_is_not_superuser(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.get('/api/v1/auth/me/')
+
+        assert response.status_code == 200
+        assert response.data['is_superuser'] is False
+
+    def test_superuser_is_superuser(self, user):
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(update_fields=['is_staff', 'is_superuser'])
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.get('/api/v1/auth/me/')
+
+        assert response.data['is_superuser'] is True
+
+    def test_is_superuser_cannot_be_set_through_profile_update(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        client.patch('/api/v1/auth/me/update/', {'is_superuser': True}, format='json')
+
+        user.refresh_from_db()
+        assert user.is_superuser is False
