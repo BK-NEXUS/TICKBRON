@@ -242,7 +242,7 @@ def partner_bookings(request):
     for booking in bookings:
         # Get property name from booking items
         booking_item = booking_items.filter(booking=booking).first()
-        property_name = booking_item.room_type.property.city if booking_item else "Unknown"
+        property_name = booking_item.room_type.property.display_name() if booking_item else "Unknown"
         
         booking_data = {
             'id': booking.id,

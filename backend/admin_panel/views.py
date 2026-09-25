@@ -388,7 +388,7 @@ def admin_booking_lookup_by_reference(request):
         },
         'property': {
             'id': booking.property.id,
-            'name': f"Property {booking.property.id} - {booking.property.city}, {booking.property.country}",
+            'name': booking.property.display_name(),
             'property_type': booking.property.property_type.name if booking.property.property_type else None,
             'status': booking.property.status,
             'address_line1': booking.property.address_line1,
@@ -609,7 +609,7 @@ def admin_customer_detail(request, customer_id):
             'number_of_nights': booking.number_of_nights,
             'total_price': str(booking.total_price),
             'currency': booking.currency,
-            'property_name': f"Property {booking.property.id} - {booking.property.city}, {booking.property.country}",
+            'property_name': booking.property.display_name(),
             'property_city': booking.property.city,
             'created_at': booking.created_at
         })

@@ -25,6 +25,12 @@ export function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   
   const { user, isAuthenticated, logout } = useAuth()
+  // Most profiles only have full_name since checkpoint 21
+  const displayName =
+    user?.full_name?.trim() ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
+    user?.email ||
+    'Account'
   const navigate = useNavigate()
 
   const handleLanguageChange = (languageCode: string) => {
@@ -101,10 +107,10 @@ export function Header() {
                     aria-haspopup="true"
                   >
                     <span className="header-user-avatar">
-                      {user?.first_name?.[0]?.toUpperCase() || 'U'}
+                      {displayName[0]?.toUpperCase() || 'U'}
                     </span>
                     <span className="header-user-name">
-                      {user?.first_name || 'User'}
+                      {displayName}
                     </span>
                   </button>
                   {isUserMenuOpen && (

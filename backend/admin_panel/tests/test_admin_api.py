@@ -676,10 +676,11 @@ class AdminBookingLookupTests(TestCase):
         # Verify property details
         property_data = response.data['property']
         self.assertEqual(property_data['id'], self.property.id)
-        # Property has no name field; the lookup builds a display name
+        # The display name is the hotel name (translation); this property has none,
+        # so it falls back to the address instead of a made-up "Property N - city" label
         self.assertEqual(
             property_data['name'],
-            f"Property {self.property.id} - {self.property.city}, {self.property.country}"
+            '123 Main St, Tashkent, Uzbekistan'
         )
     
     def test_staff_can_lookup_booking_by_reference_code(self):

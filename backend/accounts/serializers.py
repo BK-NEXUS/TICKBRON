@@ -149,7 +149,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     """
     Serializer for Notification model.
     """
-    property_name = serializers.CharField(source='property.name', read_only=True, allow_null=True)
+    property_name = serializers.CharField(source='property.display_name', read_only=True, allow_null=True)
     property_slug = serializers.CharField(source='property.slug', read_only=True, allow_null=True)
     booking_confirmation_code = serializers.CharField(source='booking.confirmation_code', read_only=True, allow_null=True)
     

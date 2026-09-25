@@ -76,6 +76,9 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-09-25 hotel names instead of addresses (E2E UX 13)
+- `property_name` in `GET /bookings/`, admin customer detail bookings, `GET /partner/bookings/` and notifications, and `property.name` in `GET /admin-panel/bookings/lookup/`, are now the hotel name: the English translation, else any translation, else the full address (`Property.display_name()`). Before they were the address, the city or "Property N - city". Same field names and types; only the value changed
+
 ## 2026-09-24 frontend audit follow-up (F20, F22, F23)
 - DRF `PageNumberPagination` (PAGE_SIZE 20) is global. These lists are paginated `{ count, next, previous, results }`: `me/favorites/`, `me/reviews/`, `me/history/`, `admin-panel/properties/`, `admin-panel/amenities/`, `admin-panel/amenities/categories/`, `partner/properties/`, `partner/rooms/`, `partner/rates/`, `partner/inventory/`, `payments/transactions/`. These return a plain array: `bookings/`, `admin-panel/users/`, `admin-panel/payments/transactions/`, `partner/bookings/`, `me/history/recent/`
 - `GET /properties/search/` results now include `translations` (same shape as property detail), prefetched in one query

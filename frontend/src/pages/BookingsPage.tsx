@@ -4,6 +4,13 @@ import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 
+/** "2025-02-01" -> "Feb 1, 2025" (parsed as a calendar date, so no time-zone shift) */
+function formatBookingDate(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  if (!year || !month || !day) return isoDate
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 interface BookingCardProps {
   booking: Booking
 }
@@ -55,11 +62,11 @@ function BookingCard({ booking }: BookingCardProps) {
       <div className="booking-card-details">
         <div className="booking-card-detail">
           <span className="booking-card-detail-label">Check-in:</span>
-          <span className="booking-card-detail-value">{booking.check_in}</span>
+          <span className="booking-card-detail-value">{formatBookingDate(booking.check_in)}</span>
         </div>
         <div className="booking-card-detail">
           <span className="booking-card-detail-label">Check-out:</span>
-          <span className="booking-card-detail-value">{booking.check_out}</span>
+          <span className="booking-card-detail-value">{formatBookingDate(booking.check_out)}</span>
         </div>
         <div className="booking-card-detail">
           <span className="booking-card-detail-label">Nights:</span>

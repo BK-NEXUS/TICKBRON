@@ -35,6 +35,18 @@ describe('Header', () => {
     expect(logo).toHaveAttribute('alt', '')
   })
 
+  it('shows the name from full_name instead of "User" (E2E UX 13)', async () => {
+    const { authAdapter } = await import('../adapters/authAdapter')
+    vi.mocked(authAdapter.getCurrentUser).mockResolvedValueOnce({
+      success: true,
+      user: { id: 3, email: 'guest@example.com', first_name: null, last_name: null, full_name: 'Demo Guest' },
+    } as never)
+    renderWithAuthProvider(<Header />)
+
+    expect(await screen.findByText('Demo Guest')).toBeInTheDocument()
+    expect(screen.queryByText('User')).not.toBeInTheDocument()
+  })
+
   it('renders navigation links', () => {
     renderWithAuthProvider(<Header />)
     expect(screen.getByText('Home')).toBeInTheDocument()

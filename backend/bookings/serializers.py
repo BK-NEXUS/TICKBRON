@@ -30,7 +30,7 @@ class BookingSerializer(serializers.ModelSerializer):
     
     booking_items = BookingItemSerializer(many=True, read_only=True)
     guest_name = serializers.CharField(source='guest.get_full_name', read_only=True)
-    property_name = serializers.CharField(source='property.get_full_address', read_only=True)
+    property_name = serializers.CharField(source='property.display_name', read_only=True)
     
     class Meta:
         model = Booking

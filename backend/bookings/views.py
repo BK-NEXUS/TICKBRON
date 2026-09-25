@@ -34,7 +34,7 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Booking.objects.filter(
             guest=self.request.user,
             is_deleted=False
-        ).select_related('guest', 'property').prefetch_related('booking_items')
+        ).select_related('guest', 'property').prefetch_related('booking_items', 'property__translations')
     
     def create(self, request, *args, **kwargs):
         """

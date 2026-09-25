@@ -159,6 +159,19 @@ class Property(BaseModel):
     def __str__(self):
         return f"Property {self.id} - {self.city}, {self.country}"
     
+    def display_name(self, language='en'):
+        """
+        Name shown to people: the translation in `language`, else any translation,
+        else the address. Uses prefetched translations when available.
+        """
+        translations = [t for t in self.translations.all() if not t.is_deleted and t.name]
+        for translation in translations:
+            if translation.language == language:
+                return translation.name
+        if translations:
+            return translations[0].name
+        return self.get_full_address()
+
     def get_full_address(self):
         """Return the full address as a string."""
         parts = [self.address_line1]

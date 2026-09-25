@@ -1980,5 +1980,5 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 - DONE: 5 public property rating scores (b7646b1)
 - DONE: 6 pre-fill first/last name (16c18b6)
 - DONE: 7 favorite button + favorite cards (2fed014)
-- DONE: 8 self-host fonts (CSP)
-- TODO: 9 hotel names, human dates, user name in header
+- DONE: 8 self-host fonts (CSP) (930214a)
+- DONE: 9 hotel names, human dates, user name in header
