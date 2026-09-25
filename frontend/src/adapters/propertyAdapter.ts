@@ -132,6 +132,42 @@ export interface DateInventory {
   rate_plan_id?: number
 }
 
+// GET /api/v1/properties/{id}/availability/ (backend PropertyAvailabilitySerializer).
+// Decimal fields arrive as strings; price is null when the rate plan's base price applies.
+export interface AvailabilityDateInventory {
+  id: number
+  date: string
+  available_rooms: number
+  booked_rooms: number
+  remaining_rooms: number
+  price: string | null
+  currency: string
+  is_available: boolean
+  minimum_stay: number | null
+  maximum_stay: number | null
+  notes: string | null
+}
+
+export interface AvailabilityRatePlan {
+  id: number
+  date_inventory: AvailabilityDateInventory[]
+}
+
+export interface AvailabilityRoomType {
+  id: number
+  rate_plans: AvailabilityRatePlan[]
+}
+
+export interface PropertyAvailabilityResponse {
+  id: number
+  room_types: AvailabilityRoomType[]
+}
+
+export interface AvailabilityParams {
+  check_in: string
+  check_out: string
+}
+
 export interface Property {
   id: number
   owner_id: number
@@ -306,6 +342,18 @@ class PropertyAdapter {
    */
   async getPropertyById(id: number): Promise<{ data: PropertyDetailResponse | null; error: string | null }> {
     return this.request<PropertyDetailResponse>(`/api/v1/properties/${id}/`)
+  }
+
+  /**
+   * Get per-date availability and prices for a property
+   * Integrates with GET /api/v1/properties/{id}/availability/?check_in=&check_out= (dates inclusive)
+   */
+  async getAvailability(
+    propertyId: number,
+    params: AvailabilityParams
+  ): Promise<{ data: PropertyAvailabilityResponse | null; error: string | null }> {
+    const query = new URLSearchParams({ check_in: params.check_in, check_out: params.check_out })
+    return this.request<PropertyAvailabilityResponse>(`/api/v1/properties/${propertyId}/availability/?${query.toString()}`)
   }
 }
 

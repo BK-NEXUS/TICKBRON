@@ -2,7 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { RoomSelection } from './RoomSelection'
-import { RoomType, RatePlan } from '../adapters/propertyAdapter'
+import { RoomType, RatePlan, propertyAdapter } from '../adapters/propertyAdapter'
+
+vi.mock('../adapters/propertyAdapter', () => ({
+  propertyAdapter: { getAvailability: vi.fn() },
+}))
+
+const localDate = (offsetDays = 0) => {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Backend shape of GET /properties/{id}/availability/ (prices are decimal strings or null)
+const inventoryRow = (date: string, overrides: Record<string, unknown> = {}) => ({
+  id: 1, date, available_rooms: 3, booked_rooms: 0, remaining_rooms: 3, price: '150.00', currency: 'EUR',
+  is_available: true, minimum_stay: null, maximum_stay: null, notes: null, ...overrides,
+})
+
+const availabilityResponse = (dateInventory: ReturnType<typeof inventoryRow>[]) => ({
+  data: { id: 42, room_types: [{ id: 1, rate_plans: [{ id: 1, date_inventory: dateInventory }] }] },
+  error: null,
+})
+
+const mockGetAvailability = propertyAdapter.getAvailability as unknown as ReturnType<typeof vi.fn>
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -69,6 +92,113 @@ describe('RoomSelection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetAvailability.mockResolvedValue(availabilityResponse([inventoryRow(localDate(0))]))
+  })
+
+  const selectRoomAndRate = async () => {
+    fireEvent.click(screen.getByText('Standard Room'))
+    await waitFor(() => {
+      expect(screen.getByText('Standard Rate')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Standard Rate'))
+  }
+
+  const calendarDay = (container: HTMLElement, date: string) =>
+    container.querySelector(`.availability-calendar-day[data-date="${date}"]`) as HTMLElement
+
+  describe('real availability (GET /properties/{id}/availability/)', () => {
+    it('requests the next 90 days for the property when a rate plan is selected', async () => {
+      renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await waitFor(() => {
+        expect(mockGetAvailability).toHaveBeenCalledWith(42, { check_in: localDate(0), check_out: localDate(90) })
+      })
+    })
+
+    it('shows the price from the API for each date', async () => {
+      const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await waitFor(() => {
+        expect(calendarDay(container, localDate(0))).toHaveTextContent('€150')
+      })
+      expect(calendarDay(container, localDate(0))).toHaveAttribute('aria-disabled', 'false')
+    })
+
+    it('falls back to the rate plan base price when a date has no price', async () => {
+      mockGetAvailability.mockResolvedValue(availabilityResponse([inventoryRow(localDate(0), { price: null })]))
+      const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await waitFor(() => {
+        expect(calendarDay(container, localDate(0))).toHaveTextContent('€120')
+      })
+    })
+
+    it('does not let closed, fully booked or missing dates be selected', async () => {
+      // Month boundaries: only dates in the month on screen are rendered
+      const today = localDate(0)
+      mockGetAvailability.mockResolvedValue(availabilityResponse([
+        inventoryRow(today, { is_available: false }),
+      ]))
+      const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await waitFor(() => {
+        expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
+      })
+      await waitFor(() => {
+        expect(calendarDay(container, today)).toHaveAttribute('aria-disabled', 'true')
+      })
+      expect(container.querySelector('.availability-calendar-day[aria-disabled="false"]')).toBeNull()
+    })
+
+    it('marks a date with no remaining rooms as not selectable', async () => {
+      mockGetAvailability.mockResolvedValue(availabilityResponse([
+        inventoryRow(localDate(0), { available_rooms: 2, booked_rooms: 2, remaining_rooms: 0 }),
+      ]))
+      const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await waitFor(() => {
+        expect(calendarDay(container, localDate(0))).toHaveAttribute('aria-disabled', 'true')
+      })
+    })
+
+    it('shows a loading state while availability loads', async () => {
+      mockGetAvailability.mockReturnValue(new Promise(() => {}))
+      renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      expect(await screen.findByText('Loading availability...')).toBeInTheDocument()
+    })
+
+    it('shows the error and retries on request', async () => {
+      mockGetAvailability.mockResolvedValueOnce({ data: null, error: 'Server is unavailable' })
+      renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      const alert = await screen.findByRole('alert')
+      expect(alert).toHaveTextContent('Server is unavailable')
+      expect(screen.queryByText('Availability Calendar')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+      await waitFor(() => {
+        expect(mockGetAvailability).toHaveBeenCalledTimes(2)
+      })
+      await waitFor(() => {
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      })
+    })
+
+    it('says so when there is no availability', async () => {
+      mockGetAvailability.mockResolvedValue(availabilityResponse([]))
+      renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      expect(await screen.findByText('No availability for the next 90 days.')).toBeInTheDocument()
+    })
   })
 
   it('renders empty state when no room types provided', () => {
@@ -201,8 +331,10 @@ describe('RoomSelection', () => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
     })
 
+    await waitFor(() => {
+      expect(container.querySelector('.availability-calendar-day[aria-disabled="false"]')).not.toBeNull()
+    })
     const availableDay = container.querySelector('.availability-calendar-day[aria-disabled="false"]') as HTMLElement
-    expect(availableDay).not.toBeNull()
     fireEvent.click(availableDay)
     fireEvent.click(screen.getByLabelText('Proceed to booking'))
 

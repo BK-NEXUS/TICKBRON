@@ -1,9 +1,40 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RoomType, RatePlan, DateInventory } from '../adapters/propertyAdapter'
+import {
+  RoomType,
+  RatePlan,
+  DateInventory,
+  AvailabilityDateInventory,
+  propertyAdapter,
+} from '../adapters/propertyAdapter'
 import { RoomCard } from './RoomCard'
 import { RatePlanCard } from './RatePlanCard'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
+
+/** How far ahead the availability calendar loads, in days */
+const AVAILABILITY_DAYS = 90
+
+/** YYYY-MM-DD in local time (the calendar builds its dates the same way) */
+const toLocalDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+/** Map a backend inventory row to the calendar's shape. A null price means the rate plan's base price applies. */
+const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan): DateInventory => {
+  const bookable = row.is_available && row.remaining_rooms > 0
+  return {
+    id: row.id,
+    rate_plan_id: ratePlan.id,
+    date: row.date,
+    status: bookable ? 'available' : 'fully_booked',
+    available_rooms: row.available_rooms,
+    booked_rooms: row.booked_rooms,
+    price: Number(row.price ?? ratePlan.base_price),
+    currency: row.currency || ratePlan.currency,
+    min_stay: row.minimum_stay ?? ratePlan.min_nights,
+    max_stay: row.maximum_stay ?? ratePlan.max_nights,
+    is_available: bookable,
+  }
+}
 
 interface RoomSelectionProps {
   roomTypes: RoomType[]
@@ -24,16 +55,23 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
   const [ratePlans, setRatePlans] = useState<RatePlan[]>([])
   const [dateInventory, setDateInventory] = useState<DateInventory[]>([])
   const [loading, setLoading] = useState(false)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null)
+  // Ignore responses for a rate plan the user has already moved away from
+  const availabilityRequestId = useRef(0)
 
   const selectedRoom = roomTypes.find(room => room.id === selectedRoomId)
   const selectedRatePlan = ratePlans.find(plan => plan.id === selectedRatePlanId)
 
   const handleRoomSelect = (roomId: number) => {
+    availabilityRequestId.current += 1
     setSelectedRoomId(roomId)
     setSelectedRatePlanId(null)
     setSelectedDate(null)
     setRatePlans([])
     setDateInventory([])
+    setAvailabilityLoading(false)
+    setAvailabilityError(null)
     
     setLoading(true)
     try {
@@ -49,43 +87,40 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
     }
   }
 
+  const loadAvailability = async (ratePlanId: number) => {
+    const ratePlan = ratePlans.find(plan => plan.id === ratePlanId)
+    if (!ratePlan || selectedRoomId === null) return
+
+    const requestId = ++availabilityRequestId.current
+    setAvailabilityLoading(true)
+    setAvailabilityError(null)
+    setDateInventory([])
+
+    const today = new Date()
+    const lastDay = new Date(today)
+    lastDay.setDate(today.getDate() + AVAILABILITY_DAYS)
+    const response = await propertyAdapter.getAvailability(propertyId, {
+      check_in: toLocalDate(today),
+      check_out: toLocalDate(lastDay),
+    })
+    if (requestId !== availabilityRequestId.current) return
+
+    if (response.error || !response.data) {
+      setAvailabilityError(response.error || 'Could not load availability. Please try again.')
+    } else {
+      const rows = response.data.room_types
+        .find(room => room.id === selectedRoomId)
+        ?.rate_plans.find(plan => plan.id === ratePlanId)
+        ?.date_inventory ?? []
+      setDateInventory(rows.map(row => toCalendarInventory(row, ratePlan)))
+    }
+    setAvailabilityLoading(false)
+  }
+
   const handleRatePlanSelect = (ratePlanId: number) => {
     setSelectedRatePlanId(ratePlanId)
     setSelectedDate(null)
-    setDateInventory([])
-    
-    setLoading(true)
-    try {
-      // Generate mock inventory data
-      const today = new Date()
-      const inventory: DateInventory[] = []
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today)
-        date.setDate(today.getDate() + i)
-        const dateStr = date.toISOString().split('T')[0]
-        const availableRooms = Math.floor(Math.random() * 3) + 1
-        const bookedRooms = Math.floor(Math.random() * availableRooms)
-        const ratePlan = ratePlans.find(rp => rp.id === ratePlanId)
-        inventory.push({
-          id: inventory.length + 1,
-          rate_plan_id: ratePlanId,
-          date: dateStr,
-          status: availableRooms > bookedRooms ? 'available' : 'fully_booked',
-          available_rooms: availableRooms,
-          booked_rooms: bookedRooms,
-          price: ratePlan?.base_price || 100,
-          currency: ratePlan?.currency || 'USD',
-          min_stay: ratePlan?.min_nights || 1,
-          max_stay: ratePlan?.max_nights || 30,
-          is_available: availableRooms > bookedRooms,
-        })
-      }
-      setDateInventory(inventory)
-    } catch (error) {
-      console.error('Failed to load date inventory:', error)
-    } finally {
-      setLoading(false)
-    }
+    loadAvailability(ratePlanId)
   }
 
   const handleDateSelect = (date: string) => {
@@ -165,14 +200,27 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
       )}
 
       {/* Availability Calendar */}
-      {selectedRatePlan && dateInventory.length > 0 && (
+      {selectedRatePlan && (
         <div className="room-selection-section">
           <h3 className="room-selection-section-title">Availability Calendar</h3>
-          {loading ? (
+          {availabilityLoading ? (
             <div className="room-selection-loading" role="status" aria-live="polite">
               <div className="loading-spinner"></div>
               <p>Loading availability...</p>
             </div>
+          ) : availabilityError ? (
+            <div className="alert alert-error" role="alert">
+              <p>{availabilityError}</p>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => loadAvailability(selectedRatePlan.id)}
+              >
+                Try again
+              </button>
+            </div>
+          ) : dateInventory.length === 0 ? (
+            <p className="room-selection-empty">No availability for the next {AVAILABILITY_DAYS} days.</p>
           ) : (
             <AvailabilityCalendar
               inventory={dateInventory}

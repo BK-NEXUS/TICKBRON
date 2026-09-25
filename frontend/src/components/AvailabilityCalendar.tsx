@@ -144,6 +144,7 @@ export function AvailabilityCalendar({
           return (
             <div
               key={date}
+              data-date={date}
               className={`availability-calendar-day availability-calendar-day--${status} ${
                 isSelected ? 'availability-calendar-day--selected' : ''
               }`}

@@ -237,6 +237,41 @@ describe('PropertyAdapter', () => {
     })
   })
 
+  describe('getAvailability', () => {
+    it('requests availability for a date range', async () => {
+      const mockResponse = {
+        id: 1,
+        room_types: [{ id: 3, rate_plans: [{ id: 7, date_inventory: [] }] }],
+      }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      const result = await adapter.getAvailability(1, { check_in: '2026-10-01', check_out: '2026-12-30' })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual(mockResponse)
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/properties/1/availability/?check_in=2026-10-01&check_out=2026-12-30',
+        expect.objectContaining({ credentials: 'include' })
+      )
+    })
+
+    it('returns the backend error message', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'Property not found' }),
+      })
+
+      const result = await adapter.getAvailability(999, { check_in: '2026-10-01', check_out: '2026-12-30' })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBeTruthy()
+    })
+  })
+
   describe('singleton instance', () => {
     it('should export singleton instance', () => {
       expect(propertyAdapter).toBeInstanceOf(PropertyAdapter)
