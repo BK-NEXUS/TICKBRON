@@ -29,3 +29,9 @@ dist-ssr
 .env.production.local
 .env.development.local
 .env.test.local
+
+# Playwright E2E output
+e2e/screenshots/
+e2e/test-results/
+playwright-report/
+e2e/*.tmp.mjs
