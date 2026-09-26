@@ -4,7 +4,7 @@ URL configuration for partner app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from partner.views import (
-    PartnerPropertyViewSet, PartnerRoomTypeViewSet,
+    PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
     PartnerRatePlanViewSet, PartnerDateInventoryViewSet,
     partner_property_photo_upload, partner_bookings
 )
@@ -12,6 +12,7 @@ from partner.views import (
 app_name = 'partner'
 
 router = DefaultRouter()
+router.APIRootView = PartnerAPIRootView
 router.register(r'properties', PartnerPropertyViewSet, basename='partner-property')
 router.register(r'rooms', PartnerRoomTypeViewSet, basename='partner-room')
 router.register(r'rates', PartnerRatePlanViewSet, basename='partner-rate')

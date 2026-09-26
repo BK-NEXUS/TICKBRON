@@ -4,7 +4,7 @@ URL configuration for admin app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from admin_panel.views import (
-    AdminPropertyViewSet, AdminUserViewSet,
+    AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
     admin_property_approve, admin_property_suspend,
     admin_create_hotel_owner, admin_payment_transactions,
@@ -20,6 +20,7 @@ from admin_panel.views import (
 app_name = 'admin_panel'
 
 router = DefaultRouter()
+router.APIRootView = AdminAPIRootView
 router.register(r'properties', AdminPropertyViewSet, basename='admin-property')
 router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='admin-amenity-category')
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')

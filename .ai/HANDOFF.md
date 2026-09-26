@@ -723,6 +723,7 @@ Status: READY
   - Auth: Super-admin or staff required
   - Error: 403 for non-staff users
   - Limited fields for admin user listing (no passwords)
+  - **Updated (2026-09-26):** also returns `role` (same value as `role_name`) and `is_superuser`
 - POST `/api/v1/admin-panel/users/create-hotel-owner/` - Create hotel-owner account (super-admin only)
   - Request: { email, first_name, last_name, phone_number (optional), password, password_confirm }
   - Response: Created user object with hotel-owner role
@@ -1985,7 +1986,16 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 
 ## Phase 1: security (2026-09-26, Kolya's agent)
 
-- IN PROGRESS: 1 only hotel owners and staff can create properties
+- DONE: 1 only hotel owners and staff can create properties (b1aa434)
   - Backend already returned 403 to regular users on every partner write endpoint (`IsHotelOwner`); now covered by `partner/tests/test_property_create_access.py` (create/update/delete on properties, rooms, rates, inventory, photos, admin approve/suspend; role cannot be set through register, OTP or profile update)
   - `/auth/me` (and every user response) now has read-only `role` (`"hotel-owner"` or null), see `contracts/auth.md`
   - Frontend: "List Your Property" removed from the home page; "Partner Dashboard" links (header menu, profile quick links) only for hotel owners and staff (`src/utils/roles.ts`)
+- IN PROGRESS: 2 admin and partner panels closed to everyone else
+  - Access matrix tests: `admin_panel/tests/test_access_matrix.py`, `partner/tests/test_access_matrix.py` (anonymous 401/403, regular user 403, hotel owner 403 on admin, owner sees and changes only own partner data)
+  - Fixed: the router index pages `GET /admin-panel/` and `GET /partner/` answered 200 to any logged-in user; now `IsSuperAdminOrStaff` / `IsHotelOwner`
+  - Fixed (E2E): `GET /admin-panel/customers/` no longer lists hotel owners. `GET /admin-panel/users/` now also returns `role` (same value as `role_name`, which stays) and `is_superuser`, so owners show as "Hotel Owner" and super-admins as "Super Admin" instead of "User"/"Staff"
+  - Frontend: route guard `RequireAccess` on `/admin`, `/admin/customers/:id`, `/admin/support` (staff/super-admin) and `/partner` (hotel owner or staff). Others get `AccessDeniedPage` with "Back to Home" (plus "Sign In" when not logged in)
+  - Endpoints and permission classes (`IsSuperAdminOrStaff` = `is_staff`; `IsSuperAdmin` = `is_superuser`; `IsHotelOwner` = role `hotel-owner` or `is_staff`):
+    - `IsSuperAdminOrStaff`: `/admin-panel/` (index), `users/`, `customers/`, `customers/{id}/`, `customers/{id}/notes/`, `customers/{id}/notes/{note_id}/`, `statistics/registrations/`, `statistics/top-bookers/`, `properties/`, `properties/{id}/`, `properties/{id}/approve/`, `properties/{id}/suspend/`, `amenities/categories/[{id}/]`, `amenities/[{id}/]`, `payments/transactions/`, `bookings/lookup/`
+    - `IsSuperAdmin`: `/admin-panel/users/create-hotel-owner/`
+    - `IsHotelOwner` (querysets scoped to `owner=request.user`): `/partner/` (index), `properties/[{id}/]`, `properties/{id}/photos/`, `rooms/[{id}/]`, `rates/[{id}/]`, `inventory/[{id}/]`, `bookings/`

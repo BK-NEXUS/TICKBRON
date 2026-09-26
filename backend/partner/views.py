@@ -4,7 +4,7 @@ Views for partner API endpoints.
 This module contains views for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
-from rest_framework import viewsets, status
+from rest_framework import routers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -41,6 +41,11 @@ class IsHotelOwner(IsAuthenticated):
             return True
         
         return False
+
+
+class PartnerAPIRootView(routers.APIRootView):
+    """The router's endpoint index; the default one is open to any logged-in user."""
+    permission_classes = [IsHotelOwner]
 
 
 class PartnerPropertyViewSet(viewsets.ModelViewSet):

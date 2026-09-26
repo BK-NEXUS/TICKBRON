@@ -62,12 +62,14 @@ class AdminUserSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
-    
+    # Same value as role_name, under the name the admin UI reads
+    role = serializers.SerializerMethodField(method_name='get_role_name')
+
     class Meta:
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name', 'phone_number',
-            'is_staff', 'is_active', 'role_name', 'date_joined', 'last_login',
+            'is_staff', 'is_superuser', 'is_active', 'role', 'role_name', 'date_joined', 'last_login',
             'email_verified', 'two_factor_enabled'
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']

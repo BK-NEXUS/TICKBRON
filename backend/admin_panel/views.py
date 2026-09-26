@@ -4,7 +4,7 @@ Views for admin API endpoints.
 This module contains views for property moderation, user management,
 amenity management, and payment monitoring.
 """
-from rest_framework import viewsets, status
+from rest_framework import routers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -67,8 +67,16 @@ class IsSuperAdmin(IsAuthenticated):
         # Check if user is superuser
         if request.user.is_superuser:
             return True
-        
+
         return False
+
+
+HOTEL_OWNER_ROLE = 'hotel-owner'
+
+
+class AdminAPIRootView(routers.APIRootView):
+    """The router's endpoint index; the default one is open to any logged-in user."""
+    permission_classes = [IsSuperAdminOrStaff]
 
 
 class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
@@ -469,10 +477,10 @@ def admin_customers_directory(request):
     # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
     threshold_date = timezone.now() - timedelta(days=90)
 
-    # Staff and super-admins are not customers
+    # Staff, super-admins and hotel owners are not customers
     users = User.objects.filter(
         is_deleted=False, is_staff=False, is_superuser=False
-    ).annotate(
+    ).exclude(role__name=HOTEL_OWNER_ROLE).annotate(
         total_booking_count=Coalesce(
             Subquery(customer_bookings.annotate(c=Count('id')).values('c')), 0
         ),

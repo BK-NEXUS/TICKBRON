@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { MainLayout } from './layout/MainLayout'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { RequireAccess } from './components/RequireAccess'
+import { canUseAdminPanel, canUsePartnerPanel } from './utils/roles'
 
 // Lazy load pages for code splitting and performance optimization
 const HomePage = lazy(() => import('./pages/HomePage'))
@@ -51,10 +53,14 @@ function App() {
                 <Route path="bookings" element={<BookingsPage />} />
                 <Route path="favorites" element={<FavoritesPage />} />
                 <Route path="profile" element={<ProfilePage />} />
-                <Route path="partner" element={<PartnerDashboardPage />} />
-                <Route path="admin" element={<AdminDashboardPage />} />
-                <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
-                <Route path="admin/support" element={<SupportLookupPage />} />
+                <Route element={<RequireAccess allow={canUsePartnerPanel} area="the partner dashboard" />}>
+                  <Route path="partner" element={<PartnerDashboardPage />} />
+                </Route>
+                <Route element={<RequireAccess allow={canUseAdminPanel} area="the admin dashboard" />}>
+                  <Route path="admin" element={<AdminDashboardPage />} />
+                  <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
+                  <Route path="admin/support" element={<SupportLookupPage />} />
+                </Route>
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
               <Route path="/login" element={<LoginPage />} />

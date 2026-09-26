@@ -1651,6 +1651,56 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
+/* Access denied (route guards for /admin and /partner) */
+.access-denied-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--spacing-xl) 0;
+}
+
+.access-denied-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  text-align: center;
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-lg);
+}
+
+.access-denied-icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: var(--spacing-lg);
+}
+
+.access-denied-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.access-denied-message {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.access-denied-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.access-check-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--color-text-secondary);
+}
+
 /* Responsive Design - TICKBRON Plan V4 Breakpoints */
 /* 320–767px: Mobile */
 @media (max-width: 767px) {
