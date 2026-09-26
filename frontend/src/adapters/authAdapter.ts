@@ -23,6 +23,8 @@ export interface User {
   two_factor_enabled: boolean
   is_staff?: boolean
   is_superuser?: boolean
+  // Role name, e.g. 'hotel-owner'; null for regular users. Read-only on the backend
+  role?: string | null
 }
 
 export interface RegisterRequest {

@@ -176,7 +176,6 @@ export function HomePage() {
             <p className="cta-subtitle">Join millions of travelers who trust TICKBRON for their accommodations</p>
             <div className="cta-buttons">
               <button className="btn btn-primary btn-large">Browse Properties</button>
-              <button className="btn btn-secondary btn-large">List Your Property</button>
             </div>
           </div>
         </div>

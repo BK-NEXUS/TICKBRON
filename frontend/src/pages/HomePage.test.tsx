@@ -168,19 +168,16 @@ describe('HomePage', () => {
     expect(screen.getByText('Ready to Start Your Journey?')).toBeInTheDocument()
     expect(screen.getByText('Join millions of travelers who trust TICKBRON for their accommodations')).toBeInTheDocument()
     expect(screen.getByText('Browse Properties')).toBeInTheDocument()
-    expect(screen.getByText('List Your Property')).toBeInTheDocument()
   })
 
-  it('renders CTA buttons with correct classes', () => {
+  it('does not offer "List Your Property": owner accounts are created by a super-admin', () => {
     render(
       <BrowserRouter>
         <HomePage />
       </BrowserRouter>
     )
-    const browseButton = screen.getByText('Browse Properties')
-    const listButton = screen.getByText('List Your Property')
-    expect(browseButton).toBeInTheDocument()
-    expect(listButton).toBeInTheDocument()
+    expect(screen.getByText('Browse Properties')).toBeInTheDocument()
+    expect(screen.queryByText(/list your property/i)).not.toBeInTheDocument()
   })
 
   it('maintains semantic HTML structure', () => {

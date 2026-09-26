@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { EmptyState } from '../components/EmptyState'
 import { Link } from 'react-router-dom'
+import { canUsePartnerPanel } from '../utils/roles'
 
 export function ProfilePage() {
   const { user, isAuthenticated, updateProfile } = useAuth()
@@ -297,10 +298,12 @@ export function ProfilePage() {
                   <span className="profile-link-icon">❤️</span>
                   <span className="profile-link-text">My Favorites</span>
                 </Link>
-                <Link to="/partner" className="profile-link">
-                  <span className="profile-link-icon">🏠</span>
-                  <span className="profile-link-text">Partner Dashboard</span>
-                </Link>
+                {canUsePartnerPanel(user) && (
+                  <Link to="/partner" className="profile-link">
+                    <span className="profile-link-icon">🏠</span>
+                    <span className="profile-link-text">Partner Dashboard</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

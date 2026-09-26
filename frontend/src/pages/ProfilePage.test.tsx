@@ -49,6 +49,29 @@ describe('ProfilePage', () => {
     vi.clearAllMocks()
   })
 
+  describe('Partner Dashboard quick link', () => {
+    const renderAs = (user: typeof mockUser & { role?: string | null }) => {
+      mockUseAuth.mockReturnValue({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        updateProfile: vi.fn(),
+      })
+      renderWithRouter(<ProfilePage />)
+    }
+
+    it('is hidden from regular users', () => {
+      renderAs({ ...mockUser, role: null })
+      expect(screen.getByText('My Bookings')).toBeInTheDocument()
+      expect(screen.queryByText('Partner Dashboard')).not.toBeInTheDocument()
+    })
+
+    it('is shown to hotel owners', () => {
+      renderAs({ ...mockUser, role: 'hotel-owner' })
+      expect(screen.getByText('Partner Dashboard')).toBeInTheDocument()
+    })
+  })
+
   describe('Authentication redirect', () => {
     it('should redirect to login if not authenticated', () => {
       mockUseAuth.mockReturnValue({

@@ -28,17 +28,22 @@ class UserSerializer(serializers.ModelSerializer):
     Base serializer for User model.
     """
     full_name = serializers.SerializerMethodField()
-    
+    # Role name ('hotel-owner') or None. Only a super-admin assigns roles, so it is read-only
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 
+        fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
-                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser']
+                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
         read_only_fields = ['id', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
-    
+
     def get_full_name(self, obj):
         return obj.get_full_name()
+
+    def get_role(self, obj):
+        return obj.role.name if obj.role else None
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

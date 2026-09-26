@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Header } from './Header'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -45,6 +45,35 @@ describe('Header', () => {
 
     expect(await screen.findByText('Demo Guest')).toBeInTheDocument()
     expect(screen.queryByText('User')).not.toBeInTheDocument()
+  })
+
+  const openMenuAs = async (user: Record<string, unknown>) => {
+    const { authAdapter } = await import('../adapters/authAdapter')
+    vi.mocked(authAdapter.getCurrentUser).mockResolvedValueOnce({
+      success: true,
+      user: { id: 3, email: 'someone@example.com', full_name: 'Some One', ...user },
+    } as never)
+    renderWithAuthProvider(<Header />)
+    fireEvent.click(await screen.findByRole('button', { name: /Some One/ }))
+  }
+
+  it('hides the partner dashboard link from regular users', async () => {
+    await openMenuAs({ role: null, is_staff: false, is_superuser: false })
+    expect(screen.getByText('My Profile')).toBeInTheDocument()
+    expect(screen.queryByText('Partner Dashboard')).not.toBeInTheDocument()
+    expect(screen.queryByText('Admin Dashboard')).not.toBeInTheDocument()
+  })
+
+  it('shows the partner dashboard link to hotel owners but not the admin link', async () => {
+    await openMenuAs({ role: 'hotel-owner', is_staff: false, is_superuser: false })
+    expect(screen.getByText('Partner Dashboard')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Dashboard')).not.toBeInTheDocument()
+  })
+
+  it('shows both dashboards to staff', async () => {
+    await openMenuAs({ role: null, is_staff: true, is_superuser: false })
+    expect(screen.getByText('Partner Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Admin Dashboard')).toBeInTheDocument()
   })
 
   it('renders navigation links', () => {

@@ -1982,3 +1982,10 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 - DONE: 7 favorite button + favorite cards (2fed014)
 - DONE: 8 self-host fonts (CSP) (930214a)
 - DONE: 9 hotel names, human dates, user name in header (73b2e99)
+
+## Phase 1: security (2026-09-26, Kolya's agent)
+
+- IN PROGRESS: 1 only hotel owners and staff can create properties
+  - Backend already returned 403 to regular users on every partner write endpoint (`IsHotelOwner`); now covered by `partner/tests/test_property_create_access.py` (create/update/delete on properties, rooms, rates, inventory, photos, admin approve/suspend; role cannot be set through register, OTP or profile update)
+  - `/auth/me` (and every user response) now has read-only `role` (`"hotel-owner"` or null), see `contracts/auth.md`
+  - Frontend: "List Your Property" removed from the home page; "Partner Dashboard" links (header menu, profile quick links) only for hotel owners and staff (`src/utils/roles.ts`)

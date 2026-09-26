@@ -5,6 +5,7 @@ import { CurrencySelector } from './CurrencySelector'
 import { MobileMenu } from './MobileMenu'
 import { BrandLogo } from './BrandLogo'
 import { useAuth } from '../contexts/AuthContext'
+import { canUseAdminPanel, canUsePartnerPanel } from '../utils/roles'
 
 interface NavLink {
   label: string
@@ -124,10 +125,12 @@ export function Header() {
                       <Link to="/favorites" className="header-user-dropdown-item">
                         Favorites
                       </Link>
-                      <Link to="/partner" className="header-user-dropdown-item">
-                        Partner Dashboard
-                      </Link>
-                      {(user?.is_staff || user?.is_superuser) && (
+                      {canUsePartnerPanel(user) && (
+                        <Link to="/partner" className="header-user-dropdown-item">
+                          Partner Dashboard
+                        </Link>
+                      )}
+                      {canUseAdminPanel(user) && (
                         <Link to="/admin" className="header-user-dropdown-item header-user-dropdown-item--admin">
                           Admin Dashboard
                         </Link>
