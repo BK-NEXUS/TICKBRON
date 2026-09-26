@@ -45,6 +45,69 @@ describe('SearchForm', () => {
     })
   })
 
+  describe('date range picker', () => {
+    const localDate = (offsetDays: number) => {
+      const d = new Date()
+      d.setDate(d.getDate() + offsetDays)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    }
+    const clickDay = (container: HTMLElement, date: string) => {
+      let day = container.querySelector(`[data-date="${date}"]`)
+      if (!day) {
+        fireEvent.click(screen.getByRole('button', { name: /next month/i }))
+        day = container.querySelector(`[data-date="${date}"]`)
+      }
+      fireEvent.click(day as HTMLElement)
+    }
+    const renderForm = () => render(<BrowserRouter><SearchForm /></BrowserRouter>)
+
+    it('clicking the check-in field opens a calendar; start then end fills both dates', () => {
+      const { container } = renderForm()
+      fireEvent.click(screen.getByLabelText('Check-in'))
+      expect(screen.getByRole('dialog', { name: 'Choose your dates' })).toBeInTheDocument()
+
+      clickDay(container, localDate(3))
+      expect(screen.getByLabelText('Check-in')).toHaveValue(localDate(3))
+      expect(screen.getByLabelText('Check-out')).toHaveValue('')
+
+      clickDay(container, localDate(6))
+      expect(screen.getByLabelText('Check-out')).toHaveValue(localDate(6))
+      // Done: the calendar closes once the range is complete
+      expect(screen.queryByRole('dialog', { name: 'Choose your dates' })).not.toBeInTheDocument()
+    })
+
+    it('highlights the chosen range when reopened', () => {
+      const { container } = renderForm()
+      fireEvent.click(screen.getByLabelText('Check-in'))
+      clickDay(container, localDate(3))
+      clickDay(container, localDate(6))
+      fireEvent.click(screen.getByLabelText('Check-out'))
+
+      const inRange = container.querySelector(`[data-date="${localDate(4)}"]`)
+      if (inRange) expect(inRange).toHaveClass('availability-calendar-day--in-range')
+      expect(container.querySelector('.availability-calendar-day--range-start, .availability-calendar-day--range-end'))
+        .not.toBeNull()
+    })
+
+    it('past days cannot be picked', () => {
+      const { container } = renderForm()
+      fireEvent.click(screen.getByLabelText('Check-in'))
+      const yesterday = container.querySelector(`[data-date="${localDate(-1)}"]`)
+      if (yesterday) {
+        expect(yesterday).toHaveAttribute('aria-disabled', 'true')
+        fireEvent.click(yesterday)
+        expect(screen.getByLabelText('Check-in')).toHaveValue('')
+      }
+    })
+
+    it('can be closed without choosing', () => {
+      renderForm()
+      fireEvent.click(screen.getByLabelText('Check-out'))
+      fireEvent.click(screen.getByRole('button', { name: 'Close calendar' }))
+      expect(screen.queryByRole('dialog', { name: 'Choose your dates' })).not.toBeInTheDocument()
+    })
+  })
+
   const mockNavigate = vi.fn()
 
   beforeEach(() => {

@@ -251,10 +251,9 @@ class Booking(BaseModel):
             ValidationError: If booking cannot be created (no availability, validation errors)
             Exception: If database error occurs
         """
-        from properties.models import DateInventory
         from decimal import Decimal
-        from datetime import timedelta
-        
+        from bookings.pricing import quote_stay
+
         # Validate input
         if check_out <= check_in:
             raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
@@ -280,60 +279,14 @@ class Booking(BaseModel):
         if guest_count > room_type.max_occupancy * number_of_rooms:
             raise ValidationError({'guest_count': _('Guest count exceeds the capacity of the booked rooms')})
         
-        # Validate rate plan constraints
-        if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
-            raise ValidationError({
-                'check_in': _('Booking duration is less than minimum nights requirement')
-            })
-        
-        if rate_plan.max_nights and number_of_nights > rate_plan.max_nights:
-            raise ValidationError({
-                'check_in': _('Booking duration exceeds maximum nights requirement')
-            })
-        
         # Use atomic transaction for consistency
         with transaction.atomic():
-            # Select and lock all date inventory rows for the date range
-            date_range = []
-            current_date = check_in
-            while current_date < check_out:
-                date_range.append(current_date)
-                current_date += timedelta(days=1)
-            
-            # Lock inventory rows using SELECT FOR UPDATE
-            inventory_records = DateInventory.objects.filter(
-                rate_plan=rate_plan,
-                date__in=date_range,
-                is_available=True,
-                is_deleted=False
-            ).select_for_update()
-            
-            # Check if all dates have inventory records
-            if inventory_records.count() != len(date_range):
-                raise ValidationError({
-                    'availability': _('Not all dates in the range have available inventory')
-                })
-            
-            # Check availability for each date
-            nightly_total = Decimal('0')  # price of one room for the whole stay
-            for inventory in inventory_records:
-                # Check if date is available for booking
-                if not inventory.is_available_for_booking(number_of_nights):
-                    raise ValidationError({
-                        'availability': _(f'Date {inventory.date} is not available for booking')
-                    })
-                
-                # Check if there are enough rooms for the whole party
-                if inventory.remaining_rooms < number_of_rooms:
-                    raise ValidationError({
-                        'availability': _(f'Not enough rooms available for date {inventory.date}')
-                    })
-                
-                # Add price (use inventory price if set, otherwise rate plan base price)
-                price = inventory.price if inventory.price is not None else rate_plan.base_price
-                nightly_total += price
-            
-            total_price = nightly_total * number_of_rooms
+            # Locks every night's inventory row and prices the stay; the public quote
+            # endpoint uses the same function, so the guest pays what they were shown
+            quote = quote_stay(rate_plan, check_in, check_out, number_of_rooms, lock=True)
+            inventory_records = quote.inventory
+            nightly_total = quote.nightly_total  # price of one room for the whole stay
+            total_price = quote.total_price
 
             # Create the booking
             booking = cls.objects.create(

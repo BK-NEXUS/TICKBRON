@@ -14,7 +14,7 @@ from properties.search import PropertySearchService
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
     PaginatedSearchResponseSerializer, PropertyDetailSerializer,
-    PropertyAvailabilitySerializer, AvailabilityParamsSerializer
+    PropertyAvailabilitySerializer, AvailabilityParamsSerializer, QuoteParamsSerializer
 )
 
 # Check if running in test mode
@@ -251,5 +251,71 @@ def property_availability(request, property_id):
         property,
         context={'request': request}
     )
-    
+
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def property_quote(request, property_id):
+    """
+    Price a stay before booking, with the code that charges for it.
+
+    Query Parameters:
+        room_type_id, rate_plan_id: the room and rate (must belong to this property)
+        check_in, check_out: YYYY-MM-DD, check_out exclusive
+        rooms: number of rooms (default 1)
+
+    Returns:
+        { check_in, check_out, number_of_nights, number_of_rooms, currency,
+          nights: [{date, price}], total_price }
+        400 {error, details: {field: [message]}} when the stay cannot be booked;
+        availability messages name the date.
+    """
+    from django.core.exceptions import ValidationError as DjangoValidationError
+    from properties.models import RatePlan
+    from bookings.pricing import quote_stay
+
+    params = QuoteParamsSerializer(data=request.query_params)
+    if not params.is_valid():
+        return Response(
+            {'error': 'Invalid quote parameters', 'details': params.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    data = params.validated_data
+
+    rate_plan = RatePlan.objects.filter(
+        id=data['rate_plan_id'],
+        room_type_id=data['room_type_id'],
+        room_type__property_id=property_id,
+        room_type__property__status='active',
+        room_type__property__is_active=True,
+        room_type__property__is_deleted=False,
+        room_type__is_deleted=False,
+        is_active=True,
+        is_deleted=False,
+    ).first()
+    if rate_plan is None:
+        return Response(
+            {'error': 'Invalid quote parameters',
+             'details': {'rate_plan_id': ['Rate plan not found for this room and property.']}},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        quote = quote_stay(rate_plan, data['check_in'], data['check_out'], data['rooms'])
+    except DjangoValidationError as exc:
+        return Response(
+            {'error': 'This stay cannot be booked', 'details': exc.message_dict},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response({
+        'check_in': quote.check_in,
+        'check_out': quote.check_out,
+        'number_of_nights': quote.number_of_nights,
+        'number_of_rooms': quote.number_of_rooms,
+        'currency': quote.currency,
+        'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in quote.nights],
+        'total_price': f'{quote.total_price:.2f}',
+    }, status=status.HTTP_200_OK)

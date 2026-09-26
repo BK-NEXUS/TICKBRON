@@ -598,5 +598,21 @@ class AvailabilityParamsSerializer(serializers.Serializer):
         
         if check_in and check_in < timezone.localdate():
             raise serializers.ValidationError("check_in cannot be in the past")
-        
+
+        return data
+
+
+class QuoteParamsSerializer(serializers.Serializer):
+    """Query parameters of GET /properties/{id}/quote/."""
+    room_type_id = serializers.IntegerField(min_value=1)
+    rate_plan_id = serializers.IntegerField(min_value=1)
+    check_in = serializers.DateField()
+    check_out = serializers.DateField()
+    rooms = serializers.IntegerField(min_value=1, max_value=20, default=1)
+
+    def validate(self, data):
+        if data['check_out'] <= data['check_in']:
+            raise serializers.ValidationError({'check_out': 'Check-out date must be after check-in date'})
+        if data['check_in'] < timezone.localdate():
+            raise serializers.ValidationError({'check_in': 'Check-in date cannot be in the past'})
         return data

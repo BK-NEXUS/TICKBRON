@@ -3846,6 +3846,60 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* Check-in/check-out range */
+.availability-calendar-day--in-range {
+  background-color: rgba(188, 156, 89, 0.12);
+  border-color: rgba(188, 156, 89, 0.35);
+}
+
+.availability-calendar-day--range-start,
+.availability-calendar-day--range-end {
+  background-color: var(--color-pomegranate);
+  border-color: var(--color-pomegranate);
+}
+
+.availability-calendar-day--range-start .availability-calendar-day-number,
+.availability-calendar-day--range-end .availability-calendar-day-number,
+.availability-calendar-day--range-start .availability-calendar-day-price,
+.availability-calendar-day--range-end .availability-calendar-day-price {
+  color: var(--color-on-primary, #fff);
+}
+
+.availability-calendar-error {
+  margin: 0 0 var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  background-color: rgba(176, 58, 46, 0.08);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.room-selection-hint {
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.search-form-calendar {
+  grid-column: 1 / -1;
+  max-width: 420px;
+}
+
+.search-form-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.search-form-calendar .availability-calendar-day {
+  aspect-ratio: auto;
+  min-height: 40px;
+}
+
 .availability-calendar-day[aria-disabled="true"] {
   opacity: 0.4;
   cursor: not-allowed;

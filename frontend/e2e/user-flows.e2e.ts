@@ -29,14 +29,52 @@ const shared = {
 
 const TASHKENT = 'TICKBRON Demo Hotel Tashkent'
 
-async function pickRoomRateAndDate(page: Page, roomName: string, rateName: string, dayIndex = 0) {
+function addDays(date: string, days: number) {
+  const [y, m, d] = date.split('-').map(Number)
+  const next = new Date(y, m - 1, d + days)
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+}
+
+/** Friday or Saturday night (seed_demo prices them 15% higher) */
+function isWeekendNight(date: string) {
+  const [y, m, d] = date.split('-').map(Number)
+  return [5, 6].includes(new Date(y, m - 1, d).getDay())
+}
+
+/**
+ * Pick room, rate, then a check-in and check-out in the calendar. The stay is the
+ * `skip`-th run of `nights` open nights in the month on screen (with a weekend night
+ * when asked). Returns the dates and the "N nights, total $X" text from the page.
+ */
+async function pickStay(page: Page, roomName: string, rateName: string,
+  { nights = 2, skip = 0, weekend = false }: { nights?: number; skip?: number; weekend?: boolean } = {}) {
   await page.getByRole('button', { name: new RegExp(`^${roomName}`) }).click()
   await page.getByText(rateName, { exact: true }).first().click()
-  const day = page.locator('.availability-calendar-day[aria-disabled="false"]').nth(dayIndex)
-  await expect(day).toBeVisible()
-  const date = await day.getAttribute('data-date')
-  await day.click()
-  return date
+  const open = page.locator('.availability-calendar-day[aria-disabled="false"]')
+  await expect(open.first()).toBeVisible()
+  const openDates = new Set(await open.evaluateAll(cells => cells.map(cell => cell.getAttribute('data-date') ?? '')))
+  const candidates = [...openDates].sort().filter(start => {
+    const stay = Array.from({ length: nights }, (_, i) => addDays(start, i))
+    return stay.every(night => openDates.has(night)) && (!weekend || stay.some(isWeekendNight))
+  })
+  const checkIn = candidates[skip]
+  expect(checkIn, `an open ${nights}-night stay${weekend ? ' with a weekend night' : ''} this month`).toBeTruthy()
+  const checkOut = addDays(checkIn, nights)
+
+  await page.locator(`.availability-calendar-day[data-date="${checkIn}"]`).click()
+  const checkOutCell = page.locator(`.availability-calendar-day[data-date="${checkOut}"]`)
+  if (!(await checkOutCell.count())) await page.getByRole('button', { name: 'Next month' }).click()
+  await checkOutCell.click()
+
+  const totalText = page.getByText(/^\d+ nights?, total /)
+  await expect(totalText).toBeVisible()
+  return { checkIn, checkOut, totalText: (await totalText.textContent()) ?? '' }
+}
+
+/** "2 nights, total $129" -> 129 */
+function totalFrom(text: string) {
+  const match = text.replace(/,/g, '').match(/\$\s*([\d.]+)/)
+  return match ? Number(match[1]) : NaN
 }
 
 /** Dollar amount in the parent row of a label, e.g. "Total $60" -> 60 */
@@ -130,8 +168,11 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(page.getByRole('heading', { level: 1, name: TASHKENT })).toBeVisible()
   })
 
-  await step(audit, 'A4 pick-room-rate-date', async () => {
-    await pickRoomRateAndDate(page, 'Standard Double', 'Standard Rate')
+  let selectionTotal = NaN
+  await step(audit, 'A4 pick-room-rate-and-stay-with-weekend-night', async () => {
+    // A weekend night costs more than the base price: the case that used to show $60 and charge $69
+    const stay = await pickStay(page, 'Standard Double', 'Standard Rate', { nights: 2, weekend: true })
+    selectionTotal = totalFrom(stay.totalText)
     await expect(page.getByRole('heading', { name: 'Your Selection' })).toBeVisible()
     await page.getByRole('button', { name: 'Proceed to booking' }).click()
     await expect(page).toHaveURL(/\/booking/)
@@ -149,7 +190,9 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     const lastName = page.getByLabel(/last name/i)
     await expect.soft(firstName, 'first name pre-filled from profile').not.toHaveValue('')
     await expect.soft(lastName, 'last name pre-filled from profile').not.toHaveValue('')
+    await expect(page.locator('.booking-summary-total-value').first()).toBeVisible()
     summaryTotal = await amountNextTo(page, /^Total$/)
+    expect(summaryTotal, 'booking form total = total shown when the dates were picked').toBe(selectionTotal)
     if (!(await firstName.inputValue())) await firstName.fill('Demo')
     if (!(await lastName.inputValue())) await lastName.fill('Guest')
     await page.getByRole('button', { name: /continue to payment/i }).click()
@@ -168,8 +211,14 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     shared.referenceCode = (await code.textContent())?.trim()
     expect(shared.referenceCode).toMatch(/^[A-Z2-9]{6}$/)
     const paid = await amountNextTo(page, 'Amount Paid:')
-    expect.soft(paid, `amount paid ($${paid}) should equal the total shown before payment ($${summaryTotal})`)
+    // Hard check: what the guest saw is what was charged
+    expect(paid, `amount paid ($${paid}) should equal the total shown before payment ($${summaryTotal})`)
       .toBe(summaryTotal)
+    // ...and what the backend stored for the booking and its payment
+    const bookings = await (await page.request.get(`${API}/api/v1/bookings/`)).json()
+    const rows = Array.isArray(bookings) ? bookings : bookings.results
+    const stored = rows.find((b: { confirmation_code: string }) => b.confirmation_code === shared.referenceCode)
+    expect(Number(stored.total_price), 'backend booking total = total shown').toBe(summaryTotal)
   })
 
   await step(audit, 'A8 my-bookings', async () => {
@@ -183,7 +232,7 @@ test('B payment failure shows the failure screen and retry works', async ({ page
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
     await page.goto('/search?destination=Tashkent')
     await page.getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
-    await pickRoomRateAndDate(page, 'Standard Double', 'Standard Rate', 1)
+    await pickStay(page, 'Standard Double', 'Standard Rate', { nights: 1, skip: 1 })
     await page.getByRole('button', { name: 'Proceed to booking' }).click()
   })
 

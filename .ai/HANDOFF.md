@@ -2009,3 +2009,12 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
   - E: partner property cards show the city, not the hotel name
   - H: language switch (i18n, BUG 8, not in scope)
   - Flow G (access control) passes every step, including the soft ones (customer profile and partner panel show Access Denied)
+
+## Phase 2: fix broken things (2026-09-26, Kolya's agent)
+
+- IN PROGRESS: 1 date range selection + one correct price everywhere
+  - Root cause of "shown $60, charged $69" (E2E flow A): for a one-night stay the booking page asked `/availability/` with `check_in == check_out`, which is a 400, and then silently fell back to `nights × base price`. The backend charged that night's own (weekend) price
+  - One pricing function: `bookings/pricing.py::quote_stay` (each night's inventory price, else the rate plan base price, × rooms; every night open with rooms left; rate plan and per-night min/max stay). `Booking.create_booking` charges it (locked rows) and the new endpoint shows it
+  - NEW `GET /api/v1/properties/{id}/quote/?room_type_id&rate_plan_id&check_in&check_out[&rooms=1]` (public, check_out exclusive) -> `{check_in, check_out, number_of_nights, number_of_rooms, currency, nights: [{date, price}], total_price}`; 400 `{error, details: {field: [msg]}}`, availability messages name the date (`"2026-09-28 is not available."`, `"No rooms left on ..."`). Booking create errors now use the same messages
+  - Frontend: `DateRangeCalendar` (click check-in, click check-out, range highlighted; a closed day can still be the check-out day) used by the property calendar and the home/search date picker. The property calendar refuses a range with a closed/sold-out night or a min/max stay break and names the date. Room selection and the booking page show the quote ("2 nights, total $129"); payment and confirmation show the booking's own total. No local price calculation is left
+  - E2E flow A picks a 2-night stay with a weekend night and hard-asserts shown total == amount paid == stored booking total

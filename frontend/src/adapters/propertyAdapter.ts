@@ -163,6 +163,26 @@ export interface PropertyAvailabilityResponse {
   room_types: AvailabilityRoomType[]
 }
 
+export interface QuoteParams {
+  roomTypeId: number
+  ratePlanId: number
+  checkIn: string
+  /** Exclusive: the day the guest leaves */
+  checkOut: string
+  rooms: number
+}
+
+// GET /api/v1/properties/{id}/quote/: the same pricing Booking.create_booking charges
+export interface StayQuote {
+  check_in: string
+  check_out: string
+  number_of_nights: number
+  number_of_rooms: number
+  currency: string
+  nights: Array<{ date: string; price: string }>
+  total_price: string
+}
+
 export interface AvailabilityParams {
   check_in: string
   check_out: string
@@ -354,6 +374,38 @@ class PropertyAdapter {
   ): Promise<{ data: PropertyAvailabilityResponse | null; error: string | null }> {
     const query = new URLSearchParams({ check_in: params.check_in, check_out: params.check_out })
     return this.request<PropertyAvailabilityResponse>(`/api/v1/properties/${propertyId}/availability/?${query.toString()}`)
+  }
+
+  /**
+   * Price a stay with the code that charges for it.
+   * GET /api/v1/properties/{id}/quote/ (check_out exclusive). On 400 the error is the
+   * backend's reason, e.g. "2026-09-28 is not available."
+   */
+  async getQuote(
+    propertyId: number,
+    params: QuoteParams
+  ): Promise<{ data: StayQuote | null; error: string | null }> {
+    const query = new URLSearchParams({
+      room_type_id: String(params.roomTypeId),
+      rate_plan_id: String(params.ratePlanId),
+      check_in: params.checkIn,
+      check_out: params.checkOut,
+      rooms: String(params.rooms),
+    })
+    try {
+      const response = await apiFetch(`${this.baseUrl}/api/v1/properties/${propertyId}/quote/?${query.toString()}`, {
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const apiError = await readApiError(response)
+        // The field message ("... is not available.") is clearer than the envelope text
+        const reason = apiError.fieldErrors ? Object.values(apiError.fieldErrors).flat()[0] : undefined
+        return { data: null, error: reason || apiError.message }
+      }
+      return { data: await response.json(), error: null }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+    }
   }
 }
 

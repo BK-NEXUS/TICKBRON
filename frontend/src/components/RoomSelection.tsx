@@ -5,6 +5,7 @@ import {
   RatePlan,
   DateInventory,
   AvailabilityDateInventory,
+  StayQuote,
   propertyAdapter,
 } from '../adapters/propertyAdapter'
 import { RoomCard } from './RoomCard'
@@ -25,7 +26,7 @@ const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan)
     id: row.id,
     rate_plan_id: ratePlan.id,
     date: row.date,
-    status: bookable ? 'available' : 'fully_booked',
+    status: !row.is_available ? 'closed' : bookable ? 'available' : 'fully_booked',
     available_rooms: row.available_rooms,
     booked_rooms: row.booked_rooms,
     price: Number(row.price ?? ratePlan.base_price),
@@ -51,7 +52,12 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
   const navigate = useNavigate()
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [checkIn, setCheckIn] = useState<string | null>(null)
+  const [checkOut, setCheckOut] = useState<string | null>(null)
+  const [quote, setQuote] = useState<StayQuote | null>(null)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const quoteRequestId = useRef(0)
   const [ratePlans, setRatePlans] = useState<RatePlan[]>([])
   const [dateInventory, setDateInventory] = useState<DateInventory[]>([])
   const [loading, setLoading] = useState(false)
@@ -63,11 +69,20 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
   const selectedRoom = roomTypes.find(room => room.id === selectedRoomId)
   const selectedRatePlan = ratePlans.find(plan => plan.id === selectedRatePlanId)
 
+  const clearRange = () => {
+    quoteRequestId.current += 1
+    setCheckIn(null)
+    setCheckOut(null)
+    setQuote(null)
+    setQuoteError(null)
+    setQuoteLoading(false)
+  }
+
   const handleRoomSelect = (roomId: number) => {
     availabilityRequestId.current += 1
     setSelectedRoomId(roomId)
     setSelectedRatePlanId(null)
-    setSelectedDate(null)
+    clearRange()
     setRatePlans([])
     setDateInventory([])
     setAvailabilityLoading(false)
@@ -119,32 +134,57 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
 
   const handleRatePlanSelect = (ratePlanId: number) => {
     setSelectedRatePlanId(ratePlanId)
-    setSelectedDate(null)
+    clearRange()
     loadAvailability(ratePlanId)
   }
 
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date)
+  /** The backend prices the stay, with the same code that charges for it */
+  const loadQuote = async (start: string, end: string) => {
+    if (selectedRoomId === null || selectedRatePlanId === null) return
+    const requestId = ++quoteRequestId.current
+    setQuoteLoading(true)
+    const response = await propertyAdapter.getQuote(propertyId, {
+      roomTypeId: selectedRoomId, ratePlanId: selectedRatePlanId, checkIn: start, checkOut: end, rooms: 1,
+    })
+    if (requestId !== quoteRequestId.current) return
+    setQuote(response?.data ?? null)
+    setQuoteError(response?.data ? null : response?.error || 'Could not price these dates. Please try again.')
+    setQuoteLoading(false)
+  }
+
+  const handleRangeChange = (start: string | null, end: string | null) => {
+    clearRange()
+    setCheckIn(start)
+    setCheckOut(end)
+    if (start && end) loadQuote(start, end)
   }
 
   const handleProceedToBooking = () => {
-    if (selectedRoom && selectedRatePlan && selectedDate) {
-      const checkInDate = new Date(selectedDate)
-      const nightsToBook = selectedRatePlan.min_nights || 1
-      const checkOutDate = new Date(checkInDate.getTime() + nightsToBook * 24 * 60 * 60 * 1000)
-      
+    if (selectedRoom && selectedRatePlan && checkIn && checkOut && quote) {
       const bookingState = {
         propertyId,
         roomTypeId: selectedRoom.id,
         ratePlanId: selectedRatePlan.id,
-        checkIn: selectedDate,
-        checkOut: checkOutDate.toISOString().split('T')[0],
+        checkIn,
+        checkOut,
         guestCount: selectedRoom.base_occupancy,
         pricePerNight: selectedRatePlan.base_price,
         currency: selectedRatePlan.currency,
       }
       navigate('/booking', { state: bookingState })
     }
+  }
+
+  const formatMoney = (amount: string | number, code: string) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: code, minimumFractionDigits: 0, maximumFractionDigits: 2,
+    }).format(Number(amount))
+
+  const formatLongDate = (date: string) => {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    })
   }
 
   if (roomTypes.length === 0) {
@@ -222,18 +262,30 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
           ) : dateInventory.length === 0 ? (
             <p className="room-selection-empty">No availability for the next {AVAILABILITY_DAYS} days.</p>
           ) : (
-            <AvailabilityCalendar
-              inventory={dateInventory}
-              currency={selectedRatePlan.currency}
-              onDateSelect={handleDateSelect}
-              selectedDate={selectedDate || undefined}
-            />
+            <>
+              <p className="room-selection-hint" aria-live="polite">
+                {!checkIn
+                  ? 'Choose your check-in date.'
+                  : !checkOut
+                    ? 'Now choose your check-out date.'
+                    : null}
+              </p>
+              <AvailabilityCalendar
+                inventory={dateInventory}
+                currency={selectedRatePlan.currency}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                onRangeChange={handleRangeChange}
+                minNights={selectedRatePlan.min_nights}
+                maxNights={selectedRatePlan.max_nights}
+              />
+            </>
           )}
         </div>
       )}
 
       {/* Selection Summary */}
-      {selectedRoom && selectedRatePlan && selectedDate && (
+      {selectedRoom && selectedRatePlan && checkIn && checkOut && (
         <div className="room-selection-summary">
           <h3 className="room-selection-summary-title">Your Selection</h3>
           <div className="room-selection-summary-details">
@@ -246,35 +298,38 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
               <span className="room-selection-summary-value">{selectedRatePlan.name}</span>
             </div>
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Check-in Date:</span>
-              <span className="room-selection-summary-value">
-                {new Date(selectedDate).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </span>
+              <span className="room-selection-summary-label">Check-in:</span>
+              <span className="room-selection-summary-value">{formatLongDate(checkIn)}</span>
             </div>
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Price per Night:</span>
+              <span className="room-selection-summary-label">Check-out:</span>
+              <span className="room-selection-summary-value">{formatLongDate(checkOut)}</span>
+            </div>
+            <div className="room-selection-summary-item room-selection-summary-total">
+              <span className="room-selection-summary-label">Total:</span>
               <span className="room-selection-summary-value">
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: selectedRatePlan.currency,
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                }).format(selectedRatePlan.base_price)}
+                {quoteLoading
+                  ? 'Calculating...'
+                  : quote
+                    ? `${quote.number_of_nights} ${quote.number_of_nights === 1 ? 'night' : 'nights'}, total ${formatMoney(quote.total_price, quote.currency)}`
+                    : '—'}
               </span>
             </div>
           </div>
-          <button 
-            className="btn btn-primary btn-large room-selection-cta"
-            onClick={handleProceedToBooking}
-            aria-label="Proceed to booking"
-          >
-            Proceed to Booking
-          </button>
+          {quoteError && (
+            <div className="alert alert-error" role="alert">
+              <p>{quoteError}</p>
+            </div>
+          )}
+          {quote && (
+            <button
+              className="btn btn-primary btn-large room-selection-cta"
+              onClick={handleProceedToBooking}
+              aria-label="Proceed to booking"
+            >
+              Proceed to Booking
+            </button>
+          )}
         </div>
       )}
     </div>

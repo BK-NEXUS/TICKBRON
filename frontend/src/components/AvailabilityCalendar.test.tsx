@@ -1,179 +1,143 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { useState } from 'react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
-import { DateInventory } from '../adapters/searchAdapter'
+import { DateInventory } from '../adapters/propertyAdapter'
+
+// Dates far enough ahead that "today" never makes them past dates
+const d = (n: number) => `2030-03-${String(n).padStart(2, '0')}`
+const label = (date: string) => {
+  const [y, m, dd] = date.split('-').map(Number)
+  return new Date(y, m - 1, dd).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+const row = (date: string, overrides: Partial<DateInventory> = {}): DateInventory => ({
+  id: Number(date.slice(-2)), rate_plan_id: 1, date, status: 'available', available_rooms: 3, booked_rooms: 0,
+  price: 60, currency: 'EUR', min_stay: 1, max_stay: 30, is_available: true, ...overrides,
+})
+
+const inventory = [
+  row(d(10)), row(d(11)), row(d(12), { price: 69 }), row(d(13)),
+  row(d(14), { is_available: false, status: 'closed' }),
+  row(d(15), { is_available: false, status: 'fully_booked', booked_rooms: 3 }),
+  row(d(16)),
+]
+
+function Harness({ onRange, ...props }: Partial<React.ComponentProps<typeof AvailabilityCalendar>> & {
+  onRange?: (checkIn: string | null, checkOut: string | null) => void
+}) {
+  const [range, setRange] = useState<{ checkIn: string | null; checkOut: string | null }>({ checkIn: null, checkOut: null })
+  return (
+    <AvailabilityCalendar
+      inventory={inventory}
+      checkIn={range.checkIn}
+      checkOut={range.checkOut}
+      onRangeChange={(checkIn, checkOut) => {
+        setRange({ checkIn, checkOut })
+        onRange?.(checkIn, checkOut)
+      }}
+      {...props}
+    />
+  )
+}
+
+const cell = (container: HTMLElement, date: string) =>
+  container.querySelector(`.availability-calendar-day[data-date="${date}"]`) as HTMLElement
 
 describe('AvailabilityCalendar', () => {
-  const mockInventory: DateInventory[] = [
-    {
-      id: 1,
-      rate_plan_id: 1,
-      date: '2024-01-15',
-      available_rooms: 3,
-      booked_rooms: 1,
-      price: 120,
-      currency: 'EUR',
-      is_available: true,
-      minimum_stay: 1,
-      maximum_stay: 30,
-    },
-    {
-      id: 2,
-      rate_plan_id: 1,
-      date: '2024-01-16',
-      available_rooms: 2,
-      booked_rooms: 2,
-      price: 125,
-      currency: 'EUR',
-      is_available: true,
-      minimum_stay: 1,
-      maximum_stay: 30,
-    },
-    {
-      id: 3,
-      rate_plan_id: 1,
-      date: '2024-01-17',
-      available_rooms: 1,
-      booked_rooms: 2,
-      price: 130,
-      currency: 'EUR',
-      is_available: false,
-      minimum_stay: 1,
-      maximum_stay: 30,
-    },
-  ]
-
   it('renders empty state when no inventory provided', () => {
-    render(<AvailabilityCalendar inventory={[]} />)
-    
+    render(<AvailabilityCalendar inventory={[]} checkIn={null} checkOut={null} onRangeChange={vi.fn()} />)
     expect(screen.getByText('No availability data available')).toBeInTheDocument()
   })
 
-  it('renders calendar header with month navigation', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
+  it('opens on the month of the first available night and shows each night\'s price', () => {
+    const { container } = render(<Harness />)
+    expect(screen.getByRole('heading', { name: 'March 2030' })).toBeInTheDocument()
+    expect(cell(container, d(10))).toHaveTextContent('€60')
+    expect(cell(container, d(12))).toHaveTextContent('€69')
+  })
+
+  it('renders month navigation, weekdays and the legend', () => {
+    render(<Harness />)
     expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /next month/i })).toBeInTheDocument()
-  })
-
-  it('renders weekday headers', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    expect(screen.getByText('Sun')).toBeInTheDocument()
-    expect(screen.getByText('Mon')).toBeInTheDocument()
-    expect(screen.getByText('Tue')).toBeInTheDocument()
-    expect(screen.getByText('Wed')).toBeInTheDocument()
-    expect(screen.getByText('Thu')).toBeInTheDocument()
-    expect(screen.getByText('Fri')).toBeInTheDocument()
-    expect(screen.getByText('Sat')).toBeInTheDocument()
-  })
-
-  it('renders calendar days with inventory data', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    // Calendar renders based on current date, verify basic structure
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
-  })
-
-  it('renders availability legend', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
+    for (const weekday of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+      expect(screen.getByText(weekday)).toBeInTheDocument()
+    }
     expect(screen.getByText('Available')).toBeInTheDocument()
-    expect(screen.getByText('Limited')).toBeInTheDocument()
     expect(screen.getByText('Fully Booked')).toBeInTheDocument()
   })
 
-  it('calls onDateSelect when available date is clicked', () => {
-    const onDateSelect = vi.fn()
-    render(<AvailabilityCalendar inventory={mockInventory} onDateSelect={onDateSelect} />)
-    
-    // Calendar interaction is complex; verify callback prop is accepted
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
+  it('selects check-in then check-out and highlights the range', () => {
+    const onRange = vi.fn()
+    const { container } = render(<Harness onRange={onRange} />)
+
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(13)))
+
+    expect(onRange).toHaveBeenLastCalledWith(d(10), d(13))
+    expect(cell(container, d(10))).toHaveClass('availability-calendar-day--range-start')
+    expect(cell(container, d(11))).toHaveClass('availability-calendar-day--in-range')
+    expect(cell(container, d(13))).toHaveClass('availability-calendar-day--range-end')
   })
 
-  it('does not call onDateSelect when unavailable date is clicked', () => {
-    const onDateSelect = vi.fn()
-    render(<AvailabilityCalendar inventory={mockInventory} onDateSelect={onDateSelect} />)
-    
-    // Verify calendar renders with disabled states
-    const days = screen.getAllByRole('button')
-    expect(days.length).toBeGreaterThan(0)
+  it('a closed night can be the check-out day (no night is spent on it)', () => {
+    const onRange = vi.fn()
+    const { container } = render(<Harness onRange={onRange} />)
+    fireEvent.click(cell(container, d(12)))
+    fireEvent.click(cell(container, d(14)))
+    expect(onRange).toHaveBeenLastCalledWith(d(12), d(14))
   })
 
-  it('applies selected styling to selected date', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} selectedDate="2024-01-15" />)
-    
-    // Calendar renders based on current date, not the selected date
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
+  it('blocks a range with a closed night and names the date', () => {
+    const onRange = vi.fn()
+    const { container } = render(<Harness onRange={onRange} />)
+    fireEvent.click(cell(container, d(13)))
+    fireEvent.click(cell(container, d(16)))
+
+    expect(screen.getByRole('alert')).toHaveTextContent(`${label(d(14))} is not available`)
+    expect(onRange).toHaveBeenLastCalledWith(d(13), null)
   })
 
-  it('disables unavailable dates', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    // Verify some dates are disabled
-    const days = screen.getAllByRole('button')
-    const disabledDays = days.filter(day => day.getAttribute('aria-disabled') === 'true')
-    expect(disabledDays.length).toBeGreaterThan(0)
+  it('names a sold-out night', () => {
+    const { container } = render(<Harness inventory={[row(d(10)), row(d(11), { is_available: false, status: 'fully_booked', booked_rooms: 3 }), row(d(12))]} />)
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(13)))
+    expect(screen.getByRole('alert')).toHaveTextContent(`${label(d(11))} is sold out`)
   })
 
-  it('formats price with different currency', () => {
-    const usdInventory: DateInventory[] = [
-      { ...mockInventory[0], currency: 'USD', price: 150 }
-    ]
-    render(<AvailabilityCalendar inventory={usdInventory} />)
-    
-    // Calendar renders dates but pricing may not be visible for all dates
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
+  it('names a night with no availability data', () => {
+    const { container } = render(<Harness inventory={[row(d(10)), row(d(12))]} />)
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(13)))
+    expect(screen.getByRole('alert')).toHaveTextContent(`${label(d(11))} is not available`)
   })
 
-  it('handles month navigation', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    const prevButton = screen.getByRole('button', { name: /previous month/i })
-    const nextButton = screen.getByRole('button', { name: /next month/i })
-    
-    expect(prevButton).toBeInTheDocument()
-    expect(nextButton).toBeInTheDocument()
+  it('respects the rate plan minimum and maximum stay', () => {
+    const onRange = vi.fn()
+    const { container } = render(<Harness onRange={onRange} minNights={2} maxNights={3} />)
+
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(11)))
+    expect(screen.getByRole('alert')).toHaveTextContent('Minimum stay is 2 nights')
+
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(14)))
+    expect(screen.getByRole('alert')).toHaveTextContent('Maximum stay is 3 nights')
+    expect(onRange).not.toHaveBeenCalledWith(d(10), d(14))
   })
 
-  it('renders day numbers correctly', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    expect(screen.getByText('15')).toBeInTheDocument()
-    expect(screen.getByText('16')).toBeInTheDocument()
-    expect(screen.getByText('17')).toBeInTheDocument()
+  it('respects a night\'s own minimum stay', () => {
+    const { container } = render(<Harness inventory={[row(d(10), { min_stay: 3 }), row(d(11)), row(d(12))]} />)
+    fireEvent.click(cell(container, d(10)))
+    fireEvent.click(cell(container, d(12)))
+    expect(screen.getByRole('alert')).toHaveTextContent(`A stay including ${label(d(10))} must be at least 3 nights`)
   })
 
-  it('handles keyboard navigation for available dates', () => {
-    const onDateSelect = vi.fn()
-    render(<AvailabilityCalendar inventory={mockInventory} onDateSelect={onDateSelect} />)
-    
-    // Calendar interaction is complex; just verify calendar renders
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
-  })
-
-  it('has proper accessibility attributes for calendar days', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    const days = screen.getAllByRole('button')
-    expect(days.length).toBeGreaterThan(0)
-  })
-
-  it('renders inventory notes when provided', () => {
-    const inventoryWithNotes: DateInventory[] = [
-      { ...mockInventory[0], notes: 'Check-in available from 3:00 PM' }
-    ]
-    render(<AvailabilityCalendar inventory={inventoryWithNotes} />)
-    
-    // Notes might be displayed in a tooltip or additional info
-    expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument()
-  })
-
-  it('handles empty calendar days correctly', () => {
-    render(<AvailabilityCalendar inventory={mockInventory} />)
-    
-    // Empty days should be rendered but not interactive
-    const emptyDays = screen.queryAllByText('')
-    expect(emptyDays.length).toBeGreaterThanOrEqual(0)
+  it('closed and sold-out days cannot start a stay', () => {
+    const { container } = render(<Harness />)
+    expect(cell(container, d(14))).toHaveAttribute('aria-disabled', 'true')
+    expect(cell(container, d(15))).toHaveAttribute('aria-disabled', 'true')
+    expect(cell(container, d(10))).toHaveAttribute('aria-disabled', 'false')
   })
 })

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { DateRangeCalendar } from './DateRangeCalendar'
 
 // Search form state interface
 export interface SearchFormData {
@@ -59,6 +60,14 @@ export function SearchForm() {
   const [formData, setFormData] = useState<SearchFormData>(DEFAULT_VALUES)
   const [errors, setErrors] = useState<SearchFormErrors>({})
   const [touched, setTouched] = useState<Set<keyof SearchFormData>>(new Set())
+  const [calendarOpen, setCalendarOpen] = useState(false)
+
+  // Range calendar: first click is the check-in, second the check-out
+  const handleRangeChange = (checkIn: string | null, checkOut: string | null) => {
+    setFormData(prev => ({ ...prev, checkIn: checkIn ?? '', checkOut: checkOut ?? '' }))
+    setErrors(prev => ({ ...prev, checkIn: undefined, checkOut: undefined }))
+    if (checkIn && checkOut) setCalendarOpen(false)
+  }
 
   // Initialize form from URL parameters on mount
   useEffect(() => {
@@ -281,6 +290,9 @@ export function SearchForm() {
             className={`search-form-input ${errors.checkIn && touched.has('checkIn') ? 'search-form-input-error' : ''}`}
             value={formData.checkIn}
             onChange={handleCheckInChange}
+            onClick={() => setCalendarOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={calendarOpen}
             onBlur={() => handleBlur('checkIn')}
             aria-invalid={errors.checkIn && touched.has('checkIn') ? 'true' : 'false'}
             aria-describedby={errors.checkIn && touched.has('checkIn') ? 'checkIn-error' : undefined}
@@ -303,6 +315,9 @@ export function SearchForm() {
             className={`search-form-input ${errors.checkOut && touched.has('checkOut') ? 'search-form-input-error' : ''}`}
             value={formData.checkOut}
             onChange={handleCheckOutChange}
+            onClick={() => setCalendarOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={calendarOpen}
             onBlur={() => handleBlur('checkOut')}
             aria-invalid={errors.checkOut && touched.has('checkOut') ? 'true' : 'false'}
             aria-describedby={errors.checkOut && touched.has('checkOut') ? 'checkOut-error' : undefined}
@@ -313,6 +328,29 @@ export function SearchForm() {
             </span>
           )}
         </div>
+
+        {calendarOpen && (
+          <div className="search-form-calendar" role="dialog" aria-label="Choose your dates">
+            <div className="search-form-calendar-header">
+              <span className="search-form-calendar-hint">
+                {!formData.checkIn || formData.checkOut ? 'Choose your check-in date' : 'Now choose your check-out date'}
+              </span>
+              <button
+                type="button"
+                className="btn btn-secondary btn-small"
+                onClick={() => setCalendarOpen(false)}
+                aria-label="Close calendar"
+              >
+                ✕
+              </button>
+            </div>
+            <DateRangeCalendar
+              checkIn={formData.checkIn || null}
+              checkOut={formData.checkOut || null}
+              onChange={handleRangeChange}
+            />
+          </div>
+        )}
 
         {/* Guests */}
         <div className="search-form-field">

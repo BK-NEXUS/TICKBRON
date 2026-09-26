@@ -1,98 +1,75 @@
-import { useState } from 'react'
 import { DateInventory } from '../adapters/propertyAdapter'
+import { DateRangeCalendar } from './DateRangeCalendar'
+import { formatDay, nightsBetween, toLocalDate } from '../utils/dates'
 
 interface AvailabilityCalendarProps {
   inventory: DateInventory[]
   currency?: string
-  onDateSelect?: (date: string) => void
-  selectedDate?: string
+  checkIn: string | null
+  checkOut: string | null
+  onRangeChange: (checkIn: string | null, checkOut: string | null) => void
+  /** Rate plan stay rules */
+  minNights?: number | null
+  maxNights?: number | null
+}
+
+type Status = 'available' | 'limited' | 'fully-booked' | 'unavailable'
+
+function statusOf(row?: DateInventory): Status {
+  if (!row || row.status === 'closed') return 'unavailable'
+  if (!row.is_available || row.available_rooms <= row.booked_rooms) return 'fully-booked'
+  if (row.available_rooms - row.booked_rooms <= 1) return 'limited'
+  return 'available'
+}
+
+const STATUS_COLOR: Record<Status, string> = {
+  available: 'var(--color-success)',
+  limited: 'var(--color-warning)',
+  'fully-booked': 'var(--color-error)',
+  unavailable: 'var(--color-error)',
 }
 
 /**
- * AvailabilityCalendar component for displaying date-based availability
- * Shows a calendar view with availability status, pricing, and booking constraints
+ * Availability and price per night for one rate plan, with check-in/check-out
+ * selection. A range is refused, naming the date, when a night is closed or
+ * sold out or the stay breaks a minimum/maximum stay rule. The total itself
+ * comes from the backend quote, not from here.
  */
-export function AvailabilityCalendar({ 
-  inventory, 
+export function AvailabilityCalendar({
+  inventory,
   currency = 'USD',
-  onDateSelect, 
-  selectedDate 
+  checkIn,
+  checkOut,
+  onRangeChange,
+  minNights,
+  maxNights,
 }: AvailabilityCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-
-  const formatPrice = (price: number, currencyCode: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+  const byDate = new Map(inventory.map(row => [row.date, row]))
+  const formatPrice = (price: number, code: string) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: code || currency, minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(price)
-  }
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startDayOfWeek = firstDay.getDay()
-
-    const days = []
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(null)
+  const validateRange = (start: string, end: string): string | null => {
+    const nights = nightsBetween(start, end)
+    for (const night of nights) {
+      const row = byDate.get(night)
+      const status = statusOf(row)
+      if (status === 'unavailable') return `${formatDay(night)} is not available. Choose other dates.`
+      if (status === 'fully-booked') return `${formatDay(night)} is sold out. Choose other dates.`
     }
-
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      const inventoryItem = inventory.find(item => item.date === dateStr)
-      days.push({
-        date: dateStr,
-        day,
-        inventory: inventoryItem,
-      })
-    }
-
-    return days
-  }
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newDate = new Date(prev)
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1)
-      } else {
-        newDate.setMonth(prev.getMonth() + 1)
+    if (minNights && nights.length < minNights) return `Minimum stay is ${minNights} nights.`
+    if (maxNights && nights.length > maxNights) return `Maximum stay is ${maxNights} nights.`
+    for (const night of nights) {
+      const row = byDate.get(night)
+      if (row?.min_stay && nights.length < row.min_stay) {
+        return `A stay including ${formatDay(night)} must be at least ${row.min_stay} nights.`
       }
-      return newDate
-    })
-  }
-
-  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const days = getDaysInMonth(currentMonth)
-
-  const getAvailabilityStatus = (inventoryItem?: DateInventory) => {
-    if (!inventoryItem) return 'unavailable'
-    if (!inventoryItem.is_available) return 'unavailable'
-    if (inventoryItem.available_rooms <= inventoryItem.booked_rooms) return 'fully-booked'
-    if (inventoryItem.available_rooms - inventoryItem.booked_rooms <= 1) return 'limited'
-    return 'available'
-  }
-
-  const getAvailabilityColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'var(--color-success)'
-      case 'limited':
-        return 'var(--color-warning)'
-      case 'fully-booked':
-      case 'unavailable':
-        return 'var(--color-error)'
-      default:
-        return 'var(--color-border)'
+      if (row?.max_stay && nights.length > row.max_stay) {
+        return `A stay including ${formatDay(night)} can be at most ${row.max_stay} nights.`
+      }
     }
+    return null
   }
 
   if (inventory.length === 0) {
@@ -103,104 +80,52 @@ export function AvailabilityCalendar({
     )
   }
 
+  const today = toLocalDate(new Date())
+  const firstOpen = inventory
+    .filter(row => row.date >= today && statusOf(row) !== 'unavailable' && statusOf(row) !== 'fully-booked')
+    .map(row => row.date)
+    .sort()[0]
+
   return (
-    <div className="availability-calendar">
-      <div className="availability-calendar-header">
-        <button 
-          className="availability-calendar-nav availability-calendar-nav--prev"
-          onClick={() => navigateMonth('prev')}
-          aria-label="Previous month"
-        >
-          ‹
-        </button>
-        <h3 className="availability-calendar-title">{monthName}</h3>
-        <button 
-          className="availability-calendar-nav availability-calendar-nav--next"
-          onClick={() => navigateMonth('next')}
-          aria-label="Next month"
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="availability-calendar-weekdays">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="availability-calendar-weekday">
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="availability-calendar-days">
-        {days.map((dayData, index) => {
-          if (!dayData) {
-            return <div key={`empty-${index}`} className="availability-calendar-day availability-calendar-day--empty" />
-          }
-
-          const { date, day, inventory: inventoryItem } = dayData
-          const status = getAvailabilityStatus(inventoryItem)
-          const isSelected = selectedDate === date
-
-          return (
-            <div
-              key={date}
-              data-date={date}
-              className={`availability-calendar-day availability-calendar-day--${status} ${
-                isSelected ? 'availability-calendar-day--selected' : ''
-              }`}
-              onClick={() => inventoryItem?.is_available && onDateSelect?.(date)}
-              role="button"
-              tabIndex={inventoryItem?.is_available ? 0 : -1}
-              aria-pressed={isSelected}
-              aria-disabled={!inventoryItem?.is_available}
-              onKeyDown={(e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && inventoryItem?.is_available) {
-                  e.preventDefault()
-                  onDateSelect?.(date)
-                }
-              }}
-            >
-              <div className="availability-calendar-day-number">{day}</div>
-              {inventoryItem && (
-                <>
-                  <div className="availability-calendar-day-price">
-                    {formatPrice(inventoryItem.price, inventoryItem.currency)}
-                  </div>
-                  <div 
-                    className="availability-calendar-day-indicator"
-                    style={{ backgroundColor: getAvailabilityColor(status) }}
-                    aria-label={`Availability: ${status}`}
-                  />
-                </>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
+    <DateRangeCalendar
+      checkIn={checkIn}
+      checkOut={checkOut}
+      onChange={onRangeChange}
+      validateRange={validateRange}
+      initialMonth={(checkIn ?? firstOpen ?? inventory[0].date).slice(0, 7)}
+      describeDay={(date) => {
+        const row = byDate.get(date)
+        const status = statusOf(row)
+        return {
+          selectable: status === 'available' || status === 'limited',
+          status,
+          content: row && (
+            <>
+              <div className="availability-calendar-day-price">{formatPrice(row.price, row.currency)}</div>
+              <div
+                className="availability-calendar-day-indicator"
+                style={{ backgroundColor: STATUS_COLOR[status] }}
+                aria-hidden="true"
+              />
+            </>
+          ),
+        }
+      }}
+    >
       <div className="availability-calendar-legend">
         <div className="availability-calendar-legend-item">
-          <div 
-            className="availability-calendar-legend-color"
-            style={{ backgroundColor: 'var(--color-success)' }}
-          />
+          <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR.available }} />
           <span>Available</span>
         </div>
         <div className="availability-calendar-legend-item">
-          <div 
-            className="availability-calendar-legend-color"
-            style={{ backgroundColor: 'var(--color-warning)' }}
-          />
+          <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR.limited }} />
           <span>Limited</span>
         </div>
         <div className="availability-calendar-legend-item">
-          <div 
-            className="availability-calendar-legend-color"
-            style={{ backgroundColor: 'var(--color-error)' }}
-          />
+          <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR['fully-booked'] }} />
           <span>Fully Booked</span>
         </div>
       </div>
-    </div>
+    </DateRangeCalendar>
   )
 }

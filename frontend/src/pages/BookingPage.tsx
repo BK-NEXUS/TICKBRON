@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingAdapter, BookingCreateRequest, Booking } from '../adapters/bookingAdapter'
-import { propertyAdapter, Property, RoomType, RatePlan } from '../adapters/propertyAdapter'
+import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../adapters/propertyAdapter'
 import { paymentAdapter, PaymentProvider, PaymentTransaction, PaymentStatus } from '../adapters/paymentAdapter'
 import { useAuth } from '../contexts/AuthContext'
 import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
@@ -65,22 +65,16 @@ export function BookingPage() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending')
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
-  // Price of each night from GET /properties/{id}/availability/ (null until loaded or if it fails)
-  const [nightlyPrices, setNightlyPrices] = useState<number[] | null>(null)
-
-  /** Same rule as the backend: sum of each night's price (or the rate plan base price) x rooms */
-  const calculateTotalPrice = (): number => {
-    if (!bookingState) return 0
-    const rooms = Math.max(1, guestDetails.number_of_rooms || 1)
-    if (nightlyPrices) {
-      return nightlyPrices.reduce((sum, price) => sum + price, 0) * rooms
-    }
-    return calculateNumberOfNights() * bookingState.pricePerNight * rooms
-  }
+  // GET /properties/{id}/quote/: priced by the same backend code that charges the booking,
+  // so the total shown here is the amount paid. There is no local fallback price.
+  const [quote, setQuote] = useState<StayQuote | null>(null)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const quoteRequestId = useRef(0)
+  const roomsForQuote = Math.max(1, guestDetails.number_of_rooms || 1)
 
   const calculateNumberOfNights = (): number => {
     if (!bookingState) return 0
-    
+
     const checkIn = new Date(bookingState.checkIn)
     const checkOut = new Date(bookingState.checkOut)
     return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
@@ -110,39 +104,34 @@ export function BookingPage() {
     }
   }, [location.state, user])
 
-  /** Price per night for [checkIn, checkOut); null if availability cannot be loaded */
-  const loadNightlyPrices = async (state: BookingState, basePrice: number): Promise<number[] | null> => {
-    const nights: string[] = []
-    const day = new Date(`${state.checkIn}T00:00:00`)
-    const checkOut = new Date(`${state.checkOut}T00:00:00`)
-    while (day < checkOut) {
-      nights.push(`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`)
-      day.setDate(day.getDate() + 1)
+  // Price the stay (again when the number of rooms changes)
+  useEffect(() => {
+    if (!bookingState) return
+    const requestId = ++quoteRequestId.current
+    setQuote(null)
+    setQuoteError(null)
+    const loadQuote = async () => {
+      let response: Awaited<ReturnType<typeof propertyAdapter.getQuote>> | undefined
+      try {
+        response = await propertyAdapter.getQuote(bookingState.propertyId, {
+          roomTypeId: bookingState.roomTypeId,
+          ratePlanId: bookingState.ratePlanId,
+          checkIn: bookingState.checkIn,
+          checkOut: bookingState.checkOut,
+          rooms: roomsForQuote,
+        })
+      } catch {
+        response = undefined
+      }
+      if (requestId !== quoteRequestId.current) return
+      if (response?.data) {
+        setQuote(response.data)
+      } else {
+        setQuoteError(response?.error || 'Could not price this stay. Please go back and choose other dates.')
+      }
     }
-    if (nights.length === 0) return null
-
-    let response: Awaited<ReturnType<typeof propertyAdapter.getAvailability>> | null = null
-    try {
-      response = await propertyAdapter.getAvailability(state.propertyId, {
-        check_in: nights[0],
-        check_out: nights[nights.length - 1],
-      })
-    } catch {
-      return null
-    }
-    const inventory = response?.data?.room_types
-      .find(room => room.id === state.roomTypeId)
-      ?.rate_plans.find(plan => plan.id === state.ratePlanId)
-      ?.date_inventory
-    if (!inventory) return null
-
-    const priceByDate = new Map(inventory.map(row => [row.date, row.price]))
-    if (nights.some(night => !priceByDate.has(night))) return null
-    return nights.map(night => {
-      const price = priceByDate.get(night)
-      return price === null || price === undefined ? basePrice : Number(price)
-    })
-  }
+    loadQuote()
+  }, [bookingState, roomsForQuote])
 
   // Load property, room type, and rate plan data
   useEffect(() => {
@@ -173,7 +162,6 @@ export function BookingPage() {
         
         setRoomType(foundRoomType)
         setRatePlan(foundRatePlan)
-        setNightlyPrices(await loadNightlyPrices(bookingState, Number(foundRatePlan.base_price)))
         setLoading(false)
       } catch (err) {
         setError('Failed to load booking information')
@@ -184,21 +172,26 @@ export function BookingPage() {
     loadData()
   }, [bookingState])
 
-  const totalPrice = calculateTotalPrice()
+  // The booking's own total once it exists (the amount charged), else the backend quote;
+  // null while neither is known or when the stay cannot be booked
+  const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
+  const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
+  const formatMoney = (value: number) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2,
+  }).format(value)
 
   /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
-  const priceBreakdownLabel = (basePrice: number): string => {
-    const nights = calculateNumberOfNights()
-    const prices = nightlyPrices ?? [basePrice]
-    const uniform = prices.every(price => price === prices[0])
+  const priceBreakdownLabel = (): string => {
+    const nights = quote?.number_of_nights ?? calculateNumberOfNights()
+    const prices = (quote?.nights ?? []).map(night => Number(night.price))
+    const uniform = prices.length > 0 && prices.every(price => price === prices[0])
     const format = (value: number) => new Intl.NumberFormat('en-US', {
       style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(value)
-    const rooms = Math.max(1, guestDetails.number_of_rooms || 1)
-    const nightsText = uniform ? `${format(prices[0])} × ${nights} nights` : `${nights} nights`
-    return rooms > 1 ? `${nightsText} × ${rooms} rooms` : nightsText
+    const nightWord = nights === 1 ? 'night' : 'nights'
+    const nightsText = uniform ? `${format(prices[0])} × ${nights} ${nightWord}` : `${nights} ${nightWord}`
+    return roomsForQuote > 1 ? `${nightsText} × ${roomsForQuote} rooms` : nightsText
   }
-  const currency = bookingState?.currency || 'USD'
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -503,14 +496,7 @@ export function BookingPage() {
               </div>
               <div className="booking-confirmation-item">
                 <span className="booking-confirmation-label">Total Price:</span>
-                <span className="booking-confirmation-value">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: booking.currency,
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(booking.total_price)}
-                </span>
+                <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
               </div>
             </div>
 
@@ -597,33 +583,21 @@ export function BookingPage() {
                     <div className="booking-summary-rate-plan">{ratePlan.name}</div>
                   </div>
 
-                  <div className="booking-summary-breakdown">
-                    <div className="booking-summary-item">
-                      <span className="booking-summary-label">
-                        {priceBreakdownLabel(Number(ratePlan.base_price))}
-                      </span>
-                      <span className="booking-summary-value">
-                        {new Intl.NumberFormat('en-US', {
-                          style: 'currency',
-                          currency,
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(totalPrice)}
-                      </span>
-                    </div>
-                  </div>
+                  {totalPrice !== null && (
+                    <>
+                      <div className="booking-summary-breakdown">
+                        <div className="booking-summary-item">
+                          <span className="booking-summary-label">{priceBreakdownLabel()}</span>
+                          <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
+                        </div>
+                      </div>
 
-                  <div className="booking-summary-total">
-                    <span className="booking-summary-total-label">Total</span>
-                    <span className="booking-summary-total-value">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency,
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(totalPrice)}
-                    </span>
-                  </div>
+                      <div className="booking-summary-total">
+                        <span className="booking-summary-total-label">Total</span>
+                        <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
@@ -897,7 +871,7 @@ export function BookingPage() {
               <button 
                 type="submit" 
                 className="btn btn-primary btn-large booking-form-submit"
-                disabled={submitting}
+                disabled={submitting || !quote}
                 aria-busy={submitting}
               >
                 {submitting ? 'Processing...' : 'Continue to Payment'}
@@ -950,14 +924,7 @@ export function BookingPage() {
                 </div>
                 <div className="booking-confirmation-item">
                   <span className="booking-confirmation-label">Total Price:</span>
-                  <span className="booking-confirmation-value">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: booking.currency,
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(booking.total_price)}
-                  </span>
+                  <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
                 </div>
                 {booking.special_requests && (
                   <div className="booking-confirmation-item">
@@ -1014,47 +981,36 @@ export function BookingPage() {
                   <div className="booking-summary-rate-plan">{ratePlan.name}</div>
                 </div>
 
-                <div className="booking-summary-breakdown">
-                  <div className="booking-summary-item">
-                    <span className="booking-summary-label">
-                      {priceBreakdownLabel(Number(ratePlan.base_price))}
-                    </span>
-                    <span className="booking-summary-value">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency,
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(totalPrice)}
-                    </span>
-                  </div>
-                  
-                  {ratePlan.deposit_required && ratePlan.deposit_percentage && (
-                    <div className="booking-summary-item">
-                      <span className="booking-summary-label">Deposit ({ratePlan.deposit_percentage}%)</span>
-                      <span className="booking-summary-value">
-                        {new Intl.NumberFormat('en-US', {
-                          style: 'currency',
-                          currency,
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(totalPrice * (ratePlan.deposit_percentage / 100))}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {totalPrice === null ? (
+                  quoteError ? (
+                    <div className="booking-summary-error" role="alert">{quoteError}</div>
+                  ) : (
+                    <div className="booking-summary-loading" role="status">Calculating price...</div>
+                  )
+                ) : (
+                  <>
+                    <div className="booking-summary-breakdown">
+                      <div className="booking-summary-item">
+                        <span className="booking-summary-label">{priceBreakdownLabel()}</span>
+                        <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
+                      </div>
 
-                <div className="booking-summary-total">
-                  <span className="booking-summary-total-label">Total</span>
-                  <span className="booking-summary-total-value">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency,
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(totalPrice)}
-                  </span>
-                </div>
+                      {ratePlan.deposit_required && ratePlan.deposit_percentage && (
+                        <div className="booking-summary-item">
+                          <span className="booking-summary-label">Deposit ({ratePlan.deposit_percentage}%)</span>
+                          <span className="booking-summary-value">
+                            {formatMoney(totalPrice * (ratePlan.deposit_percentage / 100))}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="booking-summary-total">
+                      <span className="booking-summary-total-label">Total</span>
+                      <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
