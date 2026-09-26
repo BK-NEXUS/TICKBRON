@@ -1999,8 +1999,13 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
     - `IsSuperAdminOrStaff`: `/admin-panel/` (index), `users/`, `customers/`, `customers/{id}/`, `customers/{id}/notes/`, `customers/{id}/notes/{note_id}/`, `statistics/registrations/`, `statistics/top-bookers/`, `properties/`, `properties/{id}/`, `properties/{id}/approve/`, `properties/{id}/suspend/`, `amenities/categories/[{id}/]`, `amenities/[{id}/]`, `payments/transactions/`, `bookings/lookup/`
     - `IsSuperAdmin`: `/admin-panel/users/create-hotel-owner/`
     - `IsHotelOwner` (querysets scoped to `owner=request.user`): `/partner/` (index), `properties/[{id}/]`, `properties/{id}/photos/`, `rooms/[{id}/]`, `rates/[{id}/]`, `inventory/[{id}/]`, `bookings/`
-- IN PROGRESS: 3 phone number input limits and server-side validation
+- DONE: 3 phone number input limits and server-side validation (77e715b)
   - Backend (`phonenumbers` added to requirements): register, `PATCH /auth/me/update/`, OTP request/verify, `POST /admin-panel/users/create-hotel-owner/` and `POST /bookings/` (`guest_phone`) accept only a valid international number and store it as E.164 (`"+998 90 123 45 67"` -> `"+998901234567"`). Invalid -> 400 `"Enter a valid phone number in international format, e.g. +998 90 123 45 67."` on the phone field. Blank still clears the profile number / falls back to the profile number on bookings. Numbers already stored are not rewritten
   - OTP throttles key on the normalized number, so other spellings of one number share the rate limit
   - create-hotel-owner now also checks the number is not taken (was a 500 from the unique constraint)
   - Frontend: `components/PhoneInput.tsx` (+ `utils/phone.ts`) on register, OTP login, profile and booking forms. Shows `+998 90 123 45 67`, sends E.164, stops at 9 national digits, forms block submit on an incomplete number. Country table `PHONE_COUNTRIES` has only `UZ`; a country selector sets the `country` prop later
+- E2E after phase 1 (`npm run test:e2e`, fresh `seed_demo`): 5 passed (B, C, D, F, G), 3 failed on soft checks outside this phase:
+  - A: amount paid $69 vs $60 total shown before payment (booking price mismatch is back or date-dependent; not investigated)
+  - E: partner property cards show the city, not the hotel name
+  - H: language switch (i18n, BUG 8, not in scope)
+  - Flow G (access control) passes every step, including the soft ones (customer profile and partner panel show Access Denied)
