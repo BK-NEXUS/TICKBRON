@@ -5,6 +5,7 @@ import logging
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from users.serializers import validate_phone_number_format
 from .models import Booking, BookingItem
 
 logger = logging.getLogger('tickbron')
@@ -70,7 +71,13 @@ class BookingCreateSerializer(serializers.Serializer):
         required=False,
         allow_empty=True
     )
-    
+
+    def validate_guest_phone(self, value):
+        """Optional (the profile number is used when blank); stored as E.164."""
+        if not value.strip():
+            return ''
+        return validate_phone_number_format(value)
+
     def validate(self, data):
         """Validate booking creation parameters."""
         from properties.models import Property, RoomType, RatePlan

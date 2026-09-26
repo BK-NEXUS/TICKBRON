@@ -5,7 +5,15 @@ This module contains serializers for the User model to be used in API endpoints.
 """
 from rest_framework import serializers
 from users.models import User
-from users.validators import EmailFormatValidator
+from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
+
+
+def validate_phone_number_format(value):
+    """Return the E.164 form of the number or raise a 400 with one clear message."""
+    normalized = parse_phone_number(value)
+    if normalized is None:
+        raise serializers.ValidationError(PHONE_NUMBER_ERROR)
+    return normalized
 
 
 def validate_unique_phone_number(value, instance=None):
@@ -52,10 +60,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
-    
+    # Declared so the phone validation gives the only error (not the column's max_length)
+    phone_number = serializers.CharField()
+
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram', 
+        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
         extra_kwargs = {
             'full_name': {'required': True},
@@ -72,7 +82,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         """Validate phone number format and uniqueness."""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone number is required.")
-        return validate_unique_phone_number(value.strip())
+        return validate_unique_phone_number(validate_phone_number_format(value))
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -107,12 +117,12 @@ class RequestOTPSerializer(serializers.Serializer):
     Serializer for requesting OTP code.
     """
     phone_number = serializers.CharField()
-    
+
     def validate_phone_number(self, value):
         """Validate phone number format."""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone number is required.")
-        return value.strip()
+        return validate_phone_number_format(value)
 
 
 class VerifyOTPSerializer(serializers.Serializer):
@@ -126,8 +136,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         """Validate phone number format."""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone number is required.")
-        return value.strip()
-    
+        return validate_phone_number_format(value)
+
     def validate_otp_code(self, value):
         """Validate OTP code format."""
         if not value or not value.strip():
@@ -141,6 +151,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating user profile.
     """
+    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = User
         fields = ['full_name', 'first_name', 'last_name', 'phone_number', 
@@ -155,7 +167,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         value = (value or '').strip() or None
         if value is None:
             return None
-        return validate_unique_phone_number(value, instance=self.instance)
+        return validate_unique_phone_number(validate_phone_number_format(value), instance=self.instance)
     
     def update(self, instance, validated_data):
         # A changed number has not been verified by OTP yet

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
+import { PhoneInput } from '../components/PhoneInput'
+import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 
 type LoginMethod = 'password' | 'phone'
 
@@ -47,6 +49,10 @@ export function LoginPage() {
   const handleRequestOTP = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!isValidPhone(phoneNumber)) {
+      setError(phoneErrorMessage())
+      return
+    }
     setIsLoading(true)
 
     const otpResponse = await requestOTP(phoneNumber)
@@ -176,15 +182,13 @@ export function LoginPage() {
                 <label htmlFor="phone_number" className="auth-label">
                   Phone Number
                 </label>
-                <input
+                <PhoneInput
                   id="phone_number"
-                  type="tel"
                   className="auth-input"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={setPhoneNumber}
                   required
                   disabled={isLoading || otpRequested}
-                  autoComplete="tel"
                 />
               </div>
 

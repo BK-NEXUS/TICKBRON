@@ -16,6 +16,7 @@ from django.middleware.csrf import get_token
 from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 from users import lockout
+from users.validators import parse_phone_number
 from users.services import OTPService
 from common.request import get_client_ip
 
@@ -55,14 +56,16 @@ class PhoneNumberRateThrottle(AnonRateThrottle):
     """
     Base throttle keyed by the phone number in the request body.
 
-    The number is trimmed the same way the serializers trim it, so padding it
-    with whitespace does not produce a fresh throttle bucket.
+    The number is normalized the same way the serializers normalize it, so
+    another spelling of it ("+998 90 ...", extra whitespace) does not produce a
+    fresh throttle bucket.
     """
 
     def get_cache_key(self, request, view):
         phone_number = ''
         if hasattr(request.data, 'get'):
-            phone_number = str(request.data.get('phone_number') or '').strip()
+            raw = str(request.data.get('phone_number') or '').strip()
+            phone_number = parse_phone_number(raw) or raw
         if phone_number:
             return self.cache_format % {'scope': self.scope, 'ident': phone_number}
         return super().get_cache_key(request, view)

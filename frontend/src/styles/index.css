@@ -1651,6 +1651,26 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
+/* Phone field (PhoneInput): country flag inside the form's own input style */
+.phone-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.phone-input-country {
+  position: absolute;
+  left: var(--spacing-md);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.phone-input .phone-input-field {
+  width: 100%;
+  padding-left: calc(var(--spacing-md) + 1.75em);
+}
+
 /* Access denied (route guards for /admin and /partner) */
 .access-denied-page {
   display: flex;

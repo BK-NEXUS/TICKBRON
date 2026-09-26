@@ -8,6 +8,8 @@ import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
 import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
+import { PhoneInput } from '../components/PhoneInput'
+import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 
 interface BookingState {
   propertyId: number
@@ -207,6 +209,10 @@ export function BookingPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    setField(name, value)
+  }
+
+  const setField = (name: string, value: string) => {
     setGuestDetails(prev => ({ ...prev, [name]: value }))
     // Clear validation error for this field
     if (validationErrors[name]) {
@@ -263,8 +269,8 @@ export function BookingPage() {
       errors.email = 'Please enter a valid email address'
     }
 
-    if (guestDetails.phone_number && guestDetails.phone_number.trim().length < 10) {
-      errors.phone_number = 'Phone number must be at least 10 characters'
+    if (guestDetails.phone_number && !isValidPhone(guestDetails.phone_number)) {
+      errors.phone_number = phoneErrorMessage()
     }
 
     if (guestDetails.number_of_rooms < 1) {
@@ -785,16 +791,14 @@ export function BookingPage() {
                   <label htmlFor="phone_number" className="booking-form-label">
                     Phone Number
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     id="phone_number"
                     name="phone_number"
-                    value={guestDetails.phone_number}
-                    onChange={handleInputChange}
+                    value={guestDetails.phone_number ?? ''}
+                    onChange={(value) => setField('phone_number', value)}
                     className={`booking-form-input ${validationErrors.phone_number ? 'booking-form-input--error' : ''}`}
                     aria-invalid={!!validationErrors.phone_number}
                     aria-describedby={validationErrors.phone_number ? 'phone_number-error' : undefined}
-                    autoComplete="tel"
                   />
                   {validationErrors.phone_number && (
                     <span id="phone_number-error" className="booking-form-error" role="alert">

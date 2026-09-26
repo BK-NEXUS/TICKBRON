@@ -17,7 +17,7 @@ class TestOTPService(TestCase):
     def setUp(self):
         """Set up test data."""
         self.otp_service = OTPService()
-        self.phone_number = '+1234567890'
+        self.phone_number = '+998901234567'
     
     def test_send_otp_existing_user(self):
         """Test that sending OTP for existing user works."""
@@ -161,7 +161,7 @@ class TestOTPViews(TestCase):
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
-        self.phone_number = '+1234567890'
+        self.phone_number = '+998901234567'
     
     def test_request_otp_endpoint(self):
         """Test request OTP endpoint."""

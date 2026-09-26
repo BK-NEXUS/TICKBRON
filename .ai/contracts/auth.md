@@ -52,6 +52,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 - PATCH `/api/v1/auth/me/update/` - Update user profile
   - Required authentication
   - Optional fields: `full_name`, `first_name`, `last_name`, `phone_number`, `whatsapp`, `telegram`, `preferred_contact_method`
+  - `phone_number` (here, on register, OTP request/verify and create-hotel-owner; added 2026-09-26): a valid international number, separators allowed, stored and returned as E.164 (`+998901234567`). Otherwise 400 with `phone_number: ["Enter a valid phone number in international format, e.g. +998 90 123 45 67."]`
   - Partial updates supported
 
 ## Configuration

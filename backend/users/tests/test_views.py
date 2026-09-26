@@ -20,7 +20,7 @@ class TestAuthViews(TestCase):
         self.user_data = {
             'email': 'test@example.com',
             'full_name': 'Test User',
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
@@ -34,7 +34,7 @@ class TestAuthViews(TestCase):
         assert 'email' in response.data
         assert response.data['email'] == 'test@example.com'
         assert response.data['full_name'] == 'Test User'
-        assert response.data['phone_number'] == '+1234567890'
+        assert response.data['phone_number'] == '+998901234567'
     
     def test_register_user_auto_login(self):
         """Test that user is automatically logged in after registration."""

@@ -181,6 +181,27 @@ describe('LoginPage', () => {
     })
   })
 
+  describe('phone number field', () => {
+    it('formats the number and stops at a complete +998 number', () => {
+      renderWithRouter(<LoginPage />)
+      fireEvent.click(screen.getByText('Phone & SMS Code'))
+      const phoneInput = screen.getByLabelText('Phone Number')
+      fireEvent.change(phoneInput, { target: { value: '998901234567123' } })
+      expect(phoneInput).toHaveValue('+998 90 123 45 67')
+    })
+
+    it('does not request a code for an incomplete number', async () => {
+      const { authAdapter } = await import('../adapters/authAdapter')
+      renderWithRouter(<LoginPage />)
+      fireEvent.click(screen.getByText('Phone & SMS Code'))
+      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '90 123' } })
+      fireEvent.click(screen.getByRole('button', { name: /send code/i }))
+
+      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
+      expect(authAdapter.requestOTP).not.toHaveBeenCalled()
+    })
+  })
+
   describe('phone/SMS-code login flow', () => {
     it('requests OTP code when phone number submitted', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
@@ -197,12 +218,12 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
         expect(authAdapter.requestOTP).toHaveBeenCalledWith({
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
         })
       })
 
@@ -224,7 +245,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -250,7 +271,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -288,7 +309,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -303,7 +324,7 @@ describe('LoginPage', () => {
 
       await waitFor(() => {
         expect(authAdapter.verifyOTP).toHaveBeenCalledWith({
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           otp_code: '123456',
         })
       })
@@ -324,7 +345,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: 'invalid' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -351,7 +372,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -384,7 +405,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -396,7 +417,7 @@ describe('LoginPage', () => {
 
       await waitFor(() => {
         expect(authAdapter.requestOTP).toHaveBeenCalledWith({
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
         })
       })
     })
@@ -416,7 +437,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {
@@ -508,7 +529,7 @@ describe('LoginPage', () => {
       const phoneInput = screen.getByLabelText('Phone Number')
       const sendButton = screen.getByRole('button', { name: /send code/i })
 
-      fireEvent.change(phoneInput, { target: { value: 'invalid' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.click(sendButton)
 
       await waitFor(() => {

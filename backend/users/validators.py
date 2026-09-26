@@ -5,8 +5,42 @@ This module contains custom validators for password strength, email verification
 and other security-related validations.
 """
 import re
+import phonenumbers
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+PHONE_NUMBER_ERROR = 'Enter a valid phone number in international format, e.g. +998 90 123 45 67.'
+
+# Spaces, dashes, dots and brackets people type between digit groups
+_PHONE_SEPARATORS = re.compile(r'[\s\-.()]')
+
+
+def parse_phone_number(value):
+    """
+    Return the E.164 form of a phone number ("+998901234567"), or None if it is
+    not a valid number.
+
+    The number must start with "+" and a country code. Separators between
+    digit groups are allowed; letters and other characters are not.
+    """
+    compact = _PHONE_SEPARATORS.sub('', str(value or ''))
+    if not re.fullmatch(r'\+\d{1,15}', compact):
+        return None
+    try:
+        number = phonenumbers.parse(compact, None)
+    except phonenumbers.NumberParseException:
+        return None
+    if not phonenumbers.is_valid_number(number):
+        return None
+    return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
+
+
+def normalize_phone_number(value):
+    """E.164 form of a phone number; raises ValidationError if it is not valid."""
+    normalized = parse_phone_number(value)
+    if normalized is None:
+        raise ValidationError(PHONE_NUMBER_ERROR, code='invalid_phone_number')
+    return normalized
 
 
 class StrongPasswordValidator:

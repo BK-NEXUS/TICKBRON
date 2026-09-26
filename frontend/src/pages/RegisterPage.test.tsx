@@ -71,6 +71,45 @@ describe('RegisterPage', () => {
     })
   })
 
+  describe('phone number field', () => {
+    const fillAllBut = (phone: string) => {
+      fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } })
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: phone } })
+      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'SecurePassword123!' } })
+      fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'SecurePassword123!' } })
+    }
+
+    it('formats the number and stops at a complete +998 number', () => {
+      renderWithRouter(<RegisterPage />)
+      const phoneInput = screen.getByLabelText('Phone Number')
+      fireEvent.change(phoneInput, { target: { value: '+998 90 123 45 6789' } })
+      expect(phoneInput).toHaveValue('+998 90 123 45 67')
+    })
+
+    it('does not submit an incomplete number', async () => {
+      const { authAdapter } = await import('../adapters/authAdapter')
+      renderWithRouter(<RegisterPage />)
+      fillAllBut('90 123 45')
+      fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
+      expect(authAdapter.register).not.toHaveBeenCalled()
+    })
+
+    it('sends the number in E.164', async () => {
+      const { authAdapter } = await import('../adapters/authAdapter')
+      vi.mocked(authAdapter.register).mockResolvedValue({ success: false, error: 'stop here' })
+      renderWithRouter(<RegisterPage />)
+      fillAllBut('90 123 45 67')
+      fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+      await waitFor(() => expect(authAdapter.register).toHaveBeenCalledWith(
+        expect.objectContaining({ phone_number: '+998901234567' }),
+      ))
+    })
+  })
+
   describe('form submission', () => {
     it('submits registration with required fields', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
@@ -100,7 +139,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -109,7 +148,7 @@ describe('RegisterPage', () => {
         expect(authAdapter.register).toHaveBeenCalledWith({
           email: 'test@example.com',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           password: 'SecurePassword123!',
           password_confirm: 'SecurePassword123!',
         })
@@ -128,7 +167,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)
@@ -150,7 +189,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Short1!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'Short1!' } })
       fireEvent.click(submitButton)
@@ -178,7 +217,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -205,7 +244,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -266,7 +305,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+1234567890' } })
+      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)

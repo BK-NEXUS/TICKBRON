@@ -47,7 +47,7 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
@@ -58,7 +58,7 @@ class TestUserRegistrationSerializer(TestCase):
         user = serializer.save()
         assert user.email == 'newuser@example.com'
         assert user.full_name == 'New User'
-        assert user.phone_number == '+1234567890'
+        assert user.phone_number == '+998901234567'
         assert user.check_password('SecureP@ssw0rd123')
     
     def test_password_mismatch(self):
@@ -66,7 +66,7 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'password': 'securepass123',
             'password_confirm': 'differentpass123'
         }
@@ -80,7 +80,7 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'password': 'short',
             'password_confirm': 'short'
         }
@@ -120,7 +120,7 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
@@ -138,8 +138,8 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+1234567890',
-            'whatsapp': '+1234567890',
+            'phone_number': '+998901234567',
+            'whatsapp': '+998901234567',
             'telegram': '@telegramuser',
             'preferred_contact_method': 'whatsapp',
             'password': 'SecureP@ssw0rd123',
@@ -150,7 +150,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert serializer.is_valid()
         
         user = serializer.save()
-        assert user.whatsapp == '+1234567890'
+        assert user.whatsapp == '+998901234567'
         assert user.telegram == '@telegramuser'
         assert user.preferred_contact_method == 'whatsapp'
     
@@ -159,7 +159,7 @@ class TestUserRegistrationSerializer(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
-            whatsapp='+1234567890',
+            whatsapp='+998901234567',
             telegram='@telegramuser',
             preferred_contact_method='telegram'
         )
@@ -170,7 +170,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'whatsapp' in data
         assert 'telegram' in data
         assert 'preferred_contact_method' in data
-        assert data['whatsapp'] == '+1234567890'
+        assert data['whatsapp'] == '+998901234567'
         assert data['telegram'] == '@telegramuser'
         assert data['preferred_contact_method'] == 'telegram'
 
@@ -226,7 +226,7 @@ class TestRequestOTPSerializer(TestCase):
     def test_valid_phone_number(self):
         """Test valid phone number."""
         data = {
-            'phone_number': '+1234567890'
+            'phone_number': '+998901234567'
         }
         
         serializer = RequestOTPSerializer(data=data)
@@ -257,7 +257,7 @@ class TestVerifyOTPSerializer(TestCase):
     def test_valid_otp_data(self):
         """Test valid OTP data."""
         data = {
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'otp_code': '123456'
         }
         
@@ -277,7 +277,7 @@ class TestVerifyOTPSerializer(TestCase):
     def test_missing_otp_code(self):
         """Test missing OTP code."""
         data = {
-            'phone_number': '+1234567890'
+            'phone_number': '+998901234567'
         }
         
         serializer = VerifyOTPSerializer(data=data)
@@ -287,7 +287,7 @@ class TestVerifyOTPSerializer(TestCase):
     def test_invalid_otp_code_format(self):
         """Test invalid OTP code format (not 6 digits)."""
         data = {
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'otp_code': '12345'
         }
         
@@ -298,7 +298,7 @@ class TestVerifyOTPSerializer(TestCase):
     def test_otp_code_with_letters(self):
         """Test OTP code with letters (should be digits only)."""
         data = {
-            'phone_number': '+1234567890',
+            'phone_number': '+998901234567',
             'otp_code': 'ABCDEF'
         }
         
@@ -316,7 +316,7 @@ class TestUserUpdateSerializer(TestCase):
             email='test@example.com',
             password='testpass123',
             full_name='Test User',
-            phone_number='+1234567890'
+            phone_number='+998901234567'
         )
     
     def test_update_full_name(self):
@@ -331,7 +331,7 @@ class TestUserUpdateSerializer(TestCase):
     def test_update_contact_fields(self):
         """Test updating contact fields."""
         data = {
-            'whatsapp': '+9876543210',
+            'whatsapp': '+998917654321',
             'telegram': '@newtelegram',
             'preferred_contact_method': 'whatsapp'
         }
@@ -339,26 +339,26 @@ class TestUserUpdateSerializer(TestCase):
         assert serializer.is_valid()
         
         updated_user = serializer.save()
-        assert updated_user.whatsapp == '+9876543210'
+        assert updated_user.whatsapp == '+998917654321'
         assert updated_user.telegram == '@newtelegram'
         assert updated_user.preferred_contact_method == 'whatsapp'
     
     def test_update_phone_number(self):
         """Test updating phone number."""
-        data = {'phone_number': '+9876543210'}
+        data = {'phone_number': '+998917654321'}
         serializer = UserUpdateSerializer(self.user, data=data, partial=True)
         assert serializer.is_valid()
         
         updated_user = serializer.save()
-        assert updated_user.phone_number == '+9876543210'
+        assert updated_user.phone_number == '+998917654321'
     
     def test_partial_update(self):
         """Test partial update (only some fields)."""
-        data = {'whatsapp': '+9876543210'}
+        data = {'whatsapp': '+998917654321'}
         serializer = UserUpdateSerializer(self.user, data=data, partial=True)
         assert serializer.is_valid()
         
         updated_user = serializer.save()
-        assert updated_user.whatsapp == '+9876543210'
+        assert updated_user.whatsapp == '+998917654321'
         assert updated_user.full_name == 'Test User'  # Unchanged
-        assert updated_user.phone_number == '+1234567890'  # Unchanged
+        assert updated_user.phone_number == '+998901234567'  # Unchanged

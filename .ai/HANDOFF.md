@@ -1990,7 +1990,7 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
   - Backend already returned 403 to regular users on every partner write endpoint (`IsHotelOwner`); now covered by `partner/tests/test_property_create_access.py` (create/update/delete on properties, rooms, rates, inventory, photos, admin approve/suspend; role cannot be set through register, OTP or profile update)
   - `/auth/me` (and every user response) now has read-only `role` (`"hotel-owner"` or null), see `contracts/auth.md`
   - Frontend: "List Your Property" removed from the home page; "Partner Dashboard" links (header menu, profile quick links) only for hotel owners and staff (`src/utils/roles.ts`)
-- IN PROGRESS: 2 admin and partner panels closed to everyone else
+- DONE: 2 admin and partner panels closed to everyone else (31f460f)
   - Access matrix tests: `admin_panel/tests/test_access_matrix.py`, `partner/tests/test_access_matrix.py` (anonymous 401/403, regular user 403, hotel owner 403 on admin, owner sees and changes only own partner data)
   - Fixed: the router index pages `GET /admin-panel/` and `GET /partner/` answered 200 to any logged-in user; now `IsSuperAdminOrStaff` / `IsHotelOwner`
   - Fixed (E2E): `GET /admin-panel/customers/` no longer lists hotel owners. `GET /admin-panel/users/` now also returns `role` (same value as `role_name`, which stays) and `is_superuser`, so owners show as "Hotel Owner" and super-admins as "Super Admin" instead of "User"/"Staff"
@@ -1999,3 +1999,8 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
     - `IsSuperAdminOrStaff`: `/admin-panel/` (index), `users/`, `customers/`, `customers/{id}/`, `customers/{id}/notes/`, `customers/{id}/notes/{note_id}/`, `statistics/registrations/`, `statistics/top-bookers/`, `properties/`, `properties/{id}/`, `properties/{id}/approve/`, `properties/{id}/suspend/`, `amenities/categories/[{id}/]`, `amenities/[{id}/]`, `payments/transactions/`, `bookings/lookup/`
     - `IsSuperAdmin`: `/admin-panel/users/create-hotel-owner/`
     - `IsHotelOwner` (querysets scoped to `owner=request.user`): `/partner/` (index), `properties/[{id}/]`, `properties/{id}/photos/`, `rooms/[{id}/]`, `rates/[{id}/]`, `inventory/[{id}/]`, `bookings/`
+- IN PROGRESS: 3 phone number input limits and server-side validation
+  - Backend (`phonenumbers` added to requirements): register, `PATCH /auth/me/update/`, OTP request/verify, `POST /admin-panel/users/create-hotel-owner/` and `POST /bookings/` (`guest_phone`) accept only a valid international number and store it as E.164 (`"+998 90 123 45 67"` -> `"+998901234567"`). Invalid -> 400 `"Enter a valid phone number in international format, e.g. +998 90 123 45 67."` on the phone field. Blank still clears the profile number / falls back to the profile number on bookings. Numbers already stored are not rewritten
+  - OTP throttles key on the normalized number, so other spellings of one number share the rate limit
+  - create-hotel-owner now also checks the number is not taken (was a 500 from the unique constraint)
+  - Frontend: `components/PhoneInput.tsx` (+ `utils/phone.ts`) on register, OTP login, profile and booking forms. Shows `+998 90 123 45 67`, sends E.164, stops at 9 national digits, forms block submit on an incomplete number. Country table `PHONE_COUNTRIES` has only `UZ`; a country selector sets the `country` prop later

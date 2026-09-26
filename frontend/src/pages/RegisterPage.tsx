@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
+import { PhoneInput } from '../components/PhoneInput'
+import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 
 export function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -37,6 +39,11 @@ export function RegisterPage() {
     setError('')
 
     // Basic validation
+    if (!isValidPhone(formData.phone_number)) {
+      setError(phoneErrorMessage())
+      return
+    }
+
     if (formData.password !== formData.password_confirm) {
       setError('Passwords do not match')
       return
@@ -116,16 +123,14 @@ export function RegisterPage() {
               <label htmlFor="phone_number" className="auth-label">
                 Phone Number
               </label>
-              <input
+              <PhoneInput
                 id="phone_number"
                 name="phone_number"
-                type="tel"
                 className="auth-input"
                 value={formData.phone_number}
-                onChange={handleChange}
+                onChange={(phone_number) => setFormData(prev => ({ ...prev, phone_number }))}
                 required
                 disabled={isLoading}
-                autoComplete="tel"
               />
             </div>
 

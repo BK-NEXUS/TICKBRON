@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { EmptyState } from '../components/EmptyState'
 import { Link } from 'react-router-dom'
 import { canUsePartnerPanel } from '../utils/roles'
+import { PhoneInput } from '../components/PhoneInput'
+import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 
 export function ProfilePage() {
   const { user, isAuthenticated, updateProfile } = useAuth()
@@ -46,10 +48,17 @@ export function ProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
     setError(null)
     setSuccess(false)
 
+    // Checked only when changed: a number saved before validation existed is sent back as it is
+    const phoneChanged = editForm.phone_number !== (user?.phone_number || '')
+    if (phoneChanged && editForm.phone_number && !isValidPhone(editForm.phone_number)) {
+      setError(phoneErrorMessage())
+      return
+    }
+
+    setSaving(true)
     try {
       const response = await updateProfile(editForm)
       if (response.success) {
@@ -196,12 +205,11 @@ export function ProfilePage() {
                   </div>
                   <div className="profile-form-field">
                     <label htmlFor="phone_number" className="profile-form-label">Phone Number</label>
-                    <input
-                      type="tel"
+                    <PhoneInput
                       id="phone_number"
                       name="phone_number"
                       value={editForm.phone_number}
-                      onChange={handleInputChange}
+                      onChange={(phone_number) => setEditForm(prev => ({ ...prev, phone_number }))}
                       className="profile-form-input"
                     />
                   </div>

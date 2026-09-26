@@ -103,7 +103,7 @@ const mockBooking = {
   guest: 1,
   guest_name: 'John Doe',
   guest_full_name: 'John Doe',
-  guest_phone: '+1234567890',
+  guest_phone: '+998901234567',
   guest_email: 'john@example.com',
   property: 1,
   property_name: 'Test Property',
@@ -269,7 +269,7 @@ describe('BookingPage', () => {
         first_name: 'John',
         last_name: 'Doe',
         full_name: 'John Doe',
-        phone_number: '+1234567890',
+        phone_number: '+998901234567',
         is_active: true,
         date_joined: '2025-01-01T00:00:00Z',
         last_login: '2025-01-15T00:00:00Z',
@@ -297,7 +297,8 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toHaveValue('John')
         expect(screen.getByLabelText(/last name/i)).toHaveValue('Doe')
         expect(screen.getByLabelText(/email/i)).toHaveValue('john@example.com')
-        expect(screen.getByLabelText(/phone number/i)).toHaveValue('+1234567890')
+        // Shown grouped; the value sent to the backend is E.164
+        expect(screen.getByLabelText(/phone number/i)).toHaveValue('+998 90 123 45 67')
       })
     })
 
@@ -342,7 +343,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -438,6 +439,26 @@ describe('BookingPage', () => {
       expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
     })
 
+    it('formats the phone number and stops at a complete +998 number', async () => {
+      renderWithRouter(<BookingPage />)
+      const phoneInput = await screen.findByLabelText(/phone number/i)
+
+      fireEvent.change(phoneInput, { target: { value: '+998 90 123 45 67 000' } })
+
+      expect(phoneInput).toHaveValue('+998 90 123 45 67')
+    })
+
+    it('rejects an incomplete phone number before creating the booking', async () => {
+      renderWithRouter(<BookingPage />)
+      const phoneInput = await screen.findByLabelText(/phone number/i)
+
+      fireEvent.change(phoneInput, { target: { value: '+998 90 12' } })
+      fireEvent.click(screen.getByText('Continue to Payment'))
+
+      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
+      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+    })
+
     it('should validate email format', async () => {
       renderWithRouter(<BookingPage />)
 
@@ -491,7 +512,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -589,7 +610,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -629,7 +650,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -692,7 +713,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -758,7 +779,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',
@@ -814,7 +835,7 @@ describe('BookingPage', () => {
           first_name: 'John',
           last_name: 'Doe',
           full_name: 'John Doe',
-          phone_number: '+1234567890',
+          phone_number: '+998901234567',
           is_active: true,
           date_joined: '2025-01-01T00:00:00Z',
           last_login: '2025-01-15T00:00:00Z',

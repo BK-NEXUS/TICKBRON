@@ -18,6 +18,9 @@ django-redis==5.4.0
 django-ratelimit==4.1.0
 cryptography==41.0.7
 
+# Phone number validation (E.164)
+phonenumbers==9.0.40
+
 # Environment & Configuration
 python-dotenv==1.0.0
 

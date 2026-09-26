@@ -496,7 +496,7 @@ class BookingSerializerTests(TestCase):
         """Test booking creation auto-fills guest details from user profile."""
         # Update user with profile details
         self.user.full_name = 'John Doe'
-        self.user.phone_number = '+1234567890'
+        self.user.phone_number = '+998901234567'
         self.user.save()
         
         data = {
@@ -513,14 +513,14 @@ class BookingSerializerTests(TestCase):
         
         booking = serializer.save()
         self.assertEqual(booking.guest_full_name, 'John Doe')
-        self.assertEqual(booking.guest_phone, '+1234567890')
+        self.assertEqual(booking.guest_phone, '+998901234567')
         self.assertEqual(booking.guest_email, 'test@example.com')
     
     def test_booking_create_with_guest_details_override(self):
         """Test booking creation allows overriding guest details."""
         # Update user with profile details
         self.user.full_name = 'John Doe'
-        self.user.phone_number = '+1234567890'
+        self.user.phone_number = '+998901234567'
         self.user.save()
         
         data = {
@@ -531,7 +531,7 @@ class BookingSerializerTests(TestCase):
             'check_out': self.check_out.strftime('%Y-%m-%d'),
             'guest_count': 2,
             'guest_full_name': 'Jane Smith',
-            'guest_phone': '+9876543210',
+            'guest_phone': '+998917654321',
             'guest_email': 'jane@example.com'
         }
         
@@ -540,7 +540,7 @@ class BookingSerializerTests(TestCase):
         
         booking = serializer.save()
         self.assertEqual(booking.guest_full_name, 'Jane Smith')
-        self.assertEqual(booking.guest_phone, '+9876543210')
+        self.assertEqual(booking.guest_phone, '+998917654321')
         self.assertEqual(booking.guest_email, 'jane@example.com')
     
     def test_booking_create_with_number_of_rooms(self):
@@ -683,7 +683,7 @@ class BookingSerializerTests(TestCase):
             check_out=self.check_out,
             guest_count=2,
             guest_full_name='Test Guest',
-            guest_phone='+1234567890',
+            guest_phone='+998901234567',
             guest_email='guest@example.com',
             number_of_rooms=2,
             children=[5, 8]
@@ -698,7 +698,7 @@ class BookingSerializerTests(TestCase):
         self.assertIn('number_of_rooms', data)
         self.assertIn('children', data)
         self.assertEqual(data['guest_full_name'], 'Test Guest')
-        self.assertEqual(data['guest_phone'], '+1234567890')
+        self.assertEqual(data['guest_phone'], '+998901234567')
         self.assertEqual(data['guest_email'], 'guest@example.com')
         self.assertEqual(data['number_of_rooms'], 2)
         self.assertEqual(data['children'], [5, 8])

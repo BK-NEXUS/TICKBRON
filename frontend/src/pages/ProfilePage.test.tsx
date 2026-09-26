@@ -509,6 +509,47 @@ describe('ProfilePage', () => {
       expect(screen.getByLabelText('Telegram')).toHaveValue('@johndoe')
     })
 
+    it('formats a new phone number and stops at a complete +998 number', () => {
+      renderWithRouter(<ProfilePage />)
+      fireEvent.click(screen.getByText('Edit Profile'))
+      const phoneInput = screen.getByLabelText('Phone Number')
+
+      fireEvent.change(phoneInput, { target: { value: '9012345678901' } })
+
+      expect(phoneInput).toHaveValue('+998 90 123 45 67')
+    })
+
+    it('does not save an incomplete new phone number', async () => {
+      const mockUpdateProfile = vi.fn()
+      mockUseAuth.mockReturnValue({
+        user: mockUser, isAuthenticated: true, isLoading: false, updateProfile: mockUpdateProfile,
+      })
+      renderWithRouter(<ProfilePage />)
+      fireEvent.click(screen.getByText('Edit Profile'))
+
+      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '90 123' } })
+      fireEvent.click(screen.getByText('Save Changes'))
+
+      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
+      expect(mockUpdateProfile).not.toHaveBeenCalled()
+    })
+
+    it('saves a new phone number in E.164', async () => {
+      const mockUpdateProfile = vi.fn().mockResolvedValue({ success: true, user: mockUser })
+      mockUseAuth.mockReturnValue({
+        user: mockUser, isAuthenticated: true, isLoading: false, updateProfile: mockUpdateProfile,
+      })
+      renderWithRouter(<ProfilePage />)
+      fireEvent.click(screen.getByText('Edit Profile'))
+
+      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '+998 91 555 44 33' } })
+      fireEvent.click(screen.getByText('Save Changes'))
+
+      await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ phone_number: '+998915554433' }),
+      ))
+    })
+
     it('should close edit form when cancel button is clicked', () => {
       renderWithRouter(<ProfilePage />)
 

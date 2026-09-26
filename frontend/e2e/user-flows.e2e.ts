@@ -142,7 +142,8 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(page.getByRole('heading', { name: 'Complete Your Booking' })).toBeVisible()
     // Guest data comes from the logged-in profile (checkpoint 22)
     await expect.soft(page.getByLabel(/email/i).first()).toHaveValue(DEMO.guest.email)
-    await expect.soft(page.getByLabel(/phone/i).first()).toHaveValue(DEMO.guest.phone)
+    // PhoneInput shows the E.164 number grouped: +998900000003 -> +998 90 000 00 03
+    await expect.soft(page.getByLabel(/phone/i).first()).toHaveValue('+998 90 000 00 03')
     // The profile has full_name "Demo Guest"; first/last name should be filled from it
     const firstName = page.getByLabel(/first name/i)
     const lastName = page.getByLabel(/last name/i)
