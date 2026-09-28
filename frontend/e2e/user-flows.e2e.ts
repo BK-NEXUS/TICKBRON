@@ -51,14 +51,22 @@ async function pickStay(page: Page, roomName: string, rateName: string,
   await page.getByRole('button', { name: new RegExp(`^${roomName}`) }).click()
   await page.getByText(rateName, { exact: true }).first().click()
   const open = page.locator('.availability-calendar-day[aria-disabled="false"]')
-  await expect(open.first()).toBeVisible()
-  const openDates = new Set(await open.evaluateAll(cells => cells.map(cell => cell.getAttribute('data-date') ?? '')))
-  const candidates = [...openDates].sort().filter(start => {
-    const stay = Array.from({ length: nights }, (_, i) => addDays(start, i))
-    return stay.every(night => openDates.has(night)) && (!weekend || stay.some(isWeekendNight))
-  })
+  const findStays = async () => {
+    await expect(open.first()).toBeVisible()
+    const openDates = new Set(await open.evaluateAll(cells => cells.map(cell => cell.getAttribute('data-date') ?? '')))
+    return [...openDates].sort().filter(start => {
+      const stay = Array.from({ length: nights }, (_, i) => addDays(start, i))
+      return stay.every(night => openDates.has(night)) && (!weekend || stay.some(isWeekendNight))
+    })
+  }
+  let candidates = await findStays()
+  if (!candidates[skip]) {
+    // Near the end of a month the stay may only fit in the next one
+    await page.getByRole('button', { name: 'Next month' }).click()
+    candidates = await findStays()
+  }
   const checkIn = candidates[skip]
-  expect(checkIn, `an open ${nights}-night stay${weekend ? ' with a weekend night' : ''} this month`).toBeTruthy()
+  expect(checkIn, `an open ${nights}-night stay${weekend ? ' with a weekend night' : ''} this month or next`).toBeTruthy()
   const checkOut = addDays(checkIn, nights)
 
   await page.locator(`.availability-calendar-day[data-date="${checkIn}"]`).click()
