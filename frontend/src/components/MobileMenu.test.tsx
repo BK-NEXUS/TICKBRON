@@ -22,6 +22,25 @@ describe('MobileMenu', () => {
     expect(screen.getByText('Help')).toBeInTheDocument()
   })
 
+  it('Login and Sign Up lead to the login and register pages', () => {
+    render(<MobileMenu isOpen={true} onClose={vi.fn()} />)
+    expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Sign Up' })).toHaveAttribute('href', '/register')
+  })
+
+  it('does not offer Login and Sign Up to a logged-in user', () => {
+    render(<MobileMenu isOpen={true} onClose={vi.fn()} isAuthenticated />)
+    expect(screen.queryByText('Login')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sign Up')).not.toBeInTheDocument()
+  })
+
+  it('every navigation link points at a page that exists', () => {
+    render(<MobileMenu isOpen={true} onClose={vi.fn()} />)
+    const hrefs = screen.getAllByRole('link').map(link => link.getAttribute('href'))
+    expect(hrefs).toEqual(expect.arrayContaining(['/', '/search', '/about', '/help']))
+    expect(hrefs).not.toContain('/properties')
+  })
+
   it('renders action buttons', () => {
     render(<MobileMenu isOpen={true} onClose={vi.fn()} />)
     expect(screen.getByText('Login')).toBeInTheDocument()

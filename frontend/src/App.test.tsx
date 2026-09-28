@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, cleanup } from '@testing-library/react'
 import App from './App'
 
 // Every module App.tsx loads with React.lazy. lazy() needs a default export,
@@ -19,6 +19,8 @@ const lazyModules = {
   AdminCustomerProfile: () => import('./components/AdminCustomerProfile'),
   SupportLookupPage: () => import('./pages/SupportLookupPage'),
   NotFoundPage: () => import('./pages/NotFoundPage'),
+  InfoPage: () => import('./pages/InfoPage'),
+  DestinationsPage: () => import('./pages/DestinationsPage'),
 }
 
 describe('lazy-loaded pages', () => {
@@ -57,6 +59,64 @@ describe('App routing', () => {
 
     await waitFor(() => expect(screen.getAllByText(expected).length).toBeGreaterThan(0))
     expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument()
+  })
+})
+
+describe('links in the layout', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/auth/csrf/')) {
+        return new Response(JSON.stringify({ csrf_token: 't', authenticated: false }), { status: 200 })
+      }
+      return new Response(JSON.stringify({ results: [], count: 0 }), { status: 200 })
+    }))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    window.history.pushState({}, '', '/')
+  })
+
+  it('every internal link in the header and footer opens a page, not the 404 page', async () => {
+    window.history.pushState({}, '', '/')
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Find Your Perfect Stay' }, { timeout: 5_000 })
+    const hrefs = [...new Set(
+      [...document.querySelectorAll('header a[href], footer a[href]')]
+        .map(a => a.getAttribute('href') ?? '')
+        .filter(href => href.startsWith('/'))
+    )]
+    expect(hrefs.length).toBeGreaterThan(5)
+    cleanup()
+
+    const broken: string[] = []
+    for (const href of hrefs) {
+      window.history.pushState({}, '', href)
+      render(<App />)
+      // Wait for the lazy page to load
+      await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument(), { timeout: 5_000 })
+      if (screen.queryByRole('heading', { name: 'Page Not Found' })) broken.push(href)
+      cleanup()
+    }
+    expect(broken).toEqual([])
+  }, 30_000)
+
+  it.each([
+    ['/about', 'About TICKBRON'],
+    ['/help', 'Help Center'],
+    ['/contact', 'Contact Us'],
+    ['/safety', 'Safety'],
+    ['/terms', 'Terms of Service'],
+    ['/privacy', 'Privacy Policy'],
+    ['/cookies', 'Cookie Policy'],
+    ['/destinations', 'Destinations'],
+  ])('%s has its own page', async (path, heading) => {
+    window.history.pushState({}, '', path)
+    render(<App />)
+    expect(await screen.findByRole('heading', { level: 1, name: heading }, { timeout: 5_000 })).toBeInTheDocument()
   })
 })
 

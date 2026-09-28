@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { PropertyDetailPage } from './PropertyDetailPage'
 import { propertyAdapter } from '../adapters/propertyAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
@@ -163,6 +163,22 @@ describe('PropertyDetailPage', () => {
     renderWithProviders(<PropertyDetailPage />)
 
     expect(await screen.findByRole('button', { name: 'Save Test Property to favorites' })).toBeInTheDocument()
+  })
+
+  it('Book Now takes a logged-in guest to the room list and focuses it', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 1 }, isAuthenticated: true, isLoading: false,
+      login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),
+    })
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: mockProperty, error: null })
+
+    renderWithProviders(<PropertyDetailPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Select room to book' }))
+
+    expect(scrollIntoView).toHaveBeenCalled()
+    expect(document.activeElement).toHaveClass('room-selection')
   })
 
   it('renders loading state initially', () => {

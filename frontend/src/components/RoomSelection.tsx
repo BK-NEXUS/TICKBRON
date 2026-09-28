@@ -189,14 +189,14 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
 
   if (roomTypes.length === 0) {
     return (
-      <div className="room-selection room-selection--empty">
+      <div className="room-selection room-selection--empty" tabIndex={-1}>
         <p className="room-selection-empty">No rooms available for this property</p>
       </div>
     )
   }
 
   return (
-    <div className="room-selection">
+    <div className="room-selection" tabIndex={-1}>
       <h2 className="room-selection-title">Select Your Room</h2>
       
       {/* Room Types */}

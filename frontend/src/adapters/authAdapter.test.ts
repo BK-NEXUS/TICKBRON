@@ -240,6 +240,41 @@ describe('AuthAdapter', () => {
     })
   })
 
+  describe('getCurrentUser only if there is a session', () => {
+    it('does not ask /auth/me/ when the session is anonymous', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ csrf_token: 't', authenticated: false }) })
+
+      const response = await adapter.getCurrentUser({ onlyIfSession: true })
+
+      expect(response.success).toBe(false)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(mockFetch).toHaveBeenCalledWith('http://test-api/api/v1/auth/csrf/', expect.objectContaining({ credentials: 'include' }))
+      expect(mockFetch).not.toHaveBeenCalledWith('http://test-api/api/v1/auth/me/', expect.anything())
+    })
+
+    it('asks /auth/me/ when the session is logged in', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ csrf_token: 't', authenticated: true }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1, email: 'test@example.com' }) })
+
+      const response = await adapter.getCurrentUser({ onlyIfSession: true })
+
+      expect(response.success).toBe(true)
+      expect(response.user).toEqual(expect.objectContaining({ id: 1 }))
+      expect(mockFetch).toHaveBeenLastCalledWith('http://test-api/api/v1/auth/me/', expect.objectContaining({ method: 'GET' }))
+    })
+
+    it('asks /auth/me/ when the session check fails', async () => {
+      mockFetch
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1, email: 'test@example.com' }) })
+
+      const response = await adapter.getCurrentUser({ onlyIfSession: true })
+
+      expect(response.success).toBe(true)
+    })
+  })
+
   describe('requestOTP', () => {
     it('sends OTP request with correct data', async () => {
       const otpData = {

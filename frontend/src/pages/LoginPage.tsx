@@ -114,6 +114,7 @@ export function LoginPage() {
               type="button"
               className={`auth-tab ${loginMethod === 'password' ? 'active' : ''}`}
               onClick={() => setLoginMethod('password')}
+              aria-pressed={loginMethod === 'password'}
               disabled={isLoading}
             >
               Email & Password
@@ -122,6 +123,7 @@ export function LoginPage() {
               type="button"
               className={`auth-tab ${loginMethod === 'phone' ? 'active' : ''}`}
               onClick={() => setLoginMethod('phone')}
+              aria-pressed={loginMethod === 'phone'}
               disabled={isLoading}
             >
               Phone & SMS Code

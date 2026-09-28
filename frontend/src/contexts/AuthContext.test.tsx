@@ -25,6 +25,11 @@ describe('AuthContext', () => {
   )
 
   describe('initial state', () => {
+    it('checks the session on mount without a 401 for anonymous visitors', async () => {
+      renderHook(() => useAuth(), { wrapper })
+      await waitFor(() => expect(authAdapter.getCurrentUser).toHaveBeenCalledWith({ onlyIfSession: true }))
+    })
+
     it('provides default auth state', async () => {
       const { result } = renderHook(() => useAuth(), { wrapper })
 

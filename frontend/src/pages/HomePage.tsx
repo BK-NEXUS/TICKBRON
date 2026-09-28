@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { SearchForm } from '../components/SearchForm'
 
 // Mock data for homepage content
@@ -48,6 +49,7 @@ const STATS = [
 ]
 
 export function HomePage() {
+  const navigate = useNavigate()
   return (
     <div className="home-page">
       {/* Hero Section */}
@@ -175,7 +177,7 @@ export function HomePage() {
             <h2 id="cta-title" className="cta-title">Ready to Start Your Journey?</h2>
             <p className="cta-subtitle">Join millions of travelers who trust TICKBRON for their accommodations</p>
             <div className="cta-buttons">
-              <button className="btn btn-primary btn-large">Browse Properties</button>
+              <button className="btn btn-primary btn-large" onClick={() => navigate('/search')}>Browse Properties</button>
             </div>
           </div>
         </div>

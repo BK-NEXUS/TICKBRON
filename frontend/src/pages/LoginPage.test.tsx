@@ -33,6 +33,18 @@ describe('LoginPage', () => {
   })
 
   describe('rendering', () => {
+    it('marks the selected login method (the other one is a real choice)', () => {
+      renderWithRouter(<LoginPage />)
+
+      expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Phone & SMS Code' })).toHaveAttribute('aria-pressed', 'false')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Phone & SMS Code' }))
+
+      expect(screen.getByRole('button', { name: 'Phone & SMS Code' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'false')
+    })
+
     it('renders login form with tabs', () => {
       renderWithRouter(<LoginPage />)
 

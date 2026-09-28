@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       setIsLoading(true)
       try {
-        const response = await authAdapter.getCurrentUser()
+        const response = await authAdapter.getCurrentUser({ onlyIfSession: true })
         if (response.success && response.user) {
           setUser(response.user)
         }

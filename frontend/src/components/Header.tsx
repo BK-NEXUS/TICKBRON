@@ -14,7 +14,7 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Home', href: '/' },
-  { label: 'Properties', href: '/properties' },
+  { label: 'Properties', href: '/search' },
   { label: 'About', href: '/about' },
   { label: 'Help', href: '/help' },
 ]
@@ -163,6 +163,7 @@ export function Header() {
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
+        isAuthenticated={isAuthenticated}
       />
     </>
   )

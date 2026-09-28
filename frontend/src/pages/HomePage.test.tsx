@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
 describe('HomePage', () => {
@@ -178,6 +178,19 @@ describe('HomePage', () => {
     )
     expect(screen.getByText('Browse Properties')).toBeInTheDocument()
     expect(screen.queryByText(/list your property/i)).not.toBeInTheDocument()
+  })
+
+  it('Browse Properties opens the list of all properties', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<h1>All properties page</h1>} />
+        </Routes>
+      </MemoryRouter>
+    )
+    fireEvent.click(screen.getByText('Browse Properties'))
+    expect(screen.getByRole('heading', { name: 'All properties page' })).toBeInTheDocument()
   })
 
   it('maintains semantic HTML structure', () => {

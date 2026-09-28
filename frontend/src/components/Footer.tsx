@@ -12,9 +12,8 @@ export function Footer() {
         <div className="footer-section">
           <h4>Explore</h4>
           <ul>
-            <li><a href="/properties">Properties</a></li>
+            <li><a href="/search">Properties</a></li>
             <li><a href="/destinations">Destinations</a></li>
-            <li><a href="/experiences">Experiences</a></li>
           </ul>
         </div>
         <div className="footer-section">

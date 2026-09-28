@@ -216,9 +216,12 @@ export function PropertyDetailPage() {
               onClick={() => {
                 if (isAuthenticated) {
                   // Scroll to room selection section
-                  const roomSelectionSection = document.querySelector('.room-selection')
+                  const roomSelectionSection = document.querySelector<HTMLElement>('.room-selection')
                   if (roomSelectionSection) {
                     roomSelectionSection.scrollIntoView({ behavior: 'smooth' })
+                    // Focus too: keyboard users land on the rooms, and the click visibly does something
+                    // even when the rooms are already on screen
+                    roomSelectionSection.focus({ preventScroll: true })
                   }
                 } else {
                   // Redirect to login with return state

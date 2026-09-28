@@ -4,6 +4,7 @@ interface MobileMenuProps {
   isOpen: boolean
   onClose: () => void
   className?: string
+  isAuthenticated?: boolean
 }
 
 interface NavLink {
@@ -13,12 +14,12 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Home', href: '/' },
-  { label: 'Properties', href: '/properties' },
+  { label: 'Properties', href: '/search' },
   { label: 'About', href: '/about' },
   { label: 'Help', href: '/help' },
 ]
 
-export function MobileMenu({ isOpen, onClose, className = '' }: MobileMenuProps) {
+export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = false }: MobileMenuProps) {
   const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
@@ -81,10 +82,12 @@ export function MobileMenu({ isOpen, onClose, className = '' }: MobileMenuProps)
           </ul>
         </nav>
 
-        <div className="mobile-menu-footer">
-          <button className="btn btn-secondary btn-full">Login</button>
-          <button className="btn btn-primary btn-full">Sign Up</button>
-        </div>
+        {!isAuthenticated && (
+          <div className="mobile-menu-footer">
+            <a href="/login" className="btn btn-secondary btn-full" onClick={onClose}>Login</a>
+            <a href="/register" className="btn btn-primary btn-full" onClick={onClose}>Sign Up</a>
+          </div>
+        )}
       </div>
     </>
   )

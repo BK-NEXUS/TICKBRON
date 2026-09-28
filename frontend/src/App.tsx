@@ -21,6 +21,8 @@ const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminCustomerProfile = lazy(() => import('./components/AdminCustomerProfile'))
 const SupportLookupPage = lazy(() => import('./pages/SupportLookupPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const InfoPage = lazy(() => import('./pages/InfoPage'))
+const DestinationsPage = lazy(() => import('./pages/DestinationsPage'))
 
 // Loading component for Suspense fallback
 function PageLoader() {
@@ -61,6 +63,10 @@ function App() {
                   <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
                   <Route path="admin/support" element={<SupportLookupPage />} />
                 </Route>
+                <Route path="destinations" element={<DestinationsPage />} />
+                {(['about', 'help', 'contact', 'safety', 'terms', 'privacy', 'cookies'] as const).map(slug => (
+                  <Route key={slug} path={slug} element={<InfoPage slug={slug} />} />
+                ))}
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
               <Route path="/login" element={<LoginPage />} />

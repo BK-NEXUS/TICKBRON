@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * Browser E2E tests against the real local stack (no mocked API):
  *   backend:  cd backend && venv\Scripts\python.exe manage.py seed_demo && venv\Scripts\python.exe manage.py runserver 8000
+ *             with THROTTLE_ANON_RATE=100000/hour and THROTTLE_USER_RATE=100000/hour set: the crawl (crawl.e2e.ts)
+ *             loads every page many times and would otherwise use up the demo accounts' hourly API limit
  *   frontend: npm run dev            (http://localhost:3000)
  *   tests:    npm run test:e2e
  * Screenshots (desktop 1440px + mobile 390px per step) and console/network logs go to e2e/screenshots/ (gitignored).

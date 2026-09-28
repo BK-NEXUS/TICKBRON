@@ -156,7 +156,22 @@ class AuthAdapter {
     })
   }
 
-  async getCurrentUser(): Promise<AuthResponse> {
+  /**
+   * With onlyIfSession, first ask GET /auth/csrf/ whether the session is logged in and skip
+   * /auth/me/ when it is not (an anonymous visit then makes no 401 request).
+   */
+  async getCurrentUser(options: { onlyIfSession?: boolean } = {}): Promise<AuthResponse> {
+    if (options.onlyIfSession) {
+      try {
+        const response = await fetch(`${this.baseUrl}/api/v1/auth/csrf/`, { credentials: 'include' })
+        const data = response.ok ? await response.json() : null
+        if (data?.authenticated === false) {
+          return { success: false, error: 'Not logged in' }
+        }
+      } catch {
+        // Could not tell: fall through to /auth/me/
+      }
+    }
     return this.request('/api/v1/auth/me/', {
       method: 'GET',
     })
