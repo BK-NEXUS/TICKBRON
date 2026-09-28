@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Header } from './Header'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -12,23 +12,26 @@ vi.mock('../adapters/authAdapter', () => ({
 }))
 
 describe('Header', () => {
-  const renderWithAuthProvider = (component: React.ReactElement) => {
-    return render(
+  const renderWithAuthProvider = async (component: React.ReactElement) => {
+    const result = render(
       <AuthProvider>
         <BrowserRouter>
           {component}
         </BrowserRouter>
       </AuthProvider>
     )
+    // Let what the page loads on mount (e.g. the auth check) finish inside act
+    await act(async () => {})
+    return result
   }
 
-  it('renders the logo', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders the logo', async () => {
+    await renderWithAuthProvider(<Header />)
     expect(screen.getByText('TICKBRON')).toBeInTheDocument()
   })
 
-  it('renders the client logo image next to the site name', () => {
-    const { container } = renderWithAuthProvider(<Header />)
+  it('renders the client logo image next to the site name', async () => {
+    const { container } = await renderWithAuthProvider(<Header />)
     const logo = container.querySelector('.header-logo img.brand-logo--header')
     expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
     // Decorative: the visible "TICKBRON" heading already names the site
@@ -41,7 +44,7 @@ describe('Header', () => {
       success: true,
       user: { id: 3, email: 'guest@example.com', first_name: null, last_name: null, full_name: 'Demo Guest' },
     } as never)
-    renderWithAuthProvider(<Header />)
+    await renderWithAuthProvider(<Header />)
 
     expect(await screen.findByText('Demo Guest')).toBeInTheDocument()
     expect(screen.queryByText('User')).not.toBeInTheDocument()
@@ -53,7 +56,7 @@ describe('Header', () => {
       success: true,
       user: { id: 3, email: 'someone@example.com', full_name: 'Some One', ...user },
     } as never)
-    renderWithAuthProvider(<Header />)
+    await renderWithAuthProvider(<Header />)
     fireEvent.click(await screen.findByRole('button', { name: /Some One/ }))
   }
 
@@ -76,32 +79,32 @@ describe('Header', () => {
     expect(screen.getByText('Admin Dashboard')).toBeInTheDocument()
   })
 
-  it('renders navigation links', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders navigation links', async () => {
+    await renderWithAuthProvider(<Header />)
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Properties')).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
     expect(screen.getByText('Help')).toBeInTheDocument()
   })
 
-  it('renders action buttons when not authenticated', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders action buttons when not authenticated', async () => {
+    await renderWithAuthProvider(<Header />)
     expect(screen.getByText('Login')).toBeInTheDocument()
     expect(screen.getByText('Sign Up')).toBeInTheDocument()
   })
 
-  it('renders language selector', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders language selector', async () => {
+    await renderWithAuthProvider(<Header />)
     expect(screen.getByText('EN')).toBeInTheDocument()
   })
 
-  it('renders currency selector', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders currency selector', async () => {
+    await renderWithAuthProvider(<Header />)
     expect(screen.getByText('USD')).toBeInTheDocument()
   })
 
-  it('renders mobile menu toggle', () => {
-    renderWithAuthProvider(<Header />)
+  it('renders mobile menu toggle', async () => {
+    await renderWithAuthProvider(<Header />)
     const toggle = screen.getByLabelText('Open menu')
     expect(toggle).toBeInTheDocument()
   })

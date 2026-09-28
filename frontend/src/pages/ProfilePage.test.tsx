@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProfilePage } from './ProfilePage'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { settle } from '../test/utils'
 
 // Mock AuthContext
 vi.mock('../contexts/AuthContext', () => ({
@@ -621,6 +622,8 @@ describe('ProfilePage', () => {
 
       // Verify that updateProfile was called
       expect(mockUpdateProfile).toHaveBeenCalled()
+      // Let the page finish loading inside the test
+      await settle()
     })
 
     it('should display error message when profile update fails', async () => {

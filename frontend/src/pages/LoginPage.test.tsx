@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { LoginPage } from './LoginPage'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -14,8 +14,8 @@ vi.mock('../adapters/authAdapter', () => ({
   },
 }))
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(
+const renderWithRouter = async (component: React.ReactElement) => {
+  const result = render(
     <AuthProvider>
       <MemoryRouter initialEntries={['/login']}>
         <Routes>
@@ -25,6 +25,9 @@ const renderWithRouter = (component: React.ReactElement) => {
       </MemoryRouter>
     </AuthProvider>
   )
+  // Let what the page loads on mount (e.g. the auth check) finish inside act
+  await act(async () => {})
+  return result
 }
 
 describe('LoginPage', () => {
@@ -33,8 +36,8 @@ describe('LoginPage', () => {
   })
 
   describe('rendering', () => {
-    it('marks the selected login method (the other one is a real choice)', () => {
-      renderWithRouter(<LoginPage />)
+    it('marks the selected login method (the other one is a real choice)', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'true')
       expect(screen.getByRole('button', { name: 'Phone & SMS Code' })).toHaveAttribute('aria-pressed', 'false')
@@ -45,8 +48,8 @@ describe('LoginPage', () => {
       expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'false')
     })
 
-    it('renders login form with tabs', () => {
-      renderWithRouter(<LoginPage />)
+    it('renders login form with tabs', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByText('Email & Password')).toBeInTheDocument()
       expect(screen.getByText('Phone & SMS Code')).toBeInTheDocument()
@@ -55,30 +58,30 @@ describe('LoginPage', () => {
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
     })
 
-    it('renders title and subtitle', () => {
-      renderWithRouter(<LoginPage />)
+    it('renders title and subtitle', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByText('Welcome Back')).toBeInTheDocument()
       expect(screen.getByText('Sign in to your TICKBRON account')).toBeInTheDocument()
     })
 
-    it('renders the client logo above the form', () => {
-      renderWithRouter(<LoginPage />)
+    it('renders the client logo above the form', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const logo = screen.getByRole('img', { name: 'TICKBRON — Online Booking' })
       expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
       expect(logo).toHaveClass('brand-logo--auth')
     })
 
-    it('renders link to register page', () => {
-      renderWithRouter(<LoginPage />)
+    it('renders link to register page', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByText('Don\'t have an account?')).toBeInTheDocument()
       expect(screen.getByText('Sign up')).toBeInTheDocument()
     })
 
-    it('shows password login form by default', () => {
-      renderWithRouter(<LoginPage />)
+    it('shows password login form by default', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
@@ -88,8 +91,8 @@ describe('LoginPage', () => {
   })
 
   describe('login method switching', () => {
-    it('switches to phone login when clicking phone tab', () => {
-      renderWithRouter(<LoginPage />)
+    it('switches to phone login when clicking phone tab', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -99,8 +102,8 @@ describe('LoginPage', () => {
       expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
     })
 
-    it('switches back to password login when clicking email tab', () => {
-      renderWithRouter(<LoginPage />)
+    it('switches back to password login when clicking email tab', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -132,7 +135,7 @@ describe('LoginPage', () => {
         },
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       const passwordInput = screen.getByLabelText('Password')
@@ -157,7 +160,7 @@ describe('LoginPage', () => {
         error: 'Invalid credentials',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       const passwordInput = screen.getByLabelText('Password')
@@ -174,11 +177,13 @@ describe('LoginPage', () => {
 
     it('disables submit button while loading', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
+      // The test decides when login finishes (no real timer racing the assertions)
+      let finishLogin: (value: { success: boolean }) => void = () => {}
       vi.mocked(authAdapter.login).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100))
+        () => new Promise(resolve => { finishLogin = resolve })
       )
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       const passwordInput = screen.getByLabelText('Password')
@@ -190,12 +195,15 @@ describe('LoginPage', () => {
 
       expect(submitButton).toBeDisabled()
       expect(screen.getByText('Signing in...')).toBeInTheDocument()
+
+      // Finish inside the test so no state update lands after it ends
+      await act(async () => finishLogin({ success: true }))
     })
   })
 
   describe('phone number field', () => {
-    it('formats the number and stops at a complete +998 number', () => {
-      renderWithRouter(<LoginPage />)
+    it('formats the number and stops at a complete +998 number', async () => {
+      await renderWithRouter(<LoginPage />)
       fireEvent.click(screen.getByText('Phone & SMS Code'))
       const phoneInput = screen.getByLabelText('Phone Number')
       fireEvent.change(phoneInput, { target: { value: '998901234567123' } })
@@ -204,7 +212,7 @@ describe('LoginPage', () => {
 
     it('does not request a code for an incomplete number', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
       fireEvent.click(screen.getByText('Phone & SMS Code'))
       fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '90 123' } })
       fireEvent.click(screen.getByRole('button', { name: /send code/i }))
@@ -222,7 +230,7 @@ describe('LoginPage', () => {
         otp_code: '123456',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -249,7 +257,7 @@ describe('LoginPage', () => {
         otp_code: '123456',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -275,7 +283,7 @@ describe('LoginPage', () => {
         otp_code: '123456',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -313,7 +321,7 @@ describe('LoginPage', () => {
         },
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -349,7 +357,7 @@ describe('LoginPage', () => {
         error: 'Invalid phone number',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -376,7 +384,7 @@ describe('LoginPage', () => {
         error: 'Invalid code',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -409,7 +417,7 @@ describe('LoginPage', () => {
         otp_code: '123456',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -441,7 +449,7 @@ describe('LoginPage', () => {
         otp_code: '123456',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -461,22 +469,22 @@ describe('LoginPage', () => {
   })
 
   describe('form validation', () => {
-    it('requires email field', () => {
-      renderWithRouter(<LoginPage />)
+    it('requires email field', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       expect(emailInput).toHaveAttribute('required')
     })
 
-    it('requires password field', () => {
-      renderWithRouter(<LoginPage />)
+    it('requires password field', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const passwordInput = screen.getByLabelText('Password')
       expect(passwordInput).toHaveAttribute('required')
     })
 
-    it('has correct autocomplete attributes', () => {
-      renderWithRouter(<LoginPage />)
+    it('has correct autocomplete attributes', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       const passwordInput = screen.getByLabelText('Password')
@@ -487,15 +495,15 @@ describe('LoginPage', () => {
   })
 
   describe('accessibility', () => {
-    it('has proper form labels for password login', () => {
-      renderWithRouter(<LoginPage />)
+    it('has proper form labels for password login', async () => {
+      await renderWithRouter(<LoginPage />)
 
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
     })
 
-    it('has proper form labels for phone login', () => {
-      renderWithRouter(<LoginPage />)
+    it('has proper form labels for phone login', async () => {
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)
@@ -510,7 +518,7 @@ describe('LoginPage', () => {
         error: 'Invalid credentials',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const emailInput = screen.getByLabelText('Email')
       const passwordInput = screen.getByLabelText('Password')
@@ -533,7 +541,7 @@ describe('LoginPage', () => {
         error: 'Invalid phone number',
       })
 
-      renderWithRouter(<LoginPage />)
+      await renderWithRouter(<LoginPage />)
 
       const phoneTab = screen.getByText('Phone & SMS Code')
       fireEvent.click(phoneTab)

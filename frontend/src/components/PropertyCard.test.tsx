@@ -119,7 +119,7 @@ describe('PropertyCard', () => {
 
     const card = screen.getByLabelText('Charming Paris Apartment in Paris, France')
     // Simulate keyboard interaction by clicking directly (since the component handles onClick)
-    card.click()
+    fireEvent.click(card)
 
     expect(handleClick).toHaveBeenCalledTimes(1)
   })

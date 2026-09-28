@@ -3,6 +3,7 @@ import { render as rtlRender, screen, fireEvent, waitFor, within } from '@testin
 import { MemoryRouter } from 'react-router-dom'
 import { AdminCustomersList } from './AdminCustomersList'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { settle } from '../test/utils'
 
 // Components render <Link>, which needs a router
 const render = (ui: React.ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
@@ -59,25 +60,29 @@ describe('AdminCustomersList', () => {
     ],
   }
 
-  it('should render the customers list with header', () => {
+  it('should render the customers list with header', async () => {
     ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
 
     render(<AdminCustomersList />)
+
+    await settle()
 
     expect(screen.getByText('Customers Directory')).toBeInTheDocument()
     expect(screen.getByText('View and search customer information with booking history')).toBeInTheDocument()
   })
 
-  it('should render search bar and controls', () => {
+  it('should render search bar and controls', async () => {
     ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
 
     render(<AdminCustomersList />)
+
+    await settle()
 
     expect(screen.getByLabelText('Search customers')).toBeInTheDocument()
     expect(screen.getByLabelText('Sort customers by')).toBeInTheDocument()

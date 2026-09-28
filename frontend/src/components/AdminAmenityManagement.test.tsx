@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AdminAmenityManagement } from './AdminAmenityManagement'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { settle } from '../test/utils'
 
 // Mock adminAdapter
 vi.mock('../adapters/adminAdapter')
@@ -38,13 +39,15 @@ describe('AdminAmenityManagement', () => {
     vi.clearAllMocks()
   })
 
-  it('should render amenity management page', () => {
+  it('should render amenity management page', async () => {
     ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
 
     render(<AdminAmenityManagement />)
+
+    await settle()
 
     expect(screen.getByText('Amenity Management')).toBeInTheDocument()
     expect(screen.getByText('Manage amenity categories and amenities')).toBeInTheDocument()

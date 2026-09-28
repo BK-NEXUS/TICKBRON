@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { RegisterPage } from './RegisterPage'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -12,8 +12,8 @@ vi.mock('../adapters/authAdapter', () => ({
   },
 }))
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(
+const renderWithRouter = async (component: React.ReactElement) => {
+  const result = render(
     <AuthProvider>
       <MemoryRouter initialEntries={['/register']}>
         <Routes>
@@ -23,6 +23,9 @@ const renderWithRouter = (component: React.ReactElement) => {
       </MemoryRouter>
     </AuthProvider>
   )
+  // Let what the page loads on mount (e.g. the auth check) finish inside act
+  await act(async () => {})
+  return result
 }
 
 describe('RegisterPage', () => {
@@ -31,8 +34,8 @@ describe('RegisterPage', () => {
   })
 
   describe('rendering', () => {
-    it('renders registration form', () => {
-      renderWithRouter(<RegisterPage />)
+    it('renders registration form', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
@@ -42,30 +45,30 @@ describe('RegisterPage', () => {
       expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
     })
 
-    it('renders title and subtitle', () => {
-      renderWithRouter(<RegisterPage />)
+    it('renders title and subtitle', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument()
       expect(screen.getByText('Join TICKBRON to book amazing properties')).toBeInTheDocument()
     })
 
-    it('renders the client logo above the form', () => {
-      renderWithRouter(<RegisterPage />)
+    it('renders the client logo above the form', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       const logo = screen.getByRole('img', { name: 'TICKBRON — Online Booking' })
       expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
       expect(logo).toHaveClass('brand-logo--auth')
     })
 
-    it('renders link to login page', () => {
-      renderWithRouter(<RegisterPage />)
+    it('renders link to login page', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByText('Already have an account?')).toBeInTheDocument()
       expect(screen.getByText('Sign in')).toBeInTheDocument()
     })
 
-    it('shows password hint', () => {
-      renderWithRouter(<RegisterPage />)
+    it('shows password hint', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByText('Must be at least 12 characters')).toBeInTheDocument()
     })
@@ -80,8 +83,8 @@ describe('RegisterPage', () => {
       fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'SecurePassword123!' } })
     }
 
-    it('formats the number and stops at a complete +998 number', () => {
-      renderWithRouter(<RegisterPage />)
+    it('formats the number and stops at a complete +998 number', async () => {
+      await renderWithRouter(<RegisterPage />)
       const phoneInput = screen.getByLabelText('Phone Number')
       fireEvent.change(phoneInput, { target: { value: '+998 90 123 45 6789' } })
       expect(phoneInput).toHaveValue('+998 90 123 45 67')
@@ -89,7 +92,7 @@ describe('RegisterPage', () => {
 
     it('does not submit an incomplete number', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
       fillAllBut('90 123 45')
       fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
@@ -100,7 +103,7 @@ describe('RegisterPage', () => {
     it('sends the number in E.164', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
       vi.mocked(authAdapter.register).mockResolvedValue({ success: false, error: 'stop here' })
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
       fillAllBut('90 123 45 67')
       fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
@@ -128,7 +131,7 @@ describe('RegisterPage', () => {
         },
       })
 
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -156,7 +159,7 @@ describe('RegisterPage', () => {
     })
 
     it('displays error on password mismatch', async () => {
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -178,7 +181,7 @@ describe('RegisterPage', () => {
     })
 
     it('displays error on short password', async () => {
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -206,7 +209,7 @@ describe('RegisterPage', () => {
         error: 'Email already exists',
       })
 
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -229,11 +232,13 @@ describe('RegisterPage', () => {
 
     it('disables submit button while loading', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
+      // The test decides when registration finishes (no real timer racing the assertions)
+      let finishRegister: (value: { success: boolean }) => void = () => {}
       vi.mocked(authAdapter.register).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100))
+        () => new Promise(resolve => { finishRegister = resolve })
       )
 
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -251,12 +256,15 @@ describe('RegisterPage', () => {
 
       expect(submitButton).toBeDisabled()
       expect(screen.getByText('Creating Account...')).toBeInTheDocument()
+
+      // Finish inside the test so no state update lands after it ends
+      await act(async () => finishRegister({ success: true }))
     })
   })
 
   describe('form validation', () => {
-    it('requires required fields', () => {
-      renderWithRouter(<RegisterPage />)
+    it('requires required fields', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByLabelText('Full Name')).toHaveAttribute('required')
       expect(screen.getByLabelText('Email')).toHaveAttribute('required')
@@ -265,8 +273,8 @@ describe('RegisterPage', () => {
       expect(screen.getByLabelText('Confirm Password')).toHaveAttribute('required')
     })
 
-    it('has correct autocomplete attributes', () => {
-      renderWithRouter(<RegisterPage />)
+    it('has correct autocomplete attributes', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
@@ -283,8 +291,8 @@ describe('RegisterPage', () => {
   })
 
   describe('accessibility', () => {
-    it('has proper form labels', () => {
-      renderWithRouter(<RegisterPage />)
+    it('has proper form labels', async () => {
+      await renderWithRouter(<RegisterPage />)
 
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
@@ -294,7 +302,7 @@ describe('RegisterPage', () => {
     })
 
     it('displays error with role="alert"', async () => {
-      renderWithRouter(<RegisterPage />)
+      await renderWithRouter(<RegisterPage />)
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')

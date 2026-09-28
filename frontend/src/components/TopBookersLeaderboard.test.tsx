@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { TopBookersLeaderboard } from './TopBookersLeaderboard'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { settle } from '../test/utils'
 
 // Mock the admin adapter
 vi.mock('../adapters/adminAdapter', () => ({
@@ -15,8 +16,9 @@ describe('TopBookersLeaderboard', () => {
     vi.clearAllMocks()
   })
 
-  it('should render the leaderboard', () => {
+  it('should render the leaderboard', async () => {
     render(<TopBookersLeaderboard />)
+    await settle()
 
     expect(screen.getByText('Top Bookers Leaderboard')).toBeInTheDocument()
     expect(screen.getByText('All Time')).toBeInTheDocument()
@@ -149,14 +151,16 @@ describe('TopBookersLeaderboard', () => {
     })
   })
 
-  it('should display correct period label for this_month', () => {
+  it('should display correct period label for this_month', async () => {
     render(<TopBookersLeaderboard period="this_month" />)
+    await settle()
 
     expect(screen.getByText('This Month')).toBeInTheDocument()
   })
 
-  it('should display correct period label for this_year', () => {
+  it('should display correct period label for this_year', async () => {
     render(<TopBookersLeaderboard period="this_year" />)
+    await settle()
 
     expect(screen.getByText('This Year')).toBeInTheDocument()
   })

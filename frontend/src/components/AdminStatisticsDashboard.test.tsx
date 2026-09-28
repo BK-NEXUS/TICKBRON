@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { AdminStatisticsDashboard } from './AdminStatisticsDashboard'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { settle } from '../test/utils'
 
 // Mock the admin adapter
 vi.mock('../adapters/adminAdapter', () => ({
@@ -15,15 +16,17 @@ describe('AdminStatisticsDashboard', () => {
     vi.clearAllMocks()
   })
 
-  it('should render the statistics dashboard', () => {
+  it('should render the statistics dashboard', async () => {
     render(<AdminStatisticsDashboard />)
+    await settle()
 
     expect(screen.getByText('Statistics Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Registration trends and customer insights')).toBeInTheDocument()
   })
 
-  it('should show rolling 12 months view by default', () => {
+  it('should show rolling 12 months view by default', async () => {
     render(<AdminStatisticsDashboard />)
+    await settle()
 
     expect(screen.getByText('Rolling 12 Months')).toBeInTheDocument()
     expect(screen.getByText('Calendar Year')).toBeInTheDocument()
@@ -33,11 +36,13 @@ describe('AdminStatisticsDashboard', () => {
     render(<AdminStatisticsDashboard />)
 
     const calendarYearButton = screen.getByText('Calendar Year')
-    calendarYearButton.click()
+    fireEvent.click(calendarYearButton)
 
     await waitFor(() => {
       expect(screen.getByText('New Registrations by Year')).toBeInTheDocument()
     })
+    // Let the page finish loading inside the test
+    await settle()
   })
 
   it('should display loading state while fetching statistics', async () => {
@@ -102,8 +107,9 @@ describe('AdminStatisticsDashboard', () => {
     })
   })
 
-  it('should render top bookers leaderboard section', () => {
+  it('should render top bookers leaderboard section', async () => {
     render(<AdminStatisticsDashboard />)
+    await settle()
 
     expect(screen.getByText('Top Bookers Leaderboard')).toBeInTheDocument()
   })

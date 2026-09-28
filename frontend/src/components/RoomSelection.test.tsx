@@ -330,7 +330,7 @@ describe('RoomSelection', () => {
     renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
+    fireEvent.click(standardRoom)
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
@@ -341,7 +341,7 @@ describe('RoomSelection', () => {
     renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
+    fireEvent.click(standardRoom)
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
@@ -352,14 +352,14 @@ describe('RoomSelection', () => {
     renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
+    fireEvent.click(standardRoom)
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     }, { timeout: 3000 })
     
     const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
+    fireEvent.click(standardRate)
     
     await waitFor(() => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
@@ -370,14 +370,14 @@ describe('RoomSelection', () => {
     renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
+    fireEvent.click(standardRoom)
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     })
     
     const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
+    fireEvent.click(standardRate)
     
     await waitFor(() => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
@@ -393,14 +393,14 @@ describe('RoomSelection', () => {
     renderWithRouter(<RoomSelection propertyId={1} roomTypes={mockRoomTypes} />)
     
     const standardRoom = screen.getByText('Standard Room')
-    standardRoom.click()
+    fireEvent.click(standardRoom)
     
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     }, { timeout: 3000 })
     
     const standardRate = screen.getByText('Standard Rate')
-    standardRate.click()
+    fireEvent.click(standardRate)
     
     await waitFor(() => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()

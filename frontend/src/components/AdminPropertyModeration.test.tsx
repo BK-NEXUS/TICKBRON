@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AdminPropertyModeration } from './AdminPropertyModeration'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { settle } from '../test/utils'
 
 // Mock adminAdapter
 vi.mock('../adapters/adminAdapter')
@@ -56,13 +57,15 @@ describe('AdminPropertyModeration', () => {
     vi.clearAllMocks()
   })
 
-  it('should render property moderation page', () => {
+  it('should render property moderation page', async () => {
     ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
 
     render(<AdminPropertyModeration />)
+
+    await settle()
 
     expect(screen.getByText('Property Moderation')).toBeInTheDocument()
     expect(screen.getByText('Review and moderate property submissions')).toBeInTheDocument()

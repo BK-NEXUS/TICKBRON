@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PaymentConfirmation } from './PaymentConfirmation'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
+import { settle } from '../test/utils'
 
 describe('PaymentConfirmation', () => {
   const mockPayment: PaymentTransaction = {
@@ -252,6 +253,8 @@ describe('PaymentConfirmation', () => {
     fireEvent.click(copyButton)
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ABC123')
+    // Let the page finish loading inside the test
+    await settle()
   })
 
   it('should show copied state after successful copy', async () => {

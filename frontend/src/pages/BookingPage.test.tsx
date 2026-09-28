@@ -6,6 +6,7 @@ import { bookingAdapter } from '../adapters/bookingAdapter'
 import { propertyAdapter } from '../adapters/propertyAdapter'
 import { paymentAdapter } from '../adapters/paymentAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { settle } from '../test/utils'
 
 // Mock adapters
 vi.mock('../adapters/bookingAdapter')
@@ -235,7 +236,7 @@ describe('BookingPage', () => {
   })
 
   describe('Loading state', () => {
-    it('should show loading state initially', () => {
+    it('should show loading state initially', async () => {
       mockUseAuth.mockReturnValue({
         user: null,
         isAuthenticated: false,
@@ -250,6 +251,8 @@ describe('BookingPage', () => {
       renderWithRouter(<BookingPage />)
 
       expect(screen.getByText('Loading booking information...')).toBeInTheDocument()
+      // Let the page finish loading inside the test
+      await settle()
     })
   })
 

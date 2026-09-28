@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ReviewForm } from './ReviewForm'
 import { accountAdapter } from '../adapters/accountAdapter'
 
@@ -63,14 +63,11 @@ describe('ReviewForm', () => {
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
 
-    // Wait for async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(mockCreateReview).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockCreateReview).toHaveBeenCalledWith({
       property: 1,
       booking: 7,
       overall_rating: 5,
-    })
+    }))
   })
 
   it('should submit review with category ratings', async () => {
@@ -106,17 +103,14 @@ describe('ReviewForm', () => {
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
 
-    // Wait for async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 0))
-
     // Flat fields, as ReviewCreateSerializer expects; unrated categories are not sent
-    expect(mockCreateReview).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockCreateReview).toHaveBeenCalledWith({
       property: 1,
       booking: 7,
       overall_rating: 5,
       cleanliness_rating: 5,
       location_rating: 4,
-    })
+    }))
   })
 
   it('should submit review with title and comment', async () => {
@@ -153,16 +147,13 @@ describe('ReviewForm', () => {
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
 
-    // Wait for async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(mockCreateReview).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockCreateReview).toHaveBeenCalledWith({
       property: 1,
       booking: 7,
       overall_rating: 5,
       title: 'Great stay!',
       comment: 'Amazing property',
-    })
+    }))
   })
 
   it('should show validation error when overall rating is missing', async () => {
@@ -189,10 +180,7 @@ describe('ReviewForm', () => {
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
 
-    // Wait for async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(screen.getByText('Invalid review data')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Invalid review data')).toBeInTheDocument())
   })
 
   it('should call onCancel when cancel button is clicked', () => {
@@ -259,13 +247,10 @@ describe('ReviewForm', () => {
     const submitButton = screen.getByText('Submit Review')
     fireEvent.click(submitButton)
 
-    // Wait for async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(mockCreateReview).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockCreateReview).toHaveBeenCalledWith({
       property: 1,
       booking: 3,
       overall_rating: 5,
-    })
+    }))
   })
 })

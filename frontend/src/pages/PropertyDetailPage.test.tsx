@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { PropertyDetailPage } from './PropertyDetailPage'
 import { propertyAdapter } from '../adapters/propertyAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { settle } from '../test/utils'
 
 // Mock React Router
 vi.mock('react-router-dom', () => ({
@@ -181,7 +182,7 @@ describe('PropertyDetailPage', () => {
     expect(document.activeElement).toHaveClass('room-selection')
   })
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
       data: mockProperty,
       error: null,
@@ -190,6 +191,8 @@ describe('PropertyDetailPage', () => {
     renderWithProviders(<PropertyDetailPage />)
     
     expect(screen.getByText('Loading property details...')).toBeInTheDocument()
+    // Let the page finish loading inside the test
+    await settle()
   })
 
   it('renders property details after loading', async () => {
@@ -243,6 +246,8 @@ describe('PropertyDetailPage', () => {
 
     // Just verify the component renders without error
     expect(screen.getByText('Loading property details...')).toBeInTheDocument()
+    // Let the page finish loading inside the test
+    await settle()
   })
 
   it('renders property header', async () => {

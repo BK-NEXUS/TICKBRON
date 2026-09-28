@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { SearchResultsPage } from './SearchResultsPage'
 import * as propertyAdapter from '../adapters/propertyAdapter'
+import { settle } from '../test/utils'
 
 // Mock the property adapter
 vi.mock('../adapters/propertyAdapter', () => ({
@@ -108,7 +109,7 @@ describe('SearchResultsPage', () => {
     })
   })
 
-  it('displays loading state initially', () => {
+  it('displays loading state initially', async () => {
     const router = createMemoryRouter(
       [
         {
@@ -124,6 +125,8 @@ describe('SearchResultsPage', () => {
     render(<RouterProvider router={router} />)
 
     expect(screen.getByText('Loading properties...')).toBeInTheDocument()
+    // Let the page finish loading inside the test
+    await settle()
   })
 
   it('displays search results after loading', async () => {
@@ -308,7 +311,7 @@ describe('SearchResultsPage', () => {
     })
 
     const mapButton = screen.getByLabelText('Map view')
-    mapButton.click()
+    fireEvent.click(mapButton)
 
     await waitFor(() => {
       expect(screen.getByText('Map View')).toBeInTheDocument()

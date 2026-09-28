@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingsPage } from './BookingsPage'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { settle } from '../test/utils'
 
 // Mock adapters
 vi.mock('../adapters/accountAdapter')
@@ -274,6 +275,8 @@ describe('BookingsPage', () => {
       fireEvent.click(copyButtons[0])
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ABC123')
+      // Let the page finish loading inside the test
+      await settle()
     })
 
     it('should show copied state after successful copy', async () => {

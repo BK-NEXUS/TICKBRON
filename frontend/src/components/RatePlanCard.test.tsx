@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { RatePlanCard } from './RatePlanCard'
 import { RatePlan } from '../adapters/searchAdapter'
 
@@ -94,7 +94,7 @@ describe('RatePlanCard', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} onSelect={onSelect} />)
     
     const card = screen.getByRole('button')
-    card.click()
+    fireEvent.click(card)
     
     expect(onSelect).toHaveBeenCalledWith(1)
   })
@@ -104,7 +104,7 @@ describe('RatePlanCard', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} onSelect={onSelect} />)
     
     const card = screen.getByRole('button')
-    card.click()
+    fireEvent.click(card)
     
     expect(onSelect).toHaveBeenCalledWith(1)
   })
@@ -114,7 +114,7 @@ describe('RatePlanCard', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} onSelect={onSelect} />)
     
     const card = screen.getByRole('button')
-    card.click()
+    fireEvent.click(card)
     
     expect(onSelect).toHaveBeenCalledWith(1)
   })

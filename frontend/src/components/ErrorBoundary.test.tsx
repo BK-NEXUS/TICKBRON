@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { ErrorBoundary } from './ErrorBoundary'
 
 // Component that throws an error
@@ -67,7 +67,7 @@ describe('ErrorBoundary', () => {
     )
 
     const refreshButton = screen.getByText('Refresh Page')
-    refreshButton.click()
+    fireEvent.click(refreshButton)
 
     expect(reloadCalled).toBe(true)
 
