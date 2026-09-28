@@ -19,11 +19,13 @@ class PartnerPropertySerializer(serializers.ModelSerializer):
     Limited to properties owned by the authenticated hotel-owner.
     """
     full_address = serializers.SerializerMethodField()
+    # Hotel name for the partner cards: English translation, else any, else the address
+    name = serializers.SerializerMethodField()
     
     class Meta:
         model = Property
         fields = [
-            'id', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
+            'id', 'name', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
@@ -35,6 +37,9 @@ class PartnerPropertySerializer(serializers.ModelSerializer):
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
+    
+    def get_name(self, obj):
+        return obj.display_name()
 
 
 class PartnerPropertyCreateSerializer(serializers.ModelSerializer):

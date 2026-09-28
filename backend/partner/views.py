@@ -61,7 +61,7 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
         return Property.objects.filter(
             owner=self.request.user,
             is_deleted=False
-        ).select_related('property_type')
+        ).select_related('property_type').prefetch_related('translations')
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""

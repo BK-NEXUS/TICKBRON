@@ -38,7 +38,7 @@ Core endpoints:
 - GET `/api/v1/me/history/recent/` ✅ IMPLEMENTED (Checkpoint 17)
 - GET `/api/v1/me/history/stats/` ✅ IMPLEMENTED (Checkpoint 17)
 - POST `/api/v1/partner/properties/` ✅ IMPLEMENTED (Checkpoint 18)
-- GET `/api/v1/partner/properties/` ✅ IMPLEMENTED (Checkpoint 18)
+- GET `/api/v1/partner/properties/` ✅ IMPLEMENTED (Checkpoint 18; read-only `name` added 2026-09-28)
 - PATCH `/api/v1/partner/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/partner/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - POST `/api/v1/partner/rooms/` ✅ IMPLEMENTED (Checkpoint 18)
@@ -76,6 +76,9 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-28 partner property name (Phase 2 item 4)
+- `GET /partner/properties/` and `GET/PATCH /partner/properties/{id}/` items have a read-only `name`: the English translation, else any translation, else the full address (`Property.display_name()`). Sending `name` is ignored. Additive only
 
 ## 2026-09-28 search filters (Phase 2 item 2)
 - `GET /properties/search/` new query params (all optional, combine with the existing ones):
