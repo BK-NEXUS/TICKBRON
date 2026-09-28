@@ -37,7 +37,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 
 ## CSRF
 - GET `/api/v1/auth/csrf/` - Get a CSRF token (public, no auth)
-  - Response 200 `{"csrf_token": "<token>"}`; also sets the `csrftoken` cookie if missing
+  - Response 200 `{"csrf_token": "<token>", "authenticated": <bool>}`; also sets the `csrftoken` cookie if missing
+  - `authenticated` (added 2026-09-28): whether this session is logged in. The SPA asks it on page load and only calls `/auth/me/` when it is true, so anonymous visits make no 401 request (browser console error)
   - The `csrftoken` cookie is HttpOnly, so the SPA cannot read it; it takes the token from this endpoint instead
   - Every POST/PUT/PATCH/DELETE from a logged-in session must send it as the `X-CSRFToken` header, otherwise 403 `{"error": {"code": "error", "message": "CSRF Failed: CSRF token missing.", ...}}`
   - Django rotates the token on login (password, OTP verify, register auto-login); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write

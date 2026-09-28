@@ -12,7 +12,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 # from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
 ISOLATED_ENV_VARS = (
     'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
-    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE',
+    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -121,6 +121,11 @@ def test_anonymous_browsing_limit_allows_normal_use():
 
 def test_anonymous_limit_can_be_set_from_the_environment():
     assert "'anon': '300/hour'" in _throttle_rates(THROTTLE_ANON_RATE='300/hour')
+
+
+def test_user_limit_can_be_set_from_the_environment():
+    # The E2E crawl loads every page as the demo accounts many times
+    assert "'user': '100000/hour'" in _throttle_rates(THROTTLE_USER_RATE='100000/hour')
 
 
 def test_sensitive_endpoints_keep_their_strict_limits():

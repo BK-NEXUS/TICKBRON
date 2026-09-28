@@ -183,7 +183,11 @@ def csrf_token(request):
     instead. get_token() also sets the cookie if the browser has none yet.
     Django rotates the token on login, so clients fetch a new one after it.
     """
-    return Response({'csrf_token': get_token(request)}, status=status.HTTP_200_OK)
+    return Response({
+        'csrf_token': get_token(request),
+        # Lets the SPA skip /auth/me/ (a 401) when nobody is logged in
+        'authenticated': request.user.is_authenticated,
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

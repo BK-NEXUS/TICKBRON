@@ -252,7 +252,8 @@ REST_FRAMEWORK = {
         # many users can share one IP (mobile carriers, offices), so this must not
         # be tight. Login, register, OTP and payment keep their own strict limits.
         'anon': os.getenv('THROTTLE_ANON_RATE', '2000/hour'),
-        'user': '1000/hour',
+        # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
+        'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
     },
 }
 
