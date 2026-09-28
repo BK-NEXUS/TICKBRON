@@ -1,82 +1,70 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { propertyAdapter, Property, SearchParams, PropertyType } from '../adapters/propertyAdapter'
+import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
 import { PropertyCard } from '../components/PropertyCard'
-import { SearchFilters, FilterState } from '../components/SearchFilters'
+import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
 import { SearchForm } from '../components/SearchForm'
+import {
+  EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, writeFiltersToUrl,
+} from '../utils/searchFilters'
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error'
 
 /**
  * SearchResultsPage component for displaying search results
- * Reads search parameters from URL and displays filtered/sorted property results
+ * The search (destination, dates, guests), sidebar filters and sort all live in the URL,
+ * so results can be shared, refreshed and reached again with the back button.
  */
 export function SearchResultsPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   const [loadingState, setLoadingState] = useState<LoadingState>('idle')
   const [properties, setProperties] = useState<Property[]>([])
-  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([])
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
-  const [sortBy, setSortBy] = useState('relevance')
   const [totalCount, setTotalCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  
-  const [filters, setFilters] = useState<FilterState>({
-    property_type: undefined,
-    min_price: undefined,
-    max_price: undefined,
-    amenities: [],
-  })
 
-  // Get search parameters from URL
-  const getSearchParams = useCallback((): SearchParams => {
-    return {
-      q: searchParams.get('destination') || undefined,
-      location: searchParams.get('destination') || undefined,
-      check_in: searchParams.get('check_in') || undefined,
-      check_out: searchParams.get('check_out') || undefined,
-      min_guests: searchParams.get('guests') ? parseInt(searchParams.get('guests')!, 10) : undefined,
-      property_type: filters.property_type ? parseInt(filters.property_type, 10) : undefined,
-      min_price: filters.min_price,
-      max_price: filters.max_price,
-      amenities: filters.amenities.map(id => parseInt(id, 10)),
-      sort: sortBy === 'relevance' ? undefined : sortBy,
+  const queryString = searchParams.toString()
+  const { filters, sort: sortBy } = useMemo(
+    () => filtersFromUrl(new URLSearchParams(queryString)),
+    [queryString]
+  )
+
+  // Property types, feature counts and amenities come from the backend
+  useEffect(() => {
+    let cancelled = false
+    propertyAdapter.getFilterOptions().then(response => {
+      if (!cancelled && response.data) setFilterOptions(response.data)
+    }).catch(err => console.error('Failed to load filter options:', err))
+    return () => { cancelled = true }
+  }, [])
+
+  // Load search results whenever the URL changes
+  useEffect(() => {
+    let cancelled = false
+    const params = new URLSearchParams(queryString)
+    const guests = params.get('guests') ? parseInt(params.get('guests')!, 10) : undefined
+    const searchRequest: SearchParams = {
+      q: params.get('destination') || undefined,
+      location: params.get('destination') || undefined,
+      check_in: params.get('check_in') || undefined,
+      check_out: params.get('check_out') || undefined,
+      min_guests: guests && !isNaN(guests) ? guests : undefined,
+      ...filtersToSearchParams(filters, sortBy),
       page: 1,
       page_size: 20,
     }
-  }, [searchParams, filters, sortBy])
 
-  // Load property types on mount
-  useEffect(() => {
-    const loadPropertyTypes = async () => {
-      // Mock property types for now - could be fetched from backend in future
-      const mockPropertyTypes: PropertyType[] = [
-        { id: 1, name: 'Apartment', slug: 'apartment' },
-        { id: 2, name: 'House', slug: 'house' },
-        { id: 3, name: 'Villa', slug: 'villa' },
-        { id: 4, name: 'Studio', slug: 'studio' },
-        { id: 5, name: 'Condo', slug: 'condo' },
-      ]
-      setPropertyTypes(mockPropertyTypes)
-    }
-    
-    loadPropertyTypes()
-  }, [])
-
-  // Load search results when search parameters or filters change
-  useEffect(() => {
     const loadSearchResults = async () => {
       setLoadingState('loading')
       setError(null)
       
       try {
-        const params = getSearchParams()
-        const response = await propertyAdapter.searchProperties(params)
+        const response = await propertyAdapter.searchProperties(searchRequest)
+        if (cancelled) return
         
         if (response.error) {
           setError(response.error)
@@ -84,11 +72,10 @@ export function SearchResultsPage() {
         } else if (response.data) {
           setProperties(response.data.results)
           setTotalCount(response.data.count)
-          setCurrentPage(response.data.page)
-          setTotalPages(response.data.total_pages)
           setLoadingState('success')
         }
       } catch (err) {
+        if (cancelled) return
         console.error('Failed to load search results:', err)
         setError('Failed to load search results. Please try again.')
         setLoadingState('error')
@@ -96,33 +83,33 @@ export function SearchResultsPage() {
     }
 
     loadSearchResults()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, filters, sortBy])
+    return () => { cancelled = true }
+  }, [queryString, filters, sortBy])
+
+  const updateUrl = (newFilters: FilterState, newSort: string, replace = false) => {
+    setSearchParams(writeFiltersToUrl(new URLSearchParams(queryString), newFilters, newSort), { replace })
+  }
 
   const handleFiltersChange = (newFilters: FilterState) => {
-    setFilters(newFilters)
+    // Typing a price should not add a history entry per keystroke
+    const onlyPriceChanged =
+      newFilters.property_type === filters.property_type &&
+      newFilters.min_rating === filters.min_rating &&
+      newFilters.features.join() === filters.features.join() &&
+      newFilters.amenities.join() === filters.amenities.join()
+    updateUrl(newFilters, sortBy, onlyPriceChanged)
   }
 
   const handleClearFilters = () => {
-    setFilters({
-      property_type: undefined,
-      min_price: undefined,
-      max_price: undefined,
-      amenities: [],
-    })
+    updateUrl(EMPTY_FILTERS, sortBy)
   }
 
   const handleSortChange = (newSortBy: string) => {
-    setSortBy(newSortBy)
+    updateUrl(filters, newSortBy)
   }
 
   const handleViewChange = (newView: 'list' | 'map') => {
     setView(newView)
-  }
-
-  const handlePropertyClick = (property: Property) => {
-    // TODO: Navigate to property detail page in future checkpoint
-    console.log('Property clicked:', property.id)
   }
 
   // Get search context for display
@@ -179,7 +166,9 @@ export function SearchResultsPage() {
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
-                propertyTypes={propertyTypes}
+                propertyTypes={filterOptions?.property_types ?? []}
+                featureCounts={filterOptions ? Object.fromEntries(filterOptions.features.map(f => [f.id, f.count])) : undefined}
+                amenities={filterOptions?.amenities ?? []}
               />
             </aside>
 
@@ -233,11 +222,7 @@ export function SearchResultsPage() {
                   {view === 'list' ? (
                     <div className="search-results-grid">
                       {properties.map(property => (
-                        <PropertyCard
-                          key={property.id}
-                          property={property}
-                          onClick={() => handlePropertyClick(property)}
-                        />
+                        <PropertyCard key={property.id} property={property} />
                       ))}
                     </div>
                   ) : (

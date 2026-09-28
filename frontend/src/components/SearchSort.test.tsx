@@ -32,10 +32,10 @@ describe('SearchSort', () => {
   it('displays current sort value', () => {
     const onSortChange = vi.fn()
 
-    render(<SearchSort sortBy="price_low" onSortChange={onSortChange} />)
+    render(<SearchSort sortBy="price_asc" onSortChange={onSortChange} />)
 
     const select = screen.getByLabelText('Sort search results') as HTMLSelectElement
-    expect(select.value).toBe('price_low')
+    expect(select.value).toBe('price_asc')
   })
 
   it('calls onSortChange when sort option changes', () => {
@@ -44,9 +44,9 @@ describe('SearchSort', () => {
     render(<SearchSort sortBy="relevance" onSortChange={onSortChange} />)
 
     const select = screen.getByLabelText('Sort search results')
-    fireEvent.change(select, { target: { value: 'price_high' } })
+    fireEvent.change(select, { target: { value: 'price_desc' } })
 
-    expect(onSortChange).toHaveBeenCalledWith('price_high')
+    expect(onSortChange).toHaveBeenCalledWith('price_desc')
   })
 
   it('has proper ARIA attributes', () => {

@@ -45,6 +45,41 @@ describe('SearchForm', () => {
     })
   })
 
+  describe('searching again from the results page', () => {
+    it('keeps the sidebar filters and sort, and replaces the search itself', async () => {
+      const Probe = () => {
+        const location = useLocation()
+        return (
+          <>
+            <SearchForm />
+            <div data-testid="search-query">{location.search}</div>
+          </>
+        )
+      }
+      render(
+        <MemoryRouter initialEntries={['/search?destination=Tashkent&guests=1&adults=1&children=0&rooms=1&features=wifi,parking&property_type=2&min_rating=4&sort=rating&page=3']}>
+          <Routes>
+            <Route path="/search" element={<Probe />} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+      fireEvent.change(screen.getByLabelText('Destination'), { target: { value: 'Samarkand' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+
+      await waitFor(() => {
+        expect(new URLSearchParams(screen.getByTestId('search-query').textContent ?? '').get('destination')).toBe('Samarkand')
+      })
+      const params = new URLSearchParams(screen.getByTestId('search-query').textContent ?? '')
+      expect(params.get('features')).toBe('wifi,parking')
+      expect(params.get('property_type')).toBe('2')
+      expect(params.get('min_rating')).toBe('4')
+      expect(params.get('sort')).toBe('rating')
+      // A new search starts from the first page
+      expect(params.has('page')).toBe(false)
+    })
+  })
+
   describe('date range picker', () => {
     const localDate = (offsetDays: number) => {
       const d = new Date()

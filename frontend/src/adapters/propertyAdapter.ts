@@ -221,6 +221,8 @@ export interface Property {
   room_types?: RoomType[]
   gallery?: Record<string, PropertyPhoto[]>
   rating?: number
+  /** Search results: average of approved reviews (null when there are none) */
+  average_rating?: number | null
   review_count?: number
   primary_photo?: PropertyPhoto
   nearby_places?: NearbyPlace[]
@@ -241,11 +243,23 @@ export interface SearchParams {
   max_guests?: number
   amenities?: number[]
   property_type?: number
+  /** Property flags that must all be set: wifi, parking, ac, heating, elevator */
+  features?: string[]
+  /** Minimum average guest rating, 1-5 */
+  min_rating?: number
   check_in?: string
   check_out?: string
   sort?: string
   page?: number
   page_size?: number
+}
+
+export interface FilterOptions {
+  property_types: Array<PropertyType & { count: number }>
+  features: Array<{ id: string; label: string; count: number }>
+  amenities: Array<{ id: number; name: string; slug: string; icon?: string | null; count: number }>
+  price_range: { min: number | null; max: number | null }
+  sort_options: Array<{ id: string; label: string }>
 }
 
 export interface SearchResponse {
@@ -330,6 +344,8 @@ class PropertyAdapter {
       queryParams.append('amenities', params.amenities.join(','))
     }
     if (params.property_type !== undefined) queryParams.append('property_type', params.property_type.toString())
+    if (params.features && params.features.length > 0) queryParams.append('features', params.features.join(','))
+    if (params.min_rating !== undefined) queryParams.append('min_rating', params.min_rating.toString())
     if (params.check_in) queryParams.append('check_in', params.check_in)
     if (params.check_out) queryParams.append('check_out', params.check_out)
     if (params.sort) queryParams.append('sort', params.sort)
@@ -340,6 +356,14 @@ class PropertyAdapter {
     const endpoint = `/api/v1/properties/search/${queryString ? `?${queryString}` : ''}`
     
     return this.request<SearchResponse>(endpoint)
+  }
+
+  /**
+   * What the search sidebar can filter and sort by
+   * Integrates with GET /api/v1/properties/filter-options/ endpoint
+   */
+  async getFilterOptions(): Promise<{ data: FilterOptions | null; error: string | null }> {
+    return this.request<FilterOptions>('/api/v1/properties/filter-options/')
   }
 
   /**

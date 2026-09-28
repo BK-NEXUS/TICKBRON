@@ -1,36 +1,31 @@
 import { useState } from 'react'
 import { CoachMark } from './CoachMark'
+import { FEATURE_OPTIONS, FilterState, RATING_OPTIONS, hasActiveFilters } from '../utils/searchFilters'
 
-export interface FilterState {
-  property_type?: string
-  min_price?: number
-  max_price?: number
-  amenities: string[]
-}
+export type { FilterState } from '../utils/searchFilters'
 
 interface SearchFiltersProps {
   filters: FilterState
   onFiltersChange: (filters: FilterState) => void
   onClearFilters: () => void
-  propertyTypes: Array<{ id: number; name: string; slug: string }>
+  /** From GET /properties/filter-options/ */
+  propertyTypes: Array<{ id: number; name: string; slug: string; count?: number }>
+  /** Property counts per feature, from filter-options (optional) */
+  featureCounts?: Record<string, number>
+  /** Searchable amenities, from filter-options (optional) */
+  amenities?: Array<{ id: number; name: string; icon?: string | null; count?: number }>
 }
-
-const AMENITY_OPTIONS = [
-  { id: 'wifi', label: 'WiFi', icon: '📶' },
-  { id: 'parking', label: 'Parking', icon: '🅿️' },
-  { id: 'ac', label: 'Air Conditioning', icon: '❄️' },
-  { id: 'heating', label: 'Heating', icon: '🔥' },
-  { id: 'elevator', label: 'Elevator', icon: '🛗' },
-]
 
 /**
  * SearchFilters component for filtering search results
- * Supports property type, price range, and amenities filtering
+ * Supports property type, price range, amenities (features), facilities and guest rating
  */
-export function SearchFilters({ filters, onFiltersChange, onClearFilters, propertyTypes }: SearchFiltersProps) {
+export function SearchFilters({
+  filters, onFiltersChange, onClearFilters, propertyTypes, featureCounts, amenities = [],
+}: SearchFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const handlePropertyTypeChange = (propertyType: string) => {
+  const handlePropertyTypeChange = (propertyType: number) => {
     onFiltersChange({
       ...filters,
       property_type: filters.property_type === propertyType ? undefined : propertyType,
@@ -47,32 +42,41 @@ export function SearchFilters({ filters, onFiltersChange, onClearFilters, proper
     onFiltersChange({ ...filters, max_price: maxPrice })
   }
 
-  const handleAmenityToggle = (amenity: string) => {
-    const updatedAmenities = filters.amenities.includes(amenity)
-      ? filters.amenities.filter(a => a !== amenity)
-      : [...filters.amenities, amenity]
-    
+  const handleFeatureToggle = (feature: string) => {
+    const updatedFeatures = filters.features.includes(feature)
+      ? filters.features.filter(f => f !== feature)
+      : [...filters.features, feature]
+
+    onFiltersChange({ ...filters, features: updatedFeatures })
+  }
+
+  const handleAmenityToggle = (amenityId: number) => {
+    const updatedAmenities = filters.amenities.includes(amenityId)
+      ? filters.amenities.filter(a => a !== amenityId)
+      : [...filters.amenities, amenityId]
+
     onFiltersChange({ ...filters, amenities: updatedAmenities })
+  }
+
+  const handleRatingChange = (rating: number) => {
+    onFiltersChange({
+      ...filters,
+      min_rating: filters.min_rating === rating ? undefined : rating,
+    })
   }
 
   const handleClearFilters = () => {
     onClearFilters()
   }
 
-  const hasActiveFilters = 
-    filters.property_type || 
-    filters.min_price !== undefined || 
-    filters.max_price !== undefined || 
-    filters.amenities.length > 0
-
   return (
     <aside className="search-filters">
       <div className="search-filters-header">
         <h2 className="search-filters-title">Filters</h2>
         <div className="search-filters-header-button" style={{ position: 'relative' }}>
-          {hasActiveFilters && (
+          {hasActiveFilters(filters) && (
             <>
-              <button 
+              <button
                 className="search-filters-clear"
                 onClick={handleClearFilters}
                 aria-label="Clear all filters"
@@ -100,12 +104,18 @@ export function SearchFilters({ filters, onFiltersChange, onClearFilters, proper
                 <input
                   type="radio"
                   name="property_type"
-                  value={type.slug}
-                  checked={filters.property_type === type.slug}
-                  onChange={() => handlePropertyTypeChange(type.slug)}
+                  value={type.id}
+                  checked={filters.property_type === type.id}
+                  onChange={() => handlePropertyTypeChange(type.id)}
+                  onClick={() => {
+                    // A second click on the checked type clears it (onChange does not fire then)
+                    if (filters.property_type === type.id) handlePropertyTypeChange(type.id)
+                  }}
                   className="search-filter-input"
+                  aria-label={type.name}
                 />
                 <span className="search-filter-label">{type.name}</span>
+                {type.count !== undefined && <span className="search-filter-count">{type.count}</span>}
               </label>
             ))}
           </div>
@@ -148,29 +158,79 @@ export function SearchFilters({ filters, onFiltersChange, onClearFilters, proper
           </div>
         </div>
 
-        {/* Amenities Filter */}
+        {/* Guest Rating Filter */}
         <div className="search-filter-section">
-          <h3 className="search-filter-section-title">Amenities</h3>
-          <div className="search-filter-amenities">
-            {AMENITY_OPTIONS.map(amenity => (
-              <label key={amenity.id} className="search-filter-amenity">
+          <h3 className="search-filter-section-title">Guest Rating</h3>
+          <div className="search-filter-options">
+            {RATING_OPTIONS.map(option => (
+              <label key={option.value} className="search-filter-option">
                 <input
-                  type="checkbox"
-                  checked={filters.amenities.includes(amenity.id)}
-                  onChange={() => handleAmenityToggle(amenity.id)}
-                  className="search-filter-checkbox"
-                  aria-label={amenity.label}
+                  type="radio"
+                  name="min_rating"
+                  value={option.value}
+                  checked={filters.min_rating === option.value}
+                  onChange={() => handleRatingChange(option.value)}
+                  onClick={() => {
+                    if (filters.min_rating === option.value) handleRatingChange(option.value)
+                  }}
+                  className="search-filter-input"
+                  aria-label={`Rating ${option.label}`}
                 />
-                <span className="search-filter-amenity-icon">{amenity.icon}</span>
-                <span className="search-filter-amenity-label">{amenity.label}</span>
+                <span className="search-filter-label">★ {option.label}</span>
               </label>
             ))}
           </div>
         </div>
+
+        {/* Amenities Filter (property features) */}
+        <div className="search-filter-section">
+          <h3 className="search-filter-section-title">Amenities</h3>
+          <div className="search-filter-amenities">
+            {FEATURE_OPTIONS.map(feature => (
+              <label key={feature.id} className="search-filter-amenity">
+                <input
+                  type="checkbox"
+                  checked={filters.features.includes(feature.id)}
+                  onChange={() => handleFeatureToggle(feature.id)}
+                  className="search-filter-checkbox"
+                  aria-label={feature.label}
+                />
+                <span className="search-filter-amenity-icon">{feature.icon}</span>
+                <span className="search-filter-amenity-label">{feature.label}</span>
+                {featureCounts?.[feature.id] !== undefined && (
+                  <span className="search-filter-count">{featureCounts[feature.id]}</span>
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Facilities Filter (searchable amenities from the backend) */}
+        {amenities.length > 0 && (
+          <div className="search-filter-section">
+            <h3 className="search-filter-section-title">Facilities</h3>
+            <div className="search-filter-amenities">
+              {amenities.map(amenity => (
+                <label key={amenity.id} className="search-filter-amenity">
+                  <input
+                    type="checkbox"
+                    checked={filters.amenities.includes(amenity.id)}
+                    onChange={() => handleAmenityToggle(amenity.id)}
+                    className="search-filter-checkbox"
+                    aria-label={amenity.name}
+                  />
+                  {amenity.icon && <span className="search-filter-amenity-icon">{amenity.icon}</span>}
+                  <span className="search-filter-amenity-label">{amenity.name}</span>
+                  {amenity.count !== undefined && <span className="search-filter-count">{amenity.count}</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile Expand/Collapse Button */}
-      <button 
+      <button
         className="search-filters-toggle"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}

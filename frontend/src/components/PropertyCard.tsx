@@ -14,7 +14,7 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const navigate = useNavigate()
   const translation = property.translations[0] || { name: 'Unknown Property', description: '' }
-  const rating = property.rating || 0
+  const rating = property.rating || property.average_rating || 0
   const reviewCount = property.review_count || 0
 
   const handleClick = () => {
@@ -57,7 +57,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
           {property.primary_photo?.photo || '🏠'}
         </div>
         <FavoriteButton propertyId={property.id} propertyName={translation.name} />
-        {property.rating && (
+        {rating > 0 && (
           <div className="property-card-rating">
             <span className="property-card-rating-value">★ {rating.toFixed(1)}</span>
             <span className="property-card-reviews">({reviewCount})</span>

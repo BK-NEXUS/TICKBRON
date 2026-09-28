@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { DateRangeCalendar } from './DateRangeCalendar'
+import { keepFilterParams } from '../utils/searchFilters'
 
 // Search form state interface
 export interface SearchFormData {
@@ -215,6 +216,8 @@ export function SearchForm() {
     newParams.set(URL_PARAMS.ADULTS, formData.adults.toString())
     newParams.set(URL_PARAMS.CHILDREN, formData.children.toString())
     newParams.set(URL_PARAMS.ROOMS, formData.rooms.toString())
+    // Searching again from the results page keeps the sidebar filters and sort
+    keepFilterParams(searchParams, newParams)
 
     // Navigate to search results page with parameters
     navigate(`/search?${newParams.toString()}`)

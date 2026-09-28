@@ -1,15 +1,9 @@
+import { SORT_OPTIONS } from '../utils/searchFilters'
+
 interface SearchSortProps {
   sortBy: string
   onSortChange: (sortBy: string) => void
 }
-
-const SORT_OPTIONS = [
-  { id: 'relevance', label: 'Relevance' },
-  { id: 'price_low', label: 'Price: Low to High' },
-  { id: 'price_high', label: 'Price: High to Low' },
-  { id: 'rating', label: 'Rating' },
-  { id: 'reviews', label: 'Number of Reviews' },
-]
 
 /**
  * SearchSort component for sorting search results

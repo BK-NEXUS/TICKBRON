@@ -13,7 +13,9 @@ describe('SearchFilters', () => {
     property_type: undefined,
     min_price: undefined,
     max_price: undefined,
+    features: [],
     amenities: [],
+    min_rating: undefined,
   }
 
   it('renders filter sections', () => {
@@ -71,12 +73,12 @@ describe('SearchFilters', () => {
 
     expect(onFiltersChange).toHaveBeenCalledWith({
       ...defaultFilters,
-      property_type: 'apartment',
+      property_type: 1,
     })
   })
 
   it('handles property type deselection', () => {
-    const filtersWithType = { ...defaultFilters, property_type: 'apartment' }
+    const filtersWithType = { ...defaultFilters, property_type: 1 }
     const onFiltersChange = vi.fn()
     const onClearFilters = vi.fn()
 
@@ -95,7 +97,7 @@ describe('SearchFilters', () => {
 
     expect(onFiltersChange).toHaveBeenCalledWith({
       ...defaultFilters,
-      property_type: 'house',
+      property_type: 2,
     })
   })
 
@@ -161,12 +163,12 @@ describe('SearchFilters', () => {
 
     expect(onFiltersChange).toHaveBeenCalledWith({
       ...defaultFilters,
-      amenities: ['wifi'],
+      features: ['wifi'],
     })
   })
 
   it('handles amenity deselection', () => {
-    const filtersWithAmenities = { ...defaultFilters, amenities: ['wifi'] }
+    const filtersWithAmenities = { ...defaultFilters, features: ['wifi'] }
     const onFiltersChange = vi.fn()
     const onClearFilters = vi.fn()
 
@@ -184,12 +186,12 @@ describe('SearchFilters', () => {
 
     expect(onFiltersChange).toHaveBeenCalledWith({
       ...defaultFilters,
-      amenities: [],
+      features: [],
     })
   })
 
   it('shows clear all button when filters are active', () => {
-    const activeFilters = { ...defaultFilters, property_type: 'apartment' }
+    const activeFilters = { ...defaultFilters, property_type: 1 }
     const onFiltersChange = vi.fn()
     const onClearFilters = vi.fn()
 
@@ -222,7 +224,7 @@ describe('SearchFilters', () => {
   })
 
   it('calls onClearFilters when clear all button is clicked', () => {
-    const activeFilters = { ...defaultFilters, property_type: 'apartment' }
+    const activeFilters = { ...defaultFilters, property_type: 1 }
     const onFiltersChange = vi.fn()
     const onClearFilters = vi.fn()
 
@@ -296,5 +298,55 @@ describe('SearchFilters', () => {
 
     const toggleButton = screen.getByText('Show More')
     expect(toggleButton).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('selects and clears a minimum guest rating', () => {
+    const onFiltersChange = vi.fn()
+    const { rerender } = render(
+      <SearchFilters filters={defaultFilters} onFiltersChange={onFiltersChange} onClearFilters={vi.fn()} propertyTypes={mockPropertyTypes} />
+    )
+
+    fireEvent.click(screen.getByLabelText('Rating 4+'))
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ ...defaultFilters, min_rating: 4 })
+
+    rerender(
+      <SearchFilters filters={{ ...defaultFilters, min_rating: 4 }} onFiltersChange={onFiltersChange} onClearFilters={vi.fn()} propertyTypes={mockPropertyTypes} />
+    )
+    fireEvent.click(screen.getByLabelText('Rating 4+'))
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ ...defaultFilters, min_rating: undefined })
+  })
+
+  it('clicking the selected property type again clears it', () => {
+    const onFiltersChange = vi.fn()
+    render(
+      <SearchFilters filters={{ ...defaultFilters, property_type: 1 }} onFiltersChange={onFiltersChange} onClearFilters={vi.fn()} propertyTypes={mockPropertyTypes} />
+    )
+
+    fireEvent.click(screen.getByLabelText('Apartment'))
+    expect(onFiltersChange).toHaveBeenCalledWith({ ...defaultFilters, property_type: undefined })
+  })
+
+  it('shows backend amenities as Facilities and toggles them by id', () => {
+    const onFiltersChange = vi.fn()
+    render(
+      <SearchFilters
+        filters={defaultFilters}
+        onFiltersChange={onFiltersChange}
+        onClearFilters={vi.fn()}
+        propertyTypes={mockPropertyTypes}
+        amenities={[{ id: 12, name: 'Swimming Pool', count: 3 }]}
+      />
+    )
+
+    expect(screen.getByText('Facilities')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Swimming Pool'))
+    expect(onFiltersChange).toHaveBeenCalledWith({ ...defaultFilters, amenities: [12] })
+  })
+
+  it('shows Clear All for a rating-only filter', () => {
+    render(
+      <SearchFilters filters={{ ...defaultFilters, min_rating: 3 }} onFiltersChange={vi.fn()} onClearFilters={vi.fn()} propertyTypes={mockPropertyTypes} />
+    )
+    expect(screen.getByText('Clear All')).toBeInTheDocument()
   })
 })

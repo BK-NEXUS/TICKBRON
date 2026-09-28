@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
+import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { SearchResultsPage } from './SearchResultsPage'
 import * as propertyAdapter from '../adapters/propertyAdapter'
 
@@ -8,6 +8,7 @@ import * as propertyAdapter from '../adapters/propertyAdapter'
 vi.mock('../adapters/propertyAdapter', () => ({
   propertyAdapter: {
     searchProperties: vi.fn(),
+    getFilterOptions: vi.fn(),
   },
   Property: {},
   SearchParams: {},
@@ -15,11 +16,6 @@ vi.mock('../adapters/propertyAdapter', () => ({
 }))
 
 describe('SearchResultsPage', () => {
-  const mockPropertyTypes = [
-    { id: 1, name: 'Apartment', slug: 'apartment' },
-    { id: 2, name: 'House', slug: 'house' },
-  ]
-
   const mockProperties = [
     {
       id: 1,
@@ -55,8 +51,29 @@ describe('SearchResultsPage', () => {
     },
   ]
 
+  const mockFilterOptions = {
+    property_types: [
+      { id: 7, name: 'Guesthouse', slug: 'guesthouse', count: 3 },
+      { id: 9, name: 'Hotel', slug: 'hotel', count: 12 },
+    ],
+    features: [
+      { id: 'wifi', label: 'WiFi', count: 10 },
+      { id: 'parking', label: 'Parking', count: 4 },
+      { id: 'ac', label: 'Air Conditioning', count: 8 },
+      { id: 'heating', label: 'Heating', count: 2 },
+      { id: 'elevator', label: 'Elevator', count: 1 },
+    ],
+    amenities: [],
+    price_range: { min: 15, max: 120 },
+    sort_options: [],
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(propertyAdapter.propertyAdapter.getFilterOptions).mockResolvedValue({
+      data: mockFilterOptions,
+      error: null,
+    })
     vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
       data: {
         count: 1,
@@ -341,6 +358,114 @@ describe('SearchResultsPage', () => {
           min_guests: 2,
         })
       )
+    })
+  })
+
+  describe('filters and sort live in the URL', () => {
+    // MemoryRouter + a probe: a data router navigation builds a Request whose AbortSignal jsdom rejects
+    const router = { state: { location: { search: '' } }, navigate: async (delta: number) => { void delta } }
+    const Probe = () => {
+      const location = useLocation()
+      const navigate = useNavigate()
+      router.state.location.search = location.search
+      router.navigate = async (delta: number) => { navigate(delta) }
+      return null
+    }
+    const renderAt = (url: string) => {
+      render(
+        <MemoryRouter initialEntries={[url]}>
+          <Routes>
+            <Route path="/search" element={<><SearchResultsPage /><Probe /></>} />
+          </Routes>
+        </MemoryRouter>
+      )
+      return router
+    }
+    const lastSearch = () => {
+      const calls = vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls
+      return calls[calls.length - 1][0]
+    }
+
+    it('reads filters and sort from the URL and searches with them', async () => {
+      renderAt('/search?destination=Tashkent&property_type=9&features=wifi&min_rating=4&min_price=20&sort=price_asc')
+
+      await waitFor(() => {
+        expect(propertyAdapter.propertyAdapter.searchProperties).toHaveBeenCalledWith(
+          expect.objectContaining({
+            location: 'Tashkent',
+            property_type: 9,
+            features: ['wifi'],
+            min_rating: 4,
+            min_price: 20,
+            sort: 'price_asc',
+          })
+        )
+      })
+      expect((screen.getByLabelText('Sort search results') as HTMLSelectElement).value).toBe('price_asc')
+      expect(await screen.findByLabelText('Hotel')).toBeChecked()
+      expect(screen.getByLabelText('WiFi')).toBeChecked()
+      expect(screen.getByLabelText('Minimum price')).toHaveValue(20)
+    })
+
+    it('writes a changed filter to the URL and searches again', async () => {
+      const router = renderAt('/search?destination=Tashkent&guests=2')
+      await screen.findByText('Charming Paris Apartment')
+
+      fireEvent.click(screen.getByLabelText('Parking'))
+
+      await waitFor(() => {
+        expect(new URLSearchParams(router.state.location.search).get('features')).toBe('parking')
+      })
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.get('destination')).toBe('Tashkent')
+      expect(params.get('guests')).toBe('2')
+      await waitFor(() => expect(lastSearch()).toEqual(expect.objectContaining({ features: ['parking'] })))
+    })
+
+    it('writes the sort to the URL', async () => {
+      const router = renderAt('/search?destination=Tashkent')
+      await screen.findByText('Charming Paris Apartment')
+
+      fireEvent.change(screen.getByLabelText('Sort search results'), { target: { value: 'rating' } })
+
+      await waitFor(() => {
+        expect(new URLSearchParams(router.state.location.search).get('sort')).toBe('rating')
+      })
+      await waitFor(() => expect(lastSearch()).toEqual(expect.objectContaining({ sort: 'rating' })))
+    })
+
+    it('clearing filters removes them from the URL but keeps the search and sort', async () => {
+      const router = renderAt('/search?destination=Tashkent&features=wifi&property_type=9&sort=rating')
+      await screen.findByText('Charming Paris Apartment')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Clear all filters' }))
+
+      await waitFor(() => {
+        expect(router.state.location.search).toBe('?destination=Tashkent&sort=rating')
+      })
+    })
+
+    it('shows property types from the backend, not a fixed list', async () => {
+      renderAt('/search?destination=Tashkent')
+
+      expect(await screen.findByLabelText('Guesthouse')).toBeInTheDocument()
+      expect(screen.getByLabelText('Hotel')).toBeInTheDocument()
+      expect(screen.queryByLabelText('Villa')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Condo')).not.toBeInTheDocument()
+      expect(propertyAdapter.propertyAdapter.getFilterOptions).toHaveBeenCalledTimes(1)
+    })
+
+    it('restores filters when going back in history', async () => {
+      const router = renderAt('/search?destination=Tashkent')
+      await screen.findByText('Charming Paris Apartment')
+
+      fireEvent.click(screen.getByLabelText('WiFi'))
+      await waitFor(() => expect(screen.getByLabelText('WiFi')).toBeChecked())
+
+      await act(async () => { await router.navigate(-1) })
+
+      await waitFor(() => expect(screen.getByLabelText('WiFi')).not.toBeChecked())
+      expect(router.state.location.search).toBe('?destination=Tashkent')
     })
   })
 })
