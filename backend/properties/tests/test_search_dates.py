@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from properties.models import Property, PropertyTranslation, PropertyType
+from properties.models import DateInventory, Property, PropertyTranslation, PropertyType, RatePlan, RoomType
 from users.models import User
 
 SEARCH_URL = '/api/v1/properties/search/'
@@ -28,6 +28,15 @@ class TestSearchWithDates(TestCase):
 
     def test_search_with_check_in_and_check_out_returns_results(self):
         check_in = timezone.localdate() + timedelta(days=3)
+        # Search with dates only returns properties open on every night (Phase 2 item 2)
+        room_type = RoomType.objects.create(
+            property=self.property, name='Double', slug='double', base_price=Decimal('60.00'),
+        )
+        rate_plan = RatePlan.objects.create(
+            room_type=room_type, name='Standard', slug='standard', base_price=Decimal('60.00'),
+        )
+        for offset in range(2):
+            DateInventory.objects.create(rate_plan=rate_plan, date=check_in + timedelta(days=offset), available_rooms=1)
         response = self.client.get(SEARCH_URL, {
             'destination': 'Tashkent', 'check_in': str(check_in), 'check_out': str(check_in + timedelta(days=2)),
         })

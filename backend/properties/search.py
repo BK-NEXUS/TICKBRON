@@ -5,13 +5,59 @@ This module provides text search, geographic search, and comprehensive filtering
 using database features that work with both SQLite (development) and PostgreSQL (production).
 """
 from django.db import models
-from django.db.models import Q, F, Value, FloatField, Prefetch
+from django.db.models import Q, F, Value, FloatField, Prefetch, Avg, Count, OuterRef, Subquery, IntegerField
+from django.db.models.functions import Coalesce
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 from datetime import date, datetime, timedelta
 import math
 import re
+
+
+# Search `features` value -> Property flag. Order is the order the sidebar shows them.
+FEATURES = {
+    'wifi': ('has_wifi', 'WiFi'),
+    'parking': ('has_parking', 'Parking'),
+    'ac': ('has_ac', 'Air Conditioning'),
+    'heating': ('has_heating', 'Heating'),
+    'elevator': ('has_elevator', 'Elevator'),
+}
+
+SORT_OPTIONS = [
+    ('relevance', 'Relevance'),
+    ('price_asc', 'Price: Low to High'),
+    ('price_desc', 'Price: High to Low'),
+    ('rating', 'Rating'),
+    ('reviews', 'Number of Reviews'),
+]
+
+
+def searchable_properties():
+    """Properties that search can return: approved, active and not deleted."""
+    from properties.models import Property
+    return Property.objects.filter(is_active=True, is_deleted=False, status='active')
+
+
+def with_review_scores(queryset):
+    """
+    Annotate average_rating (None without reviews) and review_count from approved reviews.
+    Subqueries, so joins added by other filters cannot multiply the counts.
+    """
+    from accounts.models import Review
+
+    approved = Review.objects.filter(
+        property=OuterRef('pk'), status='approved', is_deleted=False,
+    ).order_by().values('property')
+    return queryset.annotate(
+        average_rating=Subquery(
+            approved.annotate(value=Avg('overall_rating')).values('value'), output_field=FloatField(),
+        ),
+        review_count=Coalesce(
+            Subquery(approved.annotate(value=Count('id')).values('value'), output_field=IntegerField()),
+            0,
+        ),
+    )
 
 
 class PropertySearchService:
@@ -26,13 +72,9 @@ class PropertySearchService:
     
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
-        from properties.models import Property, PropertyTranslation
+        from properties.models import PropertyTranslation
         
-        return Property.objects.filter(
-            is_active=True,
-            is_deleted=False,
-            status='active'
-        ).select_related(
+        return with_review_scores(searchable_properties()).select_related(
             'owner',
             'property_type'
         ).prefetch_related(
@@ -168,8 +210,26 @@ class PropertySearchService:
             except ValueError as e:
                 raise ValueError(f"Invalid date values: {str(e)}")
         
+        # Validate features (has_wifi, ...)
+        if search_params.get('features'):
+            features = list(search_params['features'])
+            unknown = [f for f in features if f not in FEATURES]
+            if unknown:
+                raise ValueError(f"Unknown features: {', '.join(unknown)}")
+            validated_params['features'] = features
+        
+        # Validate minimum rating
+        if search_params.get('min_rating') is not None:
+            try:
+                min_rating = float(search_params['min_rating'])
+            except (ValueError, TypeError):
+                raise ValueError("Invalid minimum rating")
+            if not 1 <= min_rating <= 5:
+                raise ValueError("Minimum rating must be between 1 and 5")
+            validated_params['min_rating'] = min_rating
+        
         # Validate sorting
-        valid_sort_methods = ['relevance', 'price_asc', 'price_desc', 'rating', 'distance']
+        valid_sort_methods = [sort_id for sort_id, _ in SORT_OPTIONS] + ['distance']
         if 'sort' in search_params:
             sort = search_params['sort']
             if sort not in valid_sort_methods:
@@ -298,6 +358,14 @@ class PropertySearchService:
         # Apply amenity filtering
         if search_params.get('amenities'):
             queryset = self._apply_amenity_filter(queryset, search_params['amenities'])
+        
+        # Apply feature filtering (every requested flag must be set)
+        if search_params.get('features'):
+            queryset = queryset.filter(**{FEATURES[f][0]: True for f in search_params['features']})
+        
+        # Apply minimum rating filtering (unrated properties have no rating, so they drop out)
+        if search_params.get('min_rating') is not None:
+            queryset = queryset.filter(average_rating__gte=search_params['min_rating'])
         
         # Apply property type filtering
         if search_params.get('property_type'):
@@ -472,25 +540,46 @@ class PropertySearchService:
     
     def _apply_date_filter(self, queryset, check_in, check_out):
         """
-        Apply date availability filtering.
-        
-        This checks if properties have availability for the requested date range.
-        For now, this is a basic implementation - can be enhanced with inventory integration.
+        Keep properties that can be booked for the whole stay: one active rate plan
+        (on an active room type) whose rate plan min/max nights allow the stay and
+        which has an open inventory row with a room left for every night from
+        check_in up to, not including, check_out. The same rules as quote_stay.
         """
-        try:
-            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            # Invalid date format, skip filtering
+        from properties.models import DateInventory, RatePlan
+
+        check_in = self._parse_date(check_in)
+        check_out = self._parse_date(check_out)
+        if not check_in or not check_out or check_out <= check_in:
             return queryset
-        
-        # Ensure check_out is after check_in
-        if check_out_date <= check_in_date:
-            return queryset
-        
-        # Basic availability check - ensure property exists and is active
-        # More sophisticated inventory checking can be added in future checkpoints
-        return queryset
+        nights = (check_out - check_in).days
+
+        open_nights = DateInventory.objects.filter(
+            rate_plan=OuterRef('pk'),
+            date__gte=check_in,
+            date__lt=check_out,
+            is_deleted=False,
+            is_available=True,
+            available_rooms__gt=F('booked_rooms'),
+        ).filter(
+            Q(minimum_stay__isnull=True) | Q(minimum_stay__lte=nights),
+            Q(maximum_stay__isnull=True) | Q(maximum_stay__gte=nights),
+        ).order_by().values('rate_plan').annotate(n=Count('id')).values('n')
+
+        bookable_rate_plans = RatePlan.objects.filter(
+            is_active=True,
+            is_deleted=False,
+            room_type__is_active=True,
+            room_type__is_deleted=False,
+            min_nights__lte=nights,
+        ).filter(
+            Q(max_nights__isnull=True) | Q(max_nights__gte=nights)
+        ).annotate(
+            open_nights=Subquery(open_nights, output_field=IntegerField())
+        ).filter(open_nights=nights)
+
+        return queryset.filter(
+            id__in=bookable_rate_plans.values('room_type__property_id')
+        )
     
     def _apply_sorting(self, queryset, sort_method, search_params):
         """
@@ -517,8 +606,15 @@ class PropertySearchService:
             return queryset.order_by('-base_price', '-created_at')
         
         elif sort_method == 'rating':
-            # For now, sort by created_at as rating field will be added later
-            return queryset.order_by('-created_at')
+            # Highest average first, unrated last; more reviews wins a tie
+            return queryset.order_by(
+                F('average_rating').desc(nulls_last=True), '-review_count', '-created_at'
+            )
+        
+        elif sort_method == 'reviews':
+            return queryset.order_by(
+                '-review_count', F('average_rating').desc(nulls_last=True), '-created_at'
+            )
         
         elif sort_method == 'distance':
             # Sort by distance from search center (simplified approach)

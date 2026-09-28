@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
-from properties.search import PropertySearchService
+from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
     PaginatedSearchResponseSerializer, PropertyDetailSerializer,
@@ -51,8 +51,10 @@ def property_search(request):
         min_guests, max_guests: Guest capacity range (min 1)
         amenities: List of amenity IDs (comma-separated, max 20)
         property_type: Property type ID
-        check_in, check_out: Date range for availability (YYYY-MM-DD format)
-        sort: Sorting method (relevance, price_asc, price_desc, rating, distance)
+        features: Comma-separated flags the property must all have (wifi, parking, ac, heating, elevator)
+        min_rating: Minimum average rating of approved reviews (1-5)
+        check_in, check_out: Only properties with one rate plan open for every night of the stay (YYYY-MM-DD)
+        sort: Sorting method (relevance, price_asc, price_desc, rating, reviews, distance)
         page: Page number (min 1, default: 1)
         page_size: Results per page (1-100, default: 20)
     
@@ -118,6 +120,57 @@ def property_search(request):
     }
     
     return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([SearchRateThrottle])
+def property_filter_options(request):
+    """
+    What the search sidebar can filter and sort by, from the searchable properties:
+    property types that have at least one property, features and searchable amenities
+    with property counts, the price range and the sort options /properties/search/ accepts.
+    """
+    from django.db.models import Count, Max, Min, Q
+    from properties.models import Amenity, PropertyType
+
+    properties = searchable_properties()
+
+    property_types = PropertyType.objects.filter(is_deleted=False).annotate(
+        count=Count('properties', filter=Q(properties__in=properties))
+    ).filter(count__gt=0).order_by('name')
+
+    feature_counts = properties.aggregate(**{
+        feature: Count('id', filter=Q(**{flag: True})) for feature, (flag, _) in FEATURES.items()
+    })
+
+    amenities = Amenity.objects.filter(is_searchable=True, is_active=True, is_deleted=False).annotate(
+        count=Count('property_amenities', filter=Q(
+            property_amenities__property__in=properties,
+            property_amenities__is_available=True,
+            property_amenities__is_deleted=False,
+        ))
+    ).order_by('name')
+
+    prices = properties.aggregate(min=Min('base_price'), max=Max('base_price'))
+
+    return Response({
+        'property_types': [
+            {'id': t.id, 'name': t.name, 'slug': t.slug, 'count': t.count} for t in property_types
+        ],
+        'features': [
+            {'id': feature, 'label': label, 'count': feature_counts[feature]}
+            for feature, (_, label) in FEATURES.items()
+        ],
+        'amenities': [
+            {'id': a.id, 'name': a.name, 'slug': a.slug, 'icon': a.icon, 'count': a.count} for a in amenities
+        ],
+        'price_range': {
+            'min': float(prices['min']) if prices['min'] is not None else None,
+            'max': float(prices['max']) if prices['max'] is not None else None,
+        },
+        'sort_options': [{'id': sort_id, 'label': label} for sort_id, label in SORT_OPTIONS],
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

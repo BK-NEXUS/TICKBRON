@@ -94,6 +94,9 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
     primary_photo = serializers.SerializerMethodField()
     amenities = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
+    # Annotated by the search queryset (properties.search.with_review_scores)
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Property
@@ -102,7 +105,7 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
-            'primary_photo', 'amenities', 'full_address', 'created_at'
+            'primary_photo', 'amenities', 'full_address', 'average_rating', 'review_count', 'created_at'
         ]
         read_only_fields = ['id']
     
@@ -132,6 +135,13 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
+    
+    def get_average_rating(self, obj):
+        value = getattr(obj, 'average_rating', None)
+        return round(float(value), 1) if value is not None else None
+    
+    def get_review_count(self, obj):
+        return getattr(obj, 'review_count', 0) or 0
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):
@@ -388,6 +398,19 @@ class SearchParamsSerializer(serializers.Serializer):
         min_value=1,
         help_text="Property type ID to filter by"
     )
+    features = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Comma-separated features the property must all have: wifi, parking, ac, heating, elevator"
+    )
+    min_rating = serializers.DecimalField(
+        required=False,
+        max_digits=3,
+        decimal_places=1,
+        min_value=1,
+        max_value=5,
+        help_text="Minimum average guest rating (1-5)"
+    )
     check_in = serializers.DateField(
         required=False, 
         help_text="Check-in date (YYYY-MM-DD format)"
@@ -399,7 +422,7 @@ class SearchParamsSerializer(serializers.Serializer):
     sort = serializers.ChoiceField(
         required=False,
         default='relevance',
-        choices=['relevance', 'price_asc', 'price_desc', 'rating', 'distance'],
+        choices=['relevance', 'price_asc', 'price_desc', 'rating', 'reviews', 'distance'],
         help_text="Sorting method"
     )
     page = serializers.IntegerField(
@@ -415,6 +438,16 @@ class SearchParamsSerializer(serializers.Serializer):
         max_value=100,
         help_text="Results per page (1-100)"
     )
+    
+    def validate_features(self, value):
+        from properties.search import FEATURES
+        features = [f.strip() for f in value.split(',') if f.strip()]
+        unknown = [f for f in features if f not in FEATURES]
+        if unknown:
+            raise serializers.ValidationError(
+                f"Unknown feature(s): {', '.join(unknown)}. Allowed: {', '.join(FEATURES)}."
+            )
+        return features
     
     def validate(self, data):
         """Validate search parameters with comprehensive checks."""

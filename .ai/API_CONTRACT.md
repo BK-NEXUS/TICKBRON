@@ -11,7 +11,8 @@ Core endpoints:
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
 - GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26)
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
-- GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24)
+- GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24; `features`, `min_rating`, `sort=reviews`, real date availability, `average_rating`/`review_count` added 2026-09-28)
+- GET `/api/v1/properties/filter-options/` ✅ IMPLEMENTED (2026-09-28)
 - GET `/api/v1/properties/search/suggestions/` ✅ IMPLEMENTED (Checkpoint 10)
 - GET `/api/v1/properties/{id}/` ✅ IMPLEMENTED (Checkpoint 11)
 - GET `/api/v1/properties/{id}/availability/` ✅ IMPLEMENTED (Checkpoint 12)
@@ -75,6 +76,17 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-28 search filters (Phase 2 item 2)
+- `GET /properties/search/` new query params (all optional, combine with the existing ones):
+  - `features=wifi,parking` comma-separated; the property must have every flag (`wifi`=`has_wifi`, `parking`=`has_parking`, `ac`=`has_ac`, `heating`=`has_heating`, `elevator`=`has_elevator`). Unknown value -> 400 `{error, details: {features: [msg]}}`
+  - `min_rating` 1-5 (one decimal): average `overall_rating` of approved, not deleted reviews >= value. Properties without approved reviews drop out
+  - `sort` also accepts `reviews` (most approved reviews first). `rating` now really sorts by average rating (highest first, unrated last, more reviews wins a tie). Accepted: `relevance`, `price_asc`, `price_desc`, `rating`, `reviews`, `distance`
+  - `property_type` is the type id (unchanged; the frontend used to send a slug)
+- `check_in` + `check_out` now filter for real (before they were ignored): a property is returned only if one active rate plan (on an active room type) allows the stay length (`min_nights`/`max_nights`) and has an inventory row that is `is_available`, has a room left and allows the stay length (`minimum_stay`/`maximum_stay`) for every night from check_in up to, not including, check_out. Nights on two different rate plans do not combine. Same rules as `quote_stay`
+- Each search result has two new fields: `average_rating` (float, one decimal, or null) and `review_count` (int)
+- NEW `GET /properties/filter-options/` (public, search throttle) -> `{property_types: [{id, name, slug, count}], features: [{id, label, count}], amenities: [{id, name, slug, icon, count}], price_range: {min, max}, sort_options: [{id, label}]}`. Counts are over searchable properties (active, approved, not deleted); property types with no such property are left out; amenities are the `is_searchable` ones; `price_range` is min/max `base_price` (null when there are no properties)
+- Additive only, no migration. Behaviour change: a search with dates no longer returns properties without open inventory for those nights
 
 ## 2026-09-25 hotel names instead of addresses (E2E UX 13)
 - `property_name` in `GET /bookings/`, admin customer detail bookings, `GET /partner/bookings/` and notifications, and `property.name` in `GET /admin-panel/bookings/lookup/`, are now the hotel name: the English translation, else any translation, else the full address (`Property.display_name()`). Before they were the address, the city or "Property N - city". Same field names and types; only the value changed
