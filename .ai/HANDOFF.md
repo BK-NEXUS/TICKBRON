@@ -2046,3 +2046,12 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
   - Guard (`src/test/setup.ts`): after each test, pending updates finish inside act, and a test that caused an act warning fails with the component's name (it failed 55 tests before the fixes). Tests that silence console.error themselves are not checked
   - Result: 0 act warnings; `npm test` 3 runs in a row: 1048 passed each. No assertion was removed or weakened (5 `expect` lines were only wrapped in `waitFor`)
 - Fixed: E2E flow A failed at the end of a month (2026-09-28: no Friday/Saturday night left in September), because `pickStay` only searched the month on screen. It now looks in the next month when the stay does not fit; the price assertions are unchanged
+
+## Phase 3: room inventory (#31) + hotel owner calendar (2026-09-28, Kolya's agent)
+
+Design (audit-report #31, option A): rooms are counted per room type and date (`RoomInventory`); `DateInventory` keeps the price and the rate plan rules (open/closed, min/max stay) per rate plan.
+
+- DONE: 3.1 RoomInventory model + double-sell repro (this commit)
+  - `properties.RoomInventory` (table `room_inventory`): room_type, date, available_rooms (at most room_type.total_rooms, checked in `clean()`), booked_rooms (>= 0), is_available; unique per room_type + date. Migration `properties/0007_room_inventory` (schema only)
+  - Repro `bookings/tests/test_room_inventory.py::TestDoubleSellAcrossRatePlans`: one room, two rate plans; booking it through the second rate plan succeeds today (checked with `--runxfail`: DID NOT RAISE). Marked xfail(strict) until step 3.3
+  - Backend (PostgreSQL): 1176 passed, 2 skipped, 1 xfailed

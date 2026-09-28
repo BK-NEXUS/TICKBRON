@@ -984,3 +984,59 @@ class DateInventory(BaseModel):
             return False
         
         return True
+
+
+class RoomInventory(BaseModel):
+    """
+    How many rooms of a room type can be sold on a date (audit #31).
+
+    Rooms are physical, so they are counted once per room type, whatever rate plan
+    sells them. DateInventory keeps the per rate plan price and rules (open/closed,
+    minimum/maximum stay).
+    """
+    room_type = models.ForeignKey(
+        RoomType,
+        on_delete=models.CASCADE,
+        related_name='room_inventory',
+        db_index=True
+    )
+    date = models.DateField(db_index=True)
+    available_rooms = models.PositiveIntegerField(
+        default=0,
+        help_text=_('Rooms of this type for sale on this date (at most the room type total)')
+    )
+    booked_rooms = models.PositiveIntegerField(
+        default=0,
+        help_text=_('Rooms held by pending or confirmed TICKBRON bookings')
+    )
+    is_available = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text=_('False closes the date for every rate plan of this room type')
+    )
+
+    class Meta:
+        db_table = 'room_inventory'
+        verbose_name = 'Room Inventory'
+        verbose_name_plural = 'Room Inventory'
+        unique_together = ('room_type', 'date')
+        ordering = ['room_type', 'date']
+        indexes = [
+            models.Index(fields=['room_type', 'date']),
+        ]
+
+    def __str__(self):
+        return f"{self.room_type.name} - {self.date} ({self.remaining_rooms}/{self.available_rooms} free)"
+
+    def clean(self):
+        super().clean()
+        if self.room_type_id and self.available_rooms > self.room_type.total_rooms:
+            raise ValidationError({
+                'available_rooms': _('Cannot be more than the %(total)s rooms of this room type')
+                % {'total': self.room_type.total_rooms}
+            })
+
+    @property
+    def remaining_rooms(self):
+        """Rooms that can still be sold on this date."""
+        return max(0, self.available_rooms - self.booked_rooms)
