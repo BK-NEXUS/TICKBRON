@@ -321,16 +321,16 @@ test('E hotel owner changes availability and the public page shows it', async ({
     await expect(page.getByRole('heading', { name: 'My Properties' })).toBeVisible()
     // Only the owner's three demo properties
     await expect(page.getByRole('button', { name: /^Manage / })).toHaveCount(3)
-    for (const city of ['Tashkent', 'Samarkand', 'Bukhara']) {
-      await expect(page.getByRole('button', { name: `Manage ${city}` })).toBeVisible()
+    // Cards and their Manage buttons name the hotel, not only the city (phase 2 item 4)
+    for (const hotel of [TASHKENT, 'TICKBRON Demo Registan Inn', 'TICKBRON Demo Old Town Guesthouse']) {
+      await expect(page.getByRole('button', { name: `Manage ${hotel}` })).toBeVisible()
+      await expect(page.getByRole('heading', { level: 3, name: hotel })).toBeVisible()
     }
-    // Cards should show the property name, not only the city
-    await expect.soft(page.getByText(TASHKENT), 'partner cards show the property name').toBeVisible()
   })
 
   await step(audit, 'E2 open-availability-in-ui', async () => {
-    await page.getByRole('button', { name: 'Manage Tashkent' }).click()
-    await expect(page.getByRole('heading', { name: 'Room Types for Tashkent' })).toBeVisible()
+    await page.getByRole('button', { name: `Manage ${TASHKENT}` }).click()
+    await expect(page.getByRole('heading', { name: `Room Types for ${TASHKENT}` })).toBeVisible()
     const toRates = page.getByRole('button', { name: /rates|rate plans|availability|inventory/i })
     await expect.soft(toRates, 'a room type should lead to its rate plans / availability').not.toHaveCount(0)
   })

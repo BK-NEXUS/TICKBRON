@@ -128,3 +128,28 @@ export function hasActiveFilters(filters: FilterState): boolean {
     filters.min_rating !== undefined
   )
 }
+
+const LAST_SEARCH_KEY = 'tickbron:lastSearch'
+
+/** Remember the results page query so breadcrumbs can lead back to it with its filters */
+export function rememberSearch(queryString: string) {
+  try {
+    window.sessionStorage.setItem(LAST_SEARCH_KEY, queryString)
+  } catch {
+    // Storage blocked: breadcrumbs fall back to a plain city search
+  }
+}
+
+/** The last search for this city (with its dates, guests, filters and sort), else a plain city search */
+export function searchUrlForCity(city: string): string {
+  try {
+    const last = window.sessionStorage.getItem(LAST_SEARCH_KEY)
+    if (last !== null) {
+      const destination = new URLSearchParams(last).get('destination') ?? ''
+      if (destination.trim().toLowerCase() === city.trim().toLowerCase()) return `/search?${last}`
+    }
+  } catch {
+    // Storage blocked
+  }
+  return `/search?${new URLSearchParams({ destination: city }).toString()}`
+}

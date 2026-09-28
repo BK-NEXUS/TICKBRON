@@ -7,8 +7,12 @@ import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { EmptyState } from '../components/EmptyState'
+import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
 type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'bookings' | 'add-property'
+
+/** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
+const propertyName = (property: PartnerProperty) => property.name || property.city
 
 export function PartnerDashboardPage() {
   const { user, isAuthenticated } = useAuth()
@@ -84,6 +88,25 @@ export function PartnerDashboardPage() {
     setCurrentView('rates')
   }
 
+  // Home › Partner Dashboard › Hotel › Room type › Rate plan, shown by the layout's Breadcrumbs.
+  // Each level is a button that goes back to that view; Back steps up one level.
+  const trail: Crumb[] = [{ label: 'Partner Dashboard' }]
+  if (currentView !== 'properties') trail[0] = { label: 'Partner Dashboard', onClick: handleBackToProperties }
+  if (currentView === 'add-property') trail.push({ label: 'Add Property' })
+  if (currentView === 'bookings') trail.push({ label: 'Bookings' })
+  if (selectedProperty && ['rooms', 'rates', 'availability'].includes(currentView)) {
+    trail.push(currentView === 'rooms'
+      ? { label: propertyName(selectedProperty) }
+      : { label: propertyName(selectedProperty), onClick: handleBackToRooms })
+    if (selectedRoomType && currentView !== 'rooms') {
+      trail.push(currentView === 'rates'
+        ? { label: selectedRoomType.name }
+        : { label: selectedRoomType.name, onClick: handleBackToRates })
+    }
+    if (selectedRatePlan && currentView === 'availability') trail.push({ label: selectedRatePlan.name })
+  }
+  usePageTrail(trail)
+
   if (!isAuthenticated || !user) {
     return (
       <div className="partner-dashboard-page">
@@ -155,57 +178,6 @@ export function PartnerDashboardPage() {
     </nav>
   )
 
-  const renderBreadcrumb = () => {
-    const breadcrumbs = [
-      { label: 'Properties', onClick: handleBackToProperties, active: currentView === 'properties' },
-    ]
-
-    if (selectedProperty) {
-      breadcrumbs.push({
-        label: selectedProperty.city,
-        onClick: handleBackToProperties,
-        active: currentView === 'rooms',
-      })
-    }
-
-    if (selectedRoomType) {
-      breadcrumbs.push({
-        label: selectedRoomType.name,
-        onClick: handleBackToRooms,
-        active: currentView === 'rates',
-      })
-    }
-
-    if (selectedRatePlan) {
-      breadcrumbs.push({
-        label: selectedRatePlan.name,
-        onClick: handleBackToRates,
-        active: currentView === 'availability',
-      })
-    }
-
-    if (currentView === 'bookings') {
-      breadcrumbs.push({ label: 'Bookings', onClick: () => {}, active: true })
-    }
-
-    return (
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        {breadcrumbs.map((crumb, index) => (
-          <span key={index} className="breadcrumb-item">
-            {index > 0 && <span className="breadcrumb-separator">/</span>}
-            {crumb.active ? (
-              <span className="breadcrumb-current">{crumb.label}</span>
-            ) : (
-              <button onClick={crumb.onClick} className="breadcrumb-link">
-                {crumb.label}
-              </button>
-            )}
-          </span>
-        ))}
-      </nav>
-    )
-  }
-
   const renderPropertiesView = () => (
     <div className="partner-properties-view">
       <div className="properties-view-header">
@@ -242,13 +214,13 @@ export function PartnerDashboardPage() {
           {properties.map(property => (
             <div key={property.id} className="property-card">
               <div className="property-card-header">
-                <h3 className="property-card-title">{property.city}</h3>
+                <h3 className="property-card-title">{propertyName(property)}</h3>
                 <span className={`property-status property-status--${property.status}`}>
                   {property.status}
                 </span>
               </div>
               <div className="property-card-body">
-                <p className="property-address">{property.address_line1}</p>
+                <p className="property-address">{property.city}, {property.address_line1}</p>
                 {property.address_line2 && <p className="property-address">{property.address_line2}</p>}
                 <div className="property-details">
                   <div className="property-detail">
@@ -280,7 +252,7 @@ export function PartnerDashboardPage() {
                 <button
                   onClick={() => handlePropertySelect(property)}
                   className="btn btn-primary"
-                  aria-label={`Manage ${property.city}`}
+                  aria-label={`Manage ${propertyName(property)}`}
                 >
                   Manage
                 </button>
@@ -309,7 +281,7 @@ export function PartnerDashboardPage() {
         return selectedProperty ? (
           <PartnerRoomsManagement
             propertyId={selectedProperty.id}
-            propertyName={selectedProperty.city}
+            propertyName={propertyName(selectedProperty)}
             onManageRates={handleRoomTypeSelect}
           />
         ) : null
@@ -344,7 +316,6 @@ export function PartnerDashboardPage() {
         </div>
 
         {renderNavigation()}
-        {renderBreadcrumb()}
 
         <div className="dashboard-content">
           {renderCurrentView()}

@@ -7,7 +7,7 @@ import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
 import { SearchForm } from '../components/SearchForm'
 import {
-  EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, writeFiltersToUrl,
+  EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, rememberSearch, writeFiltersToUrl,
 } from '../utils/searchFilters'
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error'
@@ -32,6 +32,11 @@ export function SearchResultsPage() {
     () => filtersFromUrl(new URLSearchParams(queryString)),
     [queryString]
   )
+
+  // The property page's breadcrumb leads back to this exact search (dates, guests, filters, sort)
+  useEffect(() => {
+    rememberSearch(queryString)
+  }, [queryString])
 
   // Property types, feature counts and amenities come from the backend
   useEffect(() => {

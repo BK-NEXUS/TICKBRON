@@ -4,7 +4,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { PartnerDashboardPage } from './PartnerDashboardPage'
+import { BreadcrumbProvider, Breadcrumbs } from '../components/Breadcrumbs'
 import { partnerAdapter } from '../adapters/partnerAdapter'
 
 vi.mock('../contexts/AuthContext', () => ({
@@ -45,6 +47,17 @@ vi.mock('../components/PartnerAvailabilityManagement', () => ({
 vi.mock('../components/PartnerPropertyWizard', () => ({ PartnerPropertyWizard: () => null }))
 vi.mock('../components/PartnerBookingsView', () => ({ PartnerBookingsView: () => null }))
 
+// The breadcrumb trail is shown by the layout (MainLayout)
+const renderDashboard = () =>
+  render(
+    <MemoryRouter initialEntries={['/partner']}>
+      <BreadcrumbProvider>
+        <Breadcrumbs />
+        <PartnerDashboardPage />
+      </BreadcrumbProvider>
+    </MemoryRouter>
+  )
+
 describe('PartnerDashboardPage navigation', () => {
   beforeEach(() => {
     vi.mocked(partnerAdapter.getProperties).mockResolvedValue({
@@ -54,7 +67,7 @@ describe('PartnerDashboardPage navigation', () => {
   })
 
   it('goes property -> room type rates -> rate plan availability', async () => {
-    render(<PartnerDashboardPage />)
+    renderDashboard()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Manage Tashkent' }))
     expect(screen.getByTestId('rooms-management')).toBeInTheDocument()
@@ -66,5 +79,34 @@ describe('PartnerDashboardPage navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'stub: open availability' }))
     expect(screen.getByTestId('availability-management')).toHaveTextContent('availability for rate plan 11')
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Standard Rate')
+  })
+
+  it('cards show the hotel name, not only the city (E2E flow E)', async () => {
+    vi.mocked(partnerAdapter.getProperties).mockResolvedValue({
+      data: [{ id: 3, name: 'TICKBRON Demo Hotel Tashkent', city: 'Tashkent', address_line1: '15 Amir Temur Avenue', status: 'active' } as never],
+      error: null,
+    })
+    renderDashboard()
+
+    expect(await screen.findByRole('heading', { level: 3, name: 'TICKBRON Demo Hotel Tashkent' })).toBeInTheDocument()
+    expect(screen.getByText('Tashkent, 15 Amir Temur Avenue')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage TICKBRON Demo Hotel Tashkent' }))
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(trail).toHaveTextContent('Partner Dashboard')
+    expect(trail).toHaveTextContent('TICKBRON Demo Hotel Tashkent')
+  })
+
+  it('Back steps up one level inside the dashboard', async () => {
+    renderDashboard()
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage Tashkent' }))
+    fireEvent.click(screen.getByRole('button', { name: 'stub: open rates' }))
+    expect(screen.getByTestId('rates-management')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByTestId('rooms-management')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('heading', { name: 'My Properties' })).toBeInTheDocument()
   })
 })

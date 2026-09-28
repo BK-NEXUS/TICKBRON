@@ -10,6 +10,9 @@ import { DiningRestaurants } from '../components/DiningRestaurants'
 import { RoomSelection } from '../components/RoomSelection'
 import { ReviewsSection } from '../components/ReviewsSection'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTrail } from '../components/Breadcrumbs'
+import { searchUrlForCity } from '../utils/searchFilters'
+import { propertyDisplayName } from '../utils/propertyName'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -78,6 +81,12 @@ export function PropertyDetailPage() {
       }
     }
   }, [property])
+
+  // Home › City (back to the last search there, with its filters) › Hotel
+  usePageTrail(property ? [
+    { label: property.city, to: searchUrlForCity(property.city) },
+    { label: propertyDisplayName(property) },
+  ] : null)
 
   if (loading) {
     return (

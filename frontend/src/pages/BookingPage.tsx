@@ -10,6 +10,9 @@ import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { usePageTrail } from '../components/Breadcrumbs'
+import { searchUrlForCity } from '../utils/searchFilters'
+import { propertyDisplayName } from '../utils/propertyName'
 
 interface BookingState {
   propertyId: number
@@ -58,6 +61,13 @@ export function BookingPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [booking, setBooking] = useState<Booking | null>(null)
+
+  // Home › City › Hotel › Booking
+  usePageTrail(property ? [
+    { label: property.city, to: searchUrlForCity(property.city) },
+    { label: propertyDisplayName(property), to: `/property/${property.id}` },
+    { label: 'Booking' },
+  ] : null)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<'details' | 'payment' | 'processing' | 'confirmation' | 'success' | 'failure'>('details')
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null)

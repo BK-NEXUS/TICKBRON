@@ -9,6 +9,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 // Property types from backend contract
 export interface PartnerProperty {
   id: number
+  /** Hotel name (English translation, else any, else the address); read-only */
+  name?: string
   owner: number
   property_type: number
   status: string

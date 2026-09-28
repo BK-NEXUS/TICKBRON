@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { Breadcrumbs } from '../components/Breadcrumbs'
 
 type LoginMethod = 'password' | 'phone'
 
@@ -101,6 +102,7 @@ export function LoginPage() {
 
   return (
     <div className="auth-page">
+      <Breadcrumbs />
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
