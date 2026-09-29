@@ -8,7 +8,7 @@ from rest_framework import status
 from decimal import Decimal
 from datetime import date, timedelta
 from users.models import User
-from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
+from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory
 from bookings.models import Booking, BookingItem
 
 
@@ -245,12 +245,11 @@ class BookingViewTests(APITestCase):
     
     def test_create_booking_insufficient_inventory(self):
         """Test creating booking when inventory is insufficient."""
-        # Set available_rooms to 0 to simulate no availability
-        DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
-            date__gte=self.check_in,
-            date__lt=self.check_out
-        ).update(available_rooms=0, booked_rooms=0)
+        # RoomInventory is what the engine gates room count on (audit #31)
+        current_date = self.check_in
+        while current_date < self.check_out:
+            RoomInventory.objects.create(room_type=self.room_type, date=current_date, available_rooms=0)
+            current_date += timedelta(days=1)
         
         self.client.force_authenticate(user=self.user)
         
@@ -357,7 +356,7 @@ class BookingViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertTrue(Booking.objects.filter(id=booking.id).exists())
-        inventory = DateInventory.objects.get(rate_plan=self.rate_plan, date=self.check_in)
+        inventory = RoomInventory.objects.get(room_type=self.room_type, date=self.check_in)
         self.assertEqual(inventory.booked_rooms, 1)
 
     def test_booking_serializer_fields_are_read_only(self):

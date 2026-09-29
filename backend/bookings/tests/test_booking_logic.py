@@ -15,7 +15,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from bookings.models import Booking, ExpiredBookingProcessingError
-from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
+from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
 
 BOOKINGS_URL = '/api/v1/bookings/'
@@ -46,11 +46,16 @@ class BookingLogicTestBase(TestCase):
                 rate_plan=self.rate_plan, date=self.start + timedelta(days=offset), available_rooms=5,
                 booked_rooms=0, price=Decimal('100.00'), currency='USD', is_available=True
             )
+            RoomInventory.objects.create(
+                room_type=self.room_type, date=self.start + timedelta(days=offset), available_rooms=5,
+            )
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
     def inventory(self, day_offset=0):
-        return DateInventory.objects.get(rate_plan=self.rate_plan, date=self.start + timedelta(days=day_offset))
+        # RoomInventory: the booking engine's room count, shared by every rate plan
+        # of this room type (audit #31). DateInventory keeps price and rate rules.
+        return RoomInventory.objects.get(room_type=self.room_type, date=self.start + timedelta(days=day_offset))
 
     def create_booking(self, nights=1, day_offset=0, **extra):
         check_in = self.start + timedelta(days=day_offset)

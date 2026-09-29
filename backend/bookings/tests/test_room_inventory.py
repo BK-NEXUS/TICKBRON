@@ -56,7 +56,6 @@ class RoomInventoryFixture(TestCase):
 
 
 class TestDoubleSellAcrossRatePlans(RoomInventoryFixture):
-    @pytest.mark.xfail(strict=True, reason='#31: the booking engine uses RoomInventory from step 3.3')
     def test_the_last_room_cannot_be_sold_again_through_another_rate_plan(self):
         self.book(self.flexible)
 

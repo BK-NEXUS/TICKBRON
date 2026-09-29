@@ -284,7 +284,7 @@ class Booking(BaseModel):
             # Locks every night's inventory row and prices the stay; the public quote
             # endpoint uses the same function, so the guest pays what they were shown
             quote = quote_stay(rate_plan, check_in, check_out, number_of_rooms, lock=True)
-            inventory_records = quote.inventory
+            room_inventory_records = quote.room_inventory
             nightly_total = quote.nightly_total  # price of one room for the whole stay
             total_price = quote.total_price
 
@@ -319,11 +319,13 @@ class Booking(BaseModel):
                 currency=rate_plan.currency
             )
             
-            # Update inventory - atomically reserve every booked room
-            for inventory in inventory_records:
+            # Update inventory - atomically reserve every booked room. RoomInventory is
+            # keyed by room type, not rate plan, so this is what stops a second rate
+            # plan of the same room type from selling the same physical room (#31).
+            for inventory in room_inventory_records:
                 inventory.booked_rooms = F('booked_rooms') + number_of_rooms
                 inventory.save(update_fields=['booked_rooms'])
-            
+
             return booking
     
     def _lock_row(self):
@@ -377,13 +379,14 @@ class Booking(BaseModel):
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
                 
-                # Lock and update inventory
-                from properties.models import DateInventory
-                inventory_records = DateInventory.objects.filter(
-                    rate_plan=item.rate_plan,
+                # Lock and update inventory (RoomInventory: shared by every rate plan
+                # of this room type, see create_booking)
+                from properties.models import RoomInventory
+                inventory_records = RoomInventory.objects.filter(
+                    room_type=item.room_type,
                     date__in=date_range
                 ).select_for_update()
-                
+
                 for inventory in inventory_records:
                     # Decrement booked_rooms
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
@@ -436,13 +439,14 @@ class Booking(BaseModel):
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
                 
-                # Lock and update inventory
-                from properties.models import DateInventory
-                inventory_records = DateInventory.objects.filter(
-                    rate_plan=item.rate_plan,
+                # Lock and update inventory (RoomInventory: shared by every rate plan
+                # of this room type, see create_booking)
+                from properties.models import RoomInventory
+                inventory_records = RoomInventory.objects.filter(
+                    room_type=item.room_type,
                     date__in=date_range
                 ).select_for_update()
-                
+
                 for inventory in inventory_records:
                     # Decrement booked_rooms
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms

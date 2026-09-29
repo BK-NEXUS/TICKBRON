@@ -10,7 +10,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from bookings.models import Booking
-from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
+from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
 
 
@@ -94,8 +94,12 @@ class TestQuote:
         assert f'{closed} is not available' in str(response.data['details']['availability'])
 
     def test_sold_out_night_is_named(self, stay):
-        stay['days'][2].booked_rooms = 3
-        stay['days'][2].save()
+        # RoomInventory is what the engine gates room count on (audit #31);
+        # DateInventory keeps price and rate rules.
+        RoomInventory.objects.create(
+            room_type=stay['room'], date=stay['start'] + timedelta(days=2),
+            available_rooms=3, booked_rooms=3,
+        )
         response = quote(stay, 1, 4)
         sold_out = (stay['start'] + timedelta(days=2)).isoformat()
         assert response.status_code == 400

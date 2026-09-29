@@ -16,7 +16,7 @@ from django.test import TransactionTestCase
 from django.utils import timezone
 
 from bookings.models import Booking
-from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
+from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
 
 
@@ -78,6 +78,9 @@ class BookingConcurrencyTests(TransactionTestCase):
         # of tripping the booked_rooms >= 0 check constraint
         self.other_booking = self._book()
         self.booking = self._book()
+        # RoomInventory is what the engine gates and updates room count on (audit
+        # #31); the first _book() call above created this row (default: total_rooms)
+        self.room_inventory = RoomInventory.objects.get(room_type=self.room_type, date=self.day)
         assert self._booked_rooms() == 2
 
     def _book(self):
@@ -87,7 +90,7 @@ class BookingConcurrencyTests(TransactionTestCase):
         )
 
     def _booked_rooms(self):
-        return DateInventory.objects.get(pk=self.inventory.pk).booked_rooms
+        return RoomInventory.objects.get(pk=self.room_inventory.pk).booked_rooms
 
     def _stale_copies(self, count=2):
         """Independent in-memory copies loaded before the race, as two requests would have."""
@@ -143,10 +146,69 @@ class BookingConcurrencyTests(TransactionTestCase):
         assert self._booked_rooms() == 1
 
     def test_last_room_cannot_be_sold_twice(self):
-        DateInventory.objects.filter(pk=self.inventory.pk).update(available_rooms=3)  # 2 held, 1 left
+        RoomInventory.objects.filter(pk=self.room_inventory.pk).update(available_rooms=3)  # 2 held, 1 left
 
         results = run_concurrently(self._book, self._book)
 
         assert self._outcomes(results) == ['error', 'ok']
         self._assert_losers_got_validation_errors(results)
         assert self._booked_rooms() == 3
+
+
+class RoomInventoryConcurrencyTests(TransactionTestCase):
+    """
+    A physical room is one RoomInventory row shared by every rate plan of its
+    room type (audit #31): two rate plans racing for the same last room must
+    not both win.
+    """
+
+    def setUp(self):
+        if connection.vendor != 'postgresql':
+            self.skipTest('Row-level locking races need PostgreSQL')
+
+        self.user = User.objects.create_user(email='race-two-rate-plans@example.com', password='testpass123')
+        property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
+        self.property = Property.objects.create(
+            owner=self.user, property_type=property_type, status='active',
+            max_guests=4, bedrooms=1, bathrooms=1, city='Tashkent', country='Uzbekistan',
+            base_price=Decimal('100.00'), currency='USD'
+        )
+        # One physical room, sold through two rate plans (the audit #31 repro)
+        self.room_type = RoomType.objects.create(
+            property=self.property, name='Standard', slug='standard', base_occupancy=2,
+            max_occupancy=4, base_price=Decimal('100.00'), currency='USD', total_rooms=1
+        )
+        self.flexible = RatePlan.objects.create(
+            room_type=self.room_type, name='Flexible', slug='flexible', rate_type='standard',
+            base_price=Decimal('100.00'), currency='USD', min_nights=1, max_nights=30, is_active=True
+        )
+        self.non_refundable = RatePlan.objects.create(
+            room_type=self.room_type, name='Non-refundable', slug='non-refundable',
+            rate_type='non_refundable', base_price=Decimal('90.00'), currency='USD',
+            min_nights=1, max_nights=30, is_active=True
+        )
+        self.day = timezone.localdate() + timedelta(days=5)
+        for rate_plan in (self.flexible, self.non_refundable):
+            DateInventory.objects.create(
+                rate_plan=rate_plan, date=self.day, available_rooms=1, booked_rooms=0,
+                price=rate_plan.base_price, currency='USD', is_available=True
+            )
+
+    def _book(self, rate_plan):
+        return Booking.create_booking(
+            guest=self.user, property_obj=self.property, room_type=self.room_type, rate_plan=rate_plan,
+            check_in=self.day, check_out=self.day + timedelta(days=1), guest_count=2
+        )
+
+    def test_last_room_cannot_be_sold_through_two_rate_plans_at_once(self):
+        results = run_concurrently(
+            lambda: self._book(self.flexible), lambda: self._book(self.non_refundable),
+        )
+
+        assert sorted(kind for kind, _ in results) == ['error', 'ok']
+        for kind, value in results:
+            if kind == 'error':
+                assert isinstance(value, ValidationError), repr(value)
+        room_inventory = RoomInventory.objects.get(room_type=self.room_type, date=self.day)
+        assert room_inventory.booked_rooms == 1
+        assert Booking.objects.filter(status='pending').count() == 1

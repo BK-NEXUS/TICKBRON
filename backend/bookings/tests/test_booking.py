@@ -8,7 +8,7 @@ from django.db import transaction
 from decimal import Decimal
 from datetime import date, timedelta
 from users.models import User
-from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
+from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory
 from bookings.models import Booking, BookingItem
 from bookings.serializers import BookingCreateSerializer, BookingCancelSerializer, BookingSerializer
 from rest_framework.test import APIRequestFactory
@@ -115,23 +115,25 @@ class BookingModelTests(TestCase):
         self.assertEqual(booking_item.rate_plan, self.rate_plan)
         self.assertEqual(booking_item.number_of_rooms, 1)
         
-        # Check inventory was updated
-        inventory_records = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        # Check inventory was updated (RoomInventory: shared by every rate plan of
+        # this room type, see bookings.models.Booking.create_booking, audit #31)
+        inventory_records = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         )
         for inventory in inventory_records:
             self.assertEqual(inventory.booked_rooms, 1)
-    
+
     def test_booking_creation_insufficient_inventory(self):
         """Test booking creation fails when inventory is insufficient."""
         # Set booked_rooms to available_rooms
-        DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
-            date__gte=self.check_in,
-            date__lt=self.check_out
-        ).update(booked_rooms=5)
+        current_date = self.check_in
+        while current_date < self.check_out:
+            RoomInventory.objects.create(
+                room_type=self.room_type, date=current_date, available_rooms=5, booked_rooms=5,
+            )
+            current_date += timedelta(days=1)
         
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
@@ -233,9 +235,10 @@ class BookingModelTests(TestCase):
             guest_count=2
         )
         
-        # Refresh inventory to see the updated booked_rooms
-        DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        # Refresh inventory to see the updated booked_rooms (RoomInventory now
+        # gates room count; the first booking above already created its rows)
+        RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ).update(available_rooms=1)  # Only 1 room available total
@@ -276,14 +279,14 @@ class BookingModelTests(TestCase):
         self.assertEqual(booking.cancellation_reason, 'Test cancellation')
         
         # Check inventory was restored
-        inventory_records = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        inventory_records = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         )
         for inventory in inventory_records:
             self.assertEqual(inventory.booked_rooms, 0)
-    
+
     def test_booking_cancellation_invalid_status(self):
         """Test booking cancellation fails for invalid status."""
         # Create booking
@@ -808,22 +811,22 @@ class BookingExpiryTests(TestCase):
         )
         
         # Verify inventory was booked
-        inventory_records = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        inventory_records = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         )
         for inventory in inventory_records:
             self.assertEqual(inventory.booked_rooms, 1)
-        
+
         # Expire the booking
         booking.expire_booking()
-        
+
         # Check booking status
         self.assertEqual(booking.status, 'cancelled')
         self.assertIsNotNone(booking.cancelled_at)
         self.assertEqual(booking.cancellation_reason, 'Booking expired - payment not completed within time limit')
-        
+
         # Check inventory was restored
         for inventory in inventory_records:
             inventory.refresh_from_db()
@@ -989,8 +992,8 @@ class BookingExpiryTests(TestCase):
         )
         
         # Verify inventory was booked for 3 nights
-        inventory_records = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        inventory_records = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=check_in,
             date__lt=check_out
         )
@@ -1061,10 +1064,11 @@ class TransactionSafetyTests(TestCase):
             is_active=True
         )
         
-        # Create date inventory with limited availability
+        # Create date inventory with limited availability (RoomInventory is what the
+        # booking engine actually gates and updates -- see create_booking, audit #31)
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
-        
+
         current_date = self.check_in
         while current_date < self.check_out:
             DateInventory.objects.create(
@@ -1076,12 +1080,15 @@ class TransactionSafetyTests(TestCase):
                 currency='USD',
                 is_available=True
             )
+            RoomInventory.objects.create(
+                room_type=self.room_type, date=current_date, available_rooms=1,  # Only 1 room available
+            )
             current_date += timedelta(days=1)
-    
+
     def test_transaction_rollback_on_error(self):
         """Test that transaction rolls back on error."""
-        initial_booked_count = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        initial_booked_count = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ).first().booked_rooms
@@ -1106,19 +1113,19 @@ class TransactionSafetyTests(TestCase):
             pass
         
         # Check that inventory was not updated (transaction rolled back)
-        final_booked_count = DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        final_booked_count = RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ).first().booked_rooms
-        
+
         self.assertEqual(initial_booked_count, final_booked_count)
-    
+
     def test_inventory_consistency_after_successful_booking(self):
         """Test that inventory remains consistent after successful booking."""
         # Get initial inventory state
-        initial_inventory = list(DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        initial_inventory = list(RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
@@ -1135,8 +1142,8 @@ class TransactionSafetyTests(TestCase):
         )
         
         # Check inventory consistency
-        final_inventory = list(DateInventory.objects.filter(
-            rate_plan=self.rate_plan,
+        final_inventory = list(RoomInventory.objects.filter(
+            room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
