@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { partnerAdapter, PartnerDateInventory, CreateDateInventoryRequest, UpdateDateInventoryRequest } from '../adapters/partnerAdapter'
+import { partnerAdapter, PartnerDateInventory, CreateDateInventoryRequest, UpdateDateInventoryRequest, BulkPriceRequest } from '../adapters/partnerAdapter'
 
 interface PartnerAvailabilityManagementProps {
   ratePlanId: number
   ratePlanName: string
 }
 
-type ViewMode = 'list' | 'create' | 'edit'
+type ViewMode = 'list' | 'create' | 'edit' | 'bulk-price'
 
 export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: PartnerAvailabilityManagementProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -15,6 +15,13 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const [bulkPriceData, setBulkPriceData] = useState<Omit<BulkPriceRequest, 'rate_plan'>>({
+    date_from: '',
+    date_to: '',
+    price: 100,
+  })
+  const [bulkSaving, setBulkSaving] = useState(false)
 
   const [formData, setFormData] = useState<CreateDateInventoryRequest>({
     rate_plan: ratePlanId,
@@ -137,11 +144,36 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
       setSuccessMessage('Date inventory deleted successfully')
       loadDateInventory()
-      
+
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
       setError('Failed to delete date inventory. Please try again.')
       setLoading(false)
+    }
+  }
+
+  const handleBulkPriceApply = async () => {
+    setBulkSaving(true)
+    setError(null)
+
+    try {
+      const response = await partnerAdapter.bulkSetPrice({ rate_plan: ratePlanId, ...bulkPriceData })
+
+      if (response.error) {
+        setError(response.error)
+        setBulkSaving(false)
+        return
+      }
+
+      setSuccessMessage('Price updated for the selected dates')
+      setViewMode('list')
+      setBulkSaving(false)
+      loadDateInventory()
+
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError('Failed to update the price. Please try again.')
+      setBulkSaving(false)
     }
   }
 
@@ -222,16 +254,29 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     <div className="partner-availability-list">
       <div className="availability-list-header">
         <h2 className="availability-list-title">Date Inventory for {ratePlanName}</h2>
-        <button
-          onClick={() => {
-            resetForm()
-            setViewMode('create')
-          }}
-          className="btn btn-primary"
-          aria-label="Add new date inventory"
-        >
-          + Add Date Inventory
-        </button>
+        <div className="availability-list-header-actions">
+          <button
+            onClick={() => {
+              setBulkPriceData({ date_from: '', date_to: '', price: 100 })
+              setError(null)
+              setViewMode('bulk-price')
+            }}
+            className="btn btn-secondary"
+            aria-label={`Bulk price edit for ${ratePlanName}`}
+          >
+            Bulk price edit
+          </button>
+          <button
+            onClick={() => {
+              resetForm()
+              setViewMode('create')
+            }}
+            className="btn btn-primary"
+            aria-label="Add new date inventory"
+          >
+            + Add Date Inventory
+          </button>
+        </div>
       </div>
 
       {successMessage && (
@@ -466,9 +511,88 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     </div>
   )
 
+  const renderBulkPriceView = () => (
+    <div className="partner-availability-form">
+      <div className="availability-form-header">
+        <h2 className="availability-form-title">Bulk price edit for {ratePlanName}</h2>
+        <button
+          onClick={() => setViewMode('list')}
+          className="btn btn-tertiary"
+          aria-label="Cancel and return to list"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {error && (
+        <div className="alert alert-error" role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
+
+      <form className="availability-form" onSubmit={(e) => { e.preventDefault(); handleBulkPriceApply() }}>
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="bulk_date_from">From *</label>
+            <input
+              id="bulk_date_from"
+              type="date"
+              value={bulkPriceData.date_from}
+              onChange={(e) => setBulkPriceData(prev => ({ ...prev, date_from: e.target.value }))}
+              className="form-input"
+              required
+              aria-required="true"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="bulk_date_to">To (exclusive) *</label>
+            <input
+              id="bulk_date_to"
+              type="date"
+              value={bulkPriceData.date_to}
+              onChange={(e) => setBulkPriceData(prev => ({ ...prev, date_to: e.target.value }))}
+              className="form-input"
+              required
+              aria-required="true"
+            />
+            <small className="form-hint">The last night priced is the day before this date.</small>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="bulk_price">Nightly price *</label>
+          <input
+            id="bulk_price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={bulkPriceData.price}
+            onChange={(e) => setBulkPriceData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+            className="form-input"
+            required
+            aria-required="true"
+          />
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={bulkSaving}
+          >
+            {bulkSaving ? 'Applying...' : 'Apply'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+
   return (
     <div className="partner-availability-management">
-      {viewMode === 'list' ? renderListView() : renderFormView()}
+      {viewMode === 'list' && renderListView()}
+      {viewMode === 'bulk-price' && renderBulkPriceView()}
+      {(viewMode === 'create' || viewMode === 'edit') && renderFormView()}
     </div>
   )
 }
