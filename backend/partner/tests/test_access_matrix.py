@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 
 from bookings.models import Booking
 from permissions.models import Role
-from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
+from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomBlock, RoomInventory, RoomType
 from users.models import User
 
 P = '/api/v1/partner'
@@ -19,7 +19,7 @@ P = '/api/v1/partner'
 # (method, url) for every partner endpoint. Ids do not need to exist:
 # permissions are checked before the object is looked up.
 PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/')]
-for resource in ('properties', 'rooms', 'rates', 'inventory', 'room-inventory'):
+for resource in ('properties', 'rooms', 'rates', 'inventory', 'room-inventory', 'blocks'):
     PARTNER_ENDPOINTS += [
         ('get', f'{P}/{resource}/'),
         ('post', f'{P}/{resource}/'),
@@ -84,13 +84,17 @@ def make_hotel(owner, city, guest):
     room_inventory = RoomInventory.objects.create(
         room_type=room, date=check_in + timedelta(days=10), available_rooms=3, booked_rooms=0,
     )
+    block = RoomBlock.create_block(
+        room_type=room, date_from=check_in + timedelta(days=20), date_to=check_in + timedelta(days=22),
+        rooms=1, note='Booking.com', created_by=owner,
+    )
     booking = Booking.create_booking(
         guest=guest, property_obj=prop, room_type=room, rate_plan=rate,
         check_in=check_in, check_out=check_in + timedelta(days=1), guest_count=1,
     )
     return {
         'property': prop, 'room': room, 'rate': rate, 'day': day,
-        'room_inventory': room_inventory, 'booking': booking,
+        'room_inventory': room_inventory, 'block': block, 'booking': booking,
     }
 
 
@@ -122,7 +126,7 @@ class TestHotelOwnerSeesOnlyOwnData:
 
     @pytest.mark.parametrize('resource,key', [
         ('properties', 'property'), ('rooms', 'room'), ('rates', 'rate'), ('inventory', 'day'),
-        ('room-inventory', 'room_inventory'),
+        ('room-inventory', 'room_inventory'), ('blocks', 'block'),
     ])
     def test_lists_contain_only_own_objects(self, two_owners, resource, key):
         response = call(two_owners['alice'], 'get', f'{P}/{resource}/')
@@ -136,17 +140,18 @@ class TestHotelOwnerSeesOnlyOwnData:
 
     @pytest.mark.parametrize('resource,key', [
         ('properties', 'property'), ('rooms', 'room'), ('rates', 'rate'), ('inventory', 'day'),
-        ('room-inventory', 'room_inventory'),
+        ('room-inventory', 'room_inventory'), ('blocks', 'block'),
     ])
     def test_other_owners_objects_are_not_found(self, two_owners, resource, key):
         alice, bob_obj = two_owners['alice'], two_owners['bob_hotel'][key]
         url = f'{P}/{resource}/{bob_obj.id}/'
         assert call(alice, 'get', url).status_code == 404
-        assert call(alice, 'patch', url, {'available_rooms': 1} if resource == 'room-inventory'
-                     else {'currency': 'UZS'}).status_code == 404
+        if resource != 'blocks':  # blocks has no PATCH/PUT at all (405 regardless of ownership)
+            assert call(alice, 'patch', url, {'available_rooms': 1} if resource == 'room-inventory'
+                         else {'currency': 'UZS'}).status_code == 404
         assert call(alice, 'delete', url).status_code == 404
         bob_obj.refresh_from_db()
-        if resource != 'room-inventory':
+        if resource not in ('room-inventory', 'blocks'):
             assert bob_obj.currency == 'USD'
         assert not bob_obj.is_deleted
 
@@ -169,6 +174,10 @@ class TestHotelOwnerSeesOnlyOwnData:
             'room_type': bob_hotel['room'].id, 'date': (date.today() + timedelta(days=30)).isoformat(),
             'available_rooms': 1,
         })
+        block = call(alice, 'post', f'{P}/blocks/', {
+            'room_type': bob_hotel['room'].id, 'date_from': (date.today() + timedelta(days=40)).isoformat(),
+            'date_to': (date.today() + timedelta(days=41)).isoformat(), 'rooms': 1, 'note': 'sneaky',
+        })
         photo = call(alice, 'post', f"{P}/properties/{bob_hotel['property'].id}/photos/", {
             'photo': SimpleUploadedFile('p.gif', GIF_1X1, content_type='image/gif'),
             'photo_type': 'exterior',
@@ -178,6 +187,7 @@ class TestHotelOwnerSeesOnlyOwnData:
         assert rate.status_code == 400
         assert day.status_code == 400
         assert room_inventory.status_code == 400
+        assert block.status_code == 400
         assert photo.status_code == 404
         assert not RoomType.objects.filter(slug='sneaky').exists()
         assert not RatePlan.objects.filter(slug='sneaky').exists()

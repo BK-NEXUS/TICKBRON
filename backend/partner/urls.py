@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from partner.views import (
     PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
     PartnerRatePlanViewSet, PartnerDateInventoryViewSet, PartnerRoomInventoryViewSet,
-    partner_property_photo_upload, partner_bookings
+    PartnerBlockViewSet, partner_property_photo_upload, partner_bookings
 )
 
 app_name = 'partner'
@@ -18,6 +18,7 @@ router.register(r'rooms', PartnerRoomTypeViewSet, basename='partner-room')
 router.register(r'rates', PartnerRatePlanViewSet, basename='partner-rate')
 router.register(r'inventory', PartnerDateInventoryViewSet, basename='partner-inventory')
 router.register(r'room-inventory', PartnerRoomInventoryViewSet, basename='partner-room-inventory')
+router.register(r'blocks', PartnerBlockViewSet, basename='partner-block')
 
 urlpatterns = [
     path('', include(router.urls)),

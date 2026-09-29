@@ -3,7 +3,9 @@ Property models for TICKBRON.
 
 This module contains models for properties, translations, policies, and related structures.
 """
-from django.db import models
+from datetime import timedelta
+from django.db import models, transaction, IntegrityError
+from django.db.models import F
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
@@ -1040,3 +1042,127 @@ class RoomInventory(BaseModel):
     def remaining_rooms(self):
         """Rooms that can still be sold on this date."""
         return max(0, self.available_rooms - self.booked_rooms)
+
+
+class RoomBlock(BaseModel):
+    """
+    Rooms taken out of sale for a date range without a TICKBRON booking -- an external
+    sale (Booking.com, phone, walk-in) or maintenance (audit #31, 3.5).
+
+    Applying a block locks and decrements the affected RoomInventory rows directly
+    (creating any missing, unmanaged one at the room type's full total_rooms first, same
+    as the booking engine); deleting a block (release()) restores them. Blocks stack: a
+    second block on an already-blocked night reduces available_rooms further.
+    """
+    room_type = models.ForeignKey(
+        RoomType,
+        on_delete=models.CASCADE,
+        related_name='blocks',
+        db_index=True
+    )
+    date_from = models.DateField(db_index=True)
+    date_to = models.DateField(
+        help_text=_('Exclusive: the block covers date_from up to, not including, date_to')
+    )
+    rooms = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        help_text=_('Rooms of this type taken out of sale for the date range')
+    )
+    note = models.CharField(max_length=255, help_text=_('e.g. "Booking.com", "phone"'))
+    created_by = models.ForeignKey(
+        'users.User',
+        on_delete=models.PROTECT,
+        related_name='room_blocks',
+        db_index=True
+    )
+
+    class Meta:
+        db_table = 'room_blocks'
+        verbose_name = 'Room Block'
+        verbose_name_plural = 'Room Blocks'
+        ordering = ['-date_from']
+        indexes = [
+            models.Index(fields=['room_type', 'date_from', 'date_to']),
+        ]
+
+    def __str__(self):
+        return f"{self.room_type.name}: {self.rooms} room(s) blocked {self.date_from} - {self.date_to} ({self.note})"
+
+    def clean(self):
+        super().clean()
+        if self.date_to <= self.date_from:
+            raise ValidationError({'date_to': _('Must be after date_from')})
+
+    def _nights(self):
+        day = self.date_from
+        while day < self.date_to:
+            yield day
+            day += timedelta(days=1)
+
+    @classmethod
+    def create_block(cls, room_type, date_from, date_to, rooms, note, created_by):
+        """
+        Lock every affected night's RoomInventory row (materializing any unmanaged one
+        at the room type's full total_rooms first), check none of them would drop below
+        what is already booked on TICKBRON, then create the block and decrement them.
+
+        Raises ValidationError naming the date when a night has too few rooms left.
+        Call outside an existing atomic block -- this opens its own.
+        """
+        if date_to <= date_from:
+            raise ValidationError({'date_to': _('Must be after date_from')})
+        if rooms < 1:
+            raise ValidationError({'rooms': _('Must be at least 1')})
+
+        nights = []
+        day = date_from
+        while day < date_to:
+            nights.append(day)
+            day += timedelta(days=1)
+
+        with transaction.atomic():
+            rows = {
+                row.date: row for row in
+                RoomInventory.objects.filter(room_type=room_type, date__in=nights).select_for_update()
+            }
+            for night in [n for n in nights if n not in rows]:
+                try:
+                    with transaction.atomic():
+                        rows[night] = RoomInventory.objects.create(
+                            room_type=room_type, date=night, available_rooms=room_type.total_rooms,
+                        )
+                except IntegrityError:
+                    # Lost the race to create it; the winner's row is now committed and lockable.
+                    rows[night] = RoomInventory.objects.select_for_update().get(room_type=room_type, date=night)
+
+            for night in nights:
+                row = rows[night]
+                if row.remaining_rooms < rooms:
+                    raise ValidationError({
+                        'rooms': _(
+                            'Blocking %(rooms)s room(s) on %(date)s would leave fewer than the '
+                            '%(booked)s already booked on TICKBRON.'
+                        ) % {'rooms': rooms, 'date': night.isoformat(), 'booked': row.booked_rooms}
+                    })
+
+            block = cls.objects.create(
+                room_type=room_type, date_from=date_from, date_to=date_to,
+                rooms=rooms, note=note, created_by=created_by,
+            )
+            for night in nights:
+                row = rows[night]
+                row.available_rooms = F('available_rooms') - rooms
+                row.save(update_fields=['available_rooms'])
+            return block
+
+    def release(self):
+        """Undo: restore the blocked rooms to RoomInventory and soft-delete the block."""
+        nights = list(self._nights())
+        with transaction.atomic():
+            rows = RoomInventory.objects.filter(
+                room_type=self.room_type, date__in=nights
+            ).select_for_update()
+            for row in rows:
+                row.available_rooms = F('available_rooms') + self.rooms
+                row.save(update_fields=['available_rooms'])
+            self.soft_delete()

@@ -57,6 +57,9 @@ Core endpoints:
 - GET `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4; `room_type`/`date_from`/`date_to` filters)
 - PATCH `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
 - DELETE `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
+- POST `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5)
+- GET `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5)
+- DELETE `/api/v1/partner/blocks/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5; undoes the block, no PATCH/PUT)
 - POST `/api/v1/partner/properties/{id}/photos/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/partner/bookings/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/admin-panel/properties/` ✅ IMPLEMENTED (Checkpoint 18)
@@ -80,6 +83,13 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-29 external booking blocks (Phase 3 item 3.5, audit #31)
+- NEW model `properties.RoomBlock` (table `room_blocks`, new migration `properties/0009_roomblock`): rooms taken out of sale for a date range without a TICKBRON booking (external sale via Booking.com, phone, walk-in, or maintenance). Fields: `room_type`, `date_from`, `date_to` (exclusive, same convention as check_in/check_out), `rooms`, `note`, `created_by`, `created_at`
+- NEW `POST /partner/blocks/` (owner's own room types only): `{ room_type, date_from, date_to, rooms, note }` -> `{ id, room_type, date_from, date_to, rooms, note, created_by, created_at }`. `created_by` is always the authenticated user, ignored if sent. Locks every affected night's RoomInventory row (materializing an unmanaged one at the room type's full `total_rooms` first) and decrements `available_rooms` by `rooms`; blocks on the same nights stack (each stacks on top of `available_rooms` as already reduced by earlier blocks/bookings). 400 `{error: {details: {rooms: ["Blocking N room(s) on YYYY-MM-DD would leave fewer than the M already booked on TICKBRON."]}}}` when a night doesn't have `rooms` free -- nothing is applied, the date is always named
+- NEW `GET /partner/blocks/` (owner's own blocks only, paginated like the other partner list endpoints)
+- NEW `DELETE /partner/blocks/{id}/` undoes the block: restores the blocked rooms to RoomInventory, then soft-deletes the block row (kept for audit trail, `created_by`/`created_at`/`note` preserved; excluded from `GET`/`POST` scoping by `is_deleted=False`). No PATCH/PUT -- a block is created or undone, never edited in place; those methods return 405 on an owner's own block (permission checks alone gate anonymous/other-user access, same as every other verb)
+- Additive only, no existing field or endpoint changed
 
 ## 2026-09-29 room inventory partner API + public availability (Phase 3 item 3.4, audit #31)
 - NEW `POST/GET/PATCH/DELETE /partner/room-inventory/` (owner sees and edits only own room types): `{ id, room_type, date, available_rooms, booked_rooms (read-only), remaining_rooms (read-only), is_available }`. `available_rooms` cannot be more than `room_type.total_rooms` (400 on `available_rooms` naming the limit, same rule DateInventory already enforces). Unique per `(room_type, date)`. `GET` accepts `room_type`, `date_from`, `date_to` filters (same shape as `/partner/inventory/`'s). This is the room type's real, shared-across-rate-plans physical room count that the booking engine locks and updates (RoomInventory, added 3.1-3.3)

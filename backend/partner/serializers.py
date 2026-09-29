@@ -4,9 +4,10 @@ Serializers for partner API endpoints.
 This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from common.storage import validate_image_file
-from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, PropertyPhoto
+from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from properties.serializers import (
     PropertyPhotoSerializer, AmenitySerializer, PropertyAmenitySerializer
 )
@@ -181,6 +182,44 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
                 'available_rooms': f'Cannot be more than the {room_type.total_rooms} rooms of this room type.'
             })
         return data
+
+
+class PartnerBlockSerializer(serializers.ModelSerializer):
+    """
+    Serializer for external-booking blocks (RoomBlock, 3.5) by hotel-owners.
+
+    Creating a block locks and decrements the affected RoomInventory rows
+    (RoomBlock.create_block); it cannot push a night's room count below what is already
+    booked on TICKBRON. Deleting a block restores them (release()).
+    """
+    class Meta:
+        model = RoomBlock
+        fields = ['id', 'room_type', 'date_from', 'date_to', 'rooms', 'note', 'created_by', 'created_at']
+        read_only_fields = ['id', 'created_by', 'created_at']
+
+    def validate_room_type(self, value):
+        """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if value.property.owner != request.user:
+                raise serializers.ValidationError(
+                    "You can only block room inventory for your own properties."
+                )
+        return value
+
+    def create(self, validated_data):
+        request = self.context['request']
+        try:
+            return RoomBlock.create_block(
+                room_type=validated_data['room_type'],
+                date_from=validated_data['date_from'],
+                date_to=validated_data['date_to'],
+                rooms=validated_data['rooms'],
+                note=validated_data.get('note', ''),
+                created_by=request.user,
+            )
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict)
 
 
 class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):

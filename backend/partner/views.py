@@ -11,13 +11,13 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, PropertyPhoto
+from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from bookings.models import Booking, BookingItem
 from partner.serializers import (
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
     PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
-    PartnerPropertyPhotoSerializer, PartnerBookingSerializer
+    PartnerBlockSerializer, PartnerPropertyPhotoSerializer, PartnerBookingSerializer
 )
 
 
@@ -228,6 +228,31 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
         if 'date_to' in dates:
             queryset = queryset.filter(date__lte=dates['date_to'])
         return queryset
+
+
+class PartnerBlockViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for external-booking blocks (RoomBlock, 3.5) by hotel-owners.
+
+    Scoped to blocks on room types in properties owned by the authenticated hotel-owner.
+    Creating one locks and decrements the affected RoomInventory rows
+    (RoomBlock.create_block, via the serializer); deleting one restores them (release()).
+    No PATCH/PUT: a block is created or undone (deleted), never edited in place.
+    """
+    permission_classes = [IsHotelOwner]
+    serializer_class = PartnerBlockSerializer
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        """Filter queryset to blocks on room types in properties owned by the authenticated user."""
+        return RoomBlock.objects.filter(
+            room_type__property__owner=self.request.user,
+            is_deleted=False
+        ).select_related('room_type__property')
+
+    def perform_destroy(self, instance):
+        """Deleting a block undoes it: restores the blocked rooms, then soft-deletes it."""
+        instance.release()
 
 
 @api_view(['POST'])
