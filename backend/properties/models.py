@@ -984,8 +984,43 @@ class DateInventory(BaseModel):
         
         if self.maximum_stay and nights > self.maximum_stay:
             return False
-        
+
         return True
+
+    @classmethod
+    def bulk_set_price(cls, rate_plan, date_from, date_to, price):
+        """
+        Set the nightly price for every night in [date_from, date_to) of this rate plan
+        (3.7 bulk price edit), creating any missing row (opened at the room type's full
+        total_rooms) and leaving an existing row's other fields (rules, booked_rooms)
+        untouched.
+        """
+        if date_to <= date_from:
+            raise ValidationError({'date_to': _('Must be after date_from')})
+        if price < 0:
+            raise ValidationError({'price': _('Must not be negative')})
+
+        nights = []
+        day = date_from
+        while day < date_to:
+            nights.append(day)
+            day += timedelta(days=1)
+
+        with transaction.atomic():
+            rows = {
+                row.date: row for row in
+                cls.objects.filter(rate_plan=rate_plan, date__in=nights, is_deleted=False).select_for_update()
+            }
+            for night in nights:
+                if night in rows:
+                    rows[night].price = price
+                    rows[night].save(update_fields=['price'])
+                else:
+                    rows[night] = cls.objects.create(
+                        rate_plan=rate_plan, date=night, available_rooms=rate_plan.room_type.total_rooms,
+                        booked_rooms=0, price=price, currency=rate_plan.currency, is_available=True,
+                    )
+            return [rows[night] for night in nights]
 
 
 class RoomInventory(BaseModel):
@@ -1042,6 +1077,67 @@ class RoomInventory(BaseModel):
     def remaining_rooms(self):
         """Rooms that can still be sold on this date."""
         return max(0, self.available_rooms - self.booked_rooms)
+
+    @classmethod
+    def bulk_set(cls, room_type, date_from, date_to, available_rooms=None, is_available=None):
+        """
+        Set available_rooms and/or is_available for every night in [date_from, date_to)
+        of this room type (3.6 calendar date-range edit), creating any missing,
+        unmanaged row (opened at the room type's full total_rooms) first.
+
+        Raises ValidationError naming the date when available_rooms would drop a night
+        below its booked_rooms; nothing is applied if any night fails.
+        """
+        if date_to <= date_from:
+            raise ValidationError({'date_to': _('Must be after date_from')})
+        if available_rooms is None and is_available is None:
+            raise ValidationError({'available_rooms': _('Nothing to update')})
+        if available_rooms is not None and available_rooms > room_type.total_rooms:
+            raise ValidationError({
+                'available_rooms': _('Cannot be more than the %(total)s rooms of this room type')
+                % {'total': room_type.total_rooms}
+            })
+
+        nights = []
+        day = date_from
+        while day < date_to:
+            nights.append(day)
+            day += timedelta(days=1)
+
+        with transaction.atomic():
+            rows = {
+                row.date: row for row in
+                cls.objects.filter(room_type=room_type, date__in=nights).select_for_update()
+            }
+            for night in [n for n in nights if n not in rows]:
+                try:
+                    with transaction.atomic():
+                        rows[night] = cls.objects.create(
+                            room_type=room_type, date=night, available_rooms=room_type.total_rooms,
+                        )
+                except IntegrityError:
+                    rows[night] = cls.objects.select_for_update().get(room_type=room_type, date=night)
+
+            if available_rooms is not None:
+                for night in nights:
+                    row = rows[night]
+                    if available_rooms < row.booked_rooms:
+                        raise ValidationError({
+                            'available_rooms': _(
+                                'Cannot set %(date)s below the %(booked)s room(s) already booked on TICKBRON.'
+                            ) % {'date': night.isoformat(), 'booked': row.booked_rooms}
+                        })
+
+            update_fields = [f for f, v in (('available_rooms', available_rooms), ('is_available', is_available))
+                              if v is not None]
+            for night in nights:
+                row = rows[night]
+                if available_rooms is not None:
+                    row.available_rooms = available_rooms
+                if is_available is not None:
+                    row.is_available = is_available
+                row.save(update_fields=update_fields)
+            return [rows[night] for night in nights]
 
 
 class RoomBlock(BaseModel):

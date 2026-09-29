@@ -184,6 +184,47 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
         return data
 
 
+class PartnerRoomInventoryBulkSerializer(serializers.Serializer):
+    """
+    Request body for POST /partner/room-inventory/bulk/ (3.6 calendar date-range edit):
+    sets available_rooms and/or is_available for every night in [date_from, date_to).
+    """
+    room_type = serializers.PrimaryKeyRelatedField(queryset=RoomType.objects.filter(is_deleted=False))
+    date_from = serializers.DateField()
+    date_to = serializers.DateField()
+    available_rooms = serializers.IntegerField(required=False, min_value=0)
+    is_available = serializers.BooleanField(required=False)
+
+    def validate_room_type(self, value):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if value.property.owner != request.user:
+                raise serializers.ValidationError(
+                    "You can only manage room inventory for your own properties."
+                )
+        return value
+
+
+class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
+    """
+    Request body for POST /partner/inventory/bulk-price/ (3.7 bulk price edit): sets the
+    nightly price for one rate plan over every night in [date_from, date_to).
+    """
+    rate_plan = serializers.PrimaryKeyRelatedField(queryset=RatePlan.objects.filter(is_deleted=False))
+    date_from = serializers.DateField()
+    date_to = serializers.DateField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+
+    def validate_rate_plan(self, value):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if value.room_type.property.owner != request.user:
+                raise serializers.ValidationError(
+                    "You can only manage inventory for your own properties."
+                )
+        return value
+
+
 class PartnerBlockSerializer(serializers.ModelSerializer):
     """
     Serializer for external-booking blocks (RoomBlock, 3.5) by hotel-owners.

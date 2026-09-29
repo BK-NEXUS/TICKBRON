@@ -3944,6 +3944,119 @@ body {
   border-radius: 50%;
 }
 
+/* Owner calendar day states (3.6): free / partly sold / full / closed */
+.availability-calendar-day--free {
+  background-color: rgba(56, 109, 77, 0.08);
+  border-color: var(--color-success);
+}
+
+.availability-calendar-day--partly-sold {
+  background-color: rgba(125, 85, 24, 0.08);
+  border-color: var(--color-warning);
+}
+
+.availability-calendar-day--full {
+  background-color: rgba(176, 38, 38, 0.08);
+  border-color: var(--color-error);
+}
+
+.availability-calendar-day--closed {
+  background-color: var(--color-background-alt);
+  border-color: var(--color-border);
+  opacity: 0.75;
+}
+
+/* Partner room calendar (3.6) */
+.partner-room-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.partner-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-calendar-title {
+  margin: 0;
+}
+
+.partner-calendar-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.partner-calendar-day-count {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.partner-calendar-day-block {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partner-calendar-day-panel {
+  background-color: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.partner-calendar-day-panel-title {
+  margin: 0;
+}
+
+.partner-calendar-blocks {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.partner-calendar-blocks-title {
+  margin: 0 0 var(--spacing-md);
+}
+
+.partner-calendar-blocks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.partner-calendar-block-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.partner-calendar-block-item:last-child {
+  border-bottom: none;
+}
+
+.partner-calendar-block-note {
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
 /* Room Selection */
 .room-selection {
   display: flex;

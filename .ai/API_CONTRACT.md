@@ -57,8 +57,10 @@ Core endpoints:
 - GET `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4; `room_type`/`date_from`/`date_to` filters)
 - PATCH `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
 - DELETE `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
+- POST `/api/v1/partner/room-inventory/bulk/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.6)
+- POST `/api/v1/partner/inventory/bulk-price/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.7)
 - POST `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5)
-- GET `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5)
+- GET `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5; `room_type` filter added 2026-09-29 Phase 3 item 3.6)
 - DELETE `/api/v1/partner/blocks/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5; undoes the block, no PATCH/PUT)
 - POST `/api/v1/partner/properties/{id}/photos/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/partner/bookings/` ✅ IMPLEMENTED (Checkpoint 18)
@@ -83,6 +85,12 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-29 calendar bulk edit + bulk price edit (Phase 3 items 3.6/3.7)
+- NEW `POST /partner/room-inventory/bulk/`: `{room_type, date_from, date_to, available_rooms?, is_available?}` (at least one of the two) -> array of the affected `RoomInventory` rows (same shape as `GET /partner/room-inventory/`). `date_to` is **exclusive**, the check_in/check_out convention (unlike this endpoint's own list `date_from`/`date_to` filters, which are inclusive). Creates any missing, unmanaged row (opened at the room type's full `total_rooms`) first. 400 naming the date, on `available_rooms`, if it would drop a night below what is already booked on TICKBRON; nothing is applied if any night fails. Owner's own room types only
+- NEW `POST /partner/inventory/bulk-price/`: `{rate_plan, date_from, date_to, price}` -> array of the affected `DateInventory` rows (same shape as `GET /partner/inventory/`). `date_to` is **exclusive**. Creates any missing row (price = the given value, `available_rooms` defaulted to the room type's `total_rooms`, open); an existing row's other fields (rules, `booked_rooms`) are untouched, only `price` changes. Owner's own rate plans only
+- `GET /partner/blocks/` accepts `room_type` (used by the calendar to load one room type's blocks)
+- Additive only, no existing field or endpoint changed
 
 ## 2026-09-29 external booking blocks (Phase 3 item 3.5, audit #31)
 - NEW model `properties.RoomBlock` (table `room_blocks`, new migration `properties/0009_roomblock`): rooms taken out of sale for a date range without a TICKBRON booking (external sale via Booking.com, phone, walk-in, or maintenance). Fields: `room_type`, `date_from`, `date_to` (exclusive, same convention as check_in/check_out), `rooms`, `note`, `created_by`, `created_at`

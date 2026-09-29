@@ -9,6 +9,12 @@ export function formatDay(date: string): string {
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+/** date +/- n days (n may be negative), as YYYY-MM-DD */
+export function addDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return toLocalDate(new Date(year, month - 1, day + days))
+}
+
 /** Every night of a stay: [checkIn, checkOut) */
 export function nightsBetween(checkIn: string, checkOut: string): string[] {
   const nights: string[] = []

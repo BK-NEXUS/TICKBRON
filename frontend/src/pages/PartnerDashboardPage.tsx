@@ -5,11 +5,12 @@ import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { PartnerRoomsManagement } from '../components/PartnerRoomsManagement'
 import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
+import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
-type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'bookings' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -21,6 +22,7 @@ export function PartnerDashboardPage() {
   const [selectedProperty, setSelectedProperty] = useState<PartnerProperty | null>(null)
   const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string } | null>(null)
   const [selectedRatePlan, setSelectedRatePlan] = useState<{ id: number; name: string } | null>(null)
+  const [calendarRoomType, setCalendarRoomType] = useState<{ id: number; name: string; totalRooms: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,6 +65,7 @@ export function PartnerDashboardPage() {
     setSelectedProperty(null)
     setSelectedRoomType(null)
     setSelectedRatePlan(null)
+    setCalendarRoomType(null)
     setCurrentView('properties')
   }
 
@@ -70,6 +73,11 @@ export function PartnerDashboardPage() {
     setSelectedRoomType(roomType)
     setSelectedRatePlan(null)
     setCurrentView('rates')
+  }
+
+  const handleCalendarSelect = (roomType: { id: number; name: string; totalRooms: number }) => {
+    setCalendarRoomType(roomType)
+    setCurrentView('calendar')
   }
 
   const handleRatePlanSelect = (ratePlan: { id: number; name: string }) => {
@@ -80,6 +88,7 @@ export function PartnerDashboardPage() {
   const handleBackToRooms = () => {
     setSelectedRoomType(null)
     setSelectedRatePlan(null)
+    setCalendarRoomType(null)
     setCurrentView('rooms')
   }
 
@@ -94,16 +103,17 @@ export function PartnerDashboardPage() {
   if (currentView !== 'properties') trail[0] = { label: 'Partner Dashboard', onClick: handleBackToProperties }
   if (currentView === 'add-property') trail.push({ label: 'Add Property' })
   if (currentView === 'bookings') trail.push({ label: 'Bookings' })
-  if (selectedProperty && ['rooms', 'rates', 'availability'].includes(currentView)) {
+  if (selectedProperty && ['rooms', 'rates', 'availability', 'calendar'].includes(currentView)) {
     trail.push(currentView === 'rooms'
       ? { label: propertyName(selectedProperty) }
       : { label: propertyName(selectedProperty), onClick: handleBackToRooms })
-    if (selectedRoomType && currentView !== 'rooms') {
+    if (selectedRoomType && currentView !== 'rooms' && currentView !== 'calendar') {
       trail.push(currentView === 'rates'
         ? { label: selectedRoomType.name }
         : { label: selectedRoomType.name, onClick: handleBackToRates })
     }
     if (selectedRatePlan && currentView === 'availability') trail.push({ label: selectedRatePlan.name })
+    if (calendarRoomType && currentView === 'calendar') trail.push({ label: calendarRoomType.name })
   }
   usePageTrail(trail)
 
@@ -151,6 +161,16 @@ export function PartnerDashboardPage() {
             <span className="nav-icon">🛏️</span>
             <span className="nav-label">Rooms</span>
           </button>
+          {calendarRoomType && (
+            <button
+              onClick={() => setCurrentView('calendar')}
+              className={`nav-item ${currentView === 'calendar' ? 'nav-item--active' : ''}`}
+              aria-current={currentView === 'calendar' ? 'page' : undefined}
+            >
+              <span className="nav-icon">🗓️</span>
+              <span className="nav-label">Calendar</span>
+            </button>
+          )}
           {selectedRoomType && (
             <>
               <button
@@ -283,6 +303,15 @@ export function PartnerDashboardPage() {
             propertyId={selectedProperty.id}
             propertyName={propertyName(selectedProperty)}
             onManageRates={handleRoomTypeSelect}
+            onManageCalendar={handleCalendarSelect}
+          />
+        ) : null
+      case 'calendar':
+        return calendarRoomType ? (
+          <PartnerRoomCalendar
+            roomTypeId={calendarRoomType.id}
+            roomTypeName={calendarRoomType.name}
+            totalRooms={calendarRoomType.totalRooms}
           />
         ) : null
       case 'rates':

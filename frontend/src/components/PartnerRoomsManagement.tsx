@@ -6,11 +6,13 @@ interface PartnerRoomsManagementProps {
   propertyName: string
   /** Open the rate plans (and from there availability) of a room type */
   onManageRates?: (roomType: { id: number; name: string }) => void
+  /** Open the calendar (RoomInventory + external-booking blocks) of a room type */
+  onManageCalendar?: (roomType: { id: number; name: string; totalRooms: number }) => void
 }
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates }: PartnerRoomsManagementProps) {
+export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates, onManageCalendar }: PartnerRoomsManagementProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [roomTypes, setRoomTypes] = useState<PartnerRoomType[]>([])
   const [selectedRoomType, setSelectedRoomType] = useState<PartnerRoomType | null>(null)
@@ -297,6 +299,15 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
                     aria-label={`Manage rates and availability for ${roomType.name}`}
                   >
                     Rates &amp; availability
+                  </button>
+                )}
+                {onManageCalendar && (
+                  <button
+                    onClick={() => onManageCalendar({ id: roomType.id, name: roomType.name, totalRooms: roomType.total_rooms })}
+                    className="btn btn-secondary"
+                    aria-label={`Manage calendar for ${roomType.name}`}
+                  >
+                    Calendar
                   </button>
                 )}
                 <button

@@ -686,6 +686,148 @@ describe('PartnerAdapter', () => {
       expect(result.data).toBeNull()
     })
   })
+
+  describe('Room Inventory Management (audit #31)', () => {
+    const mockRow = {
+      id: 1, room_type: 7, date: '2026-10-01', available_rooms: 5, booked_rooms: 2,
+      remaining_rooms: 3, is_available: true,
+    }
+
+    it('should create room inventory', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => mockRow } as Response)
+
+      const result = await adapter.createRoomInventory({ room_type: 7, date: '2026-10-01', available_rooms: 5 })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual(mockRow)
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/room-inventory/`,
+        expect.objectContaining({ method: 'POST' }),
+      )
+    })
+
+    it('should list room inventory with room_type/date filters in the query string', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [mockRow] } as Response)
+
+      const result = await adapter.getRoomInventory({ room_type: 7, date_from: '2026-10-01', date_to: '2026-10-31' })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual([mockRow])
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/room-inventory/?room_type=7&date_from=2026-10-01&date_to=2026-10-31`,
+        expect.anything(),
+      )
+    })
+
+    it('should update room inventory', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => mockRow } as Response)
+
+      const result = await adapter.updateRoomInventory(1, { available_rooms: 4 })
+
+      expect(result.error).toBeNull()
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/room-inventory/1/`,
+        expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ available_rooms: 4 }) }),
+      )
+    })
+
+    it('should bulk-set room inventory over a date range', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [mockRow] } as Response)
+
+      const result = await adapter.bulkSetRoomInventory({
+        room_type: 7, date_from: '2026-10-01', date_to: '2026-10-05', available_rooms: 3,
+      })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual([mockRow])
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/room-inventory/bulk/`,
+        expect.objectContaining({ method: 'POST' }),
+      )
+    })
+
+    it('should surface the date named in a bulk error', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false, status: 400,
+        json: async () => ({ error: { details: { available_rooms: ['Cannot set 2026-10-02 below the 3 room(s) already booked on TICKBRON.'] } } }),
+      } as Response)
+
+      const result = await adapter.bulkSetRoomInventory({
+        room_type: 7, date_from: '2026-10-01', date_to: '2026-10-05', available_rooms: 1,
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.error).toContain('2026-10-02')
+    })
+  })
+
+  describe('External Booking Blocks (RoomBlock, 3.5)', () => {
+    const mockBlock = {
+      id: 9, room_type: 7, date_from: '2026-10-01', date_to: '2026-10-03', rooms: 2,
+      note: 'Booking.com', created_by: 3, created_at: '2026-09-29T00:00:00Z',
+    }
+
+    it('should create a block', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => mockBlock } as Response)
+
+      const result = await adapter.createBlock({
+        room_type: 7, date_from: '2026-10-01', date_to: '2026-10-03', rooms: 2, note: 'Booking.com',
+      })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual(mockBlock)
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/blocks/`,
+        expect.objectContaining({ method: 'POST' }),
+      )
+    })
+
+    it('should list blocks filtered by room_type', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [mockBlock] } as Response)
+
+      const result = await adapter.getBlocks({ room_type: 7 })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual([mockBlock])
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/blocks/?room_type=7`,
+        expect.anything(),
+      )
+    })
+
+    it('should delete (undo) a block', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 204, json: async () => ({}) } as Response)
+
+      const result = await adapter.deleteBlock(9)
+
+      expect(result.error).toBeNull()
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/blocks/9/`,
+        expect.objectContaining({ method: 'DELETE' }),
+      )
+    })
+  })
+
+  describe('Bulk Price Edit (3.7)', () => {
+    it('should bulk-set price over a date range for one rate plan', async () => {
+      const mockRow = {
+        id: 4, rate_plan: 11, date: '2026-10-01', available_rooms: 5, booked_rooms: 0,
+        price: 120, currency: 'USD', is_available: true, minimum_stay: 1, maximum_stay: 30,
+      }
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [mockRow] } as Response)
+
+      const result = await adapter.bulkSetPrice({
+        rate_plan: 11, date_from: '2026-10-01', date_to: '2026-10-05', price: 120,
+      })
+
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual([mockRow])
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/inventory/bulk-price/`,
+        expect.objectContaining({ method: 'POST' }),
+      )
+    })
+  })
 })
 
 describe('partnerAdapter singleton', () => {

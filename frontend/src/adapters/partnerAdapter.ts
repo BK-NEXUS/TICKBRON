@@ -226,6 +226,76 @@ export interface UpdateDateInventoryRequest {
   notes?: string
 }
 
+// Room Inventory types from backend contract (RoomInventory, audit #31): the room
+// type's real, shared physical room count. DateInventory (above) still holds the price
+// and each rate plan's own rules.
+export interface PartnerRoomInventory {
+  id: number
+  room_type: number
+  date: string
+  available_rooms: number
+  booked_rooms: number
+  remaining_rooms: number
+  is_available: boolean
+}
+
+export interface CreateRoomInventoryRequest {
+  room_type: number
+  date: string
+  available_rooms: number
+  is_available?: boolean
+}
+
+export interface UpdateRoomInventoryRequest {
+  available_rooms?: number
+  is_available?: boolean
+}
+
+export interface GetRoomInventoryParams {
+  room_type?: number
+  date_from?: string
+  date_to?: string
+}
+
+/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+export interface BulkRoomInventoryRequest {
+  room_type: number
+  date_from: string
+  date_to: string
+  available_rooms?: number
+  is_available?: boolean
+}
+
+/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+export interface BulkPriceRequest {
+  rate_plan: number
+  date_from: string
+  date_to: string
+  price: number
+}
+
+// External booking block types from backend contract (RoomBlock, 3.5): rooms taken out
+// of sale for a date range without a TICKBRON booking.
+export interface PartnerBlock {
+  id: number
+  room_type: number
+  date_from: string
+  date_to: string
+  rooms: number
+  note: string
+  created_by: number
+  created_at: string
+}
+
+/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+export interface CreateBlockRequest {
+  room_type: number
+  date_from: string
+  date_to: string
+  rooms: number
+  note: string
+}
+
 // Photo Upload types from backend contract
 export interface PropertyPhoto {
   id: number
@@ -492,6 +562,99 @@ class PartnerAdapter {
    */
   async deleteDateInventory(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/inventory/${id}/`, {
+      method: 'DELETE',
+    })
+  }
+
+  /**
+   * Set one rate plan's nightly price over a date range (3.7 bulk price edit)
+   * Integrates with POST /api/v1/partner/inventory/bulk-price/ endpoint
+   */
+  async bulkSetPrice(data: BulkPriceRequest): Promise<ApiResponse<PartnerDateInventory[]>> {
+    return this.request<PartnerDateInventory[]>('/api/v1/partner/inventory/bulk-price/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Room Inventory Management Methods (RoomInventory, audit #31)
+
+  /**
+   * Create room inventory
+   * Integrates with POST /api/v1/partner/room-inventory/ endpoint
+   */
+  async createRoomInventory(data: CreateRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory>> {
+    return this.request<PartnerRoomInventory>('/api/v1/partner/room-inventory/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * List hotel-owner's room inventory, optionally filtered by room_type/date_from/date_to
+   * Integrates with GET /api/v1/partner/room-inventory/ endpoint
+   */
+  async getRoomInventory(params: GetRoomInventoryParams = {}): Promise<ApiResponse<PartnerRoomInventory[]>> {
+    const search = new URLSearchParams()
+    if (params.room_type !== undefined) search.append('room_type', String(params.room_type))
+    if (params.date_from) search.append('date_from', params.date_from)
+    if (params.date_to) search.append('date_to', params.date_to)
+    const query = search.toString()
+    return this.requestAll<PartnerRoomInventory>(`/api/v1/partner/room-inventory/${query ? `?${query}` : ''}`)
+  }
+
+  /**
+   * Update room inventory
+   * Integrates with PATCH /api/v1/partner/room-inventory/{id}/ endpoint
+   */
+  async updateRoomInventory(id: number, data: UpdateRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory>> {
+    return this.request<PartnerRoomInventory>(`/api/v1/partner/room-inventory/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * Set available_rooms and/or is_available for a room type over a date range (3.6 calendar)
+   * Integrates with POST /api/v1/partner/room-inventory/bulk/ endpoint
+   */
+  async bulkSetRoomInventory(data: BulkRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory[]>> {
+    return this.request<PartnerRoomInventory[]>('/api/v1/partner/room-inventory/bulk/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // External Booking Blocks Methods (RoomBlock, 3.5)
+
+  /**
+   * Create an external-booking block
+   * Integrates with POST /api/v1/partner/blocks/ endpoint
+   */
+  async createBlock(data: CreateBlockRequest): Promise<ApiResponse<PartnerBlock>> {
+    return this.request<PartnerBlock>('/api/v1/partner/blocks/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * List hotel-owner's blocks, optionally filtered by room_type
+   * Integrates with GET /api/v1/partner/blocks/ endpoint
+   */
+  async getBlocks(params: { room_type?: number } = {}): Promise<ApiResponse<PartnerBlock[]>> {
+    const search = new URLSearchParams()
+    if (params.room_type !== undefined) search.append('room_type', String(params.room_type))
+    const query = search.toString()
+    return this.requestAll<PartnerBlock>(`/api/v1/partner/blocks/${query ? `?${query}` : ''}`)
+  }
+
+  /**
+   * Delete (undo) a block: restores the blocked rooms
+   * Integrates with DELETE /api/v1/partner/blocks/{id}/ endpoint
+   */
+  async deleteBlock(id: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/partner/blocks/${id}/`, {
       method: 'DELETE',
     })
   }

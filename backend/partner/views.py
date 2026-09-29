@@ -4,8 +4,9 @@ Views for partner API endpoints.
 This module contains views for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import routers, viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -17,6 +18,7 @@ from partner.serializers import (
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
     PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
+    PartnerRoomInventoryBulkSerializer, PartnerDateInventoryBulkPriceSerializer,
     PartnerBlockSerializer, PartnerPropertyPhotoSerializer, PartnerBookingSerializer
 )
 
@@ -167,6 +169,25 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(date__lte=dates['date_to'])
         return queryset
 
+    @action(detail=False, methods=['post'], url_path='bulk-price')
+    def bulk_price(self, request):
+        """
+        3.7 bulk price edit: set one rate plan's nightly price over a date range.
+
+        Body: {rate_plan, date_from, date_to, price}. date_to is exclusive, same
+        convention as a booking's check_in/check_out (unlike this list's own date_from/
+        date_to filters, which are inclusive). Creates any missing row (opened at the
+        room type's full total_rooms); an existing row's other fields are untouched.
+        """
+        serializer = PartnerDateInventoryBulkPriceSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            rows = DateInventory.bulk_set_price(data['rate_plan'], data['date_from'], data['date_to'], data['price'])
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict)
+        return Response(PartnerDateInventorySerializer(rows, many=True).data, status=status.HTTP_200_OK)
+
 
 class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
     """
@@ -229,6 +250,31 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(date__lte=dates['date_to'])
         return queryset
 
+    @action(detail=False, methods=['post'])
+    def bulk(self, request):
+        """
+        3.6 calendar date-range edit: set available_rooms and/or is_available for one
+        room type over a date range in one call.
+
+        Body: {room_type, date_from, date_to, available_rooms?, is_available?} (at least
+        one of the two). date_to is exclusive, same convention as a booking's
+        check_in/check_out (unlike this list's own date_from/date_to filters, which are
+        inclusive). Creates any missing, unmanaged row (opened at the room type's full
+        total_rooms) first. 400 naming the date if available_rooms would drop a night
+        below what is already booked on TICKBRON.
+        """
+        serializer = PartnerRoomInventoryBulkSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            rows = RoomInventory.bulk_set(
+                data['room_type'], data['date_from'], data['date_to'],
+                available_rooms=data.get('available_rooms'), is_available=data.get('is_available'),
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict)
+        return Response(PartnerRoomInventorySerializer(rows, many=True).data, status=status.HTTP_200_OK)
+
 
 class PartnerBlockViewSet(viewsets.ModelViewSet):
     """
@@ -245,10 +291,18 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter queryset to blocks on room types in properties owned by the authenticated user."""
-        return RoomBlock.objects.filter(
+        queryset = RoomBlock.objects.filter(
             room_type__property__owner=self.request.user,
             is_deleted=False
         ).select_related('room_type__property')
+        if self.action == 'list':
+            room_type = self.request.query_params.get('room_type')
+            if room_type:
+                if room_type.isdigit():
+                    queryset = queryset.filter(room_type_id=int(room_type))
+                else:
+                    raise ValidationError({'room_type': ['Must be a room type id.']})
+        return queryset
 
     def perform_destroy(self, instance):
         """Deleting a block undoes it: restores the blocked rooms, then soft-deletes it."""
