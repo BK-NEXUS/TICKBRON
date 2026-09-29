@@ -2051,7 +2051,11 @@ Order and scope from the E2E report. Status per item: TODO / IN PROGRESS / DONE 
 
 Design (audit-report #31, option A): rooms are counted per room type and date (`RoomInventory`); `DateInventory` keeps the price and the rate plan rules (open/closed, min/max stay) per rate plan.
 
-- DONE: 3.1 RoomInventory model + double-sell repro (this commit)
+- DONE: 3.1 RoomInventory model + double-sell repro
   - `properties.RoomInventory` (table `room_inventory`): room_type, date, available_rooms (at most room_type.total_rooms, checked in `clean()`), booked_rooms (>= 0), is_available; unique per room_type + date. Migration `properties/0007_room_inventory` (schema only)
   - Repro `bookings/tests/test_room_inventory.py::TestDoubleSellAcrossRatePlans`: one room, two rate plans; booking it through the second rate plan succeeds today (checked with `--runxfail`: DID NOT RAISE). Marked xfail(strict) until step 3.3
   - Backend (PostgreSQL): 1176 passed, 2 skipped, 1 xfailed
+- DONE: 3.2 Data migration 0008: backfill RoomInventory from DateInventory + active bookings
+  - `properties/migrations/0008_populate_room_inventory.py`: for every (room_type, date) that has at least one DateInventory row: `available_rooms = min(total_rooms, max available_rooms over its rate plans)`; `booked_rooms` recalculated from `BookingItem`s of pending/confirmed bookings covering that night (not from the old DateInventory counters); `is_available = True` if any rate plan is open that date. An already-oversold date (recalculated booked > available) is left as computed, not clamped, and printed in the migration's own report. DateInventory rows are read-only in this migration. Reverse empties RoomInventory
+  - Migration tests (run separately -- they migrate the schema back and forth via `MigrationExecutor` and truncate tables): `pytest --create-db properties/tests/test_room_inventory_migration.py` -- 6 passed, covering the cap at total_rooms, the recount from real bookings (a stale old counter and a cancelled booking are both ignored), `is_available` from any open rate plan, an oversold date left uncapped, DateInventory left untouched, and the reverse migration
+  - pg_dump backup before migrating the dev database: `.ai/backups/tickbron_pre_0008_20260929_143037.dump` (not committed; `.gitignore` added for `.ai/backups/`). Applied with `manage.py migrate properties 0008` -- no oversold dates in the dev database, nothing printed
