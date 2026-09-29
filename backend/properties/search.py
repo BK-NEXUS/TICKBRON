@@ -541,11 +541,14 @@ class PropertySearchService:
     def _apply_date_filter(self, queryset, check_in, check_out):
         """
         Keep properties that can be booked for the whole stay: one active rate plan
-        (on an active room type) whose rate plan min/max nights allow the stay and
-        which has an open inventory row with a room left for every night from
-        check_in up to, not including, check_out. The same rules as quote_stay.
+        (on an active room type) whose rate plan min/max nights allow the stay, which
+        has an open DateInventory row (price/rules) for every night from check_in up to,
+        not including, check_out, and whose room type has a physical room left every one
+        of those nights in RoomInventory -- the shared count since 3.3 (audit #31); a
+        night with no RoomInventory row is unmanaged and open at the room type's full
+        total_rooms. The same rules as quote_stay.
         """
-        from properties.models import DateInventory, RatePlan
+        from properties.models import DateInventory, RatePlan, RoomInventory
 
         check_in = self._parse_date(check_in)
         check_out = self._parse_date(check_out)
@@ -559,23 +562,36 @@ class PropertySearchService:
             date__lt=check_out,
             is_deleted=False,
             is_available=True,
-            available_rooms__gt=F('booked_rooms'),
         ).filter(
             Q(minimum_stay__isnull=True) | Q(minimum_stay__lte=nights),
             Q(maximum_stay__isnull=True) | Q(maximum_stay__gte=nights),
         ).order_by().values('rate_plan').annotate(n=Count('id')).values('n')
+
+        # Nights where the room type's shared RoomInventory row exists and is sold out
+        # or closed. A missing row is unmanaged (open), so it never counts here.
+        room_short_nights = RoomInventory.objects.filter(
+            room_type=OuterRef('room_type'),
+            date__gte=check_in,
+            date__lt=check_out,
+        ).filter(
+            Q(is_available=False) | Q(available_rooms__lte=F('booked_rooms'))
+        ).order_by().values('room_type').annotate(n=Count('id')).values('n')
 
         bookable_rate_plans = RatePlan.objects.filter(
             is_active=True,
             is_deleted=False,
             room_type__is_active=True,
             room_type__is_deleted=False,
+            room_type__total_rooms__gt=0,
             min_nights__lte=nights,
         ).filter(
             Q(max_nights__isnull=True) | Q(max_nights__gte=nights)
         ).annotate(
-            open_nights=Subquery(open_nights, output_field=IntegerField())
-        ).filter(open_nights=nights)
+            open_nights=Subquery(open_nights, output_field=IntegerField()),
+            room_short_nights=Subquery(room_short_nights, output_field=IntegerField()),
+        ).filter(open_nights=nights).filter(
+            Q(room_short_nights__isnull=True) | Q(room_short_nights=0)
+        )
 
         return queryset.filter(
             id__in=bookable_rate_plans.values('room_type__property_id')

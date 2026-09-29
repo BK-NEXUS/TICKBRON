@@ -5,7 +5,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from partner.views import (
     PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
-    PartnerRatePlanViewSet, PartnerDateInventoryViewSet,
+    PartnerRatePlanViewSet, PartnerDateInventoryViewSet, PartnerRoomInventoryViewSet,
     partner_property_photo_upload, partner_bookings
 )
 
@@ -17,6 +17,7 @@ router.register(r'properties', PartnerPropertyViewSet, basename='partner-propert
 router.register(r'rooms', PartnerRoomTypeViewSet, basename='partner-room')
 router.register(r'rates', PartnerRatePlanViewSet, basename='partner-rate')
 router.register(r'inventory', PartnerDateInventoryViewSet, basename='partner-inventory')
+router.register(r'room-inventory', PartnerRoomInventoryViewSet, basename='partner-room-inventory')
 
 urlpatterns = [
     path('', include(router.urls)),

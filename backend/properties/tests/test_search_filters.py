@@ -13,7 +13,7 @@ from rest_framework.test import APIClient
 from accounts.models import Review
 from properties.models import (
     Amenity, AmenityCategory, DateInventory, Property, PropertyAmenity, PropertyTranslation,
-    PropertyType, RatePlan, RoomType,
+    PropertyType, RatePlan, RoomInventory, RoomType,
 )
 from users.models import User
 
@@ -53,9 +53,16 @@ class SearchFiltersBase(TestCase):
         )
         for offset in range(nights):
             day = start + timedelta(days=offset)
+            # DateInventory still gates the rate plan's own open/closed flag and rules.
             DateInventory.objects.create(
                 rate_plan=rate_plan, date=day, available_rooms=rooms,
                 booked_rooms=rooms if day in booked else 0, is_available=day not in closed,
+            )
+            # RoomInventory (audit #31) is the room type's real, shared room count since
+            # 3.3 -- what actually decides whether a room is sold out.
+            RoomInventory.objects.create(
+                room_type=room_type, date=day, available_rooms=rooms,
+                booked_rooms=rooms if day in booked else 0,
             )
         return rate_plan
 

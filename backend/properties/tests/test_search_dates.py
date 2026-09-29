@@ -57,3 +57,42 @@ class TestSearchWithDates(TestCase):
 
         assert response.status_code == 200
         assert response.data['count'] == 1
+
+    def test_search_excludes_a_room_type_actually_sold_out_via_another_rate_plan(self):
+        """
+        3.4 (audit #31): RoomInventory is the real, shared-per-room-type room count since
+        3.3; DateInventory's own available_rooms/booked_rooms columns are stale, the
+        booking engine stopped writing them. Search must not show a property bookable
+        through a rate plan whose one physical room was actually sold through a
+        different rate plan on the same room type.
+        """
+        from bookings.models import Booking
+
+        check_in = timezone.localdate() + timedelta(days=5)
+        check_out = check_in + timedelta(days=1)
+        room_type = RoomType.objects.create(
+            property=self.property, name='Last Room', slug='last-room',
+            base_price=Decimal('60.00'), total_rooms=1,
+        )
+        rate_plan_a = RatePlan.objects.create(
+            room_type=room_type, name='Rate A', slug='rate-a', base_price=Decimal('60.00'), min_nights=1,
+        )
+        rate_plan_b = RatePlan.objects.create(
+            room_type=room_type, name='Rate B', slug='rate-b', base_price=Decimal('60.00'), min_nights=1,
+        )
+        for rate_plan in (rate_plan_a, rate_plan_b):
+            DateInventory.objects.create(
+                rate_plan=rate_plan, date=check_in, available_rooms=1, booked_rooms=0, is_available=True,
+            )
+        guest = User.objects.create_user(email='guest-search@example.com', password='x')
+        Booking.create_booking(
+            guest=guest, property_obj=self.property, room_type=room_type, rate_plan=rate_plan_a,
+            check_in=check_in, check_out=check_out, guest_count=1,
+        )
+
+        response = self.client.get(SEARCH_URL, {
+            'destination': 'Tashkent', 'check_in': str(check_in), 'check_out': str(check_out),
+        })
+
+        assert response.status_code == 200, response.content
+        assert self.property.id not in [result['id'] for result in response.data['results']]

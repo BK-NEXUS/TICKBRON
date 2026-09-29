@@ -526,22 +526,49 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
     
     def get_date_inventory(self, obj):
-        """Get date inventory for this rate plan within the requested date range."""
+        """
+        Get date inventory for this rate plan within the requested date range.
+
+        Price and rules (open/closed, min/max stay) still come from DateInventory, but
+        available_rooms/booked_rooms/remaining_rooms are overridden in-memory (not saved)
+        from RoomInventory -- the room type's shared physical room count -- since the
+        booking engine stopped writing DateInventory's own counters in 3.3 (audit #31).
+        A night with no RoomInventory row yet is unmanaged: open at the room type's full
+        total_rooms, same default as quote_stay.
+        """
+        from properties.models import RoomInventory
+
         request = self.context.get('request')
         check_in = request.query_params.get('check_in') if request else None
         check_out = request.query_params.get('check_out') if request else None
-        
+
         # Filter date inventory by date range
         queryset = obj.date_inventory.filter(
             is_deleted=False
         ).order_by('date')
-        
+
         if check_in:
             queryset = queryset.filter(date__gte=check_in)
         if check_out:
             queryset = queryset.filter(date__lte=check_out)
-        
-        return DateInventorySerializer(queryset, many=True).data
+
+        rows = list(queryset)
+        if rows:
+            room_rows = {
+                room_row.date: room_row for room_row in RoomInventory.objects.filter(
+                    room_type=obj.room_type, date__in=[row.date for row in rows],
+                )
+            }
+            for row in rows:
+                room_row = room_rows.get(row.date)
+                if room_row is not None:
+                    row.available_rooms = room_row.available_rooms
+                    row.booked_rooms = room_row.booked_rooms
+                else:
+                    row.available_rooms = obj.room_type.total_rooms
+                    row.booked_rooms = 0
+
+        return DateInventorySerializer(rows, many=True).data
 
 
 class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):

@@ -49,10 +49,14 @@ Core endpoints:
 - GET `/api/v1/partner/rates/` ✅ IMPLEMENTED (Checkpoint 18)
 - PATCH `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/partner/rates/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
-- POST `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18); `available_rooms`/`booked_rooms` DEPRECATED 2026-09-29, see "Phase 3 item 3.4" below
 - GET `/api/v1/partner/inventory/` ✅ IMPLEMENTED (Checkpoint 18; `rate_plan`/`date_from`/`date_to` filters added 2026-09-24)
 - PATCH `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
 - DELETE `/api/v1/partner/inventory/{id}/` ✅ IMPLEMENTED (Checkpoint 18)
+- POST `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
+- GET `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4; `room_type`/`date_from`/`date_to` filters)
+- PATCH `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
+- DELETE `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
 - POST `/api/v1/partner/properties/{id}/photos/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/partner/bookings/` ✅ IMPLEMENTED (Checkpoint 18)
 - GET `/api/v1/admin-panel/properties/` ✅ IMPLEMENTED (Checkpoint 18)
@@ -76,6 +80,13 @@ Core endpoints:
 - DELETE `/api/v1/admin-panel/customers/{id}/notes/{note_id}/` ✅ IMPLEMENTED (Checkpoint 25)
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
+
+## 2026-09-29 room inventory partner API + public availability (Phase 3 item 3.4, audit #31)
+- NEW `POST/GET/PATCH/DELETE /partner/room-inventory/` (owner sees and edits only own room types): `{ id, room_type, date, available_rooms, booked_rooms (read-only), remaining_rooms (read-only), is_available }`. `available_rooms` cannot be more than `room_type.total_rooms` (400 on `available_rooms` naming the limit, same rule DateInventory already enforces). Unique per `(room_type, date)`. `GET` accepts `room_type`, `date_from`, `date_to` filters (same shape as `/partner/inventory/`'s). This is the room type's real, shared-across-rate-plans physical room count that the booking engine locks and updates (RoomInventory, added 3.1-3.3)
+- **DEPRECATED**: `available_rooms`/`booked_rooms` on `/partner/inventory/` (DateInventory) are no longer the source of truth for how many physical rooms are left -- the booking engine stopped writing them in 3.3. `/partner/inventory/` still owns price and each rate plan's own rules (open/closed `is_available`, `minimum_stay`, `maximum_stay`); use the new `/partner/room-inventory/` to see or change actual room counts
+- `GET /properties/{id}/availability/`'s nested `date_inventory` items keep the same shape (`available_rooms`, `booked_rooms`, `remaining_rooms`, `price`, `currency`, `is_available`, `minimum_stay`, `maximum_stay`, `notes`), but `available_rooms`/`booked_rooms`/`remaining_rooms` are now read from RoomInventory for that room type/date (falling back to the room type's full `total_rooms`, 0 booked, when no RoomInventory row exists yet -- unmanaged, same default `quote_stay` uses). `price`/`currency`/`is_available`/`minimum_stay`/`maximum_stay`/`notes` are still DateInventory's own, per rate plan
+- `GET /properties/search/` with `check_in`/`check_out`: the "has a room left" check now also reads RoomInventory for the rate plan's room type (previously only DateInventory's own, now-stale, `available_rooms`/`booked_rooms`), so a room sold out through one rate plan correctly hides every other rate plan selling the same physical room type. `is_available`/`minimum_stay`/`maximum_stay` are still checked from DateInventory
+- Additive only for the new endpoint; behaviour change (bugfix) for the two read endpoints above: numbers now match what was actually booked instead of drifting from it
 
 ## 2026-09-28 partner property name (Phase 2 item 4)
 - `GET /partner/properties/` and `GET/PATCH /partner/properties/{id}/` items have a read-only `name`: the English translation, else any translation, else the full address (`Property.display_name()`). Sending `name` is ignored. Additive only

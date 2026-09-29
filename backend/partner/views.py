@@ -11,13 +11,13 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from properties.models import Property, RoomType, RatePlan, DateInventory, PropertyPhoto
+from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, PropertyPhoto
 from bookings.models import Booking, BookingItem
 from partner.serializers import (
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
-    PartnerDateInventorySerializer, PartnerPropertyPhotoSerializer,
-    PartnerBookingSerializer
+    PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
+    PartnerPropertyPhotoSerializer, PartnerBookingSerializer
 )
 
 
@@ -141,6 +141,68 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(rate_plan_id=int(rate_plan))
             else:
                 errors['rate_plan'] = ['Must be a rate plan id.']
+
+        dates = {}
+        for name in ('date_from', 'date_to'):
+            value = params.get(name)
+            if not value:
+                continue
+            try:
+                parsed = parse_date(value) if len(value) == 10 else None
+            except ValueError:  # well formed but impossible, e.g. 2026-02-30
+                parsed = None
+            if parsed is None:
+                errors[name] = ['Must be a date in YYYY-MM-DD format.']
+            else:
+                dates[name] = parsed
+
+        if 'date_from' in dates and 'date_to' in dates and dates['date_from'] > dates['date_to']:
+            errors['date_to'] = ['Must not be before date_from.']
+        if errors:
+            raise ValidationError(errors)
+
+        if 'date_from' in dates:
+            queryset = queryset.filter(date__gte=dates['date_from'])
+        if 'date_to' in dates:
+            queryset = queryset.filter(date__lte=dates['date_to'])
+        return queryset
+
+
+class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for room inventory (RoomInventory, audit #31) management by hotel-owners.
+
+    Scoped to room inventory in properties owned by the authenticated hotel-owner. This
+    is the room type's real, shared physical room count; DateInventory (see
+    PartnerDateInventoryViewSet) still holds the price and each rate plan's own rules.
+    """
+    permission_classes = [IsHotelOwner]
+    serializer_class = PartnerRoomInventorySerializer
+
+    def get_queryset(self):
+        """Filter queryset to room inventory in properties owned by the authenticated user."""
+        queryset = RoomInventory.objects.filter(
+            room_type__property__owner=self.request.user,
+            is_deleted=False
+        ).select_related('room_type__property')
+        if self.action == 'list':
+            queryset = self._filter_list(queryset).order_by('date', 'id')
+        return queryset
+
+    def _filter_list(self, queryset):
+        """
+        Optional list filters: ?room_type=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+        (both dates inclusive). Invalid values are a 400, not a silently ignored filter.
+        """
+        params = self.request.query_params
+        errors = {}
+
+        room_type = params.get('room_type')
+        if room_type:
+            if room_type.isdigit():
+                queryset = queryset.filter(room_type_id=int(room_type))
+            else:
+                errors['room_type'] = ['Must be a room type id.']
 
         dates = {}
         for name in ('date_from', 'date_to'):

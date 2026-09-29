@@ -6,7 +6,7 @@ management scoped to hotel-owner accounts.
 """
 from rest_framework import serializers
 from common.storage import validate_image_file
-from properties.models import Property, RoomType, RatePlan, DateInventory, PropertyPhoto
+from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, PropertyPhoto
 from properties.serializers import (
     PropertyPhotoSerializer, AmenitySerializer, PropertyAmenitySerializer
 )
@@ -139,6 +139,48 @@ class PartnerDateInventorySerializer(serializers.ModelSerializer):
                     "You can only manage inventory for your own properties."
                 )
         return value
+
+
+class PartnerRoomInventorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for room inventory (RoomInventory, audit #31) management by hotel-owners.
+
+    This is the room type's real, shared physical room count -- the booking engine locks
+    and updates it. DateInventory (PartnerDateInventorySerializer) still holds the price
+    and each rate plan's own rules.
+    """
+    remaining_rooms = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = RoomInventory
+        fields = ['id', 'room_type', 'date', 'available_rooms', 'booked_rooms', 'remaining_rooms', 'is_available']
+        read_only_fields = ['id', 'booked_rooms', 'remaining_rooms']
+
+    def validate_room_type(self, value):
+        """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if value.property.owner != request.user:
+                raise serializers.ValidationError(
+                    "You can only manage room inventory for your own properties."
+                )
+        return value
+
+    def validate(self, data):
+        """
+        Mirror RoomInventory.clean(): available_rooms cannot exceed the room type's
+        total_rooms. DRF's create/update flow never calls full_clean(), so this has to
+        be enforced here too.
+        """
+        room_type = data.get('room_type') or (self.instance.room_type if self.instance else None)
+        available_rooms = data.get(
+            'available_rooms', self.instance.available_rooms if self.instance else None
+        )
+        if room_type is not None and available_rooms is not None and available_rooms > room_type.total_rooms:
+            raise serializers.ValidationError({
+                'available_rooms': f'Cannot be more than the {room_type.total_rooms} rooms of this room type.'
+            })
+        return data
 
 
 class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):

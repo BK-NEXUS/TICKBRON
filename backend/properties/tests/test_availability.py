@@ -8,7 +8,7 @@ from rest_framework import status
 from properties.models import (
     Property, PropertyType, PropertyAmenity,
     Amenity, AmenityCategory,
-    RoomType, RoomAmenity, RatePlan, DateInventory
+    RoomType, RoomAmenity, RatePlan, DateInventory, RoomInventory
 )
 from datetime import date, timedelta
 
@@ -426,3 +426,67 @@ class PropertyAvailabilityEndpointTest(TestCase):
         
         # Should include all 7 days of inventory
         self.assertEqual(len(date_inventory), 7)
+
+
+class PropertyAvailabilityUsesRoomInventoryTest(TestCase):
+    """
+    3.4 (audit #31): the public availability response's remaining_rooms (and
+    available_rooms/booked_rooms) must come from RoomInventory, the room type's shared
+    physical room count, not from DateInventory's own columns -- the booking engine
+    stopped writing those in 3.3, so they can drift from what is actually booked.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(email='owner-ri@example.com', password='testpass123')
+        self.property_type = PropertyType.objects.create(name='Hotel', slug='hotel-ri')
+        self.property = Property.objects.create(
+            owner=self.user, property_type=self.property_type, status='active',
+            max_guests=2, bedrooms=1, bathrooms=1, address_line1='1 RI St',
+            city='Tashkent', country='Uzbekistan', base_price=50.00, currency='USD',
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property, name='Room', slug='room-ri',
+            base_occupancy=2, max_occupancy=2, base_price=50.00, currency='USD', total_rooms=5,
+        )
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type, name='Standard', slug='standard-ri', rate_type='standard',
+            base_price=50.00, currency='USD', min_nights=1, is_active=True,
+        )
+        self.date = date.today() + timedelta(days=1)
+        # DateInventory says fully free -- stale, the booking engine no longer writes this
+        DateInventory.objects.create(
+            rate_plan=self.rate_plan, date=self.date, available_rooms=5, booked_rooms=0,
+            price=50.00, currency='USD', is_available=True,
+        )
+        # RoomInventory (audit #31) is what the booking engine actually updates
+        RoomInventory.objects.create(
+            room_type=self.room_type, date=self.date, available_rooms=5, booked_rooms=3, is_available=True,
+        )
+
+    def _date_row(self, response, target_date):
+        date_inventory = response.data['room_types'][0]['rate_plans'][0]['date_inventory']
+        return next(row for row in date_inventory if str(row['date']) == target_date.isoformat())
+
+    def test_remaining_rooms_reflects_room_inventory_not_date_inventory(self):
+        response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = self._date_row(response, self.date)
+        self.assertEqual(row['booked_rooms'], 3)  # RoomInventory's real count, not DateInventory's stale 0
+        self.assertEqual(row['remaining_rooms'], 2)
+
+    def test_unmanaged_night_falls_back_to_room_type_total(self):
+        """A night with no RoomInventory row is unmanaged: open at the room type's full total_rooms."""
+        other_date = self.date + timedelta(days=1)
+        DateInventory.objects.create(
+            rate_plan=self.rate_plan, date=other_date, available_rooms=1, booked_rooms=1,
+            price=50.00, currency='USD', is_available=True,
+        )
+
+        response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
+
+        row = self._date_row(response, other_date)
+        self.assertEqual(row['available_rooms'], 5)
+        self.assertEqual(row['booked_rooms'], 0)
+        self.assertEqual(row['remaining_rooms'], 5)
