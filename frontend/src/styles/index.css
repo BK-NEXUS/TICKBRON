@@ -8447,7 +8447,9 @@ body {
 }
 
 .bar-container {
-  flex: 1;
+  /* A fixed height (not flex: 1): the bars' percentage heights need a definite parent height */
+  flex: 0 0 200px;
+  align-self: stretch;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -9012,4 +9014,73 @@ body {
 .property-region-error {
   font-size: var(--font-size-sm);
   color: var(--color-error);
+}
+
+/* Page breadcrumbs (layout): Back button and "Home › ... › Current page" on one line */
+.page-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.page-breadcrumbs-back {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.page-breadcrumbs-back:hover,
+.page-breadcrumbs-back:focus-visible {
+  border-color: var(--color-gold-dark);
+}
+
+.page-breadcrumbs-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+}
+
+.page-breadcrumbs-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.page-breadcrumbs-item [aria-current='page'] {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.page-breadcrumbs-separator {
+  color: var(--color-text-tertiary);
+}
+
+.page-breadcrumbs-item a,
+.page-breadcrumbs-link {
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.partner-status .customers-table-container {
+  margin-bottom: var(--spacing-lg);
 }
