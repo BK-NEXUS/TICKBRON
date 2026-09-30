@@ -46,6 +46,9 @@ vi.mock('../components/PartnerAvailabilityManagement', () => ({
 }))
 vi.mock('../components/PartnerPropertyWizard', () => ({ PartnerPropertyWizard: () => null }))
 vi.mock('../components/PartnerBookingsView', () => ({ PartnerBookingsView: () => null }))
+vi.mock('../components/PartnerStatusTab', () => ({
+  PartnerStatusTab: () => <div data-testid="partner-status">partner status</div>,
+}))
 
 // The breadcrumb trail is shown by the layout (MainLayout)
 const renderDashboard = () =>
@@ -108,5 +111,20 @@ describe('PartnerDashboardPage navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByRole('heading', { name: 'My Properties' })).toBeInTheDocument()
+  })
+
+  it('has a Status tab (no emoji icon) with its breadcrumb', async () => {
+    renderDashboard()
+    const statusNav = await screen.findByRole('button', { name: 'Status' })
+    expect(statusNav.textContent).toBe('Status')
+
+    fireEvent.click(statusNav)
+
+    expect(screen.getByTestId('partner-status')).toBeInTheDocument()
+    expect(statusNav).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain('Partner Dashboard›Status')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.queryByTestId('partner-status')).not.toBeInTheDocument()
   })
 })

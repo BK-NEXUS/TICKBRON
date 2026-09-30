@@ -1,4 +1,4 @@
-// Status section API adapter (admin panel): /api/v1/admin-panel/status/
+// Status sections API adapter: admin panel /api/v1/admin-panel/status/, partner panel /api/v1/partner/status/
 // Contract: .ai/API_CONTRACT.md "admin Status" (Status plan S2/S3). A booking counts when it is
 // confirmed or completed; it belongs to the period of its check-in date; revenue is per currency.
 
@@ -93,6 +93,27 @@ export interface StatusUser {
   last_booking_date: string
 }
 
+export interface PartnerStatusProperty extends StatusTotals {
+  id: number
+  name: string
+  city: string
+  region: string
+  country: string
+  status: string
+}
+
+/** GET /api/v1/partner/status/ (the owner's own properties only). Contract: S4 */
+export interface PartnerStatus {
+  /** YYYY-MM-DD: when the owner's account was created */
+  since: string
+  period: StatusPeriod
+  totals: StatusTotals
+  properties: PartnerStatusProperty[]
+  year: number
+  available_years: number[]
+  monthly: StatusMonth[]
+}
+
 export interface StatusListParams {
   period: StatusPeriod
   search?: string
@@ -105,6 +126,7 @@ export interface StatusResponse<T> {
 }
 
 const ERROR_MESSAGES = { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Not found' }
+const PARTNER_ERROR_MESSAGES = { ...ERROR_MESSAGES, 403: 'Hotel owner role required' }
 
 function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams()
@@ -115,7 +137,11 @@ function query(params: Record<string, string | number | undefined>): string {
   return text ? `?${text}` : ''
 }
 
-async function request<T>(url: string, init: RequestInit = { method: 'GET' }): Promise<StatusResponse<T>> {
+async function request<T>(
+  url: string,
+  init: RequestInit = { method: 'GET' },
+  errorMessages: Record<number, string> = ERROR_MESSAGES,
+): Promise<StatusResponse<T>> {
   try {
     const response = await apiFetch(url, {
       credentials: 'include',
@@ -123,7 +149,7 @@ async function request<T>(url: string, init: RequestInit = { method: 'GET' }): P
       ...init,
     })
     if (!response.ok) {
-      const apiError = await readApiError(response, ERROR_MESSAGES)
+      const apiError = await readApiError(response, errorMessages)
       return { data: null, error: apiError.message }
     }
     return { data: (await response.json()) as T, error: null }
@@ -155,6 +181,11 @@ export const statusAdapter = {
 
   getUsers(params: StatusListParams) {
     return request<StatusPage<StatusUser>>(`${STATUS_URL}/users/${listQuery(params)}`)
+  },
+
+  getPartnerStatus(params: { period: StatusPeriod; year?: number }) {
+    return request<PartnerStatus>(
+      `${API_BASE_URL}/api/v1/partner/status/${query(params)}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
   /** Admin sets a property's region (blank clears it: "Unspecified"). Contract: S1 */

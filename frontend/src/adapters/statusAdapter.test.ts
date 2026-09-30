@@ -89,4 +89,18 @@ describe('statusAdapter', () => {
     expect(init.headers['X-CSRFToken']).toBe('test-token')
     expect(result.error).toBeNull()
   })
+
+  it('loads the partner Status with period and year', async () => {
+    await statusAdapter.getPartnerStatus({ period: '2026-04', year: 2025 })
+
+    const url = calledUrl()
+    expect(url.pathname).toBe('/api/v1/partner/status/')
+    expect(url.searchParams.get('period')).toBe('2026-04')
+    expect(url.searchParams.get('year')).toBe('2025')
+  })
+
+  it('partner Status: the year is optional', async () => {
+    await statusAdapter.getPartnerStatus({ period: 'all' })
+    expect(calledUrl().search).toBe('?period=all')
+  })
 })

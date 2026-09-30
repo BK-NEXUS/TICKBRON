@@ -2133,3 +2133,7 @@ Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or complet
 - DONE: S6 frontend admin Status: users (frontend 1107 passed)
   - Status home now has two tiles, Countries and Users. Users: guests ranked by counted bookings (name, phone, email, bookings, total spent per currency, last booking date), period selector, search (name, phone, email or ID), pagination; clicking a row (or the name) opens the existing customer profile `/admin/customers/{id}`. Breadcrumbs `Status › Users`
   - Proof: 4 new cases in `AdminStatusSection.test.tsx` -- DID FAIL (no Users tile) before
+- DONE: S7 frontend partner Status tab (frontend 1116 passed)
+  - Partner panel nav "Status" (inline SVG icon) -> `PartnerStatusTab`: summary cards (On TICKBRON since, bookings, guests via TICKBRON, revenue per currency), month/year selector, per-property table, chart year + currency selectors, monthly revenue and guests bar charts; loading/empty/error states. Breadcrumbs `Partner Dashboard › Status`, Back returns to the properties view
+  - `statusAdapter.getPartnerStatus` (403 -> "Hotel owner role required")
+  - Proof: `PartnerStatusTab.test.tsx` (6), 2 new `statusAdapter.test.ts` cases, 1 new `PartnerDashboardPage.navigation.test.tsx` case -- all DID FAIL before

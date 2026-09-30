@@ -7,10 +7,11 @@ import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
 import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
+import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
-type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -103,6 +104,7 @@ export function PartnerDashboardPage() {
   if (currentView !== 'properties') trail[0] = { label: 'Partner Dashboard', onClick: handleBackToProperties }
   if (currentView === 'add-property') trail.push({ label: 'Add Property' })
   if (currentView === 'bookings') trail.push({ label: 'Bookings' })
+  if (currentView === 'status') trail.push({ label: 'Status' })
   if (selectedProperty && ['rooms', 'rates', 'availability', 'calendar'].includes(currentView)) {
     trail.push(currentView === 'rooms'
       ? { label: propertyName(selectedProperty) }
@@ -150,6 +152,20 @@ export function PartnerDashboardPage() {
       >
         <span className="nav-icon">📅</span>
         <span className="nav-label">Bookings</span>
+      </button>
+      <button
+        onClick={() => setCurrentView('status')}
+        className={`nav-item ${currentView === 'status' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'status' ? 'page' : undefined}
+      >
+        <span className="nav-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" focusable="false">
+            <rect x="1" y="9" width="3" height="6" rx="0.5" />
+            <rect x="6.5" y="5" width="3" height="10" rx="0.5" />
+            <rect x="12" y="1" width="3" height="14" rx="0.5" />
+          </svg>
+        </span>
+        <span className="nav-label">Status</span>
       </button>
       {selectedProperty && (
         <>
@@ -331,6 +347,8 @@ export function PartnerDashboardPage() {
         ) : null
       case 'bookings':
         return <PartnerBookingsView />
+      case 'status':
+        return <PartnerStatusTab />
       default:
         return renderPropertiesView()
     }

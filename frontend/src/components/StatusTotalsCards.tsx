@@ -7,10 +7,12 @@ interface StatusTotalsCardsProps {
   caption: string
   /** Extra first card, e.g. the partner's "since" date */
   lead?: { label: string; value: string }
+  /** Label of the guests card (partner: "Guests via TICKBRON") */
+  guestsLabel?: string
 }
 
 /** Summary cards: bookings, guests and revenue (one line per currency) */
-export function StatusTotalsCards({ totals, caption, lead }: StatusTotalsCardsProps) {
+export function StatusTotalsCards({ totals, caption, lead, guestsLabel = 'Guests' }: StatusTotalsCardsProps) {
   return (
     <div className="status-cards">
       {lead && (
@@ -25,7 +27,7 @@ export function StatusTotalsCards({ totals, caption, lead }: StatusTotalsCardsPr
         <span className="status-card-caption">{caption}</span>
       </div>
       <div className="status-card">
-        <span className="status-card-label">Guests</span>
+        <span className="status-card-label">{guestsLabel}</span>
         <span className="status-card-value">{formatCount(totals.guests)}</span>
         <span className="status-card-caption">{caption}</span>
       </div>
