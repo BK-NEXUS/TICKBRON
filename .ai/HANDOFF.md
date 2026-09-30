@@ -2146,3 +2146,8 @@ How to run the Status demo (local, DEBUG=True): `cd backend && venv\Scripts\pyth
 - DONE: removed the duplicate breadcrumb on admin pages (frontend 1126 passed)
   - `AdminDashboardPage` no longer renders its old one-level `<nav class="breadcrumb">`; every admin screen shows only the layout's breadcrumb (Back + `Home › Admin Dashboard › ...`). The active nav item still marks the current view
   - Proof: `src/pages/AdminBreadcrumbs.test.tsx` (10): each dashboard view (Properties, Amenities, Users, Customers, Statistics, Status, Status > Countries, Create Owner), Support lookup and Customer profile have exactly one "Breadcrumb" navigation -- the 8 dashboard cases DID FAIL (2 found) before
+
+## Geography: Country > Region > City (2026-09-30, Kolya's agent)
+
+Plan: `.ai/GEOGRAPHY_PLAN.md`.
+
