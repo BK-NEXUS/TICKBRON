@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
+import { PropertyRegionField } from './PropertyRegionField'
 
 export function AdminPropertyModeration() {
   const [properties, setProperties] = useState<AdminProperty[]>([])
@@ -212,6 +213,12 @@ export function AdminPropertyModeration() {
                     </div>
                   )}
                 </div>
+
+                <PropertyRegionField
+                  propertyId={property.id}
+                  region={property.state}
+                  onSaved={state => setProperties(prev => prev.map(p => p.id === property.id ? { ...p, state: state ?? undefined } : p))}
+                />
 
                 {property.rejection_reason && (
                   <div className="property-rejection-reason">

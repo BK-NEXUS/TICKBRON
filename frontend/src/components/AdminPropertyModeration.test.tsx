@@ -71,6 +71,20 @@ describe('AdminPropertyModeration', () => {
     expect(screen.getByText('Review and moderate property submissions')).toBeInTheDocument()
   })
 
+  it('each property card has a Region field for the Status section', async () => {
+    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+      data: [{ ...mockProperties[0], state: 'Tashkent' }, mockProperties[1]],
+      error: null,
+    })
+
+    render(<AdminPropertyModeration />)
+
+    await waitFor(() => expect(screen.getAllByLabelText('Region')).toHaveLength(2))
+    const [first, second] = screen.getAllByLabelText('Region')
+    expect(first).toHaveValue('Tashkent')
+    expect(second).toHaveValue('')
+  })
+
   it('should load properties on mount', async () => {
     ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
       data: mockProperties,

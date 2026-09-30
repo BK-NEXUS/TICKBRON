@@ -8808,3 +8808,208 @@ body {
   justify-content: space-between;
   gap: var(--spacing-md);
 }
+
+/* Status sections (admin panel > Status, partner panel > Status). Brand tokens only. */
+.status-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.status-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  text-align: left;
+  background: var(--color-cloud-white);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  color: var(--color-text-primary);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.status-tile:hover,
+.status-tile:focus-visible {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-gold-dark);
+}
+
+.status-tile-title {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-tile-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.status-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.status-search {
+  flex: 1 1 240px;
+}
+
+.status-search .search-input {
+  width: 100%;
+}
+
+.status-period-selector,
+.status-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.status-period-selector select,
+.status-field select,
+.property-region-field input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.status-table .status-cell--numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status-row {
+  cursor: pointer;
+}
+
+.status-row-link {
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gold-dark);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.status-row-link:hover,
+.status-row-link:focus-visible {
+  color: var(--color-primary-dark);
+}
+
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.status-card-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.status-card-value {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-card-caption {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.status-hotel-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+  margin: 0 0 var(--spacing-xl) 0;
+}
+
+.status-hotel-info dt {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.status-hotel-info dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.status-charts {
+  display: grid;
+  gap: var(--spacing-xl);
+}
+
+.status-chart {
+  background: var(--color-cloud-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+}
+
+.status-chart-title {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.status-chart .bar-chart {
+  min-width: 600px;
+}
+
+/* Revenue bars in brand gold (a fill, never text); guests keep the secondary color */
+.bar.status-bar--revenue {
+  background: var(--color-gold);
+}
+
+.property-region-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+}
+
+.property-region-saved {
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
+}
+
+.property-region-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+}

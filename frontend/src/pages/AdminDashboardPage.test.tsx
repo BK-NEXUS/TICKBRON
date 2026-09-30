@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { AdminDashboardPage } from './AdminDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
 import { MemoryRouter } from 'react-router-dom'
+import { BreadcrumbProvider, Breadcrumbs } from '../components/Breadcrumbs'
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext')
@@ -135,5 +136,34 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByText('Properties')).toBeInTheDocument()
     expect(screen.getByText('Amenities')).toBeInTheDocument()
     expect(screen.getByText('Users')).toBeInTheDocument()
+  })
+
+  it('opens the Status section from the navigation, and its breadcrumb returns', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+    } as unknown as ReturnType<typeof useAuth>)
+
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <BreadcrumbProvider>
+          <Breadcrumbs />
+          <AdminDashboardPage />
+        </BreadcrumbProvider>
+      </MemoryRouter>
+    )
+
+    const statusNav = screen.getByRole('button', { name: 'Status' })
+    // No emoji icons on the new navigation item
+    expect(statusNav.textContent).toBe('Status')
+    fireEvent.click(statusNav)
+
+    expect(screen.getByRole('heading', { name: 'Status' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Countries/ })).toBeInTheDocument()
+    expect(statusNav).toHaveAttribute('aria-current', 'page')
+
+    // "Admin Dashboard" in the page breadcrumbs leaves the Status section
+    fireEvent.click(screen.getByRole('button', { name: 'Admin Dashboard' }))
+    expect(screen.queryByRole('heading', { name: 'Status' })).not.toBeInTheDocument()
   })
 })

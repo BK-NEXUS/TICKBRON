@@ -6,10 +6,11 @@ import { AdminAmenityManagement } from '../components/AdminAmenityManagement'
 import { AdminUserManagement } from '../components/AdminUserManagement'
 import { AdminCustomersList } from '../components/AdminCustomersList'
 import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard'
+import { AdminStatusSection } from '../components/AdminStatusSection'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'create-owner'
 
 export function AdminDashboardPage() {
   const navigate = useNavigate()
@@ -113,6 +114,20 @@ export function AdminDashboardPage() {
         <span className="nav-label">Statistics</span>
       </button>
       <button
+        onClick={() => setCurrentView('status')}
+        className={`nav-item ${currentView === 'status' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'status' ? 'page' : undefined}
+      >
+        <span className="nav-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" focusable="false">
+            <rect x="1" y="9" width="3" height="6" rx="0.5" />
+            <rect x="6.5" y="5" width="3" height="10" rx="0.5" />
+            <rect x="12" y="1" width="3" height="14" rx="0.5" />
+          </svg>
+        </span>
+        <span className="nav-label">Status</span>
+      </button>
+      <button
         onClick={() => navigate('/admin/support')}
         className="nav-item"
       >
@@ -153,6 +168,9 @@ export function AdminDashboardPage() {
           break
         case 'statistics':
           breadcrumbs.push({ label: 'Statistics Dashboard', onClick: () => {}, active: true })
+          break
+        case 'status':
+          breadcrumbs.push({ label: 'Status', onClick: () => {}, active: true })
           break
       }
     }
@@ -198,6 +216,8 @@ export function AdminDashboardPage() {
         return <AdminCustomersList />
       case 'statistics':
         return <AdminStatisticsDashboard />
+      case 'status':
+        return <AdminStatusSection onExit={() => setCurrentView('properties')} />
       default:
         return <AdminPropertyModeration />
     }
