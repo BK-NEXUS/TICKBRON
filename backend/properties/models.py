@@ -155,6 +155,8 @@ class Property(BaseModel):
         indexes = [
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['city', 'country']),
+            # Status sections: country > region (state) drill-down
+            models.Index(fields=['country', 'state'], name='property_country_state_idx'),
             models.Index(fields=['base_price']),
         ]
     

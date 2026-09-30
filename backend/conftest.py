@@ -14,6 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Set Django settings module for pytest
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
+# Shared data for the Status endpoint tests (admin_panel and partner)
+pytest_plugins = ['admin_panel.tests.status_fixtures']
+
 
 # Test database: pytest-django's built-in django_db_setup creates a separate
 # test database and runs migrations. Do not override it with a no-op, or tests

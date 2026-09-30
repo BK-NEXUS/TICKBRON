@@ -2112,3 +2112,8 @@ Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or complet
   - NEW `PATCH /admin-panel/properties/{id}/region/` (staff only; access matrix extended). Partner form already sets `state`; the admin UI field comes with S5
   - NEW `python manage.py seed_demo_stats` (DEBUG only, idempotent, marked DEMO): 12 hotels in Uzbekistan/Kazakhstan/Turkey (one without a region, Turkey in EUR), 12 owner accounts `stats-owner-NN@tickbron.demo`, 60 guests `stats-guest-NN@tickbron.demo` (password `DemoStats#2026`), 250 past bookings (completed/confirmed/cancelled); stays end on or before today so no inventory is held
   - Proof: `properties/tests/test_regions.py`, `admin_panel/tests/test_property_region.py`, `core/tests/test_seed_demo_stats.py` -- all DID FAIL (ImportError / 404 / unknown command) before
+- DONE: S2 admin Status countries > regions > hotels (backend 1308 passed, 2 skipped)
+  - `bookings/stats.py` holds the definitions (counted = confirmed/completed, period by check-in date, revenue per currency, commission placeholder `commission_amount`) and the DB aggregation helpers; `admin_panel/status.py` holds the views; `properties/regions.py` gained `region_expression()` / `hotel_name_expression()`
+  - NEW `GET /admin-panel/status/countries/`, `.../countries/{country}/regions/`, `.../regions/{region}/hotels/` (see API_CONTRACT.md). 3 queries per page whatever the size (count, page, revenue for the page's keys)
+  - Indexes: bookings (status, check_in), properties (country, state)
+  - Proof: `admin_panel/tests/test_status_geo.py` (21, incl. constant query count) + access matrix -- all DID FAIL (404) before. Shared data: `admin_panel/tests/status_fixtures.py` (`status_world`, registered in the root conftest)

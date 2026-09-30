@@ -3,6 +3,8 @@ URL configuration for admin app.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+
+from admin_panel.status import status_countries, status_hotels, status_regions
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
@@ -34,6 +36,9 @@ urlpatterns = [
     path('customers/<int:customer_id>/notes/<int:note_id>/', admin_internal_note_detail, name='admin-internal-note-detail'),
     path('statistics/registrations/', admin_registration_statistics, name='admin-registration-statistics'),
     path('statistics/top-bookers/', admin_top_bookers_leaderboard, name='admin-top-bookers-leaderboard'),
+    path('status/countries/', status_countries, name='admin-status-countries'),
+    path('status/countries/<str:country>/regions/', status_regions, name='admin-status-regions'),
+    path('status/countries/<str:country>/regions/<str:region>/hotels/', status_hotels, name='admin-status-hotels'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),

@@ -5,8 +5,8 @@ The region is stored in the existing `Property.state` field (the partner wizard
 labels it "State/Region"). Geography levels for now: country (text) > region > hotel.
 A full Country > Region > City dictionary is a later phase.
 """
-from django.db.models import Q
-from django.db.models.functions import Lower, Trim
+from django.db.models import CharField, Case, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models.functions import Coalesce, Lower, NullIf, Trim
 
 # Label for hotels without a region (Status views group them under it)
 UNSPECIFIED_REGION = 'Unspecified'
@@ -36,3 +36,31 @@ def backfill_regions_from_city(property_model):
             .update(state=region)
         )
     return updated
+
+
+def region_expression(prefix=''):
+    """
+    Query expression for the region of a property, UNSPECIFIED_REGION when it has none
+    (NULL or blank). `prefix` is the path to Property, e.g. 'property__' from Booking.
+    """
+    return Coalesce(NullIf(Trim(f'{prefix}state'), Value('')), Value(UNSPECIFIED_REGION),
+                    output_field=CharField())
+
+
+def hotel_name_expression():
+    """
+    Query expression for a property's name, the same choice as Property.display_name():
+    the English translation, else any translation, else the first address line.
+    """
+    from properties.models import PropertyTranslation
+
+    names = (
+        PropertyTranslation.objects
+        .filter(property=OuterRef('pk'), is_deleted=False)
+        .exclude(name='')
+        .annotate(is_en=Case(When(language='en', then=Value(1)), default=Value(0),
+                             output_field=IntegerField()))
+        .order_by('-is_en', 'id')
+        .values('name')[:1]
+    )
+    return Coalesce(Subquery(names, output_field=CharField()), 'address_line1', output_field=CharField())

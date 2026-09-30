@@ -139,6 +139,8 @@ class Booking(BaseModel):
             models.Index(fields=['guest', 'status']),
             models.Index(fields=['property', 'status']),
             models.Index(fields=['expires_at']),
+            # Status sections: counted bookings (status) in a period (check-in date)
+            models.Index(fields=['status', 'check_in'], name='booking_status_checkin_idx'),
         ]
     
     def __str__(self):

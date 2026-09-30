@@ -86,6 +86,22 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-09-30 admin Status: countries > regions > hotels (Status plan S2)
+Definitions (`backend/bookings/stats.py`, used by every Status endpoint):
+- A booking **counts** when `status` is `confirmed` or `completed` (not pending, cancelled or no_show) and it is not soft-deleted
+- A booking belongs to the period containing its **check-in date**
+- **Revenue** = sum of `total_price` of counted bookings (gross booking value), always a list per currency: `[{ currency: "USD", amount: "530.00" }, ...]` (amount is a decimal string, list sorted by currency, `[]` when none). Currencies are never mixed. Commission is not defined yet (`bookings.stats.commission_amount`, returns None; not reported)
+- **Guests** = distinct guest accounts with at least one counted booking
+- Soft-deleted properties are left out everywhere
+
+Common query parameters: `period` = `all` (default) | `YYYY` | `YYYY-MM` (400 `{ period: [...] }` otherwise, year 2000-2100); `search` (partial, any case, inside the current list only); `page`, `page_size` (default 20, max 100). Lists are ranked by counted bookings (ties: guests, then name). Response: `{ count, next, previous, results, period, ...context }`, each row has `rank` (1-based across pages), `bookings`, `guests`, `revenue`. Staff and super-admin only (403 for customers and hotel owners)
+
+- NEW `GET /api/v1/admin-panel/status/countries/` (top 100): rows `{ rank, country, hotels, bookings, guests, revenue }`. `search` matches the country name. `hotels` counts every non-deleted property of the country, with or without bookings
+- NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/` (top 100): rows `{ rank, region, hotels, bookings, guests, revenue }`, plus `country`. `country` is the exact value from the countries list (URL-encoded). Properties without a region are one row `region: "Unspecified"`. Unknown country -> empty list
+- NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/{region}/hotels/` (top 1000): rows `{ rank, id, name, city, status, bookings, guests, revenue }`, plus `country`, `region`. `region: "Unspecified"` lists hotels without a region. `search` matches the hotel name (English translation, else any translation, else the address)
+- New indexes (migrations `bookings/0005_status_indexes`, `properties/0011_status_indexes`, schema only): bookings (status, check_in), properties (country, state)
+- Additive only, no existing field or endpoint changed
+
 ## 2026-09-30 property region (Status plan S1)
 - The region of a property is its existing `state` field (the partner wizard's "State/Region"); no new field. Geography levels: `country` (text) > region (`state`) > hotel. A property with no region (NULL or blank) is shown as `"Unspecified"` by the Status endpoints
 - Data migration `properties/0010_backfill_property_regions`: sets `state` from `city` when `state` is empty and the city is Tashkent, Samarkand or Bukhara (case/whitespace-insensitive); never overwrites a region that is set; reverse is a no-op
