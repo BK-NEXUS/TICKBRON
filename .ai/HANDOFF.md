@@ -2107,3 +2107,8 @@ Design (audit-report #31, option A): rooms are counted per room type and date (`
 
 Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or completed; revenue = sum of `total_price` of counted bookings, grouped per currency.
 
+- DONE: S1 region + seed_demo_stats (backend 1275 passed, 2 skipped)
+  - Region = the existing `Property.state` field (no new column). `properties/regions.py`: `UNSPECIFIED_REGION`, `backfill_regions_from_city()`; data migration `properties/0010_backfill_property_regions` fills Tashkent/Samarkand/Bukhara when empty, never overwrites
+  - NEW `PATCH /admin-panel/properties/{id}/region/` (staff only; access matrix extended). Partner form already sets `state`; the admin UI field comes with S5
+  - NEW `python manage.py seed_demo_stats` (DEBUG only, idempotent, marked DEMO): 12 hotels in Uzbekistan/Kazakhstan/Turkey (one without a region, Turkey in EUR), 12 owner accounts `stats-owner-NN@tickbron.demo`, 60 guests `stats-guest-NN@tickbron.demo` (password `DemoStats#2026`), 250 past bookings (completed/confirmed/cancelled); stays end on or before today so no inventory is held
+  - Proof: `properties/tests/test_regions.py`, `admin_panel/tests/test_property_region.py`, `core/tests/test_seed_demo_stats.py` -- all DID FAIL (ImportError / 404 / unknown command) before

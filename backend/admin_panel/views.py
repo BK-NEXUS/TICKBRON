@@ -23,7 +23,7 @@ from payments.models import PaymentTransaction
 from bookings.models import Booking, BookingItem
 from admin_panel.models import InternalNote
 from admin_panel.serializers import (
-    AdminPropertySerializer, AdminPropertyApproveSerializer,
+    AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
     AdminUserSerializer, AdminUserCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
@@ -138,6 +138,27 @@ def admin_property_approve(request, property_id):
         )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_property_region(request, property_id):
+    """
+    Set the region of a property (Status section: country > region > hotel).
+
+    Request Body:
+        state: region name; blank or null clears it ("Unspecified")
+
+    Only the region changes; every other field in the body is ignored.
+    """
+    property = get_object_or_404(Property, id=property_id, is_deleted=False)
+    serializer = AdminPropertyRegionSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    property.state = serializer.validated_data['state']
+    property.save(update_fields=['state', 'updated_at'])
+    return Response(AdminPropertySerializer(property).data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

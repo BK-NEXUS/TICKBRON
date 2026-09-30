@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
-    admin_property_approve, admin_property_suspend,
+    admin_property_approve, admin_property_suspend, admin_property_region,
     admin_create_hotel_owner, admin_payment_transactions,
     admin_booking_lookup_by_reference,
     admin_customers_directory,
@@ -37,6 +37,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),
+    path('properties/<int:property_id>/region/', admin_property_region, name='admin-property-region'),
     path('payments/transactions/', admin_payment_transactions, name='admin-payment-transactions'),
     path('bookings/lookup/', admin_booking_lookup_by_reference, name='admin-booking-lookup'),
 ]

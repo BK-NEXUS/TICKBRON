@@ -23,6 +23,8 @@ python manage.py runserver
 python manage.py migrate
 python manage.py process_expired_bookings [--dry-run]   # expire stale pending bookings, restore inventory
 python manage.py db_health | init_db
+python manage.py seed_demo                 # demo admin/owner/guest + 3 hotels (DEBUG only)
+python manage.py seed_demo_stats           # DEMO data for the Status sections: 12 hotels, 60 guests, 250 past bookings (DEBUG only)
 
 pytest                                   # full suite (uses --reuse-db; add --create-db after model changes)
 pytest bookings/tests/test_views.py      # single file

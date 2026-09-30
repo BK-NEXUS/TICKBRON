@@ -29,6 +29,7 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/properties/1/'),
     ('post', f'{A}/properties/1/approve/'),
     ('post', f'{A}/properties/1/suspend/'),
+    ('patch', f'{A}/properties/1/region/'),
     ('get', f'{A}/amenities/categories/'),
     ('post', f'{A}/amenities/categories/'),
     ('get', f'{A}/amenities/categories/1/'),

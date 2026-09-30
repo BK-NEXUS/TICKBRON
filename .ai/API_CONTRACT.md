@@ -86,6 +86,13 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-09-30 property region (Status plan S1)
+- The region of a property is its existing `state` field (the partner wizard's "State/Region"); no new field. Geography levels: `country` (text) > region (`state`) > hotel. A property with no region (NULL or blank) is shown as `"Unspecified"` by the Status endpoints
+- Data migration `properties/0010_backfill_property_regions`: sets `state` from `city` when `state` is empty and the city is Tashkent, Samarkand or Bukhara (case/whitespace-insensitive); never overwrites a region that is set; reverse is a no-op
+- NEW `PATCH /api/v1/admin-panel/properties/{id}/region/` (staff and super-admin): `{ state: string|null }` (max 100, trimmed; blank or null clears it) -> the admin property object (same shape as `GET /admin-panel/properties/{id}/`). Only the region changes, other fields in the body are ignored. 400 `{ state: [...] }` when missing or too long, 404 for an unknown or deleted property
+- Partners already set it through `state` on `POST/PATCH /partner/properties/`
+- Additive only, no existing field or endpoint changed
+
 ## 2026-09-29 calendar bulk edit + bulk price edit (Phase 3 items 3.6/3.7)
 - NEW `POST /partner/room-inventory/bulk/`: `{room_type, date_from, date_to, available_rooms?, is_available?}` (at least one of the two) -> array of the affected `RoomInventory` rows (same shape as `GET /partner/room-inventory/`). `date_to` is **exclusive**, the check_in/check_out convention (unlike this endpoint's own list `date_from`/`date_to` filters, which are inclusive). Creates any missing, unmanaged row (opened at the room type's full `total_rooms`) first. 400 naming the date, on `available_rooms`, if it would drop a night below what is already booked on TICKBRON; nothing is applied if any night fails. Owner's own room types only
 - NEW `POST /partner/inventory/bulk-price/`: `{rate_plan, date_from, date_to, price}` -> array of the affected `DateInventory` rows (same shape as `GET /partner/inventory/`). `date_to` is **exclusive**. Creates any missing row (price = the given value, `available_rooms` defaulted to the room type's `total_rooms`, open); an existing row's other fields (rules, `booked_rooms`) are untouched, only `price` changes. Owner's own rate plans only

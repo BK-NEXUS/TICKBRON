@@ -56,6 +56,17 @@ class AdminPropertyApproveSerializer(serializers.Serializer):
     rejection_reason = serializers.CharField(required=False, allow_blank=True)
 
 
+class AdminPropertyRegionSerializer(serializers.Serializer):
+    """
+    Region of a property (stored in `Property.state`). Blank clears it,
+    so the property is grouped as "Unspecified" in the Status section.
+    """
+    state = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, trim_whitespace=True)
+
+    def validate_state(self, value):
+        return value or None
+
+
 class AdminUserSerializer(serializers.ModelSerializer):
     """
     Serializer for user management by admins.
