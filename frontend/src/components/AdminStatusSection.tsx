@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { statusAdapter, StatusCountry, StatusHotel, StatusRegion } from '../adapters/statusAdapter'
+import { useNavigate } from 'react-router-dom'
+import { statusAdapter, StatusCountry, StatusHotel, StatusRegion, StatusUser } from '../adapters/statusAdapter'
 import { Crumb, usePageTrail } from './Breadcrumbs'
 import { StatusRankedTable, StatusColumn } from './StatusRankedTable'
 import { StatusHotelDetail } from './StatusHotelDetail'
-import { formatCount, formatMoneyList } from '../utils/statusFormat'
+import { formatCount, formatDate, formatMoneyList } from '../utils/statusFormat'
 
 type Level =
   | { kind: 'home' }
@@ -11,6 +12,7 @@ type Level =
   | { kind: 'regions'; country: string }
   | { kind: 'hotels'; country: string; region: string }
   | { kind: 'hotel'; country: string; region: string; hotelId: number; hotelName: string }
+  | { kind: 'users' }
 
 interface AdminStatusSectionProps {
   /** Leave the Status section (the "Admin Dashboard" breadcrumb, or Back from the tiles) */
@@ -28,12 +30,13 @@ function metricColumns<T extends Metrics>(): StatusColumn<T>[] {
 }
 
 /**
- * Admin panel > Status: Countries > Regions > Hotels > Hotel detail.
+ * Admin panel > Status: Countries > Regions > Hotels > Hotel detail, and Users (guests ranking).
  * Numbers count confirmed and completed bookings, by check-in date; revenue per currency.
  */
 export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const [level, setLevel] = useState<Level>({ kind: 'home' })
   const [period, setPeriod] = useState('all')
+  const navigate = useNavigate()
 
   const goHome = () => setLevel({ kind: 'home' })
   const goCountries = () => setLevel({ kind: 'countries' })
@@ -43,7 +46,8 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   // Home › Admin Dashboard › Status › Countries › Uzbekistan › Tashkent › Hotel (each level clickable, Back steps up)
   const trail: Crumb[] = [{ label: 'Admin Dashboard', onClick: onExit }]
   trail.push(level.kind === 'home' ? { label: 'Status' } : { label: 'Status', onClick: goHome })
-  if (level.kind !== 'home') {
+  if (level.kind === 'users') trail.push({ label: 'Users' })
+  if (level.kind !== 'home' && level.kind !== 'users') {
     trail.push(level.kind === 'countries' ? { label: 'Countries' } : { label: 'Countries', onClick: goCountries })
   }
   if (level.kind === 'regions' || level.kind === 'hotels' || level.kind === 'hotel') {
@@ -71,8 +75,37 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
             <span className="status-tile-title">Countries</span>
             <span className="status-tile-text">By country, region and hotel</span>
           </button>
+          <button type="button" className="status-tile" onClick={() => setLevel({ kind: 'users' })}>
+            <span className="status-tile-title">Users</span>
+            <span className="status-tile-text">Guests ranked by bookings</span>
+          </button>
         </div>
       </div>
+    )
+  }
+
+  if (level.kind === 'users') {
+    return (
+      <StatusRankedTable<StatusUser>
+        key="users"
+        title="Users"
+        subtitle="Top 1,000 guests by bookings. Search by name, phone, email or ID; open a row for the customer profile."
+        noun="users"
+        period={period}
+        onPeriodChange={setPeriod}
+        load={params => statusAdapter.getUsers(params)}
+        rowKey={row => row.id}
+        rowLabel={row => row.full_name || row.email}
+        onOpen={row => navigate(`/admin/customers/${row.id}`)}
+        columns={[
+          { header: 'Name', render: row => row.full_name },
+          { header: 'Phone', render: row => row.phone || '—' },
+          { header: 'Email', render: row => row.email },
+          { header: 'Bookings', numeric: true, render: row => formatCount(row.bookings) },
+          { header: 'Total spent', numeric: true, render: row => formatMoneyList(row.total_spent) },
+          { header: 'Last booking', render: row => formatDate(row.last_booking_date) },
+        ]}
+      />
     )
   }
 

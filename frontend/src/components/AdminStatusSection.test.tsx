@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
 import { statusAdapter } from '../adapters/statusAdapter'
@@ -214,5 +214,72 @@ describe('AdminStatusSection', () => {
 
     fireEvent.change(screen.getByLabelText('Chart year'), { target: { value: '2025' } })
     await waitFor(() => expect(mocked.getHotelDetail).toHaveBeenLastCalledWith(11, { period: 'all', year: 2025 }))
+  })
+
+  describe('Users', () => {
+    const USERS = [
+      { rank: 1, id: 42, full_name: 'Madina Nazarova', first_name: 'Madina', last_name: 'Nazarova',
+        phone: '+998903330002', email: 'guest2@example.com', bookings: 1250,
+        total_spent: [{ currency: 'USD', amount: '12345.60' }], last_booking_date: '2026-04-12' },
+    ]
+
+    function renderWithProfileRoute() {
+      render(
+        <MemoryRouter initialEntries={['/admin']}>
+          <BreadcrumbProvider>
+            <Breadcrumbs />
+            <Routes>
+              <Route path="/admin" element={<AdminStatusSection onExit={vi.fn()} />} />
+              <Route path="/admin/customers/:customerId" element={<h1>Customer profile page</h1>} />
+            </Routes>
+          </BreadcrumbProvider>
+        </MemoryRouter>,
+      )
+    }
+
+    beforeEach(() => {
+      mocked.getUsers.mockResolvedValue(pageOf(USERS))
+    })
+
+    it('the home screen has a Users tile next to Countries', () => {
+      renderSection()
+      expect(screen.getByRole('button', { name: /Countries/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Users/ })).toBeInTheDocument()
+    })
+
+    it('lists guests with their numbers', async () => {
+      renderSection()
+      fireEvent.click(screen.getByRole('button', { name: /Users/ }))
+
+      const link = await screen.findByRole('button', { name: 'Madina Nazarova' })
+      const row = link.closest('tr')!
+      expect(within(row).getByText('+998903330002')).toBeInTheDocument()
+      expect(within(row).getByText('guest2@example.com')).toBeInTheDocument()
+      expect(within(row).getByText('1,250')).toBeInTheDocument()
+      expect(within(row).getByText('$12,345.60')).toBeInTheDocument()
+      expect(within(row).getByText('Apr 12, 2026')).toBeInTheDocument()
+      expect(mocked.getUsers).toHaveBeenCalledWith({ period: 'all', search: '', page: 1 })
+      expect(trailText()).toContain('Status›Users')
+    })
+
+    it('searches users', async () => {
+      renderSection()
+      fireEvent.click(screen.getByRole('button', { name: /Users/ }))
+      await screen.findByRole('button', { name: 'Madina Nazarova' })
+
+      fireEvent.change(screen.getByLabelText('Search users'), { target: { value: '99890333' } })
+
+      await waitFor(() => expect(mocked.getUsers).toHaveBeenLastCalledWith({ period: 'all', search: '99890333', page: 1 }))
+    })
+
+    it('clicking a row opens the existing customer profile', async () => {
+      renderWithProfileRoute()
+      fireEvent.click(screen.getByRole('button', { name: /Users/ }))
+      const row = (await screen.findByRole('button', { name: 'Madina Nazarova' })).closest('tr')!
+
+      fireEvent.click(within(row).getByText('guest2@example.com'))
+
+      expect(await screen.findByRole('heading', { name: 'Customer profile page' })).toBeInTheDocument()
+    })
   })
 })
