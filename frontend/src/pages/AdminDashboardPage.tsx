@@ -147,52 +147,6 @@ export function AdminDashboardPage() {
     </nav>
   )
 
-  const renderBreadcrumb = () => {
-    const breadcrumbs: Array<{ label: string; onClick: () => void; active: boolean }> = []
-
-    if (showCreateOwner) {
-      breadcrumbs.push({ label: 'Create Hotel Owner', onClick: () => {}, active: true })
-    } else {
-      switch (currentView) {
-        case 'properties':
-          breadcrumbs.push({ label: 'Property Moderation', onClick: () => {}, active: true })
-          break
-        case 'amenities':
-          breadcrumbs.push({ label: 'Amenity Management', onClick: () => {}, active: true })
-          break
-        case 'users':
-          breadcrumbs.push({ label: 'User Management', onClick: () => {}, active: true })
-          break
-        case 'customers':
-          breadcrumbs.push({ label: 'Customers Directory', onClick: () => {}, active: true })
-          break
-        case 'statistics':
-          breadcrumbs.push({ label: 'Statistics Dashboard', onClick: () => {}, active: true })
-          break
-        case 'status':
-          breadcrumbs.push({ label: 'Status', onClick: () => {}, active: true })
-          break
-      }
-    }
-
-    return (
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        {breadcrumbs.map((crumb, index) => (
-          <span key={index} className="breadcrumb-item">
-            {index > 0 && <span className="breadcrumb-separator">/</span>}
-            {crumb.active ? (
-              <span className="breadcrumb-current">{crumb.label}</span>
-            ) : (
-              <button onClick={crumb.onClick} className="breadcrumb-link">
-                {crumb.label}
-              </button>
-            )}
-          </span>
-        ))}
-      </nav>
-    )
-  }
-
   const renderCurrentView = () => {
     if (showCreateOwner) {
       return (
@@ -236,7 +190,6 @@ export function AdminDashboardPage() {
         </div>
 
         {renderNavigation()}
-        {renderBreadcrumb()}
 
         <div className="dashboard-content">
           {renderCurrentView()}

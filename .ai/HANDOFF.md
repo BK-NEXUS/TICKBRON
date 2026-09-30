@@ -2143,3 +2143,6 @@ Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or complet
   - Known: the admin dashboard still shows its own older one-level `<nav class="breadcrumb" aria-label="Breadcrumb">` under the nav bar, so pages have two navs named "Breadcrumb" (the E2E scopes to `.page-breadcrumbs`)
 
 How to run the Status demo (local, DEBUG=True): `cd backend && venv\Scripts\python.exe manage.py seed_demo && venv\Scripts\python.exe manage.py seed_demo_stats && venv\Scripts\python.exe manage.py runserver 8000`; `cd frontend && npm run dev`; admin `admin@tickbron.demo` / `DemoAdmin#2026` -> /admin > Status; owner `stats-owner-01@tickbron.demo` / `DemoStats#2026` -> /partner > Status.
+- DONE: removed the duplicate breadcrumb on admin pages (frontend 1126 passed)
+  - `AdminDashboardPage` no longer renders its old one-level `<nav class="breadcrumb">`; every admin screen shows only the layout's breadcrumb (Back + `Home › Admin Dashboard › ...`). The active nav item still marks the current view
+  - Proof: `src/pages/AdminBreadcrumbs.test.tsx` (10): each dashboard view (Properties, Amenities, Users, Customers, Statistics, Status, Status > Countries, Create Owner), Support lookup and Customer profile have exactly one "Breadcrumb" navigation -- the 8 dashboard cases DID FAIL (2 found) before

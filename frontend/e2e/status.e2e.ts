@@ -16,7 +16,7 @@ const OWN_HOTEL = 'Silk Road Plaza Hotel' // stats-owner-01's hotel (Uzbekistan,
 const OTHER_HOTEL = 'Chorsu Garden Inn' // another owner's hotel in the same region
 
 const count = (value: number) => value.toLocaleString('en-US')
-// The layout's trail (the admin dashboard also has its own older one-level breadcrumb)
+// The layout's trail (Back + Home › ...)
 const TRAIL = '.page-breadcrumbs'
 
 /** Value of the summary card with exactly this label */
