@@ -18,7 +18,8 @@ P = '/api/v1/partner'
 
 # (method, url) for every partner endpoint. Ids do not need to exist:
 # permissions are checked before the object is looked up.
-PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/')]
+PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/'),
+                     ('get', f'{P}/status/')]
 for resource in ('properties', 'rooms', 'rates', 'inventory', 'room-inventory', 'blocks'):
     PARTNER_ENDPOINTS += [
         ('get', f'{P}/{resource}/'),
@@ -196,3 +197,8 @@ class TestHotelOwnerSeesOnlyOwnData:
         response = call(two_owners['alice'], 'get', f'{P}/bookings/')
         assert response.status_code == 200
         assert [row['id'] for row in response.data] == [two_owners['alice_hotel']['booking'].id]
+
+    def test_status_lists_only_own_properties(self, two_owners):
+        response = call(two_owners['alice'], 'get', f'{P}/status/')
+        assert response.status_code == 200
+        assert [row['id'] for row in response.data['properties']] == [two_owners['alice_hotel']['property'].id]

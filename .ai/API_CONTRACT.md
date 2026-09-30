@@ -86,6 +86,12 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-09-30 partner Status (Status plan S4)
+Same definitions and `period` as the admin Status (S2 below).
+- NEW `GET /api/v1/partner/status/?period=&year=` (hotel owners; staff pass the permission but see only properties they own themselves): `{ since: "YYYY-MM-DD" (the account's creation date), period, totals: { bookings, guests, revenue }, properties: [{ id, name, city, region, country, status, bookings, guests, revenue }], year, available_years: [YYYY, ...], monthly: [{ month: "YYYY-MM", bookings, guests, revenue }] x 12 }`
+- Only the requesting owner's non-deleted properties; `properties` lists all of them (ordered by name), with zeros when a property has no counted booking in `period`. `totals` and `properties` follow `period` (default `all` = since the account was created); `monthly` covers `year` (default: the current year). 400 `{ period: [...] }` / `{ year: [...] }` for bad values
+- Additive only, no existing field or endpoint changed
+
 ## 2026-09-30 admin Status: hotel detail + users (Status plan S3)
 Same definitions, `period` and access rules as S2 below.
 - NEW `GET /api/v1/admin-panel/status/hotels/{id}/?period=&year=`: `{ hotel: { id, name, status, address, city, region, country, registered_at, owner: { id, name, email, phone } }, period, totals: { bookings, guests, revenue }, year, available_years: [YYYY, ...], monthly: [{ month: "YYYY-MM", bookings, guests, revenue }] x 12 }`. `totals` follow `period`; `monthly` covers `year` (default: the current year; 400 `{ year: [...] }` unless YYYY 2000-2100), every month present (zeros when empty). `available_years` = years with counted bookings, ascending. `region` is `"Unspecified"` when empty. `registered_at` = the property's creation time. 404 for an unknown or deleted hotel

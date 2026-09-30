@@ -2120,3 +2120,6 @@ Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or complet
 - DONE: S3 admin Status hotel detail + users (backend 1333 passed, 2 skipped)
   - NEW `GET /admin-panel/status/hotels/{id}/` (info + owner contact, totals for `period`, 12-month series for `year`, `available_years`) and `GET /admin-panel/status/users/` (guests ranked by counted bookings, total spent per currency, last booking date, search by name/phone/email/ID). Views in `admin_panel/status.py`, shared helpers `metric_totals`/`monthly_series`/`available_years` in `bookings/stats.py`
   - Proof: `admin_panel/tests/test_status_detail.py` (17, incl. constant query counts) + access matrix -- all DID FAIL (404) before
+- DONE: S4 partner Status endpoint (backend 1345 passed, 2 skipped)
+  - NEW `GET /partner/status/` (`partner/status.py`): owner's totals since the account was created or for a month/year, per-property breakdown, 12-month series, `available_years`. Scoped to `owner=request.user`
+  - Proof: `partner/tests/test_partner_status.py` (9, incl. constant query count) + access matrix (anonymous/customer rejected, own properties only) -- all DID FAIL (404) before
