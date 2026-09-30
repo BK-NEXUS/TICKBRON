@@ -111,6 +111,26 @@ GEOGRAPHY = [
 ]
 
 
+# Extra spellings used only to map old free-text locations (geography/mapping.py).
+# The uz/ru/en names, the ISO code and "X Region" -> "X" are matched without listing them.
+COUNTRY_ALIASES = {
+    'UZ': ['UZB', 'Uzbekiston', 'Ўзбекистон', 'Republic of Uzbekistan', "O'zbekiston Respublikasi"],
+    'KZ': ['KAZ', 'Kazakstan', 'Qazaqstan', 'Қазақстан', 'Republic of Kazakhstan'],
+    'TR': ['TUR', 'Türkiye', 'Turkiye', 'Türkiya', 'Turkiye Cumhuriyeti'],
+}
+REGION_ALIASES = {
+    'uz-republic-of-karakalpakstan': ['Karakalpakstan', "Qoraqalpog'iston", 'Каракалпакстан'],
+    'uz-tashkent-city': ['Toshkent shahar', 'Tashkent city'],
+}
+CITY_ALIASES = {
+    'uz-tashkent-city-tashkent': ['Toshkent shahri', 'Tashkent city'],
+    'kz-almaty-city-almaty': ['Alma-Ata', 'Алма-Ата', 'Almaty city'],
+    'tr-nevsehir-province-goreme': ['Cappadocia', 'Kapadokya', 'Каппадокия'],
+    'tr-nevsehir-province-nevsehir': ['Nevşehir', 'Невшехир'],
+    'tr-nevsehir-province-urgup': ['Ürgüp'],
+}
+
+
 def region_slug(country_code, name_en):
     return slugify(f'{country_code}-{name_en}')
 

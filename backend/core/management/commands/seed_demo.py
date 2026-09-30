@@ -16,6 +16,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from geography.mapping import map_properties
+from geography.models import City, Country, Region
 from permissions.models import Role
 from properties.models import (
     DateInventory, Property, PropertyTranslation, PropertyType, RatePlan, RoomType,
@@ -83,6 +85,9 @@ class Command(BaseCommand):
         with transaction.atomic():
             users = self._seed_users()
             properties = self._seed_properties(owner=users['owner'], approver=users['admin'])
+            # Geography refs from the text location (only these demo properties)
+            map_properties(Property, Country, Region, City,
+                           queryset=Property.objects.filter(pk__in=[prop.pk for prop, _ in properties]))
 
         self._print_summary(properties)
 

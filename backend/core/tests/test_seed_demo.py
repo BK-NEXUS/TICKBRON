@@ -43,6 +43,9 @@ class TestSeedDemo:
         assert sorted(properties.values_list('city', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
         assert all(p.status == 'active' and p.approved_at is not None for p in properties)
         assert all(p.translations.filter(language='en').exists() for p in properties)
+        # Mapped to the Geography dictionary
+        assert sorted(properties.values_list('city_ref__name_en', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
+        assert set(properties.values_list('country_ref__code', flat=True)) == {'UZ'}
 
         today = timezone.localdate()
         for rate_plan in RatePlan.objects.filter(room_type__property__in=properties):

@@ -55,6 +55,13 @@ class TestSeedDemoStats:
         assert all(h.owner.role.name == 'hotel-owner' for h in hotels.select_related('owner__role'))
         assert hotels.values('owner').distinct().count() == 12
         assert all(h.translations.filter(language='en').exists() for h in hotels)
+        # Geography refs: every hotel has its country; the one without a region has no region or city
+        assert not hotels.filter(country_ref__isnull=True).exists()
+        no_region = hotels.get(state__isnull=True)
+        assert (no_region.country_ref.code, no_region.region_ref, no_region.city_ref) == ('TR', None, None)
+        silk = hotels.select_related('region_ref', 'city_ref').get(translations__name='Silk Road Plaza Hotel')
+        assert (silk.region_ref.name_en, silk.city_ref.name_en) == ('Tashkent City', 'Tashkent')
+        assert hotels.exclude(pk=no_region.pk).filter(city_ref__isnull=True).count() == 0
         # The printed demo password works
         assert User.objects.get(email='stats-owner-01@tickbron.demo').check_password('DemoStats#2026')
         assert User.objects.get(email='stats-guest-60@tickbron.demo').check_password('DemoStats#2026')

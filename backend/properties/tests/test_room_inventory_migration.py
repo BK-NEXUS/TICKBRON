@@ -18,6 +18,8 @@ from django.utils import timezone
 
 
 class Migrate0007To0008(TransactionTestCase):
+    # Put the rows the migrations loaded (the Geography dictionary) back afterwards
+    serialized_rollback = True
     """Migrates the test database from 0007 to 0008 and back, with historical models."""
 
     migrate_from = [
