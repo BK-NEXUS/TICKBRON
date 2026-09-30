@@ -2151,3 +2151,8 @@ How to run the Status demo (local, DEBUG=True): `cd backend && venv\Scripts\pyth
 
 Plan: `.ai/GEOGRAPHY_PLAN.md`.
 
+- DONE: G1 geography app, models, initial data (backend 1369 passed, 2 skipped)
+  - NEW app `geography` (`geography/models.py`): `Country` (code ISO2 unique, currency, `name_uz/ru/en`, `is_active`, `sort_order`), `Region` (FK country PROTECT), `City` (FK region PROTECT); names unique inside the parent; stable `slug` on Region/City (set once, not changed by renames) used to match the initial data; `name(language)` falls back to English
+  - Initial data `geography/data.py` (uz/ru names flagged for native-speaker review): Uzbekistan with its 14 first-level regions and their centres + tourist cities (Khiva, Urgench, Shahrisabz, Kokand, Margilan, Termez, Nukus, ...); Kazakhstan (Almaty, Astana, Shymkent cities, Turkistan Region); Turkey (Istanbul, Ankara, Antalya, Nevsehir provinces; Goreme/Urgup for Cappadocia). Loaded by data migration `geography/0002_initial_data` and `python manage.py load_geography` (idempotent, keeps admin edits)
+  - Dev DB backup before migrating: `C:\Users\MicroStar\tickbron-backups\tickbron-before-geography-20260930-162354.dump` (pg_dump -Fc)
+  - Proof: `geography/tests/test_models.py` (7), `geography/tests/test_initial_data.py` (17) -- DID FAIL (ImportError) before

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'accounts',
     'partner',
     'admin_panel',
+    'geography',
     
     # Third-party apps
     'rest_framework',
