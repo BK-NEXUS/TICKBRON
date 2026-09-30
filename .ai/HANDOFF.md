@@ -2117,3 +2117,6 @@ Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or complet
   - NEW `GET /admin-panel/status/countries/`, `.../countries/{country}/regions/`, `.../regions/{region}/hotels/` (see API_CONTRACT.md). 3 queries per page whatever the size (count, page, revenue for the page's keys)
   - Indexes: bookings (status, check_in), properties (country, state)
   - Proof: `admin_panel/tests/test_status_geo.py` (21, incl. constant query count) + access matrix -- all DID FAIL (404) before. Shared data: `admin_panel/tests/status_fixtures.py` (`status_world`, registered in the root conftest)
+- DONE: S3 admin Status hotel detail + users (backend 1333 passed, 2 skipped)
+  - NEW `GET /admin-panel/status/hotels/{id}/` (info + owner contact, totals for `period`, 12-month series for `year`, `available_years`) and `GET /admin-panel/status/users/` (guests ranked by counted bookings, total spent per currency, last booking date, search by name/phone/email/ID). Views in `admin_panel/status.py`, shared helpers `metric_totals`/`monthly_series`/`available_years` in `bookings/stats.py`
+  - Proof: `admin_panel/tests/test_status_detail.py` (17, incl. constant query counts) + access matrix -- all DID FAIL (404) before

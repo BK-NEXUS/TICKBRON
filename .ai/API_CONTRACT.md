@@ -86,6 +86,12 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-09-30 admin Status: hotel detail + users (Status plan S3)
+Same definitions, `period` and access rules as S2 below.
+- NEW `GET /api/v1/admin-panel/status/hotels/{id}/?period=&year=`: `{ hotel: { id, name, status, address, city, region, country, registered_at, owner: { id, name, email, phone } }, period, totals: { bookings, guests, revenue }, year, available_years: [YYYY, ...], monthly: [{ month: "YYYY-MM", bookings, guests, revenue }] x 12 }`. `totals` follow `period`; `monthly` covers `year` (default: the current year; 400 `{ year: [...] }` unless YYYY 2000-2100), every month present (zeros when empty). `available_years` = years with counted bookings, ascending. `region` is `"Unspecified"` when empty. `registered_at` = the property's creation time. 404 for an unknown or deleted hotel
+- NEW `GET /api/v1/admin-panel/status/users/` (top 1000, paginated like S2): guests ranked by counted bookings in `period` (ties: latest stay first, then id). Rows `{ rank, id, full_name, first_name, last_name, phone, email, bookings, total_spent: [{ currency, amount }], last_booking_date: "YYYY-MM-DD" }` (`last_booking_date` = check-in of the latest counted booking in the period). Only accounts with at least one counted booking are listed. `search` matches first name, last name, full name, phone, email or ID (partial, any case). The frontend links each row to the existing customer profile `/admin/customers/{id}`
+- Additive only, no existing field or endpoint changed
+
 ## 2026-09-30 admin Status: countries > regions > hotels (Status plan S2)
 Definitions (`backend/bookings/stats.py`, used by every Status endpoint):
 - A booking **counts** when `status` is `confirmed` or `completed` (not pending, cancelled or no_show) and it is not soft-deleted

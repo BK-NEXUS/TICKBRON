@@ -47,6 +47,8 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/status/countries/'),
     ('get', f'{A}/status/countries/Uzbekistan/regions/'),
     ('get', f'{A}/status/countries/Uzbekistan/regions/Tashkent/hotels/'),
+    ('get', f'{A}/status/hotels/1/'),
+    ('get', f'{A}/status/users/'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
 ALL_ADMIN_ENDPOINTS = ADMIN_ENDPOINTS + SUPERADMIN_ONLY

@@ -4,7 +4,9 @@ URL configuration for admin app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from admin_panel.status import status_countries, status_hotels, status_regions
+from admin_panel.status import (
+    status_countries, status_hotel_detail, status_hotels, status_regions, status_users,
+)
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
@@ -39,6 +41,8 @@ urlpatterns = [
     path('status/countries/', status_countries, name='admin-status-countries'),
     path('status/countries/<str:country>/regions/', status_regions, name='admin-status-regions'),
     path('status/countries/<str:country>/regions/<str:region>/hotels/', status_hotels, name='admin-status-hotels'),
+    path('status/hotels/<int:property_id>/', status_hotel_detail, name='admin-status-hotel-detail'),
+    path('status/users/', status_users, name='admin-status-users'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),
