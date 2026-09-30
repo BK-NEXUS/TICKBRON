@@ -2102,3 +2102,8 @@ Design (audit-report #31, option A): rooms are counted per room type and date (`
   - `PartnerAvailabilityManagement.tsx` gained a `bulk-price` view mode: the list view's header has a new secondary "Bulk price edit" button next to the existing primary "+ Add Date Inventory"; it opens a form (date range + nightly price, `date_to` exclusive, labelled as such) with its own single primary "Apply" (the list's primary button is not rendered while this form is open, so only one primary button is ever on screen). Apply calls the new `partnerAdapter.bulkSetPrice`, shows the server's error inline on failure (stays on the form), and on success returns to the list and reloads it
   - Proof: `PartnerAvailabilityManagement.bulkPrice.test.tsx` (3) -- DID FAIL (button/heading not found) before the view mode existed. Caught two real bugs while writing it: the accessible name of "+ Add Date Inventory" is its `aria-label` ("Add new date inventory"), not its visible text -- a pre-existing pattern, not a regression; and a negative price cannot reach the server at all because the input's own `min="0"` blocks the browser's native form submission, so the error-surfacing test exercises a server-side (ownership) rejection instead
   - Frontend: 1067 passed (was 1064)
+
+## Status sections (2026-09-30, Kolya's agent)
+
+Plan: `.ai/STATUS_PLAN.md`. A booking counts when status is confirmed or completed; revenue = sum of `total_price` of counted bookings, grouped per currency.
+
