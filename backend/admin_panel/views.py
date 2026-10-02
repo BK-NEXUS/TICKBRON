@@ -144,20 +144,31 @@ def admin_property_approve(request, property_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_region(request, property_id):
     """
-    Set the region of a property (Status section: country > region > hotel).
+    Set the location of a property (Status section: country > region > hotel).
 
-    Request Body:
-        state: region name; blank or null clears it ("Unspecified")
+    Request Body (either form):
+        country_ref, region_ref, city_ref: Geography ids (all three null clears them)
+        state: region name; blank or null clears it ("Unspecified"); older clients only
 
-    Only the region changes; every other field in the body is ignored.
+    Only the location changes; every other field in the body is ignored.
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
-    serializer = AdminPropertyRegionSerializer(data=request.data)
+    serializer = AdminPropertyRegionSerializer(data=request.data, context={'property': property})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    property.state = serializer.validated_data['state']
-    property.save(update_fields=['state', 'updated_at'])
+    data = serializer.validated_data
+    refs = [name for name in ('country_ref', 'region_ref', 'city_ref') if name in data]
+    if refs:
+        for name in refs:
+            setattr(property, name, data[name])
+        if all(data.get(name) is None for name in refs) and len(refs) == 3:
+            property.state = None
+        # Property.save() copies the English names of the refs into country / state / city
+        property.save()
+    else:
+        property.state = data['state']
+        property.save(update_fields=['state', 'updated_at'])
     return Response(AdminPropertySerializer(property).data, status=status.HTTP_200_OK)
 
 
