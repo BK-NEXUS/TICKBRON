@@ -4,7 +4,7 @@ Shared data for the Status endpoint tests (admin and partner).
 Hotels are placed with the Geography dictionary refs (the Status API groups by them).
 
 Uzbekistan (UZ)
-  Tashkent City: Alpha Hotel (USD), Beta Hotel (USD)
+  Tashkent: Alpha Hotel (USD), Beta Hotel (USD)
   (no region)  : Gamma Hotel (USD)
 Kazakhstan (KZ)
   Almaty City  : Delta Hotel (KZT)
@@ -53,8 +53,8 @@ def status_world(db):
         PropertyTranslation.objects.create(property=prop, language='en', name=name)
         return prop
 
-    alpha = hotel(owner1, 'Alpha Hotel', 'UZ', 'Tashkent City', 'Tashkent')
-    beta = hotel(owner1, 'Beta Hotel', 'UZ', 'Tashkent City', 'Tashkent')
+    alpha = hotel(owner1, 'Alpha Hotel', 'UZ', 'Tashkent', 'Tashkent')
+    beta = hotel(owner1, 'Beta Hotel', 'UZ', 'Tashkent', 'Tashkent')
     gamma = hotel(owner2, 'Gamma Hotel', 'UZ', None, 'Chirchiq')
     delta = hotel(owner2, 'Delta Hotel', 'KZ', 'Almaty City', 'Almaty', currency='KZT')
 

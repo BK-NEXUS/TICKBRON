@@ -195,7 +195,7 @@ class TestLegacyTextLocation:
         prop = Property.objects.get(address_line1='1 Main St')
         assert (prop.country_ref_id, prop.region_ref_id, prop.city_ref_id) == (
             uz['country'].id, uz['tashkent'].region_id, uz['tashkent'].id)
-        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Tashkent City', 'Tashkent')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Tashkent', 'Tashkent')
 
     @pytest.mark.parametrize('country,state,city', [
         ("O'zbekiston", '', 'Toshkent'),
@@ -242,7 +242,7 @@ class TestLegacyTextLocation:
         assert response.status_code == 200, response.data
         legacy.refresh_from_db()
         assert (legacy.city_ref_id, legacy.region_ref_id) == (uz['samarkand'].id, uz['samarkand'].region_id)
-        assert (legacy.state, legacy.city) == ('Samarkand Region', 'Samarkand')
+        assert (legacy.state, legacy.city) == ('Samarkand', 'Samarkand')
 
     def test_update_with_unmatched_text_is_400(self, client, owner, hotel_type, uz):
         legacy = Property.objects.create(

@@ -74,7 +74,7 @@ class Migrate0012To0013(TransactionTestCase):
 
         row = Property.objects.select_related('country_ref', 'region_ref', 'city_ref').get(pk=khiva)
         self.assertEqual((row.country_ref.code, row.region_ref.name_en, row.city_ref.name_en),
-                         ('UZ', 'Khorezm Region', 'Khiva'))
+                         ('UZ', 'Khorezm', 'Khiva'))
         # The text fields are not changed by the migration
         self.assertEqual((row.country, row.state, row.city), ("O'zbekiston", 'Xorazm viloyati', 'Xiva'))
         row = Property.objects.select_related('city_ref').get(pk=tashkent)

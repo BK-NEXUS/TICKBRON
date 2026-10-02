@@ -28,7 +28,7 @@ def get(db):
 
 
 def tashkent_id():
-    return Region.objects.get(country__code='UZ', name_en='Tashkent City').id
+    return Region.objects.get(country__code='UZ', name_en='Tashkent').id
 
 
 def revenue(row):
@@ -121,9 +121,9 @@ class TestRegions:
         assert response.status_code == 200
         tashkent, unspecified = response.data['results']
         assert (tashkent['id'], tashkent['region'], tashkent['hotels'], tashkent['bookings'], tashkent['guests']) == \
-            (tashkent_id(), 'Tashkent City', 2, 5, 3)
+            (tashkent_id(), 'Tashkent', 2, 5, 3)
         assert (tashkent['name_uz'], tashkent['name_ru'], tashkent['name_en']) == \
-            ('Toshkent shahri', 'город Ташкент', 'Tashkent City')
+            ('Toshkent shahri', 'город Ташкент', 'Tashkent')
         assert revenue(tashkent) == {'EUR': '60.00', 'USD': '530.00'}
         assert (unspecified['id'], unspecified['region'], unspecified['hotels'], unspecified['bookings'],
                 unspecified['revenue']) == (None, 'Unspecified', 1, 0, [])
@@ -136,7 +136,7 @@ class TestRegions:
     def test_search_in_every_language_and_period(self, get, term):
         response = get(f'{S}/countries/UZ/regions/', search=term, period='2025-11')
 
-        assert [(row['region'], row['bookings']) for row in response.data['results']] == [('Tashkent City', 1)]
+        assert [(row['region'], row['bookings']) for row in response.data['results']] == [('Tashkent', 1)]
 
     def test_unknown_country_is_an_empty_list(self, get):
         response = get(f'{S}/countries/ZZ/regions/')
@@ -165,7 +165,7 @@ class TestHotels:
         assert revenue(alpha) == {'USD': '450.00'}
         assert (beta['name'], beta['bookings'], revenue(beta)) == ('Beta Hotel', 2, {'EUR': '60.00', 'USD': '80.00'})
         assert (response.data['country'], response.data['country_name']) == ('UZ', 'Uzbekistan')
-        assert (response.data['region'], response.data['region_name']) == (str(tashkent_id()), 'Tashkent City')
+        assert (response.data['region'], response.data['region_name']) == (str(tashkent_id()), 'Tashkent')
 
     def test_unspecified_region_lists_hotels_without_one(self, get):
         response = get(f'{S}/countries/UZ/regions/unspecified/hotels/')
@@ -211,7 +211,7 @@ class TestAggregatesInTheDatabase:
 class TestDeprecatedNameKeys:
     """
     DEPRECATED (2026-10-02, until the frontend moves to codes and ids, G5-G6): the URL keys may still
-    be the names shown in the lists ("Uzbekistan", "Tashkent City"); they return the same rows.
+    be the names shown in the lists ("Uzbekistan", "Tashkent"); they return the same rows.
     """
 
     @staticmethod
@@ -228,23 +228,23 @@ class TestDeprecatedNameKeys:
         assert get(f'{S}/countries/Uzbekistan/regions/').data['country_name'] == 'Uzbekistan'
         assert get(f'{S}/countries/UZ/regions/').data['country'] == 'UZ'
 
-    @pytest.mark.parametrize('region', ['Tashkent City', 'tashkent city', 'Toshkent shahri', 'город Ташкент'])
+    @pytest.mark.parametrize('region', ['Tashkent', 'tashkent', 'Toshkent shahri', 'город Ташкент'])
     def test_hotels_by_names_are_the_same_rows(self, get, region):
         by_id = self.rows(get(f'{S}/countries/UZ/regions/{tashkent_id()}/hotels/'))
         assert by_id
         assert self.rows(get(f'{S}/countries/Uzbekistan/regions/{region}/hotels/')) == by_id
 
     def test_hotel_names_response_echoes_the_names_and_resolves_the_labels(self, get):
-        response = get(f'{S}/countries/Uzbekistan/regions/Tashkent City/hotels/')
-        assert (response.data['country'], response.data['region']) == ('Uzbekistan', 'Tashkent City')
-        assert (response.data['country_name'], response.data['region_name']) == ('Uzbekistan', 'Tashkent City')
+        response = get(f'{S}/countries/Uzbekistan/regions/Tashkent/hotels/')
+        assert (response.data['country'], response.data['region']) == ('Uzbekistan', 'Tashkent')
+        assert (response.data['country_name'], response.data['region_name']) == ('Uzbekistan', 'Tashkent')
 
     def test_unspecified_by_its_label(self, get):
         response = get(f'{S}/countries/Uzbekistan/regions/Unspecified/hotels/')
         assert [row['name'] for row in self.rows(response)] == ['Gamma Hotel']
 
     def test_a_region_name_of_another_country_is_empty(self, get):
-        assert get(f'{S}/countries/Kazakhstan/regions/Tashkent City/hotels/').data['count'] == 0
+        assert get(f'{S}/countries/Kazakhstan/regions/Tashkent/hotels/').data['count'] == 0
 
     def test_unknown_names_are_empty_lists(self, get):
         assert get(f'{S}/countries/Atlantis/regions/').data['count'] == 0

@@ -38,7 +38,7 @@ class TestPropertyGeographyRefs:
         prop.country_ref, prop.region_ref, prop.city_ref = khiva.region.country, khiva.region, khiva
         prop.save()
         prop.refresh_from_db()
-        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm Region', 'Khiva')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khiva')
 
     def test_only_the_refs_that_are_set_are_copied(self, prop):
         khiva = City.objects.get(name_en='Khiva')
