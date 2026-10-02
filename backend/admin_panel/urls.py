@@ -4,6 +4,7 @@ URL configuration for admin app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
+from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
     status_countries, status_hotel_detail, status_hotels, status_regions, status_users,
 )
@@ -26,6 +27,9 @@ app_name = 'admin_panel'
 router = DefaultRouter()
 router.APIRootView = AdminAPIRootView
 router.register(r'properties', AdminPropertyViewSet, basename='admin-property')
+router.register(r'geography/countries', AdminCountryViewSet, basename='admin-geo-country')
+router.register(r'geography/regions', AdminRegionViewSet, basename='admin-geo-region')
+router.register(r'geography/cities', AdminCityViewSet, basename='admin-geo-city')
 router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='admin-amenity-category')
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 
