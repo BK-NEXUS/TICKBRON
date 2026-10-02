@@ -1039,6 +1039,19 @@ body {
   position: relative;
   height: 200px;
   background-color: var(--color-background-alt);
+  overflow: hidden;
+}
+
+.property-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-slow);
+}
+
+.property-card:hover .property-card-photo {
+  transform: scale(1.04);
 }
 
 .property-card-image-placeholder {
@@ -1047,14 +1060,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 64px;
+  color: var(--color-gold-dark);
+  background:
+    radial-gradient(120px 80px at 50% 30%, rgba(220, 185, 105, 0.3), transparent 70%),
+    linear-gradient(135deg, var(--color-cream), #E7DECF);
 }
 
 .property-card-rating {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(62, 56, 45, 0.85);
+  backdrop-filter: blur(4px);
   color: white;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
@@ -1063,10 +1080,15 @@ body {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 .property-card-rating-value {
   font-weight: var(--font-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-gold-bright);
 }
 
 .property-card-reviews {
@@ -1091,9 +1113,17 @@ body {
 }
 
 .property-card-location {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
+}
+
+.property-card-location svg {
+  flex-shrink: 0;
+  color: var(--color-gold-dark);
 }
 
 .property-card-details {
@@ -1114,7 +1144,15 @@ body {
 }
 
 .property-card-amenity {
-  font-size: var(--font-size-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--color-gold-dark);
+  background-color: rgba(188, 156, 89, 0.12);
+  border: 1px solid rgba(188, 156, 89, 0.28);
 }
 
 .property-card-footer {
@@ -1575,6 +1613,18 @@ body {
   width: 100%;
   height: 200px;
   border-radius: var(--radius-lg);
+}
+
+/* Skeleton card used in search results loading grid */
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-card-content {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .search-results-loading p {
@@ -2726,7 +2776,8 @@ body {
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-md);
+  border-top: 3px solid var(--color-gold);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -2758,15 +2809,24 @@ body {
 
 .property-detail-rating-value {
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  color: var(--color-gold-dark);
 }
 
 .property-detail-reviews {
   color: var(--color-text-secondary);
 }
 
+/* Prominent, full-width booking call-to-action */
 .property-detail-cta {
   width: 100%;
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  font-size: var(--font-size-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.property-detail-cta:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 /* Property Detail Page Responsive Design */
