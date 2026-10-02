@@ -38,6 +38,9 @@ export type IconName =
   | 'users'
   | 'bed'
   | 'bath'
+  | 'clock'
+  | 'credit-card'
+  | 'check-circle'
 
 const PATHS: Record<IconName, string> = {
   building:
@@ -83,6 +86,10 @@ const PATHS: Record<IconName, string> = {
   users: 'M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 19v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.2a3.5 3.5 0 0 1 0 6.6',
   bed: 'M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 14h18M3 18h18M7 10V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3',
   bath: 'M4 12h16a1 1 0 0 1 1 1 6 6 0 0 1-6 6H9a6 6 0 0 1-6-6 1 1 0 0 1 1-1zM7 12V6a2 2 0 0 1 4 0M6 19l-1 2M18 19l1 2',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  'credit-card':
+    'M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-9zM3 10h18M6.5 14.5h3',
+  'check-circle': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 12l2.5 2.5 4.5-5',
 }
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {

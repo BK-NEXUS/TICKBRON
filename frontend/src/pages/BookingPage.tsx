@@ -13,6 +13,7 @@ import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
+import { Icon } from '../components/Icon'
 
 interface BookingState {
   propertyId: number
@@ -469,7 +470,9 @@ export function BookingPage() {
       <div className="booking-page booking-page--success">
         <div className="container">
           <div className="success-state" role="status" aria-live="polite">
-            <div className="success-icon">✓</div>
+            <div className="success-icon">
+              <Icon name="check" size={36} />
+            </div>
             <h1>Booking Confirmed!</h1>
             <p>Your booking has been successfully created.</p>
             
@@ -613,7 +616,9 @@ export function BookingPage() {
 
               {booking && booking.expires_at && (
                 <div className="booking-summary-expiry">
-                  <div className="booking-summary-expiry-icon">⏰</div>
+                  <div className="booking-summary-expiry-icon">
+                    <Icon name="clock" size={20} />
+                  </div>
                   <div className="booking-summary-expiry-text">
                     <strong>Booking expires in 15 minutes</strong>
                     <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>

@@ -3594,6 +3594,7 @@ body {
 
 .booking-form-input,
 .booking-form-textarea {
+  width: 100%;
   padding: var(--spacing-md);
   font-size: var(--font-size-base);
   border: 1px solid var(--color-border);
@@ -3604,11 +3605,29 @@ body {
   font-family: var(--font-family-base);
 }
 
+.booking-form-input::placeholder,
+.booking-form-textarea::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
+}
+
+.booking-form-input:hover:not(:disabled):not(:focus),
+.booking-form-textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-gold);
+}
+
 .booking-form-input:focus,
 .booking-form-textarea:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
+  box-shadow: var(--shadow-focus);
+}
+
+.booking-form-input:disabled,
+.booking-form-textarea:disabled {
+  background-color: var(--color-background-alt);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
 }
 
 .booking-form-input--error {
@@ -3617,7 +3636,7 @@ body {
 
 .booking-form-input--error:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(176, 38, 38, 0.1);
+  box-shadow: var(--shadow-focus-error);
 }
 
 .booking-form-textarea {
@@ -3768,12 +3787,25 @@ body {
   background-color: var(--color-background);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-sprout-green);
+  box-shadow: var(--shadow-lg);
 }
 
-.success-icon {
-  font-size: 80px;
-  color: var(--color-sprout-green);
-  margin-bottom: var(--spacing-lg);
+/* Circular check badge for the booking success state (scoped: a shared
+   .success-icon rule later in this file styles text checkmarks) */
+.booking-page--success .success-icon {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: white;
+  font-size: inherit;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--color-sprout-green), #2C5A3E);
+  box-shadow: 0 8px 20px rgba(56, 109, 77, 0.35);
 }
 
 .success-state h1 {
