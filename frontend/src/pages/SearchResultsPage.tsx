@@ -6,6 +6,7 @@ import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
 import { SearchForm } from '../components/SearchForm'
+import { Icon } from '../components/Icon'
 import {
   EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, rememberSearch, writeFiltersToUrl,
 } from '../utils/searchFilters'
@@ -246,7 +247,7 @@ export function SearchResultsPage() {
                     <div className="search-results-map">
                       <div className="search-results-map-placeholder">
                         <div className="search-results-map-placeholder-content">
-                          <span className="search-results-map-placeholder-icon">🗺️</span>
+                          <span className="search-results-map-placeholder-icon"><Icon name="map" size={48} /></span>
                           <h2>Map View</h2>
                           <p>Map integration will be implemented in a future checkpoint.</p>
                           <p>Current view: {properties.length} properties on map</p>
