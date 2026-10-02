@@ -2,7 +2,7 @@
 Rules for every item: inspect first; proof test first; never weaken or skip tests; PostgreSQL; full suites with --create-db before merging to master; commit and push every 15–20 minutes (this computer is wiped at shutdown); one item may have several commits; prefixes "kolya - backend:" / "kolya - frontend:" / "kolya - docs:"; frontend uses brand colors (gold/ink/cream), one primary button per screen, no emoji icons; never log or commit secrets; stop only on a real merge conflict. Short reports.
 
 R1 [BACKEND] [DONE 2026-10-02] Test database fix + merge fix/geography-mapping into master.
-R2 [BACKEND: G1–G4 | FRONTEND: G5–G7] Geography: finish .ai/GEOGRAPHY_PLAN.md from the first step not DONE.
+R2 [BACKEND: G1–G4 DONE 2026-10-02, merged | FRONTEND: G5–G7] Geography: finish .ai/GEOGRAPHY_PLAN.md from the first step not DONE.
 R3 [FRONTEND: 3.6–3.7 UI | SHARED: 3.8 E2E] Phase 3 steps 3.6–3.8 from .ai/PHASE3_PLAN.md (owner calendar, external booking blocks UI, bulk price edit, E2E).
 R4 [BACKEND] Security and reliability review: re-run the permission matrix including all new endpoints; admin audit log (who viewed which customer profile and when — audit #21); confirm OTP, lockout and rate limits are intact; refund with optional cancel_booking flag (fix plan item #6) if not done yet; python manage.py check --deploy with production-like settings; pip-audit and npm audit (fix high/critical); no PII or secrets in logs; document server-level headers (clickjacking/CSP) in .ai/RELEASE_CHECKLIST.md.
 R5 [FRONTEND] Languages uz/ru/en: a real i18n system (react-i18next or equivalent), language selector working and remembered, all UI strings translated, geography names in the chosen language. E2E flow H must pass.
