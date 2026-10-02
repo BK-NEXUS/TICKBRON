@@ -48,7 +48,7 @@ class TestPartnerStatus:
             (hotels['beta'].id, 'Beta Hotel', 2, 2),
         ]
         assert revenue(rows[1]) == {'EUR': '60.00', 'USD': '80.00'}
-        assert (rows[0]['city'], rows[0]['region'], rows[0]['country']) == ('Tashkent', 'Tashkent', 'Uzbekistan')
+        assert (rows[0]['city'], rows[0]['region'], rows[0]['country']) == ('Tashkent', 'Tashkent City', 'Uzbekistan')
 
     def test_monthly_series(self, status_world):
         owner1 = status_world['owners'][0]

@@ -38,7 +38,7 @@ class TestHotelDetail:
         assert response.status_code == 200
         hotel = response.data['hotel']
         assert (hotel['id'], hotel['name'], hotel['city'], hotel['region'], hotel['country']) == \
-            (alpha.id, 'Alpha Hotel', 'Tashkent', 'Tashkent', 'Uzbekistan')
+            (alpha.id, 'Alpha Hotel', 'Tashkent', 'Tashkent City', 'Uzbekistan')
         assert hotel['address'] == alpha.get_full_address()
         assert hotel['registered_at'] is not None
         assert hotel['owner'] == {

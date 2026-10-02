@@ -86,6 +86,35 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/registrations/` ✅ IMPLEMENTED (Checkpoint 26)
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
+## 2026-10-02 Geography: Country > Region > City (Geography plan G3, G4) - BREAKING for Status and property writes
+Dictionary rows carry `name_uz`, `name_ru`, `name_en`; the frontend picks the language (English until i18n exists). The old text fields `country` / `state` / `city` stay on Property but are now **read-only copies** of the English names of the refs (set by `Property.save()`).
+
+Public (no login, read-only, active rows only, ordered by `sort_order` then English name; `hotel_count` = public properties: active, approved, not deleted):
+- NEW `GET /api/v1/geography/countries/` -> `[{ id, code, currency, name_uz, name_ru, name_en, hotel_count }]`
+- NEW `GET /api/v1/geography/countries/{code}/regions/` (code: ISO2, any case) -> `[{ id, name_uz, name_ru, name_en, hotel_count }]`. 404 for an unknown or hidden country
+- NEW `GET /api/v1/geography/regions/{id}/cities/` -> `[{ id, name_uz, name_ru, name_en, hotel_count }]`. 404 for an unknown or hidden region (or one in a hidden country)
+
+Super-admin only (`is_superuser`; staff get 403), under `/api/v1/admin-panel/geography/`, one set per kind `countries/`, `regions/`, `cities/`:
+- `GET` list (paginated `{count, next, previous, results}`, `page_size` up to 200; hidden rows included): `?search=` (any of the three names, countries also the code), `?is_active=true|false`, `?country=<id>` (regions), `?region=<id>` (cities)
+- `POST` create. Country `{ code (2 letters), currency (3 letters), name_uz, name_ru, name_en, is_active? }`; region `{ country, names... }`; city `{ region, names... }`. Codes are upper-cased; names must be non-blank and unique inside the parent (400 otherwise)
+- `GET/PATCH/PUT {id}/`: edit names and `is_active` (hide/show). The parent (`country` / `region`) and the `slug` cannot be changed (400 / read-only). Rows: country `{ id, code, currency, names, is_active, sort_order, region_count, hotel_count }`, region `{ id, country, slug, names, is_active, sort_order, city_count, hotel_count }`, city `{ id, region, slug, names, is_active, sort_order, hotel_count }`
+- `DELETE {id}/`: 204, or **409** when the row is in use (regions, cities or properties): hide it instead
+- `POST {kind}/reorder/` body `{ "ids": [..] }`: `sort_order` becomes the position of each id (400 for an empty, repeated or unknown id; nothing changes then)
+
+Property writes (BREAKING):
+- `POST /api/v1/partner/properties/` now **requires** `country_ref`, `region_ref`, `city_ref` (ids). `city`, `state`, `country` in the body are ignored. 400 when a ref is missing, null, hidden, the region is not in the country or the city not in the region (field errors under `error.details`)
+- `PATCH /api/v1/partner/properties/{id}/`: the three refs are optional but cannot be null; the merged result is validated the same way (changing only the region while the old city stays is a 400). Responses include `country_ref`, `region_ref`, `city_ref` (ids). Editing other fields never re-validates an unchanged location
+- `PATCH /api/v1/admin-panel/properties/{id}/region/` accepts `{ country_ref, region_ref, city_ref }` (the admin can fix country and city too; all three `null` clears the location -> "Unspecified"). The old `{ state }` body still works when no ref is sent. Admin property list/detail now include the three ref ids
+
+Search: `location`, `q` and `suggestions` match the uz/ru/en names of the city, region and country through the refs ("Toshkent", "Ташкент" and "Tashkent" find the same hotel), and still match the old text fields, so unmapped hotels stay searchable. Suggestions are strings in the language that matched what was typed, for places with public hotels.
+
+Status (BREAKING, replaces the 2026-09-30 admin Status URLs below): hotels are grouped by their refs; hotels without a ref are "unspecified".
+- `GET /api/v1/admin-panel/status/countries/`: rows `{ rank, code, country, name_uz, name_ru, name_en, hotels, bookings, guests, revenue }`. `code` is the ISO2 code, `null` for the "Unspecified" group (`country: "Unspecified"`). `search` matches the names in all languages or the code
+- `GET /api/v1/admin-panel/status/countries/{code}/regions/`: `{code}` is the ISO2 code (any case) or `unspecified`. Rows `{ rank, id, region, name_uz, name_ru, name_en, hotels, bookings, guests, revenue }` (`id` null = "Unspecified"), plus `country` (upper-case code or `unspecified`) and `country_name` (English, null for an unknown code)
+- `GET /api/v1/admin-panel/status/countries/{code}/regions/{region_id}/hotels/`: `{region_id}` is a region id or `unspecified`; rows as before `{ rank, id, name, city, status, bookings, guests, revenue }`, plus `country`, `country_name`, `region` (the id as text or `unspecified`) and `region_name`. A region of another country or a non-numeric segment gives an empty list
+- `GET /api/v1/admin-panel/status/hotels/{id}/`: `hotel` gains `country_code`, `region_id`, `city_id`; `hotel.region` is the English region name from the ref ("Unspecified" without one)
+- `GET /api/v1/partner/status/` is unchanged (its `region` / `country` text are the synced English names)
+
 ## 2026-09-30 partner Status (Status plan S4)
 Same definitions and `period` as the admin Status (S2 below).
 - NEW `GET /api/v1/partner/status/?period=&year=` (hotel owners; staff pass the permission but see only properties they own themselves): `{ since: "YYYY-MM-DD" (the account's creation date), period, totals: { bookings, guests, revenue }, properties: [{ id, name, city, region, country, status, bookings, guests, revenue }], year, available_years: [YYYY, ...], monthly: [{ month: "YYYY-MM", bookings, guests, revenue }] x 12 }`
@@ -108,9 +137,9 @@ Definitions (`backend/bookings/stats.py`, used by every Status endpoint):
 
 Common query parameters: `period` = `all` (default) | `YYYY` | `YYYY-MM` (400 `{ period: [...] }` otherwise, year 2000-2100); `search` (partial, any case, inside the current list only); `page`, `page_size` (default 20, max 100). Lists are ranked by counted bookings (ties: guests, then name). Response: `{ count, next, previous, results, period, ...context }`, each row has `rank` (1-based across pages), `bookings`, `guests`, `revenue`. Staff and super-admin only (403 for customers and hotel owners)
 
-- NEW `GET /api/v1/admin-panel/status/countries/` (top 100): rows `{ rank, country, hotels, bookings, guests, revenue }`. `search` matches the country name. `hotels` counts every non-deleted property of the country, with or without bookings
-- NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/` (top 100): rows `{ rank, region, hotels, bookings, guests, revenue }`, plus `country`. `country` is the exact value from the countries list (URL-encoded). Properties without a region are one row `region: "Unspecified"`. Unknown country -> empty list
-- NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/{region}/hotels/` (top 1000): rows `{ rank, id, name, city, status, bookings, guests, revenue }`, plus `country`, `region`. `region: "Unspecified"` lists hotels without a region. `search` matches the hotel name (English translation, else any translation, else the address)
+- (SUPERSEDED 2026-10-02: see the Geography section; grouping is by refs, URLs use codes and ids) NEW `GET /api/v1/admin-panel/status/countries/` (top 100): rows `{ rank, country, hotels, bookings, guests, revenue }`. `search` matches the country name. `hotels` counts every non-deleted property of the country, with or without bookings
+- (SUPERSEDED 2026-10-02) NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/` (top 100): rows `{ rank, region, hotels, bookings, guests, revenue }`, plus `country`. `country` is the exact value from the countries list (URL-encoded). Properties without a region are one row `region: "Unspecified"`. Unknown country -> empty list
+- (SUPERSEDED 2026-10-02) NEW `GET /api/v1/admin-panel/status/countries/{country}/regions/{region}/hotels/` (top 1000): rows `{ rank, id, name, city, status, bookings, guests, revenue }`, plus `country`, `region`. `region: "Unspecified"` lists hotels without a region. `search` matches the hotel name (English translation, else any translation, else the address)
 - New indexes (migrations `bookings/0005_status_indexes`, `properties/0011_status_indexes`, schema only): bookings (status, check_in), properties (country, state)
 - Additive only, no existing field or endpoint changed
 

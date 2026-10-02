@@ -1,13 +1,15 @@
 """
 Admin Status section: /api/v1/admin-panel/status/ (staff and super-admin only).
 
-Countries > regions > hotels > hotel detail, plus the guests ranking (users). Lists accept
+Countries > regions > hotels > hotel detail, plus the guests ranking (users). Hotels are grouped by
+their Geography refs: a country by its ISO code, a region by its id, and hotels without the ref under
+"unspecified" in the URL and "Unspecified" in the label. Lists accept
 ?period=all|YYYY|YYYY-MM, ?search= (inside the current list only) and
 ?page= / ?page_size= (20 by default, 100 at most). Definitions of counted bookings,
 guests and revenue: bookings/stats.py.
 """
-from django.db.models import CharField, Count, Max, Q
-from django.db.models.functions import Cast
+from django.db.models import CharField, Count, Max, Q, Value
+from django.db.models.functions import Cast, Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -20,8 +22,9 @@ from bookings.stats import (
     InvalidPeriod, available_years, counted_bookings, counted_q, metric_annotations, metric_totals,
     monthly_series, parse_period, parse_year, revenue_by,
 )
+from geography.models import Country, Region
 from properties.models import Property
-from properties.regions import hotel_name_expression, region_expression
+from properties.regions import UNSPECIFIED_REGION, hotel_name_expression
 from users.models import User
 
 TOP_COUNTRIES = 100
@@ -34,6 +37,61 @@ class StatusPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+
+UNSPECIFIED = 'unspecified'  # URL segment and group key of hotels without a country / region ref
+
+
+def country_key(prefix=''):
+    """Group key of a hotel's country: ISO code, or UNSPECIFIED. `prefix`: path to Property."""
+    return Coalesce(f'{prefix}country_ref__code', Value(UNSPECIFIED), output_field=CharField())
+
+
+def region_key(prefix=''):
+    """Group key of a hotel's region: the region id as text, or UNSPECIFIED."""
+    return Coalesce(Cast(f'{prefix}region_ref_id', CharField()), Value(UNSPECIFIED), output_field=CharField())
+
+
+def country_filter(code, prefix=''):
+    """Properties of the country with this ISO code (any case); "unspecified" = no country ref."""
+    if code.lower() == UNSPECIFIED:
+        return Q(**{f'{prefix}country_ref__isnull': True})
+    return Q(**{f'{prefix}country_ref__code': code.upper()})
+
+
+def region_filter(region, prefix=''):
+    """Properties of the region with this id; "unspecified" = no region ref; anything else matches nothing."""
+    if region.lower() == UNSPECIFIED:
+        return Q(**{f'{prefix}region_ref__isnull': True})
+    if region.isdigit():
+        return Q(**{f'{prefix}region_ref_id': int(region)})
+    return Q(pk__in=[])
+
+
+def names_filter(prefix, term):
+    """Q matching the term in the uz, ru or en name behind `prefix` (e.g. 'country_ref__')."""
+    return (Q(**{f'{prefix}name_uz__icontains': term}) | Q(**{f'{prefix}name_ru__icontains': term})
+            | Q(**{f'{prefix}name_en__icontains': term}))
+
+
+def names(item, prefix):
+    """uz/ru/en names of a grouped row; "Unspecified" in all three when the group has no ref."""
+    return {language: item[f'{prefix}name_{language}'] or UNSPECIFIED_REGION for language in ('uz', 'ru', 'en')}
+
+
+def country_name(code):
+    """English name for the breadcrumb; None for a code that does not exist."""
+    if code.lower() == UNSPECIFIED:
+        return UNSPECIFIED_REGION
+    return Country.objects.filter(code=code.upper()).values_list('name_en', flat=True).first()
+
+
+def region_name(region):
+    if region.lower() == UNSPECIFIED:
+        return UNSPECIFIED_REGION
+    if not region.isdigit():
+        return None
+    return Region.objects.filter(pk=int(region)).values_list('name_en', flat=True).first()
 
 
 def bad_request(field, error):
@@ -80,21 +138,30 @@ def status_countries(request):
     except InvalidPeriod as error:
         return bad_request('period', error)
 
-    properties = Property.objects.filter(is_deleted=False)
+    properties = Property.objects.filter(is_deleted=False).annotate(country_key=country_key())
     search = search_term(request)
     if search:
-        properties = properties.filter(country__icontains=search)
+        properties = properties.filter(names_filter('country_ref__', search) | Q(country_ref__code__iexact=search))
     rows = (
-        properties.values('country')
+        properties.values('country_key', 'country_ref__name_uz', 'country_ref__name_ru', 'country_ref__name_en')
         .annotate(hotels_count=Count('id', distinct=True), **metric_annotations('bookings__', date_range))
-        .order_by('-bookings_count', '-guests_count', 'country')
+        .order_by('-bookings_count', '-guests_count', 'country_ref__name_en', 'country_key')
     )
-    bookings = counted_bookings(date_range).filter(property__is_deleted=False)
-    return ranked_page(
-        request, rows, TOP_COUNTRIES, 'country', bookings, 'property__country',
-        lambda item: {'country': item['country'], 'hotels': item['hotels_count']},
-        {'period': period},
+    bookings = (
+        counted_bookings(date_range).filter(property__is_deleted=False)
+        .annotate(country_key=country_key('property__'))
     )
+
+    def to_row(item):
+        name = names(item, 'country_ref__')
+        return {
+            'code': None if item['country_key'] == UNSPECIFIED else item['country_key'],
+            'country': name['en'], 'name_uz': name['uz'], 'name_ru': name['ru'], 'name_en': name['en'],
+            'hotels': item['hotels_count'],
+        }
+
+    return ranked_page(request, rows, TOP_COUNTRIES, 'country_key', bookings, 'country_key', to_row,
+                       {'period': period})
 
 
 @api_view(['GET'])
@@ -106,25 +173,35 @@ def status_regions(request, country):
     except InvalidPeriod as error:
         return bad_request('period', error)
 
-    properties = Property.objects.filter(is_deleted=False, country=country).annotate(region=region_expression())
+    properties = (
+        Property.objects.filter(country_filter(country), is_deleted=False).annotate(region_key=region_key())
+    )
     search = search_term(request)
     if search:
-        properties = properties.filter(region__icontains=search)
+        properties = properties.filter(names_filter('region_ref__', search))
     rows = (
-        properties.values('region')
+        properties.values('region_key', 'region_ref__name_uz', 'region_ref__name_ru', 'region_ref__name_en')
         .annotate(hotels_count=Count('id', distinct=True), **metric_annotations('bookings__', date_range))
-        .order_by('-bookings_count', '-guests_count', 'region')
+        .order_by('-bookings_count', '-guests_count', 'region_ref__name_en', 'region_key')
     )
     bookings = (
         counted_bookings(date_range)
-        .filter(property__is_deleted=False, property__country=country)
-        .annotate(region=region_expression('property__'))
+        .filter(country_filter(country, 'property__'), property__is_deleted=False)
+        .annotate(region_key=region_key('property__'))
     )
-    return ranked_page(
-        request, rows, TOP_REGIONS, 'region', bookings, 'region',
-        lambda item: {'region': item['region'], 'hotels': item['hotels_count']},
-        {'period': period, 'country': country},
-    )
+
+    def to_row(item):
+        name = names(item, 'region_ref__')
+        return {
+            'id': None if item['region_key'] == UNSPECIFIED else int(item['region_key']),
+            'region': name['en'], 'name_uz': name['uz'], 'name_ru': name['ru'], 'name_en': name['en'],
+            'hotels': item['hotels_count'],
+        }
+
+    extra = {'period': period, 'country': country.upper() if country.lower() != UNSPECIFIED else UNSPECIFIED}
+    response = ranked_page(request, rows, TOP_REGIONS, 'region_key', bookings, 'region_key', to_row, extra)
+    response.data['country_name'] = country_name(country)
+    return response
 
 
 @api_view(['GET'])
@@ -137,9 +214,8 @@ def status_hotels(request, country, region):
         return bad_request('period', error)
 
     properties = (
-        Property.objects.filter(is_deleted=False, country=country)
-        .annotate(region=region_expression(), name=hotel_name_expression())
-        .filter(region=region)
+        Property.objects.filter(country_filter(country), region_filter(region), is_deleted=False)
+        .annotate(name=hotel_name_expression())
     )
     search = search_term(request)
     if search:
@@ -150,11 +226,19 @@ def status_hotels(request, country, region):
         .order_by('-bookings_count', '-guests_count', 'name', 'id')
     )
     bookings = counted_bookings(date_range).filter(property__is_deleted=False)
-    return ranked_page(
+    extra = {
+        'period': period,
+        'country': country.upper() if country.lower() != UNSPECIFIED else UNSPECIFIED,
+        'region': region.lower() if region.lower() == UNSPECIFIED else region,
+    }
+    response = ranked_page(
         request, rows, TOP_HOTELS, 'id', bookings, 'property_id',
         lambda item: {'id': item['id'], 'name': item['name'], 'city': item['city'], 'status': item['status']},
-        {'period': period, 'country': country, 'region': region},
+        extra,
     )
+    response.data['country_name'] = country_name(country)
+    response.data['region_name'] = region_name(region)
+    return response
 
 
 @api_view(['GET'])
@@ -174,7 +258,9 @@ def status_hotel_detail(request, property_id):
         return bad_request('year', error)
 
     prop = get_object_or_404(
-        Property.objects.select_related('owner').annotate(region=region_expression(), name=hotel_name_expression()),
+        Property.objects.select_related('owner', 'country_ref')
+        .annotate(region=Coalesce('region_ref__name_en', Value(UNSPECIFIED_REGION), output_field=CharField()),
+                  name=hotel_name_expression()),
         pk=property_id, is_deleted=False,
     )
     owner = prop.owner
@@ -183,6 +269,8 @@ def status_hotel_detail(request, property_id):
         'hotel': {
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
             'city': prop.city, 'region': prop.region, 'country': prop.country,
+            'country_code': prop.country_ref.code if prop.country_ref else None,
+            'region_id': prop.region_ref_id, 'city_id': prop.city_ref_id,
             'registered_at': prop.created_at,
             'owner': {'id': owner.id, 'name': owner.get_full_name(), 'email': owner.email,
                       'phone': owner.phone_number},
