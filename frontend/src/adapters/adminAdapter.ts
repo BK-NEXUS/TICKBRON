@@ -329,6 +329,116 @@ export interface GetTopBookersParams {
   limit?: number
 }
 
+// Admin Geography types (G5-G6)
+export interface GeographyCountry {
+  id: number
+  code: string // ISO2 code
+  name_en: string
+  name_uz: string
+  name_ru: string
+  currency: string
+  is_active: boolean
+  sort_order: number
+  hotel_count?: number
+  regions?: GeographyRegion[]
+  created_at: string
+  updated_at: string
+}
+
+export interface GeographyRegion {
+  id: number
+  country: number
+  country_code?: string
+  name_en: string
+  name_uz: string
+  name_ru: string
+  slug: string
+  is_active: boolean
+  sort_order: number
+  hotel_count?: number
+  cities?: GeographyCity[]
+  created_at: string
+  updated_at: string
+}
+
+export interface GeographyCity {
+  id: number
+  region: number
+  region_id?: number
+  name_en: string
+  name_uz: string
+  name_ru: string
+  slug: string
+  is_active: boolean
+  sort_order: number
+  hotel_count?: number
+  created_at: string
+  updated_at: string
+}
+
+// Admin Geography CRUD request types
+export interface CreateGeographyCountryRequest {
+  code: string
+  name_en: string
+  name_uz: string
+  name_ru: string
+  currency: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface UpdateGeographyCountryRequest {
+  name_en?: string
+  name_uz?: string
+  name_ru?: string
+  currency?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface CreateGeographyRegionRequest {
+  country: number
+  name_en: string
+  name_uz: string
+  name_ru: string
+  slug?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface UpdateGeographyRegionRequest {
+  name_en?: string
+  name_uz?: string
+  name_ru?: string
+  slug?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface CreateGeographyCityRequest {
+  region: number
+  name_en: string
+  name_uz: string
+  name_ru: string
+  slug?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface UpdateGeographyCityRequest {
+  name_en?: string
+  name_uz?: string
+  name_ru?: string
+  slug?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+// Reorder request type
+export interface ReorderGeographyRequest {
+  items: Array<{ id: number; sort_order: number }>
+}
+
 // Admin Support Lookup types from backend contract (Checkpoint 23)
 export interface SupportLookupBooking {
   id: number
@@ -719,6 +829,197 @@ class AdminAdapter {
       },
       error: null,
     }
+  }
+
+  // Admin Geography Methods (G5-G6)
+
+  /**
+   * List all countries with regions and cities (tree structure)
+   * Integrates with GET /api/v1/admin-panel/geography/countries/ endpoint
+   */
+  async getGeographyTree(): Promise<ApiResponse<GeographyCountry[]>> {
+    return this.request<GeographyCountry[]>('/api/v1/admin-panel/geography/countries/', {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Get a single country by code
+   * Integrates with GET /api/v1/admin-panel/geography/countries/{code}/ endpoint
+   */
+  async getCountry(code: string): Promise<ApiResponse<GeographyCountry>> {
+    return this.request<GeographyCountry>(`/api/v1/admin-panel/geography/countries/${code}/`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Create a new country
+   * Integrates with POST /api/v1/admin-panel/geography/countries/ endpoint
+   */
+  async createCountry(countryData: CreateGeographyCountryRequest): Promise<ApiResponse<GeographyCountry>> {
+    return this.request<GeographyCountry>('/api/v1/admin-panel/geography/countries/', {
+      method: 'POST',
+      body: JSON.stringify(countryData),
+    })
+  }
+
+  /**
+   * Update a country
+   * Integrates with PATCH /api/v1/admin-panel/geography/countries/{code}/ endpoint
+   */
+  async updateCountry(code: string, countryData: UpdateGeographyCountryRequest): Promise<ApiResponse<GeographyCountry>> {
+    return this.request<GeographyCountry>(`/api/v1/admin-panel/geography/countries/${code}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(countryData),
+    })
+  }
+
+  /**
+   * Delete (hide) a country
+   * Integrates with DELETE /api/v1/admin-panel/geography/countries/{code}/ endpoint
+   */
+  async deleteCountry(code: string): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/admin-panel/geography/countries/${code}/`, {
+      method: 'DELETE',
+    })
+  }
+
+  /**
+   * Reorder countries
+   * Integrates with POST /api/v1/admin-panel/geography/countries/reorder/ endpoint
+   */
+  async reorderCountries(reorderData: ReorderGeographyRequest): Promise<ApiResponse<GeographyCountry[]>> {
+    return this.request<GeographyCountry[]>('/api/v1/admin-panel/geography/countries/reorder/', {
+      method: 'POST',
+      body: JSON.stringify(reorderData),
+    })
+  }
+
+  /**
+   * List regions for a country
+   * Integrates with GET /api/v1/admin-panel/geography/countries/{code}/regions/ endpoint
+   */
+  async getRegions(countryCode: string): Promise<ApiResponse<GeographyRegion[]>> {
+    return this.request<GeographyRegion[]>(`/api/v1/admin-panel/geography/countries/${countryCode}/regions/`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Get a single region by ID
+   * Integrates with GET /api/v1/admin-panel/geography/regions/{id}/ endpoint
+   */
+  async getRegion(id: number): Promise<ApiResponse<GeographyRegion>> {
+    return this.request<GeographyRegion>(`/api/v1/admin-panel/geography/regions/${id}/`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Create a new region
+   * Integrates with POST /api/v1/admin-panel/geography/regions/ endpoint
+   */
+  async createRegion(regionData: CreateGeographyRegionRequest): Promise<ApiResponse<GeographyRegion>> {
+    return this.request<GeographyRegion>('/api/v1/admin-panel/geography/regions/', {
+      method: 'POST',
+      body: JSON.stringify(regionData),
+    })
+  }
+
+  /**
+   * Update a region
+   * Integrates with PATCH /api/v1/admin-panel/geography/regions/{id}/ endpoint
+   */
+  async updateRegion(id: number, regionData: UpdateGeographyRegionRequest): Promise<ApiResponse<GeographyRegion>> {
+    return this.request<GeographyRegion>(`/api/v1/admin-panel/geography/regions/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(regionData),
+    })
+  }
+
+  /**
+   * Delete (hide) a region
+   * Integrates with DELETE /api/v1/admin-panel/geography/regions/{id}/ endpoint
+   */
+  async deleteRegion(id: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/admin-panel/geography/regions/${id}/`, {
+      method: 'DELETE',
+    })
+  }
+
+  /**
+   * Reorder regions within a country
+   * Integrates with POST /api/v1/admin-panel/geography/countries/{code}/regions/reorder/ endpoint
+   */
+  async reorderRegions(countryCode: string, reorderData: ReorderGeographyRequest): Promise<ApiResponse<GeographyRegion[]>> {
+    return this.request<GeographyRegion[]>(`/api/v1/admin-panel/geography/countries/${countryCode}/regions/reorder/`, {
+      method: 'POST',
+      body: JSON.stringify(reorderData),
+    })
+  }
+
+  /**
+   * List cities for a region
+   * Integrates with GET /api/v1/admin-panel/geography/regions/{id}/cities/ endpoint
+   */
+  async getCities(regionId: number): Promise<ApiResponse<GeographyCity[]>> {
+    return this.request<GeographyCity[]>(`/api/v1/admin-panel/geography/regions/${regionId}/cities/`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Get a single city by ID
+   * Integrates with GET /api/v1/admin-panel/geography/cities/{id}/ endpoint
+   */
+  async getCity(id: number): Promise<ApiResponse<GeographyCity>> {
+    return this.request<GeographyCity>(`/api/v1/admin-panel/geography/cities/${id}/`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Create a new city
+   * Integrates with POST /api/v1/admin-panel/geography/cities/ endpoint
+   */
+  async createCity(cityData: CreateGeographyCityRequest): Promise<ApiResponse<GeographyCity>> {
+    return this.request<GeographyCity>('/api/v1/admin-panel/geography/cities/', {
+      method: 'POST',
+      body: JSON.stringify(cityData),
+    })
+  }
+
+  /**
+   * Update a city
+   * Integrates with PATCH /api/v1/admin-panel/geography/cities/{id}/ endpoint
+   */
+  async updateCity(id: number, cityData: UpdateGeographyCityRequest): Promise<ApiResponse<GeographyCity>> {
+    return this.request<GeographyCity>(`/api/v1/admin-panel/geography/cities/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(cityData),
+    })
+  }
+
+  /**
+   * Delete (hide) a city
+   * Integrates with DELETE /api/v1/admin-panel/geography/cities/{id}/ endpoint
+   */
+  async deleteCity(id: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/admin-panel/geography/cities/${id}/`, {
+      method: 'DELETE',
+    })
+  }
+
+  /**
+   * Reorder cities within a region
+   * Integrates with POST /api/v1/admin-panel/geography/regions/{id}/cities/reorder/ endpoint
+   */
+  async reorderCities(regionId: number, reorderData: ReorderGeographyRequest): Promise<ApiResponse<GeographyCity[]>> {
+    return this.request<GeographyCity[]>(`/api/v1/admin-panel/geography/regions/${regionId}/cities/reorder/`, {
+      method: 'POST',
+      body: JSON.stringify(reorderData),
+    })
   }
 }
 
