@@ -18,5 +18,6 @@ R14 [BACKEND: indexes, N+1, Redis caching, load test | FRONTEND: thumbnails, bun
 R15 [SHARED: E2E + crawl | BACKEND: backend suite, checklist] Final: full backend and frontend suites, full E2E + crawl, update .ai/RELEASE_CHECKLIST.md.
 
 Waiting for owner decisions (do not implement): commission percentage, payment model (pay at hotel or through the platform), settlement report, Telegram notifications (needs a bot token), real Payme/Click/Visa and Eskiz credentials, legal texts reviewed by a lawyer, hosting and deployment, transparent and horizontal logo files from the client.
+Remove geography backward compatibility after the frontend moves to ids (G5–G6): the text location input on partner property writes (geography/serializers.py resolve_text_location) and the name-based Status URL keys (admin_panel/status.py country_q / region_q aliases), both marked DEPRECATED in .ai/API_CONTRACT.md (2026-10-02).
 Team change (2026-10-02): a second person works on frontend/ on another computer with a different agent (OpenCode), on branches feat/fe-*. Kolya's agent works on backend/ and .ai/ only and does not edit frontend/. Every backend item a frontend task depends on is documented in .ai/API_CONTRACT.md and announced in .ai/HANDOFF.md as "READY FOR FRONTEND: <item> — <endpoints>".
 ===== END OF ROADMAP =====

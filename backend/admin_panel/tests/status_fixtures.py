@@ -1,11 +1,13 @@
 """
 Shared data for the Status endpoint tests (admin and partner).
 
-Uzbekistan
-  Tashkent   : Alpha Hotel (USD), Beta Hotel (USD)
-  (no region): Gamma Hotel (USD)
-Kazakhstan
-  Almaty     : Delta Hotel (KZT)
+Hotels are placed with the Geography dictionary refs (the Status API groups by them).
+
+Uzbekistan (UZ)
+  Tashkent: Alpha Hotel (USD), Beta Hotel (USD)
+  (no region)  : Gamma Hotel (USD)
+Kazakhstan (KZ)
+  Almaty City  : Delta Hotel (KZT)
 """
 from datetime import date
 from decimal import Decimal
@@ -13,6 +15,7 @@ from decimal import Decimal
 import pytest
 
 from bookings.models import Booking
+from geography.models import City, Country, Region
 from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType
 from users.models import User
@@ -38,19 +41,22 @@ def status_world(db):
         email='owner2@example.com', password='OwnerPassword#123', full_name='Oydin Owner',
         phone_number='+998902222222', role=owner_role)
 
-    def hotel(owner, name, country, state, city, currency='USD'):
+    def hotel(owner, name, country_code, region_en, city_en, currency='USD'):
+        country = Country.objects.get(code=country_code)
+        region = Region.objects.get(country=country, name_en=region_en) if region_en else None
+        city = City.objects.get(region=region, name_en=city_en) if city_en and region else None
         prop = Property.objects.create(
             owner=owner, property_type=hotel_type, status='active', max_guests=2,
-            address_line1=f'1 {name} Street', city=city, state=state, country=country,
-            base_price=Decimal('50.00'), currency=currency,
+            address_line1=f'1 {name} Street', country_ref=country, region_ref=region, city_ref=city,
+            city=city_en or '', base_price=Decimal('50.00'), currency=currency,
         )
         PropertyTranslation.objects.create(property=prop, language='en', name=name)
         return prop
 
-    alpha = hotel(owner1, 'Alpha Hotel', 'Uzbekistan', 'Tashkent', 'Tashkent')
-    beta = hotel(owner1, 'Beta Hotel', 'Uzbekistan', 'Tashkent', 'Tashkent')
-    gamma = hotel(owner2, 'Gamma Hotel', 'Uzbekistan', None, 'Chirchiq')
-    delta = hotel(owner2, 'Delta Hotel', 'Kazakhstan', 'Almaty', 'Almaty', currency='KZT')
+    alpha = hotel(owner1, 'Alpha Hotel', 'UZ', 'Tashkent', 'Tashkent')
+    beta = hotel(owner1, 'Beta Hotel', 'UZ', 'Tashkent', 'Tashkent')
+    gamma = hotel(owner2, 'Gamma Hotel', 'UZ', None, 'Chirchiq')
+    delta = hotel(owner2, 'Delta Hotel', 'KZ', 'Almaty City', 'Almaty', currency='KZT')
 
     def guest(n, first, last):
         return User.objects.create_user(

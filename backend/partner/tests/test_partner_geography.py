@@ -3,6 +3,10 @@ Partner property writes use the Geography dictionary (Geography plan G4):
 country_ref, region_ref and city_ref ids are required on create and validated
 (active, region inside country, city inside region). The old text fields are
 filled from the English names by Property.save().
+
+DEPRECATED compatibility (2026-10-02, until the frontend moves to ids, G5-G6): the old text
+fields country / state / city are accepted instead of the ids and resolved through the
+geography mapping (TestLegacyTextLocation).
 """
 import pytest
 from rest_framework.test import APIClient
@@ -89,12 +93,6 @@ class TestCreate:
         assert missing in details(response)
         assert not Property.objects.exists()
 
-    def test_text_only_location_is_rejected(self, client, hotel_type, world):
-        data = payload(hotel_type, world, city='Tashkent', country='Uzbekistan')
-        for key in ('country_ref', 'region_ref', 'city_ref'):
-            del data[key]
-        assert client.post(URL, data, format='json').status_code == 400
-
     def test_null_is_rejected(self, client, hotel_type, world):
         assert client.post(URL, payload(hotel_type, world, city_ref=None), format='json').status_code == 400
 
@@ -168,3 +166,104 @@ class TestUpdate:
         assert response.status_code == 200, response.data
         legacy.refresh_from_db()
         assert legacy.city == 'Capital'
+
+
+@pytest.mark.django_db
+class TestLegacyTextLocation:
+    """DEPRECATED: the old wizard sends country / state / city text instead of ids."""
+
+    @pytest.fixture
+    def uz(self, db):
+        return {
+            'country': Country.objects.get(code='UZ'),
+            'tashkent': City.objects.get(region__country__code='UZ', name_en='Tashkent'),
+            'samarkand': City.objects.get(region__country__code='UZ', name_en='Samarkand'),
+        }
+
+    def text(self, hotel_type, **overrides):
+        data = {
+            'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1,
+            'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD',
+            'country': 'Uzbekistan', 'state': 'Tashkent City', 'city': 'Tashkent',
+        }
+        data.update(overrides)
+        return data
+
+    def test_create_with_text_resolves_the_refs(self, client, hotel_type, uz):
+        response = client.post(URL, self.text(hotel_type), format='json')
+        assert response.status_code == 201, response.data
+        prop = Property.objects.get(address_line1='1 Main St')
+        assert (prop.country_ref_id, prop.region_ref_id, prop.city_ref_id) == (
+            uz['country'].id, uz['tashkent'].region_id, uz['tashkent'].id)
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Tashkent', 'Tashkent')
+
+    @pytest.mark.parametrize('country,state,city', [
+        ("O'zbekiston", '', 'Toshkent'),
+        ('Узбекистан', None, 'Ташкент'),
+        ('uzbekistan', 'tashkent', 'TASHKENT'),
+        ('UZ', 'Tashkent Region', 'Tashkent'),  # a region that does not fit the city: the city wins
+    ])
+    def test_other_spellings_and_a_blank_region(self, client, hotel_type, uz, country, state, city):
+        response = client.post(URL, self.text(hotel_type, country=country, state=state, city=city), format='json')
+        assert response.status_code == 201, response.data
+        prop = Property.objects.get(address_line1='1 Main St')
+        assert prop.city_ref_id == uz['tashkent'].id
+        assert prop.region_ref_id == uz['tashkent'].region_id
+
+    def test_state_may_be_left_out_entirely(self, client, hotel_type, uz):
+        data = self.text(hotel_type)
+        del data['state']
+        assert client.post(URL, data, format='json').status_code == 201
+
+    @pytest.mark.parametrize('field,value', [('country', 'Atlantis'), ('city', 'Poseidonia'), ('city', '')])
+    def test_text_that_cannot_be_matched_is_400_naming_the_field(self, client, hotel_type, uz, field, value):
+        response = client.post(URL, self.text(hotel_type, **{field: value}), format='json')
+        assert response.status_code == 400
+        assert field in details(response)
+        assert not Property.objects.exists()
+
+    def test_missing_country_or_city_text_is_400(self, client, hotel_type, uz):
+        for field in ('country', 'city'):
+            data = self.text(hotel_type)
+            del data[field]
+            response = client.post(URL, data, format='json')
+            assert response.status_code == 400 and field in details(response), field
+
+    def test_ids_win_when_both_are_sent(self, client, hotel_type, world):
+        response = client.post(URL, payload(hotel_type, world, country='Uzbekistan', city='Tashkent'), format='json')
+        assert response.status_code == 201, response.data
+        assert Property.objects.get(address_line1='1 Main St').city == 'Capital'
+
+    def test_update_with_text_moves_the_property(self, client, owner, hotel_type, uz):
+        legacy = Property.objects.create(
+            owner=owner, property_type=hotel_type, max_guests=2, address_line1='9 Old St', base_price=50,
+            country_ref=uz['country'], region_ref=uz['tashkent'].region, city_ref=uz['tashkent'])
+        response = client.patch(f'{URL}{legacy.id}/', {'city': 'Samarkand'}, format='json')
+        assert response.status_code == 200, response.data
+        legacy.refresh_from_db()
+        assert (legacy.city_ref_id, legacy.region_ref_id) == (uz['samarkand'].id, uz['samarkand'].region_id)
+        assert (legacy.state, legacy.city) == ('Samarkand', 'Samarkand')
+
+    def test_update_with_unmatched_text_is_400(self, client, owner, hotel_type, uz):
+        legacy = Property.objects.create(
+            owner=owner, property_type=hotel_type, max_guests=2, address_line1='9 Old St', base_price=50,
+            country_ref=uz['country'], region_ref=uz['tashkent'].region, city_ref=uz['tashkent'])
+        response = client.patch(f'{URL}{legacy.id}/', {'city': 'Poseidonia'}, format='json')
+        assert response.status_code == 400 and 'city' in details(response)
+        legacy.refresh_from_db()
+        assert legacy.city == 'Tashkent'
+
+    def test_update_of_a_property_without_refs_maps_its_text(self, client, owner, hotel_type, uz):
+        legacy = Property.objects.create(
+            owner=owner, property_type=hotel_type, max_guests=2, address_line1='9 Old St', base_price=50,
+            country='Uzbekistan', city='Tashkent')
+        response = client.patch(f'{URL}{legacy.id}/', {'city': 'Samarkand'}, format='json')
+        assert response.status_code == 200, response.data
+        legacy.refresh_from_db()
+        assert legacy.city_ref_id == uz['samarkand'].id
+
+    def test_edits_without_a_location_leave_it_alone(self, client, owner, hotel_type, uz):
+        legacy = Property.objects.create(
+            owner=owner, property_type=hotel_type, max_guests=2, address_line1='9 Old St', base_price=50,
+            country='Elsewhere', city='Nowhere')
+        assert client.patch(f'{URL}{legacy.id}/', {'max_guests': 4}, format='json').status_code == 200

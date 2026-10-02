@@ -10,9 +10,9 @@ from django.core.management import call_command
 from geography.models import City, Country, Region
 
 UZ_REGIONS_EN = {
-    'Andijan Region', 'Bukhara Region', 'Fergana Region', 'Jizzakh Region', 'Khorezm Region',
-    'Namangan Region', 'Navoi Region', 'Kashkadarya Region', 'Samarkand Region', 'Sirdarya Region',
-    'Surkhandarya Region', 'Tashkent Region', 'Republic of Karakalpakstan', 'Tashkent City',
+    'Andijan', 'Bukhara', 'Fergana', 'Jizzakh', 'Khorezm',
+    'Namangan', 'Navoi', 'Kashkadarya', 'Samarkand', 'Sirdarya',
+    'Surkhandarya', 'Tashkent Region', 'Republic of Karakalpakstan', 'Tashkent',
 }
 
 
@@ -40,16 +40,16 @@ class TestInitialData:
             assert region.cities.exists(), region.name_en
 
     @pytest.mark.parametrize('en,uz,ru,region_en', [
-        ('Tashkent', 'Toshkent', 'Ташкент', 'Tashkent City'),
-        ('Samarkand', 'Samarqand', 'Самарканд', 'Samarkand Region'),
-        ('Bukhara', 'Buxoro', 'Бухара', 'Bukhara Region'),
-        ('Fergana', "Farg'ona", 'Фергана', 'Fergana Region'),
-        ('Khiva', 'Xiva', 'Хива', 'Khorezm Region'),
-        ('Urgench', 'Urganch', 'Ургенч', 'Khorezm Region'),
-        ('Shahrisabz', 'Shahrisabz', 'Шахрисабз', 'Kashkadarya Region'),
-        ('Kokand', "Qo'qon", 'Коканд', 'Fergana Region'),
-        ('Margilan', "Marg'ilon", 'Маргилан', 'Fergana Region'),
-        ('Termez', 'Termiz', 'Термез', 'Surkhandarya Region'),
+        ('Tashkent', 'Toshkent', 'Ташкент', 'Tashkent'),
+        ('Samarkand', 'Samarqand', 'Самарканд', 'Samarkand'),
+        ('Bukhara', 'Buxoro', 'Бухара', 'Bukhara'),
+        ('Fergana', "Farg'ona", 'Фергана', 'Fergana'),
+        ('Khiva', 'Xiva', 'Хива', 'Khorezm'),
+        ('Urgench', 'Urganch', 'Ургенч', 'Khorezm'),
+        ('Shahrisabz', 'Shahrisabz', 'Шахрисабз', 'Kashkadarya'),
+        ('Kokand', "Qo'qon", 'Коканд', 'Fergana'),
+        ('Margilan', "Marg'ilon", 'Маргилан', 'Fergana'),
+        ('Termez', 'Termiz', 'Термез', 'Surkhandarya'),
         ('Nukus', 'Nukus', 'Нукус', 'Republic of Karakalpakstan'),
     ])
     def test_uzbek_cities_in_three_languages(self, en, uz, ru, region_en):

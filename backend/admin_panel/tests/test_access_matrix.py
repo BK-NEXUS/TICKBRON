@@ -45,8 +45,8 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/payments/transactions/'),
     ('get', f'{A}/bookings/lookup/?reference_code=ABCDEF'),
     ('get', f'{A}/status/countries/'),
-    ('get', f'{A}/status/countries/Uzbekistan/regions/'),
-    ('get', f'{A}/status/countries/Uzbekistan/regions/Tashkent/hotels/'),
+    ('get', f'{A}/status/countries/UZ/regions/'),
+    ('get', f'{A}/status/countries/UZ/regions/1/hotels/'),
     ('get', f'{A}/status/hotels/1/'),
     ('get', f'{A}/status/users/'),
 ]

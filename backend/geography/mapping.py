@@ -14,7 +14,7 @@ from geography.data import CITY_ALIASES, COUNTRY_ALIASES, REGION_ALIASES
 
 _APOSTROPHES = re.compile(r"[ʻʼ‘’`'´]")
 _SPACES = re.compile(r'\s+')
-# Words that only say what kind of region it is ("Samarkand Region" -> "samarkand")
+# Words that only say what kind of region it is ("Samarkand Region" -> "samarkand"); used as a fallback
 _REGION_WORDS = re.compile(
     r'\b(region|province|city|oblast|viloyati|shahri|respublikasi|область|город|ил)\b|\(ил\)')
 
@@ -27,11 +27,16 @@ def normalize(value):
     return _SPACES.sub(' ', value).strip()
 
 
+def _strip_region_words(key):
+    return _SPACES.sub(' ', _REGION_WORDS.sub(' ', key)).strip()
+
+
 def _region_keys(region):
+    """(exact, loose): the full names and aliases, and the same without the "Region" / "City" words."""
     names = [region.name_uz, region.name_ru, region.name_en, *REGION_ALIASES.get(region.slug, [])]
-    keys = {normalize(name) for name in names if name}
-    keys |= {_SPACES.sub(' ', _REGION_WORDS.sub(' ', key)).strip() for key in list(keys)}
-    return {key for key in keys if key}
+    exact = {normalize(name) for name in names if name}
+    loose = {_strip_region_words(key) for key in exact}
+    return {key for key in exact if key}, {key for key in loose if key}
 
 
 def _names(row, aliases):
@@ -46,21 +51,27 @@ class GeographyIndex:
         for country in country_model.objects.all():
             for key in _names(country, [country.code, *COUNTRY_ALIASES.get(country.code, [])]):
                 self.countries.setdefault(key, set()).add(country)
+        # Exact names first: "Tashkent" (the city) and "Tashkent Region" are two regions that only
+        # look alike once "Region" is stripped, so the stripped keys are the fallback.
         self.regions = {}
+        self.loose_regions = {}
         for region in region_model.objects.select_related('country'):
-            for key in _region_keys(region):
+            exact, loose = _region_keys(region)
+            for key in exact:
                 self.regions.setdefault(key, set()).add(region)
+            for key in loose:
+                self.loose_regions.setdefault(key, set()).add(region)
         self.cities = {}
         centres = set()
         for city in city_model.objects.select_related('region__country').order_by('region_id', 'sort_order', 'id'):
             keys = _names(city, CITY_ALIASES.get(city.slug, []))
             for key in keys:
                 self.cities.setdefault(key, set()).add(city)
-            # A region is also known by its centre (its first city): "Samarkand" -> Samarkand Region
+            # A region is also known by its centre (its first city): "Termez" -> Surkhandarya
             if city.region_id not in centres:
                 centres.add(city.region_id)
                 for key in keys:
-                    self.regions.setdefault(key, set()).add(city.region)
+                    self.loose_regions.setdefault(key, set()).add(city.region)
 
     @staticmethod
     def _one(candidates):
@@ -71,8 +82,12 @@ class GeographyIndex:
         country = self._one(self.countries.get(normalize(country_text), set()))
         if country is None:
             return None, None, None
-        regions = {r for r in self.regions.get(normalize(state_text), set()) if r.country_id == country.id}
-        region = self._one(regions)
+        key = normalize(state_text)
+        region = None
+        for index, lookup in ((self.regions, key), (self.loose_regions, _strip_region_words(key))):
+            region = self._one({r for r in index.get(lookup, set()) if r.country_id == country.id})
+            if region is not None:
+                break
         cities = {c for c in self.cities.get(normalize(city_text), set()) if c.region.country_id == country.id}
         if region is not None and len(cities) > 1:
             cities = {c for c in cities if c.region_id == region.id}

@@ -49,3 +49,6 @@ When changing AI accounts, the next agent must:
 5. verify the last checkpoint in the actual repository
 6. run relevant tests
 7. continue only from the exact next checkpoint
+
+## Running the E2E tests (Playwright)
+Run Playwright from `C:\Users\MicroStar\Desktop\TICKBRON\frontend` with a **capital D** in `Desktop`. From the lowercase path (`...\desktop\...`) Windows loads `@playwright/test` twice and every run ends with "Playwright Test did not expect test() to be called here" and "No tests found". Start the backend (`seed_demo`, `seed_demo_stats`, `runserver 8000` with `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` set to `100000/hour`) and `npm run dev` first; see `frontend/playwright.config.ts`.
