@@ -176,7 +176,7 @@ class TestHotels:
         assert get(f'{S}/countries/KZ/regions/{tashkent_id()}/hotels/').data['count'] == 0
 
     def test_garbage_region_segment_is_an_empty_list(self, get):
-        assert get(f'{S}/countries/UZ/regions/Tashkent/hotels/').data['count'] == 0
+        assert get(f'{S}/countries/UZ/regions/Atlantis/hotels/').data['count'] == 0
 
     def test_search_by_hotel_name(self, get):
         response = get(f'{S}/countries/UZ/regions/{tashkent_id()}/hotels/', search='bet')
