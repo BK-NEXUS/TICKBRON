@@ -5590,7 +5590,9 @@ body {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl) var(--spacing-md);
-  background-color: var(--color-background-alt);
+  background:
+    radial-gradient(800px 400px at 50% -10%, rgba(220, 185, 105, 0.18), transparent 60%),
+    linear-gradient(160deg, var(--color-cream), var(--color-background-alt) 60%, #EAE2D5);
 }
 
 .auth-container {
@@ -5598,8 +5600,10 @@ body {
   width: 100%;
   margin: 0 auto;
   background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-gold);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
   padding: var(--spacing-2xl);
 }
 
@@ -5652,24 +5656,72 @@ body {
 }
 
 .auth-input {
+  width: 100%;
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
   color: var(--color-text-primary);
+  background-color: var(--color-background);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.auth-input::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
+}
+
+.auth-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-gold);
 }
 
 .auth-input:focus {
   outline: none;
   border-color: var(--color-pomegranate);
-  box-shadow: 0 0 0 3px rgba(188, 156, 89, 0.1);
+  box-shadow: var(--shadow-focus);
 }
 
 .auth-input:disabled {
   background-color: var(--color-background-alt);
   cursor: not-allowed;
+}
+
+/* Password field with visibility toggle */
+.auth-password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-password-field .auth-input {
+  padding-right: 46px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.auth-password-toggle:hover:not(:disabled) {
+  color: var(--color-pomegranate);
+  background-color: rgba(188, 156, 89, 0.12);
+}
+
+.auth-password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .auth-hint {
@@ -5733,7 +5785,8 @@ body {
 
 .auth-tab.active {
   color: var(--color-pomegranate);
-  border-bottom-color: var(--color-pomegranate);
+  border-bottom-color: var(--color-gold-bright);
+  font-weight: var(--font-weight-semibold);
 }
 
 .auth-tab:disabled {

@@ -5,6 +5,7 @@ import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Icon } from '../components/Icon'
 
 type LoginMethod = 'password' | 'phone'
 
@@ -12,6 +13,7 @@ export function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [otpRequested, setOtpRequested] = useState(false)
@@ -160,16 +162,29 @@ export function LoginPage() {
                 <label htmlFor="password" className="auth-label">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="auth-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
+                <div className="auth-password-field">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="auth-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    disabled={isLoading}
+                    tabIndex={-1}
+                  >
+                    <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
+                  </button>
+                </div>
               </div>
 
               <button
