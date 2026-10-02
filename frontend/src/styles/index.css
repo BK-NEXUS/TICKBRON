@@ -89,6 +89,22 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
   
+  /* Elevation tokens (Material-inspired) */
+  --elevation-0: none;
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --elevation-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --elevation-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --elevation-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  --elevation-5: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
+  
+  /* Component-specific elevations */
+  --elevation-card: var(--elevation-1);
+  --elevation-card-hover: var(--elevation-2);
+  --elevation-modal: var(--elevation-4);
+  --elevation-dropdown: var(--elevation-3);
+  --elevation-tooltip: var(--elevation-2);
+  --elevation-sticky: var(--elevation-1);
+  
   /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-base: 200ms ease-in-out;
@@ -338,7 +354,7 @@ body {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--elevation-dropdown);
   z-index: var(--z-dropdown);
   min-width: 200px;
 }
@@ -418,7 +434,7 @@ body {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--elevation-dropdown);
   z-index: var(--z-dropdown);
   min-width: 220px;
 }
@@ -487,7 +503,7 @@ body {
   transition: transform var(--transition-base);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--elevation-modal);
 }
 
 .mobile-menu-open {
@@ -820,11 +836,12 @@ body {
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--elevation-card);
 }
 
 .property-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .property-card:focus {
@@ -1404,11 +1421,12 @@ body {
   overflow: hidden;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
+  box-shadow: var(--elevation-card);
 }
 
 .destination-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .destination-image {
@@ -1463,11 +1481,12 @@ body {
   text-align: center;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
+  box-shadow: var(--elevation-card);
 }
 
 .property-type-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .property-type-icon {
@@ -1507,11 +1526,12 @@ body {
   border-radius: var(--radius-lg);
   text-align: center;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .feature-icon {
@@ -1548,7 +1568,7 @@ body {
   background-color: var(--color-background);
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elevation-1);
 }
 
 .testimonial-rating {
@@ -2214,7 +2234,7 @@ body {
 
 .property-gallery-nav:hover {
   background-color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-2);
 }
 
 .property-gallery-nav:disabled {
@@ -2400,7 +2420,7 @@ body {
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -3004,11 +3024,12 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   position: relative;
+  box-shadow: var(--elevation-card);
 }
 
 .room-card:hover {
   border-color: var(--color-pomegranate);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
   transform: translateY(-2px);
 }
 
@@ -3020,7 +3041,7 @@ body {
 .room-card--selected {
   border-color: var(--color-pomegranate);
   background-color: rgba(188, 156, 89, 0.05);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .room-card-header {
@@ -3435,7 +3456,7 @@ body {
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -3616,11 +3637,12 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   position: relative;
+  box-shadow: var(--elevation-card);
 }
 
 .rate-plan-card:hover {
   border-color: var(--color-pomegranate);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
   transform: translateY(-2px);
 }
 
@@ -3632,7 +3654,7 @@ body {
 .rate-plan-card--selected {
   border-color: var(--color-pomegranate);
   background-color: rgba(188, 156, 89, 0.05);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .rate-plan-card-header {
@@ -3843,7 +3865,7 @@ body {
 .availability-calendar-day--selected {
   border-color: var(--color-pomegranate);
   background-color: rgba(188, 156, 89, 0.1);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elevation-1);
 }
 
 /* Check-in/check-out range */
@@ -4427,10 +4449,11 @@ body {
   display: flex;
   flex-direction: column;
   transition: box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .favorite-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .favorite-card-image {
@@ -4616,10 +4639,11 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   transition: box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .booking-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .booking-card-header {
@@ -5092,7 +5116,7 @@ body {
   color: var(--color-cloud-white);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--elevation-tooltip);
   position: relative;
 }
 
@@ -5181,7 +5205,7 @@ body {
   margin: 0 auto;
   background-color: var(--color-background);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--elevation-modal);
   padding: var(--spacing-2xl);
 }
 
@@ -5410,7 +5434,7 @@ body {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--elevation-dropdown);
   z-index: var(--z-dropdown);
   overflow: hidden;
 }
@@ -5474,11 +5498,12 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   position: relative;
+  box-shadow: var(--elevation-card);
 }
 
 .payment-method-card:hover:not(.payment-method-card--disabled) {
   border-color: var(--color-pomegranate);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
   transform: translateY(-2px);
 }
 
@@ -5490,7 +5515,7 @@ body {
 .payment-method-card--selected {
   border-color: var(--color-pomegranate);
   background-color: rgba(188, 156, 89, 0.05);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .payment-method-card--focused {
@@ -6695,10 +6720,11 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   transition: box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .property-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .property-card-header {
@@ -6994,10 +7020,11 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   transition: box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .item-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .item-card-header {
@@ -7118,10 +7145,11 @@ body {
   flex-direction: column;
   gap: var(--spacing-md);
   transition: box-shadow var(--transition-fast);
+  box-shadow: var(--elevation-card);
 }
 
 .user-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-card-hover);
 }
 
 .user-card-header {
@@ -7356,7 +7384,7 @@ body {
   background-color: var(--color-background);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elevation-1);
 }
 
 .customers-table thead {
@@ -7674,7 +7702,7 @@ body {
   max-height: 90vh;
   overflow-y: auto;
   z-index: var(--z-modal);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--elevation-modal);
 }
 
 .modal-title {
@@ -7956,7 +7984,7 @@ body {
   background-color: var(--color-background);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elevation-1);
 }
 
 .bookings-table thead,
@@ -8773,7 +8801,7 @@ body {
 
 .favorite-button:hover:not(:disabled) {
   transform: scale(1.06);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-2);
 }
 
 .favorite-button:focus-visible {
@@ -8836,7 +8864,7 @@ body {
 
 .status-tile:hover,
 .status-tile:focus-visible {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--elevation-2);
   border-color: var(--color-gold-dark);
 }
 

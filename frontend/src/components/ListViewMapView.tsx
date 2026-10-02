@@ -1,3 +1,6 @@
+import { Icon } from './Icon'
+import { getIcon } from './icons'
+
 interface ListViewMapViewProps {
   view: 'list' | 'map'
   onViewChange: (view: 'list' | 'map') => void
@@ -16,7 +19,7 @@ export function ListViewMapView({ view, onViewChange }: ListViewMapViewProps) {
         aria-label="List view"
         aria-pressed={view === 'list'}
       >
-        <span className="list-view-map-view-icon">📋</span>
+        <span className="list-view-map-view-icon" aria-hidden="true"><Icon icon={getIcon('list')} size={18} /></span>
         <span className="list-view-map-view-label">List</span>
       </button>
       <button
@@ -25,7 +28,7 @@ export function ListViewMapView({ view, onViewChange }: ListViewMapViewProps) {
         aria-label="Map view"
         aria-pressed={view === 'map'}
       >
-        <span className="list-view-map-view-icon">🗺️</span>
+        <span className="list-view-map-view-icon" aria-hidden="true"><Icon icon={getIcon('map')} size={18} /></span>
         <span className="list-view-map-view-label">Map</span>
       </button>
     </div>

@@ -271,7 +271,7 @@ describe('PaymentConfirmation', () => {
     fireEvent.click(copyButton)
 
     await waitFor(() => {
-      expect(screen.getByText('✓ Copied')).toBeInTheDocument()
+      expect(screen.getByText('Copied')).toBeInTheDocument()
     })
   })
 })

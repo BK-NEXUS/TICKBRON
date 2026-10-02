@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { PaymentProvider } from '../adapters/paymentAdapter'
+import { Icon } from './Icon'
+import { getIcon } from './icons'
 
 interface PaymentMethodSelectorProps {
   selectedProvider: PaymentProvider | null
@@ -19,21 +21,21 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
       id: 'payme' as PaymentProvider,
       name: 'Payme',
       description: 'Fast and secure mobile payments',
-      icon: '📱',
+      icon: getIcon('smartphone'),
       popular: true,
     },
     {
       id: 'click' as PaymentProvider,
       name: 'Click',
       description: 'Uzbekistan\'s leading payment system',
-      icon: '💳',
+      icon: getIcon('credit-card'),
       popular: false,
     },
     {
       id: 'visa' as PaymentProvider,
       name: 'Visa',
       description: 'Global credit and debit cards',
-      icon: '💼',
+      icon: getIcon('wallet'),
       popular: false,
     },
   ]
@@ -74,7 +76,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
             aria-checked={selectedProvider === method.id}
             aria-disabled={disabled}
           >
-            <div className="payment-method-card-icon">{method.icon}</div>
+            <div className="payment-method-card-icon" aria-hidden="true"><Icon icon={method.icon} size={28} /></div>
             <div className="payment-method-card-content">
               <div className="payment-method-card-name">
                 {method.name}
@@ -87,9 +89,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
               </div>
             </div>
             {selectedProvider === method.id && (
-              <div className="payment-method-card-check" aria-hidden="true">
-                ✓
-              </div>
+              <div className="payment-method-card-check" aria-hidden="true" data-testid="payment-method-check"><Icon icon={getIcon('check')} size={24} /></div>
             )}
           </div>
         ))}

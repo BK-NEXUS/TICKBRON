@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { getIcon } from './icons'
 
 // TODO: Currency data will come from backend API when available
 // For now, this is a UI foundation with placeholder data
@@ -44,7 +46,7 @@ export function CurrencySelector({
       >
         <span className="currency-symbol">{currentCurr.symbol}</span>
         <span className="currency-code">{currentCurr.code}</span>
-        <span className="currency-chevron">{isOpen ? '▲' : '▼'}</span>
+        <span className="currency-chevron"><Icon icon={getIcon(isOpen ? 'chevron-up' : 'chevron-down')} size={12} /></span>
       </button>
 
       {isOpen && (
@@ -60,7 +62,7 @@ export function CurrencySelector({
                 <span className="currency-name">{currency.name}</span>
                 <span className="currency-code">{currency.code}</span>
                 {currency.code === currentCurrency && (
-                  <span className="currency-check">✓</span>
+                  <span className="currency-check"><Icon icon={getIcon('check')} size={14} /></span>
                 )}
               </button>
             ))}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
+import { Icon } from '../components/Icon'
+import { getIcon } from '../components/icons'
 
 interface PaymentConfirmationProps {
   payment: PaymentTransaction
@@ -65,7 +67,7 @@ export function PaymentConfirmation({
   return (
     <div className="payment-confirmation">
       <div className="payment-confirmation-header">
-        <div className="payment-confirmation-icon" aria-hidden="true">✓</div>
+        <div className="payment-confirmation-icon" aria-hidden="true"><Icon icon={getIcon('check-circle')} size={48} /></div>
         <h2 className="payment-confirmation-title">Payment Successful!</h2>
         <p className="payment-confirmation-subtitle">
           Your payment has been processed successfully
@@ -120,7 +122,8 @@ export function PaymentConfirmation({
                   aria-label="Copy booking reference code"
                   title="Copy booking reference code"
                 >
-                  {copied ? '✓ Copied' : '📋 Copy'}
+                  {copied ? <Icon icon={getIcon('check')} size={14} /> : <Icon icon={getIcon('copy')} size={14} />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
             </div>
@@ -141,14 +144,14 @@ export function PaymentConfirmation({
 
         <div className="payment-confirmation-info">
           <div className="payment-confirmation-info-item">
-            <div className="payment-confirmation-info-icon" aria-hidden="true">📧</div>
+            <div className="payment-confirmation-info-icon" aria-hidden="true"><Icon icon={getIcon('mail')} size={24} /></div>
             <div className="payment-confirmation-info-text">
               <strong>Confirmation email sent</strong>
               <p>You will receive a confirmation email with your booking details shortly.</p>
             </div>
           </div>
           <div className="payment-confirmation-info-item">
-            <div className="payment-confirmation-info-icon" aria-hidden="true">📱</div>
+            <div className="payment-confirmation-info-icon" aria-hidden="true"><Icon icon={getIcon('smartphone')} size={24} /></div>
             <div className="payment-confirmation-info-text">
               <strong>Manage your booking</strong>
               <p>You can view and manage your booking from your account at any time.</p>

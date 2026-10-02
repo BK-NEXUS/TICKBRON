@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { getIcon } from './icons'
 
 // TODO: Language data will come from backend API when available
 // For now, this is a UI foundation with placeholder data
@@ -44,7 +46,7 @@ export function LanguageSelector({
       >
         <span className="language-flag">{currentLang.flag}</span>
         <span className="language-code">{currentLang.code.toUpperCase()}</span>
-        <span className="language-chevron">{isOpen ? '▲' : '▼'}</span>
+        <span className="language-chevron"><Icon icon={getIcon(isOpen ? 'chevron-up' : 'chevron-down')} size={12} /></span>
       </button>
 
       {isOpen && (
@@ -59,7 +61,7 @@ export function LanguageSelector({
                 <span className="language-flag">{language.flag}</span>
                 <span className="language-name">{language.name}</span>
                 {language.code === currentLanguage && (
-                  <span className="language-check">✓</span>
+                  <span className="language-check"><Icon icon={getIcon('check')} size={14} /></span>
                 )}
               </button>
             ))}

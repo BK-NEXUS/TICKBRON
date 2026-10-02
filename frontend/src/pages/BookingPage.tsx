@@ -9,6 +9,8 @@ import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
 import { PhoneInput } from '../components/PhoneInput'
+import { Icon } from '../components/Icon'
+import { getIcon } from '../components/icons'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
@@ -469,7 +471,7 @@ export function BookingPage() {
       <div className="booking-page booking-page--success">
         <div className="container">
           <div className="success-state" role="status" aria-live="polite">
-            <div className="success-icon">✓</div>
+            <div className="success-icon" aria-hidden="true"><Icon icon={getIcon('check-circle')} size={80} color="var(--color-sprout-green)" /></div>
             <h1>Booking Confirmed!</h1>
             <p>Your booking has been successfully created.</p>
             

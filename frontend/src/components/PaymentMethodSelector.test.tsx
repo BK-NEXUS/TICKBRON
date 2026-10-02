@@ -94,7 +94,9 @@ describe('PaymentMethodSelector', () => {
       />
     )
 
-    expect(screen.getByText('✓')).toBeInTheDocument()
+    // Check for the check icon SVG (lucide check icon) - it has aria-hidden="true" so use class selector
+    const checkIcon = screen.getByTestId('payment-method-check')
+    expect(checkIcon).toBeInTheDocument()
   })
 
   it('should show selected provider label when provider is selected', () => {

@@ -1,13 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
+import { Icon } from './Icon'
+import { getIcon } from './icons'
 
 export function MobileBottomNavigation() {
   const location = useLocation()
 
   const navItems = [
-    { path: '/', label: 'Search', icon: '🔍' },
-    { path: '/bookings', label: 'My Bookings', icon: '📅' },
-    { path: '/favorites', label: 'Favorites', icon: '❤️' },
-    { path: '/profile', label: 'Profile', icon: '👤' },
+    { path: '/', label: 'Search', icon: getIcon('search') },
+    { path: '/bookings', label: 'My Bookings', icon: getIcon('calendar') },
+    { path: '/favorites', label: 'Favorites', icon: getIcon('heart') },
+    { path: '/profile', label: 'Profile', icon: getIcon('user') },
   ]
 
   return (
@@ -23,7 +25,7 @@ export function MobileBottomNavigation() {
                 className={`mobile-bottom-nav-link ${isActive ? 'mobile-bottom-nav-link--active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="mobile-bottom-nav-icon" aria-hidden="true">{item.icon}</span>
+                <span className="mobile-bottom-nav-icon" aria-hidden="true"><Icon icon={item.icon} size={22} /></span>
                 <span className="mobile-bottom-nav-label">{item.label}</span>
               </Link>
             </li>
