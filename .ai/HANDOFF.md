@@ -2163,3 +2163,12 @@ Plan: `.ai/GEOGRAPHY_PLAN.md`.
   - `seed_demo` and `seed_demo_stats` set the refs (the demo hotel without a region keeps only its country)
   - Tests: every TransactionTestCase (`bookings/tests/test_concurrency.py`, `users/tests/test_phone_unique.py`, the migration tests) empties all tables when it ends, which also wiped the Geography rows the data migration loads -- for every later test and the next `--reuse-db` run (7 geography tests failed in the full suite). Root `conftest.py` now has an autouse `geography_dictionary` fixture that reloads the dictionary (idempotent) when a database test finds it empty; the two migration tests also use `serialized_rollback = True`. Run the migration tests apart: `pytest --create-db properties/tests/test_geography_migration.py`
   - Proof: `geography/tests/test_mapping.py` (15), `properties/tests/test_property_geography.py` (4), `properties/tests/test_geography_migration.py` (forward + reverse), seed tests extended -- all DID FAIL before (ImportError / missing fields / missing refs)
+
+## R1 test database fix (2026-10-02, Kolya's agent, master)
+Status: DONE. `serialized_rollback` removed from the two migration TransactionTestCases (`properties/tests/test_geography_migration.py`, `test_room_inventory_migration.py`): an earlier flushing TransactionTestCase re-creates content types with new keys and the restored snapshot collided. Full backend suite with `--create-db`: 1389 passed, 2 skipped. `--reuse-db` is no longer in `pytest.ini`.
+
+## Team split (2026-10-02)
+Kolya's agent: `backend/` and `.ai/` only. Frontend: second person (OpenCode agent), branches `feat/fe-*`. Owner tags per item are in `.ai/ROADMAP.md`. Backend items a frontend task needs get a line `READY FOR FRONTEND: <item> — <endpoints>` in this file.
+
+### Frontend needs
+(Frontend writes requests here: exact endpoint, fields, expected states/errors. Backend handles them at the start of each item.)
