@@ -52,20 +52,62 @@ def region_key(prefix=''):
     return Coalesce(Cast(f'{prefix}region_ref_id', CharField()), Value(UNSPECIFIED), output_field=CharField())
 
 
-def country_filter(code, prefix=''):
-    """Properties of the country with this ISO code (any case); "unspecified" = no country ref."""
-    if code.lower() == UNSPECIFIED:
-        return Q(**{f'{prefix}country_ref__isnull': True})
-    return Q(**{f'{prefix}country_ref__code': code.upper()})
+def _alias_q(base, value):
+    """Q matching the uz, ru or en name (case-insensitive) behind `base` (e.g. 'country_ref__' or '')."""
+    return (Q(**{f'{base}name_en__iexact': value}) | Q(**{f'{base}name_uz__iexact': value})
+            | Q(**{f'{base}name_ru__iexact': value}))
 
 
-def region_filter(region, prefix=''):
-    """Properties of the region with this id; "unspecified" = no region ref; anything else matches nothing."""
-    if region.lower() == UNSPECIFIED:
-        return Q(**{f'{prefix}region_ref__isnull': True})
-    if region.isdigit():
-        return Q(**{f'{prefix}region_ref_id': int(region)})
-    return Q(pk__in=[])
+def is_iso_code(value):
+    return len(value) == 2 and value.isascii() and value.isalpha()
+
+
+def country_q(segment, path):
+    """
+    Q for the country named by a URL segment, behind the relation `path` ('country_ref',
+    'property__country_ref'; '' when the query is on Country itself).
+
+    The segment is an ISO code (any case) or "unspecified" (no country).
+    DEPRECATED (2026-10-02, until the frontend moves to codes, G5-G6): it may also be a country name
+    in any language, the value the old lists gave as `country`.
+    """
+    base = f'{path}__' if path else ''
+    if segment.lower() == UNSPECIFIED:
+        return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
+    if is_iso_code(segment):
+        return Q(**{f'{base}code': segment.upper()})
+    return _alias_q(base, segment)
+
+
+def region_q(segment, path):
+    """
+    Q for the region named by a URL segment, behind `path` ('region_ref'; '' on Region itself).
+
+    The segment is a region id or "unspecified" (no region).
+    DEPRECATED (2026-10-02, until the frontend moves to ids, G5-G6): it may also be a region name in
+    any language, the value the old lists gave as `region`.
+    """
+    base = f'{path}__' if path else ''
+    if segment.lower() == UNSPECIFIED:
+        return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
+    if segment.isdigit():
+        return Q(**{f'{path}_id': int(segment)}) if path else Q(pk=int(segment))
+    return _alias_q(base, segment)
+
+
+def country_filter(segment, prefix=''):
+    return country_q(segment, f'{prefix}country_ref')
+
+
+def region_filter(segment, prefix=''):
+    return region_q(segment, f'{prefix}region_ref')
+
+
+def echo_key(segment):
+    """The key as the response reports it: codes upper-case, "unspecified" lower-case, names as sent."""
+    if segment.lower() == UNSPECIFIED:
+        return UNSPECIFIED
+    return segment.upper() if is_iso_code(segment) else segment
 
 
 def names_filter(prefix, term):
@@ -79,19 +121,19 @@ def names(item, prefix):
     return {language: item[f'{prefix}name_{language}'] or UNSPECIFIED_REGION for language in ('uz', 'ru', 'en')}
 
 
-def country_name(code):
-    """English name for the breadcrumb; None for a code that does not exist."""
-    if code.lower() == UNSPECIFIED:
+def country_name(segment):
+    """English name for the breadcrumb; None for a country that does not exist."""
+    if segment.lower() == UNSPECIFIED:
         return UNSPECIFIED_REGION
-    return Country.objects.filter(code=code.upper()).values_list('name_en', flat=True).first()
+    return Country.objects.filter(country_q(segment, '')).values_list('name_en', flat=True).first()
 
 
-def region_name(region):
+def region_name(country, region):
+    """English name of the region inside the country; None when there is no such region."""
     if region.lower() == UNSPECIFIED:
         return UNSPECIFIED_REGION
-    if not region.isdigit():
-        return None
-    return Region.objects.filter(pk=int(region)).values_list('name_en', flat=True).first()
+    return (Region.objects.filter(region_q(region, ''), country_q(country, 'country'))
+            .values_list('name_en', flat=True).first())
 
 
 def bad_request(field, error):
@@ -198,7 +240,7 @@ def status_regions(request, country):
             'hotels': item['hotels_count'],
         }
 
-    extra = {'period': period, 'country': country.upper() if country.lower() != UNSPECIFIED else UNSPECIFIED}
+    extra = {'period': period, 'country': echo_key(country)}
     response = ranked_page(request, rows, TOP_REGIONS, 'region_key', bookings, 'region_key', to_row, extra)
     response.data['country_name'] = country_name(country)
     return response
@@ -226,18 +268,14 @@ def status_hotels(request, country, region):
         .order_by('-bookings_count', '-guests_count', 'name', 'id')
     )
     bookings = counted_bookings(date_range).filter(property__is_deleted=False)
-    extra = {
-        'period': period,
-        'country': country.upper() if country.lower() != UNSPECIFIED else UNSPECIFIED,
-        'region': region.lower() if region.lower() == UNSPECIFIED else region,
-    }
+    extra = {'period': period, 'country': echo_key(country), 'region': echo_key(region)}
     response = ranked_page(
         request, rows, TOP_HOTELS, 'id', bookings, 'property_id',
         lambda item: {'id': item['id'], 'name': item['name'], 'city': item['city'], 'status': item['status']},
         extra,
     )
     response.data['country_name'] = country_name(country)
-    response.data['region_name'] = region_name(region)
+    response.data['region_name'] = region_name(country, region)
     return response
 
 
