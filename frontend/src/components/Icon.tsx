@@ -41,6 +41,12 @@ export type IconName =
   | 'clock'
   | 'credit-card'
   | 'check-circle'
+  | 'chart'
+  | 'plus'
+  | 'dollar'
+  | 'user'
+  | 'bell'
+  | 'ban'
 
 const PATHS: Record<IconName, string> = {
   building:
@@ -90,6 +96,12 @@ const PATHS: Record<IconName, string> = {
   'credit-card':
     'M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-9zM3 10h18M6.5 14.5h3',
   'check-circle': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 12l2.5 2.5 4.5-5',
+  chart: 'M4 20h16M7 16v-5M12 16V8M17 16v-7',
+  plus: 'M12 5v14M5 12h14',
+  dollar: 'M12 2v20M16.5 6.5H10a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H7',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1',
+  bell: 'M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6M10.5 20a2 2 0 0 0 3 0',
+  ban: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM5.6 5.6l12.8 12.8',
 }
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {

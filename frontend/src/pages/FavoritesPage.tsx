@@ -4,6 +4,7 @@ import { accountAdapter, Favorite } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 import { markFavoriteRemoved } from '../hooks/useFavorites'
+import { Icon } from '../components/Icon'
 
 /** Display name of a favorite: its first translation, else the city */
 const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
@@ -56,7 +57,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Icon name="lock" size={40} />}
             title="Sign in required"
             message="Please sign in to view your favorite properties."
             ctaText="Sign In"
@@ -105,7 +106,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
-            icon="❤️"
+            icon={<Icon name="heart" size={40} />}
             title="No favorites yet"
             message="Save your favorite properties to view them here."
             ctaText="Explore Properties"
@@ -133,7 +134,7 @@ export function FavoritesPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="favorite-card-placeholder">🏠</div>
+                  <div className="favorite-card-placeholder"><Icon name="home" size={40} /></div>
                 )}
               </div>
               

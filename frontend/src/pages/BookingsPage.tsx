@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
+import { Icon } from '../components/Icon'
 
 /** "2025-02-01" -> "Feb 1, 2025" (parsed as a calendar date, so no time-zone shift) */
 function formatBookingDate(isoDate: string) {
@@ -159,7 +160,7 @@ export function BookingsPage() {
       <div className="bookings-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Icon name="lock" size={40} />}
             title="Sign in required"
             message="Please sign in to view your booking history."
             ctaText="Sign In"
@@ -208,7 +209,7 @@ export function BookingsPage() {
       <div className="bookings-page">
         <div className="container">
           <EmptyState
-            icon="📅"
+            icon={<Icon name="calendar" size={40} />}
             title="No bookings yet"
             message="Start exploring amazing properties and book your first stay."
             ctaText="Search Properties"
