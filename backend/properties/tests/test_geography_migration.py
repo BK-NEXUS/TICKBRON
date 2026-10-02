@@ -15,8 +15,8 @@ from django.test import TransactionTestCase
 
 
 class Migrate0012To0013(TransactionTestCase):
-    # Put the rows the migrations loaded (the Geography dictionary) back afterwards
-    serialized_rollback = True
+    # No serialized_rollback: an earlier TransactionTestCase flush re-creates content types with new
+    # keys, so restoring the creation-time snapshot collides. conftest reloads Geography instead.
     migrate_from = [
         ('properties', '0012_property_geography_refs'),
         ('geography', '0002_initial_data'),

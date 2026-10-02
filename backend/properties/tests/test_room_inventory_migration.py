@@ -18,9 +18,9 @@ from django.utils import timezone
 
 
 class Migrate0007To0008(TransactionTestCase):
-    # Put the rows the migrations loaded (the Geography dictionary) back afterwards
-    serialized_rollback = True
     """Migrates the test database from 0007 to 0008 and back, with historical models."""
+    # No serialized_rollback: an earlier TransactionTestCase flush re-creates content types with new
+    # keys, so restoring the creation-time snapshot collides. conftest reloads Geography instead.
 
     migrate_from = [
         ('properties', '0007_room_inventory'),
