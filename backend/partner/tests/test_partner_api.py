@@ -12,6 +12,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from permissions.models import Role
+from partner.tests.geography_helpers import uzbek_location
 
 User = get_user_model()
 
@@ -115,8 +116,7 @@ class PartnerPropertyTests(TestCase):
             'bedrooms': 3,
             'bathrooms': 2,
             'address_line1': '789 Pine Rd',
-            'city': 'Bukhara',
-            'country': 'Uzbekistan',
+            **uzbek_location('Bukhara'),
             'base_price': 150.00,
             'currency': 'USD'
         }
@@ -177,8 +177,8 @@ class PartnerPropertyTests(TestCase):
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'property_type': self.property.property_type_id, 'status': 'active', 'max_guests': 2,
-            'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Status Test St', 'city': 'Samarkand',
-            'country': 'Uzbekistan', 'base_price': '80.00', 'currency': 'USD'
+            'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Status Test St', **uzbek_location('Samarkand'),
+            'base_price': '80.00', 'currency': 'USD'
         }
         
         response = self.client.post('/api/v1/partner/properties/', data, format='json')
