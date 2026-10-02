@@ -7,13 +7,14 @@ management scoped to hotel-owner accounts.
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from common.storage import validate_image_file
+from geography.serializers import GeographyRefsMixin
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from properties.serializers import (
     PropertyPhotoSerializer, AmenitySerializer, PropertyAmenitySerializer
 )
 
 
-class PartnerPropertySerializer(serializers.ModelSerializer):
+class PartnerPropertySerializer(GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
     
@@ -28,12 +29,14 @@ class PartnerPropertySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
+            'country_ref', 'region_ref', 'city_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'full_address', 'created_at', 'updated_at'
         ]
-        # status is set by admin moderation (approve/suspend), never by the owner
-        read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
+        # status is set by admin moderation (approve/suspend), never by the owner. The text
+        # location is derived from the Geography refs (English names) and cannot be written.
+        read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
     
     def get_full_address(self, obj):
         """Get the full address as a string."""
@@ -43,7 +46,7 @@ class PartnerPropertySerializer(serializers.ModelSerializer):
         return obj.display_name()
 
 
-class PartnerPropertyCreateSerializer(serializers.ModelSerializer):
+class PartnerPropertyCreateSerializer(GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for creating new properties by hotel-owners.
     
@@ -53,7 +56,8 @@ class PartnerPropertyCreateSerializer(serializers.ModelSerializer):
         model = Property
         fields = [
             'property_type', 'max_guests', 'bedrooms', 'bathrooms',
-            'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
+            'address_line1', 'address_line2', 'postal_code',
+            'country_ref', 'region_ref', 'city_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]

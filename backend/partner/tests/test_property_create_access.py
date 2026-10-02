@@ -10,6 +10,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
+from partner.tests.geography_helpers import uzbek_location
 from permissions.models import Role
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
 from users.models import User
@@ -84,8 +85,8 @@ def create_requests(inv):
     return [
         ('/api/v1/partner/properties/', {
             'property_type': inv['property_type'].id, 'max_guests': 2, 'bedrooms': 1,
-            'bathrooms': 1, 'address_line1': '2 Navoi', 'city': 'Tashkent',
-            'country': 'Uzbekistan', 'base_price': '70.00', 'currency': 'USD',
+            'bathrooms': 1, 'address_line1': '2 Navoi', **uzbek_location('Tashkent'),
+            'base_price': '70.00', 'currency': 'USD',
         }, 'json'),
         ('/api/v1/partner/rooms/', {
             'property': inv['property'].id, 'name': 'Deluxe', 'slug': 'deluxe',

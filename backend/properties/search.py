@@ -39,6 +39,19 @@ def searchable_properties():
     return Property.objects.filter(is_active=True, is_deleted=False, status='active')
 
 
+GEOGRAPHY_LEVELS = ('city_ref', 'region_ref', 'country_ref')
+GEOGRAPHY_LANGUAGES = ('uz', 'ru', 'en')
+
+
+def geography_name_filter(term):
+    """Q matching the term in the uz/ru/en name of the property's city, region or country (via the refs)."""
+    query = Q()
+    for level in GEOGRAPHY_LEVELS:
+        for language in GEOGRAPHY_LANGUAGES:
+            query |= Q(**{f'{level}__name_{language}__icontains': term})
+    return query
+
+
 def with_review_scores(queryset):
     """
     Annotate average_rating (None without reviews) and review_count from approved reviews.
@@ -431,6 +444,7 @@ class PropertySearchService:
                     Q(address_line1__icontains=word) |
                     Q(city__icontains=word) |
                     Q(country__icontains=word) |
+                    geography_name_filter(word) |
                     Q(translations__name__icontains=word) |
                     Q(translations__description__icontains=word)
                 )
@@ -445,8 +459,12 @@ class PropertySearchService:
         return queryset
     
     def _apply_location_search(self, queryset, location):
-        """Apply location-based search (city, country)."""
+        """
+        Apply location-based search: names in all three languages through the Geography refs,
+        plus the old text fields (the only location unmapped properties have).
+        """
         return queryset.filter(
+            geography_name_filter(location) |
             Q(city__icontains=location) |
             Q(country__icontains=location) |
             Q(address_line1__icontains=location)
@@ -656,21 +674,24 @@ class PropertySearchService:
         if not query or len(query) < 2:
             return []
         
-        # Get matching cities and countries
-        # Only approved properties, matching the search base queryset
-        cities = Property.objects.filter(
-            is_active=True,
-            is_deleted=False,
-            status='active',
-            city__icontains=query
-        ).values_list('city', flat=True).distinct()[:limit]
-        
-        countries = Property.objects.filter(
-            is_active=True,
-            is_deleted=False,
-            status='active',
-            country__icontains=query
-        ).values_list('country', flat=True).distinct()[:limit]
-        
-        suggestions = list(set(list(cities) + list(countries)))
+        # Places (city, region, country) that have public hotels, named in whichever language
+        # matched what was typed; so the suggestion finds the same hotels when it is searched for.
+        # Properties never mapped to the dictionary fall back to their text city / country.
+        public = Property.objects.filter(is_active=True, is_deleted=False, status='active')
+        suggestions = []
+
+        def add(values):
+            for value in values:
+                if value and value not in suggestions:
+                    suggestions.append(value)
+
+        for level in GEOGRAPHY_LEVELS:
+            for language in GEOGRAPHY_LANGUAGES:
+                field = f'{level}__name_{language}'
+                add(public.filter(**{f'{field}__icontains': query}).order_by(field)
+                    .values_list(field, flat=True).distinct()[:limit])
+        add(public.filter(city_ref__isnull=True, city__icontains=query)
+            .order_by('city').values_list('city', flat=True).distinct()[:limit])
+        add(public.filter(country_ref__isnull=True, country__icontains=query)
+            .order_by('country').values_list('country', flat=True).distinct()[:limit])
         return suggestions[:limit]

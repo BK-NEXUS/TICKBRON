@@ -51,7 +51,16 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/status/users/'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
-ALL_ADMIN_ENDPOINTS = ADMIN_ENDPOINTS + SUPERADMIN_ONLY
+# Geography dictionary management (G3): super-admin only, staff get 403 too
+GEOGRAPHY_ENDPOINTS = [
+    (method, f'{A}/geography/{kind}/{suffix}')
+    for kind in ('countries', 'regions', 'cities')
+    for method, suffix in (
+        ('get', ''), ('post', ''), ('post', 'reorder/'),
+        ('get', '1/'), ('put', '1/'), ('patch', '1/'), ('delete', '1/'),
+    )
+]
+ALL_ADMIN_ENDPOINTS = ADMIN_ENDPOINTS + SUPERADMIN_ONLY + GEOGRAPHY_ENDPOINTS
 
 
 @pytest.fixture
@@ -103,6 +112,11 @@ class TestAdminPanelAccessMatrix:
     def test_staff_is_let_through(self, accounts, method, url):
         # 400/404 are fine here (empty body, ids that do not exist); only 401/403 are not
         assert call(accounts['staff'], method, url).status_code not in (401, 403)
+
+    @pytest.mark.parametrize('method,url', GEOGRAPHY_ENDPOINTS)
+    def test_geography_is_super_admin_only(self, accounts, method, url):
+        assert call(accounts['staff'], method, url).status_code == 403
+        assert call(accounts['superadmin'], method, url).status_code not in (401, 403)
 
     def test_only_super_admin_creates_hotel_owners(self, accounts):
         method, url = SUPERADMIN_ONLY[0]

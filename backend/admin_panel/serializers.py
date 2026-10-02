@@ -5,6 +5,8 @@ This module contains serializers for property moderation, user management,
 amenity management, and payment monitoring.
 """
 from rest_framework import serializers
+from geography.models import City, Country, Region
+from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
@@ -30,7 +32,8 @@ class AdminPropertySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'owner', 'owner_email', 'owner_name', 'property_type', 'status',
             'max_guests', 'bedrooms', 'bathrooms', 'address_line1', 'address_line2',
-            'city', 'state', 'postal_code', 'country', 'latitude', 'longitude',
+            'city', 'state', 'postal_code', 'country', 'country_ref', 'region_ref', 'city_ref',
+            'latitude', 'longitude',
             'base_price', 'currency', 'full_address', 'approved_at', 'approved_by',
             'rejection_reason', 'created_at', 'updated_at'
         ]
@@ -58,13 +61,29 @@ class AdminPropertyApproveSerializer(serializers.Serializer):
 
 class AdminPropertyRegionSerializer(serializers.Serializer):
     """
-    Region of a property (stored in `Property.state`). Blank clears it,
-    so the property is grouped as "Unspecified" in the Status section.
+    Location of a property. Send geography refs (country_ref, region_ref, city_ref; all three
+    null clears them) or, for older clients, `state`: the region text (blank clears it, so the
+    property is grouped as "Unspecified" in the Status section). Refs win when both are sent.
+    Needs the property in the serializer context.
     """
-    state = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, trim_whitespace=True)
+    state = serializers.CharField(
+        max_length=100, allow_blank=True, allow_null=True, trim_whitespace=True, required=False)
+    country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), allow_null=True, required=False)
+    region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), allow_null=True, required=False)
+    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), allow_null=True, required=False)
 
     def validate_state(self, value):
         return value or None
+
+    def validate(self, attrs):
+        sent_refs = any(field in attrs for field in REF_FIELDS)
+        if not sent_refs and 'state' not in attrs:
+            raise serializers.ValidationError({'state': 'This field is required.'})
+        if sent_refs:
+            errors = check_geography(attrs, current=self.context.get('property'), nullable=True)
+            if errors:
+                raise serializers.ValidationError(errors)
+        return attrs
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
