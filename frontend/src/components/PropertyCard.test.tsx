@@ -150,7 +150,7 @@ describe('PropertyCard', () => {
     const propertyWithoutImage = { ...mockProperty, primary_photo: undefined }
     render(<PropertyCard property={propertyWithoutImage} />)
 
-    expect(screen.getByText('🏠')).toBeInTheDocument()
+    expect(screen.getByTestId('property-image-placeholder')).toBeInTheDocument()
   })
 
   it('has click handler that calls custom onClick', () => {

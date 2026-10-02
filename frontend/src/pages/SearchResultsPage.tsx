@@ -190,6 +190,18 @@ export function SearchResultsPage() {
                 <div className="search-results-loading" role="status" aria-live="polite">
                   <div className="search-results-loading-spinner" aria-hidden="true"></div>
                   <p>Loading properties...</p>
+                  <div className="search-results-grid search-results-skeletons" aria-hidden="true">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={index} className="property-card skeleton-card">
+                        <div className="skeleton skeleton-image"></div>
+                        <div className="skeleton-card-content">
+                          <div className="skeleton skeleton-text"></div>
+                          <div className="skeleton skeleton-text"></div>
+                          <div className="skeleton skeleton-text"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
