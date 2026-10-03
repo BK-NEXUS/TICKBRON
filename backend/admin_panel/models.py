@@ -49,3 +49,60 @@ class InternalNote(TimeStampedModel, SoftDeleteModel):
     
     def __str__(self):
         return f"Note for {self.customer.email} by {self.author.email if self.author else 'Unknown'}"
+
+
+class AppendOnlyQuerySet(models.QuerySet):
+    """Bulk update/delete are refused, so audit rows cannot be rewritten in bulk either."""
+
+    def update(self, **kwargs):
+        raise PermissionError('Audit log entries cannot be changed')
+
+    def delete(self):
+        raise PermissionError('Audit log entries cannot be deleted')
+
+
+class AdminAccessLog(models.Model):
+    """
+    Who on the staff opened which customer's data, and when (R4, audit #21).
+
+    Ids only: no names, phones, emails or search terms, so the log itself holds no
+    copy of personal data. Plain integer ids (not foreign keys) keep the history
+    even if a user row is ever removed. Append-only: rows are never changed or deleted.
+    """
+    ACTION_CHOICES = [
+        ('customer_list', 'Customer list'),
+        ('customer_view', 'Customer profile'),
+        ('booking_lookup', 'Support lookup by booking reference'),
+        ('user_list', 'User list'),
+        ('status_users', 'Status users list'),
+    ]
+
+    actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES, db_index=True)
+    target_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    target_booking_id = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    objects = AppendOnlyQuerySet.as_manager()
+
+    class Meta:
+        db_table = 'admin_access_log'
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return f'{self.created_at} user:{self.actor_id} {self.action} target:{self.target_user_id}'
+
+    @classmethod
+    def record(cls, actor, action, target_user_id=None, target_booking_id=None):
+        return cls.objects.create(
+            actor_id=actor.pk, action=action,
+            target_user_id=target_user_id, target_booking_id=target_booking_id,
+        )
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise PermissionError('Audit log entries cannot be changed')
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError('Audit log entries cannot be deleted')

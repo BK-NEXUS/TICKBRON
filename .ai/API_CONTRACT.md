@@ -791,3 +791,13 @@ Rules:
 - Frontend must not invent response/request fields.
 - Contract changes must be recorded here and in HANDOFF.md.
 - ✅ indicates implemented endpoints, ❌ indicates pending implementation.
+
+## 2026-10-03 Admin access audit log (R4, audit #21)
+
+### GET `/api/v1/admin-panel/audit-log/`
+- Auth: staff / super-admin (`IsSuperAdminOrStaff`); anonymous, guests and hotel owners get 401/403. Read-only: POST/PUT/PATCH/DELETE return 405
+- Query: `actor_id`, `target_user_id`, `target_booking_id` (integers, else 400), `action`, `page`, `page_size` (default 50, max 200)
+- Response: paginated `{ count, next, previous, results: [{ id, actor_id, action, target_user_id, target_booking_id, created_at }] }`, newest first
+- `action` values: `customer_list` (GET /customers/), `customer_view` (GET /customers/{id}/, target_user_id), `booking_lookup` (GET /bookings/lookup/, target_booking_id + target_user_id = guest), `user_list` (GET /users/), `status_users` (GET /status/users/)
+- A row is written only when data was actually returned (2xx); 404s and permission failures write nothing. Reading the log is not recorded
+- Ids only: no names, phones, emails or search terms. Rows cannot be changed or deleted (model and queryset refuse; table `admin_access_log`, migration `admin_panel/0004_admin_access_log`)

@@ -139,6 +139,6 @@ class TestAggregatesInTheDatabase:
             assert get(f'{S}/hotels/{alpha.id}/', year=2026).status_code == 200
 
     def test_users(self, get, status_world, django_assert_max_num_queries):
-        # count, page, total spent for the page's guests
-        with django_assert_max_num_queries(3):
+        # count, page, total spent for the page's guests, the AdminAccessLog insert (R4)
+        with django_assert_max_num_queries(4):
             assert get(f'{S}/users/').status_code == 200

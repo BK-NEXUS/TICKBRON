@@ -4,7 +4,7 @@ Views for admin API endpoints.
 This module contains views for property moderation, user management,
 amenity management, and payment monitoring.
 """
-from rest_framework import routers, viewsets, status
+from rest_framework import routers, serializers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -21,7 +21,7 @@ from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
 from bookings.models import Booking, BookingItem
-from admin_panel.models import InternalNote
+from admin_panel.models import AdminAccessLog, InternalNote
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
     AdminUserSerializer, AdminUserCreateSerializer,
@@ -212,6 +212,7 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
         """Custom list method to handle both router and custom URL."""
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        AdminAccessLog.record(request.user, 'user_list')
         return Response(serializer.data)
 
 
@@ -444,7 +445,10 @@ def admin_booking_lookup_by_reference(request):
             } if booking.property.owner else None,
         },
     }
-    
+
+    AdminAccessLog.record(
+        request.user, 'booking_lookup', target_user_id=booking.guest_id, target_booking_id=booking.id,
+    )
     return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -589,7 +593,8 @@ def admin_customers_directory(request):
 
     # Serialize paginated data
     serializer = AdminCustomerSerializer(paginated_data, many=True)
-    
+
+    AdminAccessLog.record(request.user, 'customer_list')
     return paginator.get_paginated_response(serializer.data)
 
 
@@ -704,7 +709,8 @@ def admin_customer_detail(request, customer_id):
         'internal_notes': internal_notes_serializer.data,
         'last_activity': last_activity
     }
-    
+
+    AdminAccessLog.record(request.user, 'customer_view', target_user_id=customer.id)
     return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -929,3 +935,41 @@ def admin_top_bookers_leaderboard(request):
         'limit': limit,
         'leaderboard': leaderboard_data
     }, status=status.HTTP_200_OK)
+
+
+class AdminAccessLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminAccessLog
+        fields = ['id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'created_at']
+        read_only_fields = fields
+
+
+class AdminAccessLogPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_access_log(request):
+    """
+    Staff-only, read-only view of AdminAccessLog, newest first.
+
+    Filters: actor_id, target_user_id, target_booking_id (integers), action.
+    Reading this log is not itself recorded (it holds ids only, no customer data).
+    """
+    entries = AdminAccessLog.objects.all()
+    for name in ('actor_id', 'target_user_id', 'target_booking_id'):
+        value = request.query_params.get(name)
+        if value:
+            if not value.isdigit():
+                return Response({'error': f'{name} must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
+            entries = entries.filter(**{name: int(value)})
+    action = request.query_params.get('action')
+    if action:
+        entries = entries.filter(action=action)
+
+    paginator = AdminAccessLogPagination()
+    page = paginator.paginate_queryset(entries, request)
+    return paginator.get_paginated_response(AdminAccessLogSerializer(page, many=True).data)

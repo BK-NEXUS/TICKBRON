@@ -17,6 +17,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdminOrStaff
 from bookings.stats import (
     InvalidPeriod, available_years, counted_bookings, counted_q, metric_annotations, metric_totals,
@@ -375,4 +376,5 @@ def status_users(request):
     ]
     response = paginator.get_paginated_response(results)
     response.data['period'] = period
+    AdminAccessLog.record(request.user, 'status_users')
     return response
