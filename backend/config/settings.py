@@ -338,3 +338,37 @@ VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 # SMS Configuration
 # Defaults to False: test mode returns the OTP code in the API response.
 SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'False').lower() == 'true'
+
+
+# Production refuses to start on insecure settings (R4 security review).
+# Local development (DEBUG=True) and the test run keep their defaults.
+_PLACEHOLDER_SECRET_KEYS = {
+    'django-insecure-change-this-in-production',
+    'your-secret-key-here-change-in-production',
+}
+
+
+def _production_config_errors():
+    errors = []
+    if SMS_TEST_MODE:
+        errors.append('SMS_TEST_MODE must be False when DEBUG is False (it returns OTP codes in API responses)')
+    if PAYMENT_TEST_MODE:
+        errors.append('PAYMENT_TEST_MODE must be False when DEBUG is False (payments would not reach a provider)')
+    if (SECRET_KEY in _PLACEHOLDER_SECRET_KEYS or SECRET_KEY.startswith('django-insecure-')
+            or len(SECRET_KEY) < 50):
+        errors.append('SECRET_KEY must be a random value of at least 50 characters, not a placeholder')
+    if '*' in ALLOWED_HOSTS:
+        errors.append("ALLOWED_HOSTS must list the real host names, not '*'")
+    for name in ('CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS'):
+        raw = os.getenv(name, '').strip()
+        if not raw:
+            errors.append(f'{name} must be set (comma-separated https:// origins)')
+        elif any(not origin.strip().startswith('https://') for origin in raw.split(',')):
+            errors.append(f'{name} may only contain https:// origins')
+    return errors
+
+
+if not DEBUG and not TESTING:
+    _errors = _production_config_errors()
+    if _errors:
+        raise ValueError('Insecure production settings:\n- ' + '\n- '.join(_errors))
