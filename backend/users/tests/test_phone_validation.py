@@ -141,7 +141,7 @@ class TestAdminCreateHotelOwner:
     def payload(self, phone):
         return {
             'email': 'owner@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
-            'phone_number': phone, 'password': 'OwnerPassword#123', 'password_confirm': 'OwnerPassword#123',
+            'phone_number': phone, 'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
         }
 
     @pytest.fixture

@@ -41,7 +41,7 @@ class BasePaymentAdapter:
     """
     
     def __init__(self):
-        self.test_mode = getattr(settings, 'PAYMENT_TEST_MODE', True)
+        self.test_mode = getattr(settings, 'PAYMENT_TEST_MODE', False)
         self.provider_name = self.__class__.__name__.replace('Adapter', '').lower()
     
     def _is_test_mode(self) -> bool:

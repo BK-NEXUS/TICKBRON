@@ -76,7 +76,13 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'amount': 'Payment amount must match booking total'}
             )
-        
+
+        # The amount alone is not enough: 300 UZS is not 300 USD
+        if attrs.get('currency') != booking.currency:
+            raise serializers.ValidationError(
+                {'currency': 'Payment currency must match booking currency'}
+            )
+
         return attrs
 
 

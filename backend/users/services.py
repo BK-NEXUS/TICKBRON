@@ -26,7 +26,7 @@ class OTPService:
     """
     
     def __init__(self):
-        self.test_mode = getattr(settings, 'SMS_TEST_MODE', True)
+        self.test_mode = getattr(settings, 'SMS_TEST_MODE', False)
     
     def _is_test_mode(self) -> bool:
         """Check if SMS test mode is enabled."""

@@ -56,8 +56,11 @@ class StrongPasswordValidator:
     - No common patterns or sequences
     """
     
-    def __init__(self, min_length=12):
+    def __init__(self, min_length=12, forbid_sequences=True):
         self.min_length = min_length
+        # Off in AUTH_PASSWORD_VALIDATORS: any "abc"/"456" run would also reject
+        # long random passphrases, and length + blocklist matter more
+        self.forbid_sequences = forbid_sequences
     
     def validate(self, password, user=None):
         """
@@ -109,7 +112,7 @@ class StrongPasswordValidator:
                 )
         
         # Check for sequential characters
-        if self._has_sequential_chars(password):
+        if self.forbid_sequences and self._has_sequential_chars(password):
             raise ValidationError(
                 _("Password contains sequential characters and is not secure."),
                 code='password_sequential',

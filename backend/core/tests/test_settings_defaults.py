@@ -45,7 +45,11 @@ def _cache_backend(**env_overrides):
     return _load_settings("settings.CACHES['default']['BACKEND']", **env_overrides)
 
 
-PRODUCTION_ENV = {'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key', 'ALLOWED_HOSTS': 'example.com'}
+# Must pass the production startup checks (core/tests/test_r4_production_config.py)
+PRODUCTION_ENV = {
+    'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
+    'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
+}
 
 
 def test_provider_test_modes_default_to_false():

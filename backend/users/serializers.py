@@ -3,9 +3,27 @@ Serializers for user models.
 
 This module contains serializers for the User model to be used in API endpoints.
 """
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from users.models import User
 from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
+
+
+def validate_new_password(attrs):
+    """
+    Run AUTH_PASSWORD_VALIDATORS on attrs['password'] and raise a 400 under 'password'.
+
+    The other attrs (email, names) feed the similarity check, through an unsaved user.
+    """
+    user = User(**{
+        field: attrs[field] for field in ('email', 'full_name', 'first_name', 'last_name')
+        if attrs.get(field)
+    })
+    try:
+        validate_password(attrs['password'], user=user)
+    except DjangoValidationError as e:
+        raise serializers.ValidationError({'password': list(e.messages)})
 
 
 def validate_phone_number_format(value):
@@ -87,6 +105,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        validate_new_password(attrs)
         return attrs
     
     def create(self, validated_data):

@@ -19,7 +19,8 @@ from admin_panel.views import (
     admin_internal_note_create,
     admin_internal_note_detail,
     admin_registration_statistics,
-    admin_top_bookers_leaderboard
+    admin_top_bookers_leaderboard,
+    admin_access_log,
 )
 
 app_name = 'admin_panel'
@@ -47,6 +48,7 @@ urlpatterns = [
     path('status/countries/<str:country>/regions/<str:region>/hotels/', status_hotels, name='admin-status-hotels'),
     path('status/hotels/<int:property_id>/', status_hotel_detail, name='admin-status-hotel-detail'),
     path('status/users/', status_users, name='admin-status-users'),
+    path('audit-log/', admin_access_log, name='admin-access-log'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),
