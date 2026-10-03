@@ -70,7 +70,7 @@ Severity: Critical / High (fixed now, each with a proof test that failed before 
 - L-4 `PUT/PATCH /me/favorites/{id}/` can switch `property` to an inactive property (`accounts/serializers.py:28-31`, the active check is only on create). Open.
 - L-5 Validation errors are logged with `str(exc)` (`common/exception_handlers.py:75`) and may contain submitted values (e.g. an email). Fix: log field names only. Open.
 - L-6 Uploaded photos keep the original file name (`common/storage.py:224`). Fix: random file names. Open.
-- L-7 `manage.py check --deploy` reported 63 drf-spectacular schema warnings (W001/W002, documentation only). FIXED (SCHEMA_COMMIT).
+- L-7 `manage.py check --deploy` reported 63 drf-spectacular schema warnings (W001/W002, documentation only). FIXED 9b129e9.
 
 ## Verified OK (with evidence)
 - Every endpoint and role: `core/tests/test_r4_permission_matrix.py` walks the URL resolver (164 method/path pairs x 5 roles: anonymous, guest, hotel owner, staff, super-admin), fails on any unclassified new route. Geography admin and create-hotel-owner are super-admin only; Status, customers, support lookup, audit log are staff-only; partner incl. room-inventory/blocks/status is owner/staff.
