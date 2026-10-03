@@ -11,9 +11,9 @@ This `.ai` directory is the persistent memory and coordination layer for AI codi
 Chat history is NOT required to resume work.
 
 ## Mandatory cycle
-READ → SYNC → AUDIT → SCOPE LOCK → IMPLEMENT → TEST → SECURITY CHECK → CONTRACT CHECK → CHECKPOINT → COMMIT → PUSH → STOP
+READ → SYNC → AUDIT → (PLAN + APPROVAL, gated items only) → SCOPE LOCK → IMPLEMENT → TEST → SECURITY CHECK → CONTRACT CHECK → CHECKPOINT → COMMIT → PUSH → NEXT ITEM
 
-An agent must never silently continue into another checkpoint.
+Next item rule (2026-10-03, approved by Kolya): After an item is merged and pushed, continue with the next BACKEND item in `.ai/ROADMAP.md` automatically. Approval gate: an item that touches money (prices, currencies, payments, refunds), security or database migrations starts with a plan in `.ai/PLAN_<item>.md` (e.g. `PLAN_R6.md`); push it, show the owner a short summary, and WAIT for the owner's explicit approval before changing code. Everything else continues without waiting.
 
 ## Ownership and workflow
 - Backend owner: Kolya. Frontend owner: Baxram.
