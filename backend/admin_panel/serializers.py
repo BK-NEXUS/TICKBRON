@@ -39,15 +39,15 @@ class AdminPropertySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'owner', 'approved_at', 'approved_by', 'created_at', 'updated_at']
     
-    def get_owner_email(self, obj):
+    def get_owner_email(self, obj) -> str | None:
         """Get owner email."""
         return obj.owner.email if obj.owner else None
     
-    def get_owner_name(self, obj):
+    def get_owner_name(self, obj) -> str | None:
         """Get owner full name."""
         return obj.owner.get_full_name() if obj.owner else None
     
-    def get_full_address(self, obj):
+    def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
         return obj.get_full_address()
 
@@ -106,11 +106,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
     
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         """Get user full name."""
         return obj.get_full_name()
     
-    def get_role_name(self, obj):
+    def get_role_name(self, obj) -> str | None:
         """Get role name."""
         return obj.role.name if obj.role else None
 
@@ -271,7 +271,7 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
     
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         """Get user full name."""
         return obj.get_full_name()
 

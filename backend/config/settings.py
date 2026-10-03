@@ -272,6 +272,14 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'TICKBRON API Documentation',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Several models have a field named "status" with different choices
+    'ENUM_NAME_OVERRIDES': {
+        'BookingStatusEnum': 'bookings.models.Booking.STATUS_CHOICES',
+        'PaymentTransactionStatusEnum': 'payments.models.PaymentTransaction.STATUS_CHOICES',
+        'WebhookEventStatusEnum': 'payments.models.WebhookEvent.STATUS_CHOICES',
+        'PropertyStatusEnum': 'properties.models.Property.STATUS_CHOICES',
+        'ReviewStatusEnum': 'accounts.models.Review.STATUS_CHOICES',
+    },
 }
 
 # Redis Configuration

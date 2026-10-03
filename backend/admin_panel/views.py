@@ -4,6 +4,8 @@ Views for admin API endpoints.
 This module contains views for property moderation, user management,
 amenity management, and payment monitoring.
 """
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import routers, serializers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -95,6 +97,7 @@ class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
         ).select_related('owner', 'property_type', 'approved_by')
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_approve(request, property_id):
@@ -140,6 +143,7 @@ def admin_property_approve(request, property_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['PATCH'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_region(request, property_id):
@@ -172,6 +176,7 @@ def admin_property_region(request, property_id):
     return Response(AdminPropertySerializer(property).data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_suspend(request, property_id):
@@ -216,6 +221,7 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsSuperAdmin])
 def admin_create_hotel_owner(request):
@@ -284,6 +290,7 @@ class AdminAmenityViewSet(viewsets.ModelViewSet):
         return Amenity.objects.filter(is_deleted=False).select_related('category')
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_payment_transactions(request):
@@ -328,6 +335,7 @@ def admin_payment_transactions(request):
     return Response(transactions_data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_booking_lookup_by_reference(request):
@@ -461,6 +469,7 @@ class AdminCustomerPagination(PageNumberPagination):
     max_page_size = 100
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT, operation_id='v1_admin_panel_customers_list')
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_customers_directory(request):
@@ -598,6 +607,7 @@ def admin_customers_directory(request):
     return paginator.get_paginated_response(serializer.data)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_customer_detail(request, customer_id):
@@ -714,6 +724,7 @@ def admin_customer_detail(request, customer_id):
     return Response(response_data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_internal_note_create(request, customer_id):
@@ -746,6 +757,7 @@ def admin_internal_note_create(request, customer_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_internal_note_detail(request, customer_id, note_id):
@@ -782,6 +794,7 @@ def admin_internal_note_detail(request, customer_id, note_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_registration_statistics(request):
@@ -857,6 +870,7 @@ def admin_registration_statistics(request):
         }, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_top_bookers_leaderboard(request):
@@ -950,6 +964,7 @@ class AdminAccessLogPagination(PageNumberPagination):
     max_page_size = 200
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_access_log(request):

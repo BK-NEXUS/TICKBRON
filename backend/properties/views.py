@@ -4,6 +4,8 @@ Views for TICKBRON property endpoints.
 import sys
 import os
 import logging
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
@@ -35,6 +37,7 @@ class SearchRateThrottle(AnonRateThrottle):
         return super().allow_request(request, view)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @throttle_classes([SearchRateThrottle])
@@ -122,6 +125,7 @@ def property_search(request):
     return Response(response_data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @throttle_classes([SearchRateThrottle])
@@ -173,6 +177,7 @@ def property_filter_options(request):
     }, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def property_search_suggestions(request):
@@ -213,6 +218,7 @@ def property_search_suggestions(request):
     return Response({'suggestions': suggestions}, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def property_detail(request, property_id):
@@ -254,6 +260,7 @@ def property_detail(request, property_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def property_availability(request, property_id):
@@ -308,6 +315,7 @@ def property_availability(request, property_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def property_quote(request, property_id):

@@ -4,6 +4,8 @@ Views for TICKBRON payment API endpoints.
 import sys
 import os
 from decimal import Decimal, InvalidOperation
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, serializers, viewsets, status
 from rest_framework.decorators import (
     action, api_view, authentication_classes, permission_classes, throttle_classes
@@ -481,6 +483,7 @@ class PaymentAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @csrf_exempt
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])

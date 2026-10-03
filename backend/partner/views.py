@@ -5,6 +5,8 @@ This module contains views for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
 from django.core.exceptions import ValidationError as DjangoValidationError
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import routers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
@@ -60,6 +62,8 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset to properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return Property.objects.filter(
             owner=self.request.user,
             is_deleted=False
@@ -87,6 +91,8 @@ class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset to room types in properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return RoomType.objects.filter(
             property__owner=self.request.user,
             is_deleted=False
@@ -104,6 +110,8 @@ class PartnerRatePlanViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset to rate plans in properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return RatePlan.objects.filter(
             room_type__property__owner=self.request.user,
             is_deleted=False
@@ -121,6 +129,8 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset to date inventory in properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         queryset = DateInventory.objects.filter(
             rate_plan__room_type__property__owner=self.request.user,
             is_deleted=False
@@ -202,6 +212,8 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter queryset to room inventory in properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         queryset = RoomInventory.objects.filter(
             room_type__property__owner=self.request.user,
             is_deleted=False
@@ -291,6 +303,8 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter queryset to blocks on room types in properties owned by the authenticated user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         queryset = RoomBlock.objects.filter(
             room_type__property__owner=self.request.user,
             is_deleted=False
@@ -309,6 +323,7 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
         instance.release()
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsHotelOwner])
 def partner_property_photo_upload(request, property_id):
@@ -349,6 +364,7 @@ def partner_property_photo_upload(request, property_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_bookings(request):

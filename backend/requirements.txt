@@ -1,7 +1,7 @@
-# Core Django
-Django==4.2.7
-djangorestframework==3.14.0
-django-cors-headers==4.3.1
+# Core Django (5.2 LTS: 4.2 reached end of life; upgraded in the R4 security review)
+Django==5.2.17
+djangorestframework==3.18.1
+django-cors-headers==4.9.0
 
 # Database (PostgreSQL; 2.9.10+ ships Python 3.13 wheels for Windows)
 psycopg2-binary==2.9.10
@@ -12,20 +12,20 @@ Pillow
 # Redis & Celery
 redis==5.0.1
 celery==5.3.4
-django-redis==5.4.0
+django-redis==6.0.0
 
 # Security
 django-ratelimit==4.1.0
-cryptography==41.0.7
+cryptography==50.0.2
 
 # Phone number validation (E.164)
 phonenumbers==9.0.40
 
 # Environment & Configuration
-python-dotenv==1.0.0
+python-dotenv==1.2.4
 
 # API Documentation
-drf-spectacular==0.26.5
+drf-spectacular==0.30.0
 
 # Testing
 pytest==9.1.1
@@ -33,9 +33,9 @@ pytest-django==4.14.0
 pytest-cov==4.1.0
 
 # Code Quality
-black==23.11.0
+black==26.5.1
 flake8==6.1.0
 isort==5.12.0
 
 # Development
-django-debug-toolbar==4.2.0
+django-debug-toolbar==6.0.0

@@ -31,6 +31,8 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Return favorites for the current user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return Favorite.objects.filter(
             user=self.request.user,
             is_deleted=False
@@ -111,6 +113,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Return reviews based on user role."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         user = self.request.user
         
         # Regular users can only see their own reviews
@@ -258,6 +262,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Return notifications for the current user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return Notification.objects.filter(
             user=self.request.user,
             is_deleted=False
@@ -318,6 +324,8 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         """Return account history for the current user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return AccountHistory.objects.filter(
             user=self.request.user,
             is_deleted=False

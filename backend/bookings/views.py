@@ -2,6 +2,8 @@
 Views for TICKBRON booking endpoints.
 """
 import logging
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -31,6 +33,8 @@ class BookingViewSet(mixins.CreateModelMixin,
     
     def get_queryset(self):
         """Return bookings for the current user."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+            return self.get_serializer_class().Meta.model.objects.none()
         return Booking.objects.filter(
             guest=self.request.user,
             is_deleted=False
@@ -132,6 +136,7 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Response(serializer.data)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def booking_cancel(request, booking_id):

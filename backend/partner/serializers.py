@@ -40,11 +40,11 @@ class PartnerPropertySerializer(GeographyRefsMixin, serializers.ModelSerializer)
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
         extra_kwargs = {'city': {'required': False}, 'country': {'required': False}}
     
-    def get_full_address(self, obj):
+    def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
         return obj.get_full_address()
     
-    def get_name(self, obj):
+    def get_name(self, obj) -> str:
         return obj.display_name()
 
 
