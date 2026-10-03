@@ -11,7 +11,7 @@ from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
 from users.serializers import (
-    UserSerializer, validate_phone_number_format, validate_unique_phone_number
+    UserSerializer, validate_new_password, validate_phone_number_format, validate_unique_phone_number
 )
 from admin_panel.models import InternalNote
 
@@ -144,6 +144,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'password_confirm': 'Passwords do not match'
             })
+        validate_new_password(data)
         return data
     
     def create(self, validated_data):

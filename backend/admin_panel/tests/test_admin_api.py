@@ -207,8 +207,8 @@ class AdminUserTests(TestCase):
             'first_name': 'Hotel',
             'last_name': 'Owner',
             'phone_number': '+998901234567',
-            'password': 'testpassword123',
-            'password_confirm': 'testpassword123'
+            'password': 'Owner#Secret2026',
+            'password_confirm': 'Owner#Secret2026'
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
@@ -256,8 +256,8 @@ class AdminUserTests(TestCase):
             'email': 'hotelowner4@example.com',
             'first_name': 'Hotel',
             'last_name': 'Owner',
-            'password': 'testpassword123',
-            'password_confirm': 'testpassword123'
+            'password': 'Owner#Secret2026',
+            'password_confirm': 'Owner#Secret2026'
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
