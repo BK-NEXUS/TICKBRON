@@ -10,12 +10,14 @@ from rest_framework.test import APIClient
 
 from properties.models import DateInventory, Property, PropertyTranslation, PropertyType, RatePlan, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
 
 SEARCH_URL = '/api/v1/properties/search/'
 
 
 class TestSearchWithDates(TestCase):
     def setUp(self):
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         owner = User.objects.create_user(email='owner@example.com', password='x')
         hotel = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(

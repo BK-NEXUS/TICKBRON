@@ -954,7 +954,7 @@ def admin_top_bookers_leaderboard(request):
 class AdminAccessLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminAccessLog
-        fields = ['id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'created_at']
+        fields = ['id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'created_at']
         read_only_fields = fields
 
 

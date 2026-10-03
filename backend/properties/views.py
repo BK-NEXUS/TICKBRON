@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
+from currency.rates import uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
@@ -108,8 +109,9 @@ def property_search(request):
     
     # Serialize results
     results_serializer = PropertySearchResultSerializer(
-        search_results['results'], 
-        many=True
+        search_results['results'],
+        many=True,
+        context={'rate_request': request}
     )
     
     response_data = {
@@ -255,7 +257,7 @@ def property_detail(request, property_id):
         )
     
     # Serialize property with all related data
-    serializer = PropertyDetailSerializer(property)
+    serializer = PropertyDetailSerializer(property, context={'rate_request': request})
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -379,4 +381,5 @@ def property_quote(request, property_id):
         'currency': quote.currency,
         'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in quote.nights],
         'total_price': f'{quote.total_price:.2f}',
+        **uzs_amount(request, quote.total_price, quote.currency, 'uzs_total'),
     }, status=status.HTTP_200_OK)

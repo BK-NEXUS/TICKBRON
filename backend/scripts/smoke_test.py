@@ -149,6 +149,15 @@ class APISmokeTestV2:
         
         print("Created room type, rate plan, and inventory")
 
+        # R6: a USD hotel can only be booked once an exchange rate exists
+        from currency.cbu import tashkent_today
+        from currency.models import ExchangeRate
+        if not ExchangeRate.objects.filter(currency='USD', status='accepted').exists():
+            ExchangeRate.objects.create(currency='USD', rate=Decimal('12000.00'), nominal=1, source='demo',
+                                        status='accepted', rate_date=tashkent_today(),
+                                        note='smoke_test: local only, not a real rate')
+            print("Stored a demo USD rate (run fetch_exchange_rates for the real one)")
+
     def test_registration(self):
         """Test user registration with fresh unique user"""
         print("\n=== STEP 1: USER REGISTRATION ===")

@@ -10,6 +10,7 @@ from datetime import date, timedelta
 from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory
 from bookings.models import Booking, BookingItem
+from currency.testing import make_usd_rate
 
 
 class BookingViewTests(APITestCase):
@@ -17,6 +18,7 @@ class BookingViewTests(APITestCase):
     
     def setUp(self):
         """Set up test data."""
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.client = APIClient()
         
         self.user = User.objects.create_user(

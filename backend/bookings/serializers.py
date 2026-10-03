@@ -2,10 +2,13 @@
 Serializers for TICKBRON booking endpoints.
 """
 import logging
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.serializers import validate_phone_number_format
+from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
 
 logger = logging.getLogger('tickbron')
@@ -32,7 +35,8 @@ class BookingSerializer(serializers.ModelSerializer):
     booking_items = BookingItemSerializer(many=True, read_only=True)
     guest_name = serializers.CharField(source='guest.get_full_name', read_only=True)
     property_name = serializers.CharField(source='property.display_name', read_only=True)
-    
+    exchange_rate = serializers.SerializerMethodField()
+
     class Meta:
         model = Booking
         fields = [
@@ -41,11 +45,22 @@ class BookingSerializer(serializers.ModelSerializer):
             'number_of_nights', 'guest_count', 'total_price', 'currency',
             'special_requests', 'confirmation_code', 'cancelled_at',
             'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at',
-            'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children'
+            'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children',
+            'charge_amount', 'charge_currency', 'exchange_rate',
         ]
         # Output-only serializer: bookings are created via BookingCreateSerializer
         # and changed only through model methods, never written from request data.
         read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_exchange_rate(self, obj):
+        """The rate the charge was computed with (R6 snapshot), in the quote's format."""
+        return {
+            'rate': f'{obj.exchange_rate:.6f}',
+            'date': obj.exchange_rate_date.isoformat() if obj.exchange_rate_date else None,
+            'source': obj.exchange_rate_source,
+            'stale': obj.exchange_rate_stale,
+        }
 
 
 class BookingCreateSerializer(serializers.Serializer):
@@ -190,6 +205,8 @@ class BookingCreateSerializer(serializers.Serializer):
                 children=validated_data.get('children', [])
             )
             return booking
+        except ExchangeRateUnavailable:
+            raise
         except ValidationError as e:
             # Convert Django ValidationError to DRF ValidationError
             if hasattr(e, 'message_dict'):

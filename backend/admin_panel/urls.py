@@ -4,6 +4,7 @@ URL configuration for admin app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
+from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
     status_countries, status_hotel_detail, status_hotels, status_regions, status_users,
@@ -49,6 +50,9 @@ urlpatterns = [
     path('status/hotels/<int:property_id>/', status_hotel_detail, name='admin-status-hotel-detail'),
     path('status/users/', status_users, name='admin-status-users'),
     path('audit-log/', admin_access_log, name='admin-access-log'),
+    path('exchange-rates/', exchange_rate_list, name='admin-exchange-rates'),
+    path('exchange-rates/status/', exchange_rate_status, name='admin-exchange-rate-status'),
+    path('exchange-rates/<int:rate_id>/accept/', exchange_rate_accept, name='admin-exchange-rate-accept'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),

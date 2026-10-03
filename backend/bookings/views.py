@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
+from currency.rates import ExchangeRateUnavailable
 from .models import Booking
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
@@ -73,6 +74,12 @@ class BookingViewSet(mixins.CreateModelMixin,
             return Response(
                 response_serializer.data,
                 status=status.HTTP_201_CREATED
+            )
+        except ExchangeRateUnavailable as e:
+            # USD-priced hotel and no rate yet: nothing was reserved (R6 decision A)
+            return Response(
+                {'error': 'Exchange rate unavailable', 'code': e.default_code, 'details': str(e.detail)},
+                status=e.status_code
             )
         except ValidationError as e:
             # Handle Django ValidationError

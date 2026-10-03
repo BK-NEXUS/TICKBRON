@@ -10,10 +10,21 @@ from decimal import Decimal
 from typing import Optional
 
 from django.conf import settings
+from django.core.cache import cache
+from rest_framework import status
+from rest_framework.exceptions import APIException
 
 from common.money import CHARGE_CURRENCY
 
 logger = logging.getLogger(__name__)
+
+
+class ExchangeRateUnavailable(APIException):
+    """No accepted rate yet for a non-UZS property: it cannot be charged in UZS (R6 decision A)."""
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_code = 'exchange_rate_unavailable'
+    default_detail = ("This hotel is priced in a foreign currency and today's exchange rate is not available "
+                      'yet, so it cannot be booked right now. Please try again later.')
 
 
 @dataclass(frozen=True)
@@ -48,7 +59,8 @@ def current_rate(currency, today=None):
     if row is None:
         return None
     stale = row.rate_date < today - timedelta(days=settings.FX_STALE_AFTER_DAYS)
-    if stale:
+    # Logged at most once per hour and rate date (cache.add is a no-op while the key exists)
+    if stale and cache.add(f'fx-stale-warning:{currency}:{row.rate_date}', 1, 3600):
         logger.warning(f'{currency} exchange rate of {row.rate_date} is stale (older than '
                        f'{settings.FX_STALE_AFTER_DAYS} days); check the CBU fetch task')
     return RateInfo(currency, row.rate, row.rate_date, row.source, stale, row.id)
@@ -56,7 +68,23 @@ def current_rate(currency, today=None):
 
 def rate_for_request(request, currency):
     """current_rate() cached on the request: one lookup per request, never per row."""
-    cache = request.__dict__.setdefault('_tickbron_rates', {})
-    if currency not in cache:
-        cache[currency] = current_rate(currency)
-    return cache[currency]
+    rates = request.__dict__.setdefault('_tickbron_rates', {})
+    if currency not in rates:
+        rates[currency] = current_rate(currency)
+    return rates[currency]
+
+
+def uzs_amount(request, amount, currency, key):
+    """
+    `amount` in `currency` shown in so'm with the rate behind it, for API responses:
+    {key: "2354590.00" or None, 'exchange_rate': {...} or None}. UZS needs no rate
+    (exchange_rate None); no accepted rate yet gives None for both.
+    """
+    from common.money import quantize, to_uzs
+
+    if currency == CHARGE_CURRENCY:
+        return {key: f"{quantize(amount, 'UZS'):.2f}", 'exchange_rate': None}
+    rate = rate_for_request(request, currency)
+    if rate is None:
+        return {key: None, 'exchange_rate': None}
+    return {key: f'{to_uzs(amount, rate.rate):.2f}', 'exchange_rate': rate.as_dict()}

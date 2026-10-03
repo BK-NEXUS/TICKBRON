@@ -25,6 +25,10 @@ from properties.models import (
 from users.models import User
 
 INVENTORY_DAYS = 90
+# R6: the demo hotels are priced in USD and USD hotels cannot be booked without a rate.
+# Used only when no accepted rate exists (offline dev machines, E2E); a real one comes
+# from `python manage.py fetch_exchange_rates`.
+DEMO_USD_RATE = Decimal('12000.00')
 
 DEMO_USERS = [
     {
@@ -88,8 +92,25 @@ class Command(BaseCommand):
             # Geography refs from the text location (only these demo properties)
             map_properties(Property, Country, Region, City,
                            queryset=Property.objects.filter(pk__in=[prop.pk for prop, _ in properties]))
+            demo_rate = self._seed_demo_rate()
 
         self._print_summary(properties)
+        if demo_rate:
+            self.stdout.write(self.style.WARNING(
+                f'No exchange rate yet: stored a DEMO rate of {DEMO_USD_RATE} UZS per USD (source "demo") so the '
+                'USD demo hotels can be booked. Run `python manage.py fetch_exchange_rates` for the real CBU rate.'
+            ))
+
+    def _seed_demo_rate(self):
+        from currency.cbu import tashkent_today
+        from currency.models import ExchangeRate
+
+        if ExchangeRate.objects.filter(currency='USD', status='accepted').exists():
+            return None
+        return ExchangeRate.objects.create(
+            currency='USD', rate=DEMO_USD_RATE, nominal=1, rate_date=tashkent_today(), source='demo',
+            status='accepted', note='seed_demo: local development only, not a real rate',
+        )
 
     def _seed_users(self):
         owner_role, _ = Role.objects.get_or_create(

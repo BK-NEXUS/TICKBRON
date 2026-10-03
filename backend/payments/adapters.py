@@ -8,11 +8,13 @@ import hmac
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone as dt_timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.conf import settings
 from django.utils import timezone
 from typing import Dict, Optional, Tuple
 import logging
+
+from common.money import som_to_tiyin, tiyin_to_som
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,27 @@ class BasePaymentAdapter:
         """Check if payment test mode is enabled."""
         return self.test_mode
     
+    # Amounts inside TICKBRON are Decimal so'm (the booking's charge snapshot). Each
+    # provider's own unit exists only at this edge: requests are converted with
+    # to_provider_amount, webhook amounts come back through from_provider_amount.
+
+    def to_provider_amount(self, amount: Decimal):
+        if isinstance(amount, float):
+            raise TypeError('Money must be Decimal, not float')
+        return f'{Decimal(amount):.2f}'
+
+    def from_provider_amount(self, value) -> Optional[Decimal]:
+        """The provider's amount as Decimal so'm, or None when it is not a valid amount."""
+        if value is None or isinstance(value, (bool, float)):
+            return None
+        try:
+            amount = Decimal(str(value).strip())
+        except (InvalidOperation, ValueError):
+            return None
+        if not amount.is_finite() or amount < 0:
+            return None
+        return amount
+
     def has_webhook_secret(self) -> bool:
         """True if a non-blank webhook secret is configured (webhooks fail closed otherwise)."""
         return bool(str(getattr(self, 'secret_key', '') or '').strip())
@@ -244,6 +267,16 @@ class PaymeAdapter(BasePaymentAdapter):
         super().__init__()
         self.merchant_id = getattr(settings, 'PAYME_MERCHANT_ID', '')
         self.secret_key = getattr(settings, 'PAYME_SECRET_KEY', '')
+
+    def to_provider_amount(self, amount: Decimal) -> int:
+        """Payme Merchant API amounts are tiyin ("Сумма платежа (в тийинах)"): whole so'm x 100."""
+        return som_to_tiyin(amount)
+
+    def from_provider_amount(self, value) -> Optional[Decimal]:
+        try:
+            return tiyin_to_som(value)
+        except ValueError:
+            return None
     
     def initiate_payment(self, booking, amount: Decimal, currency: str,
                        payment_method_token: Optional[str] = None,
@@ -260,7 +293,7 @@ class PaymeAdapter(BasePaymentAdapter):
         # Prepare Payme-specific request
         request_data = {
             'merchant_id': self.merchant_id,
-            'amount': int(amount * 100),  # Payme uses smallest currency unit
+            'amount': self.to_provider_amount(amount),  # tiyin
             'currency': currency,
             'booking_id': booking.id,
             'description': f"Booking {booking.confirmation_code}",
@@ -322,7 +355,7 @@ class PaymeAdapter(BasePaymentAdapter):
             'provider_event_id': payload.get('id'),
             'provider_transaction_id': payload.get('transaction_id'),
             'status': payload.get('status'),
-            'amount': payload.get('amount'),
+            'amount': self.from_provider_amount(payload.get('amount')),  # so'm
             'currency': payload.get('currency'),
             'timestamp': timestamp if 'timestamp' in payload else None,
         }
@@ -335,6 +368,8 @@ class ClickAdapter(BasePaymentAdapter):
     Click payment provider adapter.
     
     Implements Click-specific signature validation and API communication.
+    Click amounts are so'm as a decimal number ("1000.0"), so the base class
+    conversion applies (never a float).
     """
     
     def __init__(self):
@@ -359,7 +394,7 @@ class ClickAdapter(BasePaymentAdapter):
         request_data = {
             'service_id': self.service_id,
             'merchant_id': self.merchant_id,
-            'amount': float(amount),
+            'amount': self.to_provider_amount(amount),  # so'm, "1000.00"
             'currency': currency,
             'booking_id': booking.id,
             'description': f"Booking {booking.confirmation_code}",
@@ -439,7 +474,7 @@ class ClickAdapter(BasePaymentAdapter):
             'provider_event_id': payload.get('payment_id'),
             'provider_transaction_id': payload.get('transaction_id'),
             'status': payload.get('status'),
-            'amount': payload.get('amount'),
+            'amount': self.from_provider_amount(payload.get('amount')),  # so'm
             'currency': payload.get('currency'),
             'timestamp': timestamp if 'timestamp' in payload else None,
         }

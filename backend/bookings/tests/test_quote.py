@@ -12,6 +12,7 @@ from rest_framework.test import APIClient
 from bookings.models import Booking
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
 
 
 @pytest.fixture
@@ -77,6 +78,7 @@ class TestQuote:
         assert response.data['total_price'] == '378.00'
 
     def test_quote_equals_the_amount_charged(self, stay):
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         shown = quote(stay, 1, 4).data['total_price']
         booking = Booking.create_booking(
             guest=stay['guest'], property_obj=stay['property'], room_type=stay['room'],

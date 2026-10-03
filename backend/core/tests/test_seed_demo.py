@@ -82,3 +82,34 @@ def test_refuses_to_run_without_debug(settings):
     with pytest.raises(CommandError):
         call_command('seed_demo', stdout=StringIO())
     assert not User.objects.filter(email='admin@tickbron.demo').exists()
+
+
+@pytest.mark.django_db
+class TestSeedDemoExchangeRate:
+    """R6: the demo hotels are priced in USD, so a local database needs a rate to book them."""
+
+    @pytest.fixture(autouse=True)
+    def debug_on(self, settings):
+        settings.DEBUG = True
+
+    def test_demo_rate_when_none_exists(self):
+        from currency.models import ExchangeRate
+        from currency.rates import current_rate
+
+        output = run_seed()
+
+        rate = current_rate('USD')
+        assert rate is not None and rate.source == 'demo'
+        assert 'fetch_exchange_rates' in output
+        run_seed()
+        assert ExchangeRate.objects.filter(source='demo').count() == 1
+
+    def test_real_rate_is_left_alone(self):
+        from decimal import Decimal
+        from currency.cbu import tashkent_today
+        from currency.models import ExchangeRate
+
+        ExchangeRate.objects.create(currency='USD', rate=Decimal('11772.95'), nominal=1, source='cbu.uz',
+                                    status='accepted', rate_date=tashkent_today())
+        run_seed()
+        assert not ExchangeRate.objects.filter(source='demo').exists()

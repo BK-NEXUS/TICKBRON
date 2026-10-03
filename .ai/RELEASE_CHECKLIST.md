@@ -244,3 +244,26 @@ What the web server (nginx or similar, in front of both the SPA and `/api/`) mus
 - [ ] Visa: `VISA_API_KEY`, `VISA_SECRET_KEY` (card payments must use provider tokenization; card data never touches our backend)
 - [ ] Eskiz (SMS for OTP): API credentials and sender id; until then OTP login cannot work in production (`SMS_TEST_MODE` must stay False)
 
+
+## Currency and exchange rates (R6, 2026-10-03)
+
+Hotels are priced in USD or UZS; guests are always charged in UZS (Payme and Click take only UZS). A USD hotel cannot be booked until an exchange rate exists (503 `exchange_rate_unavailable`, nothing reserved).
+
+### First deploy (once)
+- [ ] Backup first: `pg_dump -Fc` (the R6 migrations add the booking charge snapshot and backfill every existing booking)
+- [ ] `python manage.py migrate`. The first R6 migration (`currency.0001`) STOPS with nothing changed if any property, room type or rate plan is priced in a currency other than USD/UZS, and lists them. Fix those rows (decide the real USD or UZS price with the hotel owner), then run `migrate` again.
+- [ ] `python manage.py fetch_exchange_rates` right after the migration: stores today's CBU USD rate so USD hotels can be booked at once. It prints the rate, or why it failed. The server must reach `https://cbu.uz` (outbound HTTPS).
+- [ ] Celery **beat** and a worker are running: `currency.tasks.fetch_exchange_rates` runs daily at 09:00 and 18:00 Asia/Tashkent (`CELERY_BEAT_SCHEDULE`), with 3 retries 10 minutes apart.
+- [ ] Check `GET /api/v1/admin-panel/exchange-rates/status/` as a super-admin: `rate` set, `stale: false`, `last_error: null`.
+
+### Manual "fetch rate now"
+- `python manage.py fetch_exchange_rates` (same code as the scheduled task; safe to run any time, the same CBU date is stored once).
+
+### Settings (environment, defaults shown)
+- `FX_STALE_AFTER_DAYS=3`: an older rate is still used but marked `stale: true` (quote, booking, status) and logged as a warning.
+- `FX_MAX_CHANGE=0.10`: a new rate more than 10% away from the current one is stored as `rejected` and not used until a super-admin accepts it (`POST /api/v1/admin-panel/exchange-rates/{id}/accept/`, written to the admin audit log with the old and new rate).
+- `FX_MIN_RATE=1000`, `FX_MAX_RATE=100000`: accepted range of so'm per USD; anything outside is rejected.
+- `FX_FETCH_TIMEOUT=10` (seconds).
+
+### When the rate is stale or missing
+- [ ] Look at `last_error` in the status endpoint (network, CBU answer format, rejected jump), run `fetch_exchange_rates` by hand, and if a correct rate was rejected for a real jump, accept it as super-admin.

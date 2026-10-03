@@ -357,6 +357,8 @@ class WebhookProcessor:
         """
         if isinstance(data, datetime):
             return data.isoformat()
+        elif isinstance(data, Decimal):
+            return str(data)  # amounts (so'm) from the adapters
         elif isinstance(data, dict):
             return {k: self._serialize_for_json(v) for k, v in data.items()}
         elif isinstance(data, list):

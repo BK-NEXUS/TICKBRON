@@ -2204,3 +2204,27 @@ Full report: `.ai/SECURITY_REVIEW.md`. Production checklist and server headers: 
 - `npm audit` (read-only, 2026-10-03): 18 vulnerabilities, 3 critical, 11 high, 4 moderate. Critical: `vitest`, `@vitest/ui`, `@vitest/coverage-v8` (UI server file read/exec; dev only; fix: vitest 5.x, major). High: `vite` (path traversal in dev server; fix vite 8.x, major), `minimatch`, `braces`, `micromatch`, `fast-glob`, `globby`, `@typescript-eslint/*` (ReDoS / DoS in dev tooling; `npm audit fix` covers minimatch, globby, @typescript-eslint). Moderate: `esbuild` (dev server), `react-router` / `react-router-dom` (open redirect via backslash in `<Link>`/`useNavigate`; shipped in the bundle; fix 7.18.4, major). Only react-router reaches production users; the rest is development tooling.
 - DONE (merged to master `dc205e1`): 1 Critical (dependencies, Django 5.2.17) and 4 High (payment currency, password rules, insecure production settings, unbounded stay/bulk ranges) fixed with proof tests; refund + cancel_booking; admin access audit log; permission matrix over every route x 5 roles; guest IDOR tests; `check --deploy` no issues. Backend `pytest --create-db`: 1894 passed, 2 skipped. E2E: 12 passed, 1 failed (flow H, waits for R5). Open: 6 Medium, 6 Low (see SECURITY_REVIEW.md).
 - READY FOR FRONTEND: R4 — `POST /payments/transactions/{id}/refund/` (`cancel_booking`, `cancellation_reason`, response `booking_status`); `GET /admin-panel/audit-log/`; stricter password errors on register / create-hotel-owner; 365-night cap on quote, booking and partner bulk ranges.
+
+## R6 currency — IN PROGRESS (2026-10-03, Kolya's agent, branch feat/r6-currency)
+Owner's approved answers and additions: the prompt (decisions A–D, additions 1–6) plus `.ai/PLAN_R6.md`.
+
+### Done (code + tests written; last commit is WIP, full suite NOT green yet)
+- `common/money.py` (USD/UZS list in one place, whole so'm, round once), CBU fetch task + `fetch_exchange_rates` command, FX_* thresholds from env, migration guard (earlier commits).
+- Booking charge snapshot: `charge_currency`, `charge_amount`, `exchange_rate`, `exchange_rate_date`, `exchange_rate_source`, `exchange_rate_stale`. Written in `Booking.create_booking` inside the transaction that locks the inventory, rate read there (`current_rate`). Immutable (`save()` raises PermissionError). USD hotel with no rate → 503 `exchange_rate_unavailable`, nothing reserved. Migrations `bookings/0006-0008` (nullable → backfill 'legacy'/'identity' → NOT NULL).
+- Quote: `uzs_total`, `exchange_rate`. Search/detail/availability: `base_price_uzs_approx`, `uzs_rate` (one rate lookup per request, context key `rate_request`).
+- Payments: amount/currency must equal the booking's `charge_amount`/`charge_currency` (serializer AND `PaymentTransaction.clean`). Adapter edge units: Payme tiyin (confirmed in Payme docs: "Сумма платежа (в тийинах)"), Click so'm decimal string (Click's official integration lib uses `amount: 1000.0`). Webhook amount converted to so'm in `process_webhook`. UZS partial refunds must be whole so'm.
+- Super-admin: `GET /admin-panel/exchange-rates/status/`, `POST /admin-panel/exchange-rates/{id}/accept/` (audit log action `exchange_rate_accept`, new `AdminAccessLog.details` JSON, migration `admin_panel/0005`); staff `GET /admin-panel/exchange-rates/`.
+- `seed_demo` stores a demo USD rate (source `demo`) only if none exists; `scripts/smoke_test.py` the same.
+- Existing tests that book USD hotels call `currency.testing.make_usd_rate()` in their setup; Payme webhook tests send tiyin.
+- Docs: `API_CONTRACT.md` "2026-10-03 Currency" section, `RELEASE_CHECKLIST.md` "Currency and exchange rates (R6)".
+- Dev DB: backup `.ai/backups/tickbron_20261003_152623_before_r6_booking_snapshot.dump`, migrated; Status totals the same before and after (USD 26247.55 / 74 bookings, UZS 396121550.00 / 141).
+
+### TODO next (in this order)
+1. `git pull --rebase`, then from `backend/`: `venv\Scripts\python.exe -m pytest --create-db -q`. The last run was stopped at ~1264 tests with 23 FAILED (not yet looked at). Fix them: no weakened assertions; a test may only change where the R6 contract changed (USD booking needs a rate → `make_usd_rate()`, payment = UZS snapshot, Payme amounts in tiyin).
+2. Check that the new tests fail without the code (TDD proof) at least for the snapshot, payment and accept tests (e.g. `git stash` the code, run, restore).
+3. Split/clean the WIP commit if wanted, then commit `kolya - backend: ...` and push after each commit.
+4. Write checkpoint `.ai/checkpoints/backend_r6.md`, update `.ai/PLAN_R6.md` status to DONE, update `BACKEND_STATE.md`.
+5. Add to this file: `READY FOR FRONTEND: R6 - <endpoints and fields>` with the formatting rules (copy from API_CONTRACT "Display rules for the frontend").
+6. Merge `feat/r6-currency` into master ONLY after the full suite is green with `--create-db`; push; report the counts (passed/failed/skipped). Then stop (owner asked to stop after R6).
+- Not done (decide or skip): availability per rate plan `uzs_total` for a stay (plan 6; the quote endpoint already gives it).
+- Restart any running `runserver` (old code does not know the new NOT NULL booking columns).

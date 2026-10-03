@@ -75,12 +75,15 @@ class AdminAccessLog(models.Model):
         ('booking_lookup', 'Support lookup by booking reference'),
         ('user_list', 'User list'),
         ('status_users', 'Status users list'),
+        ('exchange_rate_accept', 'Accepted a rejected exchange rate'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
     action = models.CharField(max_length=32, choices=ACTION_CHOICES, db_index=True)
     target_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     target_booking_id = models.BigIntegerField(null=True, blank=True)
+    # Non-personal facts about the action (R6: currency, old and new rate of an accepted rate)
+    details = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     objects = AppendOnlyQuerySet.as_manager()
@@ -93,10 +96,10 @@ class AdminAccessLog(models.Model):
         return f'{self.created_at} user:{self.actor_id} {self.action} target:{self.target_user_id}'
 
     @classmethod
-    def record(cls, actor, action, target_user_id=None, target_booking_id=None):
+    def record(cls, actor, action, target_user_id=None, target_booking_id=None, details=None):
         return cls.objects.create(
             actor_id=actor.pk, action=action,
-            target_user_id=target_user_id, target_booking_id=target_booking_id,
+            target_user_id=target_user_id, target_booking_id=target_booking_id, details=details,
         )
 
     def save(self, *args, **kwargs):
