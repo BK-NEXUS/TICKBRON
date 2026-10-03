@@ -22,6 +22,7 @@ from django.utils.decorators import method_decorator
 from bookings.models import Booking
 from bookings.state_machine import BookingState, BookingStateMachine
 from common.request import get_client_ip
+from common.money import CHARGE_CURRENCY, is_whole_som
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .serializers import (
     PaymentTransactionSerializer,
@@ -84,9 +85,11 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         return PaymentTransaction.objects.filter(booking__guest=user)
 
     @staticmethod
-    def _parse_refund_amount(raw_amount, paid_amount):
+    def _parse_refund_amount(raw_amount, paid_amount, currency=None):
         """
-        Return (refund_amount, error). A missing amount means a full refund.
+        Return (refund_amount, error). A missing amount means a full refund of what
+        was paid (the transaction amount, never a re-conversion at today's rate).
+        UZS refunds must be whole so'm.
         """
         if raw_amount in (None, ''):
             return paid_amount, None
@@ -98,6 +101,8 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             return None, 'Refund amount must be greater than zero'
         if amount > paid_amount:
             return None, 'Refund amount cannot exceed the payment amount'
+        if currency == CHARGE_CURRENCY and not is_whole_som(amount):
+            return None, "UZS refunds must be whole so'm"
         return amount, None
     
     def create(self, request, *args, **kwargs):
@@ -336,7 +341,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                     )
 
                 refund_amount, error = self._parse_refund_amount(
-                    request.data.get('amount'), payment_transaction.amount
+                    request.data.get('amount'), payment_transaction.amount, payment_transaction.currency
                 )
                 if error:
                     return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)

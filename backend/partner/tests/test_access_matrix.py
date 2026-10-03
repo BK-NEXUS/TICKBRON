@@ -13,6 +13,8 @@ from bookings.models import Booking
 from permissions.models import Role
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomBlock, RoomInventory, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
+from currency.models import ExchangeRate
 
 P = '/api/v1/partner'
 
@@ -89,6 +91,8 @@ def make_hotel(owner, city, guest):
         room_type=room, date_from=check_in + timedelta(days=20), date_to=check_in + timedelta(days=22),
         rooms=1, note='Booking.com', created_by=owner,
     )
+    if not ExchangeRate.objects.exists():
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
     booking = Booking.create_booking(
         guest=guest, property_obj=prop, room_type=room, rate_plan=rate,
         check_in=check_in, check_out=check_in + timedelta(days=1), guest_count=1,

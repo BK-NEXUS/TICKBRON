@@ -18,6 +18,7 @@ from django.utils import timezone
 from bookings.models import Booking
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
 
 
 def run_concurrently(*calls):
@@ -53,6 +54,7 @@ class BookingConcurrencyTests(TransactionTestCase):
     def setUp(self):
         if connection.vendor != 'postgresql':
             self.skipTest('Row-level locking races need PostgreSQL')
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
         self.user = User.objects.create_user(email='race@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
@@ -165,6 +167,7 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
     def setUp(self):
         if connection.vendor != 'postgresql':
             self.skipTest('Row-level locking races need PostgreSQL')
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
         self.user = User.objects.create_user(email='race-two-rate-plans@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')

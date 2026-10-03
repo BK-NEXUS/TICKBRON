@@ -6,6 +6,7 @@ management scoped to hotel-owner accounts.
 """
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
+from common.money import SUPPORTED_BASE_CURRENCIES, is_whole_som
 from common.storage import validate_image_file
 from geography.serializers import GeographyRefsMixin
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
@@ -14,7 +15,63 @@ from properties.serializers import (
 )
 
 
-class PartnerPropertySerializer(GeographyRefsMixin, serializers.ModelSerializer):
+def _check_price_unit(currency, amount, field):
+    """UZS prices are whole so'm (R6)."""
+    if currency == 'UZS' and amount is not None and not is_whole_som(amount):
+        raise serializers.ValidationError({field: "UZS prices must be whole so'm."})
+
+
+class PropertyCurrencyMixin:
+    """
+    R6: a property is priced in USD or UZS. Default: its country's currency when supported
+    (Uzbekistan -> UZS), else USD. It cannot change once the property has room types,
+    because every room type, rate plan and nightly price uses it.
+    """
+
+    def validate_currency(self, value):
+        if value not in SUPPORTED_BASE_CURRENCIES:
+            raise serializers.ValidationError(f"Currency must be one of: {', '.join(SUPPORTED_BASE_CURRENCIES)}.")
+        return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if 'currency' not in attrs and self.instance is None:
+            country = attrs.get('country_ref')
+            country_currency = getattr(country, 'currency', None)
+            attrs['currency'] = country_currency if country_currency in SUPPORTED_BASE_CURRENCIES else 'USD'
+        currency = attrs.get('currency', getattr(self.instance, 'currency', None))
+        if (self.instance is not None and currency != self.instance.currency
+                and self.instance.room_types.filter(is_deleted=False).exists()):
+            raise serializers.ValidationError(
+                {'currency': 'The currency cannot change after room types exist; their prices use it.'})
+        _check_price_unit(currency, attrs.get('base_price'), 'base_price')
+        return attrs
+
+
+class ChildCurrencyMixin:
+    """
+    R6: room types, rate plans and nightly prices use their property's currency. Omitted means
+    the property's; anything else is rejected. `price_field` must be whole so'm for UZS.
+    """
+    price_field = 'base_price'
+
+    def property_of(self, attrs):
+        raise NotImplementedError
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        prop = self.property_of(attrs)
+        if prop is not None:
+            sent = attrs.get('currency')
+            if sent is not None and sent != prop.currency:
+                raise serializers.ValidationError(
+                    {'currency': f'Must be the property currency ({prop.currency}).'})
+            attrs['currency'] = prop.currency
+            _check_price_unit(prop.currency, attrs.get(self.price_field), self.price_field)
+        return attrs
+
+
+class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
     
@@ -48,7 +105,7 @@ class PartnerPropertySerializer(GeographyRefsMixin, serializers.ModelSerializer)
         return obj.display_name()
 
 
-class PartnerPropertyCreateSerializer(GeographyRefsMixin, serializers.ModelSerializer):
+class PartnerPropertyCreateSerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for creating new properties by hotel-owners.
     
@@ -72,7 +129,7 @@ class PartnerPropertyCreateSerializer(GeographyRefsMixin, serializers.ModelSeria
         return super().create(validated_data)
 
 
-class PartnerRoomTypeSerializer(serializers.ModelSerializer):
+class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for room type management by hotel-owners.
     
@@ -85,6 +142,9 @@ class PartnerRoomTypeSerializer(serializers.ModelSerializer):
             'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size'
         ]
         read_only_fields = ['id']
+
+    def property_of(self, attrs):
+        return attrs.get('property') or getattr(self.instance, 'property', None)
     
     def validate_property(self, value):
         """Ensure the property belongs to the authenticated hotel-owner."""
@@ -97,7 +157,7 @@ class PartnerRoomTypeSerializer(serializers.ModelSerializer):
         return value
 
 
-class PartnerRatePlanSerializer(serializers.ModelSerializer):
+class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for rate plan management by hotel-owners.
     
@@ -111,6 +171,10 @@ class PartnerRatePlanSerializer(serializers.ModelSerializer):
             'deposit_required', 'deposit_percentage', 'advance_booking_days'
         ]
         read_only_fields = ['id']
+
+    def property_of(self, attrs):
+        room_type = attrs.get('room_type') or getattr(self.instance, 'room_type', None)
+        return room_type.property if room_type else None
     
     def validate_room_type(self, value):
         """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
@@ -123,7 +187,7 @@ class PartnerRatePlanSerializer(serializers.ModelSerializer):
         return value
 
 
-class PartnerDateInventorySerializer(serializers.ModelSerializer):
+class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for date inventory management by hotel-owners.
     
@@ -138,6 +202,12 @@ class PartnerDateInventorySerializer(serializers.ModelSerializer):
             'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay', 'notes'
         ]
         read_only_fields = ['id', 'booked_rooms', 'remaining_rooms']
+
+    price_field = 'price'
+
+    def property_of(self, attrs):
+        rate_plan = attrs.get('rate_plan') or getattr(self.instance, 'rate_plan', None)
+        return rate_plan.room_type.property if rate_plan else None
     
     def validate_rate_plan(self, value):
         """Ensure the rate plan belongs to a property owned by the authenticated hotel-owner."""
@@ -231,6 +301,10 @@ class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
                     "You can only manage inventory for your own properties."
                 )
         return value
+
+    def validate(self, attrs):
+        _check_price_unit(attrs['rate_plan'].room_type.property.currency, attrs.get('price'), 'price')
+        return attrs
 
 
 class PartnerBlockSerializer(serializers.ModelSerializer):

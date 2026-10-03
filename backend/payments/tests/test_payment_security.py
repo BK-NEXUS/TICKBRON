@@ -312,7 +312,8 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
         self.tx = self._create_transaction(self.booking, 'k-wh', provider_transaction_id='txn-wh-1')
         self.provider_client = APIClient()  # no session, like a real provider
 
-    def _post_webhook(self, event_id, provider_status='completed', amount='300.00'):
+    # Payme reports tiyin (R6): 30000 tiyin = 300.00, the transaction amount
+    def _post_webhook(self, event_id, provider_status='completed', amount='30000'):
         from payments.adapters import get_payment_adapter
 
         payload = {'id': event_id, 'transaction_id': 'txn-wh-1', 'status': provider_status,
@@ -334,7 +335,7 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
         assert self.booking.payment_status == 'paid'
 
     def test_amount_mismatch_does_not_confirm(self):
-        response = self._post_webhook('evt-cheap', amount='0.01')
+        response = self._post_webhook('evt-cheap', amount='1')
 
         assert response.status_code == status.HTTP_200_OK
         self.tx.refresh_from_db()

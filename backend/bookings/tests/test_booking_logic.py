@@ -17,6 +17,7 @@ from rest_framework.test import APIClient
 from bookings.models import Booking, ExpiredBookingProcessingError
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
 
 BOOKINGS_URL = '/api/v1/bookings/'
 
@@ -25,6 +26,7 @@ class BookingLogicTestBase(TestCase):
     """An active property with one room type (5 rooms, 4 guests each) and 10 days of inventory."""
 
     def setUp(self):
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.user = User.objects.create_user(email='guest@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(

@@ -2,12 +2,41 @@
 Serializers for TICKBRON property models and search results.
 """
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyPolicy,
     Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
     RoomType, RatePlan, DateInventory
 )
+from currency.rates import uzs_amount
+
+
+class ApproxUzsPriceMixin(serializers.Serializer):
+    """
+    R6 decision D: base_price in so'm at the latest rate, for display only (the name says
+    approximate; the charged amount comes from the booking snapshot). The rate is looked
+    up once per request (currency.rates.rate_for_request), never per row.
+    """
+    base_price_uzs_approx = serializers.SerializerMethodField()
+    uzs_rate = serializers.SerializerMethodField()
+
+    def _approx_uzs(self, obj):
+        # 'rate_request' only carries the per-request rate cache; it is not DRF's
+        # 'request' context, which would also turn file fields into absolute URLs
+        request = self.context.get('rate_request') or self.context.get('request')
+        if request is None:
+            return {'value': None, 'exchange_rate': None}
+        return uzs_amount(request, obj.base_price, obj.currency, 'value')
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_base_price_uzs_approx(self, obj):
+        return self._approx_uzs(obj)['value']
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_uzs_rate(self, obj):
+        return self._approx_uzs(obj)['exchange_rate']
 
 
 class PropertyTypeSerializer(serializers.ModelSerializer):
@@ -82,7 +111,7 @@ class PropertyPolicySerializer(serializers.ModelSerializer):
         read_only_fields = []
 
 
-class PropertySearchResultSerializer(serializers.ModelSerializer):
+class PropertySearchResultSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for property search results.
     
@@ -103,7 +132,8 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'translations', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
+            'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate',
+            'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'primary_photo', 'amenities', 'full_address', 'average_rating', 'review_count', 'created_at'
         ]
@@ -144,7 +174,7 @@ class PropertySearchResultSerializer(serializers.ModelSerializer):
         return getattr(obj, 'review_count', 0) or 0
 
 
-class PropertyDetailSerializer(serializers.ModelSerializer):
+class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Detailed serializer for property information.
     
@@ -164,7 +194,8 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'owner', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
+            'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate',
+            'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'approved_at', 'approved_by', 'rejection_reason',
             'translations', 'policies', 'photos', 'amenities', 'full_address',
@@ -602,7 +633,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
         ).data
 
 
-class PropertyAvailabilitySerializer(serializers.ModelSerializer):
+class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for Property availability data.
     
@@ -615,7 +646,7 @@ class PropertyAvailabilitySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'latitude', 'longitude', 'base_price', 'currency', 'room_types'
+            'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate', 'room_types'
         ]
         read_only_fields = ['id']
     

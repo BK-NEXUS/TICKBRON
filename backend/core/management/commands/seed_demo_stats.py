@@ -26,6 +26,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from bookings.models import Booking, BookingItem
+from common.money import quantize
 from geography.mapping import GeographyIndex
 from geography.models import City, Country, Region
 from permissions.models import Role
@@ -39,20 +40,21 @@ GUEST_COUNT = 60
 SEED = 2026
 
 # (country, region or None, city, hotel name, address, nightly price, currency)
+# R6: hotels in Uzbekistan are priced in whole so'm, the others in USD (the only supported currencies)
 DEMO_HOTELS = [
-    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Silk Road Plaza Hotel', '12 Navoi Street', '85.00', 'USD'),
-    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Chorsu Garden Inn', '4 Chorsu Square', '48.00', 'USD'),
-    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Minor Mosque View Suites', '31 Qoraqamish Street', '110.00', 'USD'),
-    ('Uzbekistan', 'Samarkand', 'Samarkand', 'Registan Courtyard Hotel', '9 Tashkent Street', '70.00', 'USD'),
-    ('Uzbekistan', 'Samarkand', 'Samarkand', 'Bibi-Khanym Guesthouse', '22 Islam Karimov Street', '42.00', 'USD'),
-    ('Uzbekistan', 'Bukhara', 'Bukhara', 'Lyabi-Hauz Heritage Hotel', '5 Nakshbandi Street', '65.00', 'USD'),
-    ('Uzbekistan', 'Bukhara', 'Bukhara', 'Ark Fortress Boutique', '17 Afrosiyob Street', '58.00', 'USD'),
+    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Silk Road Plaza Hotel', '12 Navoi Street', '1000000', 'UZS'),
+    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Chorsu Garden Inn', '4 Chorsu Square', '565000', 'UZS'),
+    ('Uzbekistan', 'Tashkent', 'Tashkent', 'Minor Mosque View Suites', '31 Qoraqamish Street', '1295000', 'UZS'),
+    ('Uzbekistan', 'Samarkand', 'Samarkand', 'Registan Courtyard Hotel', '9 Tashkent Street', '825000', 'UZS'),
+    ('Uzbekistan', 'Samarkand', 'Samarkand', 'Bibi-Khanym Guesthouse', '22 Islam Karimov Street', '495000', 'UZS'),
+    ('Uzbekistan', 'Bukhara', 'Bukhara', 'Lyabi-Hauz Heritage Hotel', '5 Nakshbandi Street', '765000', 'UZS'),
+    ('Uzbekistan', 'Bukhara', 'Bukhara', 'Ark Fortress Boutique', '17 Afrosiyob Street', '685000', 'UZS'),
     ('Kazakhstan', 'Almaty', 'Almaty', 'Medeu Mountain Lodge', '140 Dostyk Avenue', '95.00', 'USD'),
     ('Kazakhstan', 'Almaty', 'Almaty', 'Panfilov Park Hotel', '61 Panfilov Street', '72.00', 'USD'),
-    ('Turkey', 'Istanbul', 'Istanbul', 'Bosphorus Terrace Hotel', '8 Kennedy Avenue', '120.00', 'EUR'),
-    ('Turkey', 'Istanbul', 'Istanbul', 'Grand Bazaar Suites', '44 Divanyolu Street', '88.00', 'EUR'),
+    ('Turkey', 'Istanbul', 'Istanbul', 'Bosphorus Terrace Hotel', '8 Kennedy Avenue', '120.00', 'USD'),
+    ('Turkey', 'Istanbul', 'Istanbul', 'Grand Bazaar Suites', '44 Divanyolu Street', '88.00', 'USD'),
     # No region on purpose: shows the "Unspecified" group
-    ('Turkey', None, 'Cappadocia', 'Cave Stone Retreat', '3 Uchisar Road', '105.00', 'EUR'),
+    ('Turkey', None, 'Cappadocia', 'Cave Stone Retreat', '3 Uchisar Road', '105.00', 'USD'),
 ]
 
 # Popularity weight of each hotel above (index-aligned), so the rankings are not flat
@@ -200,7 +202,7 @@ class Command(BaseCommand):
                 status = 'completed'
             statuses[status] += 1
             # Weekend-heavy stays and seasonal variation: +/- 20% around the hotel price
-            nightly = (hotel['price'] * Decimal(str(round(rng.uniform(0.8, 1.2), 2)))).quantize(Decimal('0.01'))
+            nightly = quantize(hotel['price'] * Decimal(str(round(rng.uniform(0.8, 1.2), 2))), hotel['currency'])
             booked_at = timezone.make_aware(
                 datetime.combine(check_in - timedelta(days=rng.randint(1, 45)), time(10)))
 

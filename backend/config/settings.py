@@ -7,6 +7,9 @@ Django + Django REST Framework + PostgreSQL + Redis + Celery
 import os
 import sys
 from pathlib import Path
+from decimal import Decimal
+
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from .logging_config import get_logging_config
 
@@ -58,6 +61,7 @@ INSTALLED_APPS = [
     'partner',
     'admin_panel',
     'geography',
+    'currency',
     
     # Third-party apps
     'rest_framework',
@@ -324,7 +328,19 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bookings.tasks.expire_pending_bookings',
         'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
     },
+    # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (UTC+5; CELERY_TIMEZONE is UTC)
+    'fetch-exchange-rates': {
+        'task': 'currency.tasks.fetch_exchange_rates',
+        'schedule': crontab(hour='4,13', minute=0),
+    },
 }
+
+# Exchange rates (R6). Thresholds come from the environment; see currency/cbu.py
+FX_STALE_AFTER_DAYS = int(os.getenv('FX_STALE_AFTER_DAYS', '3'))
+FX_MAX_CHANGE = Decimal(os.getenv('FX_MAX_CHANGE', '0.10'))      # reject jumps over 10 %
+FX_MIN_RATE = Decimal(os.getenv('FX_MIN_RATE', '1000'))          # UZS per USD, sane range
+FX_MAX_RATE = Decimal(os.getenv('FX_MAX_RATE', '100000'))
+FX_FETCH_TIMEOUT = int(os.getenv('FX_FETCH_TIMEOUT', '10'))      # seconds
 
 # Database connection health check
 DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'

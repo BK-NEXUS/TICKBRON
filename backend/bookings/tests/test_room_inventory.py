@@ -16,10 +16,12 @@ from django.utils import timezone
 from bookings.models import Booking
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomInventory, RoomType
 from users.models import User
+from currency.testing import make_usd_rate
 
 
 class RoomInventoryFixture(TestCase):
     def setUp(self):
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.owner = User.objects.create_user(email='owner@example.com', password='x')
         self.guest = User.objects.create_user(email='guest@example.com', password='x')
         hotel = PropertyType.objects.create(name='Hotel', slug='hotel')

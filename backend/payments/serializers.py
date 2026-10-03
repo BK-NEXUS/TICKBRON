@@ -71,16 +71,17 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
                 {'booking': 'Booking has expired; please create a new booking'}
             )
         
-        # Validate amount matches booking total
-        if amount != booking.total_price:
+        # The guest pays the booking's charge snapshot (R6): UZS, fixed when the booking
+        # was made. Client values are only compared, never used to compute anything.
+        if amount != booking.charge_amount:
             raise serializers.ValidationError(
-                {'amount': 'Payment amount must match booking total'}
+                {'amount': 'Payment amount must match the booking charge amount'}
             )
 
         # The amount alone is not enough: 300 UZS is not 300 USD
-        if attrs.get('currency') != booking.currency:
+        if attrs.get('currency') != booking.charge_currency:
             raise serializers.ValidationError(
-                {'currency': 'Payment currency must match booking currency'}
+                {'currency': 'Payment currency must match the booking charge currency'}
             )
 
         return attrs

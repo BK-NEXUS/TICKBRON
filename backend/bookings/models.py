@@ -13,6 +13,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.utils import timezone
 from common.models import BaseModel
+from common.money import CHARGE_CURRENCY, quantize, to_uzs
+from currency.rates import ExchangeRateUnavailable, current_rate
 from .state_machine import BookingStateMachine, PaymentStateMachine, BookingPaymentStateMachine, BookingState, PaymentState
 
 logger = logging.getLogger(__name__)
@@ -109,7 +111,17 @@ class Booking(BaseModel):
         help_text=_('Total price for the booking')
     )
     currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
-    
+
+    # What the guest is charged (R6): set once when the booking is created, inside the
+    # transaction that locks the inventory, and never changed (see save()). total_price
+    # and currency above are the price in the property's own currency.
+    charge_currency = models.CharField(max_length=3)
+    charge_amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(0)])
+    exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, help_text=_('UZS per one unit of currency'))
+    exchange_rate_date = models.DateField(null=True, blank=True)
+    exchange_rate_source = models.CharField(max_length=16)  # 'cbu.uz', 'identity' or 'legacy'
+    exchange_rate_stale = models.BooleanField(default=False)
+
     # Additional information
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
@@ -175,10 +187,52 @@ class Booking(BaseModel):
             except Booking.DoesNotExist:
                 pass  # New booking, no transition validation needed
     
+    # The price and the charge snapshot: never changed once the booking exists
+    SNAPSHOT_FIELDS = (
+        'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
+        'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale',
+    )
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        instance._loaded_snapshot = {
+            name: getattr(instance, name) for name in cls.SNAPSHOT_FIELDS if name in instance.__dict__
+        }
+        return instance
+
+    def _check_snapshot_unchanged(self):
+        loaded = getattr(self, '_loaded_snapshot', None)
+        if self._state.adding or loaded is None:
+            return
+        changed = [name for name, value in loaded.items() if getattr(self, name) != value]
+        if changed:
+            raise PermissionError(f'Booking price and charge snapshot cannot be changed: {", ".join(changed)}')
+
+    def _fill_snapshot_if_missing(self):
+        """
+        Rows created outside create_booking (seeds, old code paths) record what really
+        happens to them: a UZS row is charged as is, any other currency is a legacy row
+        charged in its own currency at rate 1. create_booking always sets the snapshot.
+        """
+        if self.charge_currency:
+            return
+        self.charge_currency = self.currency
+        self.charge_amount = self.total_price
+        self.exchange_rate = 1
+        self.exchange_rate_source = 'identity' if self.currency == CHARGE_CURRENCY else 'legacy'
+
     def save(self, *args, **kwargs):
-        """Override save to generate confirmation code and set expiry if needed."""
+        """Refuse snapshot changes, fill the snapshot of new rows, generate the confirmation code and expiry."""
+        self._check_snapshot_unchanged()
+        if self._state.adding:
+            self._fill_snapshot_if_missing()
+        self._save_with_confirmation_code(*args, **kwargs)
+        self._loaded_snapshot = {name: getattr(self, name) for name in self.SNAPSHOT_FIELDS}
+
+    def _save_with_confirmation_code(self, *args, **kwargs):
         from django.db import IntegrityError
-        
+
         # Calculate number of nights if not set
         if not self.number_of_nights:
             self.number_of_nights = (self.check_out - self.check_in).days
@@ -288,7 +342,14 @@ class Booking(BaseModel):
             quote = quote_stay(rate_plan, check_in, check_out, number_of_rooms, lock=True)
             room_inventory_records = quote.room_inventory
             nightly_total = quote.nightly_total  # price of one room for the whole stay
-            total_price = quote.total_price
+            currency = rate_plan.currency
+            total_price = quantize(quote.total_price, currency)
+
+            # The charge snapshot: read the rate now, after the inventory is locked, from
+            # the database only. No rate yet for a foreign currency -> nothing is reserved.
+            rate = current_rate(currency)
+            if rate is None:
+                raise ExchangeRateUnavailable()
 
             # Create the booking
             booking = cls.objects.create(
@@ -301,7 +362,13 @@ class Booking(BaseModel):
                 number_of_nights=number_of_nights,
                 guest_count=guest_count,
                 total_price=total_price,
-                currency=rate_plan.currency,
+                currency=currency,
+                charge_currency=CHARGE_CURRENCY,
+                charge_amount=to_uzs(total_price, rate.rate),
+                exchange_rate=rate.rate,
+                exchange_rate_date=rate.date,
+                exchange_rate_source=rate.source,
+                exchange_rate_stale=rate.stale,
                 special_requests=special_requests,
                 guest_full_name=guest_full_name or guest.get_full_name(),
                 guest_phone=guest_phone or guest.phone_number,

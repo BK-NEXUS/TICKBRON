@@ -10,6 +10,7 @@ from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from bookings.models import Booking
 from io import StringIO
+from currency.testing import make_usd_rate
 
 
 class BookingExpiryCommandTests(TestCase):
@@ -17,6 +18,7 @@ class BookingExpiryCommandTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.user = User.objects.create_user(
             email='test@example.com',
             password='TestPassword123!',

@@ -19,6 +19,7 @@ from payments.adapters import PaymeAdapter
 from payments.models import PaymentAuditLog, PaymentTransaction
 from properties.models import RoomInventory
 from users.models import User
+from currency.testing import make_usd_rate
 
 TRANSACTIONS_URL = '/api/v1/payments/transactions/'
 
@@ -26,6 +27,7 @@ TRANSACTIONS_URL = '/api/v1/payments/transactions/'
 @pytest.fixture
 def paid(stay):
     """A confirmed, paid two-night booking of 2 rooms and its completed payment."""
+    make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
     booking = Booking.create_booking(
         guest=stay['guest'], property_obj=stay['property'], room_type=stay['room'],
         rate_plan=stay['rate'], check_in=stay['start'], check_out=stay['start'] + timedelta(days=2),
@@ -34,7 +36,7 @@ def paid(stay):
     Booking.objects.filter(pk=booking.pk).update(status='confirmed', payment_status='paid')
     tx = PaymentTransaction.objects.create(
         idempotency_key='k-refund-cancel', booking=booking, provider='payme',
-        amount=booking.total_price, currency=booking.currency, status='completed',
+        amount=booking.charge_amount, currency=booking.charge_currency, status='completed',  # R6: paid in UZS
         provider_transaction_id='txn-refund-cancel',
     )
     staff = User.objects.create_user(email='staff@example.com', password='x', is_staff=True)

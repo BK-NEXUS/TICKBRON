@@ -801,3 +801,41 @@ Rules:
 - `action` values: `customer_list` (GET /customers/), `customer_view` (GET /customers/{id}/, target_user_id), `booking_lookup` (GET /bookings/lookup/, target_booking_id + target_user_id = guest), `user_list` (GET /users/), `status_users` (GET /status/users/)
 - A row is written only when data was actually returned (2xx); 404s and permission failures write nothing. Reading the log is not recorded
 - Ids only: no names, phones, emails or search terms. Rows cannot be changed or deleted (model and queryset refuse; table `admin_access_log`, migration `admin_panel/0004_admin_access_log`)
+
+## 2026-10-03 Currency: UZS charge, CBU rate, booking snapshot (R6)
+
+Hotels are priced in `USD` or `UZS` (property `currency`; room types, rate plans and nightly prices use the property currency). Guests are always charged in `UZS`. All money values in JSON are strings with exactly 2 decimals; UZS values are whole so'm and always end in `.00` (`"2354590.00"`). Exchange rates are strings with 6 decimals, UZS per 1 USD (`"11772.950000"`).
+
+`exchange_rate` object (used below): `{ rate, date, source, stale }` - `date` is the CBU rate date (`YYYY-MM-DD`, null for `identity`), `source` is `cbu.uz`, `identity` (UZS, rate 1) or `legacy` (bookings made before R6, charged in their own currency), `stale` is true when the rate is older than `FX_STALE_AFTER_DAYS` (default 3).
+
+### GET `/api/v1/properties/{id}/quote/` (added fields)
+- `uzs_total`: what the guest will be charged in so'm for this stay (base total x rate, rounded once to whole so'm, half up). UZS hotel: equals `total_price`. USD hotel without any rate yet: `null`
+- `exchange_rate`: the rate used, or `null` for UZS hotels and when no rate exists yet
+- `total_price`, `currency`, `nights[].price` stay in the hotel's own currency
+
+### POST `/api/v1/bookings/` (and GET list/detail; added fields)
+- `charge_amount` (UZS string), `charge_currency` (`"UZS"`), `exchange_rate` object (UZS hotels: `{rate: "1.000000", date: null, source: "identity", stale: false}`)
+- Set once when the booking is made (rate read in the same transaction that reserves the rooms) and never changed afterwards; a later rate change does not touch the booking, its payment or its refund limit. If the rate changed since the quote, the booking uses the current rate and returns it: the payment page must show the booking's `charge_amount`, not the quote
+- The client cannot send currency, rate or amounts: extra `currency`, `charge_amount`, `exchange_rate`, `uzs_total`, `total_price` fields are ignored
+- **503** `{ error: "Exchange rate unavailable", code: "exchange_rate_unavailable", details: "<message>" }` for a USD hotel when no exchange rate has ever been fetched (fresh install). Nothing is reserved; show "Booking is temporarily unavailable, please try again later"
+- Bookings made before R6 have `source: "legacy"`, `charge_currency` = their own currency (USD/EUR) and `charge_amount` = `total_price`
+
+### POST `/api/v1/payments/transactions/` (rule changed, replaces the R4 currency rule)
+- `amount` must equal the booking's `charge_amount` and `currency` its `charge_currency` (`"UZS"` for every booking made since R6), else 400 `amount` / `currency`. Send exactly the booking's values
+- Payme counts in tiyin (1 so'm = 100 tiyin), Click in so'm: converted only inside the backend adapters, never by the frontend
+- Refunds (staff): a full refund is the paid amount (the UZS snapshot), never a re-conversion; a partial refund of a UZS payment must be whole so'm (400 otherwise)
+
+### Search and property pages (informational only)
+- `GET /properties/search/` results, `GET /properties/{id}/`, `GET /properties/{id}/availability/`: + `base_price_uzs_approx` (string or `null` when no rate yet) and `uzs_rate` (`exchange_rate` object, `null` for UZS hotels). Approximate: computed from the latest rate, for display next to `base_price`; label it "≈". The amount charged always comes from the booking
+
+### Staff: exchange rates
+- `GET /api/v1/admin-panel/exchange-rates/` (staff, super-admin): paginated history `{ count, next, previous, results: [{ id, currency, rate, nominal, rate_date, source, status: accepted|rejected, note, fetched_at }] }`, newest first; query `currency`, `page`, `page_size` (50, max 200)
+- `GET /api/v1/admin-panel/exchange-rates/status/` (super-admin only): `{ currencies: [{ currency: "USD", rate, date, source, stale, last_fetch: {attempted_at, success, error} | null, last_error, rejected: [<history row>] }] }`. No rate at all: `rate`/`date`/`source` null and `stale: true`. Show a warning banner when `stale` is true or `rejected` is not empty
+- `POST /api/v1/admin-panel/exchange-rates/{id}/accept/` (super-admin only): accepts a rate the fetch rejected (jump over `FX_MAX_CHANGE`, default 10%). 201 with the new accepted row; 400 if the row is not `rejected`; 404 unknown id; 409 if a rate for that date is already accepted. Written to the audit log
+- Audit log (`GET /admin-panel/audit-log/`): rows now have `details` (object or null); new `action` `exchange_rate_accept` with `details: { currency, rate_date, old_rate, new_rate, rejected_id, accepted_id }` and the super-admin in `actor_id`
+
+### Display rules for the frontend
+- UZS: no decimals, digits grouped by 3 with a non-breaking space, suffix `so'm` (uz, en) or `сум` (ru): `1 250 000 so'm`
+- USD: `$1,250.00` (en), `1 250,00 $` (ru, uz)
+- Main number = the UZS amount (`uzs_total` / `charge_amount`). For USD hotels also show `≈ $200.00` next to it and "Rate of 03.10.2026 (CBU)" near the total (from `exchange_rate.date`, shown `dd.mm.yyyy`). `stale: true` → small note "rate may be out of date"
+- Search cards / property page: `base_price` in its currency plus `≈ 1 177 295 so'm` from `base_price_uzs_approx` (omit when null)

@@ -155,10 +155,15 @@ class PaymentTransaction(BaseModel):
                 'booking': _('Payment can only be initiated for pending bookings')
             })
         
-        # Validate amount matches booking total
-        if self.amount != self.booking.total_price:
+        # A payment is the booking's charge snapshot (R6): its UZS amount, or for bookings
+        # made before R6 their total in their own currency
+        if self.amount != self.booking.charge_amount:
             raise ValidationError({
-                'amount': _('Payment amount must match booking total')
+                'amount': _('Payment amount must match the booking charge amount')
+            })
+        if self.currency != self.booking.charge_currency:
+            raise ValidationError({
+                'currency': _('Payment currency must match the booking charge currency')
             })
     
     def save(self, *args, **kwargs):

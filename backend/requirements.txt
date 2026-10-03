@@ -21,6 +21,9 @@ cryptography==50.0.2
 # Phone number validation (E.164)
 phonenumbers==9.0.40
 
+# Time zones (Asia/Tashkent for the CBU rate date; Windows has no system tz database)
+tzdata==2026.4
+
 # Environment & Configuration
 python-dotenv==1.2.4
 

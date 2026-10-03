@@ -13,6 +13,7 @@ from rest_framework import status
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from permissions.models import Role
 from partner.tests.geography_helpers import uzbek_location
+from currency.testing import make_usd_rate
 
 User = get_user_model()
 
@@ -803,6 +804,7 @@ class PartnerBookingListTests(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.client = APIClient()
 
         self.hotel_owner_role, _ = Role.objects.get_or_create(
