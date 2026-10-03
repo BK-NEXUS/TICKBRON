@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from bookings.models import Booking
+from bookings.state_machine import BookingState, BookingStateMachine
 from common.request import get_client_ip
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .serializers import (
@@ -302,68 +303,98 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         """
         Refund a payment transaction (staff only).
 
-        Request body: optional `amount`. Omitted means a full refund; a smaller
-        positive amount is a partial refund; more than the payment is rejected.
-        Refunding changes payment status only: the booking itself is not
-        cancelled (cancel it separately if needed).
+        Request body:
+            amount: optional; omitted means a full refund, a smaller positive
+                amount is a partial refund, more than the payment is rejected
+            cancel_booking: optional boolean (default false); true also cancels
+                the booking and releases its rooms
+            cancellation_reason: optional text stored on the cancelled booking
+
+        Everything happens in one database transaction with the payment row
+        locked, so a payment cannot be refunded twice and a failure leaves
+        nothing half done. If the booking cannot be cancelled, the provider is
+        not asked to refund.
         """
-        payment_transaction = self.get_object()
-
-        if payment_transaction.status != 'completed':
-            return Response(
-                {'error': 'Only completed payments can be refunded'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        refund_amount, error = self._parse_refund_amount(request.data.get('amount'), payment_transaction.amount)
-        if error:
-            return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
-        new_status = 'refunded' if refund_amount == payment_transaction.amount else 'partially_refunded'
-
         try:
-            adapter = get_payment_adapter(payment_transaction.provider)
-            provider_response = adapter.refund_payment(
-                provider_transaction_id=payment_transaction.provider_transaction_id,
-                amount=refund_amount
+            cancel_booking = serializers.BooleanField().to_internal_value(
+                request.data.get('cancel_booking', False)
             )
+        except serializers.ValidationError:
+            return Response({'error': 'cancel_booking must be true or false'}, status=status.HTTP_400_BAD_REQUEST)
+        cancellation_reason = str(request.data.get('cancellation_reason') or 'Refunded and cancelled by staff')[:500]
 
-            old_status = payment_transaction.status
-            details = {'provider_response': provider_response, 'refund_amount': str(refund_amount)}
+        tx_id = self.get_object().pk
+        try:
             with transaction.atomic():
+                payment_transaction = PaymentTransaction.objects.select_for_update().get(pk=tx_id)
+                if payment_transaction.status != 'completed':
+                    return Response(
+                        {'error': 'Only completed payments can be refunded'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                refund_amount, error = self._parse_refund_amount(
+                    request.data.get('amount'), payment_transaction.amount
+                )
+                if error:
+                    return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+                new_status = 'refunded' if refund_amount == payment_transaction.amount else 'partially_refunded'
+
+                booking = Booking.objects.select_for_update().get(pk=payment_transaction.booking_id)
+                if cancel_booking:
+                    can_cancel, _ = BookingStateMachine.validate_transition(
+                        BookingState(booking.status), BookingState('cancelled')
+                    )
+                    if not can_cancel:
+                        return Response(
+                            {'error': f'Booking in status {booking.status} cannot be cancelled; nothing was refunded'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                adapter = get_payment_adapter(payment_transaction.provider)
+                provider_response = adapter.refund_payment(
+                    provider_transaction_id=payment_transaction.provider_transaction_id,
+                    amount=refund_amount
+                )
+
+                old_status = payment_transaction.status
+                details = {
+                    'provider_response': provider_response,
+                    'refund_amount': str(refund_amount),
+                    'cancel_booking': cancel_booking,
+                }
                 payment_transaction.status = new_status
                 payment_transaction.provider_response = provider_response
                 payment_transaction.save()
 
-                # Update booking payment status using state machine. A booking
-                # that was never marked paid (e.g. payment captured after it was
-                # cancelled) keeps its status; the refund itself still stands.
-                booking = Booking.objects.select_for_update().get(pk=payment_transaction.booking_id)
+                # A booking that was never marked paid (e.g. payment captured after it
+                # was cancelled) keeps its payment status; the refund itself still stands.
                 try:
                     with transaction.atomic():
                         booking.update_payment_status(new_status)
                 except DjangoValidationError:
                     details['booking_payment_status'] = f'unchanged ({booking.payment_status})'
 
-            # Log audit entry
-            PaymentAuditLog.log_action(
-                action='payment_refunded',
-                payment_transaction=payment_transaction,
-                booking=booking,
-                old_status=old_status,
-                new_status=payment_transaction.status,
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details=details
-            )
+                if cancel_booking:
+                    # Releases the booked rooms and logs booking_status_changed
+                    booking.cancel_booking(cancellation_reason)
 
-            return Response(
-                PaymentTransactionSerializer(payment_transaction).data,
-                status=status.HTTP_200_OK
-            )
+                PaymentAuditLog.log_action(
+                    action='payment_refunded',
+                    payment_transaction=payment_transaction,
+                    booking=booking,
+                    old_status=old_status,
+                    new_status=payment_transaction.status,
+                    actor=request.user,
+                    ip_address=self._get_client_ip(request),
+                    details=details
+                )
 
         except NotImplementedError:
             return self._provider_unavailable_response()
         except PaymentAdapterError as e:
+            # The atomic block rolled back; record the failure on its own
+            payment_transaction = PaymentTransaction.objects.get(pk=tx_id)
             payment_transaction.error_code = 'REFUND_ERROR'
             payment_transaction.error_message = str(e)
             payment_transaction.save()
@@ -383,7 +414,11 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 {'error': 'Payment could not be refunded.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
+        data = PaymentTransactionSerializer(payment_transaction).data
+        data['booking_status'] = booking.status
+        return Response(data, status=status.HTTP_200_OK)
+
     def _provider_unavailable_response(self):
         """503 for providers whose production integration is not implemented yet."""
         return Response(

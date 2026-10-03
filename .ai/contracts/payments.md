@@ -100,14 +100,14 @@ Status: READY
 - Creates audit log entries for payment completion and booking status change
 
 ### POST `/api/v1/payments/transactions/{id}/refund/`
-- Request: Optional `amount` in request body. Omitted, or equal to the payment amount → full refund (`refunded`); smaller positive amount → `partially_refunded`
-- Response: Updated PaymentTransaction object
+- Request (all optional): `amount` (omitted or equal to the payment amount → full refund `refunded`; smaller positive amount → `partially_refunded`), `cancel_booking` (boolean, default false; added 2026-10-03, R4), `cancellation_reason` (text, max 500, stored on the booking when it is cancelled)
+- Response: Updated PaymentTransaction object plus `booking_status` (the booking's status after the call)
 - Auth: **staff only** (`is_staff`); guests get 403. Staff can refund any user's transaction
-- Error: 400 if payment is not completed, the amount is not a positive number, exceeds the payment amount, or the refund fails; 503 if the provider is not integrated
-- Initiates refund with payment provider
-- Updates transaction status and booking payment status together; if the booking was never marked paid (e.g. payment captured after cancellation), its payment status is left unchanged and noted in the audit log
-- Does NOT cancel the booking. An admin "cancel + refund" action does not exist yet (tracked in `.ai/audit-report.md`)
-- Creates audit log entry for payment refund
+- Error: 400 if payment is not completed (also a second refund), the amount is not a positive number or exceeds the payment amount, `cancel_booking` is not a boolean, `cancel_booking` is true but the booking cannot be cancelled (completed / no_show / already cancelled; then nothing is refunded), or the provider refund fails; 503 if the provider is not integrated
+- One database transaction with the payment row locked: provider refund, transaction status, booking payment status and (with `cancel_booking`) booking cancellation + room inventory release either all happen or none
+- Booking payment status: if the booking was never marked paid (e.g. payment captured after cancellation), it is left unchanged and noted in the audit log
+- Without `cancel_booking` the booking is NOT cancelled (unchanged behaviour)
+- Audit log: `payment_refunded` (actor, refund_amount, cancel_booking) and, when cancelled, `booking_status_changed`
 
 ### GET `/api/v1/payments/webhooks/` and `/api/v1/payments/webhooks/{id}/`
 - Read-only list / detail of received webhook events
