@@ -6,6 +6,8 @@ Only active rows are listed. hotel_count is the number of public properties
 """
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -24,6 +26,7 @@ def _rows(queryset, *fields):
     )
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def country_list(request):
@@ -31,6 +34,7 @@ def country_list(request):
     return Response(_rows(Country.objects.filter(is_active=True), 'code', 'currency'))
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def region_list(request, code):
@@ -39,6 +43,7 @@ def region_list(request, code):
     return Response(_rows(Region.objects.filter(country=country, is_active=True)))
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def city_list(request, region_id):

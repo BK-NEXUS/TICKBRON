@@ -5,6 +5,8 @@ This module contains views for user registration, login, and session management.
 """
 import sys
 import os
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -89,6 +91,7 @@ class OTPVerifyRateThrottle(PhoneNumberRateThrottle):
     scope = 'otp_verify'
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([RegisterRateThrottle])
@@ -111,6 +114,7 @@ def register(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
@@ -158,6 +162,7 @@ def _login_failed_response():
 
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
@@ -173,6 +178,7 @@ def logout_view(request):
     )
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def csrf_token(request):
@@ -190,6 +196,7 @@ def csrf_token(request):
     }, status=status.HTTP_200_OK)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def me(request):
@@ -207,6 +214,7 @@ def me(request):
     )
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
@@ -223,6 +231,7 @@ def update_profile(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_session(request):
@@ -242,6 +251,7 @@ def refresh_session(request):
     )
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([OTPRequestRateThrottle])
@@ -268,6 +278,7 @@ def request_otp(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([OTPVerifyRateThrottle])

@@ -142,8 +142,7 @@
 - `DATABASE_HEALTH_CHECK_INTERVAL` - Health check interval in seconds (default: `60`)
 
 ## Current PAYMENT_TEST_MODE Value
-**Current Setting:** `True` (test mode active)
-**Production Requirement:** Set to `False` and provide real payment provider credentials
+**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True` or `SMS_TEST_MODE=True`.
 
 ## Deployment Readiness
 - ✅ All migrations apply cleanly from scratch
@@ -183,3 +182,65 @@
 
 ## Blockers
 None - Backend is ready for deployment with proper configuration.
+
+## Security headers (R4, 2026-10-03)
+
+What the Django app sends on every API response (`common/middleware.py` SecurityHeadersMiddleware, `django.middleware.security.SecurityMiddleware`, `XFrameOptionsMiddleware`; `config/settings.py:185-200`):
+
+| Header | Value | Set by |
+|---|---|---|
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` (HTTPS requests only) | Django SecurityMiddleware + SecurityHeadersMiddleware (env `SECURE_HSTS_*`) |
+| `X-Content-Type-Options` | `nosniff` | both |
+| `X-Frame-Options` | `DENY` | XFrameOptionsMiddleware (env `X_FRAME_OPTIONS`) |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | SecurityHeadersMiddleware |
+| `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | SecurityHeadersMiddleware |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Django default |
+| Cookies | session + csrftoken: `HttpOnly`, `SameSite=Lax`, `Secure` when DEBUG is off | settings |
+
+What the web server (nginx or similar, in front of both the SPA and `/api/`) must add, because the SPA's HTML/JS/CSS never pass through Django:
+
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response (add `preload` only after submitting the domain to hstspreload.org); redirect all `http://` to `https://` (or set `SECURE_SSL_REDIRECT=True` in Django and `SECURE_PROXY_SSL_HEADER` for the proxy).
+- `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; add the map tile host when R11 adds Leaflet, and payment provider hosts when Payme/Click are integrated):
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
+- Clickjacking: `frame-ancestors 'none'` in the CSP above, plus `X-Frame-Options: DENY` for older browsers (SPA responses).
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on SPA and `/media/` responses.
+- `/media/` (uploaded photos): serve with `Content-Disposition: inline`, the image MIME type from the file extension only (jpg/png/gif/webp), `nosniff`, no script execution, and no directory listing.
+- Remove `Server` / `X-Powered-By` version banners; limit request body size (e.g. `client_max_body_size 11m` for 10 MB photos).
+
+## Production checklist (R4, 2026-10-03)
+
+### Environment variables (the app refuses to start without the starred ones being safe)
+- [ ] `DEBUG=False`
+- [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
+- [ ] `ALLOWED_HOSTS`* real host names, no `*`
+- [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only
+- [ ] `SECURE_SSL_REDIRECT=True` (or redirect at the proxy); `NUM_PROXIES` = number of proxies that append to `X-Forwarded-For` (rate limits and lockout key on the client IP)
+- [ ] `DB_*` with `DB_SSLMODE=require` if the database is on another host
+- [ ] `REDIS_URL` / `CELERY_*` (cache must be shared Redis: throttles and login lockout live there)
+- [ ] `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` left at defaults unless measured
+
+### Test modes off
+- [ ] `SMS_TEST_MODE=False`* (True returns OTP codes in responses)
+- [ ] `PAYMENT_TEST_MODE=False`* (True fakes provider calls; `/confirm/` additionally needs DEBUG)
+- [ ] `config/*_security_check*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
+
+### Demo data
+- [ ] Never run `seed_demo` / `seed_demo_stats` in production (they refuse when DEBUG is off)
+- [ ] If the production database was ever copied from a dev database, delete every `*@tickbron.demo` account and the demo hotels before launch: `User.objects.filter(email__endswith='@tickbron.demo')`
+
+### HTTPS and server headers
+- [ ] Valid TLS certificate, HTTP→HTTPS redirect, HSTS (see "Security headers" above)
+- [ ] CSP, frame-ancestors, nosniff, Referrer-Policy on SPA responses; safe `/media/` serving
+- [ ] `/api/docs/`, `/api/redoc/`, `/api/schema/` blocked at the proxy or limited to staff (SECURITY_REVIEW L-2)
+
+### Database
+- [ ] Application DB user with least privilege: owner of the `tickbron` schema objects only for migrations; at runtime CONNECT + SELECT/INSERT/UPDATE/DELETE on app tables, no SUPERUSER / CREATEDB / CREATEROLE (CREATEDB is needed only by the test runner on dev machines)
+- [ ] Daily `pg_dump -Fc` backups kept off the server (e.g. 14 daily + 8 weekly), restore tested at least once; backup before every migration
+- [ ] `python manage.py migrate` and `python manage.py check --deploy` (must print "no issues") on each release
+
+### Real credentials still missing (owner decision / contracts)
+- [ ] Payme: `PAYME_MERCHANT_ID`, `PAYME_SECRET_KEY` (and real API integration + webhook status mapping)
+- [ ] Click: `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET_KEY`
+- [ ] Visa: `VISA_API_KEY`, `VISA_SECRET_KEY` (card payments must use provider tokenization; card data never touches our backend)
+- [ ] Eskiz (SMS for OTP): API credentials and sender id; until then OTP login cannot work in production (`SMS_TEST_MODE` must stay False)
+

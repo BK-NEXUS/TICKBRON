@@ -67,3 +67,14 @@ def test_debug_still_allows_local_development_values():
         CSRF_TRUSTED_ORIGINS=None, SMS_TEST_MODE='True', PAYMENT_TEST_MODE='True',
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_check_deploy_reports_no_issues():
+    env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS + EXTRA_ISOLATED}
+    env.update(GOOD_PRODUCTION_ENV, DJANGO_SETTINGS_MODULE='config.settings', SECURE_SSL_REDIRECT='True')
+    result = subprocess.run(
+        [sys.executable, 'manage.py', 'check', '--deploy', '--fail-level', 'WARNING'],
+        cwd=BACKEND_DIR, env=env, capture_output=True, text=True, timeout=300,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'no issues' in result.stdout

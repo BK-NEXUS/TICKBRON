@@ -12,6 +12,8 @@ from django.db.models import CharField, Count, Max, Q, Value
 from django.db.models.functions import Cast, Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -172,6 +174,7 @@ def ranked_page(request, rows, limit, key, bookings, booking_key, to_row, extra)
     return response
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_countries(request):
@@ -207,6 +210,7 @@ def status_countries(request):
                        {'period': period})
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_regions(request, country):
@@ -247,6 +251,7 @@ def status_regions(request, country):
     return response
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_hotels(request, country, region):
@@ -280,6 +285,7 @@ def status_hotels(request, country, region):
     return response
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_hotel_detail(request, property_id):
@@ -322,6 +328,7 @@ def status_hotel_detail(request, property_id):
     })
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_users(request):

@@ -30,7 +30,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
                   'property_primary_photo', 'notes', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
     
-    def get_property_primary_photo(self, obj):
+    def get_property_primary_photo(self, obj) -> str | None:
         """Get the primary photo for the property."""
         try:
             primary_photo = obj.property.photos.filter(is_primary=True, is_deleted=False).first()

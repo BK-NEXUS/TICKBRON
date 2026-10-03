@@ -6,6 +6,8 @@ breakdown and a monthly series for ?year= (default: the current year).
 Definitions of counted bookings, guests and revenue: bookings/stats.py.
 """
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -19,6 +21,7 @@ from properties.models import Property
 from properties.regions import hotel_name_expression, region_expression
 
 
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_status(request):
