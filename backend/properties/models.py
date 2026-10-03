@@ -911,6 +911,13 @@ class RatePlan(BaseModel):
             })
 
 
+def _check_bulk_range(date_from, date_to):
+    """Bulk edits write one row per day: cap the range like a stay (R4 security review)."""
+    from bookings.pricing import MAX_STAY_NIGHTS
+    if (date_to - date_from).days > MAX_STAY_NIGHTS:
+        raise ValidationError({'date_to': _('The range can be at most %(days)d days') % {'days': MAX_STAY_NIGHTS}})
+
+
 class DateInventory(BaseModel):
     """
     Date inventory model for tracking availability and pricing over time.
@@ -1021,6 +1028,7 @@ class DateInventory(BaseModel):
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
+        _check_bulk_range(date_from, date_to)
         if price < 0:
             raise ValidationError({'price': _('Must not be negative')})
 
@@ -1114,6 +1122,7 @@ class RoomInventory(BaseModel):
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
+        _check_bulk_range(date_from, date_to)
         if available_rooms is None and is_available is None:
             raise ValidationError({'available_rooms': _('Nothing to update')})
         if available_rooms is not None and available_rooms > room_type.total_rooms:
@@ -1231,6 +1240,7 @@ class RoomBlock(BaseModel):
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
+        _check_bulk_range(date_from, date_to)
         if rooms < 1:
             raise ValidationError({'rooms': _('Must be at least 1')})
 

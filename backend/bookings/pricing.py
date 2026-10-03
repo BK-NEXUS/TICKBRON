@@ -13,6 +13,10 @@ from typing import List
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
+# Longest stay anyone can quote or book, whatever the rate plan allows. Without it a
+# far-away check_out made quote_stay build (and lock) one row per night (R4 security review).
+MAX_STAY_NIGHTS = 365
+
 
 @dataclass
 class StayQuote:
@@ -106,6 +110,8 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
         raise ValidationError({'check_out': 'Check-out date must be after check-in date'})
 
     number_of_nights = (check_out - check_in).days
+    if number_of_nights > MAX_STAY_NIGHTS:
+        raise ValidationError({'check_out': f'A stay can be at most {MAX_STAY_NIGHTS} nights.'})
     if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
         raise ValidationError({
             'check_in': f'Minimum stay is {rate_plan.min_nights} nights for this rate.'
