@@ -2230,3 +2230,11 @@ Owner's approved answers and additions: the prompt (decisions A–D, additions 1
 6. Merge `feat/r6-currency` into master ONLY after the full suite is green with `--create-db`; push; report the counts (passed/failed/skipped). Then stop (owner asked to stop after R6).
 - Not done (decide or skip): availability per rate plan `uzs_total` for a stay (plan 6; the quote endpoint already gives it).
 - Restart any running `runserver` (old code does not know the new NOT NULL booking columns).
+
+## Frontend needs (R12, PLANNED — not ready, waiting for owner approval of `.ai/PLAN_R12.md`)
+No endpoint below exists yet; do not build against it until "READY FOR FRONTEND: R12".
+- Owner: "Guest did not arrive" button with a comment dialog (10–500 characters) on the arrivals and bookings lists; "My reports" list with withdraw.
+- Staff: "No-show reports" queue (pending first, filters, flagged-hotel badge) with approve and reject dialogs that show the exact refund amount and require a comment; needs-attention refunds list with retry.
+- Refund statement ("If you do not arrive, 50% of the amount paid will be refunded: X so'm.") on the payment step before the pay button, on the confirmation page and in My bookings, uz/ru/en, from the API text key and amount (never computed by the frontend).
+- New status labels: `no_show`, `no_show_reported`, `expired`; refund `pending`, `succeeded`, `failed`.
+- Status pages: new periods and custom range, granularity, reconciliation block, hotels list with sort/search/filters, user detail page, CSV download buttons.
