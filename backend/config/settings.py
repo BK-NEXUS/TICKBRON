@@ -322,7 +322,9 @@ CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:63
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+# R12: beat schedules are written in business time (Asia/Tashkent) whatever TIME_ZONE is.
+# Production must run Celery beat, a worker and Redis (RELEASE_CHECKLIST).
+CELERY_TIMEZONE = BUSINESS_TIME_ZONE
 
 # Periodic tasks (run with: celery -A config beat -l info)
 EXPIRED_BOOKINGS_INTERVAL_SECONDS = int(os.getenv('EXPIRED_BOOKINGS_INTERVAL_SECONDS', '60'))
@@ -332,10 +334,15 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bookings.tasks.expire_pending_bookings',
         'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
     },
-    # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (UTC+5; CELERY_TIMEZONE is UTC)
+    # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (CELERY_TIMEZONE)
     'fetch-exchange-rates': {
         'task': 'currency.tasks.fetch_exchange_rates',
-        'schedule': crontab(hour='4,13', minute=0),
+        'schedule': crontab(hour='9,18', minute=0),
+    },
+    # R12: confirmed stays whose check-out date has passed become completed, 00:05 Asia/Tashkent
+    'complete-finished-stays': {
+        'task': 'bookings.tasks.complete_finished_stays',
+        'schedule': crontab(hour=0, minute=5),
     },
 }
 

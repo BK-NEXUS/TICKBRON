@@ -799,3 +799,25 @@ class BookingItem(BaseModel):
     
     def __str__(self):
         return f"{self.booking.confirmation_code} - {self.room_type.name}"
+
+
+class AutoCompletionRun(models.Model):
+    """
+    One real run of the nightly auto-completion (R12): when it ran, what started it,
+    how many confirmed stays became completed and how many could not. Dry runs are
+    not recorded. Shown to super-admins at /admin-panel/auto-completion/status/.
+    """
+    TRIGGER_CHOICES = [('beat', 'Celery beat'), ('command', 'Management command')]
+
+    trigger = models.CharField(max_length=10, choices=TRIGGER_CHOICES)
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField()
+    changed = models.PositiveIntegerField(default=0)
+    failed = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'booking_auto_completion_runs'
+        ordering = ['-started_at', '-id']
+
+    def __str__(self):
+        return f'{self.started_at} {self.trigger}: {self.changed} completed, {self.failed} failed'

@@ -279,3 +279,11 @@ Before any real payment, each item below must be tested end to end in the provid
 - [ ] Click partial-refund rules (same questions).
 - [ ] The Payme adapter end to end: create, webhook signature and amount check, full refund, partial refund, failure and retry.
 - [ ] The Click adapter end to end: the same steps.
+
+## Business date and auto-completion (R12 phase 1, 2026-10-05)
+
+- [ ] `TIME_ZONE` stays `UTC`. `BUSINESS_TIME_ZONE` (env, default `Asia/Tashkent`) decides "today" for booking check-in, statistics and auto-completion. Hotels in other countries use the same business date for now.
+- [ ] **Celery beat, a worker and Redis must run in production.** `CELERY_TIMEZONE = BUSINESS_TIME_ZONE`: beat times in `CELERY_BEAT_SCHEDULE` are Tashkent times (exchange rates 09:00 and 18:00, auto-completion 00:05). Without beat, confirmed stays never become completed and the Status "stayed" numbers stay at 0.
+- [ ] Backup first (`pg_dump -Fc`), `migrate` (`bookings/0009` adds the run history table).
+- [ ] Once after deploy: `python manage.py complete_finished_stays --dry-run` (prints how many past stays are still `confirmed`), then without `--dry-run` (completes them; nothing touches pending, cancelled or no_show).
+- [ ] Check `GET /api/v1/admin-panel/auto-completion/status/` as a super-admin the next morning: `last_run.finished_at` after 00:05 Tashkent, `failed: 0`, `waiting: 0`.

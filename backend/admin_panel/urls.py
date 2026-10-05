@@ -4,6 +4,7 @@ URL configuration for admin app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
+from bookings.admin_views import auto_completion_status
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
@@ -50,6 +51,7 @@ urlpatterns = [
     path('status/hotels/<int:property_id>/', status_hotel_detail, name='admin-status-hotel-detail'),
     path('status/users/', status_users, name='admin-status-users'),
     path('audit-log/', admin_access_log, name='admin-access-log'),
+    path('auto-completion/status/', auto_completion_status, name='admin-auto-completion-status'),
     path('exchange-rates/', exchange_rate_list, name='admin-exchange-rates'),
     path('exchange-rates/status/', exchange_rate_status, name='admin-exchange-rate-status'),
     path('exchange-rates/<int:rate_id>/accept/', exchange_rate_accept, name='admin-exchange-rate-accept'),
