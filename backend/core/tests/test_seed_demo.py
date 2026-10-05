@@ -85,6 +85,7 @@ def test_refuses_to_run_without_debug(settings):
 
 
 @pytest.mark.django_db
+@pytest.mark.no_default_exchange_rate  # the seed stores a demo rate only when none exists
 class TestSeedDemoExchangeRate:
     """R6: the demo hotels are priced in USD, so a local database needs a rate to book them."""
 

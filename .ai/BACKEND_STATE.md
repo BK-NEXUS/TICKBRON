@@ -38,3 +38,8 @@ Commit format:
 
 ## Remaining Work
 |- None - all checkpoints completed
+
+## Roadmap items (R-series, see .ai/ROADMAP.md)
+|- R1, R2 (G1-G4), R4: done and merged (see ROADMAP).
+|- R6 currency: DONE 2026-10-05, checkpoint `.ai/checkpoints/backend_r6.md`. Full suite `pytest --create-db`: 2029 passed, 0 failed, 2 skipped. Open before production: Click amount unit and Payme/Click partial-refund rules (RELEASE_CHECKLIST "Unverified before production").
+|- R12 status additions: audit + plan in progress on `feat/r12-status` (`.ai/PLAN_R12.md`), waiting for owner approval before any feature code.

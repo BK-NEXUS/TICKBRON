@@ -102,6 +102,62 @@ def geography_dictionary(request, django_db_blocker):
     yield
 
 
+DEFAULT_TEST_RATE_SOURCE = 'test-default'
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        'markers',
+        'no_default_exchange_rate: the test controls exchange rates itself (no default USD rate)',
+    )
+
+
+@pytest.fixture(autouse=True)
+def default_exchange_rate(request, django_db_blocker):
+    """
+    Give normal database tests an accepted USD rate (R6).
+
+    A USD-priced hotel cannot be booked without a rate (503 exchange_rate_unavailable),
+    as in a running system after the first CBU fetch. Tests about rates themselves
+    (no rate yet, stale rate, fetch, accept) use the no_default_exchange_rate marker
+    and create their own rows. The source is 'test-default', so a rate a test stores
+    with make_usd_rate() (source cbu.uz, created later) is the one in use.
+    TransactionTestCase tests (not django.test.TestCase) are skipped for the same reason
+    as geography_dictionary.
+    """
+    from django.test import TestCase, TransactionTestCase
+
+    test_instance = getattr(request.node, 'instance', None)
+    is_django_testcase = isinstance(test_instance, TestCase)
+    if isinstance(test_instance, TransactionTestCase) and not is_django_testcase:
+        yield
+        return
+    if request.node.get_closest_marker('no_default_exchange_rate') is not None:
+        yield
+        return
+
+    # django.test.TestCase: the row is written inside the class transaction and rolled back with it
+    uses_db = (
+        is_django_testcase
+        or request.node.get_closest_marker('django_db') is not None
+        or bool({'db', 'transactional_db'} & set(request.fixturenames))
+    )
+    if uses_db:
+        request.getfixturevalue('django_db_setup')
+        with django_db_blocker.unblock():
+            from decimal import Decimal
+
+            from currency.cbu import tashkent_today
+            from currency.models import ExchangeRate
+
+            ExchangeRate.objects.get_or_create(
+                currency='USD', rate_date=tashkent_today(), source=DEFAULT_TEST_RATE_SOURCE, status='accepted',
+                defaults={'rate': Decimal('12000.00'), 'nominal': 1},
+            )
+
+    yield
+
+
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Start every test with an empty cache."""

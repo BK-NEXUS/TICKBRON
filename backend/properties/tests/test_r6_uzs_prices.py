@@ -17,6 +17,9 @@ from currency.models import ExchangeRate
 from properties.models import Property, PropertyType
 from users.models import User
 
+# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+pytestmark = pytest.mark.no_default_exchange_rate
+
 
 def _hotel(owner, kind, name, price, currency):
     return Property.objects.create(

@@ -2205,7 +2205,9 @@ Full report: `.ai/SECURITY_REVIEW.md`. Production checklist and server headers: 
 - DONE (merged to master `dc205e1`): 1 Critical (dependencies, Django 5.2.17) and 4 High (payment currency, password rules, insecure production settings, unbounded stay/bulk ranges) fixed with proof tests; refund + cancel_booking; admin access audit log; permission matrix over every route x 5 roles; guest IDOR tests; `check --deploy` no issues. Backend `pytest --create-db`: 1894 passed, 2 skipped. E2E: 12 passed, 1 failed (flow H, waits for R5). Open: 6 Medium, 6 Low (see SECURITY_REVIEW.md).
 - READY FOR FRONTEND: R4 — `POST /payments/transactions/{id}/refund/` (`cancel_booking`, `cancellation_reason`, response `booking_status`); `GET /admin-panel/audit-log/`; stricter password errors on register / create-hotel-owner; 365-night cap on quote, booking and partner bulk ranges.
 
-## R6 currency — IN PROGRESS (2026-10-03, Kolya's agent, branch feat/r6-currency)
+## R6 currency — DONE 2026-10-05 (was IN PROGRESS 2026-10-03, branch feat/r6-currency; history below kept)
+Status 2026-10-05: full suite green (2029 passed, 0 failed, 2 skipped), checkpoint `.ai/checkpoints/backend_r6.md`. The TODO list below is done. Correction: the Click unit (so'm) is NOT verified from Click's own documentation, see RELEASE_CHECKLIST "Unverified before production".
+
 Owner's approved answers and additions: the prompt (decisions A–D, additions 1–6) plus `.ai/PLAN_R6.md`.
 
 ### Done (code + tests written; last commit is WIP, full suite NOT green yet)
