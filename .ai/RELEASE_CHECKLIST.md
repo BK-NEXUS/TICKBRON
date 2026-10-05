@@ -267,3 +267,15 @@ Hotels are priced in USD or UZS; guests are always charged in UZS (Payme and Cli
 
 ### When the rate is stale or missing
 - [ ] Look at `last_error` in the status endpoint (network, CBU answer format, rejected jump), run `fetch_exchange_rates` by hand, and if a correct rate was rejected for a real jump, accept it as super-admin.
+
+### Unverified before production (R6, 2026-10-05)
+Payment amount units, as implemented in `backend/payments/adapters.py`:
+- Payme: tiyin (1 so'm = 100 tiyin). Confirmed in Payme's own Merchant API documentation ("Сумма платежа (в тийинах)").
+- Click: so'm as a decimal number ("1000.00"). **NOT verified** from Click's own documentation; the only source so far is the amount format used in Click's integration library. Treat it as an assumption.
+
+Before any real payment, each item below must be tested end to end in the provider's sandbox with real merchant credentials (none of this is verified yet):
+- [ ] Click amount unit (so'm vs tiyin) on create, prepare/complete webhooks and refund.
+- [ ] Payme partial-refund rules (allowed at all, how many times, minimum amount, what the webhook sends).
+- [ ] Click partial-refund rules (same questions).
+- [ ] The Payme adapter end to end: create, webhook signature and amount check, full refund, partial refund, failure and retry.
+- [ ] The Click adapter end to end: the same steps.

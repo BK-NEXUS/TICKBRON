@@ -368,8 +368,10 @@ class ClickAdapter(BasePaymentAdapter):
     Click payment provider adapter.
     
     Implements Click-specific signature validation and API communication.
-    Click amounts are so'm as a decimal number ("1000.0"), so the base class
-    conversion applies (never a float).
+    Click amounts are taken to be so'm as a decimal number ("1000.0"), so the base
+    class conversion applies (never a float). NOT verified from Click's own
+    documentation (only from its integration library): test in the Click sandbox
+    before production, see .ai/RELEASE_CHECKLIST.md "Unverified before production".
     """
     
     def __init__(self):

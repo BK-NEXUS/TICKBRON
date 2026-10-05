@@ -822,7 +822,7 @@ Hotels are priced in `USD` or `UZS` (property `currency`; room types, rate plans
 
 ### POST `/api/v1/payments/transactions/` (rule changed, replaces the R4 currency rule)
 - `amount` must equal the booking's `charge_amount` and `currency` its `charge_currency` (`"UZS"` for every booking made since R6), else 400 `amount` / `currency`. Send exactly the booking's values
-- Payme counts in tiyin (1 so'm = 100 tiyin), Click in so'm: converted only inside the backend adapters, never by the frontend
+- Payme counts in tiyin (1 so'm = 100 tiyin, confirmed in Payme's documentation), Click is assumed to count in so'm (NOT verified from Click's documentation; see RELEASE_CHECKLIST "Unverified before production"): converted only inside the backend adapters, never by the frontend
 - Refunds (staff): a full refund is the paid amount (the UZS snapshot), never a re-conversion; a partial refund of a UZS payment must be whole so'm (400 otherwise)
 
 ### Search and property pages (informational only)

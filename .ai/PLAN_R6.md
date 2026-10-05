@@ -1,6 +1,6 @@
 # PLAN R6 — Currency: UZS, daily CBU rate, booking snapshot (BACKEND)
 
-Status: PLAN, waiting for owner approval. No code until approved. Gated item (money + migrations).
+Status: DONE 2026-10-05 (approved 2026-10-03; full suite green 2029 passed / 0 failed / 2 skipped; checkpoint `.ai/checkpoints/backend_r6.md`). Not done from this plan: per-rate-plan `uzs_total` in availability (6; the quote endpoint gives it). Click amount unit not verified (RELEASE_CHECKLIST "Unverified before production").
 Author: Kolya's agent, 2026-10-03. Branch when approved: `feat/r6-currency`.
 
 ## 0. Facts checked before planning (2026-10-03)
