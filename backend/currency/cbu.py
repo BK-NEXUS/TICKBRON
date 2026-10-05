@@ -11,14 +11,13 @@ date is in the future. One unit = Rate / Nominal.
 import json
 import logging
 import urllib.request
-import zoneinfo
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.utils import timezone
 
+from common.dates import business_today
 from common.money import CHARGE_CURRENCY, SUPPORTED_BASE_CURRENCIES
 from currency.models import ExchangeRate, ExchangeRateFetch
 
@@ -29,7 +28,6 @@ CBU_CODES = {'USD': '840'}
 FETCHED_CURRENCIES = tuple(c for c in SUPPORTED_BASE_CURRENCIES if c != CHARGE_CURRENCY)
 MAX_BODY_BYTES = 64 * 1024
 MAX_RATE_AGE_DAYS = 10
-TASHKENT = zoneinfo.ZoneInfo('Asia/Tashkent')
 
 
 class FetchError(Exception):
@@ -48,7 +46,8 @@ _OPENER = urllib.request.build_opener(_NoRedirect)
 
 
 def tashkent_today():
-    return timezone.now().astimezone(TASHKENT).date()
+    """The CBU rate date: the business date (R12, common.dates.business_today)."""
+    return business_today()
 
 
 def _download(currency, day):

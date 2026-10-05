@@ -169,6 +169,10 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
+# R12: the date "today" for bookings, statistics and auto-completion (common.dates.business_today).
+# TIME_ZONE stays UTC; hotels in other countries use this business date for now.
+BUSINESS_TIME_ZONE = os.getenv('BUSINESS_TIME_ZONE', 'Asia/Tashkent')
+
 USE_I18N = True
 
 USE_TZ = True

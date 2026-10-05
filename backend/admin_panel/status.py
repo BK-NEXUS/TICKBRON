@@ -11,7 +11,7 @@ guests and revenue: bookings/stats.py.
 from django.db.models import CharField, Count, Max, Q, Value
 from django.db.models.functions import Cast, Coalesce
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from common.dates import business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -298,7 +298,7 @@ def status_hotel_detail(request, property_id):
     except InvalidPeriod as error:
         return bad_request('period', error)
     try:
-        year = parse_year(request.query_params.get('year'), timezone.localdate().year)
+        year = parse_year(request.query_params.get('year'), business_today().year)
     except InvalidPeriod as error:
         return bad_request('year', error)
 

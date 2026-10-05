@@ -5,7 +5,7 @@ Totals since the account was created (or for ?period=YYYY / YYYY-MM), a per-prop
 breakdown and a monthly series for ?year= (default: the current year).
 Definitions of counted bookings, guests and revenue: bookings/stats.py.
 """
-from django.utils import timezone
+from common.dates import business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -30,7 +30,7 @@ def partner_status(request):
     except InvalidPeriod as error:
         return Response({'period': [str(error)]}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        year = parse_year(request.query_params.get('year'), timezone.localdate().year)
+        year = parse_year(request.query_params.get('year'), business_today().year)
     except InvalidPeriod as error:
         return Response({'year': [str(error)]}, status=status.HTTP_400_BAD_REQUEST)
 

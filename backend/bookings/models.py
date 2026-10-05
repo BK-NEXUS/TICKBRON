@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.utils import timezone
+from common.dates import business_today
 from common.models import BaseModel
 from common.money import CHARGE_CURRENCY, quantize, to_uzs
 from currency.rates import ExchangeRateUnavailable, current_rate
@@ -329,7 +330,7 @@ class Booking(BaseModel):
         if number_of_rooms < 1:
             raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
         
-        if check_in < timezone.localdate():
+        if check_in < business_today():
             raise ValidationError({'check_in': _('Check-in date cannot be in the past')})
         
         if guest_count > room_type.max_occupancy * number_of_rooms:
