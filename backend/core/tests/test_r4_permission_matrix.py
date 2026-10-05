@@ -46,6 +46,7 @@ ACCESS = [
     (r'^/api/v1/admin-panel/users/create-hotel-owner/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
+    (r'^/api/v1/admin-panel/refunds/\d+/(mark-done|retry)/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/', None, STAFF),
 ]
 

@@ -642,11 +642,13 @@ class Booking(BaseModel):
             # Log state transition
             self._log_state_transition(old_status, 'completed', 'checkout_completed')
     
-    def mark_no_show(self):
+    def mark_no_show(self, via_approved_report=False):
         """
         Mark a booking as no-show when guest doesn't arrive.
         
-        This method is called when a confirmed booking becomes a no-show.
+        This method is called when a confirmed booking becomes a no-show. With
+        via_approved_report=True (R12, staff approved the hotel's no-show report) a
+        completed booking may become a no-show as well; nothing else allows that.
         
         Raises:
             ValidationError: If booking cannot be marked as no-show
@@ -659,7 +661,10 @@ class Booking(BaseModel):
             # Validate state transition using state machine
             from_state = BookingState(self.status)
             to_state = BookingState('no_show')
-            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='guest_no_show')
+            reason = 'no_show_report_approved' if via_approved_report else 'guest_no_show'
+            if via_approved_report and from_state == BookingState.CONFIRMED:
+                reason = 'guest_no_show'
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason=reason)
             if not is_valid:
                 raise ValidationError({
                     'status': error_message
@@ -671,7 +676,8 @@ class Booking(BaseModel):
             self.save(update_fields=['status'])
             
             # Log state transition
-            self._log_state_transition(old_status, 'no_show', 'guest_no_show')
+            self._log_state_transition(
+                old_status, 'no_show', 'no_show_report_approved' if via_approved_report else 'guest_no_show')
     
     def update_payment_status(self, new_payment_status):
         """

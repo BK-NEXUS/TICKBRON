@@ -194,6 +194,59 @@ class PaymentTransaction(BaseModel):
             return transaction, True
 
 
+class Refund(models.Model):
+    """
+    One refund of one payment (R12). The money ledger for refunds: statistics, limits
+    and the staff needs-attention list read these rows, never text in audit details.
+
+    - amount is in the payment's currency (UZS: whole so'm); the sum of a payment's
+      non-failed refunds (pending, succeeded, needs_manual) never exceeds its amount,
+      checked by payments.refunds.create_refund with the payment row locked
+    - pending: committed, provider not called yet; succeeded / failed: provider answer;
+      needs_manual: the provider cannot do it through the API (partial refund not
+      supported or not verified, integration missing), staff refund by hand and mark it done
+    - idempotency_key is unique: the same refund request never creates a second row
+    - rows are never deleted
+    """
+    REASON_CHOICES = [('cancel', 'Booking cancelled'), ('no_show', 'No-show'), ('staff', 'Staff decision')]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'), ('succeeded', 'Succeeded'), ('failed', 'Failed'), ('needs_manual', 'Needs manual refund'),
+    ]
+    COUNTED_STATUSES = ('pending', 'succeeded', 'needs_manual')
+
+    payment = models.ForeignKey(PaymentTransaction, on_delete=models.PROTECT, related_name='refunds')
+    booking = models.ForeignKey('bookings.Booking', on_delete=models.PROTECT, related_name='refunds')
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    currency = models.CharField(max_length=3)
+    reason = models.CharField(max_length=10, choices=REASON_CHOICES)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending', db_index=True)
+    idempotency_key = models.CharField(max_length=100, unique=True)
+    provider_reference = models.CharField(max_length=255, null=True, blank=True)
+    error_code = models.CharField(max_length=50, null=True, blank=True)
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='refunds_created')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'payment_refunds'
+        ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['payment', 'status'], name='refund_payment_status_idx'),
+            models.Index(fields=['booking', 'status'], name='refund_booking_status_idx'),
+            models.Index(fields=['status', 'created_at'], name='refund_status_created_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='refund_amount_positive'),
+        ]
+
+    def __str__(self):
+        return f'Refund {self.pk} {self.amount} {self.currency} {self.status}'
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError('Refunds cannot be deleted')
+
+
 class WebhookEvent(BaseModel):
     """
     Webhook Event model for processing payment provider webhooks.

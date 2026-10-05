@@ -2240,3 +2240,29 @@ No endpoint below exists yet; do not build against it until "READY FOR FRONTEND:
 - Refund statement ("If you do not arrive, 50% of the amount paid will be refunded: X so'm.") on the payment step before the pay button, on the confirmation page and in My bookings, uz/ru/en, from the API text key and amount (never computed by the frontend).
 - New status labels: `no_show`, `no_show_reported`, `expired`; refund `pending`, `succeeded`, `failed`.
 - Status pages: new periods and custom range, granularity, reconciliation block, hotels list with sort/search/filters, user detail page, CSV download buttons.
+
+## R12 — IN PROGRESS (2026-10-05, Kolya's agent, branch feat/r12-status; stopped by the owner mid phase 1)
+Plan and owner conditions: `.ai/PLAN_R12.md` ("Phases"). Master is NOT touched by R12 yet.
+
+### Done on feat/r12-status
+- `0c4f04f` 1a business date: `BUSINESS_TIME_ZONE` (default Asia/Tashkent), `common.dates.business_today()`; booking create / quote / availability / Status default year use it. Suite green (2042 passed).
+- `8d8174e` 1b auto-completion: `bookings/completion.py`, task + beat 00:05 Tashkent (`CELERY_TIMEZONE = BUSINESS_TIME_ZONE`, CBU crontab 9,18), `AutoCompletionRun` (`bookings/0009`), command `complete_finished_stays [--dry-run]`, super-admin `GET /admin-panel/auto-completion/status/`, RELEASE_CHECKLIST section. Suite green (2063 passed).
+- WIP commit (this one) 1c Refund model — **full suite NOT run yet**:
+  - `payments.Refund` (`payments/0003`), backfill `payments/0004` (reversible), `admin_panel/0006` (audit actions `refund_mark_done`, `refund_retry`; details key `refund_id`)
+  - `payments/refunds.py`: `create_refund` (payment row locked, non-failed sum <= paid, whole so'm, idempotency key), `send_refund` (after commit, outside transactions), `mark_manual_done`, `retry_refund`
+  - adapters: `SUPPORTS_PARTIAL_REFUND = None` (unverified) for Payme/Click/Visa; `partial_refund_supported()` True only in test mode (mock)
+  - staff refund endpoint uses the model; response + `refund {id, amount, currency, reason, status}`; 202 when `needs_manual`; provider failure → refund `failed` (a requested cancellation stands; before R12 it was rolled back)
+  - `GET /admin-panel/refunds/needs-attention/` (staff), `POST /admin-panel/refunds/{id}/mark-done/`, `POST .../retry/` (super-admin)
+  - state machine: `completed -> no_show` only with reason `no_show_report_approved`; `Booking.mark_no_show(via_approved_report=True)`
+  - New tests `payments/tests/test_r12_refunds.py` + `test_r12_refund_backfill_migration.py`: 37 passed. Existing payments/admin tests NOT run yet.
+
+### TODO next (in this order)
+1. `git pull --rebase`; from `backend/`: `venv\Scripts\python.exe -m pytest --create-db -q` (or `-n 8`, pytest-xdist is only in the local venv, not in requirements). Fix failures without weakening assertions. Likely spots: `payments/tests/test_views.py` refund tests (audit `new_status` on failure is now the payment status, not 'failed'), `test_r4_refund_cancel_booking.py`, permission matrix (new routes are declared).
+2. TDD proof for 1c: `git stash` the 1c code (keep the tests), run the two R12 refund test files (must fail), restore.
+3. Clean commit for 1c (`kolya - backend: R12 1c ...`), push. Then 1d.
+4. 1d notifications: nullable `code` (CharField) + `params` (JSON) on `accounts.Notification` + migration; helper `accounts.notify(user, code, params, booking=None)` with an English fallback title/message per code; params only ids/amounts/dates (no personal data, test that). Tests first. Commit, push.
+5. Phase 1 docs: API_CONTRACT (business date, auto-completion status endpoint, refund endpoint `refund` field and 202, needs-attention/mark-done/retry, adapter partial-refund rule), RELEASE_CHECKLIST (`pg_dump` before `payments/0003-0004`, `admin_panel/0006`; partial refunds Payme/Click unverified → manual), BACKEND_STATE, checkpoint `.ai/checkpoints/backend_r12_phase1.md`.
+6. Dev DB: on this computer the dev database `tickbron` does not exist (fresh clone, only `test_tickbron`). Where a dev DB exists: `pg_dump -Fc` first, then `migrate`, then `complete_finished_stays --dry-run` and the real run.
+7. Merge phase 1 into master ONLY with the full suite green (`--create-db`, 0 failed); push; report the counts.
+8. PHASE 2 (statistics, client priority) — PLAN_R12 section 5 steps 4-9: `bookings/metrics.py` (guests = SUM guest_count, `unique_customers` = distinct accounts, nights, room_nights, stayed/counted/upcoming, `booking_status` incl. `expired` (= cancelled with the expiry reason), `no_show`, `no_show_reported`, `fully_refunded` (0 until phase 3), revenue per currency = paid − refunded from Refund rows, periods today/last_7_days/last_30_days/this_year/last_5_years/last_10_years/custom (<= 20 years) + month/year, granularity day/week/month/year), user detail `/admin-panel/status/users/{id}/`, flat hotels list `/admin-panel/status/hotels/` (search, filters, ordering whitelist, top 1000), hotel detail + reconciliation, owner `/partner/status/...` + arrivals, CSV export. List every existing test whose expected number changes (old, new, reason) in the commit message; never delete an assertion. Caveat in PLAN + API_CONTRACT: "stayed" numbers of the last `NO_SHOW_REPORT_WINDOW_DAYS` days can still change. EXPLAIN before/after. Merge, then `READY FOR FRONTEND: R12a - ...`.
+9. PHASE 3 (no-show reports + 50% refund) — PLAN_R12 steps 2-3: `NoShowReport` + owner/staff endpoints, auto-completion skips pending reports, notifications via 1d, abuse flag thresholds as settings, `no_show_refund_percent` snapshot (old bookings 0), disclosure fields on quote/booking, approve refunds through `create_refund(..., reason='no_show', idempotency_key=f'{booking.id}:no_show')`. Merge, then `READY FOR FRONTEND: R12b - ...`. Stop after phase 3.

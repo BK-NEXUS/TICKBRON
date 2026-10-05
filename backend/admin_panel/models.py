@@ -76,6 +76,8 @@ class AdminAccessLog(models.Model):
         ('user_list', 'User list'),
         ('status_users', 'Status users list'),
         ('exchange_rate_accept', 'Accepted a rejected exchange rate'),
+        ('refund_mark_done', 'Marked a manual refund as paid'),
+        ('refund_retry', 'Retried a failed refund'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
@@ -96,7 +98,8 @@ class AdminAccessLog(models.Model):
         return f'{self.created_at} user:{self.actor_id} {self.action} target:{self.target_user_id}'
 
     # The only keys `details` may hold: non-personal facts, flat scalar values
-    DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id'})
+    DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
+                             'refund_id'})
 
     @classmethod
     def _check_details(cls, details):
