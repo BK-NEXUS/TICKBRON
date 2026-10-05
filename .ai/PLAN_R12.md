@@ -1,7 +1,9 @@
 # PLAN R12 — Status additions, auto-completion, no-show reports with 50% refund (BACKEND)
 
 Status: PLAN, waiting for owner approval. No feature code until "approved". Gated item (money, refunds, migrations).
-Author: Kolya's agent, 2026-10-05. Branch: `feat/r12-status` (from `feat/r6-currency` 95ebbd4, full suite green).
+Author: Kolya's agent, 2026-10-05. Branch: `feat/r12-status` (from `feat/r6-currency` 95ebbd4, full suite green; master `e6bceeb` with R6 merged in afterwards).
+Re-checked 2026-10-05 against master `e6bceeb`: backend code identical to 95ebbd4 (`git diff 95ebbd4 e6bceeb -- backend` empty); audit refs in section 0 spot-checked and still correct (statuses `models.py:33-39`, no caller of `complete_booking`/`mark_no_show` outside tests, state machine `state_machine.py:39-44`, expiry reason `models.py:527`, `TIME_ZONE='UTC'` `settings.py:170`, guests = distinct accounts `stats.py:93`, no Refund model, no Notification created outside tests, Booking indexes `models.py:146-156`).
+Owner's second Part B brief (2026-10-05) covers sections 1-3 and stops partway through item 3 (inventory). Sections 4 (no-show refund, NO_SHOW_REFUND_PERCENT) and 5-8 come from the first brief and stay as planned until the owner says otherwise.
 A new session continues from section 5 ("Implementation steps"), first step not marked DONE.
 
 ## 0. Audit (read-only, 2026-10-05, code at 95ebbd4)
