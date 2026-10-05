@@ -99,7 +99,28 @@ class TestLogHoldsIdsOnly:
 
     def test_fields_are_ids_action_and_time(self):
         names = {f.name for f in AdminAccessLog._meta.get_fields()}
-        assert names == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'created_at'}
+        assert names == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'created_at'}
+
+    @pytest.mark.parametrize('details', [
+        {'phone': '+998901112233'},
+        {'email': 'guest@example.com'},
+        {'search': 'Ali'},
+        {'currency': {'nested': 'value'}},
+        {'currency': ['USD']},
+        'free text',
+    ])
+    def test_details_accept_only_listed_non_personal_facts(self, people, details):
+        # R6 added `details` for non-personal facts (currency, rates, row ids). Anything
+        # else (a phone, an email, a search term, nested data) is refused, nothing is stored.
+        with pytest.raises(ValueError):
+            AdminAccessLog.record(people['staff'], 'exchange_rate_accept', details=details)
+        assert not AdminAccessLog.objects.exists()
+
+    def test_listed_details_are_stored(self, people):
+        details = {'currency': 'USD', 'rate_date': '2026-10-03', 'old_rate': None,
+                   'new_rate': '13500.000000', 'rejected_id': 1, 'accepted_id': 2}
+        entry = AdminAccessLog.record(people['staff'], 'exchange_rate_accept', details=details)
+        assert AdminAccessLog.objects.get(pk=entry.pk).details == details
 
     def test_search_terms_are_not_stored(self, people):
         _client(people['staff']).get(f'{A}/status/users/', {'search': '+998901112233'})
@@ -144,7 +165,7 @@ class TestAuditLogEndpoint:
         assert response.status_code == 200
         rows = response.data['results']
         assert [r['action'] for r in rows] == ['customer_view', 'customer_list']
-        assert set(rows[0]) == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'created_at'}
+        assert set(rows[0]) == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'created_at'}
 
     def test_filters(self, people):
         staff = _client(people['staff'])

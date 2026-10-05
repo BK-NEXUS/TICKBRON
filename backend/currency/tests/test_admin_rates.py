@@ -15,6 +15,9 @@ from currency.models import ExchangeRate, ExchangeRateFetch
 from currency.rates import current_rate
 from users.models import User
 
+# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+pytestmark = pytest.mark.no_default_exchange_rate
+
 A = '/api/v1/admin-panel/exchange-rates'
 
 

@@ -19,6 +19,9 @@ from currency.models import ExchangeRate
 from currency.cbu import tashkent_today
 from properties.models import DateInventory, Property, RatePlan, RoomInventory, RoomType
 
+# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+pytestmark = pytest.mark.no_default_exchange_rate
+
 RATE = Decimal('11772.95')
 
 

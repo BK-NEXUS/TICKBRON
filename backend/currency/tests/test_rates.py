@@ -12,6 +12,9 @@ from django.test import RequestFactory, override_settings
 from currency.models import ExchangeRate
 from currency.rates import current_rate, rate_for_request
 
+# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+pytestmark = pytest.mark.no_default_exchange_rate
+
 TODAY = date(2026, 10, 3)
 
 

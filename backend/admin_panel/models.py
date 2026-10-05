@@ -95,8 +95,25 @@ class AdminAccessLog(models.Model):
     def __str__(self):
         return f'{self.created_at} user:{self.actor_id} {self.action} target:{self.target_user_id}'
 
+    # The only keys `details` may hold: non-personal facts, flat scalar values
+    DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id'})
+
+    @classmethod
+    def _check_details(cls, details):
+        if details is None:
+            return
+        if not isinstance(details, dict):
+            raise ValueError('Audit details must be a dict')
+        unknown = set(details) - cls.DETAIL_KEYS
+        if unknown:
+            raise ValueError(f'Audit details keys not allowed: {sorted(unknown)}')
+        for value in details.values():
+            if value is not None and not isinstance(value, (str, int)):
+                raise ValueError('Audit details values must be text, integers or null')
+
     @classmethod
     def record(cls, actor, action, target_user_id=None, target_booking_id=None, details=None):
+        cls._check_details(details)
         return cls.objects.create(
             actor_id=actor.pk, action=action,
             target_user_id=target_user_id, target_booking_id=target_booking_id, details=details,
