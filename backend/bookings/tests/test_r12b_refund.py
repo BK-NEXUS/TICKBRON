@@ -127,9 +127,8 @@ class TestDisclosure:
         assert data['no_show_refund_text_key'] == 'no_show_refund_statement'
         assert data['no_show_refund_text_params'] == {'percent': 50, 'amount': f'{half:.2f}'}
 
+    @pytest.mark.no_default_exchange_rate
     def test_quote_amount_is_null_without_a_rate(self, stay):
-        from currency.models import ExchangeRate
-        ExchangeRate.objects.all().delete()
         data = quote(stay, 1, 3).data
         assert data['uzs_total'] is None
         assert data['no_show_refund_percent'] == 50 and data['no_show_refund_amount'] is None
@@ -162,8 +161,10 @@ class TestDisclosure:
     def test_amount_comes_from_the_snapshot_not_todays_rate(self, stay):
         response = TestSnapshot()._book(stay)
         booking = Booking.objects.get()
+        from currency.cbu import tashkent_today
         from currency.models import ExchangeRate
-        ExchangeRate.objects.update(rate=Decimal('99999'))
+        ExchangeRate.objects.create(currency='USD', rate=Decimal('99999'), nominal=1, source='cbu.uz',
+                                    status='accepted', rate_date=tashkent_today() + timedelta(days=1))
         data = client_for(stay['guest']).get(f'/api/v1/bookings/{booking.pk}/').data
         assert data['no_show_refund_amount'] == response.data['no_show_refund_amount']
 
@@ -384,6 +385,9 @@ class TestApproveIsAtomicAndIdempotent:
 
     def test_approve_response_describes_the_refund(self, world, django_capture_on_commit_callbacks):
         response = approve(world, report(world, past_stay(world)), django_capture_on_commit_callbacks)
-        assert response.data['refunds'] == [{
-            'id': Refund.objects.get().id, 'amount': '1177295.00', 'currency': 'UZS', 'status': 'succeeded',
-        }]
+        # the response is built before the test's captured on-commit send runs, so the status is not asserted here
+        refund = Refund.objects.get()
+        assert [(r['id'], r['amount'], r['currency']) for r in response.data['refunds']] == [
+            (refund.id, '1177295.00', 'UZS')]
+        detail = client_for(world['staff']).get(f"{A}/no-show-reports/{response.data['id']}/").data
+        assert detail['refunds'][0]['status'] == 'succeeded'

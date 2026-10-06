@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from celery.schedules import crontab
 from dotenv import load_dotenv
+from common.money import parse_percent
 from .logging_config import get_logging_config
 
 # Load environment variables
@@ -271,6 +272,8 @@ REST_FRAMEWORK = {
         'anon': os.getenv('THROTTLE_ANON_RATE', '2000/hour'),
         # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
         'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
+        # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
+        'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
     },
 }
 
@@ -358,6 +361,17 @@ CSV_EXPORT_MAX_ROWS = int(os.getenv('CSV_EXPORT_MAX_ROWS', '10000'))
 # R12: hotels may report a no-show up to this many days after check-out (phase 3), so the
 # Status "stayed" numbers of that window can still change
 NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
+# R12 phase 3: the share of the amount paid that goes back to the guest when staff approve a hotel's
+# no-show report. A whole number 0-100 (startup fails otherwise). Every booking stores the value at
+# creation (Booking.no_show_refund_percent); changing this never changes existing bookings.
+NO_SHOW_REFUND_PERCENT = parse_percent('NO_SHOW_REFUND_PERCENT', os.getenv('NO_SHOW_REFUND_PERCENT'), default=50)
+# R12 phase 3: a hotel is flagged in the staff queue when, over the last NO_SHOW_FLAG_DAYS days, it has at
+# least NO_SHOW_FLAG_MIN_REPORTS reports AND its report rate is at least NO_SHOW_FLAG_FACTOR times the
+# platform rate AND at least NO_SHOW_FLAG_MIN_RATE (so a near-zero average does not flag everyone)
+NO_SHOW_FLAG_DAYS = int(os.getenv('NO_SHOW_FLAG_DAYS', '90'))
+NO_SHOW_FLAG_MIN_REPORTS = int(os.getenv('NO_SHOW_FLAG_MIN_REPORTS', '5'))
+NO_SHOW_FLAG_FACTOR = Decimal(os.getenv('NO_SHOW_FLAG_FACTOR', '3'))
+NO_SHOW_FLAG_MIN_RATE = Decimal(os.getenv('NO_SHOW_FLAG_MIN_RATE', '0.10'))
 
 # Database connection health check
 DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'

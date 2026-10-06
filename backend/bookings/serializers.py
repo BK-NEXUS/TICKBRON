@@ -10,6 +10,7 @@ from common.dates import business_today
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
+from .noshow import refund_disclosure
 
 logger = logging.getLogger('tickbron')
 
@@ -36,6 +37,9 @@ class BookingSerializer(serializers.ModelSerializer):
     guest_name = serializers.CharField(source='guest.get_full_name', read_only=True)
     property_name = serializers.CharField(source='property.display_name', read_only=True)
     exchange_rate = serializers.SerializerMethodField()
+    no_show_refund_amount = serializers.SerializerMethodField()
+    no_show_refund_text_key = serializers.SerializerMethodField()
+    no_show_refund_text_params = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -47,10 +51,27 @@ class BookingSerializer(serializers.ModelSerializer):
             'cancellation_reason', 'expires_at', 'booking_items', 'created_at', 'updated_at',
             'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children',
             'charge_amount', 'charge_currency', 'exchange_rate',
+            'no_show_refund_percent', 'no_show_refund_amount', 'no_show_refund_text_key',
+            'no_show_refund_text_params',
         ]
         # Output-only serializer: bookings are created via BookingCreateSerializer
         # and changed only through model methods, never written from request data.
         read_only_fields = fields
+
+    def _disclosure(self, obj):
+        return refund_disclosure(obj.no_show_refund_percent, obj.charge_amount, obj.charge_currency)
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_no_show_refund_amount(self, obj):
+        return self._disclosure(obj)['no_show_refund_amount']
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_no_show_refund_text_key(self, obj):
+        return self._disclosure(obj)['no_show_refund_text_key']
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_no_show_refund_text_params(self, obj):
+        return self._disclosure(obj)['no_show_refund_text_params']
 
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_exchange_rate(self, obj):

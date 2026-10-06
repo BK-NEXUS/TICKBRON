@@ -7,7 +7,10 @@ Money rules (R6). The only place that knows which currencies exist and how they 
 - Converting a stay to UZS rounds the stay total once, never night by night.
 - Decimal only: a float anywhere in money code is a bug, so it raises.
 """
+import re
 from decimal import ROUND_HALF_UP, Decimal
+
+from django.core.exceptions import ImproperlyConfigured
 
 SUPPORTED_BASE_CURRENCIES = ('UZS', 'USD')
 CHARGE_CURRENCY = 'UZS'
@@ -53,3 +56,13 @@ def tiyin_to_som(value):
     if isinstance(value, bool) or not isinstance(value, (int, str)) or not str(value).isdigit():
         raise ValueError(f'Invalid tiyin amount: {value!r}')
     return Decimal(int(value)) / TIYIN_PER_SOM
+
+
+def parse_percent(name, raw, default):
+    """A percent setting: a whole number 0-100 (None -> default); anything else fails startup."""
+    if raw is None:
+        return default
+    text = str(raw).strip()
+    if not re.fullmatch(r'\d{1,3}', text) or int(text) > 100:
+        raise ImproperlyConfigured(f'{name} must be a whole number from 0 to 100, got {raw!r}')
+    return int(text)

@@ -3,7 +3,9 @@ Automatic completion of finished stays (R12).
 
 A confirmed booking whose check-out date is before the business date
 (common.dates.business_today, Asia/Tashkent) becomes `completed`. The selection is
-"check_out < today", not "== yesterday", so a missed run heals itself. Each booking
+"check_out < today", not "== yesterday", so a missed run heals itself. Bookings with a pending
+no-show report are skipped (staff decide first; once it is rejected or withdrawn the next run
+completes it). Each booking
 goes through Booking.complete_booking() in its own transaction (row lock, state
 machine, PaymentAuditLog), so one failure does not undo the others. Nothing else is
 touched: pending, cancelled, completed and no_show rows are never selected.
@@ -28,7 +30,8 @@ class CompletionError(Exception):
 def finished_stays(today=None):
     """Confirmed bookings whose check-out date has passed (oldest check-out first)."""
     today = today or business_today()
-    return Booking.objects.filter(status='confirmed', check_out__lt=today).order_by('check_out', 'pk')
+    return (Booking.objects.filter(status='confirmed', check_out__lt=today)
+            .exclude(no_show_reports__status='pending').order_by('check_out', 'pk'))
 
 
 def complete_finished_stays(dry_run=False, trigger='command'):

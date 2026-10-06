@@ -58,6 +58,9 @@ class BookingStateMachine:
     # False for them; validate_transition() accepts them only with that reason.
     GATED_TRANSITIONS: Dict[Tuple[BookingState, BookingState], str] = {
         (BookingState.COMPLETED, BookingState.NO_SHOW): 'no_show_report_approved',
+        # staff corrected an approved report: the stay happened after all
+        (BookingState.NO_SHOW, BookingState.COMPLETED): 'no_show_report_reversed',
+        (BookingState.NO_SHOW, BookingState.CONFIRMED): 'no_show_report_reversed',
     }
 
     @classmethod

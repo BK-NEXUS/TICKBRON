@@ -5,6 +5,10 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from bookings.admin_views import auto_completion_status
+from bookings.views_noshow import (
+    admin_no_show_report_approve, admin_no_show_report_detail, admin_no_show_report_reject,
+    admin_no_show_report_reverse, admin_no_show_reports,
+)
 from payments.admin_views import refund_mark_done, refund_retry, refunds_needs_attention
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
@@ -56,6 +60,14 @@ urlpatterns = [
     path('status/users/<int:user_id>/', status_user_detail, name='admin-status-user-detail'),
     path('audit-log/', admin_access_log, name='admin-access-log'),
     path('auto-completion/status/', auto_completion_status, name='admin-auto-completion-status'),
+    path('no-show-reports/', admin_no_show_reports, name='admin-no-show-reports'),
+    path('no-show-reports/<int:report_id>/', admin_no_show_report_detail, name='admin-no-show-report-detail'),
+    path('no-show-reports/<int:report_id>/approve/', admin_no_show_report_approve,
+         name='admin-no-show-report-approve'),
+    path('no-show-reports/<int:report_id>/reject/', admin_no_show_report_reject,
+         name='admin-no-show-report-reject'),
+    path('no-show-reports/<int:report_id>/reverse/', admin_no_show_report_reverse,
+         name='admin-no-show-report-reverse'),
     path('refunds/needs-attention/', refunds_needs_attention, name='admin-refunds-needs-attention'),
     path('refunds/<int:refund_id>/mark-done/', refund_mark_done, name='admin-refund-mark-done'),
     path('refunds/<int:refund_id>/retry/', refund_retry, name='admin-refund-retry'),
