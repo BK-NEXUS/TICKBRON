@@ -2266,3 +2266,15 @@ Plan and owner conditions: `.ai/PLAN_R12.md` ("Phases"). Master is NOT touched b
 7. Merge phase 1 into master ONLY with the full suite green (`--create-db`, 0 failed); push; report the counts.
 8. PHASE 2 (statistics, client priority) — PLAN_R12 section 5 steps 4-9: `bookings/metrics.py` (guests = SUM guest_count, `unique_customers` = distinct accounts, nights, room_nights, stayed/counted/upcoming, `booking_status` incl. `expired` (= cancelled with the expiry reason), `no_show`, `no_show_reported`, `fully_refunded` (0 until phase 3), revenue per currency = paid − refunded from Refund rows, periods today/last_7_days/last_30_days/this_year/last_5_years/last_10_years/custom (<= 20 years) + month/year, granularity day/week/month/year), user detail `/admin-panel/status/users/{id}/`, flat hotels list `/admin-panel/status/hotels/` (search, filters, ordering whitelist, top 1000), hotel detail + reconciliation, owner `/partner/status/...` + arrivals, CSV export. List every existing test whose expected number changes (old, new, reason) in the commit message; never delete an assertion. Caveat in PLAN + API_CONTRACT: "stayed" numbers of the last `NO_SHOW_REPORT_WINDOW_DAYS` days can still change. EXPLAIN before/after. Merge, then `READY FOR FRONTEND: R12a - ...`.
 9. PHASE 3 (no-show reports + 50% refund) — PLAN_R12 steps 2-3: `NoShowReport` + owner/staff endpoints, auto-completion skips pending reports, notifications via 1d, abuse flag thresholds as settings, `no_show_refund_percent` snapshot (old bookings 0), disclosure fields on quote/booking, approve refunds through `create_refund(..., reason='no_show', idempotency_key=f'{booking.id}:no_show')`. Merge, then `READY FOR FRONTEND: R12b - ...`. Stop after phase 3.
+### Frontend baseline (2026-10-06)
+- `npm test`: 77 passed, 6 failed (1120 passed tests, 6 failed tests) across 83 test files
+- `npm run build`: SUCCESS
+- `npm run lint`: 274 problems (263 errors, 11 warnings)
+
+### Frontend status (2026-10-06)
+a) No emoji used as icons: PARTIAL - PaymentMethodSelector.tsx uses emoji icons (📱, 💳, 💼) on lines 22, 29, 36. Also phone.ts uses 🇺🇿 emoji flag. Icons should come from lucide-react.
+b) Dark mode: MISSING - No dark mode implementation found. No ThemeProvider, no system preference toggle, no header toggle, no preference persistence.
+c) Card payment form: MISSING - No card payment form with 16-digit Luhn check, expiry, CVV, cardholder found. Payment flow uses PaymentMethodSelector for provider selection (Payme/Click/Visa).
+d) Phone country selector: MISSING - Currently only Uzbekistan (1 country) with emoji flag 🇺🇿 in phone.ts. Needs at least 40 countries with local SVG flags (no CDN), searchable, UZ default with 9-digit limit.
+e) Assets: CONFIRMED - Fonts (@fontsource/pt-sans, @fontsource/pt-serif) bundled locally. No external URLs in src/ or index.html except documented API calls. CSP restricts to 'self'.
+f) API calls documented: CONFIRMED (with exceptions) - All API calls go through apiFetch helper. Exceptions: primary_photo URLs in accountAdapter.test.ts use http://example.com/photo.jpg (test data).
