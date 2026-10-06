@@ -337,7 +337,9 @@ def property_quote(request, property_id):
     """
     from django.core.exceptions import ValidationError as DjangoValidationError
     from properties.models import RatePlan
+    from bookings.noshow import refund_disclosure
     from bookings.pricing import quote_stay
+    from django.conf import settings
 
     params = QuoteParamsSerializer(data=request.query_params)
     if not params.is_valid():
@@ -373,6 +375,7 @@ def property_quote(request, property_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    uzs = uzs_amount(request, quote.total_price, quote.currency, 'uzs_total')
     return Response({
         'check_in': quote.check_in,
         'check_out': quote.check_out,
@@ -381,5 +384,7 @@ def property_quote(request, property_id):
         'currency': quote.currency,
         'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in quote.nights],
         'total_price': f'{quote.total_price:.2f}',
-        **uzs_amount(request, quote.total_price, quote.currency, 'uzs_total'),
+        **uzs,
+        # R12: what the guest is told before paying (the booking stores this percent at creation)
+        **refund_disclosure(settings.NO_SHOW_REFUND_PERCENT, uzs['uzs_total']),
     }, status=status.HTTP_200_OK)

@@ -6,8 +6,9 @@ with transaction-safe inventory locking and double-booking prevention.
 """
 import logging
 
+from django.conf import settings
 from django.db import models, transaction
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import F
@@ -123,6 +124,14 @@ class Booking(BaseModel):
     exchange_rate_source = models.CharField(max_length=16)  # 'cbu.uz', 'identity' or 'legacy'
     exchange_rate_stale = models.BooleanField(default=False)
 
+    # What the guest was promised if the hotel reports them as a no-show and staff approve (R12
+    # phase 3): the NO_SHOW_REFUND_PERCENT of the moment the booking was created, written in the
+    # inventory-locking transaction and never changed (see save()). 0 = nothing promised: bookings
+    # made before this existed, and rows written outside create_booking.
+    no_show_refund_percent = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(100)],
+        help_text=_('Percent of the amount paid refunded if the guest does not arrive (snapshot)'))
+
     # Additional information
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
@@ -191,7 +200,7 @@ class Booking(BaseModel):
     # The price and the charge snapshot: never changed once the booking exists
     SNAPSHOT_FIELDS = (
         'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
-        'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale',
+        'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale', 'no_show_refund_percent',
     )
 
     @classmethod
@@ -370,6 +379,7 @@ class Booking(BaseModel):
                 exchange_rate_date=rate.date,
                 exchange_rate_source=rate.source,
                 exchange_rate_stale=rate.stale,
+                no_show_refund_percent=settings.NO_SHOW_REFUND_PERCENT,
                 special_requests=special_requests,
                 guest_full_name=guest_full_name or guest.get_full_name(),
                 guest_phone=guest_phone or guest.phone_number,
@@ -679,6 +689,27 @@ class Booking(BaseModel):
             self._log_state_transition(
                 old_status, 'no_show', 'no_show_report_approved' if via_approved_report else 'guest_no_show')
     
+    def restore_after_reversed_no_show(self, completed):
+        """
+        Staff corrected an approved no-show report: the booking goes back to `completed` (the
+        stay is over) or `confirmed`. Only no_show_report.reverse_report calls this.
+
+        Raises:
+            ValidationError: if the booking is not a no-show any more
+        """
+        with transaction.atomic():
+            self._lock_row()
+            from_state = BookingState(self.status)
+            to_state = BookingState('completed' if completed else 'confirmed')
+            is_valid, error_message = BookingStateMachine.validate_transition(
+                from_state, to_state, reason='no_show_report_reversed')
+            if not is_valid:
+                raise ValidationError({'status': error_message})
+            old_status = self.status
+            self.status = to_state.value
+            self.save(update_fields=['status'])
+            self._log_state_transition(old_status, to_state.value, 'no_show_report_reversed')
+
     def update_payment_status(self, new_payment_status):
         """
         Update payment status with state machine validation.
@@ -827,3 +858,51 @@ class AutoCompletionRun(models.Model):
 
     def __str__(self):
         return f'{self.started_at} {self.trigger}: {self.changed} completed, {self.failed} failed'
+
+
+class NoShowReport(models.Model):
+    """
+    A hotel's report that a guest did not arrive (R12 phase 3). The hotel reports, staff decide:
+    owners can withdraw their own pending report but never approve or reject.
+
+    - one `pending` report per booking (partial unique constraint); a report is allowed only for
+      a confirmed or completed booking, from the day after check-in until NO_SHOW_REPORT_WINDOW_DAYS
+      after check-out (bookings.noshow.create_report)
+    - approving moves the booking to no_show and pays the refund promised at booking time;
+      rejecting changes nothing; staff can correct either decision (bookings.noshow.reverse_report)
+    - rows are never deleted
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn'),
+    ]
+
+    booking = models.ForeignKey(Booking, on_delete=models.PROTECT, related_name='no_show_reports')
+    property = models.ForeignKey('properties.Property', on_delete=models.PROTECT, related_name='no_show_reports')
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='no_show_reports_created')
+    comment = models.TextField(help_text=_('The hotel\'s statement, plain text, 10-500 characters'))
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    decided_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='no_show_reports_decided')
+    decision_comment = models.TextField(blank=True, default='')
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'booking_no_show_reports'
+        ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['status', 'created_at'], name='noshow_status_created_idx'),
+            models.Index(fields=['property', 'status', 'created_at'], name='noshow_prop_status_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['booking'], condition=models.Q(status='pending'),
+                                    name='noshow_one_pending_per_booking'),
+        ]
+
+    def __str__(self):
+        return f'NoShowReport {self.pk} booking {self.booking_id} {self.status}'
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError('No-show reports cannot be deleted')

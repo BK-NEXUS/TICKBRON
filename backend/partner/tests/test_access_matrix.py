@@ -22,7 +22,9 @@ P = '/api/v1/partner'
 # permissions are checked before the object is looked up.
 PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/'),
                      ('get', f'{P}/status/'), ('get', f'{P}/status/hotels/1/'),  # R12
-                     ('get', f'{P}/status/arrivals/')]
+                     ('get', f'{P}/status/arrivals/'),
+                     ('post', f'{P}/bookings/1/no-show-report/'), ('get', f'{P}/no-show-reports/'),  # R12b
+                     ('post', f'{P}/no-show-reports/1/withdraw/')]
 for resource in ('properties', 'rooms', 'rates', 'inventory', 'room-inventory', 'blocks'):
     PARTNER_ENDPOINTS += [
         ('get', f'{P}/{resource}/'),

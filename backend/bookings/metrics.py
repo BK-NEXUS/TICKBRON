@@ -11,8 +11,9 @@ thin wrappers, and every Status view (admin and partner) reads these functions.
 - guests    = SUM(guest_count) of counted bookings (persons; guest_count includes children).
 - unique_customers = COUNT(DISTINCT guest) of counted bookings (the old `guests`).
 - nights    = SUM(number_of_nights); room_nights = SUM(number_of_nights x number_of_rooms).
-- no_show   = status no_show, not fully refunded; no_show_reported = has a pending no-show
-              report (0 until R12 phase 3).
+- no_show   = status no_show (an approved report), not fully refunded; no_show_reported = has a
+              pending no-show report. A reported booking is neither stayed nor no_show until staff
+              decide: it is left out of the confirmed / completed counts of booking_status.
 - fully_refunded = counted or no_show bookings excluded by the refund rule: the booking has
               at least one paid payment and every paid payment is refunded in full by
               `succeeded` Refund rows (per payment, so per currency too). Failed, pending or
@@ -27,14 +28,16 @@ thin wrappers, and every Status view (admin and partner) reads these functions.
               no_show_reported.
 
 Caveat: "stayed" numbers for the last NO_SHOW_REPORT_WINDOW_DAYS days after check-out can
-still change (hotels may report a no-show in that window, R12 phase 3).
+still change: a hotel may report a no-show in that window, and an approved report moves the
+booking from stayed to no_show. (A completed stay with a PENDING report is still in `stayed`
+until it is decided.)
 
 All aggregation runs in the database; Python only reshapes already-aggregated rows.
 """
 import re
 from datetime import date, timedelta
 
-from django.db.models import Count, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek, TruncYear
 
 from common.dates import business_today
@@ -375,13 +378,20 @@ def booking_value_total(bookings):
 
 # --- totals -------------------------------------------------------------------------
 
+def _pending_report():
+    from bookings.models import NoShowReport
+    return Exists(NoShowReport.objects.filter(booking_id=OuterRef('pk'), status='pending'))
+
+
 def _status_counts(date_range):
     in_period = period_q('', date_range)
+    reported = Q(_pending_report())
     expired = Q(status='cancelled', cancellation_reason=EXPIRY_REASON)
     return {
         'st_pending': Count('id', filter=in_period & Q(status='pending')),
-        'st_confirmed': Count('id', filter=in_period & Q(status='confirmed')),
-        'st_completed': Count('id', filter=in_period & Q(status='completed')),
+        'st_confirmed': Count('id', filter=in_period & Q(status='confirmed') & ~reported),
+        'st_completed': Count('id', filter=in_period & Q(status='completed') & ~reported),
+        'st_reported': Count('id', filter=in_period & reported),
         'st_cancelled': Count('id', filter=in_period & Q(status='cancelled') & ~expired),
         'st_expired': Count('id', filter=in_period & expired),
         'st_no_show': Count('id', filter=in_period & Q(status='no_show')),
@@ -424,7 +434,7 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         'nights': totals['nights'],
         'room_nights': totals['room_nights'],
         'no_show': totals['no_show'],
-        'no_show_reported': 0,
+        'no_show_reported': totals['st_reported'],
         'fully_refunded': totals['fully_refunded'],
         'upcoming': totals['upcoming'],
         'revenue': revenue_total(in_revenue),
@@ -432,7 +442,8 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         'booking_status': {
             'pending': totals['st_pending'], 'confirmed': totals['st_confirmed'],
             'completed': totals['st_completed'], 'cancelled': totals['st_cancelled'],
-            'expired': totals['st_expired'], 'no_show': totals['st_no_show'], 'no_show_reported': 0,
+            'expired': totals['st_expired'], 'no_show': totals['st_no_show'],
+            'no_show_reported': totals['st_reported'],
         },
     }
 

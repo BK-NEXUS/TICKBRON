@@ -52,6 +52,11 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/status/hotels/'),  # R12
     ('get', f'{A}/status/users/1/'),  # R12
     ('get', f'{A}/audit-log/'),
+    ('get', f'{A}/no-show-reports/'),  # R12b
+    ('get', f'{A}/no-show-reports/1/'),
+    ('post', f'{A}/no-show-reports/1/approve/'),
+    ('post', f'{A}/no-show-reports/1/reject/'),
+    ('post', f'{A}/no-show-reports/1/reverse/'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
 # Geography dictionary management (G3): super-admin only, staff get 403 too

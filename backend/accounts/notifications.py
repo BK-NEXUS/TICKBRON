@@ -109,6 +109,12 @@ NOTIFICATION_CODES = {
             '{amount} {currency} ({percent}%) will be refunded.'
         ),
     },
+    'no_show_marked_no_refund': {
+        'type': 'booking',
+        'params': ('booking_id', 'booking_reference'),
+        'title': 'Booking {booking_reference} marked as a no-show',
+        'message': 'Your booking {booking_reference} was marked as a no-show. No refund is due for it.',
+    },
     'refund_succeeded': {
         'type': 'payment',
         'params': ('refund_id', 'booking_id', 'booking_reference', 'amount', 'currency'),
