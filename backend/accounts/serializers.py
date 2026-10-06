@@ -155,11 +155,11 @@ class NotificationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Notification
-        fields = ['id', 'user', 'notification_type', 'priority', 'title', 'message',
+        fields = ['id', 'user', 'notification_type', 'priority', 'title', 'message', 'code', 'params',
                   'booking', 'booking_confirmation_code', 'property', 'property_name', 
                   'property_slug', 'is_read', 'read_at', 'sent_via_email', 'sent_via_sms',
                   'action_url', 'action_label', 'created_at']
-        read_only_fields = ['id', 'user', 'sent_via_email', 'sent_via_sms', 'created_at']
+        read_only_fields = ['id', 'user', 'code', 'params', 'sent_via_email', 'sent_via_sms', 'created_at']
 
 
 class NotificationUpdateSerializer(serializers.ModelSerializer):

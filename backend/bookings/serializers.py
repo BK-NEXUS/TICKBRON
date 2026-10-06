@@ -6,7 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+from common.dates import business_today
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
@@ -103,7 +103,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 'check_out': 'Check-out date must be after check-in date'
             })
         
-        if data['check_in'] < timezone.localdate():
+        if data['check_in'] < business_today():
             raise ValidationError({
                 'check_in': 'Check-in date cannot be in the past'
             })

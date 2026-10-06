@@ -141,6 +141,11 @@ class Notification(BaseModel):
     
     title = models.CharField(max_length=200)
     message = models.TextField()
+
+    # R12: machine-readable code + params (ids, amounts, dates only; see accounts.notifications).
+    # title/message are the English fallback. Null on notifications created before R12.
+    code = models.CharField(max_length=64, null=True, blank=True)
+    params = models.JSONField(null=True, blank=True)
     
     # Optional related objects
     booking = models.ForeignKey('bookings.Booking', on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')

@@ -279,3 +279,18 @@ Before any real payment, each item below must be tested end to end in the provid
 - [ ] Click partial-refund rules (same questions).
 - [ ] The Payme adapter end to end: create, webhook signature and amount check, full refund, partial refund, failure and retry.
 - [ ] The Click adapter end to end: the same steps.
+
+## Business date and auto-completion (R12 phase 1, 2026-10-05)
+
+- [ ] `TIME_ZONE` stays `UTC`. `BUSINESS_TIME_ZONE` (env, default `Asia/Tashkent`) decides "today" for booking check-in, statistics and auto-completion. Hotels in other countries use the same business date for now.
+- [ ] **Celery beat, a worker and Redis must run in production.** `CELERY_TIMEZONE = BUSINESS_TIME_ZONE`: beat times in `CELERY_BEAT_SCHEDULE` are Tashkent times (exchange rates 09:00 and 18:00, auto-completion 00:05). Without beat, confirmed stays never become completed and the Status "stayed" numbers stay at 0.
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`, every time.** R12 phase 1 migrations: `bookings/0009` (auto-completion run history), `payments/0003` (Refund table), `payments/0004` (backfills a `succeeded` Refund for every `refunded` / `partially_refunded` payment; its reverse deletes only those rows), `admin_panel/0006` (audit actions), `accounts/0002` (notification `code` / `params`). All reversible.
+- [ ] Once after deploy: `python manage.py complete_finished_stays --dry-run` (prints how many past stays are still `confirmed`), then without `--dry-run` (completes them; nothing touches pending, cancelled or no_show).
+- [ ] Check `GET /api/v1/admin-panel/auto-completion/status/` as a super-admin the next morning: `last_run.finished_at` after 00:05 Tashkent, `failed: 0`, `waiting: 0`.
+
+## Refunds (R12 phase 1, 2026-10-06)
+
+- [ ] **Partial refunds with Payme, Click and Visa are NOT verified** (`SUPPORTS_PARTIAL_REFUND = None` in `payments/adapters.py`). Until a partial refund has been tested in each provider's sandbox, every partial refund skips the provider and is stored as `needs_manual`: staff pay it by hand and close it with `POST /api/v1/admin-panel/refunds/{id}/mark-done/` (`provider_reference` required). After a successful sandbox test, set `SUPPORTS_PARTIAL_REFUND = True` on that adapter only (with a test).
+- [ ] Full refunds call the provider after the refund row is committed. A provider failure leaves the refund `failed`; super-admins retry it from `GET /api/v1/admin-panel/refunds/needs-attention/`.
+- [ ] Someone on staff checks the needs-attention list daily (failed, needs_manual, pending for more than an hour).
+- [ ] `migrate` prints `Refund backfill: N refund row(s) created, M payment(s) skipped`. Skipped = a `partially_refunded` payment without an audit row (amount unknown, never invented) or audit amounts above the payment: check each one by hand and record its refund with the real amount.

@@ -193,7 +193,10 @@ def test_beat_schedule_runs_the_task_twice_a_day():
     from django.conf import settings
     entry = settings.CELERY_BEAT_SCHEDULE['fetch-exchange-rates']
     assert entry['task'] == 'currency.tasks.fetch_exchange_rates'
-    assert entry['schedule'].hour == {4, 13}       # 09:00 and 18:00 Asia/Tashkent (UTC+5)
+    # 09:00 and 18:00 Asia/Tashkent. R12: CELERY_TIMEZONE is now Asia/Tashkent (was UTC: {4, 13});
+    # the same real times in UTC are checked in bookings/tests/test_r12_auto_completion.py
+    assert settings.CELERY_TIMEZONE == 'Asia/Tashkent'
+    assert entry['schedule'].hour == {9, 18}
 
 
 def test_settings_defaults_and_environment():

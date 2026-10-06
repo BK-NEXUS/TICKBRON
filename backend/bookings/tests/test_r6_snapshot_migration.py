@@ -16,6 +16,24 @@ from django.utils import timezone
 from bookings.stats import metric_totals, revenue_by
 
 
+def _others_without_bookings_after(graph, bookings_node):
+    """Newest node of every other app whose dependencies stop at `bookings_node` or earlier."""
+    allowed = set(graph.forwards_plan(bookings_node))
+    others = []
+    for leaf in graph.leaf_nodes():
+        if leaf[0] == 'bookings':
+            continue
+        node = leaf
+        while node is not None and any(
+            dep[0] == 'bookings' and dep not in allowed for dep in graph.forwards_plan(node)
+        ):
+            parents = [p for p in graph.node_map[node].parents if p.key[0] == node[0]]
+            node = parents[0].key if parents else None
+        if node is not None:
+            others.append(node)
+    return others
+
+
 class MigrateBookingSnapshot(TransactionTestCase):
     # No serialized_rollback (see test_room_inventory_migration.py)
 
@@ -24,8 +42,9 @@ class MigrateBookingSnapshot(TransactionTestCase):
         if connection.vendor != 'postgresql':
             self.skipTest('Migration executor tests need PostgreSQL')
         executor = MigrationExecutor(connection)
-        # Every other app stays on its latest migration, so the historical models match the tables
-        others = [node for node in executor.loader.graph.leaf_nodes() if node[0] != 'bookings']
+        # Every other app stays on its latest migration that does not need a bookings migration
+        # after 0005 (R12: payments/0003 depends on bookings/0009), so the historical models match
+        others = _others_without_bookings_after(executor.loader.graph, ('bookings', '0005_status_indexes'))
         self.migrate_from = others + [('bookings', '0005_status_indexes')]
         self.migrate_to = others + [('bookings', '0008_charge_snapshot_required')]
         executor.migrate(self.migrate_from)

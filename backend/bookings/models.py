@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.utils import timezone
+from common.dates import business_today
 from common.models import BaseModel
 from common.money import CHARGE_CURRENCY, quantize, to_uzs
 from currency.rates import ExchangeRateUnavailable, current_rate
@@ -329,7 +330,7 @@ class Booking(BaseModel):
         if number_of_rooms < 1:
             raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
         
-        if check_in < timezone.localdate():
+        if check_in < business_today():
             raise ValidationError({'check_in': _('Check-in date cannot be in the past')})
         
         if guest_count > room_type.max_occupancy * number_of_rooms:
@@ -641,11 +642,13 @@ class Booking(BaseModel):
             # Log state transition
             self._log_state_transition(old_status, 'completed', 'checkout_completed')
     
-    def mark_no_show(self):
+    def mark_no_show(self, via_approved_report=False):
         """
         Mark a booking as no-show when guest doesn't arrive.
         
-        This method is called when a confirmed booking becomes a no-show.
+        This method is called when a confirmed booking becomes a no-show. With
+        via_approved_report=True (R12, staff approved the hotel's no-show report) a
+        completed booking may become a no-show as well; nothing else allows that.
         
         Raises:
             ValidationError: If booking cannot be marked as no-show
@@ -658,7 +661,10 @@ class Booking(BaseModel):
             # Validate state transition using state machine
             from_state = BookingState(self.status)
             to_state = BookingState('no_show')
-            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='guest_no_show')
+            reason = 'no_show_report_approved' if via_approved_report else 'guest_no_show'
+            if via_approved_report and from_state == BookingState.CONFIRMED:
+                reason = 'guest_no_show'
+            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason=reason)
             if not is_valid:
                 raise ValidationError({
                     'status': error_message
@@ -670,7 +676,8 @@ class Booking(BaseModel):
             self.save(update_fields=['status'])
             
             # Log state transition
-            self._log_state_transition(old_status, 'no_show', 'guest_no_show')
+            self._log_state_transition(
+                old_status, 'no_show', 'no_show_report_approved' if via_approved_report else 'guest_no_show')
     
     def update_payment_status(self, new_payment_status):
         """
@@ -798,3 +805,25 @@ class BookingItem(BaseModel):
     
     def __str__(self):
         return f"{self.booking.confirmation_code} - {self.room_type.name}"
+
+
+class AutoCompletionRun(models.Model):
+    """
+    One real run of the nightly auto-completion (R12): when it ran, what started it,
+    how many confirmed stays became completed and how many could not. Dry runs are
+    not recorded. Shown to super-admins at /admin-panel/auto-completion/status/.
+    """
+    TRIGGER_CHOICES = [('beat', 'Celery beat'), ('command', 'Management command')]
+
+    trigger = models.CharField(max_length=10, choices=TRIGGER_CHOICES)
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField()
+    changed = models.PositiveIntegerField(default=0)
+    failed = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'booking_auto_completion_runs'
+        ordering = ['-started_at', '-id']
+
+    def __str__(self):
+        return f'{self.started_at} {self.trigger}: {self.changed} completed, {self.failed} failed'

@@ -1,7 +1,7 @@
 """
 Serializers for TICKBRON property models and search results.
 """
-from django.utils import timezone
+from common.dates import business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -687,7 +687,7 @@ class AvailabilityParamsSerializer(serializers.Serializer):
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError("check_out must be after check_in")
         
-        if check_in and check_in < timezone.localdate():
+        if check_in and check_in < business_today():
             raise serializers.ValidationError("check_in cannot be in the past")
 
         return data
@@ -704,6 +704,6 @@ class QuoteParamsSerializer(serializers.Serializer):
     def validate(self, data):
         if data['check_out'] <= data['check_in']:
             raise serializers.ValidationError({'check_out': 'Check-out date must be after check-in date'})
-        if data['check_in'] < timezone.localdate():
+        if data['check_in'] < business_today():
             raise serializers.ValidationError({'check_in': 'Check-in date cannot be in the past'})
         return data

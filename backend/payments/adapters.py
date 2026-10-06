@@ -49,7 +49,19 @@ class BasePaymentAdapter:
     def _is_test_mode(self) -> bool:
         """Check if payment test mode is enabled."""
         return self.test_mode
-    
+
+    # Partial refunds through the provider's API (R12): True = supported, False = not
+    # supported, None = not verified in the provider's documentation and sandbox. Only
+    # True lets TICKBRON send a partial refund; otherwise the refund is `needs_manual`
+    # (staff refund by hand and mark it done). Payme, Click and Visa: None until verified.
+    SUPPORTS_PARTIAL_REFUND = None
+
+    def partial_refund_supported(self) -> bool:
+        """The test-mode mock refunds any amount; real providers only when declared True."""
+        if self._is_test_mode():
+            return True
+        return self.SUPPORTS_PARTIAL_REFUND is True
+
     # Amounts inside TICKBRON are Decimal so'm (the booking's charge snapshot). Each
     # provider's own unit exists only at this edge: requests are converted with
     # to_provider_amount, webhook amounts come back through from_provider_amount.

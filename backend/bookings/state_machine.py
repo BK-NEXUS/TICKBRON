@@ -53,6 +53,13 @@ class BookingStateMachine:
         (BookingState.CONFIRMED, BookingState.NO_SHOW): 'guest_no_show',
     }
     
+    # Transitions that exist ONLY with one specific reason (R12): a completed stay becomes
+    # a no-show only when staff approve the hotel's no-show report. can_transition() stays
+    # False for them; validate_transition() accepts them only with that reason.
+    GATED_TRANSITIONS: Dict[Tuple[BookingState, BookingState], str] = {
+        (BookingState.COMPLETED, BookingState.NO_SHOW): 'no_show_report_approved',
+    }
+
     @classmethod
     def can_transition(cls, from_state: BookingState, to_state: BookingState) -> bool:
         """
@@ -88,6 +95,12 @@ class BookingStateMachine:
         if from_state == to_state:
             return False, f"Cannot transition from {from_state.value} to {to_state.value} (same state)"
         
+        gated_reason = cls.GATED_TRANSITIONS.get((from_state, to_state))
+        if gated_reason is not None:
+            if reason == gated_reason:
+                return True, None
+            return False, f"Invalid transition from {from_state.value} to {to_state.value}"
+
         valid_transitions = cls.TRANSITIONS.get(from_state, set())
         if to_state not in valid_transitions:
             return False, f"Invalid transition from {from_state.value} to {to_state.value}"
