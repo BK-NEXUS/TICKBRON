@@ -29,6 +29,7 @@ from bookings.models import Booking, BookingItem
 from common.money import quantize
 from geography.mapping import GeographyIndex
 from geography.models import City, Country, Region
+from payments.models import PaymentTransaction, Refund
 from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType, RatePlan, RoomType
 from users.models import User
@@ -223,6 +224,7 @@ class Command(BaseCommand):
                 },
             )
             Booking.objects.filter(pk=booking.pk).update(created_at=booked_at)
+            self._seed_payment(booking, number, cancelled)
             BookingItem.objects.update_or_create(
                 booking=booking,
                 defaults={'room_type': hotel['room'], 'rate_plan': hotel['rate_plan'],
@@ -230,6 +232,35 @@ class Command(BaseCommand):
                           'currency': hotel['currency']},
             )
         return statuses
+
+    @staticmethod
+    def _seed_payment(booking, number, cancelled):
+        """
+        R12: Status revenue = paid payments - succeeded refunds, so every demo booking gets its
+        payment (the booking's charge snapshot); a cancelled one is refunded in full.
+        """
+        key = f'demo-stats-{number:03d}'
+        booking.refresh_from_db()
+        if not PaymentTransaction.objects.filter(idempotency_key=key).exists():
+            # bulk_create: demo rows written directly, like the bookings above
+            PaymentTransaction.objects.bulk_create([PaymentTransaction(
+                idempotency_key=key, booking=booking, provider='payme', amount=booking.charge_amount,
+                currency=booking.charge_currency, status='completed', provider_transaction_id=key,
+            )])
+        tx = PaymentTransaction.objects.get(idempotency_key=key)
+        PaymentTransaction.objects.filter(pk=tx.pk).update(
+            booking=booking, amount=booking.charge_amount, currency=booking.charge_currency,
+            status='refunded' if cancelled else 'completed')
+        refund_key = f'{key}:refund'
+        if cancelled:
+            Refund.objects.update_or_create(
+                idempotency_key=refund_key,
+                defaults={'payment': tx, 'booking': booking, 'amount': booking.charge_amount,
+                          'currency': booking.charge_currency, 'reason': 'cancel', 'status': 'succeeded',
+                          'provider_reference': 'demo'},
+            )
+        else:
+            Refund.objects.filter(idempotency_key=refund_key).delete()
 
     def _print_summary(self, hotels, statuses):
         write = self.stdout.write

@@ -47,20 +47,23 @@ def region_expression(prefix=''):
                     output_field=CharField())
 
 
-def hotel_name_expression():
+def hotel_name_expression(prefix=''):
     """
     Query expression for a property's name, the same choice as Property.display_name():
     the English translation, else any translation, else the first address line.
+    `prefix` is the path to Property, e.g. 'property__' from Booking (R12).
     """
     from properties.models import PropertyTranslation
 
+    pk = f'{prefix}id' if prefix else 'pk'
+
     names = (
         PropertyTranslation.objects
-        .filter(property=OuterRef('pk'), is_deleted=False)
+        .filter(property=OuterRef(pk), is_deleted=False)
         .exclude(name='')
         .annotate(is_en=Case(When(language='en', then=Value(1)), default=Value(0),
                              output_field=IntegerField()))
         .order_by('-is_en', 'id')
         .values('name')[:1]
     )
-    return Coalesce(Subquery(names, output_field=CharField()), 'address_line1', output_field=CharField())
+    return Coalesce(Subquery(names, output_field=CharField()), f'{prefix}address_line1', output_field=CharField())

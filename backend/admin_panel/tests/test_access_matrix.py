@@ -49,6 +49,8 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/status/countries/UZ/regions/1/hotels/'),
     ('get', f'{A}/status/hotels/1/'),
     ('get', f'{A}/status/users/'),
+    ('get', f'{A}/status/hotels/'),  # R12
+    ('get', f'{A}/status/users/1/'),  # R12
     ('get', f'{A}/audit-log/'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]

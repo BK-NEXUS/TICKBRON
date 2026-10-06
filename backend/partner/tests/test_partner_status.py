@@ -35,7 +35,7 @@ class TestPartnerStatus:
         assert response.data['period'] == 'all'
         totals = response.data['totals']
         assert (totals['bookings'], totals['guests'], revenue(totals)) == \
-            (5, 3, {'EUR': '60.00', 'USD': '530.00'})
+            (5, 5, {'EUR': '60.00', 'USD': '530.00'})  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
 
     def test_per_property_breakdown_lists_only_own_hotels(self, status_world):
         owner1 = status_world['owners'][0]
@@ -44,7 +44,7 @@ class TestPartnerStatus:
         rows = get_as(owner1).data['properties']
 
         assert [(row['id'], row['name'], row['bookings'], row['guests']) for row in rows] == [
-            (hotels['alpha'].id, 'Alpha Hotel', 3, 2),
+            (hotels['alpha'].id, 'Alpha Hotel', 3, 3),  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
             (hotels['beta'].id, 'Beta Hotel', 2, 2),
         ]
         assert revenue(rows[1]) == {'EUR': '60.00', 'USD': '80.00'}
@@ -77,7 +77,7 @@ class TestPartnerStatus:
         response = get_as(owner2)
 
         assert (response.data['totals']['bookings'], revenue(response.data['totals'])) == \
-            (1, {'KZT': '50000.00'})
+            (1, {'KZT': '50000.00', 'USD': '999.00'})  # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was KZT only)
         assert sorted(row['name'] for row in response.data['properties']) == ['Delta Hotel', 'Gamma Hotel']
 
     def test_staff_without_hotels_sees_zeros(self, status_world):
@@ -93,6 +93,7 @@ class TestPartnerStatus:
         assert get_as(status_world['owners'][0], **params).status_code == 400
 
     def test_query_count_is_constant(self, status_world, django_assert_max_num_queries):
-        # role check, properties, their revenue, totals, totals revenue, years, monthly counts, monthly revenue
-        with django_assert_max_num_queries(8):
+        # R12 (was 8): role check, fully refunded ids (scope, period), totals (4), series (4),
+        # reconciliation, years, monthly (3), properties, their revenue (2) and booking value = 19
+        with django_assert_max_num_queries(19):
             assert get_as(status_world['owners'][0], year=2026).status_code == 200
