@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { AdminAdapter, adminAdapter } from './adminAdapter'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+global\.fetch = vi\.fn\(\)
 
 describe('AdminAdapter', () => {
   let adapter: AdminAdapter
@@ -28,7 +28,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockProperties,
       })
@@ -47,7 +47,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 403 error for non-admin users when getting properties', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'Admin or staff role required' }),
@@ -67,7 +67,7 @@ describe('AdminAdapter', () => {
         approved_at: '2024-01-01T00:00:00Z',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockProperty,
       })
@@ -92,7 +92,7 @@ describe('AdminAdapter', () => {
         rejection_reason: 'Invalid information',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockProperty,
       })
@@ -116,7 +116,7 @@ describe('AdminAdapter', () => {
         status: 'suspended',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockProperty,
       })
@@ -151,7 +151,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockUsers,
       })
@@ -188,7 +188,7 @@ describe('AdminAdapter', () => {
         password_confirm: 'SecurePassword123!',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockOwner,
       })
@@ -215,7 +215,7 @@ describe('AdminAdapter', () => {
         password_confirm: 'SecurePassword123!',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'You do not have permission to perform this action.' }),
@@ -245,7 +245,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockAmenities,
       })
@@ -285,7 +285,7 @@ describe('AdminAdapter', () => {
         sort_order: 2,
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockAmenity,
       })
@@ -316,7 +316,7 @@ describe('AdminAdapter', () => {
         description: 'Updated description',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockAmenity,
       })
@@ -335,7 +335,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should delete amenity successfully', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         status: 204,
       })
@@ -365,7 +365,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCategories,
       })
@@ -401,7 +401,7 @@ describe('AdminAdapter', () => {
         sort_order: 2,
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCategory,
       })
@@ -430,7 +430,7 @@ describe('AdminAdapter', () => {
         name: 'Kitchen Updated',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCategory,
       })
@@ -449,7 +449,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should delete amenity category successfully', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         status: 204,
       })
@@ -481,7 +481,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTransactions,
       })
@@ -512,7 +512,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTransactions,
       })
@@ -569,7 +569,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomersResponse,
       })
@@ -610,7 +610,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomersResponse,
       })
@@ -651,7 +651,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomersResponse,
       })
@@ -692,7 +692,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomersResponse,
       })
@@ -733,7 +733,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomersResponse,
       })
@@ -758,7 +758,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 403 error for non-staff users when getting customers', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'Admin or staff role required' }),
@@ -771,7 +771,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 404 error when customers endpoint not found', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: async () => ({ detail: 'Not found.' }),
@@ -786,7 +786,7 @@ describe('AdminAdapter', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors', async () => {
-      ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
+      ;(vi.mocked(global.fetch)).mockRejectedValueOnce(new Error('Network error'))
 
       const result = await adapter.getProperties()
 
@@ -795,7 +795,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 404 errors', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: async () => ({ detail: 'Not found.' }),
@@ -808,7 +808,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 401 authentication errors', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ detail: 'Authentication required' }),
@@ -821,7 +821,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle generic HTTP errors', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: async () => ({ detail: 'Internal server error' }),
@@ -895,7 +895,7 @@ describe('AdminAdapter', () => {
         last_activity: '2024-09-15T10:30:00Z',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomerProfile,
       })
@@ -936,7 +936,7 @@ describe('AdminAdapter', () => {
         internal_notes: [],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockCustomerProfile,
       })
@@ -966,7 +966,7 @@ describe('AdminAdapter', () => {
         updated_at: '2024-09-10T10:00:00Z',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNote,
       })
@@ -997,7 +997,7 @@ describe('AdminAdapter', () => {
         updated_at: '2024-09-16T10:00:00Z',
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNote,
       })
@@ -1017,7 +1017,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should delete internal note successfully', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         status: 204,
       })
@@ -1035,7 +1035,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 403 error for non-staff users when getting customer profile', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'Admin or staff role required' }),
@@ -1048,7 +1048,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 404 error when customer not found', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: async () => ({ detail: 'Not found.' }),
@@ -1075,7 +1075,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => backendResponse,
       })
@@ -1102,7 +1102,7 @@ describe('AdminAdapter', () => {
         ],
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => backendResponse,
       })
@@ -1136,7 +1136,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
@@ -1164,7 +1164,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
@@ -1192,7 +1192,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
@@ -1220,7 +1220,7 @@ describe('AdminAdapter', () => {
         },
       ]
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ period: 'all_time', limit: 10, leaderboard: mockTopBookers }),
       })
@@ -1239,7 +1239,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 403 error for non-staff users when getting statistics', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'Admin or staff role required' }),
@@ -1313,7 +1313,7 @@ describe('AdminAdapter', () => {
         },
       }
 
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: true,
         json: async () => backendResponse,
       })
@@ -1375,7 +1375,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 404 error when booking not found', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: async () => ({ detail: 'Booking not found' }),
@@ -1388,7 +1388,7 @@ describe('AdminAdapter', () => {
     })
 
     it('should handle 403 error for non-staff users when looking up booking', async () => {
-      ;(global.fetch as any).mockResolvedValueOnce({
+      ;(vi.mocked(global.fetch)).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({ detail: 'Admin or staff role required' }),
