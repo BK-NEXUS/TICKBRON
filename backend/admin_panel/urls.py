@@ -9,7 +9,8 @@ from payments.admin_views import refund_mark_done, refund_retry, refunds_needs_a
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
-    status_countries, status_hotel_detail, status_hotels, status_regions, status_users,
+    status_countries, status_hotel_detail, status_hotels, status_hotels_flat, status_regions, status_user_detail,
+    status_users,
 )
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
@@ -49,8 +50,10 @@ urlpatterns = [
     path('status/countries/', status_countries, name='admin-status-countries'),
     path('status/countries/<str:country>/regions/', status_regions, name='admin-status-regions'),
     path('status/countries/<str:country>/regions/<str:region>/hotels/', status_hotels, name='admin-status-hotels'),
+    path('status/hotels/', status_hotels_flat, name='admin-status-hotels-flat'),
     path('status/hotels/<int:property_id>/', status_hotel_detail, name='admin-status-hotel-detail'),
     path('status/users/', status_users, name='admin-status-users'),
+    path('status/users/<int:user_id>/', status_user_detail, name='admin-status-user-detail'),
     path('audit-log/', admin_access_log, name='admin-access-log'),
     path('auto-completion/status/', auto_completion_status, name='admin-auto-completion-status'),
     path('refunds/needs-attention/', refunds_needs_attention, name='admin-refunds-needs-attention'),

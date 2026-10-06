@@ -46,7 +46,7 @@ class TestHotelDetail:
         }
 
         totals = response.data['totals']
-        assert (totals['bookings'], totals['guests'], revenue(totals)) == (3, 2, {'USD': '450.00'})
+        assert (totals['bookings'], totals['guests'], revenue(totals)) == (3, 3, {'USD': '450.00'})  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
 
         assert response.data['year'] == 2026
         assert response.data['available_years'] == [2026]
@@ -100,7 +100,8 @@ class TestUsers:
         assert (first['phone'], first['email'], first['bookings'], first['last_booking_date']) == \
             ('+998903330002', 'guest2@example.com', 2, '2026-04-12')
         assert revenue({'revenue': first['total_spent']}) == {'USD': '280.00'}
-        assert revenue({'revenue': rows[2]['total_spent']}) == {'EUR': '60.00', 'KZT': '50000.00'}
+        assert revenue({'revenue': rows[2]['total_spent']}) == {'EUR': '60.00', 'KZT': '50000.00', 'USD': '999.00'}
+        # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was without USD)
         # Hotel owners and staff without counted bookings are not listed
         assert response.data['count'] == 3
 
@@ -134,11 +135,13 @@ class TestAggregatesInTheDatabase:
 
     def test_hotel_detail(self, get, status_world, django_assert_max_num_queries):
         alpha = status_world['hotels']['alpha']
-        # hotel, totals, totals revenue, years, monthly counts, monthly revenue
-        with django_assert_max_num_queries(6):
+        # R12 (was 6): hotel, fully refunded ids, totals (counts, revenue x2, booking value),
+        # series (span, counts, revenue x2), reconciliation, years, monthly (counts, revenue x2) = 15
+        with django_assert_max_num_queries(15):
             assert get(f'{S}/hotels/{alpha.id}/', year=2026).status_code == 200
 
     def test_users(self, get, status_world, django_assert_max_num_queries):
-        # count, page, total spent for the page's guests, the AdminAccessLog insert (R4)
-        with django_assert_max_num_queries(4):
+        # R12 fully refunded ids, count, page, total spent for the page's guests (R12: payments and
+        # refunds, was one query), the AdminAccessLog insert (R4). R12: 6, was 4
+        with django_assert_max_num_queries(6):
             assert get(f'{S}/users/').status_code == 200

@@ -871,3 +871,55 @@ Hotels are priced in `USD` or `UZS` (property `currency`; room types, rate plans
 - With a `code`, render your own uz/ru/en text from `code` + `params`; `title` / `message` are the English fallback. `params` contain only ids, amounts (strings), currency codes, percents and ISO dates, never personal data
 - Codes (used from R12 phase 3): `no_show_report_approved`, `no_show_report_rejected` (`report_id, booking_id, booking_reference`), `no_show_marked` (`booking_id, booking_reference, amount, currency, percent`), `refund_succeeded` (`refund_id, booking_id, booking_reference, amount, currency`)
 - `code` and `params` cannot be changed through PATCH
+
+## 2026-10-06 R12 phase 2 (R12a): Status statistics
+
+Definitions (one module, `backend/bookings/metrics.py`; admin and owner Status use the same functions). Date basis = **check-in date**; "today" = the Tashkent business date.
+- **counted** = `confirmed` + `completed`, not fully refunded. `bookings` = count of counted bookings (same set as before minus fully refunded)
+- **stayed** = `completed`, not fully refunded. **The new headline number** (before R12 the headline was counted)
+- **guests** = SUM(`guest_count`) of counted bookings = **persons** (children included). **CHANGED:** before R12 `guests` was distinct accounts (a family of 4 on one account was 1, is now 4). The old number is `unique_customers`
+- `nights` = SUM(`number_of_nights`); `room_nights` = SUM(nights × rooms)
+- `upcoming` = `confirmed` with check-in after today; **not limited by the period** (the `last_*` periods end today, so future stays only show here)
+- `no_show` = status no_show, not fully refunded; `no_show_reported` = has a pending no-show report (always 0 until R12b)
+- `fully_refunded` = counted / no_show bookings whose every paid payment is refunded in full (succeeded refunds only); they are left out of every other number and only counted here
+- **revenue** = per currency, never mixed: SUM(paid payments) − SUM(succeeded refunds) of counted + no_show bookings. **CHANGED:** before R12 `revenue` was SUM(`total_price`) in the hotel currency; that old number is now `booking_value`. A no-show keeps its money as revenue; a booking without payment rows counts with revenue 0
+- `booking_status` = raw counts in the period per status: `pending, confirmed, completed, cancelled` (not expired), `expired` (cancelled because payment did not arrive in time), `no_show, no_show_reported`
+- **Caveat:** "stayed" numbers for the last `NO_SHOW_REPORT_WINDOW_DAYS` (default 7) days after check-out can still change: hotels may report a no-show in that window (R12b), which moves the booking from stayed to no_show. Show a small note "the last 7 days may still change" next to stayed numbers of recent periods
+- Pending, cancelled and expired are never guests, stays or revenue
+
+Money lists everywhere: `[{currency, amount}]`, amounts strings with 2 decimals, one entry per currency.
+
+### Periods and granularity (every Status endpoint below)
+- `?period=` `all` (default) | `today` | `last_7_days` (today−6 … today) | `last_30_days` | `this_year` (1 Jan … 31 Dec) | `last_5_years` / `last_10_years` (same day N years ago + 1 … today) | `custom` with `from` and `to` (`YYYY-MM-DD`, inclusive, from <= to, at most 20 years) | `YYYY` | `YYYY-MM`. Anything else: 400 `{ period: [...] }`
+- Responses carry `period` and `period_range` `{from, to}` (inclusive ISO dates; `null` for `all`)
+- `?granularity=` `day` | `week` (ISO week, the bucket starts Monday) | `month` (default) | `year`; at most 1000 buckets (e.g. `day` over 10 years → 400 `{ granularity: [...] }`). Series rows: `{ period, start, bookings, guests, nights, stayed, revenue }` (`period` = `YYYY-MM-DD` for day/week, `YYYY-MM`, `YYYY`), empty buckets included with zeros; with `period=all` the series runs from the first counted check-in to today
+
+### Existing admin Status lists (countries, regions, region hotels; shapes kept)
+- Rows gain `unique_customers, nights, room_nights, stayed, booking_value`; `guests` and `revenue` use the new definitions (see CHANGED above). Responses gain `period_range`
+
+### GET `/api/v1/admin-panel/status/hotels/` (NEW, staff + super-admin)
+- Flat list of all hotels. Query: period (+from/to), `search` (hotel name in any language, address, city, region or country name in uz/ru/en, ISO country code), `country` (ISO code or `unspecified`), `region` (id or `unspecified`), `status` (`draft, pending_approval, active, suspended, rejected`; else 400), `ordering` = `revenue | bookings | guests | nights | rating | created_at`, `-` prefix for descending (default `-bookings`; unknown → 400 `{ ordering: [...] }`; `revenue` sorts by the **UZS** revenue), `page`, `page_size` (20, max 100); top 1000
+- Response: paginated `{ count, next, previous, results, period, period_range, ordering }`; row `{ rank, id, name, city, region_id, region, country_code, status, created_at, rating ("4.50" or null, approved reviews), bookings, guests, unique_customers, nights, room_nights, stayed, revenue, booking_value }`
+- `?export=csv`: the whole top 1000 as CSV (see CSV below)
+
+### GET `/api/v1/admin-panel/status/hotels/{id}/` (added fields)
+- `totals` now has every field of the definitions (`bookings, stayed, counted, guests, unique_customers, nights, room_nights, no_show, no_show_reported, fully_refunded, upcoming, revenue, booking_value, booking_status`)
+- `period_range`, `granularity`, `series` (see above), `reconciliation`: `{ today, this_week (Mon–Sun), this_month, this_year, all_time: { from, to, counted: {bookings, guests}, stayed: {bookings, guests} } }` (by check-in date, not limited by `period`; `all_time` from/to null). `year`, `available_years`, `monthly` kept (monthly rows also have `nights`, `stayed`)
+
+### GET `/api/v1/admin-panel/status/users/` (added fields)
+- Rows gain `guests` (persons) and `nights`; `total_spent` = paid − refunded per currency (**CHANGED**, was SUM `total_price`; includes money kept from no-shows). `period_range`. `?export=csv` downloads the whole top 1000 (contains names, phones, emails: staff only, audit-logged)
+
+### GET `/api/v1/admin-panel/status/users/{id}/` (NEW, staff + super-admin)
+- `{ user: {id, full_name, first_name, last_name, phone, email, date_joined}, period, period_range, totals (as hotel detail), hotels_visited (hotels with a stay in the period), hotels: [{id, name, city, country, bookings, stayed, nights, guests, spent}], history: { count, next, previous, results: [{ id, reference, hotel {id, name}, check_in, check_out, nights, rooms, guests, status, total_price, currency, charge_amount, charge_currency, paid, refunded }] } }`
+- History: every status (also pending and cancelled) with check-in in the period, newest check-in first, `page` / `page_size` (20, max 100)
+- 404 for an unknown or deleted user. Audit log action `status_user_view` (target_user_id = the guest). `?export=csv` downloads the history
+
+### Owner: `GET /api/v1/partner/status/` (added fields) and two NEW endpoints (hotel owner; own hotels only)
+- Summary: + `period_range`, `granularity`, `series`, `reconciliation`, full `totals` (as admin hotel detail); `properties` rows gain `unique_customers, nights, room_nights, stayed, booking_value`. `?export=csv` = reconciliation table, one row per own hotel and window: `hotel_id, hotel, window, from, to, counted_bookings, counted_guests, stayed_bookings, stayed_guests`
+- `GET /api/v1/partner/status/hotels/{id}/`: `{ hotel: {id, name, status, address, city, region, country}, period, period_range, totals, granularity, series, reconciliation, year, available_years, monthly }`. Another owner's hotel or unknown id → 404
+- `GET /api/v1/partner/status/arrivals/?day=today|tomorrow` (default today, Tashkent date; else 400), optional `property` (own hotel id; another owner's → 404, not a number → 400): confirmed bookings checking in that day, paginated (50, max 100) `{ count, next, previous, results, day, date }`; row `{ id, reference, property {id, name}, guest_name, room_types: [..], rooms, nights, guests, check_in, check_out, special_requests, phone_last4 }`. Only the **last 4 digits** of the phone; no email
+
+### CSV export (`?export=csv`)
+- Same permissions and filters as the JSON. UTF-8 **with BOM**, `text/csv`, `Content-Disposition: attachment; filename="<name>.csv"`. At most `CSV_EXPORT_MAX_ROWS` (default 10000) data rows, then a final line `truncated`. Cells starting with `= + - @`, tab or CR get a leading apostrophe (spreadsheet formula injection). Money cells: `UZS 1000000.00; USD 70.00`
+- Every export writes an audit-log row `export_csv` with `details: { export, rows }` (no filters, no personal data); names: `status_hotels`, `status_users`, `status_user_<id>_history`, `partner_reconciliation`
+- Audit log `action` values added: `status_user_view`, `export_csv`

@@ -78,6 +78,8 @@ class AdminAccessLog(models.Model):
         ('exchange_rate_accept', 'Accepted a rejected exchange rate'),
         ('refund_mark_done', 'Marked a manual refund as paid'),
         ('refund_retry', 'Retried a failed refund'),
+        ('status_user_view', 'Status: one guest'),
+        ('export_csv', 'CSV export'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
@@ -99,7 +101,7 @@ class AdminAccessLog(models.Model):
 
     # The only keys `details` may hold: non-personal facts, flat scalar values
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
-                             'refund_id'})
+                             'refund_id', 'export', 'rows'})
 
     @classmethod
     def _check_details(cls, details):

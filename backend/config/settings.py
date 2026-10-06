@@ -353,6 +353,12 @@ FX_MIN_RATE = Decimal(os.getenv('FX_MIN_RATE', '1000'))          # UZS per USD, 
 FX_MAX_RATE = Decimal(os.getenv('FX_MAX_RATE', '100000'))
 FX_FETCH_TIMEOUT = int(os.getenv('FX_FETCH_TIMEOUT', '10'))      # seconds
 
+# R12 Status: CSV exports stop after this many rows (then a final "truncated" line)
+CSV_EXPORT_MAX_ROWS = int(os.getenv('CSV_EXPORT_MAX_ROWS', '10000'))
+# R12: hotels may report a no-show up to this many days after check-out (phase 3), so the
+# Status "stayed" numbers of that window can still change
+NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
+
 # Database connection health check
 DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
 DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))

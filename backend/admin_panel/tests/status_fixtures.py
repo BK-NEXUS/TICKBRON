@@ -16,18 +16,38 @@ import pytest
 
 from bookings.models import Booking
 from geography.models import City, Country, Region
+from payments.models import PaymentTransaction
 from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType
 from users.models import User
 
 
 def make_booking(guest, prop, check_in, price, status='confirmed', currency=None, nights=1):
-    return Booking.objects.create(
+    """
+    A booking; paid ones (confirmed, completed, no_show) also get their completed payment of
+    `price` in the booking currency (R12: revenue = paid payments - refunds).
+    """
+    booking = Booking.objects.create(
         guest=guest, property=prop, status=status, payment_status='paid',
         check_in=check_in, check_out=date.fromordinal(check_in.toordinal() + nights),
         number_of_nights=nights, guest_count=1, total_price=Decimal(price),
         currency=currency or prop.currency,
     )
+    if status in ('confirmed', 'completed', 'no_show'):
+        make_payment(booking, price, booking.currency)
+    return booking
+
+
+def make_payment(booking, amount, currency, status='completed'):
+    """A payment row of any amount (written with update(): the model wants one full charge)."""
+    tx = PaymentTransaction.objects.create(
+        idempotency_key=f'status-{booking.pk}-{PaymentTransaction.objects.count()}', booking=booking,
+        provider='payme', amount=booking.charge_amount, currency=booking.charge_currency, status='completed',
+        provider_transaction_id=f'status-ptx-{booking.pk}-{PaymentTransaction.objects.count()}',
+    )
+    PaymentTransaction.objects.filter(pk=tx.pk).update(amount=Decimal(amount), currency=currency, status=status)
+    tx.refresh_from_db()
+    return tx
 
 
 @pytest.fixture

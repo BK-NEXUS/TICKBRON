@@ -110,3 +110,28 @@ class TestSeedDemoStats:
         assert 'DEMO' in output
         assert 'stats-owner-01@tickbron.demo' in output
         assert '/admin' in output
+
+
+@pytest.mark.django_db
+class TestSeedDemoStatsPayments:
+    """R12: Status revenue is paid - refunded, so the demo bookings carry their payments."""
+
+    @pytest.fixture(autouse=True)
+    def debug_on(self, settings):
+        settings.DEBUG = True
+
+    def test_every_demo_booking_has_its_payment_and_cancelled_ones_a_full_refund(self):
+        from payments.models import PaymentTransaction, Refund
+
+        run_seed()
+        run_seed()   # idempotent
+
+        bookings = demo_bookings()
+        payments = PaymentTransaction.objects.filter(booking__in=bookings)
+        assert payments.count() == 250
+        for tx in payments.select_related('booking'):
+            assert (tx.amount, tx.currency) == (tx.booking.charge_amount, tx.booking.charge_currency)
+            assert tx.status == ('refunded' if tx.booking.status == 'cancelled' else 'completed')
+        refunds = Refund.objects.filter(booking__in=bookings)
+        assert refunds.count() == bookings.filter(status='cancelled').count()
+        assert all(r.status == 'succeeded' and r.amount == r.payment.amount for r in refunds.select_related('payment'))
