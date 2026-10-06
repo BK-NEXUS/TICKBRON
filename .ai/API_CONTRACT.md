@@ -839,3 +839,35 @@ Hotels are priced in `USD` or `UZS` (property `currency`; room types, rate plans
 - USD: `$1,250.00` (en), `1 250,00 $` (ru, uz)
 - Main number = the UZS amount (`uzs_total` / `charge_amount`). For USD hotels also show `≈ $200.00` next to it and "Rate of 03.10.2026 (CBU)" near the total (from `exchange_rate.date`, shown `dd.mm.yyyy`). `stale: true` → small note "rate may be out of date"
 - Search cards / property page: `base_price` in its currency plus `≈ 1 177 295 so'm` from `base_price_uzs_approx` (omit when null)
+
+## 2026-10-06 R12 phase 1: business date, auto-completion, Refund model, notification codes
+
+### Business date
+- "Today" for bookings, statistics and auto-completion is the date in `BUSINESS_TIME_ZONE` (default `Asia/Tashkent`, UTC+5), not the server's UTC date. Server `TIME_ZONE` stays `UTC`; stored datetimes are still UTC
+- `POST /api/v1/bookings/`, `GET /properties/{id}/quote/`, `GET /properties/{id}/availability/`: a check-in earlier than the Tashkent date is refused (400, same error shape as before). Before R12, between 00:00 and 05:00 Tashkent, yesterday was still accepted
+- Hotels in other countries use the same business date for now
+
+### Auto-completion of finished stays
+- Every night at 00:05 Tashkent (Celery beat) bookings with status `confirmed` and `check_out` before today become `completed` (state reason `checkout_completed`, `PaymentAuditLog` `booking_status_changed`). A missed night heals itself on the next run. Pending, cancelled and no_show bookings are never touched. Frontend: a past stay now shows `completed` instead of staying `confirmed`
+- `GET /api/v1/admin-panel/auto-completion/status/` (super-admin only; staff, owners, guests 403, anonymous 401/403): `{ schedule: "00:05 Asia/Tashkent", last_run: { trigger, started_at, finished_at, changed, failed } | null, waiting }`. `last_run` is the newest real run (dry runs are not recorded); `waiting` = finished stays still `confirmed` right now. Show a warning when `last_run` is null or older than a day, or `failed > 0`
+
+### POST `/api/v1/payments/transactions/{id}/refund/` (staff; request unchanged)
+- Every refund is now a `Refund` row (`payments.Refund`). Response = the payment object as before + `booking_status` + **`refund`**: `{ id, amount, currency, reason: "staff"|"cancel", status }`
+- **200** `refund.status: "succeeded"`: the provider refunded it
+- **202** `refund.status: "needs_manual"`: accepted, but the provider cannot refund this amount through its API (a partial refund with Payme, Click or Visa is not verified yet, see RELEASE_CHECKLIST), or the provider is not integrated. The provider was NOT called; the payment status does not change until staff mark it done. Show "Refund recorded; it must be paid by hand" and a link to the needs-attention list
+- **400** `{ error: "Payment could not be refunded." }`: the provider call failed; the refund is stored as `failed` and appears in needs-attention (retry there). **Changed:** with `cancel_booking: true` the cancellation now stands (before R12 it was rolled back)
+- 400 as before for a bad amount, an amount above what is left (`paid − every refund that is not failed`), non-whole so'm, or a payment that is not `completed`
+- The provider is called only after the refund row is committed, never inside the database transaction
+
+### Refunds needing attention (staff)
+- Refund object: `{ id, payment_id, booking_id, booking_reference, provider, amount, currency, reason: cancel|no_show|staff, status: pending|succeeded|failed|needs_manual, error_code, provider_reference, created_at, updated_at }`. No guest name, phone or email
+- `GET /api/v1/admin-panel/refunds/needs-attention/` (staff, super-admin): refunds `failed`, `needs_manual`, or `pending` for more than 1 hour; oldest first; paginated `{ count, next, previous, results }`, `page_size` 50 (max 200)
+- `POST /api/v1/admin-panel/refunds/{id}/mark-done/` (super-admin only) `{ provider_reference }` (required, the bank / provider cabinet id of the manual refund): `needs_manual` → `succeeded`, the payment becomes `refunded` / `partially_refunded`. 400 `{ error, code: "not_manual" }` for any other status, 400 `provider_reference` missing, 404 unknown id. Audit log action `refund_mark_done`, `details: { refund_id }`
+- `POST /api/v1/admin-panel/refunds/{id}/retry/` (super-admin only, no body): sends a `failed` refund to the provider again; 200 with the refund (`succeeded`, or `failed` again). 400 `{ error, code: "not_failed" }` for any other status, 400 `code: "limit_exceeded"` if other refunds used up the payment meanwhile, 404 unknown id. Audit log action `refund_retry`, `details: { refund_id }`
+- Refunds made before R12 were backfilled as `succeeded` rows (amount from the audit log, else the full payment for `refunded`)
+
+### Notifications (`GET /api/v1/me/notifications/` and the other notification endpoints)
+- Added read-only fields `code` (string or null) and `params` (object or null). Notifications created before R12 have both null; show `title` / `message` then
+- With a `code`, render your own uz/ru/en text from `code` + `params`; `title` / `message` are the English fallback. `params` contain only ids, amounts (strings), currency codes, percents and ISO dates, never personal data
+- Codes (used from R12 phase 3): `no_show_report_approved`, `no_show_report_rejected` (`report_id, booking_id, booking_reference`), `no_show_marked` (`booking_id, booking_reference, amount, currency, percent`), `refund_succeeded` (`refund_id, booking_id, booking_reference, amount, currency`)
+- `code` and `params` cannot be changed through PATCH

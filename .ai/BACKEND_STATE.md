@@ -42,4 +42,4 @@ Commit format:
 ## Roadmap items (R-series, see .ai/ROADMAP.md)
 |- R1, R2 (G1-G4), R4: done and merged (see ROADMAP).
 |- R6 currency: DONE 2026-10-05, checkpoint `.ai/checkpoints/backend_r6.md`. Full suite `pytest --create-db`: 2029 passed, 0 failed, 2 skipped. Open before production: Click amount unit and Payme/Click partial-refund rules (RELEASE_CHECKLIST "Unverified before production").
-|- R12 status additions: audit + plan in progress on `feat/r12-status` (`.ai/PLAN_R12.md`), waiting for owner approval before any feature code.
+|- R12 status additions (`.ai/PLAN_R12.md`, approved 2026-10-05, three phases). Phase 1 (business date, auto-completion, Refund model, notification codes) DONE 2026-10-06 on `feat/r12-status`, checkpoint `.ai/checkpoints/backend_r12_phase1.md`. Open before production: Payme/Click/Visa partial refunds unverified (go through `needs_manual`), Celery beat + worker + Redis required (RELEASE_CHECKLIST). Next: phase 2 (statistics), then phase 3 (no-show reports).
