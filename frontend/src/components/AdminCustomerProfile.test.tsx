@@ -100,7 +100,7 @@ describe('AdminCustomerProfile', () => {
   }
 
   it('should render loading state', () => {
-    ;(adminAdapter.getCustomerProfile as any).mockImplementation(() => new Promise(() => {}))
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockImplementation(() => new Promise(() => {}))
 
     renderWithRouter(<AdminCustomerProfile />)
 
@@ -108,7 +108,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render customer profile with header information', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -129,7 +129,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render back button and navigate to admin dashboard', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -147,7 +147,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render contact buttons with correct links', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -180,7 +180,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render account status badges', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -199,7 +199,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render tabs with correct counts', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -215,7 +215,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render bookings tab with table', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -239,7 +239,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render payments tab with table', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -262,7 +262,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render internal notes tab with note list', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -286,7 +286,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should handle booking filter change', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
@@ -309,12 +309,12 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should handle adding internal note', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
 
-    ;(adminAdapter.createInternalNote as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).createInternalNote).mockResolvedValueOnce({
       data: {
         id: 2,
         customer: 1,
@@ -357,12 +357,12 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should handle editing internal note', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
 
-    ;(adminAdapter.updateInternalNote as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).updateInternalNote).mockResolvedValueOnce({
       data: {
         id: 1,
         customer: 1,
@@ -414,12 +414,12 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should handle deleting internal note', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
 
-    ;(adminAdapter.deleteInternalNote as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).deleteInternalNote).mockResolvedValueOnce({
       data: null,
       error: null,
     })
@@ -453,7 +453,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render error state', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: null,
       error: 'Failed to load customer profile',
     })
@@ -466,7 +466,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should render empty state when customer not found', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: null,
       error: null,
     })
@@ -484,7 +484,7 @@ describe('AdminCustomerProfile', () => {
       bookings: [],
     }
 
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: emptyProfile,
       error: null,
     })
@@ -509,7 +509,7 @@ describe('AdminCustomerProfile', () => {
       payments: [],
     }
 
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: emptyProfile,
       error: null,
     })
@@ -534,7 +534,7 @@ describe('AdminCustomerProfile', () => {
       internal_notes: [],
     }
 
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: emptyProfile,
       error: null,
     })
@@ -563,7 +563,7 @@ describe('AdminCustomerProfile', () => {
       },
     }
 
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: profileWithoutSocial,
       error: null,
     })
@@ -579,7 +579,7 @@ describe('AdminCustomerProfile', () => {
   })
 
   it('should not allow adding an empty note', async () => {
-    ;(adminAdapter.getCustomerProfile as any).mockResolvedValueOnce({
+    ;(vi.mocked(adminAdapter).getCustomerProfile).mockResolvedValueOnce({
       data: mockCustomerProfile,
       error: null,
     })
