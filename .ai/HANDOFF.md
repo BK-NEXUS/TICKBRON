@@ -2269,7 +2269,7 @@ Plan and owner conditions: `.ai/PLAN_R12.md` ("Phases"). Master is NOT touched b
 ### Frontend baseline (2026-10-06)
 - `npm test`: 77 passed, 6 failed (1120 passed tests, 6 failed tests) across 83 test files
 - `npm run build`: SUCCESS
-- `npm run lint`: 274 problems (263 errors, 11 warnings)
+- `npm run lint`: 160 problems (149 errors, 11 warnings)
 
 ### Frontend status (2026-10-06)
 a) No emoji used as icons: PARTIAL - PaymentMethodSelector.tsx uses emoji icons (📱, 💳, 💼) on lines 22, 29, 36. Also phone.ts uses 🇺🇿 emoji flag. Icons should come from lucide-react.
