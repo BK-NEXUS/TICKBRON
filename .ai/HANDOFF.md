@@ -2278,3 +2278,12 @@ c) Card payment form: MISSING - No card payment form with 16-digit Luhn check, e
 d) Phone country selector: MISSING - Currently only Uzbekistan (1 country) with emoji flag 🇺🇿 in phone.ts. Needs at least 40 countries with local SVG flags (no CDN), searchable, UZ default with 9-digit limit.
 e) Assets: CONFIRMED - Fonts (@fontsource/pt-sans, @fontsource/pt-serif) bundled locally. No external URLs in src/ or index.html except documented API calls. CSP restricts to 'self'.
 f) API calls documented: CONFIRMED (with exceptions) - All API calls go through apiFetch helper. Exceptions: primary_photo URLs in accountAdapter.test.ts use http://example.com/photo.jpg (test data).
+
+## Frontend WIP (2026-10-06, opencode save)
+- Task: frontend lint cleanup (`no-explicit-any` in tests) after the react-router v7 upgrade; the OpenCode run was stopped mid-task.
+- Done: react-router and react-router-dom upgraded to v7.18.4 (commit 9b52a0f, on master). The `frontend status` checks a-f above are written.
+- Unfinished: the lint cleanup lives only in stash `stash@{0}` (7 files: adminAdapter.test.ts, AdminAmenityManagement.test.tsx, AdminCustomerProfile.test.tsx, AdminCustomersList.test.tsx, AdminStatisticsDashboard.test.tsx, CreateHotelOwnerAccount.test.tsx, ErrorBoundary.tsx). It is BROKEN: adminAdapter.test.ts has `global\.fetch = vi\.fn\(\)` (escaped text, syntax error). Do not apply as is; fix that line first.
+- Remaining: finish lint cleanup (baseline 160 problems), then status items b (dark mode), c (card payment form), d (phone country selector), a (emoji icons -> lucide-react).
+- Working tree was clean when saved, so the WIP commit had nothing to commit; this HANDOFF note is the only change on the save branch.
+- Tests (read-only check, 3 runs each on origin/master and 976ea80): 83 files, 1126 tests, all passed. Some tests are flaky under load (different ones fail on a run done right after `npm ci`).
+- Branches pushed: `wip/opencode-stash-0` (the stash), `wip/opencode-save` (this note).
