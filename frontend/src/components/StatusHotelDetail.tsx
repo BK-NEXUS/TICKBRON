@@ -4,12 +4,8 @@ import {
 } from '../adapters/statusAdapter'
 import { StatusPeriodSelector } from './StatusPeriodSelector'
 import { StatusMonthlyChart } from './StatusMonthlyChart'
-import { StatusStatsCards } from './StatusStatsCards'
-import { StatusBookingStatusCounts } from './StatusBookingStatusCounts'
-import { StatusSeriesSection } from './StatusSeriesSection'
-import { StatusReconciliationBlock } from './StatusReconciliationBlock'
-import { StatusStayedNote } from './StatusStayedNote'
-import { chartCurrencies, formatDate, periodLabel } from '../utils/statusFormat'
+import { StatusReport } from './StatusReport'
+import { chartCurrencies, formatDate } from '../utils/statusFormat'
 import type { DateRange } from '../utils/statusPeriod'
 
 interface StatusHotelDetailProps {
@@ -103,13 +99,11 @@ export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRa
         <div className="alert alert-error" role="alert">{error}</div>
       ) : data && (
         <>
-          <StatusStatsCards totals={data.totals} caption={periodLabel(data.period, data.period_range)} />
-          <StatusStayedNote periodRange={data.period_range} />
-          <StatusBookingStatusCounts counts={data.totals.booking_status} />
-          <StatusSeriesSection
-            series={data.series} granularity={granularity ?? data.granularity} onGranularityChange={setGranularity}
+          <StatusReport
+            period={data.period} periodRange={data.period_range} totals={data.totals} series={data.series}
+            granularity={granularity ?? data.granularity} onGranularityChange={setGranularity}
+            reconciliation={data.reconciliation}
           />
-          <StatusReconciliationBlock reconciliation={data.reconciliation} />
 
           <h3 className="status-chart-title">{TEXT.yearTitle}</h3>
           <div className="status-controls">

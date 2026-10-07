@@ -234,6 +234,11 @@ export interface StatusUserDetail {
 }
 
 export interface PartnerStatusProperty extends StatusTotals {
+  unique_customers: number
+  nights: number
+  room_nights: number
+  stayed: number
+  booking_value: Money[]
   id: number
   name: string
   city: string
@@ -328,6 +333,8 @@ export interface UserDetailParams extends StatusPeriodParams {
 export interface StatusResponse<T> {
   data: T | null
   error: string | null
+  /** HTTP status of a failed response, e.g. 404 for another owner's hotel */
+  status?: number
 }
 
 const ERROR_MESSAGES = { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Not found' }
@@ -354,7 +361,7 @@ async function send(
   url: string,
   init: RequestInit,
   errorMessages: Record<number, string>,
-): Promise<{ response: Response | null; error: string | null }> {
+): Promise<{ response: Response | null; error: string | null; status?: number }> {
   try {
     const response = await apiFetch(url, {
       credentials: 'include',
@@ -363,7 +370,7 @@ async function send(
     })
     if (!response.ok) {
       const apiError = await readApiError(response, errorMessages)
-      return { response: null, error: apiError.message }
+      return { response: null, error: apiError.message, status: response.status }
     }
     return { response, error: null }
   } catch (error) {
@@ -376,8 +383,8 @@ async function request<T>(
   init: RequestInit = { method: 'GET' },
   errorMessages: Record<number, string> = ERROR_MESSAGES,
 ): Promise<StatusResponse<T>> {
-  const { response, error } = await send(url, init, errorMessages)
-  if (!response) return { data: null, error }
+  const { response, error, status } = await send(url, init, errorMessages)
+  if (!response) return { data: null, error, status }
   try {
     return { data: (await response.json()) as T, error: null }
   } catch (parseError) {
@@ -396,8 +403,8 @@ async function requestCsv(
   fallbackName: string,
   errorMessages: Record<number, string> = ERROR_MESSAGES,
 ): Promise<StatusResponse<CsvFile>> {
-  const { response, error } = await send(url, { method: 'GET' }, errorMessages)
-  if (!response) return { data: null, error }
+  const { response, error, status } = await send(url, { method: 'GET' }, errorMessages)
+  if (!response) return { data: null, error, status }
   try {
     return { data: { blob: await response.blob(), filename: filenameFrom(response, fallbackName) }, error: null }
   } catch (readError) {

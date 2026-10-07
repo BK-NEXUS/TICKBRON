@@ -31,7 +31,7 @@ describe('StatusSeriesSection', () => {
   it('switches the revenue currency', () => {
     render(<StatusSeriesSection series={SERIES} granularity="month" onGranularityChange={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText('Chart currency'), { target: { value: 'USD' } })
+    fireEvent.change(screen.getByLabelText('Revenue currency'), { target: { value: 'USD' } })
 
     expect(screen.getByRole('img', { name: 'Revenue (USD) per month' })).toBeInTheDocument()
   })

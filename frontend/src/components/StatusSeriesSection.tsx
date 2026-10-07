@@ -11,7 +11,7 @@ interface StatusSeriesSectionProps {
 }
 
 const TEXT = {
-  currency: 'Chart currency',
+  currency: 'Revenue currency',
   empty: 'No bookings in this period.',
   noRevenue: 'No revenue in this period.',
 }

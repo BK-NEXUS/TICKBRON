@@ -112,7 +112,7 @@ describe('statusAdapter R12a', () => {
   it('maps 404 of an unknown user to a clear message', async () => {
     fetchMock.mockResolvedValue(errorResponse(404, {}))
     const result = await statusAdapter.getUserDetail(999, { period: 'all' })
-    expect(result).toEqual({ data: null, error: 'Not found' })
+    expect(result).toEqual({ data: null, error: 'Not found', status: 404 })
   })
 
   it('loads the owner summary with series and reconciliation', async () => {
@@ -130,7 +130,7 @@ describe('statusAdapter R12a', () => {
 
     fetchMock.mockResolvedValueOnce(errorResponse(404, {}))
     const other = await statusAdapter.getPartnerHotel(8, { period: 'all' })
-    expect(other).toEqual({ data: null, error: 'Not found' })
+    expect(other).toEqual({ data: null, error: 'Not found', status: 404 })
   })
 
   it('loads owner arrivals for a day, a hotel and a page', async () => {
