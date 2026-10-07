@@ -407,3 +407,5 @@ class PartnerBookingSerializer(serializers.Serializer):
     currency = serializers.CharField()
     confirmation_code = serializers.CharField()
     created_at = serializers.DateTimeField()
+    can_report_no_show = serializers.BooleanField()
+    report_deadline = serializers.DateField(allow_null=True)
