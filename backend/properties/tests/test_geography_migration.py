@@ -73,8 +73,11 @@ class Migrate0012To0013(TransactionTestCase):
         Property = new_apps.get_model('properties', 'Property')
 
         row = Property.objects.select_related('country_ref', 'region_ref', 'city_ref').get(pk=khiva)
-        self.assertEqual((row.country_ref.code, row.region_ref.name_en, row.city_ref.name_en),
-                         ('UZ', 'Khorezm', 'Khiva'))
+        # The region is asserted by its slug (the stable key): at geography 0002 its English name is
+        # still "Khorezm Region" (0003 renames it later), or "Khorezm" when a flush made load_geography
+        # recreate it, so the name depends on what ran before this test
+        self.assertEqual((row.country_ref.code, row.region_ref.slug, row.city_ref.name_en),
+                         ('UZ', 'uz-khorezm-region', 'Khiva'))
         # The text fields are not changed by the migration
         self.assertEqual((row.country, row.state, row.city), ("O'zbekiston", 'Xorazm viloyati', 'Xiva'))
         row = Property.objects.select_related('city_ref').get(pk=tashkent)

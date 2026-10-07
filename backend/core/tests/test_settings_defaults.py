@@ -144,3 +144,27 @@ def test_sensitive_endpoints_keep_their_strict_limits():
     assert OTPRequestRateThrottle.rate == '3/min'
     assert OTPVerifyRateThrottle.rate == '5/min'
     assert PaymentRateThrottle.rate == '20/min'
+
+
+def _test_db_name(**env_overrides):
+    env = {'DB_ENGINE': 'django.db.backends.postgresql', 'DB_NAME': 'tickbron', **env_overrides}
+    return _load_settings("settings.DATABASES['default'].get('TEST', {}).get('NAME')", **env)
+
+
+def test_test_database_name_is_djangos_default_without_a_suffix():
+    assert _test_db_name(TICKBRON_TEST_DB_SUFFIX='') == 'None'
+
+
+def test_test_database_suffix_gives_each_session_its_own_database():
+    assert _test_db_name(TICKBRON_TEST_DB_SUFFIX='r12') == 'test_tickbron_r12'
+
+
+def test_test_database_suffix_refuses_unsafe_characters():
+    env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS}
+    env.update({'DJANGO_SETTINGS_MODULE': 'config.settings', 'DEBUG': 'True', 'TICKBRON_TEST_DB_SUFFIX': 'a;b'})
+    result = subprocess.run(
+        [sys.executable, '-c', LOAD_SETTINGS.format(expression='1')],
+        cwd=BACKEND_DIR, env=env, capture_output=True, text=True, timeout=120,
+    )
+    assert result.returncode != 0
+    assert 'TICKBRON_TEST_DB_SUFFIX' in result.stderr
