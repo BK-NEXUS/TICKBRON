@@ -1,7 +1,7 @@
 // Number formatting for the Status sections (admin and partner): thousand separators,
 // one amount per currency (never added together).
 
-import type { Money, StatusMonth } from '../adapters/statusAdapter'
+import type { Money } from '../adapters/statusAdapter'
 import { STATUS_PRESET_PERIODS, type DateRange } from './statusPeriod'
 
 const COUNT = new Intl.NumberFormat('en-US')
@@ -49,8 +49,8 @@ export function formatDate(value: string): string {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-/** Currencies with revenue in a monthly series, the largest total first (the chart's default) */
-export function chartCurrencies(months: StatusMonth[]): string[] {
+/** Currencies with revenue in a series, the largest total first (the chart's default) */
+export function chartCurrencies(months: { revenue: Money[] }[]): string[] {
   const sums = new Map<string, number>()
   months.forEach(month => month.revenue.forEach(({ currency, amount }) => {
     sums.set(currency, (sums.get(currency) ?? 0) + Number(amount))
