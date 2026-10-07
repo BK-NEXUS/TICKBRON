@@ -61,7 +61,7 @@ export function StatusRankedTable<T>({
     if (searchInput === search) return
     const timer = setTimeout(() => {
       setSearch(searchInput)
-      goToPage(1)
+      setPageState(state => ({ ...state, page: 1 }))
     }, SEARCH_DELAY_MS)
     return () => clearTimeout(timer)
   }, [searchInput, search])
