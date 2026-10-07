@@ -2325,3 +2325,13 @@ Built (frontend only):
 - Admin Users CSV (`exportUsers`) has an adapter method but no button (contains personal data; not in the task).
 - Not checked in a browser at 390px and 1440px (no backend running): layout relies on the existing wrapping `.status-controls`, grid cards and scrolling tables.
 - Lint baseline problems outside this task remain (for example `any` in `errorHandler.test.ts`).
+
+## R12a-fix (backend, 2026-10-08)
+Status: READY on branch `fix/r12a-guests`. Contract: `.ai/API_CONTRACT.md` "R12a-fix". Additive only.
+
+### Frontend needs
+- The headline shows `stayed_guests` (persons); `stayed` (bookings) becomes the second number.
+- The note about numbers that can still change reads its window from `no_show_report_window_days` and its "as of" date from `business_date` in the response (no constants, no browser date).
+- `counted_guests` equals `guests`; `upcoming_guests` is the persons form of `upcoming`.
+
+READY FOR FRONTEND: R12a-fix - stayed_guests, counted_guests, upcoming_guests, business_date, no_show_report_window_days

@@ -77,6 +77,7 @@ def _numbers(scope, period, date_range, year, granularity):
     return {
         'period': period,
         'period_range': range_json(date_range),
+        **metrics.status_meta(),
         'totals': metrics.metric_totals(scope, date_range, refunded_ids=refunded),
         'granularity': granularity,
         'series': series,
