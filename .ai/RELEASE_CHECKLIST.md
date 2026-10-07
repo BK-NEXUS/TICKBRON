@@ -294,3 +294,10 @@ Before any real payment, each item below must be tested end to end in the provid
 - [ ] Full refunds call the provider after the refund row is committed. A provider failure leaves the refund `failed`; super-admins retry it from `GET /api/v1/admin-panel/refunds/needs-attention/`.
 - [ ] Someone on staff checks the needs-attention list daily (failed, needs_manual, pending for more than an hour).
 - [ ] `migrate` prints `Refund backfill: N refund row(s) created, M payment(s) skipped`. Skipped = a `partially_refunded` payment without an audit row (amount unknown, never invented) or audit amounts above the payment: check each one by hand and record its refund with the real amount.
+
+## No-show reports and refund (R12b, 2026-10-07)
+
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** R12b migrations: `bookings/0010` (NoShowReport, `Booking.no_show_refund_percent`; existing bookings get 0), `admin_panel/0008` (audit actions). Both reversible.
+- [ ] **Partial refunds are unverified with Payme, Click and Visa.** A no-show refund is 50% of the payment, so in real mode it is stored as `needs_manual` and staff pay it by hand (see Refunds above). Verify each provider's partial refund in its sandbox before turning it on.
+- [ ] **A lawyer must review the refund wording** shown to guests (`no_show_refund_statement`, in every language) and the owner/staff texts before launch; the 50% promise is a contract term.
+- [ ] Settings to confirm: `NO_SHOW_REFUND_PERCENT` (50), `NO_SHOW_REPORT_WINDOW_DAYS` (7), `NO_SHOW_FLAG_*`, `THROTTLE_NO_SHOW_REPORT_RATE` (20/hour).

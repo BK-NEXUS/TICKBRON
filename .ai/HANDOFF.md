@@ -2292,3 +2292,15 @@ f) API calls documented: CONFIRMED (with exceptions) - All API calls go through 
 - Working tree was clean when saved, so the WIP commit had nothing to commit; this HANDOFF note is the only change on the save branch.
 - Tests (read-only check, 3 runs each on origin/master and 976ea80): 83 files, 1126 tests, all passed. Some tests are flaky under load (different ones fail on a run done right after `npm ci`).
 - Branches pushed: `wip/opencode-stash-0` (the stash), `wip/opencode-save` (this note).
+
+## R12b: no-show reports and 50% refund (backend, 2026-10-07)
+Status: READY on branch `feat/r12b-noshow`. Contract: `.ai/API_CONTRACT.md` "R12b".
+
+### Frontend needs
+- Owner bookings list: button "Guest did not arrive" when `can_report_no_show` is true (show `report_deadline`); dialog with a comment (10-500 characters) -> `POST /partner/bookings/{id}/no-show-report/`; handle the error `code`s. A "reportable" filter uses `?reportable=true`. Arrivals still list only today/tomorrow: reports start the day after check-in, use the bookings list.
+- Owner "My reports" page from `GET /partner/no-show-reports/` with a withdraw button for `pending`.
+- Staff "No-show reports" queue (`/admin-panel/no-show-reports/`): show `refund_preview`, `hotel_flagged`, comment; approve / reject / reverse need a decision comment.
+- Refund statement on the payment step, confirmation and My bookings from `no_show_refund_text_key` + `no_show_refund_text_params` (i18n key per language; 0 percent = no sentence).
+- New booking status label `no_show` and the notification codes `no_show_report_approved`, `no_show_report_rejected`, `no_show_marked`, `no_show_marked_no_refund`.
+
+READY FOR FRONTEND: R12b - owner: POST /partner/bookings/{id}/no-show-report/, GET /partner/no-show-reports/, POST /partner/no-show-reports/{id}/withdraw/, GET /partner/bookings/ (new can_report_no_show, report_deadline, ?reportable=true); staff: GET /admin-panel/no-show-reports/ (+ {id}/), POST .../{id}/approve|reject|reverse/; guest fields no_show_refund_percent, no_show_refund_amount, no_show_refund_text_key, no_show_refund_text_params on quote, booking create and detail.

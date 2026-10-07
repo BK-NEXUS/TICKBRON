@@ -22,7 +22,7 @@ from functools import partial
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, Exists, OuterRef, Sum
 from django.utils import timezone
 
 from accounts.models import Notification
@@ -180,6 +180,19 @@ def reserve_future_nights(booking, today):
 
 # --- owner: report and withdraw -----------------------------------------------------------
 
+def report_deadline(booking):
+    """Last business day on which the owner may still report this booking."""
+    return booking.check_out + timedelta(days=settings.NO_SHOW_REPORT_WINDOW_DAYS)
+
+
+def reportable_bookings(queryset, today):
+    """Bookings the owner can report today: the same rules create_report enforces, minus the lock."""
+    window = timedelta(days=settings.NO_SHOW_REPORT_WINDOW_DAYS)
+    return queryset.filter(
+        status__in=REPORTABLE_STATUSES, check_in__lt=today, check_out__gte=today - window,
+    ).filter(~Exists(NoShowReport.objects.filter(booking=OuterRef('pk')).exclude(status='withdrawn')))
+
+
 def create_report(booking_id, owner, comment):
     """Owner reports that the guest did not arrive. Raises NoShowError; returns the NoShowReport."""
     today = business_today()
@@ -192,7 +205,7 @@ def create_report(booking_id, owner, comment):
             raise NoShowError('not_reportable_status', 'Only confirmed or completed bookings can be reported')
         if not booking.check_in < today:
             raise NoShowError('too_early', 'A no-show can be reported from the day after check-in')
-        if today > booking.check_out + timedelta(days=settings.NO_SHOW_REPORT_WINDOW_DAYS):
+        if today > report_deadline(booking):
             raise NoShowError('window_closed', 'The time to report this booking has passed')
         if booking.no_show_reports.exclude(status='withdrawn').exists():
             raise NoShowError('report_exists', 'This booking already has a no-show report')

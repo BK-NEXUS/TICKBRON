@@ -7,6 +7,8 @@ phone or email in either: the staff see the booking reference and look the guest
 """
 import re
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from bookings.models import NoShowReport
@@ -71,11 +73,13 @@ class StaffReportSerializer(OwnerReportSerializer):
     def get_hotel_flagged(self, obj) -> bool:
         return obj.property_id in self.context.get('flagged', ())
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_refund_preview(self, obj):
         # Only a pending report still has a refund to preview; a decided one shows `refunds`
         if obj.status != 'pending':
             return None
         return self.context.get('previews', {}).get(obj.booking_id)
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_refunds(self, obj):
         return self.context.get('refunds', {}).get(obj.booking_id, [])

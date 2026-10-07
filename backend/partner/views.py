@@ -16,6 +16,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from bookings.models import Booking, BookingItem
+from bookings.noshow import report_deadline, reportable_bookings
+from common.dates import business_today
 from partner.serializers import (
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
@@ -374,6 +376,7 @@ def partner_bookings(request):
     Query Parameters:
         status: Filter by booking status (optional)
         payment_status: Filter by payment status (optional)
+        reportable: true keeps only bookings the owner can report as no-show today (optional)
     
     Returns:
         List of bookings for the hotel-owner's properties
@@ -398,7 +401,13 @@ def partner_bookings(request):
     payment_status_filter = request.query_params.get('payment_status')
     if payment_status_filter:
         bookings = bookings.filter(payment_status=payment_status_filter)
-    
+
+    today = business_today()
+    reportable = reportable_bookings(bookings, today)
+    if request.query_params.get('reportable') == 'true':
+        bookings = reportable
+    reportable_ids = set(reportable.values_list('id', flat=True))
+
     # Serialize bookings
     bookings_data = []
     for booking in bookings:
@@ -419,7 +428,9 @@ def partner_bookings(request):
             'total_price': str(booking.total_price),
             'currency': booking.currency,
             'confirmation_code': booking.confirmation_code,
-            'created_at': booking.created_at
+            'created_at': booking.created_at,
+            'can_report_no_show': booking.id in reportable_ids,
+            'report_deadline': report_deadline(booking) if booking.id in reportable_ids else None,
         }
         bookings_data.append(booking_data)
     
