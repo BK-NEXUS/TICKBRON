@@ -1,5 +1,14 @@
 import { useState } from 'react'
+import { Briefcase, CreditCard, Smartphone, type LucideIcon } from 'lucide-react'
 import { PaymentProvider } from '../adapters/paymentAdapter'
+
+interface PaymentMethodOption {
+  id: PaymentProvider
+  name: string
+  description: string
+  icon: LucideIcon
+  popular: boolean
+}
 
 interface PaymentMethodSelectorProps {
   selectedProvider: PaymentProvider | null
@@ -14,26 +23,26 @@ interface PaymentMethodSelectorProps {
 export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disabled }: PaymentMethodSelectorProps) {
   const [focusedProvider, setFocusedProvider] = useState<PaymentProvider | null>(null)
 
-  const paymentMethods = [
+  const paymentMethods: PaymentMethodOption[] = [
     {
       id: 'payme' as PaymentProvider,
       name: 'Payme',
       description: 'Fast and secure mobile payments',
-      icon: '📱',
+      icon: Smartphone,
       popular: true,
     },
     {
       id: 'click' as PaymentProvider,
       name: 'Click',
       description: 'Uzbekistan\'s leading payment system',
-      icon: '💳',
+      icon: CreditCard,
       popular: false,
     },
     {
       id: 'visa' as PaymentProvider,
       name: 'Visa',
       description: 'Global credit and debit cards',
-      icon: '💼',
+      icon: Briefcase,
       popular: false,
     },
   ]
@@ -74,7 +83,9 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
             aria-checked={selectedProvider === method.id}
             aria-disabled={disabled}
           >
-            <div className="payment-method-card-icon">{method.icon}</div>
+            <div className="payment-method-card-icon">
+              <method.icon aria-hidden="true" size={28} />
+            </div>
             <div className="payment-method-card-content">
               <div className="payment-method-card-name">
                 {method.name}

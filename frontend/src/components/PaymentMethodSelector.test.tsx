@@ -150,6 +150,29 @@ describe('PaymentMethodSelector', () => {
     expect(paymeCard).toHaveAttribute('tabIndex', '0')
   })
 
+  it('should render icons as hidden svg instead of emoji and keep text labels', () => {
+    render(
+      <PaymentMethodSelector
+        selectedProvider={null}
+        onProviderSelect={mockOnProviderSelect}
+      />
+    )
+
+    const selector = screen.getByText('Select Payment Method').closest('.payment-method-selector')!
+    expect(selector.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u)
+
+    const cards = selector.querySelectorAll('.payment-method-card')
+    expect(cards).toHaveLength(3)
+    cards.forEach((card) => {
+      expect(card.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
+      expect(card.textContent).toMatch(/Payme|Click|Visa/)
+    })
+
+    expect(screen.getByText('Payme')).toBeInTheDocument()
+    expect(screen.getByText('Click')).toBeInTheDocument()
+    expect(screen.getByText('Visa')).toBeInTheDocument()
+  })
+
   it('should have aria-disabled when disabled', () => {
     render(
       <PaymentMethodSelector
