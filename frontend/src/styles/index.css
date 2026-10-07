@@ -8888,6 +8888,37 @@ body {
   color: var(--color-text-primary);
 }
 
+.status-period-selector {
+  flex-wrap: wrap;
+}
+
+.status-custom-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status-custom-range input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.status-custom-range input[aria-invalid='true'] {
+  border-color: var(--color-error, #b3261e);
+}
+
+.status-range-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-error, #b3261e);
+}
+
 .status-table .status-cell--numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
