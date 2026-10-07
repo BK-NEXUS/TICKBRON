@@ -2,6 +2,7 @@
 // one amount per currency (never added together).
 
 import type { Money, StatusMonth } from '../adapters/statusAdapter'
+import { STATUS_PRESET_PERIODS, type DateRange } from './statusPeriod'
 
 const COUNT = new Intl.NumberFormat('en-US')
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -32,9 +33,12 @@ export function monthLabel(month: string): string {
   return MONTHS[Number(month.slice(5, 7)) - 1] ?? month
 }
 
-/** "all" -> "All time", "2026" -> "2026", "2026-04" -> "April 2026" */
-export function periodLabel(period: string): string {
+/** "all" -> "All time", "last_7_days" -> "Last 7 days", "2026-04" -> "April 2026", custom -> its dates */
+export function periodLabel(period: string, range?: DateRange): string {
   if (period === 'all') return 'All time'
+  if (period === 'custom') return range ? `${range.from} – ${range.to}` : 'Custom range'
+  const preset = STATUS_PRESET_PERIODS.find(item => item.value === period)
+  if (preset) return preset.label
   if (/^\d{4}-\d{2}$/.test(period)) return `${MONTH_NAMES[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`
   return period
 }
