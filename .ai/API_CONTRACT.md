@@ -923,3 +923,29 @@ Money lists everywhere: `[{currency, amount}]`, amounts strings with 2 decimals,
 - Same permissions and filters as the JSON. UTF-8 **with BOM**, `text/csv`, `Content-Disposition: attachment; filename="<name>.csv"`. At most `CSV_EXPORT_MAX_ROWS` (default 10000) data rows, then a final line `truncated`. Cells starting with `= + - @`, tab or CR get a leading apostrophe (spreadsheet formula injection). Money cells: `UZS 1000000.00; USD 70.00`
 - Every export writes an audit-log row `export_csv` with `details: { export, rows }` (no filters, no personal data); names: `status_hotels`, `status_users`, `status_user_<id>_history`, `partner_reconciliation`
 - Audit log `action` values added: `status_user_view`, `export_csv`
+
+## 2026-10-07 R12b: no-show reports and the 50% refund
+
+Owner endpoints need the hotel-owner role (`IsHotelOwner`), staff endpoints staff or super-admin. A guest or a visitor gets 403 / 401.
+
+### Owner
+- `GET /api/v1/partner/bookings/` — each row now also has `can_report_no_show` (bool) and `report_deadline` (`YYYY-MM-DD`, null unless reportable). Reportable = status `confirmed` or `completed`, the check-in date has passed (today > check-in, Asia/Tashkent business date), today <= check-out + `NO_SHOW_REPORT_WINDOW_DAYS` (7), and no non-withdrawn report exists. Filter `?reportable=true` keeps only those rows (any other value changes nothing). The report endpoint enforces the same rules; the flag is for the UI only.
+- `POST /api/v1/partner/bookings/{id}/no-show-report/` body `{comment}` (plain text, 10-500 characters, HTML refused) -> 201 report. Throttled 20/hour per user (`THROTTLE_NO_SHOW_REPORT_RATE`).
+- `GET /api/v1/partner/no-show-reports/?status=&property=` (paginated, newest first) and `POST /api/v1/partner/no-show-reports/{id}/withdraw/` (only a pending report).
+- Report fields (owner): `id, booking_id, booking_reference, property_id, property_name, check_in, check_out, comment, status (pending|approved|rejected|withdrawn), decision_comment, decided_at, created_at`.
+
+### Staff
+- `GET /api/v1/admin-panel/no-show-reports/?status=&property=&from=&to=` (paginated; pending first, oldest pending first), `GET .../{id}/`, `POST .../{id}/approve|reject|reverse/` body `{decision_comment}` (10-500 characters).
+- Staff rows add `decided_by_id, created_by_id, hotel_flagged` (abuse flag, see settings `NO_SHOW_FLAG_*`), `refund_preview` (`{amount, currency, percent, already_refunded, paid}` while pending, else null) and `refunds` (rows already made). No guest name, phone or email.
+- `reverse`: approved -> rejected (booking restored to completed or confirmed, nights reserved again if still free, money already refunded stays refunded); rejected -> approved (normal approval).
+
+### Errors
+`{error, code}` with 400, or 404 for `not_found` (also another owner's booking or report). Codes: `not_reportable_status`, `too_early`, `window_closed`, `report_exists`, `not_pending`, `not_decided`, `booking_not_reportable`, `inventory_unavailable`, `refund_refused`. Comment problems are the usual field errors `{comment: [...]}` / `{decision_comment: [...]}`.
+
+### Guest-facing disclosure (quote, booking create, booking detail, My bookings)
+New read-only fields: `no_show_refund_percent` (int, 0 for bookings made before R12b), `no_show_refund_amount` (UZS string or null), `no_show_refund_text_key` (`no_show_refund_statement` or null), `no_show_refund_text_params` (`{percent, amount}` or null). The frontend renders the sentence from the key in the guest's language and never computes the amount. The percent is a snapshot taken at booking time (`NO_SHOW_REFUND_PERCENT`, default 50).
+
+### Refund rules
+- Approval marks the booking `no_show`, releases the future nights and refunds `percent` of what was paid in UZS, minus refunds already made, through the `Refund` model (`reason=no_show`, key `{booking_id}:no_show`). Approving twice (also two at once) refunds once.
+- A no-show refund is partial, so in real mode (`PAYMENT_TEST_MODE=False`) the provider is not called and the refund is `needs_manual` (staff pay by hand, then `POST /admin-panel/refunds/{id}/mark-done/`); in test mode the fake provider performs it.
+- Notifications: `no_show_report_approved`, `no_show_report_rejected` (owner), `no_show_marked` (guest, with amount) or `no_show_marked_no_refund` (percent 0). Auto-completion skips bookings with a pending report. Statistics `no_show_reported` counts pending reports.

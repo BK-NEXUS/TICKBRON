@@ -290,6 +290,7 @@ SPECTACULAR_SETTINGS = {
         'WebhookEventStatusEnum': 'payments.models.WebhookEvent.STATUS_CHOICES',
         'PropertyStatusEnum': 'properties.models.Property.STATUS_CHOICES',
         'ReviewStatusEnum': 'accounts.models.Review.STATUS_CHOICES',
+        'NoShowReportStatusEnum': 'bookings.models.NoShowReport.STATUS_CHOICES',
     },
 }
 
