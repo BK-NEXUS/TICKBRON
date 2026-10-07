@@ -1,8 +1,8 @@
 // Number formatting for the Status sections (admin and partner): thousand separators,
 // one amount per currency (never added together).
 
-import type { Money, StatusMonth } from '../adapters/statusAdapter'
-import { STATUS_PRESET_PERIODS, type DateRange } from './statusPeriod'
+import type { Money } from '../adapters/statusAdapter'
+import { STATUS_PRESET_PERIODS } from './statusPeriod'
 
 const COUNT = new Intl.NumberFormat('en-US')
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -34,9 +34,9 @@ export function monthLabel(month: string): string {
 }
 
 /** "all" -> "All time", "last_7_days" -> "Last 7 days", "2026-04" -> "April 2026", custom -> its dates */
-export function periodLabel(period: string, range?: DateRange): string {
+export function periodLabel(period: string, range?: { from: string | null; to: string | null }): string {
   if (period === 'all') return 'All time'
-  if (period === 'custom') return range ? `${range.from} – ${range.to}` : 'Custom range'
+  if (period === 'custom') return range?.from && range.to ? `${range.from} – ${range.to}` : 'Custom range'
   const preset = STATUS_PRESET_PERIODS.find(item => item.value === period)
   if (preset) return preset.label
   if (/^\d{4}-\d{2}$/.test(period)) return `${MONTH_NAMES[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`
@@ -49,8 +49,8 @@ export function formatDate(value: string): string {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-/** Currencies with revenue in a monthly series, the largest total first (the chart's default) */
-export function chartCurrencies(months: StatusMonth[]): string[] {
+/** Currencies with revenue in a series, the largest total first (the chart's default) */
+export function chartCurrencies(months: { revenue: Money[] }[]): string[] {
   const sums = new Map<string, number>()
   months.forEach(month => month.revenue.forEach(({ currency, amount }) => {
     sums.set(currency, (sums.get(currency) ?? 0) + Number(amount))

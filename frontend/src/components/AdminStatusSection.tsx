@@ -4,6 +4,9 @@ import { statusAdapter, StatusCountry, StatusHotel, StatusRegion, StatusUser } f
 import { Crumb, usePageTrail } from './Breadcrumbs'
 import { StatusRankedTable, StatusColumn } from './StatusRankedTable'
 import { StatusHotelDetail } from './StatusHotelDetail'
+import { AdminStatusHotels } from './AdminStatusHotels'
+import { StatusUserDetail } from './StatusUserDetail'
+import { useStatusPeriod } from '../hooks/useStatusPeriod'
 import { formatCount, formatDate, formatMoneyList } from '../utils/statusFormat'
 
 type Level =
@@ -13,6 +16,9 @@ type Level =
   | { kind: 'hotels'; country: string; region: string }
   | { kind: 'hotel'; country: string; region: string; hotelId: number; hotelName: string }
   | { kind: 'users' }
+  | { kind: 'allHotels' }
+  | { kind: 'allHotel'; hotelId: number; hotelName: string }
+  | { kind: 'user'; userId: number; name: string }
 
 interface AdminStatusSectionProps {
   /** Leave the Status section (the "Admin Dashboard" breadcrumb, or Back from the tiles) */
@@ -35,8 +41,10 @@ function metricColumns<T extends Metrics>(): StatusColumn<T>[] {
  */
 export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const [level, setLevel] = useState<Level>({ kind: 'home' })
-  const [period, setPeriod] = useState('all')
+  const { period, range, setPeriod, setRange } = useStatusPeriod()
   const navigate = useNavigate()
+  // Every list and detail takes the period and the custom range together
+  const periodProps = { period, range, onPeriodChange: setPeriod, onRangeChange: setRange }
 
   const goHome = () => setLevel({ kind: 'home' })
   const goCountries = () => setLevel({ kind: 'countries' })
@@ -46,8 +54,13 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   // Home › Admin Dashboard › Status › Countries › Uzbekistan › Tashkent › Hotel (each level clickable, Back steps up)
   const trail: Crumb[] = [{ label: 'Admin Dashboard', onClick: onExit }]
   trail.push(level.kind === 'home' ? { label: 'Status' } : { label: 'Status', onClick: goHome })
+  const goUsers = () => setLevel({ kind: 'users' })
+  const goAllHotels = () => setLevel({ kind: 'allHotels' })
   if (level.kind === 'users') trail.push({ label: 'Users' })
-  if (level.kind !== 'home' && level.kind !== 'users') {
+  if (level.kind === 'user') trail.push({ label: 'Users', onClick: goUsers }, { label: level.name })
+  if (level.kind === 'allHotels') trail.push({ label: 'Hotels' })
+  if (level.kind === 'allHotel') trail.push({ label: 'Hotels', onClick: goAllHotels }, { label: level.hotelName })
+  if (level.kind === 'countries' || level.kind === 'regions' || level.kind === 'hotels' || level.kind === 'hotel') {
     trail.push(level.kind === 'countries' ? { label: 'Countries' } : { label: 'Countries', onClick: goCountries })
   }
   if (level.kind === 'regions' || level.kind === 'hotels' || level.kind === 'hotel') {
@@ -75,7 +88,11 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
             <span className="status-tile-title">Countries</span>
             <span className="status-tile-text">By country, region and hotel</span>
           </button>
-          <button type="button" className="status-tile" onClick={() => setLevel({ kind: 'users' })}>
+          <button type="button" className="status-tile" onClick={goAllHotels}>
+            <span className="status-tile-title">Hotels</span>
+            <span className="status-tile-text">All hotels, sorted by revenue, bookings, guests and more</span>
+          </button>
+          <button type="button" className="status-tile" onClick={goUsers}>
             <span className="status-tile-title">Users</span>
             <span className="status-tile-text">Guests ranked by bookings</span>
           </button>
@@ -91,8 +108,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         title="Users"
         subtitle="Top 1,000 guests by bookings. Search by name, phone, email or ID; open a row for the customer profile."
         noun="users"
-        period={period}
-        onPeriodChange={setPeriod}
+        {...periodProps}
         load={params => statusAdapter.getUsers(params)}
         rowKey={row => row.id}
         rowLabel={row => row.full_name || row.email}
@@ -104,6 +120,19 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
           { header: 'Bookings', numeric: true, render: row => formatCount(row.bookings) },
           { header: 'Total spent', numeric: true, render: row => formatMoneyList(row.total_spent) },
           { header: 'Last booking', render: row => formatDate(row.last_booking_date) },
+          {
+            header: 'Statistics',
+            render: row => (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                aria-label={`Statistics of ${row.full_name || row.email}`}
+                onClick={event => { event.stopPropagation(); setLevel({ kind: 'user', userId: row.id, name: row.full_name || row.email }) }}
+              >
+                Statistics
+              </button>
+            ),
+          },
         ]}
       />
     )
@@ -116,8 +145,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         title="Countries"
         subtitle="Top 100 countries by bookings"
         noun="countries"
-        period={period}
-        onPeriodChange={setPeriod}
+        {...periodProps}
         load={params => statusAdapter.getCountries(params)}
         rowKey={row => row.country}
         rowLabel={row => row.country}
@@ -139,8 +167,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         title={country}
         subtitle="Top 100 regions by bookings"
         noun="regions"
-        period={period}
-        onPeriodChange={setPeriod}
+        {...periodProps}
         load={params => statusAdapter.getRegions(country, params)}
         rowKey={row => row.region}
         rowLabel={row => row.region}
@@ -162,8 +189,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         title={`${region}, ${country}`}
         subtitle="Top 1,000 hotels by bookings"
         noun="hotels"
-        period={period}
-        onPeriodChange={setPeriod}
+        {...periodProps}
         load={params => statusAdapter.getHotels(country, region, params)}
         rowKey={row => row.id}
         rowLabel={row => row.name}
@@ -177,5 +203,18 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
     )
   }
 
-  return <StatusHotelDetail key={level.hotelId} hotelId={level.hotelId} period={period} onPeriodChange={setPeriod} />
+  if (level.kind === 'allHotels') {
+    return (
+      <AdminStatusHotels
+        {...periodProps}
+        onOpen={row => setLevel({ kind: 'allHotel', hotelId: row.id, hotelName: row.name })}
+      />
+    )
+  }
+
+  if (level.kind === 'user') {
+    return <StatusUserDetail key={level.userId} userId={level.userId} {...periodProps} />
+  }
+
+  return <StatusHotelDetail key={level.hotelId} hotelId={level.hotelId} {...periodProps} />
 }

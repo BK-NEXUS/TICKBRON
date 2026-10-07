@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
 import { statusAdapter } from '../adapters/statusAdapter'
+import { HOTEL_DETAIL, TOTALS } from '../test/statusFixtures'
 
 vi.mock('../adapters/statusAdapter', () => ({
   statusAdapter: {
@@ -12,6 +13,10 @@ vi.mock('../adapters/statusAdapter', () => ({
     getHotels: vi.fn(),
     getHotelDetail: vi.fn(),
     getUsers: vi.fn(),
+    getAdminHotels: vi.fn(),
+    exportAdminHotels: vi.fn(),
+    getUserDetail: vi.fn(),
+    exportUserHistory: vi.fn(),
   },
 }))
 
@@ -48,7 +53,11 @@ const DETAIL = {
     owner: { id: 5, name: 'Olim Owner', email: 'owner1@example.com', phone: '+998901111111' },
   },
   period: 'all',
-  totals: { bookings: 1500, guests: 30, revenue: [{ currency: 'USD', amount: '45000.00' }] },
+  period_range: HOTEL_DETAIL.period_range,
+  totals: { ...TOTALS, bookings: 1500, counted: 1500, guests: 30, revenue: [{ currency: 'USD', amount: '45000.00' }] },
+  granularity: HOTEL_DETAIL.granularity,
+  series: HOTEL_DETAIL.series,
+  reconciliation: HOTEL_DETAIL.reconciliation,
   year: 2026,
   available_years: [2025, 2026],
   monthly: months,
@@ -280,6 +289,75 @@ describe('AdminStatusSection', () => {
       fireEvent.click(within(row).getByText('guest2@example.com'))
 
       expect(await screen.findByRole('heading', { name: 'Customer profile page' })).toBeInTheDocument()
+    })
+  })
+
+  describe('R12a screens', () => {
+    const FLAT_HOTEL = {
+      rank: 1, id: 11, name: 'Alpha Hotel', city: 'Tashkent', region_id: 3, region: 'Tashkent', country_code: 'UZ',
+      status: 'active', created_at: '2025-01-15T09:00:00Z', rating: '4.50', bookings: 1500, guests: 3210,
+      unique_customers: 1100, nights: 5400, room_nights: 6100, stayed: 1380, revenue: [], booking_value: [],
+    }
+    const USER = {
+      rank: 1, id: 42, full_name: 'Madina Nazarova', first_name: 'Madina', last_name: 'Nazarova',
+      phone: '+998903330002', email: 'guest2@example.com', bookings: 3, total_spent: [], last_booking_date: '2026-04-12',
+    }
+    const USER_DETAIL = {
+      user: { id: 42, full_name: 'Madina Nazarova', first_name: 'Madina', last_name: 'Nazarova', phone: null,
+        email: 'guest2@example.com', date_joined: '2025-02-01T10:00:00Z' },
+      period: 'all', period_range: { from: null, to: null }, totals: TOTALS, hotels_visited: 0, hotels: [],
+      history: { count: 0, next: null, previous: null, results: [] },
+    }
+
+    beforeEach(() => {
+      mocked.getAdminHotels.mockResolvedValue(pageOf([FLAT_HOTEL], { period_range: { from: null, to: null }, ordering: '-bookings' }))
+      mocked.getUsers.mockResolvedValue(pageOf([USER]))
+      mocked.getUserDetail.mockResolvedValue({ data: USER_DETAIL, error: null } as never)
+    })
+
+    it('the Hotels tile opens the flat list and a row opens that hotel with its own breadcrumb', async () => {
+      renderSection()
+      fireEvent.click(screen.getByRole('button', { name: /^Hotels/ }))
+
+      expect(await screen.findByRole('button', { name: 'Alpha Hotel' })).toBeInTheDocument()
+      expect(trailText()).toContain('Status›Hotels')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel' }))
+      await screen.findByRole('heading', { name: 'Alpha Hotel' })
+      expect(mocked.getHotelDetail).toHaveBeenCalledWith(11, { period: 'all' })
+      expect(trailText()).toContain('Status›Hotels›Alpha Hotel')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Hotels' }))
+      expect(await screen.findByRole('button', { name: 'Alpha Hotel' })).toBeInTheDocument()
+    })
+
+    it('a user row has a Statistics button that opens the user detail', async () => {
+      renderSection()
+      fireEvent.click(screen.getByRole('button', { name: /Users/ }))
+      await screen.findByRole('button', { name: 'Madina Nazarova' })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Statistics of Madina Nazarova' }))
+
+      expect(await screen.findByRole('heading', { name: 'Madina Nazarova' })).toBeInTheDocument()
+      expect(mocked.getUserDetail).toHaveBeenCalledWith(42, { period: 'all', page: 1 })
+      expect(trailText()).toContain('Status›Users›Madina Nazarova')
+    })
+
+    it('the period and a custom range are kept between the lists and the details', async () => {
+      renderSection()
+      fireEvent.click(screen.getByRole('button', { name: /^Hotels/ }))
+      await screen.findByRole('button', { name: 'Alpha Hotel' })
+
+      fireEvent.change(screen.getByLabelText('Period'), { target: { value: 'custom' } })
+      fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-01-01' } })
+      fireEvent.change(screen.getByLabelText('To'), { target: { value: '2026-03-01' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+      await waitFor(() => expect(mocked.getAdminHotels).toHaveBeenLastCalledWith(
+        expect.objectContaining({ period: 'custom', from: '2026-01-01', to: '2026-03-01' })))
+
+      fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel' }))
+      await waitFor(() => expect(mocked.getHotelDetail).toHaveBeenCalledWith(
+        11, { period: 'custom', from: '2026-01-01', to: '2026-03-01' }))
     })
   })
 })
