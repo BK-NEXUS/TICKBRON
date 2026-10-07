@@ -165,7 +165,7 @@ def refunded_ids(date_range):
 
 
 def period_extra(period, date_range):
-    return {'period': period, 'period_range': range_json(date_range)}
+    return {'period': period, 'period_range': range_json(date_range), **metrics.status_meta()}
 
 
 def ranked_page(request, rows, limit, key, bookings, booking_key, to_row, extra, date_range=None):
@@ -393,7 +393,8 @@ def status_users(request):
     except InvalidPeriod as error:
         return bad_request('period', error)
 
-    counted = counted_q('bookings__', date_range, refunded_ids(date_range))
+    refunded = refunded_ids(date_range)
+    counted = counted_q('bookings__', date_range, refunded)
     users = User.objects.filter(is_deleted=False)
     search = search_term(request)
     if search:
@@ -408,10 +409,12 @@ def status_users(request):
             guests_count=Coalesce(Sum('bookings__guest_count', filter=counted), 0),
             nights_count=Coalesce(Sum('bookings__number_of_nights', filter=counted), 0),
             last_booking_date=Max('bookings__check_in', filter=counted),
+            **metrics.guest_annotations('bookings__', date_range, refunded),
         )
         .filter(bookings_count__gt=0)
         .values('id', 'full_name', 'first_name', 'last_name', 'phone_number', 'email',
-                'bookings_count', 'guests_count', 'nights_count', 'last_booking_date')
+                'bookings_count', 'guests_count', 'nights_count', 'last_booking_date',
+                'counted_guests_count', 'stayed_guests_count', 'upcoming_guests_count')
         .order_by('-bookings_count', '-last_booking_date', 'id')
     )
 
@@ -432,6 +435,7 @@ def status_users(request):
             'email': item['email'],
             'bookings': item['bookings_count'],
             'guests': item['guests_count'],
+            **metrics.guest_fields(item),
             'nights': item['nights_count'],
             'total_spent': spent.get(item['id'], []),
             'last_booking_date': item['last_booking_date'].isoformat(),
@@ -544,6 +548,7 @@ def status_user_detail(request, user_id):
         .annotate(bookings_count=Count('id'), guests_count=Coalesce(Sum('guest_count'), 0),
                   nights_count=Coalesce(Sum('number_of_nights'), 0),
                   stayed_count=Count('id', filter=Q(status='completed')),
+                  stayed_guests_count=Coalesce(Sum('guest_count', filter=Q(status='completed')), 0),
                   last_check_in=Max('check_in'))
         .order_by('-bookings_count', '-last_check_in', 'property_id')[:TOP_HOTELS]
     )
@@ -579,6 +584,7 @@ def status_user_detail(request, user_id):
                 'country': hotels.get(row['property_id'], {}).get('country'),
                 'bookings': row['bookings_count'], 'stayed': row['stayed_count'],
                 'nights': row['nights_count'], 'guests': row['guests_count'],
+                'counted_guests': row['guests_count'], 'stayed_guests': row['stayed_guests_count'],
                 'spent': spent.get(row['property_id'], []),
             }
             for row in per_hotel

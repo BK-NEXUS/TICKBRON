@@ -8,6 +8,9 @@ thin wrappers, and every Status view (admin and partner) reads these functions.
 - stayed    = completed, not fully refunded (the headline number).
 - upcoming  = confirmed with check-in after today; never limited by the period.
 - bookings  = COUNT of counted bookings.
+- every headline number also exists as PERSONS (SUM(guest_count)): counted_guests (= guests),
+              stayed_guests (completed) and upcoming_guests (upcoming); the reconciliation blocks
+              carry bookings and guests for counted and stayed.
 - guests    = SUM(guest_count) of counted bookings (persons; guest_count includes children).
 - unique_customers = COUNT(DISTINCT guest) of counted bookings (the old `guests`).
 - nights    = SUM(number_of_nights); room_nights = SUM(number_of_nights x number_of_rooms).
@@ -37,6 +40,7 @@ All aggregation runs in the database; Python only reshapes already-aggregated ro
 import re
 from datetime import date, timedelta
 
+from django.conf import settings
 from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek, TruncYear
 
@@ -59,6 +63,15 @@ _PERIOD_RE = re.compile(r'^(?P<year>\d{4})(?:-(?P<month>\d{2}))?$')
 
 class InvalidPeriod(ValueError):
     pass
+
+
+def status_meta(today=None):
+    """The meta every statistics response carries: the business date the numbers are as of and
+    the window in which a hotel can still report a no-show (so "stayed" can still change)."""
+    return {
+        'business_date': (today or business_today()).isoformat(),
+        'no_show_report_window_days': settings.NO_SHOW_REPORT_WINDOW_DAYS,
+    }
 
 
 # --- periods -------------------------------------------------------------------------
@@ -295,7 +308,25 @@ def all_bookings():
 
 # --- grouped annotations (on a query of Property, User, ...) ---------------------------
 
-def metric_annotations(prefix='bookings__', date_range=None, refunded_ids=None):
+def upcoming_q(prefix='', today=None):
+    """Confirmed bookings checking in after today, not fully refunded; never limited by a period."""
+    today = today or business_today()
+    return (Q(**{f'{prefix}status': 'confirmed', f'{prefix}is_deleted': False, f'{prefix}check_in__gt': today})
+            & ~fully_refunded_q(prefix))
+
+
+def guest_annotations(prefix='bookings__', date_range=None, refunded_ids=None, today=None):
+    """Persons (SUM guest_count) of counted, stayed and upcoming bookings, for .annotate()."""
+    counted = counted_q(prefix, date_range, refunded_ids)
+    return {
+        'counted_guests_count': Coalesce(Sum(f'{prefix}guest_count', filter=counted), 0),
+        'stayed_guests_count': Coalesce(
+            Sum(f'{prefix}guest_count', filter=counted & Q(**{f'{prefix}status': 'completed'})), 0),
+        'upcoming_guests_count': Coalesce(Sum(f'{prefix}guest_count', filter=upcoming_q(prefix, today)), 0),
+    }
+
+
+def metric_annotations(prefix='bookings__', date_range=None, refunded_ids=None, today=None):
     """
     Counted bookings, guests, unique customers, nights, room nights and stays, for .annotate().
     Pass `refunded_ids` (fully_refunded_ids()) so the refund rule is not re-run per aggregate.
@@ -310,6 +341,7 @@ def metric_annotations(prefix='bookings__', date_range=None, refunded_ids=None):
             Sum(F(f'{prefix}number_of_nights') * F(f'{prefix}number_of_rooms'), filter=counted,
                 output_field=IntegerField()), 0),
         'stayed_count': Count(f'{prefix}id', filter=counted & Q(**{f'{prefix}status': 'completed'}), distinct=True),
+        **guest_annotations(prefix, date_range, refunded_ids, today),
     }
 
 
@@ -322,6 +354,16 @@ def grouped_row(item):
         'nights': item['nights_count'],
         'room_nights': item['room_nights_count'],
         'stayed': item['stayed_count'],
+        **guest_fields(item),
+    }
+
+
+def guest_fields(item):
+    """The persons fields of a row annotated with guest_annotations()."""
+    return {
+        'counted_guests': item['counted_guests_count'],
+        'stayed_guests': item['stayed_guests_count'],
+        'upcoming_guests': item['upcoming_guests_count'],
     }
 
 
@@ -410,6 +452,7 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
     counted = counted_q('', date_range, refunded_ids)
     in_period = period_q('', date_range)
     refunded = fully_refunded_q('', refunded_ids)
+    upcoming = Q(status='confirmed', check_in__gt=today) & ~refunded
     totals = scope.aggregate(
         bookings=Count('id', filter=counted),
         guests=Coalesce(Sum('guest_count', filter=counted), 0),
@@ -418,9 +461,11 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         room_nights=Coalesce(Sum(F('number_of_nights') * F('number_of_rooms'), filter=counted,
                                  output_field=IntegerField()), 0),
         stayed=Count('id', filter=counted & Q(status='completed')),
+        stayed_guests=Coalesce(Sum('guest_count', filter=counted & Q(status='completed')), 0),
+        upcoming=Count('id', filter=upcoming),
+        upcoming_guests=Coalesce(Sum('guest_count', filter=upcoming), 0),
         no_show=Count('id', filter=in_period & Q(status='no_show') & ~refunded),
         fully_refunded=Count('id', filter=in_period & Q(status__in=REVENUE_STATUSES) & refunded),
-        upcoming=Count('id', filter=Q(status='confirmed', check_in__gt=today) & ~refunded),
         **_status_counts(date_range),
     )
     in_revenue = scope.filter(revenue_q('', date_range, refunded_ids))
@@ -430,6 +475,9 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         'stayed': totals['stayed'],
         'counted': totals['bookings'],
         'guests': totals['guests'],
+        'counted_guests': totals['guests'],
+        'stayed_guests': totals['stayed_guests'],
+        'upcoming_guests': totals['upcoming_guests'],
         'unique_customers': totals['unique_customers'],
         'nights': totals['nights'],
         'room_nights': totals['room_nights'],
