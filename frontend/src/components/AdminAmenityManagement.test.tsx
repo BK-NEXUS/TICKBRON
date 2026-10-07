@@ -40,7 +40,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should render amenity management page', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -54,7 +54,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should load amenities on mount', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -67,7 +67,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should load categories when switching to categories view', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -88,7 +88,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should display amenities list', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -101,7 +101,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should show create button', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -114,7 +114,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should open create form when create button is clicked', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -127,12 +127,12 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should call createAmenity when form is submitted', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
 
-    ;(vi.mocked(adminAdapter).createAmenity).mockResolvedValueOnce({
+    ;(adminAdapter.createAmenity as any).mockResolvedValueOnce({
       data: { ...mockAmenities[0], id: 2 },
       error: null,
     })
@@ -145,12 +145,12 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should call updateAmenity when edit form is submitted', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
 
-    ;(vi.mocked(adminAdapter).updateAmenity).mockResolvedValueOnce({
+    ;(adminAdapter.updateAmenity as any).mockResolvedValueOnce({
       data: { ...mockAmenities[0], name: 'WiFi Updated' },
       error: null,
     })
@@ -164,12 +164,12 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should call deleteAmenity when delete button is clicked', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
 
-    ;(vi.mocked(adminAdapter).deleteAmenity).mockResolvedValueOnce({
+    ;(adminAdapter.deleteAmenity as any).mockResolvedValueOnce({
       data: null,
       error: null,
     })
@@ -186,7 +186,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should display empty state when no amenities', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: [],
       error: null,
     })
@@ -199,7 +199,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should display loading state while loading', () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockImplementation(
+    ;(adminAdapter.getAmenities as any).mockImplementation(
       () => new Promise(() => {})
     )
 
@@ -209,7 +209,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should display error message on API failure', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: null,
       error: 'Failed to load amenities',
     })
@@ -222,7 +222,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should close form when cancel is clicked', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
@@ -249,7 +249,7 @@ describe('AdminAmenityManagement', () => {
   })
 
   it('should display searchable badge for searchable amenities', async () => {
-    ;(vi.mocked(adminAdapter).getAmenities).mockResolvedValueOnce({
+    ;(adminAdapter.getAmenities as any).mockResolvedValueOnce({
       data: mockAmenities,
       error: null,
     })
