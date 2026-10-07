@@ -129,7 +129,7 @@ describe('PartnerStatusTab', () => {
       await screen.findByRole('table', { name: 'Your properties' })
 
       const headline = document.querySelector('.status-card--headline') as HTMLElement
-      expect(within(headline).getByText('Stayed')).toBeInTheDocument()
+      expect(within(headline).getByText('Stayed bookings')).toBeInTheDocument()
       expect(within(headline).getByText('1,100')).toBeInTheDocument()
       expect(within(screen.getByText('Upcoming').closest('.status-card') as HTMLElement).getByText('9')).toBeInTheDocument()
       expect(screen.getAllByRole('note').length).toBeGreaterThan(0)

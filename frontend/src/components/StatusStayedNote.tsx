@@ -1,7 +1,6 @@
 import type { PeriodRange } from '../adapters/statusAdapter'
 
-/** Contract: hotels may report a no-show for NO_SHOW_REPORT_WINDOW_DAYS (backend default 7) after check-out */
-export const NO_SHOW_REPORT_WINDOW_DAYS = 7
+import { STATUS_NOTE } from '../utils/statusNote'
 
 interface StatusStayedNoteProps {
   /** Hidden when the period ended before the window; omit to always show */
@@ -20,9 +19,9 @@ function isoDate(date: Date): string {
 }
 
 /** Small caveat next to "stayed" numbers of recent periods */
-export function StatusStayedNote({ periodRange, today = new Date() }: StatusStayedNoteProps) {
+export function StatusStayedNote({ periodRange, today = STATUS_NOTE.businessDate() }: StatusStayedNoteProps) {
   const windowStart = new Date(today)
-  windowStart.setDate(windowStart.getDate() - NO_SHOW_REPORT_WINDOW_DAYS)
+  windowStart.setDate(windowStart.getDate() - STATUS_NOTE.windowDays)
   if (periodRange?.to && periodRange.to < isoDate(windowStart)) return null
-  return <p role="note" className="status-note">{noteText(NO_SHOW_REPORT_WINDOW_DAYS)}</p>
+  return <p role="note" className="status-note">{noteText(STATUS_NOTE.windowDays)}</p>
 }

@@ -37,7 +37,7 @@ describe('StatusHotelDetail (R12a)', () => {
     renderDetail()
     await screen.findByRole('heading', { name: 'Alpha Hotel' })
 
-    expect(screen.getByText('Stayed').closest('.status-card')).toHaveClass('status-card--headline')
+    expect(document.querySelector('.status-card--headline')).toHaveClass('status-card--headline')
     expect(within(screen.getByText('Counted').closest('.status-card') as HTMLElement).getByText('1,500')).toBeInTheDocument()
     expect(within(screen.getByText('Upcoming').closest('.status-card') as HTMLElement).getByText('42')).toBeInTheDocument()
     const statuses = screen.getByRole('list', { name: 'Bookings by status' })

@@ -65,7 +65,7 @@ describe('StatusUserDetail', () => {
     expect(screen.getByText('guest2@example.com')).toBeInTheDocument()
     expect(screen.getByText('+998903330002')).toBeInTheDocument()
     const stayed = document.querySelector('.status-card--headline') as HTMLElement
-    expect(within(stayed).getByText('Stayed')).toBeInTheDocument()
+    expect(within(stayed).getByText('Stayed bookings')).toBeInTheDocument()
     expect(within(stayed).getByText('7')).toBeInTheDocument()
     expect(screen.getByRole('note')).toHaveTextContent('can still change')
   })

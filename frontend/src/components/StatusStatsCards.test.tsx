@@ -10,7 +10,7 @@ describe('StatusStatsCards', () => {
   it('leads with stayed; counted and upcoming are separate cards', () => {
     render(<StatusStatsCards totals={TOTALS} caption="All time" />)
 
-    const stayed = cardOf('Stayed')
+    const stayed = cardOf('Stayed bookings')
     expect(stayed).toHaveClass('status-card--headline')
     expect(within(stayed).getByText('1,380')).toBeInTheDocument()
     expect(within(cardOf('Counted')).getByText('1,500')).toBeInTheDocument()

@@ -12,7 +12,8 @@ interface StatusStatsCardsProps {
 }
 
 const TEXT = {
-  stayed: 'Stayed',
+  // TODO: show stayed_guests (persons) when the API provides it
+  stayed: 'Stayed bookings',
   stayedHint: 'completed bookings',
   counted: 'Counted',
   countedHint: 'confirmed and completed bookings',

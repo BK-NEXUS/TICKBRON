@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { PartnerHotelStatus } from './PartnerHotelStatus'
 import { statusAdapter } from '../adapters/statusAdapter'
 import { PARTNER_HOTEL } from '../test/statusFixtures'
@@ -31,7 +31,7 @@ describe('PartnerHotelStatus', () => {
 
     expect(await screen.findByRole('heading', { name: 'Alpha Hotel' })).toBeInTheDocument()
     expect(getHotel).toHaveBeenCalledWith(1, { period: 'all' })
-    expect(screen.getByText('Stayed')).toBeInTheDocument()
+    expect(within(document.querySelector('.status-card--headline') as HTMLElement).getByText('Stayed bookings')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Stayed bookings per month' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Reconciliation' })).toBeInTheDocument()
     await waitFor(() => expect(getArrivals).toHaveBeenCalledWith({ day: 'today', property: 1, page: 1 }))

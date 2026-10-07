@@ -17,7 +17,7 @@ const TEXT = {
   guestsLabel: 'Guests via TICKBRON',
   properties: 'Your properties',
   noProperties: 'No properties yet. Numbers appear here once guests book them.',
-  headers: { property: 'Property', location: 'Location', counted: 'Counted', stayed: 'Stayed', guests: 'Guests', revenue: 'Revenue' },
+  headers: { property: 'Property', location: 'Location', counted: 'Counted', stayed: 'Stayed bookings', guests: 'Guests', revenue: 'Revenue' },
   yearTitle: 'Year overview',
   chartYear: 'Chart year',
   chartCurrency: 'Chart currency',

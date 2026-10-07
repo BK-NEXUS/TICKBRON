@@ -27,7 +27,7 @@ const TEXT = {
   noHotels: 'No hotels in this period.',
   historyTitle: 'Booking history',
   noHistory: 'No bookings in this period.',
-  hotelHeaders: ['Hotel', 'Location', 'Bookings', 'Stayed', 'Nights', 'Guests', 'Spent'],
+  hotelHeaders: ['Hotel', 'Location', 'Bookings', 'Stayed bookings', 'Nights', 'Guests', 'Spent'],
   historyHeaders: ['Reference', 'Hotel', 'Check-in', 'Check-out', 'Nights', 'Rooms', 'Guests', 'Status', 'Total', 'Paid', 'Refunded'],
   charged: 'charged',
 }

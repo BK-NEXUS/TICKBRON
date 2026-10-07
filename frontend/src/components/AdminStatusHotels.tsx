@@ -23,7 +23,7 @@ const TEXT = {
   descending: 'Descending',
   columns: {
     hotel: 'Hotel', location: 'Location', status: 'Status', rating: 'Rating', created: 'Created', counted: 'Counted',
-    stayed: 'Stayed', guests: 'Guests', nights: 'Nights', revenue: 'Revenue',
+    stayed: 'Stayed bookings', guests: 'Guests', nights: 'Nights', revenue: 'Revenue',
   },
 }
 
