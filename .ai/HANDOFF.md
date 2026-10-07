@@ -2284,14 +2284,13 @@ d) Phone country selector: MISSING - Currently only Uzbekistan (1 country) with 
 e) Assets: CONFIRMED - Fonts (@fontsource/pt-sans, @fontsource/pt-serif) bundled locally. No external URLs in src/ or index.html except documented API calls. CSP restricts to 'self'.
 f) API calls documented: CONFIRMED (with exceptions) - All API calls go through apiFetch helper. Exceptions: primary_photo URLs in accountAdapter.test.ts use http://example.com/photo.jpg (test data).
 
-## Frontend WIP (2026-10-06, opencode save)
-- Task: frontend lint cleanup (`no-explicit-any` in tests) after the react-router v7 upgrade; the OpenCode run was stopped mid-task.
-- Done: react-router and react-router-dom upgraded to v7.18.4 (commit 9b52a0f, on master). The `frontend status` checks a-f above are written.
-- Unfinished: the lint cleanup lives only in stash `stash@{0}` (7 files: adminAdapter.test.ts, AdminAmenityManagement.test.tsx, AdminCustomerProfile.test.tsx, AdminCustomersList.test.tsx, AdminStatisticsDashboard.test.tsx, CreateHotelOwnerAccount.test.tsx, ErrorBoundary.tsx). It is BROKEN: adminAdapter.test.ts has `global\.fetch = vi\.fn\(\)` (escaped text, syntax error). Do not apply as is; fix that line first.
-- Remaining: finish lint cleanup (baseline 160 problems), then status items b (dark mode), c (card payment form), d (phone country selector), a (emoji icons -> lucide-react).
-- Working tree was clean when saved, so the WIP commit had nothing to commit; this HANDOFF note is the only change on the save branch.
-- Tests (read-only check, 3 runs each on origin/master and 976ea80): 83 files, 1126 tests, all passed. Some tests are flaky under load (different ones fail on a run done right after `npm ci`).
-- Branches pushed: `wip/opencode-stash-0` (the stash), `wip/opencode-save` (this note).
+## Frontend WIP (2026-10-07, opencode save)
+- Task: replace emoji used as icons with lucide-react (frontend status item a), one area per session. This save covers batch 1 only; no i18n work exists in the tree.
+- Done: `frontend/src/components/PaymentMethodSelector.tsx` emoji (📱 💳 💼) -> lucide `Smartphone` / `CreditCard` / `Briefcase` rendered as svg with `aria-hidden="true"`, text labels, selection and keyboard behaviour unchanged. Test written first and watched failing (emoji found), then green: file 12 -> 13 tests, no existing assertion removed, weakened or altered. `lucide-react` ^1.52.0 added to frontend/package.json. Commit 19f1b04, pushed on `feat/fe-icons`; same content present on `feat/fe-r12a`.
+- Blocker found, not fixed: `frontend/src/adapters/adminAdapter.test.ts:5` is `global\.fetch = vi\.fn\(\)` (escaped text, syntax error) on origin/master since merge 4f68d53 (PR #9 `wip/opencode-stash-0`), so that file never collects and 47 tests are unreachable: `npm test` = 82/83 files, 1079 passed, exit 1. Fix line 5 first; do not re-apply the stash as is.
+- Remaining, emoji batches one area at a time (~19 files): nav icons (AdminDashboardPage, PartnerDashboardPage, MobileBottomNavigation, ProfilePage), EmptyState `icon` prop and its callers (BookingsPage, FavoritesPage, SupportLookupPage, AdminDashboardPage), HomePage feature/category icons, ListViewMapView, SearchResultsPage map placeholder, PropertyCard amenity icons, PaymentConfirmation and PaymentProcessing, TopBookersLeaderboard medals, searchAdapter/searchFilters mock icons, PropertyAmenitiesDetail, PropertyGallery fallback. Leave flag emoji (phone.ts, LanguageSelector) and BMP glyphs (✓ ★ ← → ♥) alone unless asked.
+- Also remaining: lint cleanup (baseline 160 problems), status items b (dark mode), c (card payment form), d (phone country selector).
+- Tests: 83 files / 1126 green was measured before PR #9 landed; current origin/master collects 82/83 (see blocker).
 
 ## R12b: no-show reports and 50% refund (backend, 2026-10-07)
 Status: READY on branch `feat/r12b-noshow`. Contract: `.ai/API_CONTRACT.md` "R12b".
