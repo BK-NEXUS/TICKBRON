@@ -5,11 +5,13 @@ Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
 
 import os
+import re
 import sys
 from pathlib import Path
 from decimal import Decimal
 
 from celery.schedules import crontab
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 from common.money import parse_percent
 from .logging_config import get_logging_config
@@ -131,6 +133,15 @@ if os.getenv('DB_ENGINE') == 'django.db.backends.postgresql':
         'connect_timeout': 10,
         'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
     }
+
+
+# Each developer session (or Claude session) sets its own TICKBRON_TEST_DB_SUFFIX so two pytest
+# runs on one PostgreSQL server never share a test database (xdist adds _gw0, _gw1, ... to it)
+TEST_DB_SUFFIX = os.getenv('TICKBRON_TEST_DB_SUFFIX', '')
+if TEST_DB_SUFFIX:
+    if not re.fullmatch(r'[A-Za-z0-9_]{1,30}', TEST_DB_SUFFIX):
+        raise ImproperlyConfigured('TICKBRON_TEST_DB_SUFFIX may only contain letters, digits and _ (max 30)')
+    DATABASES['default']['TEST'] = {'NAME': f"test_{DATABASES['default']['NAME']}_{TEST_DB_SUFFIX}"}
 
 
 # Password validation

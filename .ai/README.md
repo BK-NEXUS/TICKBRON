@@ -52,3 +52,13 @@ When changing AI accounts, the next agent must:
 
 ## Running the E2E tests (Playwright)
 Run Playwright from `C:\Users\MicroStar\Desktop\TICKBRON\frontend` with a **capital D** in `Desktop`. From the lowercase path (`...\desktop\...`) Windows loads `@playwright/test` twice and every run ends with "Playwright Test did not expect test() to be called here" and "No tests found". Start the backend (`seed_demo`, `seed_demo_stats`, `runserver 8000` with `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` set to `100000/hour`) and `npm run dev` first; see `frontend/playwright.config.ts`.
+
+## Backend tests: one test database per session
+Two pytest runs on the same PostgreSQL server must not share a test database: the second one fails with "database test_tickbron already exists / is being used" or, worse, deletes tables under the first. Every backend session (a developer terminal, each Claude session, each worktree) sets its own suffix in its shell or in `backend/.env` before running pytest:
+
+```
+set TICKBRON_TEST_DB_SUFFIX=r12b        (PowerShell: $env:TICKBRON_TEST_DB_SUFFIX = "r12b")
+venv\Scripts\python.exe -m pytest --create-db -q -n 8
+```
+
+The test database is then `test_tickbron_r12b` (xdist workers add `_gw0`, `_gw1`, ...). Letters, digits and `_` only, 30 characters at most (`config/settings.py`, tested in `core/tests/test_settings_defaults.py`). Without a suffix Django's default `test_tickbron` is used. Before a run you can list foreign sessions: `select datname, pid, state from pg_stat_activity where datname like 'test_tickbron%';`
