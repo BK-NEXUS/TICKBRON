@@ -30,7 +30,7 @@ export const RECONCILIATION: StatusReconciliation = {
   this_week: window([20, 41], [12, 25], '2026-10-05', '2026-10-11'),
   this_month: window([80, 170], [55, 120], '2026-10-01', '2026-10-31'),
   this_year: window([900, 1900], [800, 1700], '2026-01-01', '2026-12-31'),
-  all_time: window([1500, 3210], [1380, 3000], null, null),
+  all_time: window([1490, 3200], [1370, 2990], null, null),
 }
 
 export const SERIES: StatusSeriesRow[] = [

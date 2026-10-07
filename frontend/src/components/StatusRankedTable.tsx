@@ -2,8 +2,9 @@ import { ReactNode, useEffect, useId, useState } from 'react'
 import type { StatusListParams, StatusPage, StatusResponse } from '../adapters/statusAdapter'
 import { StatusPeriodSelector } from './StatusPeriodSelector'
 import { formatCount } from '../utils/statusFormat'
+import { StatusPagination } from './StatusPagination'
+import type { DateRange } from '../utils/statusPeriod'
 
-const PAGE_SIZE = 20
 const SEARCH_DELAY_MS = 300
 
 export interface StatusColumn<T> {
@@ -19,6 +20,15 @@ interface StatusRankedTableProps<T> {
   noun: string
   period: string
   onPeriodChange: (period: string) => void
+  /** The applied custom range; with `onRangeChange` the selector offers the custom option */
+  range?: DateRange | null
+  onRangeChange?: (range: DateRange) => void
+  /** Extra controls next to the search box, e.g. a sort order */
+  toolbar?: ReactNode
+  /** Extra actions that need the current search, e.g. an export button */
+  renderActions?: (state: { search: string }) => ReactNode
+  /** Changing it reloads the list from the first page (use it for the options `load` closes over) */
+  reloadKey?: string
   load: (params: StatusListParams) => Promise<StatusResponse<StatusPage<T>>>
   rowKey: (row: T) => string | number
   /** Text of the row's link button (the first column) */
@@ -32,12 +42,16 @@ interface StatusRankedTableProps<T> {
  * and the shared period selector. Loading, empty and error states included.
  */
 export function StatusRankedTable<T>({
-  title, subtitle, noun, period, onPeriodChange, load, rowKey, rowLabel, onOpen, columns,
+  title, subtitle, noun, period, onPeriodChange, range, onRangeChange, toolbar, renderActions, reloadKey = '',
+  load, rowKey, rowLabel, onOpen, columns,
 }: StatusRankedTableProps<T>) {
   const id = useId()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
+  const [pageState, setPageState] = useState({ key: reloadKey, page: 1 })
+  // A new reloadKey starts again from the first page without a second request
+  const page = pageState.key === reloadKey ? pageState.page : 1
+  const goToPage = (next: number) => setPageState({ key: reloadKey, page: next })
   const [data, setData] = useState<StatusPage<T> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +61,7 @@ export function StatusRankedTable<T>({
     if (searchInput === search) return
     const timer = setTimeout(() => {
       setSearch(searchInput)
-      setPage(1)
+      goToPage(1)
     }, SEARCH_DELAY_MS)
     return () => clearTimeout(timer)
   }, [searchInput, search])
@@ -56,7 +70,8 @@ export function StatusRankedTable<T>({
     let cancelled = false
     setLoading(true)
     setError(null)
-    load({ period, search, page }).then(response => {
+    const applied = period === 'custom' && range ? { from: range.from, to: range.to } : {}
+    load({ period, ...applied, search, page }).then(response => {
       if (cancelled) return
       setData(response.data)
       setError(response.error)
@@ -65,14 +80,18 @@ export function StatusRankedTable<T>({
     return () => { cancelled = true }
     // `load` is a new function every render; the list depends on what it is asked for
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, search, page])
+  }, [period, range, search, page, reloadKey])
 
   const handlePeriod = (next: string) => {
-    setPage(1)
+    goToPage(1)
     onPeriodChange(next)
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const handleRange = (next: DateRange) => {
+    goToPage(1)
+    onRangeChange?.(next)
+  }
+
   const rows = data?.results ?? []
 
   return (
@@ -94,7 +113,11 @@ export function StatusRankedTable<T>({
             onChange={e => setSearchInput(e.target.value)}
           />
         </div>
-        <StatusPeriodSelector value={period} onChange={handlePeriod} />
+        {toolbar}
+        <StatusPeriodSelector
+          value={period} range={range} onChange={handlePeriod} onRangeChange={onRangeChange && handleRange}
+        />
+        {renderActions?.({ search })}
       </div>
 
       {error ? (
@@ -142,29 +165,10 @@ export function StatusRankedTable<T>({
             </table>
           </div>
 
-          <div className="pagination-controls" role="navigation" aria-label="Pagination">
-            <button
-              type="button"
-              className="pagination-button"
-              onClick={() => setPage(p => p - 1)}
-              disabled={!data?.previous}
-              aria-label="Previous page"
-            >
-              Previous
-            </button>
-            <div className="pagination-info">
-              <span aria-live="polite">Page {page} of {formatCount(totalPages)}</span>
-            </div>
-            <button
-              type="button"
-              className="pagination-button"
-              onClick={() => setPage(p => p + 1)}
-              disabled={!data?.next}
-              aria-label="Next page"
-            >
-              Next
-            </button>
-          </div>
+          <StatusPagination
+            page={page} count={data?.count ?? 0} hasPrevious={Boolean(data?.previous)} hasNext={Boolean(data?.next)}
+            onPage={goToPage}
+          />
         </>
       )}
     </section>
