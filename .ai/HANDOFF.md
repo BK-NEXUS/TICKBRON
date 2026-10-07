@@ -2304,3 +2304,24 @@ Status: READY on branch `feat/r12b-noshow`. Contract: `.ai/API_CONTRACT.md` "R12
 - New booking status label `no_show` and the notification codes `no_show_report_approved`, `no_show_report_rejected`, `no_show_marked`, `no_show_marked_no_refund`.
 
 READY FOR FRONTEND: R12b - owner: POST /partner/bookings/{id}/no-show-report/, GET /partner/no-show-reports/, POST /partner/no-show-reports/{id}/withdraw/, GET /partner/bookings/ (new can_report_no_show, report_deadline, ?reportable=true); staff: GET /admin-panel/no-show-reports/ (+ {id}/), POST .../{id}/approve|reject|reverse/; guest fields no_show_refund_percent, no_show_refund_amount, no_show_refund_text_key, no_show_refund_text_params on quote, booking create and detail.
+
+## R12a Status screens (frontend, 2026-10-07)
+Status: READY FOR PR on branch `feat/fe-r12a`. Task text: `.ai/TASK_R12A_FRONTEND.md`. Contract used unchanged: `.ai/API_CONTRACT.md` "R12 phase 2".
+
+Built (frontend only):
+- Adapters (`statusAdapter.ts`): admin hotels list, hotel and user detail, owner summary, owner hotel, arrivals, CSV as blob through `apiFetch` (`exportAdminHotels`, `exportUsers`, `exportUserHistory`, `exportPartnerReconciliation`); errors now also return the HTTP `status`.
+- Period: presets, custom range (UI check from <= to, at most 20 years; backend message shown inline), month and year as before; series granularity day, week, month, year (`useStatusPeriod`, sent only after the user picks one).
+- Admin: Status > Hotels (search, sort, server pagination, CSV), hotel detail (totals, status counts, series, reconciliation, note), Users > Statistics button > user detail (totals, hotels visited, per-hotel table, paginated history, history CSV). The old customer-profile row click is unchanged.
+- Owner: summary with series, reconciliation, arrivals (today / tomorrow) and CSV; own hotel page; another owner's hotel id shows "Hotel not found".
+- Display rules: stayed is the headline; counted and upcoming are separate cards; money per currency; fully_refunded, no_show, no_show_reported only when non-zero; thousands separators; "may still change" note; API text is never rendered as HTML.
+- Tests: 83 files / 1127 tests before, 97 files / 1237 tests after. Old assertions unchanged; only their mocks were extended to the R12a shape.
+
+### Frontend needs
+- `stayed_guests` (persons who stayed) in totals, series and property rows: the headline "Stayed" is the number of completed bookings, and `guests` counts persons of counted bookings.
+- `NO_SHOW_REPORT_WINDOW_DAYS` and the Tashkent "today" in a Status response: the note hardcodes 7 days and uses the browser date.
+
+### Found, not fixed
+- `chartCurrencies` orders currencies by raw amount across currencies (UZS is always first); only the default chart currency is affected.
+- Admin Users CSV (`exportUsers`) has an adapter method but no button (contains personal data; not in the task).
+- Not checked in a browser at 390px and 1440px (no backend running): layout relies on the existing wrapping `.status-controls`, grid cards and scrolling tables.
+- Lint baseline problems outside this task remain (for example `any` in `errorHandler.test.ts`).
