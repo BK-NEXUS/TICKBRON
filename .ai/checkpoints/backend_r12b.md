@@ -11,7 +11,7 @@ Status: READY on the branch; the owner merges the PR.
 
 ## Tests
 - New this session: `test_r12b_reportable.py` (13: check-in day, last window day, one day after, statuses, open/withdrawn report, filter, agreement with the endpoint; 11 failed before the code), `test_r12b_extras.py` (2: two concurrent approves refund once, OpenAPI builds with no warnings). The 20/hour throttle default was already tested in `test_r12b_noshow.py`; `check --deploy` in `core/tests/test_r4_production_config.py`.
-- Full suite: see the commit that closes this checkpoint (`pytest --create-db -n 8`).
+- Full suite (`venvScriptspython.exe -m pytest --create-db -q -n 8`): 2488 passed, 0 failed, 2 skipped (first run 1 failed, the throttle-rates expectation below).
 - Changed expectation: `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` throttle rates `{'anon': '2000/hour', 'user': '1000/hour'}` -> same plus `'no_show_report': '20/hour'` (the new throttle scope is part of the rates). Anon and user values unchanged.
 
 ## Known issues / not done
