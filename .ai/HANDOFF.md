@@ -2372,3 +2372,10 @@ Allowlist (TODO): `utils/phone.ts` (flag emoji until the SVG country selector ex
 Changed test assertions (intent kept, found by icon class / role / name instead of the emoji text): EmptyState (icon prop sample text), ListViewMapView, MobileBottomNavigation (2), PaymentConfirmation ("✓ Copied" -> "Copied" + check icon), PaymentProcessing (2), BookingsPage (copied check), PropertyAmenitiesDetail (2), TopBookersLeaderboard (medals); test data without emoji in PropertyCard, PropertyGallery, PropertyDetailPage, SearchResultsPage.
 ### Backend (read only, nothing edited)
 No emoji in notification texts, SMS, email templates or API messages. Hits: `backend/config/partner_admin_security_check.py:118` (a "⚠" in a dev script print) and `backend/properties/tests/test_models.py` (icon fixtures `🏢 🍳 🧊` in 8 lines).
+
+## Design system: shared surfaces (frontend, 2026-10-08)
+Branch `feat/fe-surfaces`. `src/styles/surfaces.css` (loaded after `index.css`, tokens only) applies the language through the shared classes: cards (selected = 2px gold border + tint), form controls outside auth (44px, control border, 2px focus outline, `accent-color` on checkboxes), modals (blurred backdrop, xl radius), pill badges, alerts (`.alert`, `.alert-error`, `.alert-success` were used 33 times and never defined), header and bottom navigation as floating pill bars (active item = tinted pill, safe-area kept), empty states, admin tables (rounder outer container only).
+- New `useDialogFocus` (focus moves in, Tab trapped, Escape closes, focus returns): used by the reject-property modal, the external-booking modal and the mobile menu; they had none of it.
+### Found, not fixed
+- Date inputs use the native picker; `DateRangeCalendar`/`AvailabilityCalendar` keep their own look.
+- Status components were only restyled through shared classes (no logic touched).
