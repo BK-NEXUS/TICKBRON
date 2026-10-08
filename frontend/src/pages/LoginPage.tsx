@@ -1,11 +1,11 @@
 import { useState } from 'react'
+import { EyeOff, Eye } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { Icon } from '../components/Icon'
 
 type LoginMethod = 'password' | 'phone'
 
@@ -182,7 +182,7 @@ export function LoginPage() {
                     disabled={isLoading}
                     tabIndex={-1}
                   >
-                    <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>

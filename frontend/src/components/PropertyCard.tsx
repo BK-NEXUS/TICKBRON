@@ -1,7 +1,7 @@
 import { Property } from '../adapters/propertyAdapter'
+import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
-import { Icon } from './Icon'
 
 interface PropertyCardProps {
   property: Property
@@ -63,7 +63,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
           />
         ) : (
           <div className="property-card-image-placeholder" data-testid="property-image-placeholder">
-            <Icon name="home" size={56} />
+            <House size={56} />
           </div>
         )}
         <FavoriteButton propertyId={property.id} propertyName={translation.name} />
@@ -78,7 +78,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
       <div className="property-card-content">
         <h3 className="property-card-name">{translation.name}</h3>
         <p className="property-card-location">
-          <Icon name="map-pin" size={15} /> {getLocationString()}
+          <MapPin size={15} /> {getLocationString()}
         </p>
         
         <div className="property-card-details">
@@ -96,27 +96,27 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         <div className="property-card-amenities">
           {property.has_wifi && (
             <span className="property-card-amenity" title="WiFi">
-              <Icon name="wifi" size={16} />
+              <Wifi size={16} />
             </span>
           )}
           {property.has_parking && (
             <span className="property-card-amenity" title="Parking">
-              <Icon name="parking" size={16} />
+              <Car size={16} />
             </span>
           )}
           {property.has_ac && (
             <span className="property-card-amenity" title="Air Conditioning">
-              <Icon name="snowflake" size={16} />
+              <Snowflake size={16} />
             </span>
           )}
           {property.has_heating && (
             <span className="property-card-amenity" title="Heating">
-              <Icon name="flame" size={16} />
+              <Flame size={16} />
             </span>
           )}
           {property.has_elevator && (
             <span className="property-card-amenity" title="Elevator">
-              <Icon name="elevator" size={16} />
+              <ArrowUpDown size={16} />
             </span>
           )}
         </div>

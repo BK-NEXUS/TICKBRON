@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Icon } from '../components/Icon'
+import { Lock } from 'lucide-react'
 
 interface AccessDeniedPageProps {
   /** What the visitor tried to open, e.g. "the admin dashboard" */
@@ -13,7 +13,7 @@ export function AccessDeniedPage({ area, signedIn }: AccessDeniedPageProps) {
     <div className="access-denied-page">
       <div className="container">
         <div className="access-denied-card" role="alert">
-          <div className="access-denied-icon" aria-hidden="true"><Icon name="lock" size={40} /></div>
+          <div className="access-denied-icon" aria-hidden="true"><Lock size={40} /></div>
           <h1 className="access-denied-title">Access Denied</h1>
           <p className="access-denied-message">
             {signedIn

@@ -2334,3 +2334,9 @@ Status: READY on branch `fix/r12a-guests`. Contract: `.ai/API_CONTRACT.md` "R12a
 - `counted_guests` equals `guests`; `upcoming_guests` is the persons form of `upcoming`.
 
 READY FOR FRONTEND: R12a-fix - stayed_guests, counted_guests, upcoming_guests, business_date, no_show_report_window_days
+
+## Design system: base (frontend, 2026-10-08)
+Branch `feat/fe-redesign-base`. Cherry-picked the visual commits of `origin/feat/frontend-ui-redesign` (fd7c48e, 2451463, ac4a8ae, d82a0a1, faa3d95, 0478085) without conflicts; the branch's `Icon.tsx` was removed and its usages ported to lucide-react (one icon system).
+
+### To review later
+- 6a1a552 (G5 geography adapter methods and public geography adapter) from the same branch: not design, deliberately not taken.

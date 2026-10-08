@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ReactNode } from 'react'
 
 interface EmptyStateProps {
-  /** Visual icon: a text/emoji string (rendered as-is) or an element such as `<Icon />`. */
+  /** Visual icon: a text/emoji string (rendered as-is) or an element such as a lucide icon. */
   icon: ReactNode
   title: string
   message: string

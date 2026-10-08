@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { SearchForm } from '../components/SearchForm'
-import { Icon, IconName } from '../components/Icon'
+import { ArrowRight, BadgeCheck, Building, Building2, Globe, Headset, Hotel, House, MapPin, ShieldCheck, Smartphone, Star, type LucideIcon } from 'lucide-react'
 
 // Mock data for homepage content
 // TODO: Replace with real data from backend API when available
@@ -14,31 +14,31 @@ const FEATURED_DESTINATIONS = [
 interface PropertyType {
   id: number
   name: string
-  icon: IconName
+  icon: LucideIcon
   description: string
 }
 
 const PROPERTY_TYPES: PropertyType[] = [
-  { id: 1, name: 'Apartments', icon: 'building', description: 'Modern city living spaces' },
-  { id: 2, name: 'Houses', icon: 'home', description: 'Spacious family homes' },
-  { id: 3, name: 'Villas', icon: 'villa', description: 'Luxury vacation retreats' },
-  { id: 4, name: 'Studios', icon: 'city', description: 'Compact urban spaces' },
+  { id: 1, name: 'Apartments', icon: Building2, description: 'Modern city living spaces' },
+  { id: 2, name: 'Houses', icon: House, description: 'Spacious family homes' },
+  { id: 3, name: 'Villas', icon: Hotel, description: 'Luxury vacation retreats' },
+  { id: 4, name: 'Studios', icon: Building, description: 'Compact urban spaces' },
 ]
 
 interface Feature {
   id: number
-  icon: IconName
+  icon: LucideIcon
   title: string
   description: string
 }
 
 const FEATURES: Feature[] = [
-  { id: 1, icon: 'badge-check', title: 'Verified Properties', description: 'All properties are verified for quality and safety' },
-  { id: 2, icon: 'shield', title: 'Secure Payments', description: 'Protected transactions with multiple payment options' },
-  { id: 3, icon: 'headset', title: '24/7 Support', description: 'Round-the-clock customer support for your peace of mind' },
-  { id: 4, icon: 'star', title: 'Best Price Guarantee', description: "We match or beat any competitor's price" },
-  { id: 5, icon: 'globe', title: 'Global Coverage', description: 'Properties available in 120+ countries' },
-  { id: 6, icon: 'smartphone', title: 'Easy Booking', description: 'Book in minutes with our streamlined process' },
+  { id: 1, icon: BadgeCheck, title: 'Verified Properties', description: 'All properties are verified for quality and safety' },
+  { id: 2, icon: ShieldCheck, title: 'Secure Payments', description: 'Protected transactions with multiple payment options' },
+  { id: 3, icon: Headset, title: '24/7 Support', description: 'Round-the-clock customer support for your peace of mind' },
+  { id: 4, icon: Star, title: 'Best Price Guarantee', description: "We match or beat any competitor's price" },
+  { id: 5, icon: Globe, title: 'Global Coverage', description: 'Properties available in 120+ countries' },
+  { id: 6, icon: Smartphone, title: 'Easy Booking', description: 'Book in minutes with our streamlined process' },
 ]
 
 const TESTIMONIALS = [
@@ -105,7 +105,7 @@ export function HomePage() {
             {FEATURED_DESTINATIONS.map((destination) => (
               <article key={destination.id} className="destination-card" role="listitem">
                 <div className="destination-image" aria-hidden="true">
-                  <Icon name="map-pin" size={28} />
+                  <MapPin size={28} />
                 </div>
                 <div className="destination-info">
                   <h3 className="destination-name">{destination.name}</h3>
@@ -127,7 +127,7 @@ export function HomePage() {
             {PROPERTY_TYPES.map((type) => (
               <article key={type.id} className="property-type-card" role="listitem">
                 <div className="property-type-icon" aria-hidden="true">
-                  <Icon name={type.icon} size={28} />
+                  <type.icon size={28} />
                 </div>
                 <h3 className="property-type-name">{type.name}</h3>
                 <p className="property-type-description">{type.description}</p>
@@ -146,7 +146,7 @@ export function HomePage() {
             {FEATURES.map((feature) => (
               <div key={feature.id} className="feature-card" role="listitem">
                 <div className="feature-icon" aria-hidden="true">
-                  <Icon name={feature.icon} size={24} />
+                  <feature.icon size={24} />
                 </div>
                 <h3 className="feature-title">{feature.title}</h3>
                 <p className="feature-description">{feature.description}</p>
@@ -166,7 +166,7 @@ export function HomePage() {
               <article key={testimonial.id} className="testimonial-card" role="listitem">
                 <div className="testimonial-rating" aria-label={`Rating: ${testimonial.rating} out of 5 stars`}>
                   {Array.from({ length: testimonial.rating }).map((_, index) => (
-                    <Icon key={index} name="star" size={16} />
+                    <Star key={index} size={16} />
                   ))}
                 </div>
                 <p className="testimonial-text">"{testimonial.text}"</p>
@@ -189,7 +189,7 @@ export function HomePage() {
             <div className="cta-buttons">
               <button className="btn btn-primary btn-large" onClick={() => navigate('/search')}>
                 Browse Properties
-                <Icon name="arrow-right" size={18} />
+                <ArrowRight size={18} />
               </button>
             </div>
           </div>
