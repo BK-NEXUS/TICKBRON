@@ -24,7 +24,7 @@ export function StatusPagination({
     <div className="pagination-controls" role="navigation" aria-label="Pagination">
       <button
         type="button"
-        className="pagination-button"
+        className="btn btn-secondary btn-sm"
         onClick={() => onPage(page - 1)}
         disabled={!hasPrevious}
         aria-label={TEXT.previousLabel}
@@ -36,7 +36,7 @@ export function StatusPagination({
       </div>
       <button
         type="button"
-        className="pagination-button"
+        className="btn btn-secondary btn-sm"
         onClick={() => onPage(page + 1)}
         disabled={!hasNext}
         aria-label={TEXT.nextLabel}

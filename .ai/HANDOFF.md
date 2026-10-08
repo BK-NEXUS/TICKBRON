@@ -2354,4 +2354,4 @@ Branch `feat/fe-buttons`. One button system in `index.css` ("Buttons"): the exis
 - Primary audit: property card CTA and partner "Manage" are secondary now, header "Sign Up" is tonal.
 ### Found, not fixed
 - Status period selector, granularity selector and search sort are `<select>`s (period has 7+ options); turning them into segmented controls would change their tests, so they stay selects.
-- 159 `<button>` elements still carry their own classes (status tiles, breadcrumbs, wizard steps...); they are not on the shared system yet.
+- 46 raw `<button>` elements remain on purpose (widgets with their own look: nav items, status tiles, auth tabs and password toggles, header menu, currency/language selectors, gallery and calendar arrows, review stars, filter chips, breadcrumb links). 30 raw buttons were moved to the shared classes or SegmentedControl in this step (customer notes, pagination, sort toggle, wizard steps, filters, back buttons, error boundary).

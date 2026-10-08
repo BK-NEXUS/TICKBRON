@@ -103,7 +103,7 @@ export function Breadcrumbs() {
 
   return (
     <div className="page-breadcrumbs container">
-      <button type="button" className="page-breadcrumbs-back" onClick={handleBack} aria-label="Back">
+      <button type="button" className="btn btn-ghost btn-sm" onClick={handleBack} aria-label="Back">
         ← Back
       </button>
       <nav aria-label="Breadcrumb">

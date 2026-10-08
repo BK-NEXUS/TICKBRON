@@ -231,7 +231,7 @@ export function AdminCustomerProfile() {
     <div className="admin-customer-profile">
       {/* Back button */}
       <button
-        className="back-button"
+        className="btn btn-ghost btn-sm"
         onClick={() => navigate('/admin')}
         aria-label="Back to admin dashboard"
       >
@@ -341,35 +341,17 @@ export function AdminCustomerProfile() {
       </div>
 
       {/* Tabs */}
-      <div className="customer-tabs" role="tablist">
-        <button
-          className={`tab-button ${activeTab === 'bookings' ? 'tab-button--active' : ''}`}
-          onClick={() => setActiveTab('bookings')}
-          role="tab"
-          aria-selected={activeTab === 'bookings'}
-          aria-controls="bookings-panel"
-        >
-          Bookings ({profile.bookings.length})
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'payments' ? 'tab-button--active' : ''}`}
-          onClick={() => setActiveTab('payments')}
-          role="tab"
-          aria-selected={activeTab === 'payments'}
-          aria-controls="payments-panel"
-        >
-          Payments ({profile.payments.length})
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'notes' ? 'tab-button--active' : ''}`}
-          onClick={() => setActiveTab('notes')}
-          role="tab"
-          aria-selected={activeTab === 'notes'}
-          aria-controls="notes-panel"
-        >
-          Internal Notes ({profile.internal_notes.length})
-        </button>
-      </div>
+      <SegmentedControl<TabType>
+        mode="tabs"
+        aria-label="Customer sections"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: 'bookings', label: `Bookings (${profile.bookings.length})`, controls: 'bookings-panel' },
+          { value: 'payments', label: `Payments (${profile.payments.length})`, controls: 'payments-panel' },
+          { value: 'notes', label: `Internal Notes (${profile.internal_notes.length})`, controls: 'notes-panel' },
+        ]}
+      />
 
       {/* Tab Content */}
       <div className="customer-tab-content">
@@ -499,7 +481,7 @@ export function AdminCustomerProfile() {
               />
               <div className="note-actions">
                 <button
-                  className="note-button note-button--primary"
+                  className="btn btn-primary btn-sm"
                   onClick={handleAddNote}
                   disabled={noteSaving || !noteText.trim()}
                   aria-label="Add note"
@@ -548,7 +530,7 @@ export function AdminCustomerProfile() {
                         />
                         <div className="note-edit-actions">
                           <button
-                            className="note-button note-button--primary"
+                            className="btn btn-primary btn-sm"
                             onClick={() => handleUpdateNote(note.id)}
                             disabled={noteSaving || !editingNoteText.trim()}
                             aria-label="Save note"
@@ -556,7 +538,7 @@ export function AdminCustomerProfile() {
                             {noteSaving ? 'Saving...' : 'Save'}
                           </button>
                           <button
-                            className="note-button note-button--secondary"
+                            className="btn btn-secondary btn-sm"
                             onClick={handleCancelEditNote}
                             aria-label="Cancel edit"
                           >
@@ -569,14 +551,14 @@ export function AdminCustomerProfile() {
                         <p className="note-text">{note.note}</p>
                         <div className="note-actions">
                           <button
-                            className="note-action-button"
+                            className="btn btn-secondary btn-sm"
                             onClick={() => handleEditNote(note)}
                             aria-label={`Edit note from ${note.author_name}`}
                           >
                             Edit
                           </button>
                           <button
-                            className="note-action-button note-action-button--danger"
+                            className="btn btn-danger btn-sm"
                             onClick={() => handleDeleteNote(note.id)}
                             aria-label={`Delete note from ${note.author_name}`}
                           >

@@ -1249,21 +1249,6 @@ table .btn {
   font-family: var(--font-family-heading);
 }
 
-.search-filters-clear {
-  background: none;
-  border: none;
-  color: var(--color-pomegranate);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
-}
-
-.search-filters-clear:hover {
-  background-color: var(--color-background-alt);
-}
-
 .search-filter-section {
   margin-bottom: var(--spacing-xl);
 }
@@ -1353,22 +1338,6 @@ table .btn {
 .search-filter-amenity-label {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
-}
-
-.search-filters-toggle {
-  width: 100%;
-  padding: var(--spacing-md);
-  background-color: var(--color-background-alt);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  transition: background-color var(--transition-fast);
-}
-
-.search-filters-toggle:hover {
-  background-color: var(--color-border);
 }
 
 .search-filters-content {
@@ -7764,22 +7733,6 @@ table .btn {
   cursor: pointer;
 }
 
-.sort-order-toggle {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  background-color: var(--color-registan-teal);
-  color: var(--color-cloud-white);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.sort-order-toggle:hover {
-  background-color: var(--color-secondary-dark);
-}
-
 .page-size-control {
   display: flex;
   flex-direction: column;
@@ -7913,28 +7866,6 @@ table .btn {
   background-color: var(--color-background-alt);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-}
-
-.pagination-button {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  background-color: var(--color-registan-teal);
-  color: var(--color-cloud-white);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.pagination-button:hover:not(:disabled) {
-  background-color: var(--color-secondary-dark);
-}
-
-.pagination-button:disabled {
-  background-color: var(--color-border);
-  color: var(--color-text-secondary);
-  cursor: not-allowed;
 }
 
 .pagination-info {
@@ -8184,23 +8115,6 @@ table .btn {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-}
-
-.back-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  background-color: var(--color-background-alt);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-  align-self: flex-start;
-}
-
-.back-button:hover {
-  background-color: var(--color-border);
 }
 
 .customer-profile-header {
@@ -8507,40 +8421,6 @@ table .btn {
   justify-content: flex-end;
 }
 
-.note-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.note-button--primary {
-  background-color: var(--color-registan-teal);
-  color: var(--color-cloud-white);
-}
-
-.note-button--primary:hover {
-  background-color: var(--color-secondary-dark);
-}
-
-.note-button--primary:disabled {
-  background-color: var(--color-border);
-  cursor: not-allowed;
-}
-
-.note-button--secondary {
-  background-color: var(--color-background-alt);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.note-button--secondary:hover {
-  background-color: var(--color-border);
-}
-
 .notes-list {
   display: flex;
   flex-direction: column;
@@ -8612,32 +8492,6 @@ table .btn {
   display: flex;
   gap: var(--spacing-sm);
   justify-content: flex-end;
-}
-
-.note-action-button {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  background-color: var(--color-background);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.note-action-button:hover {
-  background-color: var(--color-background-alt);
-  color: var(--color-text-primary);
-}
-
-.note-action-button--danger {
-  color: var(--color-alert-red);
-  border-color: var(--color-alert-red);
-}
-
-.note-action-button--danger:hover {
-  background-color: rgba(176, 38, 38, 0.1);
 }
 
 .note-edit-form {
@@ -8716,10 +8570,6 @@ table .btn {
 
   .sort-select,
   .page-size-select {
-    width: 100%;
-  }
-
-  .sort-order-toggle {
     width: 100%;
   }
 
@@ -9518,22 +9368,7 @@ table .btn {
   font-size: var(--font-size-sm);
 }
 
-.page-breadcrumbs-back {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-}
-
 .page-breadcrumbs-back:hover,
-.page-breadcrumbs-back:focus-visible {
-  border-color: var(--color-gold-dark);
-}
-
 .page-breadcrumbs-list {
   display: flex;
   flex-wrap: wrap;

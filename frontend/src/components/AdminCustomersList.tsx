@@ -178,7 +178,7 @@ export function AdminCustomersList() {
           </div>
 
           <button
-            className="sort-order-toggle"
+            className="btn btn-secondary btn-sm"
             onClick={handleSortOrderToggle}
             aria-label={`Sort order: ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
           >
@@ -277,7 +277,7 @@ export function AdminCustomersList() {
           {/* Pagination Controls */}
           <div className="pagination-controls" role="navigation" aria-label="Pagination">
             <button
-              className="pagination-button"
+              className="btn btn-secondary btn-sm"
               onClick={handlePreviousPage}
               disabled={!previousPage || currentPage === 1}
               aria-label="Previous page"
@@ -292,7 +292,7 @@ export function AdminCustomersList() {
             </div>
             
             <button
-              className="pagination-button"
+              className="btn btn-secondary btn-sm"
               onClick={handleNextPage}
               disabled={!nextPage || currentPage === totalPages}
               aria-label="Next page"
