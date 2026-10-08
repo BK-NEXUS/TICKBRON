@@ -1,13 +1,14 @@
 import { Link, useLocation } from 'react-router-dom'
+import { CalendarDays, Heart, Search, User } from 'lucide-react'
 
 export function MobileBottomNavigation() {
   const location = useLocation()
 
   const navItems = [
-    { path: '/', label: 'Search', icon: '🔍' },
-    { path: '/bookings', label: 'My Bookings', icon: '📅' },
-    { path: '/favorites', label: 'Favorites', icon: '❤️' },
-    { path: '/profile', label: 'Profile', icon: '👤' },
+    { path: '/', label: 'Search', icon: Search },
+    { path: '/bookings', label: 'My Bookings', icon: CalendarDays },
+    { path: '/favorites', label: 'Favorites', icon: Heart },
+    { path: '/profile', label: 'Profile', icon: User },
   ]
 
   return (
@@ -23,7 +24,7 @@ export function MobileBottomNavigation() {
                 className={`mobile-bottom-nav-link ${isActive ? 'mobile-bottom-nav-link--active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="mobile-bottom-nav-icon" aria-hidden="true">{item.icon}</span>
+                <span className="mobile-bottom-nav-icon" aria-hidden="true"><item.icon size={22} /></span>
                 <span className="mobile-bottom-nav-label">{item.label}</span>
               </Link>
             </li>

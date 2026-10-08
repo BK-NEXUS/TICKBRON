@@ -153,7 +153,7 @@ describe('PaymentProcessing', () => {
   })
 
   it('should show status icon for completed status', () => {
-    render(
+    const { container } = render(
       <PaymentProcessing
         provider={'payme' as PaymentProvider}
         amount={100.00}
@@ -162,11 +162,11 @@ describe('PaymentProcessing', () => {
       />
     )
 
-    expect(screen.getByText('✅')).toBeInTheDocument()
+    expect(container.querySelector('.payment-processing-status-icon .lucide-circle-check')).toBeInTheDocument()
   })
 
   it('should show status icon for failed status', () => {
-    render(
+    const { container } = render(
       <PaymentProcessing
         provider={'payme' as PaymentProvider}
         amount={100.00}
@@ -175,6 +175,6 @@ describe('PaymentProcessing', () => {
       />
     )
 
-    expect(screen.getByText('❌')).toBeInTheDocument()
+    expect(container.querySelector('.payment-processing-status-icon .lucide-circle-x')).toBeInTheDocument()
   })
 })

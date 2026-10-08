@@ -26,11 +26,11 @@ export const EMPTY_FILTERS: FilterState = {
 }
 
 export const FEATURE_OPTIONS = [
-  { id: 'wifi', label: 'WiFi', icon: '📶' },
-  { id: 'parking', label: 'Parking', icon: '🅿️' },
-  { id: 'ac', label: 'Air Conditioning', icon: '❄️' },
-  { id: 'heating', label: 'Heating', icon: '🔥' },
-  { id: 'elevator', label: 'Elevator', icon: '🛗' },
+  { id: 'wifi', label: 'WiFi' },
+  { id: 'parking', label: 'Parking' },
+  { id: 'ac', label: 'Air Conditioning' },
+  { id: 'heating', label: 'Heating' },
+  { id: 'elevator', label: 'Elevator' },
 ]
 
 export const RATING_OPTIONS = [

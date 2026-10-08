@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Medal } from 'lucide-react'
 import { adminAdapter, TopBooker } from '../adapters/adminAdapter'
 
 interface TopBookersLeaderboardProps {
@@ -47,10 +48,8 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
   }
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return '🥇'
-    if (rank === 2) return '🥈'
-    if (rank === 3) return '🥉'
-    return `#${rank}`
+    if (rank > 3) return `#${rank}`
+    return <Medal size={20} className={`rank-medal rank-medal--${rank}`} aria-label={`Rank ${rank}`} role="img" />
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { House } from 'lucide-react'
 import { Property } from '../adapters/propertyAdapter'
 
 interface PropertyGalleryProps {
@@ -20,7 +21,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
   // Fallback to placeholder if no images
   const displayImages = galleryImages.length > 0 ? 
     galleryImages : 
-    [{ id: 0, photo: '🏠', photo_type: 'other', is_primary: true, display_order: 0 }]
+    [{ id: 0, photo: '', photo_type: 'other', is_primary: true, display_order: 0 }]
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))
@@ -61,7 +62,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
         
         <div className="property-gallery-image">
           <div className="property-gallery-image-placeholder">
-            {displayImages[currentIndex].photo}
+            {displayImages[currentIndex].photo || <House size={64} aria-hidden="true" />}
           </div>
         </div>
 

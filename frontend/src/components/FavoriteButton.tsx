@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Heart } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -40,7 +41,7 @@ export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: F
       aria-label={saved ? `Remove ${propertyName} from favorites` : `Save ${propertyName} to favorites`}
       title={saved ? 'Remove from favorites' : 'Save to favorites'}
     >
-      <span aria-hidden="true">{saved ? '♥' : '♡'}</span>
+      <Heart size={18} aria-hidden="true" fill={saved ? 'currentColor' : 'none'} />
       {variant === 'detail' && <span className="favorite-button-label">{saved ? 'Saved' : 'Save'}</span>}
     </button>
   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AmenityIcon } from './AmenityIcon'
 import { CoachMark } from './CoachMark'
 import { FEATURE_OPTIONS, FilterState, RATING_OPTIONS, hasActiveFilters } from '../utils/searchFilters'
 
@@ -13,7 +14,7 @@ interface SearchFiltersProps {
   /** Property counts per feature, from filter-options (optional) */
   featureCounts?: Record<string, number>
   /** Searchable amenities, from filter-options (optional) */
-  amenities?: Array<{ id: number; name: string; icon?: string | null; count?: number }>
+  amenities?: Array<{ id: number; name: string; slug?: string; icon?: string | null; count?: number }>
 }
 
 /**
@@ -195,7 +196,7 @@ export function SearchFilters({
                   className="search-filter-checkbox"
                   aria-label={feature.label}
                 />
-                <span className="search-filter-amenity-icon">{feature.icon}</span>
+                <span className="search-filter-amenity-icon"><AmenityIcon slug={feature.id} /></span>
                 <span className="search-filter-amenity-label">{feature.label}</span>
                 {featureCounts?.[feature.id] !== undefined && (
                   <span className="search-filter-count">{featureCounts[feature.id]}</span>
@@ -219,7 +220,7 @@ export function SearchFilters({
                     className="search-filter-checkbox"
                     aria-label={amenity.name}
                   />
-                  {amenity.icon && <span className="search-filter-amenity-icon">{amenity.icon}</span>}
+                  <span className="search-filter-amenity-icon"><AmenityIcon slug={amenity.slug ?? ""} /></span>
                   <span className="search-filter-amenity-label">{amenity.name}</span>
                   {amenity.count !== undefined && <span className="search-filter-count">{amenity.count}</span>}
                 </label>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, Copy, Mail, Smartphone } from 'lucide-react'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
 
 interface PaymentConfirmationProps {
@@ -120,7 +121,8 @@ export function PaymentConfirmation({
                   aria-label="Copy booking reference code"
                   title="Copy booking reference code"
                 >
-                  {copied ? '✓ Copied' : '📋 Copy'}
+                  {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+                  {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
             </div>
@@ -141,14 +143,14 @@ export function PaymentConfirmation({
 
         <div className="payment-confirmation-info">
           <div className="payment-confirmation-info-item">
-            <div className="payment-confirmation-info-icon" aria-hidden="true">📧</div>
+            <div className="payment-confirmation-info-icon" aria-hidden="true"><Mail size={24} /></div>
             <div className="payment-confirmation-info-text">
               <strong>Confirmation email sent</strong>
               <p>You will receive a confirmation email with your booking details shortly.</p>
             </div>
           </div>
           <div className="payment-confirmation-info-item">
-            <div className="payment-confirmation-info-icon" aria-hidden="true">📱</div>
+            <div className="payment-confirmation-info-icon" aria-hidden="true"><Smartphone size={24} /></div>
             <div className="payment-confirmation-info-text">
               <strong>Manage your booking</strong>
               <p>You can view and manage your booking from your account at any time.</p>

@@ -43,20 +43,20 @@ describe('MobileBottomNavigation', () => {
   })
 
   it('includes icons for each navigation item', () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <MobileBottomNavigation />
       </MemoryRouter>
     )
 
-    expect(screen.getByText('🔍')).toBeInTheDocument()
-    expect(screen.getByText('📅')).toBeInTheDocument()
-    expect(screen.getByText('❤️')).toBeInTheDocument()
-    expect(screen.getByText('👤')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-search')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-calendar-days')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-heart')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-user')).toBeInTheDocument()
   })
 
   it('has proper accessibility attributes', () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <MobileBottomNavigation />
       </MemoryRouter>
@@ -65,7 +65,8 @@ describe('MobileBottomNavigation', () => {
     const nav = screen.getByRole('navigation')
     expect(nav).toHaveAttribute('aria-label', 'Main navigation')
 
-    const icons = screen.getAllByText(/🔍|📅|❤️|👤/)
+    const icons = container.querySelectorAll('.mobile-bottom-nav-icon')
+    expect(icons).toHaveLength(4)
     icons.forEach(icon => {
       expect(icon).toHaveAttribute('aria-hidden', 'true')
     })

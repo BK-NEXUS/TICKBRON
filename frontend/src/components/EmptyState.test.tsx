@@ -8,7 +8,7 @@ describe('EmptyState', () => {
     render(
       <MemoryRouter>
         <EmptyState
-          icon="📅"
+          icon="ICON"
           title="No bookings yet"
           message="Start exploring amazing properties and book your first stay."
           ctaText="Search Properties"
@@ -17,7 +17,7 @@ describe('EmptyState', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText('📅')).toBeInTheDocument()
+    expect(screen.getByText('ICON')).toBeInTheDocument()
     expect(screen.getByText('No bookings yet')).toBeInTheDocument()
     expect(screen.getByText('Start exploring amazing properties and book your first stay.')).toBeInTheDocument()
     expect(screen.getByText('Search Properties')).toBeInTheDocument()
@@ -27,7 +27,7 @@ describe('EmptyState', () => {
     render(
       <MemoryRouter>
         <EmptyState
-          icon="❤️"
+          icon="HEART-ICON"
           title="No favorites yet"
           message="Save your favorite properties to view them here."
           ctaText="Explore Properties"
@@ -44,7 +44,7 @@ describe('EmptyState', () => {
     render(
       <MemoryRouter>
         <EmptyState
-          icon="📅"
+          icon="ICON"
           title="No bookings yet"
           message="Start exploring amazing properties and book your first stay."
           ctaText="Search Properties"
@@ -56,7 +56,7 @@ describe('EmptyState', () => {
     const emptyState = screen.getByRole('status')
     expect(emptyState).toHaveAttribute('aria-live', 'polite')
 
-    const icon = screen.getByText('📅')
+    const icon = screen.getByText('ICON')
     expect(icon).toHaveAttribute('aria-hidden', 'true')
   })
 
@@ -64,7 +64,7 @@ describe('EmptyState', () => {
     render(
       <MemoryRouter>
         <EmptyState
-          icon="📅"
+          icon="ICON"
           title="No bookings yet"
           message="Start exploring amazing properties and book your first stay."
           ctaText="Search Properties"

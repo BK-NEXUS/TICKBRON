@@ -82,10 +82,10 @@ describe('ListViewMapView', () => {
   it('displays icons for both buttons', () => {
     const onViewChange = vi.fn()
 
-    render(<ListViewMapView view="list" onViewChange={onViewChange} />)
+    const { container } = render(<ListViewMapView view="list" onViewChange={onViewChange} />)
 
-    expect(screen.getByText('📋')).toBeInTheDocument()
-    expect(screen.getByText('🗺️')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-list')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-map')).toBeInTheDocument()
   })
 
   it('displays labels for both buttons', () => {

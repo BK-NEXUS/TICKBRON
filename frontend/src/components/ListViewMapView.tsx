@@ -1,3 +1,4 @@
+import { List, Map as MapIcon } from 'lucide-react'
 import { SegmentedControl, type SegmentedOption } from './SegmentedControl'
 
 type View = 'list' | 'map'
@@ -15,7 +16,7 @@ const OPTIONS: SegmentedOption<View>[] = [
     activeClassName: 'list-view-map-view-button-active',
     label: (
       <>
-        <span className="list-view-map-view-icon">📋</span>
+        <List className="list-view-map-view-icon" size={18} aria-hidden="true" />
         <span className="list-view-map-view-label">List</span>
       </>
     ),
@@ -27,7 +28,7 @@ const OPTIONS: SegmentedOption<View>[] = [
     activeClassName: 'list-view-map-view-button-active',
     label: (
       <>
-        <span className="list-view-map-view-icon">🗺️</span>
+        <MapIcon className="list-view-map-view-icon" size={18} aria-hidden="true" />
         <span className="list-view-map-view-label">Map</span>
       </>
     ),

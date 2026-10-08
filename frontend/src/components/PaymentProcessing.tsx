@@ -1,4 +1,5 @@
 import { PaymentProvider, PaymentStatus } from '../adapters/paymentAdapter'
+import { CircleCheck, CircleX, CreditCard, Hourglass, Undo2, type LucideIcon } from 'lucide-react'
 
 interface PaymentProcessingProps {
   provider: PaymentProvider
@@ -36,18 +37,19 @@ export function PaymentProcessing({ provider, amount, currency, status, message 
     return messages[currentStatus]
   }
 
-  const getStatusIcon = (currentStatus: PaymentStatus): string => {
-    const icons: Record<PaymentStatus, string> = {
-      pending: '⏳',
-      processing: '💳',
-      completed: '✅',
-      failed: '❌',
-      refunded: '↩️',
-      partially_refunded: '↩️',
+  const getStatusIcon = (currentStatus: PaymentStatus): LucideIcon => {
+    const icons: Record<PaymentStatus, LucideIcon> = {
+      pending: Hourglass,
+      processing: CreditCard,
+      completed: CircleCheck,
+      failed: CircleX,
+      refunded: Undo2,
+      partially_refunded: Undo2,
     }
     return icons[currentStatus]
   }
 
+  const StatusIcon = getStatusIcon(status)
   const isProcessing = status === 'pending' || status === 'processing'
   const isSuccess = status === 'completed'
 
@@ -60,7 +62,7 @@ export function PaymentProcessing({ provider, amount, currency, status, message 
           </div>
         ) : (
           <div className="payment-processing-status-icon" aria-hidden="true">
-            {getStatusIcon(status)}
+            <StatusIcon size={48} />
           </div>
         )}
       </div>
