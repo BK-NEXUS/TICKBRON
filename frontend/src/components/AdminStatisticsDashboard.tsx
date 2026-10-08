@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { SegmentedControl } from './SegmentedControl'
 import { adminAdapter, RegistrationStatistics } from '../adapters/adminAdapter'
 import { TopBookersLeaderboard } from './TopBookersLeaderboard'
 
@@ -55,20 +56,15 @@ export function AdminStatisticsDashboard() {
       </div>
 
       <div className="statistics-controls">
-        <button
-          onClick={() => setCurrentView('rolling_12_months')}
-          className={`stats-toggle ${currentView === 'rolling_12_months' ? 'stats-toggle--active' : ''}`}
-          aria-pressed={currentView === 'rolling_12_months'}
-        >
-          Rolling 12 Months
-        </button>
-        <button
-          onClick={() => setCurrentView('calendar_year')}
-          className={`stats-toggle ${currentView === 'calendar_year' ? 'stats-toggle--active' : ''}`}
-          aria-pressed={currentView === 'calendar_year'}
-        >
-          Calendar Year
-        </button>
+        <SegmentedControl<StatisticsView>
+          aria-label="Statistics view"
+          value={currentView}
+          onChange={setCurrentView}
+          options={[
+            { value: 'rolling_12_months', label: 'Rolling 12 Months' },
+            { value: 'calendar_year', label: 'Calendar Year' },
+          ]}
+        />
       </div>
 
       {error && (

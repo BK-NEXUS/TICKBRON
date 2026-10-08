@@ -77,7 +77,7 @@ export function SearchFilters({
           {hasActiveFilters(filters) && (
             <>
               <button
-                className="search-filters-clear"
+                className="btn btn-ghost btn-sm"
                 onClick={handleClearFilters}
                 aria-label="Clear all filters"
               >
@@ -231,7 +231,7 @@ export function SearchFilters({
 
       {/* Mobile Expand/Collapse Button */}
       <button
-        className="search-filters-toggle"
+        className="btn btn-secondary btn-full"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
         aria-controls="search-filters-content"

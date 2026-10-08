@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SegmentedControl } from './SegmentedControl'
 import { statusAdapter, ArrivalsDay, PartnerArrivalsPage } from '../adapters/statusAdapter'
 import { StatusPagination } from './StatusPagination'
 import { formatCount, formatDate } from '../utils/statusFormat'
@@ -55,19 +56,7 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
     <section className="partner-arrivals" aria-busy={loading}>
       <h3 className="status-chart-title">{TEXT.title}</h3>
       <div className="status-controls">
-        <div className="status-field" role="group" aria-label={TEXT.title}>
-          {DAYS.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              className={`btn ${day === option.value ? 'btn-primary' : 'btn-secondary'}`}
-              aria-pressed={day === option.value}
-              onClick={() => setDay(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<ArrivalsDay> aria-label={TEXT.title} options={DAYS} value={day} onChange={setDay} />
         {data && <span className="status-card-caption">{formatDate(data.date)}</span>}
       </div>
 

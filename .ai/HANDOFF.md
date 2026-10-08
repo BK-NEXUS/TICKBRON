@@ -2347,3 +2347,11 @@ Branch `feat/fe-design-tokens`. `src/styles/tokens.css` (imported first in `main
 - `env(safe-area-inset-*)` added to `.header` and `.mobile-bottom-navigation` (it did not exist before); `viewport-fit=cover` set in `index.html`.
 - Tests: WCAG contrast of the token pairs, container rule, layout/page wrappers.
 - `src/fonts.test.ts` reads the font tokens from `tokens.css` now (they moved; assertions unchanged).
+
+## Design system: buttons (frontend, 2026-10-08)
+Branch `feat/fe-buttons`. One button system in `index.css` ("Buttons"): the existing `btn btn-*` classes were redefined (primary/secondary/tonal/ghost/danger/link, sizes sm/md/lg, `btn-icon`, 44px targets on `pointer: coarse`, 2px focus ring, lift on hover, reduced motion). Legacy names `btn-small`, `btn-large`, `btn-block`, `btn-tertiary`, `btn-sm` map to the same rules. `Button` / `ButtonLink` (`components/Button.tsx`) add loading (`aria-busy`, clicks swallowed) and type-enforced `aria-label` for icon-only buttons; existing markup was not mass-edited.
+- `SegmentedControl` (`mode="tabs"` with arrow keys, or `"toggle"`) replaced the ad hoc tab/toggle buttons: Admin amenity tabs, customer profile tabs, statistics view, list/map view, partner arrivals day.
+- Primary audit: property card CTA and partner "Manage" are secondary now, header "Sign Up" is tonal.
+### Found, not fixed
+- Status period selector, granularity selector and search sort are `<select>`s (period has 7+ options); turning them into segmented controls would change their tests, so they stay selects.
+- 46 raw `<button>` elements remain on purpose (widgets with their own look: nav items, status tiles, auth tabs and password toggles, header menu, currency/language selectors, gallery and calendar arrows, review stars, filter chips, breadcrumb links). 30 raw buttons were moved to the shared classes or SegmentedControl in this step (customer notes, pagination, sort toggle, wizard steps, filters, back buttons, error boundary).

@@ -474,7 +474,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <button
             type="button"
             onClick={handleBack}
-            className="wizard-button wizard-button--secondary"
+            className="btn btn-secondary"
             disabled={loading}
           >
             Back
@@ -485,7 +485,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <button
             type="button"
             onClick={handleSubmit}
-            className="wizard-button wizard-button--primary"
+            className="btn btn-primary"
             disabled={loading}
           >
             {loading ? 'Creating Property...' : 'Create Property'}
@@ -494,7 +494,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <button
             type="button"
             onClick={handleNext}
-            className="wizard-button wizard-button--primary"
+            className="btn btn-primary"
             disabled={loading}
           >
             Next
@@ -505,7 +505,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <button
             type="button"
             onClick={onCancel}
-            className="wizard-button wizard-button--tertiary"
+            className="btn btn-ghost"
             disabled={loading}
           >
             Cancel

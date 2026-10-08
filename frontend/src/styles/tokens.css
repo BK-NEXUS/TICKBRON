@@ -41,6 +41,8 @@
   --color-border: var(--color-hairline);        /* decorative dividers only */
   --color-border-control: #8C8270;             /* borders of inputs and controls (>= 3:1) */
   --color-focus: var(--color-gold-dark);
+  --color-tint: rgba(188, 156, 89, 0.14);         /* tinted fill: tonal buttons, hover, active segment */
+  --color-tint-strong: rgba(188, 156, 89, 0.28);
 
   --color-success: var(--color-sprout-green);
   --color-warning: var(--color-saffron);
@@ -97,6 +99,8 @@
   --shadow-2xl: var(--shadow-xl);
   --shadow-brand: 0 6px 16px -4px rgba(188, 156, 89, 0.35), 0 2px 4px rgba(188, 156, 89, 0.12);
   --shadow-brand-hover: 0 10px 22px -4px rgba(188, 156, 89, 0.45), 0 3px 6px rgba(188, 156, 89, 0.16);
+  --shadow-danger: 0 6px 16px -4px rgba(176, 38, 38, 0.35), 0 2px 4px rgba(176, 38, 38, 0.12);
+  --shadow-danger-hover: 0 10px 22px -4px rgba(176, 38, 38, 0.45), 0 3px 6px rgba(176, 38, 38, 0.16);
   --shadow-card-hover: var(--shadow-lg);
   --shadow-focus: 0 0 0 3px rgba(188, 156, 89, 0.35);       /* gold focus halo */
   --shadow-focus-error: 0 0 0 3px rgba(176, 38, 38, 0.28);   /* error focus halo */

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { SegmentedControl } from './SegmentedControl'
 import { 
   adminAdapter, 
   AdminAmenity, 
@@ -296,24 +297,16 @@ export function AdminAmenityManagement() {
         <p className="admin-view-subtitle">Manage amenity categories and amenities</p>
       </div>
 
-      <div className="view-tabs">
-        <button
-          onClick={() => setViewMode('amenities')}
-          className={`tab-button ${viewMode === 'amenities' ? 'tab-button--active' : ''}`}
-          aria-selected={viewMode === 'amenities'}
-          role="tab"
-        >
-          Amenities
-        </button>
-        <button
-          onClick={() => setViewMode('categories')}
-          className={`tab-button ${viewMode === 'categories' ? 'tab-button--active' : ''}`}
-          aria-selected={viewMode === 'categories'}
-          role="tab"
-        >
-          Categories
-        </button>
-      </div>
+      <SegmentedControl<ViewMode>
+        mode="tabs"
+        aria-label="Amenity views"
+        value={viewMode}
+        onChange={setViewMode}
+        options={[
+          { value: 'amenities', label: 'Amenities' },
+          { value: 'categories', label: 'Categories' },
+        ]}
+      />
 
       {error && (
         <div className="alert alert-error" role="alert" aria-live="polite">
