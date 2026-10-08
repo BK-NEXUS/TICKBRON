@@ -180,7 +180,7 @@ export function AdminDashboardPage() {
 
   return (
     <div className="admin-dashboard-page">
-      <div className="container">
+      <div className="container container-large-desktop">
         <div className="dashboard-header">
           <h1 className="dashboard-title">Admin Dashboard</h1>
           <p className="dashboard-subtitle">

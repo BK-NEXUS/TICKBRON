@@ -3,7 +3,7 @@ import { BrandLogo } from './BrandLogo'
 export function Footer() {
   return (
     <footer className="footer">
-      <div className="footer-container">
+      <div className="container footer-container">
         <div className="footer-section">
           <BrandLogo variant="footer" decorative />
           <h3>TICKBRON</h3>
@@ -33,7 +33,7 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="footer-bottom">
+      <div className="container footer-bottom">
         <p>&copy; 2024 TICKBRON. All rights reserved.</p>
       </div>
     </footer>

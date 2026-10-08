@@ -56,7 +56,7 @@ export function Header() {
   return (
     <>
       <header className="header">
-        <div className="header-container">
+        <div className="container header-container">
           {/* Mobile Menu Button */}
           <button
             className="header-mobile-toggle"

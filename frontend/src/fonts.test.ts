@@ -24,7 +24,7 @@ describe('brand fonts', () => {
   })
 
   it('keep the font-family tokens pointing at PT Sans / PT Serif', () => {
-    const css = read('styles/index.css')
+    const css = read('styles/tokens.css')
     expect(css).toMatch(/--font-family-heading: 'PT Serif'/)
     expect(css).toMatch(/--font-family-body: 'PT Sans'/)
   })

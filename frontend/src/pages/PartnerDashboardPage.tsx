@@ -357,7 +357,7 @@ export function PartnerDashboardPage() {
 
   return (
     <div className="partner-dashboard-page">
-      <div className="container">
+      <div className="container container-large-desktop">
         <div className="dashboard-header">
           <h1 className="dashboard-title">Partner Dashboard</h1>
           <p className="dashboard-subtitle">Welcome, {user.first_name || user.email}</p>
