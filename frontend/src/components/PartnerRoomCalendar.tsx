@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDialogFocus } from '../hooks/useDialogFocus'
 import {
   partnerAdapter, PartnerRoomInventory, PartnerBlock,
 } from '../adapters/partnerAdapter'
@@ -171,6 +172,8 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     setBlockError(null)
     setBlockModalOpen(true)
   }
+
+  const dialogRef = useDialogFocus<HTMLDivElement>(blockModalOpen, () => closeBlockModal())
 
   const closeBlockModal = () => {
     setBlockModalOpen(false)
@@ -354,7 +357,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
 
       {blockModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
-          <div className="modal-content">
+          <div className="modal-content" ref={dialogRef} tabIndex={-1}>
             <h2 id="block-modal-title" className="modal-title">External booking</h2>
             <p className="modal-subtitle">Take rooms out of sale for {roomTypeName} (sold via Booking.com, phone, etc.)</p>
 

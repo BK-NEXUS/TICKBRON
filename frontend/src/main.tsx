@@ -8,6 +8,7 @@ import '@fontsource/pt-sans/700.css'
 import '@fontsource/pt-serif/400.css'
 import '@fontsource/pt-serif/700.css'
 import './styles/index.css'
+import './styles/surfaces.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

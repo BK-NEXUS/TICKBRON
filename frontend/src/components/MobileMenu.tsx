@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDialogFocus } from '../hooks/useDialogFocus'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -37,6 +38,8 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
     }
   }, [isOpen])
 
+  const menuRef = useDialogFocus<HTMLDivElement>(isOpen, onClose)
+
   if (!isOpen && !isAnimating) return null
 
   return (
@@ -51,6 +54,8 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
       {/* Menu */}
       <div
         className={`mobile-menu ${isAnimating ? 'mobile-menu-open' : ''} ${className}`}
+        ref={menuRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"

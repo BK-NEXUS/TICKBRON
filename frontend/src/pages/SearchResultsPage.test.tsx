@@ -46,7 +46,7 @@ describe('SearchResultsPage', () => {
       policies: [],
       rating: 4.8,
       review_count: 127,
-      image_url: '🏰',
+      image_url: 'castle.jpg',
       created_at: '2024-01-15T10:00:00Z',
       updated_at: '2024-01-20T15:30:00Z',
     },

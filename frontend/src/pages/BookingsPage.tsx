@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Check, Copy } from 'lucide-react'
 import { Lock, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accountAdapter, Booking } from '../adapters/accountAdapter'
@@ -50,7 +51,7 @@ function BookingCard({ booking }: BookingCardProps) {
                 aria-label="Copy booking reference code"
                 title="Copy booking reference code"
               >
-                {copied ? '✓' : '📋'}
+                {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               </button>
             </div>
           </div>

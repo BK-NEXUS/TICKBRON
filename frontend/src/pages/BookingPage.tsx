@@ -1031,7 +1031,7 @@ export function BookingPage() {
 
             {booking && booking.expires_at && (
               <div className="booking-summary-expiry">
-                <div className="booking-summary-expiry-icon">⏰</div>
+                <div className="booking-summary-expiry-icon"><Clock size={20} aria-hidden="true" /></div>
                 <div className="booking-summary-expiry-text">
                   <strong>Booking expires in 15 minutes</strong>
                   <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>

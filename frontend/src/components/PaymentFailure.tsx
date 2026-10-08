@@ -1,4 +1,5 @@
 import { PaymentProvider } from '../adapters/paymentAdapter'
+import { CircleX, TriangleAlert } from 'lucide-react'
 
 interface PaymentFailureProps {
   provider: PaymentProvider
@@ -79,7 +80,7 @@ export function PaymentFailure({
   return (
     <div className="payment-failure">
       <div className="payment-failure-header">
-        <div className="payment-failure-icon" aria-hidden="true">❌</div>
+        <div className="payment-failure-icon" aria-hidden="true"><CircleX size={48} /></div>
         <h2 className="payment-failure-title">Payment Failed</h2>
         <p className="payment-failure-subtitle">
           We couldn't process your payment
@@ -88,7 +89,7 @@ export function PaymentFailure({
 
       <div className="payment-failure-content">
         <div className="payment-failure-error" role="alert" aria-live="assertive">
-          <div className="payment-failure-error-icon" aria-hidden="true">⚠️</div>
+          <div className="payment-failure-error-icon" aria-hidden="true"><TriangleAlert size={24} /></div>
           <div className="payment-failure-error-text">
             <strong>Error:</strong>
             <p>{getErrorMessage(error)}</p>

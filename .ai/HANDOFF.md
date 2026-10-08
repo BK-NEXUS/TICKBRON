@@ -2362,3 +2362,20 @@ Branch `feat/fe-auth-pages`. One centred card (max 440px inside `.container`, so
 - Register asks for full name, email, phone, password and password confirmation, all required. The client wants name, phone and email as the required fields; password (+ confirmation) is extra. Fields were not added or removed.
 ### Found, not fixed
 - Phone field still shows the flag emoji (step 4 allowlists `utils/phone.ts` until the SVG country selector exists).
+
+## Emoji cleanup (frontend, 2026-10-08)
+Branch `feat/fe-no-emoji`. Search: `/\p{Extended_Pictographic}|\p{Regional_Indicator}/u` over `src/` and `index.html`. 99 hits in 25 files before, 10 left (allowlisted, see below). Guard: `src/test/noEmoji.test.ts` (fails with file:line; proved once with a temporary emoji).
+Replaced by lucide-react icons (decorative ones `aria-hidden`, icon-only ones named):
+- Mobile bottom nav, list/map toggle, favorite heart, copy and copied buttons (payment confirmation, bookings), payment status and failure icons, confirmation info rows, booking expiry clock, top-bookers medals (`role="img"` with name "Rank 1..3"), gallery placeholder.
+- Amenity, category and feature-filter icons now come from `AmenityIcon` by slug; the free-text `icon` field from the backend/admin is no longer rendered (an admin could type an emoji there). Mock data in `searchAdapter.ts` lost its emoji `icon` / `image_url` values.
+Allowlist (TODO): `utils/phone.ts` (flag emoji until the SVG country selector exists); `LanguageSelector.tsx`/`.test.tsx` and `CurrencySelector.tsx`/`.test.tsx` (i18n foundation not merged, owned by another session).
+Changed test assertions (intent kept, found by icon class / role / name instead of the emoji text): EmptyState (icon prop sample text), ListViewMapView, MobileBottomNavigation (2), PaymentConfirmation ("✓ Copied" -> "Copied" + check icon), PaymentProcessing (2), BookingsPage (copied check), PropertyAmenitiesDetail (2), TopBookersLeaderboard (medals); test data without emoji in PropertyCard, PropertyGallery, PropertyDetailPage, SearchResultsPage.
+### Backend (read only, nothing edited)
+No emoji in notification texts, SMS, email templates or API messages. Hits: `backend/config/partner_admin_security_check.py:118` (a "⚠" in a dev script print) and `backend/properties/tests/test_models.py` (icon fixtures `🏢 🍳 🧊` in 8 lines).
+
+## Design system: shared surfaces (frontend, 2026-10-08)
+Branch `feat/fe-surfaces`. `src/styles/surfaces.css` (loaded after `index.css`, tokens only) applies the language through the shared classes: cards (selected = 2px gold border + tint), form controls outside auth (44px, control border, 2px focus outline, `accent-color` on checkboxes), modals (blurred backdrop, xl radius), pill badges, alerts (`.alert`, `.alert-error`, `.alert-success` were used 33 times and never defined), header and bottom navigation as floating pill bars (active item = tinted pill, safe-area kept), empty states, admin tables (rounder outer container only).
+- New `useDialogFocus` (focus moves in, Tab trapped, Escape closes, focus returns): used by the reject-property modal, the external-booking modal and the mobile menu; they had none of it.
+### Found, not fixed
+- Date inputs use the native picker; `DateRangeCalendar`/`AvailabilityCalendar` keep their own look.
+- Status components were only restyled through shared classes (no logic touched).

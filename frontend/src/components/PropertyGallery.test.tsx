@@ -32,14 +32,14 @@ describe('PropertyGallery', () => {
     policies: [],
     gallery: {
       exterior: [
-        { id: 1, photo: '🏠', photo_type: 'exterior', is_primary: true, display_order: 1 },
-        { id: 2, photo: '🏰', photo_type: 'exterior', is_primary: false, display_order: 2 },
-        { id: 3, photo: '🌆', photo_type: 'exterior', is_primary: false, display_order: 3 },
+        { id: 1, photo: 'house.jpg', photo_type: 'exterior', is_primary: true, display_order: 1 },
+        { id: 2, photo: 'castle.jpg', photo_type: 'exterior', is_primary: false, display_order: 2 },
+        { id: 3, photo: 'city.jpg', photo_type: 'exterior', is_primary: false, display_order: 3 },
       ],
     },
     primary_photo: {
       id: 1,
-      photo: '🏠',
+      photo: 'house.jpg',
       photo_type: 'exterior',
       is_primary: true,
       display_order: 1,

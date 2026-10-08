@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
 import { PropertyRegionField } from './PropertyRegionField'
 
@@ -86,6 +87,8 @@ export function AdminPropertyModeration() {
       setActionLoading(null)
     }
   }
+
+  const dialogRef = useDialogFocus<HTMLDivElement>(rejectModal !== null, () => handleRejectCancel())
 
   const handleRejectCancel = () => {
     setRejectModal(null)
@@ -290,7 +293,7 @@ export function AdminPropertyModeration() {
 
       {rejectModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reject-modal-title">
-          <div className="modal-content">
+          <div className="modal-content" ref={dialogRef} tabIndex={-1}>
             <h2 id="reject-modal-title" className="modal-title">Reject Property</h2>
             <p className="modal-subtitle">You are rejecting: {rejectModal.propertyName}</p>
             

@@ -1,0 +1,223 @@
+/* Shared surfaces: cards, form controls, modals, badges, alerts, floating bars, empty states, admin tables.
+   Loaded after index.css; every value comes from tokens.css. */
+
+/* Cards: large radius, wide soft shadow, coloured border for the selected one */
+.property-card,
+.room-card,
+.rate-plan-card,
+.status-card,
+.status-tile,
+.favorite-card,
+.booking-card,
+.destination-card,
+.property-type-card,
+.feature-card,
+.testimonial-card,
+.booking-summary-card,
+.property-detail-booking-card,
+.payment-method-card {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.property-card:hover,
+.room-card:hover,
+.rate-plan-card:hover,
+.status-card:hover,
+.status-tile:hover,
+.favorite-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.room-card--selected,
+.rate-plan-card--selected {
+  border: 2px solid var(--color-gold);
+  background-color: var(--color-tint);
+  box-shadow: var(--shadow-lg);
+}
+
+.status-tile {
+  border-left-width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-card:hover,
+  .room-card:hover,
+  .rate-plan-card:hover,
+  .favorite-card:hover {
+    transform: none;
+  }
+}
+
+/* Form controls outside the auth pages: rounded white fields, thin control border, visible focus */
+.search-input,
+.search-form-input,
+.search-filter-input,
+.search-filter-price-input,
+.search-sort-select,
+.booking-form-child-input,
+.profile-form-select,
+.form-control,
+.form-input,
+.sort-select,
+.page-size-select,
+.filter-select {
+  min-height: 44px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.search-input:focus-visible,
+.search-form-input:focus-visible,
+.search-filter-input:focus-visible,
+.search-filter-price-input:focus-visible,
+.search-sort-select:focus-visible,
+.booking-form-child-input:focus-visible,
+.profile-form-select:focus-visible,
+.form-control:focus-visible,
+.form-input:focus-visible,
+.sort-select:focus-visible,
+.page-size-select:focus-visible,
+.filter-select:focus-visible,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+input[type='date']:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-gold-dark);
+}
+
+textarea.form-control,
+textarea.form-input {
+  min-height: 96px;
+}
+
+/* Modals: blurred backdrop, large radius */
+.modal-overlay,
+.mobile-menu-backdrop {
+  background-color: rgba(62, 56, 45, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.modal-content {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+}
+
+.modal-content:focus {
+  outline: none;
+}
+
+/* Badges and pills */
+.badge,
+.status-badge,
+.role-badge,
+.profile-status-badge,
+.property-policy-item-badge,
+.payment-method-card-badge,
+.amenity-tag,
+.rank-badge {
+  border-radius: var(--radius-pill);
+}
+
+/* Alerts (used across the app, now defined in one place) */
+.alert {
+  padding: var(--spacing-12) var(--spacing-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.alert-error {
+  background-color: rgba(176, 38, 38, 0.08);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.alert-success {
+  background-color: rgba(56, 109, 77, 0.1);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.alert-warning {
+  background-color: rgba(125, 85, 24, 0.1);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+/* Floating pill header */
+.header {
+  background-color: transparent;
+  border-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding-top: calc(env(safe-area-inset-top) + var(--spacing-sm));
+  pointer-events: none;
+}
+
+.header-container {
+  pointer-events: auto;
+  width: calc(100% - 2 * var(--gutter));
+  padding-inline: var(--spacing-lg);
+  background-color: rgba(242, 237, 231, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+}
+
+/* Floating pill bottom navigation; the active item is a tinted pill */
+.mobile-bottom-navigation {
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--spacing-12) + env(safe-area-inset-bottom));
+  padding: var(--spacing-xs);
+  background-color: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lg);
+}
+
+.mobile-bottom-nav-link {
+  border-radius: var(--radius-pill);
+}
+
+.mobile-bottom-nav-link--active {
+  background-color: var(--color-tint-strong);
+  color: var(--color-text-primary);
+}
+
+/* Empty states */
+.empty-state {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Admin tables stay dense: only a rounder outer container and hairline rows */
+.customers-table,
+.payments-table,
+.bookings-table,
+.leaderboard-table {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.customers-table thead,
+.payments-table thead,
+.bookings-table thead {
+  border-bottom-width: 1px;
+}

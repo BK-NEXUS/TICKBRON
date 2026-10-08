@@ -44,7 +44,7 @@ describe('PropertyCard', () => {
     review_count: 127,
     primary_photo: {
       id: 1,
-      photo: '🏰',
+      photo: 'castle.jpg',
       photo_type: 'exterior',
       is_primary: true,
       display_order: 1,

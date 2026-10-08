@@ -8,11 +8,11 @@ describe('PropertyAmenitiesDetail', () => {
     {
       amenity: {
         id: 1,
-        category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '🍳', sort_order: 1 },
+        category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: 'kitchen', sort_order: 1 },
         name: 'WiFi',
         slug: 'wifi',
         description: 'High-speed internet',
-        icon: '📶',
+        icon: 'wifi',
         is_searchable: true,
         sort_order: 1,
       },
@@ -21,11 +21,11 @@ describe('PropertyAmenitiesDetail', () => {
     {
       amenity: {
         id: 2,
-        category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '🍳', sort_order: 1 },
+        category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: 'kitchen', sort_order: 1 },
         name: 'Kitchen',
         slug: 'kitchen',
         description: 'Full kitchen',
-        icon: '🍳',
+        icon: 'kitchen',
         is_searchable: true,
         sort_order: 2,
       },
@@ -34,11 +34,11 @@ describe('PropertyAmenitiesDetail', () => {
     {
       amenity: {
         id: 3,
-        category: { id: 2, name: 'Bathroom', slug: 'bathroom', description: 'Bathroom amenities', icon: '🚿', sort_order: 2 },
+        category: { id: 2, name: 'Bathroom', slug: 'bathroom', description: 'Bathroom amenities', icon: 'bathroom', sort_order: 2 },
         name: 'Air Conditioning',
         slug: 'ac',
         description: 'Climate control',
-        icon: '❄️',
+        icon: 'ac',
         is_searchable: true,
         sort_order: 3,
       },
@@ -85,18 +85,17 @@ describe('PropertyAmenitiesDetail', () => {
   })
 
   it('renders category icons', () => {
-    render(<PropertyAmenitiesDetail amenities={mockAmenities} />)
+    const { container } = render(<PropertyAmenitiesDetail amenities={mockAmenities} />)
     
-    const categoryIcons = screen.getAllByText(/🍳|🚿/).filter(el => el.className === 'property-amenities-category-icon')
-    expect(categoryIcons.some(el => el.textContent === '🍳')).toBe(true)
-    expect(categoryIcons.some(el => el.textContent === '🚿')).toBe(true)
+    expect(container.querySelector('.property-amenities-category-icon .lucide-utensils')).toBeInTheDocument()
+    expect(container.querySelector('.property-amenities-category-icon .lucide-shower-head')).toBeInTheDocument()
   })
 
   it('renders amenity icons', () => {
-    render(<PropertyAmenitiesDetail amenities={mockAmenities} />)
+    const { container } = render(<PropertyAmenitiesDetail amenities={mockAmenities} />)
     
-    expect(screen.getByText('📶')).toBeInTheDocument()
-    expect(screen.getByText('❄️')).toBeInTheDocument()
+    expect(container.querySelector('.property-amenity-item-icon .lucide-wifi')).toBeInTheDocument()
+    expect(container.querySelector('.property-amenity-item-icon .lucide-snowflake')).toBeInTheDocument()
   })
 
   it('sorts amenities by category sort order', () => {

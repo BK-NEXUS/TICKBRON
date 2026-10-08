@@ -74,4 +74,12 @@ describe('MobileMenu', () => {
     const menu = screen.getByRole('dialog')
     expect(menu).toHaveClass('custom-class')
   })
+
+  it('closes on Escape and keeps focus inside the open menu', () => {
+    const onClose = vi.fn()
+    render(<MobileMenu isOpen={true} onClose={onClose} />)
+    expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })

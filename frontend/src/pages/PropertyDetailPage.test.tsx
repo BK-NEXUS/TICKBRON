@@ -68,11 +68,11 @@ describe('PropertyDetailPage', () => {
       {
         amenity: {
           id: 1,
-          category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '🍳', sort_order: 1 },
+          category: { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: 'kitchen', sort_order: 1 },
           name: 'WiFi',
           slug: 'wifi',
           description: 'High-speed internet',
-          icon: '📶',
+          icon: 'wifi',
           is_searchable: true,
           sort_order: 1,
         },
@@ -122,7 +122,7 @@ describe('PropertyDetailPage', () => {
       exterior: [
         {
           id: 1,
-          photo: '🏠',
+          photo: 'house.jpg',
           photo_type: 'exterior',
           is_primary: true,
           display_order: 1,
@@ -131,7 +131,7 @@ describe('PropertyDetailPage', () => {
     },
     primary_photo: {
       id: 1,
-      photo: '🏠',
+      photo: 'house.jpg',
       photo_type: 'exterior',
       is_primary: true,
       display_order: 1,

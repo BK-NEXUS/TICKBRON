@@ -1,4 +1,5 @@
 import { PropertyAmenity, AmenityCategory } from '../adapters/propertyAdapter'
+import { AmenityIcon } from './AmenityIcon'
 
 interface PropertyAmenitiesDetailProps {
   amenities?: PropertyAmenity[]
@@ -41,7 +42,7 @@ export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDet
       {categories.map(({ category, amenities: categoryAmenities }) => (
         <div key={category.id} className="property-amenities-category">
           <h3 className="property-amenities-category-title">
-            <span className="property-amenities-category-icon">{category.icon}</span>
+            <span className="property-amenities-category-icon"><AmenityIcon slug={category.slug} /></span>
             {category.name}
           </h3>
           
@@ -57,7 +58,7 @@ export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDet
                 >
                   <div className="property-amenity-item-header">
                     <span className="property-amenity-item-icon">
-                      {propertyAmenity.amenity.icon}
+                      <AmenityIcon slug={propertyAmenity.amenity.slug} />
                     </span>
                     <span className="property-amenity-item-name">
                       {propertyAmenity.amenity.name}

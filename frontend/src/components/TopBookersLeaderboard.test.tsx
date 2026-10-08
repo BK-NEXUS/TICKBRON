@@ -110,9 +110,9 @@ describe('TopBookersLeaderboard', () => {
     render(<TopBookersLeaderboard />)
 
     await waitFor(() => {
-      expect(screen.getByText('🥇')).toBeInTheDocument()
-      expect(screen.getByText('🥈')).toBeInTheDocument()
-      expect(screen.getByText('🥉')).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: 'Rank 1' })).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: 'Rank 2' })).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: 'Rank 3' })).toBeInTheDocument()
     })
   })
 

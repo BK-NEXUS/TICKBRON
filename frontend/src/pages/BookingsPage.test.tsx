@@ -290,7 +290,7 @@ describe('BookingsPage', () => {
       fireEvent.click(copyButtons[0])
 
       await waitFor(() => {
-        expect(screen.getAllByText('✓')).toHaveLength(1)
+        expect(document.querySelectorAll('.booking-card-copy-btn .lucide-check')).toHaveLength(1)
       })
     })
 
