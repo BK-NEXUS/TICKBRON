@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Lock, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
@@ -159,7 +160,7 @@ export function BookingsPage() {
       <div className="bookings-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Sign in required"
             message="Please sign in to view your booking history."
             ctaText="Sign In"
@@ -208,7 +209,7 @@ export function BookingsPage() {
       <div className="bookings-page">
         <div className="container">
           <EmptyState
-            icon="📅"
+            icon={<Calendar size={40} />}
             title="No bookings yet"
             message="Start exploring amazing properties and book your first stay."
             ctaText="Search Properties"

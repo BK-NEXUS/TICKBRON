@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Lock, Ban } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { adminAdapter, SupportLookupBooking } from '../adapters/adminAdapter'
 import { EmptyState } from '../components/EmptyState'
@@ -76,7 +77,7 @@ export function SupportLookupPage() {
       <div className="support-lookup-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Authentication required"
             message="Please sign in to access the support lookup tool."
             ctaText="Sign In"
@@ -92,7 +93,7 @@ export function SupportLookupPage() {
       <div className="support-lookup-page">
         <div className="container">
           <EmptyState
-            icon="🚫"
+            icon={<Ban size={40} />}
             title="Access Denied"
             message="You do not have permission to access the support lookup tool."
             ctaText="Go to Home"

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Check, Clock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingAdapter, BookingCreateRequest, Booking } from '../adapters/bookingAdapter'
 import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../adapters/propertyAdapter'
@@ -469,7 +470,9 @@ export function BookingPage() {
       <div className="booking-page booking-page--success">
         <div className="container">
           <div className="success-state" role="status" aria-live="polite">
-            <div className="success-icon">✓</div>
+            <div className="success-icon">
+              <Check size={36} />
+            </div>
             <h1>Booking Confirmed!</h1>
             <p>Your booking has been successfully created.</p>
             
@@ -613,7 +616,9 @@ export function BookingPage() {
 
               {booking && booking.expires_at && (
                 <div className="booking-summary-expiry">
-                  <div className="booking-summary-expiry-icon">⏰</div>
+                  <div className="booking-summary-expiry-icon">
+                    <Clock size={20} />
+                  </div>
                   <div className="booking-summary-expiry-text">
                     <strong>Booking expires in 15 minutes</strong>
                     <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>

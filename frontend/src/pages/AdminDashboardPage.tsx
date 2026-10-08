@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -42,7 +43,7 @@ export function AdminDashboardPage() {
       <div className="admin-dashboard-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Authentication required"
             message="Please sign in to access the admin dashboard."
             ctaText="Sign In"
@@ -60,7 +61,7 @@ export function AdminDashboardPage() {
       <div className="admin-dashboard-page">
         <div className="container">
           <EmptyState
-            icon="🚫"
+            icon={<Ban size={40} />}
             title="Access Denied"
             message="You do not have permission to access the admin dashboard."
             ctaText="Go to Home"
@@ -78,7 +79,7 @@ export function AdminDashboardPage() {
         className={`nav-item ${currentView === 'properties' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'properties' ? 'page' : undefined}
       >
-        <span className="nav-icon">🏠</span>
+        <span className="nav-icon"><House size={18} /></span>
         <span className="nav-label">Properties</span>
       </button>
       <button
@@ -86,7 +87,7 @@ export function AdminDashboardPage() {
         className={`nav-item ${currentView === 'amenities' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'amenities' ? 'page' : undefined}
       >
-        <span className="nav-icon">🛎️</span>
+        <span className="nav-icon"><Bell size={18} /></span>
         <span className="nav-label">Amenities</span>
       </button>
       <button
@@ -94,7 +95,7 @@ export function AdminDashboardPage() {
         className={`nav-item ${currentView === 'users' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'users' ? 'page' : undefined}
       >
-        <span className="nav-icon">👥</span>
+        <span className="nav-icon"><Users size={18} /></span>
         <span className="nav-label">Users</span>
       </button>
       <button
@@ -102,7 +103,7 @@ export function AdminDashboardPage() {
         className={`nav-item ${currentView === 'customers' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'customers' ? 'page' : undefined}
       >
-        <span className="nav-icon">👤</span>
+        <span className="nav-icon"><User size={18} /></span>
         <span className="nav-label">Customers</span>
       </button>
       <button
@@ -110,7 +111,7 @@ export function AdminDashboardPage() {
         className={`nav-item ${currentView === 'statistics' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'statistics' ? 'page' : undefined}
       >
-        <span className="nav-icon">📊</span>
+        <span className="nav-icon"><ChartColumn size={18} /></span>
         <span className="nav-label">Statistics</span>
       </button>
       <button
@@ -131,7 +132,7 @@ export function AdminDashboardPage() {
         onClick={() => navigate('/admin/support')}
         className="nav-item"
       >
-        <span className="nav-icon">🔍</span>
+        <span className="nav-icon"><Search size={18} /></span>
         <span className="nav-label">Support Lookup</span>
       </button>
       {user.is_superuser && (
@@ -140,7 +141,7 @@ export function AdminDashboardPage() {
           className={`nav-item ${showCreateOwner ? 'nav-item--active' : ''}`}
           aria-current={showCreateOwner ? 'page' : undefined}
         >
-          <span className="nav-icon">➕</span>
+          <span className="nav-icon"><Plus size={18} /></span>
           <span className="nav-label">Create Owner</span>
         </button>
       )}

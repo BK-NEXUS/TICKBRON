@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Lock, Heart, House } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accountAdapter, Favorite } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
@@ -56,7 +57,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Sign in required"
             message="Please sign in to view your favorite properties."
             ctaText="Sign In"
@@ -105,7 +106,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
-            icon="❤️"
+            icon={<Heart size={40} />}
             title="No favorites yet"
             message="Save your favorite properties to view them here."
             ctaText="Explore Properties"
@@ -133,7 +134,7 @@ export function FavoritesPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="favorite-card-placeholder">🏠</div>
+                  <div className="favorite-card-placeholder"><House size={40} /></div>
                 )}
               </div>
               

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Lock, House, Calendar, BedDouble, Banknote } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
@@ -124,7 +125,7 @@ export function PartnerDashboardPage() {
       <div className="partner-dashboard-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Authentication required"
             message="Please sign in to access the partner dashboard."
             ctaText="Sign In"
@@ -142,7 +143,7 @@ export function PartnerDashboardPage() {
         className={`nav-item ${currentView === 'properties' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'properties' ? 'page' : undefined}
       >
-        <span className="nav-icon">🏠</span>
+        <span className="nav-icon"><House size={18} /></span>
         <span className="nav-label">Properties</span>
       </button>
       <button
@@ -150,7 +151,7 @@ export function PartnerDashboardPage() {
         className={`nav-item ${currentView === 'bookings' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'bookings' ? 'page' : undefined}
       >
-        <span className="nav-icon">📅</span>
+        <span className="nav-icon"><Calendar size={18} /></span>
         <span className="nav-label">Bookings</span>
       </button>
       <button
@@ -174,7 +175,7 @@ export function PartnerDashboardPage() {
             className={`nav-item ${currentView === 'rooms' ? 'nav-item--active' : ''}`}
             aria-current={currentView === 'rooms' ? 'page' : undefined}
           >
-            <span className="nav-icon">🛏️</span>
+            <span className="nav-icon"><BedDouble size={18} /></span>
             <span className="nav-label">Rooms</span>
           </button>
           {calendarRoomType && (
@@ -183,7 +184,7 @@ export function PartnerDashboardPage() {
               className={`nav-item ${currentView === 'calendar' ? 'nav-item--active' : ''}`}
               aria-current={currentView === 'calendar' ? 'page' : undefined}
             >
-              <span className="nav-icon">🗓️</span>
+              <span className="nav-icon"><Calendar size={18} /></span>
               <span className="nav-label">Calendar</span>
             </button>
           )}
@@ -194,7 +195,7 @@ export function PartnerDashboardPage() {
                 className={`nav-item ${currentView === 'rates' ? 'nav-item--active' : ''}`}
                 aria-current={currentView === 'rates' ? 'page' : undefined}
               >
-                <span className="nav-icon">💰</span>
+                <span className="nav-icon"><Banknote size={18} /></span>
                 <span className="nav-label">Rates</span>
               </button>
               {selectedRatePlan && (
@@ -203,7 +204,7 @@ export function PartnerDashboardPage() {
                   className={`nav-item ${currentView === 'availability' ? 'nav-item--active' : ''}`}
                   aria-current={currentView === 'availability' ? 'page' : undefined}
                 >
-                  <span className="nav-icon">📅</span>
+                  <span className="nav-icon"><Calendar size={18} /></span>
                   <span className="nav-label">Availability</span>
                 </button>
               )}
@@ -239,7 +240,7 @@ export function PartnerDashboardPage() {
         </div>
       ) : properties.length === 0 ? (
         <EmptyState
-          icon="🏠"
+          icon={<House size={40} />}
           title="No properties yet"
           message="Start by listing your first property to begin accepting bookings."
           ctaText="Add Your First Property"

@@ -1,4 +1,5 @@
 import { Property } from '../adapters/propertyAdapter'
+import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
 
@@ -53,9 +54,18 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
       }}
     >
       <div className="property-card-image">
-        <div className="property-card-image-placeholder">
-          {property.primary_photo?.photo || '🏠'}
-        </div>
+        {property.primary_photo?.photo ? (
+          <img
+            className="property-card-photo"
+            src={property.primary_photo.photo}
+            alt={property.primary_photo.alt_text || translation.name}
+            loading="lazy"
+          />
+        ) : (
+          <div className="property-card-image-placeholder" data-testid="property-image-placeholder">
+            <House size={56} />
+          </div>
+        )}
         <FavoriteButton propertyId={property.id} propertyName={translation.name} />
         {rating > 0 && (
           <div className="property-card-rating">
@@ -67,7 +77,9 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
 
       <div className="property-card-content">
         <h3 className="property-card-name">{translation.name}</h3>
-        <p className="property-card-location">{getLocationString()}</p>
+        <p className="property-card-location">
+          <MapPin size={15} /> {getLocationString()}
+        </p>
         
         <div className="property-card-details">
           <span className="property-card-detail">
@@ -83,19 +95,29 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
 
         <div className="property-card-amenities">
           {property.has_wifi && (
-            <span className="property-card-amenity" title="WiFi">📶</span>
+            <span className="property-card-amenity" title="WiFi">
+              <Wifi size={16} />
+            </span>
           )}
           {property.has_parking && (
-            <span className="property-card-amenity" title="Parking">🅿️</span>
+            <span className="property-card-amenity" title="Parking">
+              <Car size={16} />
+            </span>
           )}
           {property.has_ac && (
-            <span className="property-card-amenity" title="Air Conditioning">❄️</span>
+            <span className="property-card-amenity" title="Air Conditioning">
+              <Snowflake size={16} />
+            </span>
           )}
           {property.has_heating && (
-            <span className="property-card-amenity" title="Heating">🔥</span>
+            <span className="property-card-amenity" title="Heating">
+              <Flame size={16} />
+            </span>
           )}
           {property.has_elevator && (
-            <span className="property-card-amenity" title="Elevator">🛗</span>
+            <span className="property-card-amenity" title="Elevator">
+              <ArrowUpDown size={16} />
+            </span>
           )}
         </div>
 

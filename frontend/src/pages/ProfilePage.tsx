@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Lock, Calendar, Heart, House } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { EmptyState } from '../components/EmptyState'
 import { Link } from 'react-router-dom'
@@ -80,7 +81,7 @@ export function ProfilePage() {
       <div className="profile-page">
         <div className="container">
           <EmptyState
-            icon="🔒"
+            icon={<Lock size={40} />}
             title="Sign in required"
             message="Please sign in to view your profile."
             ctaText="Sign In"
@@ -299,16 +300,16 @@ export function ProfilePage() {
               <h2 className="profile-section-title">Quick Links</h2>
               <div className="profile-links">
                 <Link to="/bookings" className="profile-link">
-                  <span className="profile-link-icon">📅</span>
+                  <span className="profile-link-icon"><Calendar size={18} /></span>
                   <span className="profile-link-text">My Bookings</span>
                 </Link>
                 <Link to="/favorites" className="profile-link">
-                  <span className="profile-link-icon">❤️</span>
+                  <span className="profile-link-icon"><Heart size={18} /></span>
                   <span className="profile-link-text">My Favorites</span>
                 </Link>
                 {canUsePartnerPanel(user) && (
                   <Link to="/partner" className="profile-link">
-                    <span className="profile-link-icon">🏠</span>
+                    <span className="profile-link-icon"><House size={18} /></span>
                     <span className="profile-link-text">Partner Dashboard</span>
                   </Link>
                 )}
