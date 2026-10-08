@@ -288,7 +288,7 @@ export function PartnerDashboardPage() {
               <div className="property-card-footer">
                 <button
                   onClick={() => handlePropertySelect(property)}
-                  className="btn btn-primary"
+                  className="btn btn-secondary"
                   aria-label={`Manage ${propertyName(property)}`}
                 >
                   Manage

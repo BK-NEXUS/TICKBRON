@@ -128,7 +128,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
             </span>
             <span className="property-card-price-period">per night</span>
           </div>
-          <button className="btn btn-primary btn-small property-card-cta">
+          <button className="btn btn-secondary btn-small property-card-cta">
             View Details
           </button>
         </div>

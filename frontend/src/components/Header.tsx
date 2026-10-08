@@ -149,7 +149,7 @@ export function Header() {
                   <Link to="/login" className="btn btn-secondary btn-small">
                     Login
                   </Link>
-                  <Link to="/register" className="btn btn-primary btn-small">
+                  <Link to="/register" className="btn btn-tonal btn-small">
                     Sign Up
                   </Link>
                 </>

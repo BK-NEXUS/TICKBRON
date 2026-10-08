@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { SegmentedControl } from './SegmentedControl'
 import { adminAdapter, RegistrationStatistics } from '../adapters/adminAdapter'
 import { TopBookersLeaderboard } from './TopBookersLeaderboard'
 

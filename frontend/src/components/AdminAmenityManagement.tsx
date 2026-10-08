@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { SegmentedControl } from './SegmentedControl'
 import { 
   adminAdapter, 
   AdminAmenity, 
