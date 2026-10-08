@@ -2355,3 +2355,10 @@ Branch `feat/fe-buttons`. One button system in `index.css` ("Buttons"): the exis
 ### Found, not fixed
 - Status period selector, granularity selector and search sort are `<select>`s (period has 7+ options); turning them into segmented controls would change their tests, so they stay selects.
 - 46 raw `<button>` elements remain on purpose (widgets with their own look: nav items, status tiles, auth tabs and password toggles, header menu, currency/language selectors, gallery and calendar arrows, review stars, filter chips, breadcrumb links). 30 raw buttons were moved to the shared classes or SegmentedControl in this step (customer notes, pagination, sort toggle, wizard steps, filters, back buttons, error boundary).
+
+## Design system: login and register (frontend, 2026-10-08)
+Branch `feat/fe-auth-pages`. One centred card (max 440px inside `.container`, so 16px mobile gutter), 44px inputs with `--color-border-control`, visible focus, full-width primary pill with loading state (`Button`), sticky on small screens so it stays above the keyboard. New: `PasswordField` (show/hide toggle, now reachable by keyboard; it had `tabIndex=-1`), `AuthModeSwitch` (tabs "Log in" / "Register" navigating between `/login` and `/register`; labels chosen so existing queries for "Sign in" / "Create account" stay unique), login-method switch uses `SegmentedControl`. The render-time `navigate()` in both pages is now `<Navigate replace />` (React warning gone, test added).
+### Decision needed
+- Register asks for full name, email, phone, password and password confirmation, all required. The client wants name, phone and email as the required fields; password (+ confirmation) is extra. Fields were not added or removed.
+### Found, not fixed
+- Phone field still shows the flag emoji (step 4 allowlists `utils/phone.ts` until the SVG country selector exists).

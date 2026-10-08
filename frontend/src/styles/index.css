@@ -802,6 +802,15 @@ table .btn {
   overflow-x: auto;
 }
 
+.segmented--full {
+  display: flex;
+  width: 100%;
+}
+
+.segmented--full .segmented-item {
+  flex: 1;
+}
+
 .segmented-item {
   display: inline-flex;
   align-items: center;
@@ -821,7 +830,12 @@ table .btn {
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.segmented-item:hover {
+.segmented-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.segmented-item:hover:not(:disabled) {
   background-color: var(--color-tint);
   color: var(--color-text-primary);
 }
@@ -5565,33 +5579,30 @@ table .btn {
   border-right-color: var(--color-deep-ink);
 }
 
-/* Auth Pages */
+/* Auth Pages: one centred card, gutter comes from .container */
 .auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-md);
+  padding-block: var(--spacing-xl) var(--spacing-3xl);
   background:
     radial-gradient(800px 400px at 50% -10%, rgba(220, 185, 105, 0.18), transparent 60%),
     linear-gradient(160deg, var(--color-cream), var(--color-background-alt) 60%, #EAE2D5);
 }
 
 .auth-container {
-  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  max-width: 440px;
   width: 100%;
-  margin: 0 auto;
+  margin-inline: auto;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-top: 3px solid var(--color-gold);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-xl);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: var(--spacing-xl);
 }
 
 .auth-title {
@@ -5609,11 +5620,10 @@ table .btn {
 }
 
 .auth-error {
-  background-color: rgba(176, 38, 38, 0.1);
+  background-color: rgba(176, 38, 38, 0.08);
   color: var(--color-error);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-error);
 }
@@ -5622,7 +5632,6 @@ table .btn {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
 }
 
 .auth-field {
@@ -5639,8 +5648,9 @@ table .btn {
 
 .auth-input {
   width: 100%;
-  padding: var(--spacing-md);
-  border: 1px solid var(--color-border);
+  min-height: 44px;
+  padding: var(--spacing-12) var(--spacing-md);
+  border: 1px solid var(--color-border-control);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
@@ -5655,13 +5665,13 @@ table .btn {
 }
 
 .auth-input:hover:not(:disabled):not(:focus) {
-  border-color: var(--color-gold);
+  border-color: var(--color-text-primary);
 }
 
-.auth-input:focus {
-  outline: none;
-  border-color: var(--color-pomegranate);
-  box-shadow: var(--shadow-focus);
+.auth-input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-color: var(--color-focus);
 }
 
 .auth-input:disabled {
@@ -5677,43 +5687,26 @@ table .btn {
 }
 
 .auth-password-field .auth-input {
-  padding-right: 46px;
+  padding-right: 52px;
 }
 
 .auth-password-toggle {
   position: absolute;
-  right: var(--spacing-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: none;
-  background: none;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
-}
-
-.auth-password-toggle:hover:not(:disabled) {
-  color: var(--color-pomegranate);
-  background-color: rgba(188, 156, 89, 0.12);
-}
-
-.auth-password-toggle:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  right: var(--spacing-xs);
+  color: var(--color-text-secondary);
 }
 
 .auth-hint {
   font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
+/* Stays reachable above the on-screen keyboard on small screens */
 .auth-submit {
-  margin-top: var(--spacing-md);
+  position: sticky;
+  bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+  z-index: 1;
 }
 
 .auth-footer {
@@ -5729,51 +5722,15 @@ table .btn {
 }
 
 .auth-link {
-  color: var(--color-pomegranate);
-  text-decoration: none;
+  color: var(--color-gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   font-weight: var(--font-weight-medium);
   transition: color var(--transition-fast);
 }
 
 .auth-link:hover {
-  color: var(--color-primary-dark);
-  text-decoration: underline;
-}
-
-.auth-tabs {
-  display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.auth-tab {
-  flex: 1;
-  padding: var(--spacing-md);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.auth-tab:hover {
   color: var(--color-text-primary);
-  background-color: var(--color-background-alt);
-}
-
-.auth-tab.active {
-  color: var(--color-pomegranate);
-  border-bottom-color: var(--color-gold-bright);
-  font-weight: var(--font-weight-semibold);
-}
-
-.auth-tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .auth-test-mode {
@@ -5781,7 +5738,6 @@ table .btn {
   color: var(--color-cloud-white);
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-md);
   text-align: center;
 }
 
@@ -5794,24 +5750,7 @@ table .btn {
 }
 
 .auth-resend {
-  background: none;
-  border: none;
-  color: var(--color-pomegranate);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  padding: var(--spacing-sm);
-  text-decoration: underline;
-  margin-top: var(--spacing-sm);
-  transition: color var(--transition-fast);
-}
-
-.auth-resend:hover {
-  color: var(--color-primary-dark);
-}
-
-.auth-resend:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+  align-self: center;
 }
 
 /* Header User Menu */

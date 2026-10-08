@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { EyeOff, Eye } from 'lucide-react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Button } from '../components/Button'
+import { PasswordField } from '../components/PasswordField'
+import { AuthModeSwitch } from '../components/AuthModeSwitch'
 
 export function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,8 +17,6 @@ export function RegisterPage() {
     password: '',
     password_confirm: '',
   })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
@@ -26,9 +26,7 @@ export function RegisterPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || '/'
-    navigate(from, { replace: true })
-    return null
+    return <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +76,8 @@ export function RegisterPage() {
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
+          <AuthModeSwitch mode="register" disabled={isLoading} />
+
           <div className="auth-header">
             <h1 className="auth-title">Create Account</h1>
             <p className="auth-subtitle">Join TICKBRON to book amazing properties</p>
@@ -143,30 +143,15 @@ export function RegisterPage() {
               <label htmlFor="password" className="auth-label">
                 Password
               </label>
-              <div className="auth-password-field">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="auth-password-toggle"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  aria-pressed={showPassword}
-                  disabled={isLoading}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <PasswordField
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="new-password"
+              />
               <p className="auth-hint">Must be at least 12 characters</p>
             </div>
 
@@ -174,39 +159,22 @@ export function RegisterPage() {
               <label htmlFor="password_confirm" className="auth-label">
                 Confirm Password
               </label>
-              <div className="auth-password-field">
-                <input
-                  id="password_confirm"
-                  name="password_confirm"
-                  type={showPasswordConfirm ? 'text' : 'password'}
-                  className="auth-input"
-                  value={formData.password_confirm}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="auth-password-toggle"
-                  onClick={() => setShowPasswordConfirm((visible) => !visible)}
-                  aria-label={showPasswordConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                  aria-pressed={showPasswordConfirm}
-                  disabled={isLoading}
-                  tabIndex={-1}
-                >
-                  {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <PasswordField
+                id="password_confirm"
+                name="password_confirm"
+                value={formData.password_confirm}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="new-password"
+                showLabel="Show confirm password"
+                hideLabel="Hide confirm password"
+              />
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-full auth-submit"
-              disabled={isLoading}
-            >
+            <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Create Account'}
-            </button>
+            </Button>
           </form>
 
           <div className="auth-footer">

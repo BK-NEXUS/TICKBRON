@@ -19,6 +19,9 @@ interface SegmentedControlProps<T extends string> {
   /** tabs: a tablist whose arrow keys also select; toggle: a group of pressed buttons */
   mode?: 'tabs' | 'toggle'
   className?: string
+  /** Stretch over the full width, options share it equally */
+  fullWidth?: boolean
+  disabled?: boolean
 }
 
 const MOVES: Record<string, (index: number, count: number) => number> = {
@@ -30,7 +33,7 @@ const MOVES: Record<string, (index: number, count: number) => number> = {
 
 /** White pill container with the active option as a tinted pill. */
 export function SegmentedControl<T extends string>({
-  options, value, onChange, mode = 'toggle', className, 'aria-label': ariaLabel,
+  options, value, onChange, mode = 'toggle', className, fullWidth, disabled, 'aria-label': ariaLabel,
 }: SegmentedControlProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const isTabs = mode === 'tabs'
@@ -46,7 +49,7 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div
-      className={['segmented', className].filter(Boolean).join(' ')}
+      className={['segmented', fullWidth && 'segmented--full', className].filter(Boolean).join(' ')}
       role={isTabs ? 'tablist' : 'group'}
       aria-label={ariaLabel}
     >
@@ -60,6 +63,7 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             ref={node => { refs.current[index] = node }}
             type="button"
+            disabled={disabled}
             className={itemClass}
             aria-label={option.ariaLabel}
             {...(isTabs

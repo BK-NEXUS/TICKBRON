@@ -1,19 +1,26 @@
 import { useState } from 'react'
-import { EyeOff, Eye } from 'lucide-react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Button } from '../components/Button'
+import { PasswordField } from '../components/PasswordField'
+import { SegmentedControl, type SegmentedOption } from '../components/SegmentedControl'
+import { AuthModeSwitch } from '../components/AuthModeSwitch'
 
 type LoginMethod = 'password' | 'phone'
+
+const LOGIN_METHODS: SegmentedOption<LoginMethod>[] = [
+  { value: 'password', label: 'Email & Password' },
+  { value: 'phone', label: 'Phone & SMS Code' },
+]
 
 export function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [otpRequested, setOtpRequested] = useState(false)
@@ -27,9 +34,7 @@ export function LoginPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || '/'
-    navigate(from, { replace: true })
-    return null
+    return <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
   }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -108,31 +113,21 @@ export function LoginPage() {
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
+          <AuthModeSwitch mode="login" disabled={isLoading} />
+
           <div className="auth-header">
             <h1 className="auth-title">Welcome Back</h1>
             <p className="auth-subtitle">Sign in to your TICKBRON account</p>
           </div>
 
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={`auth-tab ${loginMethod === 'password' ? 'active' : ''}`}
-              onClick={() => setLoginMethod('password')}
-              aria-pressed={loginMethod === 'password'}
-              disabled={isLoading}
-            >
-              Email & Password
-            </button>
-            <button
-              type="button"
-              className={`auth-tab ${loginMethod === 'phone' ? 'active' : ''}`}
-              onClick={() => setLoginMethod('phone')}
-              aria-pressed={loginMethod === 'phone'}
-              disabled={isLoading}
-            >
-              Phone & SMS Code
-            </button>
-          </div>
+          <SegmentedControl<LoginMethod>
+            fullWidth
+            disabled={isLoading}
+            aria-label="Login method"
+            options={LOGIN_METHODS}
+            value={loginMethod}
+            onChange={setLoginMethod}
+          />
 
           {error && (
             <div className="auth-error" role="alert">
@@ -162,38 +157,19 @@ export function LoginPage() {
                 <label htmlFor="password" className="auth-label">
                   Password
                 </label>
-                <div className="auth-password-field">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="auth-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className="auth-password-toggle"
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    aria-pressed={showPassword}
-                    disabled={isLoading}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+                <PasswordField
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                />
               </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary btn-full auth-submit"
-                disabled={isLoading}
-              >
+              <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign In'}
-              </button>
+              </Button>
             </form>
           ) : (
             <form className="auth-form" onSubmit={otpRequested ? handleOTPSubmit : handleRequestOTP}>
@@ -212,13 +188,9 @@ export function LoginPage() {
               </div>
 
               {!otpRequested ? (
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-full auth-submit"
-                  disabled={isLoading}
-                >
+                <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
                   {isLoading ? 'Sending code...' : 'Send Code'}
-                </button>
+                </Button>
               ) : (
                 <>
                   <div className="auth-field">
@@ -246,22 +218,13 @@ export function LoginPage() {
                     </div>
                   )}
 
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-full auth-submit"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
                     {isLoading ? 'Verifying...' : 'Verify & Sign In'}
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
-                    className="btn btn-link auth-resend"
-                    onClick={handleResendOTP}
-                    disabled={isLoading}
-                  >
+                  <Button variant="link" className="auth-resend" onClick={handleResendOTP} disabled={isLoading}>
                     Resend Code
-                  </button>
+                  </Button>
                 </>
               )}
             </form>
