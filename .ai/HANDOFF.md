@@ -2340,3 +2340,10 @@ Branch `feat/fe-redesign-base`. Cherry-picked the visual commits of `origin/feat
 
 ### To review later
 - 6a1a552 (G5 geography adapter methods and public geography adapter) from the same branch: not design, deliberately not taken.
+
+## Design system: tokens and container (frontend, 2026-10-08)
+Branch `feat/fe-design-tokens`. `src/styles/tokens.css` (imported first in `main.tsx`) now holds every token: radii 8/12/16/24/pill, two-layer ink-tinted shadows plus `--shadow-brand`, spacing scale, `--container-max` 1280px / `--container-wide` 1440px, responsive `--gutter` (16/24/32), `--color-border-control` (3:1 control borders) and `--color-focus`. A dark theme needs only a second set of the colour and shadow tokens.
+- The one page wrapper is the `.container` class (the `Container` component renders it); `container-large-desktop` is the 1440px variant used by the admin and partner dashboards. Header, footer, breadcrumbs and all pages render inside it. Wide tables scroll in `.table-scroll` / their own overflow wrappers.
+- `env(safe-area-inset-*)` added to `.header` and `.mobile-bottom-navigation` (it did not exist before); `viewport-fit=cover` set in `index.html`.
+- Tests: WCAG contrast of the token pairs, container rule, layout/page wrappers.
+- `src/fonts.test.ts` reads the font tokens from `tokens.css` now (they moved; assertions unchanged).

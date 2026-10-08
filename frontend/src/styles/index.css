@@ -1,123 +1,4 @@
-/* TickBron Design System - fonts are self-hosted via @fontsource (imported in main.tsx) */
-
-:root {
-  /* TICKBRON brand palette (measured from the client logo, 2026-09-25).
-     Legacy token names are kept so components need no changes.
-     Contrast (WCAG 2.1): see .ai/checkpoints/frontend_brand.md */
-  --color-gold-bright: #DCB969;   /* fills only: never text on light backgrounds */
-  --color-gold: #BC9C59;          /* decorative only: borders, bars, tints */
-  --color-gold-dark: #715A2C;     /* text-safe gold: links, accents, selected states */
-  --color-ink: #3E382D;
-  --color-cream: #F2EDE7;
-
-  --color-registan-teal: #4F4637;   /* secondary: warm dark ink */
-  --color-deep-ink: var(--color-ink);
-  --color-pomegranate: var(--color-gold-dark);
-  --color-saffron: #7D5518;         /* warning / pending: dark amber */
-  --color-chalk-stone: var(--color-cream);
-  --color-cloud-white: #FFFFFF;
-  --color-hairline: #E2D8C8;
-  --color-alert-red: #B02626;
-  --color-sprout-green: #386D4D;
-
-  /* Legacy color mapping for backward compatibility */
-  --color-primary: var(--color-gold-bright);
-  --color-primary-hover: #C9AD6E;
-  --color-primary-dark: #5A4722;
-  --color-primary-light: #E8D29D;
-  --color-on-primary: var(--color-ink);
-
-  --color-secondary: var(--color-registan-teal);
-  --color-secondary-dark: #2B261E;
-  --color-secondary-light: #6B6150;
-
-  --color-text-primary: var(--color-deep-ink);
-  --color-text-secondary: #655D4F;
-  --color-text-tertiary: #726858;
-
-  --color-background: var(--color-cloud-white);
-  --color-background-alt: var(--color-chalk-stone);
-  --color-border: var(--color-hairline);
-
-  --color-success: var(--color-sprout-green);
-  --color-warning: var(--color-saffron);
-  --color-error: var(--color-alert-red);
-
-  /* Spacing */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  --spacing-3xl: 64px;
-  
-  /* Typography - TickBron Design System */
-  --font-family-heading: 'PT Serif', Georgia, 'Times New Roman', serif;
-  --font-family-body: 'PT Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  --font-family-base: var(--font-family-body);
-  
-  /* Type Scale */
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 24px;
-  --font-size-2xl: 32px;
-  --font-size-3xl: 48px;
-  --font-size-4xl: 64px;
-  
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
-  
-  /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
-  
-  /* Shadows (layered for depth; brand-tinted, subtle) */
-  --shadow-xs: 0 1px 2px rgba(62, 56, 45, 0.06);
-  --shadow-sm: 0 1px 3px rgba(62, 56, 45, 0.08), 0 1px 2px rgba(62, 56, 45, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(62, 56, 45, 0.08), 0 2px 4px -2px rgba(62, 56, 45, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(62, 56, 45, 0.1), 0 4px 6px -4px rgba(62, 56, 45, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(62, 56, 45, 0.12), 0 8px 10px -6px rgba(62, 56, 45, 0.06);
-  --shadow-2xl: 0 25px 50px -12px rgba(62, 56, 45, 0.22);
-  --shadow-focus: 0 0 0 3px rgba(188, 156, 89, 0.35);       /* gold focus ring */
-  --shadow-focus-error: 0 0 0 3px rgba(176, 38, 38, 0.28);   /* error focus ring */
-  --shadow-card-hover: 0 12px 24px -8px rgba(62, 56, 45, 0.16), 0 4px 8px -4px rgba(62, 56, 45, 0.08);
-
-  /* Transitions */
-  --transition-fast: 150ms ease-in-out;
-  --transition-base: 200ms ease-in-out;
-  --transition-slow: 300ms ease-in-out;
-  --transition-transform: 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  
-  /* Z-index */
-  --z-dropdown: 1000;
-  --z-sticky: 1020;
-  --z-fixed: 1030;
-  --z-modal-backdrop: 1040;
-  --z-modal: 1050;
-  --z-popover: 1060;
-  --z-tooltip: 1070;
-
-  /* Layout */
-  --container-max: 1200px;
-  --container-narrow: 760px;
-  --header-height: 72px;
-
-  /* Focus ring (WCAG 2.4.7) */
-  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-gold-dark);
-  --focus-ring-inset: inset 0 0 0 2px var(--color-gold-dark);
-}
+/* TickBron design system: components and layout. Tokens live in tokens.css; fonts are self-hosted via @fontsource (imported in main.tsx) */
 
 /* Reset and Base Styles */
 *,
@@ -210,10 +91,12 @@ body {
   flex-direction: column;
 }
 
+/* The one page wrapper: every page and shared layout renders its content inside it */
 .container {
   width: 100%;
-  margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
 .container-mobile {
@@ -225,15 +108,25 @@ body {
 }
 
 .container-desktop {
-  max-width: 1439px;
+  max-width: var(--container-max);
 }
 
 .container-large-desktop {
-  max-width: 1920px;
+  max-width: var(--container-wide);
+}
+
+.container-narrow {
+  max-width: var(--container-narrow);
 }
 
 .container-full {
-  max-width: 100%;
+  max-width: none;
+}
+
+/* Wide tables scroll inside their own wrapper, never the page */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Header */
@@ -244,6 +137,8 @@ body {
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
   z-index: var(--z-sticky);
 }
 
@@ -252,9 +147,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  max-width: 1280px;
-  margin: 0 auto;
+  padding-block: var(--spacing-md);
 }
 
 .header-logo {
@@ -839,7 +732,7 @@ body {
   z-index: 1;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding-inline: var(--gutter);
 }
 
 .hero-eyebrow {
@@ -2100,12 +1993,8 @@ body {
 /* Responsive Design - TICKBRON Plan V4 Breakpoints */
 /* 320–767px: Mobile */
 @media (max-width: 767px) {
-  .container {
-    padding: 0 var(--spacing-md);
-  }
-  
   .header-container {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding-block: var(--spacing-sm);
   }
   
   .header-mobile-toggle {
@@ -2220,7 +2109,7 @@ body {
 /* 768–1023px: Tablet */
 @media (min-width: 768px) and (max-width: 1023px) {
   .header-container {
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding-block: var(--spacing-sm);
   }
   
   .header-mobile-toggle {
@@ -2352,10 +2241,6 @@ body {
   .header-language-selector,
   .header-currency-selector {
     display: block;
-  }
-  
-  .header-container {
-    max-width: 1920px;
   }
   
   .hero-title {
@@ -4713,6 +4598,8 @@ body {
   border-top: 1px solid var(--color-border);
   z-index: var(--z-fixed);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 
 .mobile-bottom-nav-list {
