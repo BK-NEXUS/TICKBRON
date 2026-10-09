@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
+import { StarIcon } from '../components/StarIcon'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -215,7 +216,7 @@ export function PropertyDetailPage() {
             
             {property.rating && (
               <div className="property-detail-rating">
-                <span className="property-detail-rating-value">★ {property.rating.toFixed(1)}</span>
+                <span className="property-detail-rating-value"><StarIcon /> {property.rating.toFixed(1)}</span>
                 <span className="property-detail-reviews">({property.review_count} reviews)</span>
               </div>
             )}

@@ -221,3 +221,10 @@ textarea.form-input {
 .bookings-table thead {
   border-bottom-width: 1px;
 }
+
+/* Rating star icon (StarIcon): sits on the text baseline in every rating row */
+.star-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -2px;
+}

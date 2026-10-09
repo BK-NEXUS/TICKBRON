@@ -2394,3 +2394,6 @@ Branch `claude/loyha-organish-22tsk4`. Plan: `.ai/PLAN_R5.md`. Frontend only, no
 
 ## Language and currency on phones (frontend, 2026-10-09)
 `MobileMenu` now has two `SegmentedControl`s (UZ/RU/EN with the native name as accessible name, UZS/USD) between the links and the Login/Sign Up footer; choosing keeps the menu open. Its title, links, close button and auth buttons use `t()` (5 new `menu.*` keys in uz/ru/en). Checked in Chromium at 390px (ru). Tests: 4 new in `MobileMenu.test.tsx`; no assertion changed.
+
+## Star icon instead of the star character (frontend, 2026-10-09)
+`StarIcon` (lucide Star, filled, `currentColor`) replaces the star character in 10 places (cards, property header and page, reviews, rating breakdown, review form, search filter, nearby places, dining). `noEmoji.test.ts` passes again (it failed on master). Test assertions that looked for the star text now look for `.star-icon` (same intent: rating shown, nothing shown without a rating, 5 stars per review). Not checked visually in a browser beyond the header.

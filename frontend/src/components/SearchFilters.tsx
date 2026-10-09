@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AmenityIcon } from './AmenityIcon'
 import { CoachMark } from './CoachMark'
 import { FEATURE_OPTIONS, FilterState, RATING_OPTIONS, hasActiveFilters } from '../utils/searchFilters'
+import { StarIcon } from './StarIcon'
 
 export type { FilterState } from '../utils/searchFilters'
 
@@ -177,7 +178,7 @@ export function SearchFilters({
                   className="search-filter-input"
                   aria-label={`Rating ${option.label}`}
                 />
-                <span className="search-filter-label">★ {option.label}</span>
+                <span className="search-filter-label"><StarIcon /> {option.label}</span>
               </label>
             ))}
           </div>

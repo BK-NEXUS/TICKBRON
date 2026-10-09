@@ -1,4 +1,5 @@
 import { Restaurant } from '../adapters/propertyAdapter'
+import { StarIcon } from './StarIcon'
 
 interface DiningRestaurantsProps {
   restaurants?: Restaurant[]
@@ -55,7 +56,7 @@ export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) 
             <div className="dining-restaurant-item-details">
               {restaurant.rating && (
                 <div className="dining-restaurant-item-rating">
-                  <span className="dining-restaurant-item-rating-value">★ {restaurant.rating.toFixed(1)}</span>
+                  <span className="dining-restaurant-item-rating-value"><StarIcon /> {restaurant.rating.toFixed(1)}</span>
                 </div>
               )}
               

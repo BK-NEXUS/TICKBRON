@@ -27,7 +27,7 @@ describe('RatingBreakdown', () => {
   it('should render overall rating stars', () => {
     render(<RatingBreakdown propertyScores={mockPropertyScores} />)
 
-    const stars = screen.getAllByText('★')
+    const stars = document.querySelectorAll('.rating-breakdown-star .star-icon')
     expect(stars).toHaveLength(5)
   })
 

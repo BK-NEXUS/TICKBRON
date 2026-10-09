@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { accountAdapter, CreateReviewRequest } from '../adapters/accountAdapter'
+import { StarIcon } from './StarIcon'
 
 interface ReviewFormProps {
   propertyId: number
@@ -33,7 +34,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
             aria-label={`${label} ${star} stars`}
             aria-pressed={star <= value}
           >
-            ★
+            <StarIcon />
           </button>
         ))}
       </div>

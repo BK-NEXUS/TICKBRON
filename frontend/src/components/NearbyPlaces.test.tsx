@@ -72,9 +72,9 @@ describe('NearbyPlaces', () => {
   it('renders place ratings when available', () => {
     render(<NearbyPlaces places={mockPlaces} />)
     
-    expect(screen.getByText('★ 4.8')).toBeInTheDocument()
-    expect(screen.getByText('★ 4.5')).toBeInTheDocument()
-    expect(screen.getByText('★ 4.7')).toBeInTheDocument()
+    expect(screen.getByText('4.8').querySelector('.star-icon')).not.toBeNull()
+    expect(screen.getByText('4.5').querySelector('.star-icon')).not.toBeNull()
+    expect(screen.getByText('4.7').querySelector('.star-icon')).not.toBeNull()
   })
 
   it('renders place addresses when available', () => {
@@ -106,7 +106,7 @@ describe('NearbyPlaces', () => {
     render(<NearbyPlaces places={placesWithoutRating} />)
     
     expect(screen.getByText('Unknown Place')).toBeInTheDocument()
-    expect(screen.queryByText(/★/)).not.toBeInTheDocument()
+    expect(document.querySelector('.star-icon')).toBeNull()
   })
 
   it('handles places without address', () => {

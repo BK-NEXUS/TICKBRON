@@ -1,5 +1,6 @@
 import { Property } from '../adapters/propertyAdapter'
 import { FavoriteButton } from './FavoriteButton'
+import { StarIcon } from './StarIcon'
 
 interface PropertyDetailHeaderProps {
   property: Property
@@ -32,7 +33,7 @@ export function PropertyDetailHeader({ property }: PropertyDetailHeaderProps) {
             
             {property.rating && (
               <div className="property-detail-header-rating">
-                <span className="property-detail-header-rating-value">★ {rating.toFixed(1)}</span>
+                <span className="property-detail-header-rating-value"><StarIcon /> {rating.toFixed(1)}</span>
                 <span className="property-detail-header-reviews">({reviewCount} reviews)</span>
               </div>
             )}

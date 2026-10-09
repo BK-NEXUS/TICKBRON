@@ -1,4 +1,5 @@
 import { PropertyScores } from '../adapters/accountAdapter'
+import { StarIcon } from './StarIcon'
 
 interface RatingBreakdownProps {
   propertyScores: PropertyScores
@@ -48,7 +49,7 @@ export function RatingBreakdown({ propertyScores }: RatingBreakdownProps) {
                 key={star}
                 className={`rating-breakdown-star ${star <= Math.round(average_rating) ? 'rating-breakdown-star--active' : ''}`}
               >
-                ★
+                <StarIcon />
               </span>
             ))}
           </span>

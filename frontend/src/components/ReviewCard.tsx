@@ -1,4 +1,5 @@
 import { Review } from '../adapters/accountAdapter'
+import { StarIcon } from './StarIcon'
 
 interface ReviewCardProps {
   review: Review
@@ -13,7 +14,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
             key={star}
             className={`review-card-star ${star <= rating ? 'review-card-star--active' : ''}`}
           >
-            ★
+            <StarIcon />
           </span>
         ))}
       </div>

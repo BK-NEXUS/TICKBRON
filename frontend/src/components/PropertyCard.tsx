@@ -2,6 +2,7 @@ import { Property } from '../adapters/propertyAdapter'
 import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
+import { StarIcon } from './StarIcon'
 
 interface PropertyCardProps {
   property: Property
@@ -69,7 +70,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         <FavoriteButton propertyId={property.id} propertyName={translation.name} />
         {rating > 0 && (
           <div className="property-card-rating">
-            <span className="property-card-rating-value">★ {rating.toFixed(1)}</span>
+            <span className="property-card-rating-value"><StarIcon /> {rating.toFixed(1)}</span>
             <span className="property-card-reviews">({reviewCount})</span>
           </div>
         )}

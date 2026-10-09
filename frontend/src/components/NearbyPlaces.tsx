@@ -1,4 +1,5 @@
 import { NearbyPlace } from '../adapters/propertyAdapter'
+import { StarIcon } from './StarIcon'
 
 interface NearbyPlacesProps {
   places?: NearbyPlace[]
@@ -39,7 +40,7 @@ export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
             
             {place.rating && (
               <div className="nearby-place-item-rating">
-                <span className="nearby-place-item-rating-value">★ {place.rating.toFixed(1)}</span>
+                <span className="nearby-place-item-rating-value"><StarIcon /> {place.rating.toFixed(1)}</span>
               </div>
             )}
             

@@ -77,7 +77,7 @@ describe('PropertyCard', () => {
   it('displays rating when available', () => {
     render(<PropertyCard property={mockProperty} />)
 
-    expect(screen.getByText('★ 4.8')).toBeInTheDocument()
+    expect(screen.getByText('4.8').querySelector('.star-icon')).not.toBeNull()
     expect(screen.getByText('(127)')).toBeInTheDocument()
   })
 
@@ -85,7 +85,7 @@ describe('PropertyCard', () => {
     const propertyWithoutRating = { ...mockProperty, rating: undefined, review_count: undefined }
     render(<PropertyCard property={propertyWithoutRating} />)
 
-    expect(screen.queryByText('★')).not.toBeInTheDocument()
+    expect(document.querySelector('.star-icon')).toBeNull()
   })
 
   it('displays amenities icons', () => {
