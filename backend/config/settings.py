@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'admin_panel',
     'geography',
     'currency',
+    'promotions',
     
     # Third-party apps
     'rest_framework',
