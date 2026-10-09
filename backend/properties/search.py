@@ -305,34 +305,11 @@ class PropertySearchService:
             except ValueError:
                 raise ValueError(f"Invalid date format: {date_str}. Use YYYY-MM-DD format.")
     
-    def search(self, search_params):
-        """
-        Perform property search based on provided parameters.
-        
-        Args:
-            search_params: dict containing search parameters
-                - q: text search query
-                - location: location search (city, country)
-                - lat, lng, radius: geographic search
-                - min_price, max_price: price range
-                - min_guests, max_guests: guest capacity
-                - amenities: list of amenity IDs
-                - property_type: property type ID
-                - check_in, check_out: date range for availability
-                - sort: sorting method (relevance, price_asc, price_desc, rating, distance)
-                - page: page number
-                - page_size: results per page
-        
-        Returns:
-            dict with search results and metadata
-        
-        Raises:
-            ValueError: if search parameters are invalid
-        """
-        # Validate and sanitize search parameters
-        search_params = self._validate_search_params(search_params)
-        
-        queryset = self.base_queryset
+    def filtered_queryset(self, search_params):
+        """The searchable properties that match every filter, before sorting and paging."""
+        return self._apply_filters(self.base_queryset, self._validate_search_params(search_params))
+
+    def _apply_filters(self, queryset, search_params):
         
         # Apply text search
         if search_params.get('q'):
@@ -391,6 +368,37 @@ class PropertySearchService:
                 search_params['check_in'],
                 search_params['check_out']
             )
+        
+        return queryset
+    
+    def search(self, search_params):
+        """
+        Perform property search based on provided parameters.
+        
+        Args:
+            search_params: dict containing search parameters
+                - q: text search query
+                - location: location search (city, country)
+                - lat, lng, radius: geographic search
+                - min_price, max_price: price range
+                - min_guests, max_guests: guest capacity
+                - amenities: list of amenity IDs
+                - property_type: property type ID
+                - check_in, check_out: date range for availability
+                - sort: sorting method (relevance, price_asc, price_desc, rating, distance)
+                - page: page number
+                - page_size: results per page
+        
+        Returns:
+            dict with search results and metadata
+        
+        Raises:
+            ValueError: if search parameters are invalid
+        """
+        # Validate and sanitize search parameters
+        search_params = self._validate_search_params(search_params)
+        
+        queryset = self._apply_filters(self.base_queryset, search_params)
         
         # Apply sorting
         sort_method = search_params.get('sort', 'relevance')
