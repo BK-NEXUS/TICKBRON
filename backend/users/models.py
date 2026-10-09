@@ -7,6 +7,7 @@ import hmac
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 from common.models import BaseModel
 
@@ -15,6 +16,11 @@ class UserManager(BaseUserManager):
     """
     Custom user manager for email-based authentication.
     """
+    
+    @classmethod
+    def normalize_email(cls, email):
+        """Lowercase the whole address: Alice@x.uz and alice@x.uz are one account."""
+        return (email or '').strip().lower()
     
     def create_user(self, email, password=None, **extra_fields):
         """
@@ -115,11 +121,15 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(Lower('email'), name='users_email_lower_unique'),
+        ]
     
     def __str__(self):
         return self.email
     
     def save(self, *args, **kwargs):
+        self.email = UserManager.normalize_email(self.email)
         # Store a missing phone number as NULL so the unique constraint allows many
         if self.phone_number is not None:
             self.phone_number = self.phone_number.strip() or None

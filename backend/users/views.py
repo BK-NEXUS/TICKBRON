@@ -134,13 +134,13 @@ def login_view(request):
         password = serializer.validated_data['password']
         client_ip = get_client_ip(request)
         
-        user = User.objects.filter(email=email).first()
+        user = User.objects.filter(email__iexact=email).first()
         if user is None or lockout.is_locked(user, client_ip):
             # Hash anyway so the response time does not reveal which case this is
             make_password(password)
             return _login_failed_response()
         
-        authenticated_user = authenticate(request, username=email, password=password)
+        authenticated_user = authenticate(request, username=user.email, password=password)
         if authenticated_user is None or not authenticated_user.is_active:
             lockout.record_failure(user, client_ip)
             return _login_failed_response()

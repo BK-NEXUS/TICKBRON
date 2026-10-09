@@ -11,7 +11,8 @@ from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
 from users.serializers import (
-    UserSerializer, validate_new_password, validate_phone_number_format, validate_unique_phone_number
+    UserSerializer, validate_new_password, validate_phone_number_format, validate_unique_email,
+    validate_unique_phone_number
 )
 from admin_panel.models import InternalNote
 
@@ -121,6 +122,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     
     Super-admin only endpoint for direct hotel-owner account creation.
     """
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(required=False, allow_blank=True)
@@ -131,6 +133,9 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             'email', 'first_name', 'last_name', 'phone_number',
             'password', 'password_confirm'
         ]
+
+    def validate_email(self, value):
+        return validate_unique_email(User.objects.normalize_email(value))
 
     def validate_phone_number(self, value):
         """Optional; when given it must be a valid, unused number (stored as E.164)."""

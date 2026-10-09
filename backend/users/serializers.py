@@ -34,6 +34,13 @@ def validate_phone_number_format(value):
     return normalized
 
 
+def validate_unique_email(value):
+    """Reject an address already used by an account, ignoring letter case."""
+    if User.objects.filter(email__iexact=value).exists():
+        raise serializers.ValidationError("A user with this email already exists.")
+    return value
+
+
 def validate_unique_phone_number(value, instance=None):
     """
     Check phone number uniqueness after normalization.
@@ -76,6 +83,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration.
     """
+    # Declared so only validate_email checks uniqueness (the model validator is case-sensitive)
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     # Declared so the phone validation gives the only error (not the column's max_length)
@@ -91,10 +100,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
     
     def validate_email(self, value):
-        """Validate email format."""
-        validator = EmailFormatValidator()
-        validator.validate(value)
-        return value
+        """Validate format and uniqueness ignoring case (the field validator is case-sensitive)."""
+        EmailFormatValidator().validate(value)
+        return validate_unique_email(User.objects.normalize_email(value))
     
     def validate_phone_number(self, value):
         """Validate phone number format and uniqueness."""
