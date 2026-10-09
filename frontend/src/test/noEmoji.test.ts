@@ -11,11 +11,6 @@ const ALLOWED_SIGNS = /[©®™]/g
 // TODO: remove once the SVG country selector replaces the flag emoji
 const ALLOWED_FILES = new Set([
   'src/utils/phone.ts',
-  // TODO: the i18n session owns these two; remove when its language and currency selectors are done
-  'src/components/LanguageSelector.tsx',
-  'src/components/LanguageSelector.test.tsx',
-  'src/components/CurrencySelector.tsx',
-  'src/components/CurrencySelector.test.tsx',
 ])
 
 const SCANNED_EXTENSIONS = /\.(tsx?|css|html|json|svg)$/

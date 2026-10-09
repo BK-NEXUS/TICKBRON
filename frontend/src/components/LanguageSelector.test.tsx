@@ -3,56 +3,46 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { LanguageSelector } from './LanguageSelector'
 
 describe('LanguageSelector', () => {
-  it('renders the current language', () => {
-    render(<LanguageSelector currentLanguage="en" />)
+  it('renders the current language with an SVG flag, not an emoji', () => {
+    const { container } = render(<LanguageSelector currentLanguage="en" />)
     expect(screen.getByText('EN')).toBeInTheDocument()
-    expect(screen.getByText('🇺🇸')).toBeInTheDocument()
+    expect(container.querySelector('button svg.flag-icon')).not.toBeNull()
   })
 
-  it('opens dropdown when button is clicked', () => {
+  it('names the button after the current language', () => {
+    render(<LanguageSelector currentLanguage="ru" />)
+    expect(screen.getByRole('button', { name: 'Language: Русский' })).toBeInTheDocument()
+  })
+
+  it('offers exactly Uzbek, Russian and English', () => {
     render(<LanguageSelector currentLanguage="en" />)
-    const button = screen.getByRole('button')
-    fireEvent.click(button)
-    expect(screen.getByText('Español')).toBeInTheDocument()
-    expect(screen.getByText('Français')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button'))
+    expect(screen.getAllByRole('button').slice(1).map((b) => b.textContent)).toEqual(["O'zbekcha", 'Русский', 'English'])
   })
 
   it('calls onLanguageChange when a language is selected', () => {
     const handleChange = vi.fn()
     render(<LanguageSelector currentLanguage="en" onLanguageChange={handleChange} />)
-    
-    const button = screen.getByRole('button')
-    fireEvent.click(button)
-    
-    const spanishOption = screen.getByText('Español')
-    fireEvent.click(spanishOption)
-    
-    expect(handleChange).toHaveBeenCalledWith('es')
+    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByText('Русский'))
+    expect(handleChange).toHaveBeenCalledWith('ru')
   })
 
-  it('closes dropdown after selection', () => {
+  it('closes the dropdown after selection', () => {
     render(<LanguageSelector currentLanguage="en" />)
-    const button = screen.getByRole('button')
-    fireEvent.click(button)
-    
-    const spanishOption = screen.getByText('Español')
-    fireEvent.click(spanishOption)
-    
-    expect(screen.queryByText('Español')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByText('Русский'))
+    expect(screen.queryByText("O'zbekcha")).not.toBeInTheDocument()
   })
 
-  it('shows checkmark for selected language', () => {
+  it('marks the selected language', () => {
     render(<LanguageSelector currentLanguage="en" />)
-    const button = screen.getByRole('button')
-    fireEvent.click(button)
-    
-    expect(screen.getByText('✓')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button'))
+    expect(screen.getByText('English').closest('button')).toHaveAttribute('aria-current', 'true')
   })
 
   it('applies custom className', () => {
-    const { container } = render(
-      <LanguageSelector currentLanguage="en" className="custom-class" />
-    )
+    const { container } = render(<LanguageSelector currentLanguage="en" className="custom-class" />)
     expect(container.firstChild).toHaveClass('custom-class')
   })
 })

@@ -1,0 +1,22 @@
+import type { MessageKey } from './en'
+
+export const uz: Record<MessageKey, string> = {
+  'nav.home': 'Bosh sahifa',
+  'nav.properties': 'Mehmonxonalar',
+  'nav.about': 'Biz haqimizda',
+  'nav.help': 'Yordam',
+  'header.openMenu': 'Menyuni ochish',
+  'header.account': 'Hisob',
+  'header.login': 'Kirish',
+  'header.signUp': "Ro'yxatdan o'tish",
+  'header.signOut': 'Chiqish',
+  'header.myProfile': 'Mening profilim',
+  'header.myBookings': 'Mening bronlarim',
+  'header.favorites': 'Sevimlilar',
+  'header.partnerDashboard': 'Hamkor paneli',
+  'header.adminDashboard': 'Admin paneli',
+  'language.label': 'Til: {name}',
+  'currency.label': 'Valyuta: {name}',
+  'currency.UZS': "O'zbek so'mi",
+  'currency.USD': 'AQSh dollari',
+}

@@ -1,50 +1,42 @@
 import { useState } from 'react'
-
-// TODO: Language data will come from backend API when available
-// For now, this is a UI foundation with placeholder data
-const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-]
+import { Check, ChevronDown } from 'lucide-react'
+import { FlagIcon } from './FlagIcon'
+import { useI18n } from '../i18n/I18nContext'
+import { LANGUAGES, isLanguage, type Language } from '../i18n/options'
 
 interface LanguageSelectorProps {
-  currentLanguage?: string
-  onLanguageChange?: (languageCode: string) => void
+  currentLanguage?: Language
+  onLanguageChange?: (language: Language) => void
   className?: string
 }
 
-export function LanguageSelector({ 
-  currentLanguage = 'en', 
+export function LanguageSelector({
+  currentLanguage = 'uz',
   onLanguageChange,
-  className = '' 
+  className = '',
 }: LanguageSelectorProps) {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
-  const currentLang = LANGUAGES.find(lang => lang.code === currentLanguage) || LANGUAGES[0]
+  const current = LANGUAGES.find((language) => language.code === currentLanguage) ?? LANGUAGES[0]
 
-  const handleSelect = (languageCode: string) => {
-    if (onLanguageChange) {
-      onLanguageChange(languageCode)
-    }
+  const handleSelect = (code: string) => {
+    if (isLanguage(code)) onLanguageChange?.(code)
     setIsOpen(false)
   }
 
   return (
     <div className={`language-selector ${className}`}>
       <button
+        type="button"
         className="language-selector-button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-label={t('language.label', { name: current.name })}
       >
-        <span className="language-flag">{currentLang.flag}</span>
-        <span className="language-code">{currentLang.code.toUpperCase()}</span>
-        <span className="language-chevron">{isOpen ? '▲' : '▼'}</span>
+        <FlagIcon language={current.code} />
+        <span className="language-code" aria-hidden="true">{current.code.toUpperCase()}</span>
+        <ChevronDown className="language-chevron" size={14} aria-hidden="true" />
       </button>
 
       {isOpen && (
@@ -52,15 +44,15 @@ export function LanguageSelector({
           <div className="language-dropdown-list">
             {LANGUAGES.map((language) => (
               <button
+                type="button"
                 key={language.code}
-                className={`language-option ${language.code === currentLanguage ? 'language-option-active' : ''}`}
+                className={`language-option ${language.code === current.code ? 'language-option-active' : ''}`}
+                aria-current={language.code === current.code ? 'true' : undefined}
                 onClick={() => handleSelect(language.code)}
               >
-                <span className="language-flag">{language.flag}</span>
+                <FlagIcon language={language.code} />
                 <span className="language-name">{language.name}</span>
-                {language.code === currentLanguage && (
-                  <span className="language-check">✓</span>
-                )}
+                {language.code === current.code && <Check className="language-check" size={16} aria-hidden="true" />}
               </button>
             ))}
           </div>

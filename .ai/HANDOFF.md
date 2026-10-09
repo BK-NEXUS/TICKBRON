@@ -2379,3 +2379,16 @@ Branch `feat/fe-surfaces`. `src/styles/surfaces.css` (loaded after `index.css`, 
 ### Found, not fixed
 - Date inputs use the native picker; `DateRangeCalendar`/`AvailabilityCalendar` keep their own look.
 - Status components were only restyled through shared classes (no logic touched).
+
+## Languages foundation, R5 base (frontend, 2026-10-09)
+Branch `claude/loyha-organish-22tsk4`. Plan: `.ai/PLAN_R5.md`. Frontend only, no API change.
+- `src/i18n/`: `I18nProvider` + `useI18n()` -> `{ language, currency, setLanguage, setCurrency, t, formatMoney }`. uz/ru/en catalogs in `messages/` (a test checks every key and {placeholder} exists in all three). Choice kept in localStorage (`tickbron.language`, `tickbron.currency`), `<html lang>` follows. Defaults: browser language if uz/ru/en else uz; currency UZS. Outside the provider the hook gives English (isolated tests).
+- `formatMoney(amount, 'UZS'|'USD', language)`: "1 250 000 so'm" / "сум" / "UZS" (NBSP groups, whole sums), USD "$1,250.00". Display only, no conversion; the 28 existing `Intl.NumberFormat('en-US')` call sites are NOT migrated yet (frontend item 3).
+- `LanguageSelector` / `CurrencySelector`: only uz/ru/en and UZS/USD; flags are inline SVG (`FlagIcon`), lucide chevron/check. Their emoji allowlist entries in `noEmoji.test.ts` are removed.
+- First consumer: `Header` (nav, menu, buttons). Wrapped in `App.tsx`.
+### Changed test assertions
+- `LanguageSelector.test.tsx`, `CurrencySelector.test.tsx` rewritten for the new option lists and SVG flags (same scenarios: render, open, select, close, selected mark, className). `Header.test.tsx`: currency now shows `UZS` (new default, was the placeholder `USD`).
+### Found, not fixed
+- `noEmoji.test.ts` fails on master too: the star `★` in `DiningRestaurants.tsx:58` and `NearbyPlaces.tsx:42` (and their tests) matches the emoji regex.
+- Language and currency selectors are hidden on phones and `MobileMenu` has none, so a phone user cannot switch language yet.
+- Remaining i18n work: move the other strings to keys (8 chunks), migrate price formatting, USD display with approximate sum (needs R6 rate fields), E2E flow H, native-speaker review of uz/ru texts.

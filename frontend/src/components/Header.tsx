@@ -5,46 +5,35 @@ import { CurrencySelector } from './CurrencySelector'
 import { MobileMenu } from './MobileMenu'
 import { BrandLogo } from './BrandLogo'
 import { useAuth } from '../contexts/AuthContext'
+import type { MessageKey } from '../i18n/messages/en'
+import { useI18n } from '../i18n/I18nContext'
 import { canUseAdminPanel, canUsePartnerPanel } from '../utils/roles'
 
 interface NavLink {
-  label: string
+  labelKey: MessageKey
   href: string
 }
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Properties', href: '/search' },
-  { label: 'About', href: '/about' },
-  { label: 'Help', href: '/help' },
+  { labelKey: 'nav.home', href: '/' },
+  { labelKey: 'nav.properties', href: '/search' },
+  { labelKey: 'nav.about', href: '/about' },
+  { labelKey: 'nav.help', href: '/help' },
 ]
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState('en')
-  const [currentCurrency, setCurrentCurrency] = useState('USD')
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   
   const { user, isAuthenticated, logout } = useAuth()
+  const { t, language, setLanguage, currency, setCurrency } = useI18n()
   // Most profiles only have full_name since checkpoint 21
   const displayName =
     user?.full_name?.trim() ||
     [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
     user?.email ||
-    'Account'
+    t('header.account')
   const navigate = useNavigate()
-
-  const handleLanguageChange = (languageCode: string) => {
-    setCurrentLanguage(languageCode)
-    // TODO: Integrate with backend API when available
-    console.log('Language changed to:', languageCode)
-  }
-
-  const handleCurrencyChange = (currencyCode: string) => {
-    setCurrentCurrency(currencyCode)
-    // TODO: Integrate with backend API when available
-    console.log('Currency changed to:', currencyCode)
-  }
 
   const handleLogout = async () => {
     const response = await logout()
@@ -61,7 +50,7 @@ export function Header() {
           <button
             className="header-mobile-toggle"
             onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t('header.openMenu')}
             aria-expanded={isMobileMenuOpen}
           >
             <span className="hamburger-icon">
@@ -81,7 +70,7 @@ export function Header() {
           <nav className="header-nav">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} className="nav-link">
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             ))}
           </nav>
@@ -89,13 +78,13 @@ export function Header() {
           {/* Actions */}
           <div className="header-actions">
             <LanguageSelector
-              currentLanguage={currentLanguage}
-              onLanguageChange={handleLanguageChange}
+              currentLanguage={language}
+              onLanguageChange={setLanguage}
               className="header-language-selector"
             />
             <CurrencySelector
-              currentCurrency={currentCurrency}
-              onCurrencyChange={handleCurrencyChange}
+              currentCurrency={currency}
+              onCurrencyChange={setCurrency}
               className="header-currency-selector"
             />
             <div className="header-auth-buttons">
@@ -117,29 +106,29 @@ export function Header() {
                   {isUserMenuOpen && (
                     <div className="header-user-dropdown">
                       <Link to="/profile" className="header-user-dropdown-item">
-                        My Profile
+                        {t('header.myProfile')}
                       </Link>
                       <Link to="/bookings" className="header-user-dropdown-item">
-                        My Bookings
+                        {t('header.myBookings')}
                       </Link>
                       <Link to="/favorites" className="header-user-dropdown-item">
-                        Favorites
+                        {t('header.favorites')}
                       </Link>
                       {canUsePartnerPanel(user) && (
                         <Link to="/partner" className="header-user-dropdown-item">
-                          Partner Dashboard
+                          {t('header.partnerDashboard')}
                         </Link>
                       )}
                       {canUseAdminPanel(user) && (
                         <Link to="/admin" className="header-user-dropdown-item header-user-dropdown-item--admin">
-                          Admin Dashboard
+                          {t('header.adminDashboard')}
                         </Link>
                       )}
                       <button
                         onClick={handleLogout}
                         className="header-user-dropdown-item header-user-dropdown-item--logout"
                       >
-                        Sign Out
+                        {t('header.signOut')}
                       </button>
                     </div>
                   )}
@@ -147,10 +136,10 @@ export function Header() {
               ) : (
                 <>
                   <Link to="/login" className="btn btn-secondary btn-small">
-                    Login
+                    {t('header.login')}
                   </Link>
                   <Link to="/register" className="btn btn-tonal btn-small">
-                    Sign Up
+                    {t('header.signUp')}
                   </Link>
                 </>
               )}

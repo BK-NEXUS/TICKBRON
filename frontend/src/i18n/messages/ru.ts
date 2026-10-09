@@ -1,0 +1,22 @@
+import type { MessageKey } from './en'
+
+export const ru: Record<MessageKey, string> = {
+  'nav.home': 'Главная',
+  'nav.properties': 'Отели',
+  'nav.about': 'О нас',
+  'nav.help': 'Помощь',
+  'header.openMenu': 'Открыть меню',
+  'header.account': 'Аккаунт',
+  'header.login': 'Войти',
+  'header.signUp': 'Регистрация',
+  'header.signOut': 'Выйти',
+  'header.myProfile': 'Мой профиль',
+  'header.myBookings': 'Мои бронирования',
+  'header.favorites': 'Избранное',
+  'header.partnerDashboard': 'Панель партнёра',
+  'header.adminDashboard': 'Панель администратора',
+  'language.label': 'Язык: {name}',
+  'currency.label': 'Валюта: {name}',
+  'currency.UZS': 'Узбекский сум',
+  'currency.USD': 'Доллар США',
+}
