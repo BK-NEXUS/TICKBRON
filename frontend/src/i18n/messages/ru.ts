@@ -142,6 +142,8 @@ export const ru: Catalog = {
   'search.mapSoon': "Карта появится на следующем этапе.",
   'search.mapCount.one': "Сейчас на карте: {count} объект",
   'search.mapCount.other': "Сейчас на карте объектов: {count}",
+  'search.showFilters': "Показать фильтры",
+  'search.hideFilters': "Скрыть фильтры",
   'filters.title': "Фильтры",
   'filters.clearAll': "Сбросить всё",
   'filters.clearAllLabel': "Сбросить все фильтры",

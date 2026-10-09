@@ -140,6 +140,8 @@ export const uz: Catalog = {
   'search.mapSoon': "Xarita keyingi bosqichda qo'shiladi.",
   'search.mapCount.one': "Hozirgi ko'rinish: xaritada {count} ta obyekt",
   'search.mapCount.other': "Hozirgi ko'rinish: xaritada {count} ta obyekt",
+  'search.showFilters': "Filtrlarni ko'rsatish",
+  'search.hideFilters': "Filtrlarni yashirish",
   'filters.title': "Filtrlar",
   'filters.clearAll': "Hammasini tozalash",
   'filters.clearAllLabel': "Barcha filtrlarni tozalash",

@@ -138,6 +138,8 @@ export const en = {
   'search.mapSoon': "Map integration will be implemented in a future checkpoint.",
   'search.mapCount.one': "Current view: {count} property on map",
   'search.mapCount.other': "Current view: {count} properties on map",
+  'search.showFilters': "Show filters",
+  'search.hideFilters': "Hide filters",
   'filters.title': "Filters",
   'filters.clearAll': "Clear All",
   'filters.clearAllLabel': "Clear all filters",

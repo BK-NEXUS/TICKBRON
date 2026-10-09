@@ -9777,3 +9777,77 @@ table .btn {
     animation: none;
   }
 }
+
+/* ===== Search results (R10): banner on top, exactly two hotel columns at every width ===== */
+.search-results-promo .promo-carousel {
+  margin-bottom: var(--spacing-xl);
+}
+
+.search-results-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.search-results-filters-toggle {
+  display: none;
+}
+
+/* Phones: filters sit behind a button, the cards get compact so two fit in 390px */
+@media (max-width: 767px) {
+  .search-results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .search-results-filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .search-results-sidebar {
+    display: none;
+  }
+
+  .search-results-sidebar--open {
+    display: block;
+  }
+
+  .search-results-toolbar {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .search-results-grid .property-card-image {
+    height: 120px;
+  }
+
+  .search-results-grid .property-card-content {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    gap: var(--spacing-xs);
+  }
+
+  .search-results-grid .property-card-name {
+    font-size: var(--font-size-base);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .search-results-grid .property-card-details,
+  .search-results-grid .property-card-amenities,
+  .search-results-grid .property-card-cta {
+    display: none;
+  }
+
+  .search-results-grid .property-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .search-results-grid .property-card-rating {
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+}
