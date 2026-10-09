@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingPage } from './BookingPage'
@@ -879,6 +879,49 @@ describe('BookingPage', () => {
       expect(screen.getByText('Payme')).toBeInTheDocument()
       expect(screen.getByText('Click')).toBeInTheDocument()
       expect(screen.getByText('Visa')).toBeInTheDocument()
+    })
+
+    describe('card form (test mode)', () => {
+      afterEach(() => vi.unstubAllEnvs())
+
+      const toPaymentStep = async () => {
+        renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Continue to Payment'))
+        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+      }
+
+      it('shows the card form for Visa in test mode and keeps Pay disabled until the card is valid', async () => {
+        vi.stubEnv('VITE_PAYMENT_TEST_MODE', 'true')
+        await toPaymentStep()
+        fireEvent.click(screen.getByText('Visa').closest('.payment-method-card')!)
+
+        expect(screen.getByLabelText('Card number')).toBeInTheDocument()
+        const pay = screen.getByRole('button', { name: /Pay with Visa/ })
+        expect(pay).toBeDisabled()
+
+        fireEvent.change(screen.getByLabelText('Card number'), { target: { value: '4111111111111111' } })
+        fireEvent.change(screen.getByLabelText('Expiry (MM/YY)'), { target: { value: '1245' } })
+        fireEvent.change(screen.getByLabelText('CVV'), { target: { value: '123' } })
+        fireEvent.change(screen.getByLabelText('Name on card'), { target: { value: 'Alisher Navoiy' } })
+        expect(pay).toBeEnabled()
+      })
+
+      it('does not show the card form for Payme or when test mode is off', async () => {
+        vi.stubEnv('VITE_PAYMENT_TEST_MODE', 'true')
+        await toPaymentStep()
+        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
+        expect(screen.queryByLabelText('Card number')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Pay with Payme/ })).toBeEnabled()
+      })
+
+      it('shows no card form for Visa when test mode is off', async () => {
+        vi.stubEnv('VITE_PAYMENT_TEST_MODE', '')
+        await toPaymentStep()
+        fireEvent.click(screen.getByText('Visa').closest('.payment-method-card')!)
+        expect(screen.queryByLabelText('Card number')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Pay with Visa/ })).toBeEnabled()
+      })
     })
 
     it('should show payment processing state when payment is initiated', async () => {

@@ -2419,3 +2419,11 @@ All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages,
 ### Found, not fixed
 - Checked in Chromium (dark system setting, 1440px): home, login, search shell. NOT checked: pages with data (property cards, booking, partner and admin tables, Status charts) because no backend ran; raw colours remain in about 40 rules (status badges with their own pastel background and dark text, WhatsApp/Telegram button colours) and may need a pass.
 - 390px dark not checked.
+
+## Card form, test mode only (frontend, 2026-10-09)
+`CardForm` (number 16 digits + Luhn, expiry MM/YY not in the past and at most 20 years ahead, CVV 3 digits as a password field, name on card) with a visible "Test mode. Card details are not sent or stored" note. It appears in `BookingPage` only for Visa and only when `isCardTestMode()`: `VITE_PAYMENT_TEST_MODE=true` AND not a production build; the Pay button stays disabled until the card looks valid. The component reports only a valid/invalid flag to the page: the values are not passed up, put in the payment request, stored or logged (the payment API call is unchanged). Real mode: Payme/Click/Visa pages, never a card number on our site. `.env.example` documents the flag; set it together with backend `PAYMENT_TEST_MODE=True`.
+- Tests: 14 utils, 8 component, 3 env, 3 BookingPage. No existing assertion changed.
+### Found, not fixed
+- Not checked in a browser (the booking flow needs the backend). Texts are English only until the i18n string migration.
+- `BookingPage.tsx:234` `handleChildrenChange` is unused (lint error already on master).
+- The Visa button on the method list opens the card form only in test mode; in the other modes it still goes to the backend test flow as before.

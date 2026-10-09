@@ -6,6 +6,8 @@ import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../ada
 import { paymentAdapter, PaymentProvider, PaymentTransaction, PaymentStatus } from '../adapters/paymentAdapter'
 import { useAuth } from '../contexts/AuthContext'
 import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
+import { CardForm } from '../components/CardForm'
+import { isCardTestMode } from '../utils/paymentTestMode'
 import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
@@ -73,6 +75,7 @@ export function BookingPage() {
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<'details' | 'payment' | 'processing' | 'confirmation' | 'success' | 'failure'>('details')
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null)
+  const [cardValid, setCardValid] = useState(false)
   const [paymentTransaction, setPaymentTransaction] = useState<PaymentTransaction | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending')
   const [paymentError, setPaymentError] = useState<string | null>(null)
@@ -189,6 +192,8 @@ export function BookingPage() {
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
   const { formatMoney: formatAmount } = useI18n()
+  // The test card form stands in for the Visa page only while the backend runs in test payment mode
+  const needsCard = selectedProvider === 'visa' && isCardTestMode()
   const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
 
   /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
@@ -555,6 +560,8 @@ export function BookingPage() {
               disabled={submitting}
             />
 
+            {needsCard && <CardForm onValidityChange={setCardValid} disabled={submitting} />}
+
             {selectedProvider && (
               <div className="payment-method-actions">
                 {error && (
@@ -565,7 +572,7 @@ export function BookingPage() {
                 <button 
                   className="btn btn-primary btn-large"
                   onClick={handleConfirmBooking}
-                  disabled={submitting}
+                  disabled={submitting || (needsCard && !cardValid)}
                   aria-busy={submitting}
                 >
                   {submitting ? 'Processing...' : `Pay with ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)}`}
