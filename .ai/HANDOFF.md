@@ -2437,3 +2437,9 @@ All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages,
 ### Found, not fixed
 - 3 `react-refresh/only-export-components` warnings (`Breadcrumbs.tsx`, `Button.tsx`, `AuthContext.tsx`): they export a hook or helper next to a component; splitting files would change imports.
 - `npm audit` (18 findings, mostly dev tools) and the React Router 7 warnings were not touched.
+
+## Strings to keys, chunk 1: shell and auth (frontend, 2026-10-09)
+Footer, `AuthModeSwitch`, `PasswordField`, `LoginPage`, `RegisterPage` use `t()` (54 new keys `footer.*`, `auth.*`, `phone.invalid`, uz/ru/en). Error fallbacks too; messages that come from the backend stay as the backend sends them. `src/i18n/screens.test.tsx` renders each migrated screen in uz or ru and fails when English is left: add every new chunk there. uz and ru texts are machine-quality and need a native speaker. No existing assertion changed (English is the default outside the provider).
+### Found, not fixed
+- Footer text keeps the literal "2024" (the Footer test asserts it); it should show the current year.
+- Chunks left: search and home, property and booking and payment, bookings and profile and favorites and support, partner panel, admin and Status, error and empty states, info pages, remaining shared components.

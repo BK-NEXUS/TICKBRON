@@ -3,14 +3,16 @@ import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { isValidPhone, phoneExample } from '../utils/phone'
 import { redirectPathFrom } from '../utils/redirect'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { useI18n } from '../i18n/I18nContext'
 
 export function RegisterPage() {
+  const { t } = useI18n()
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
@@ -43,17 +45,17 @@ export function RegisterPage() {
 
     // Basic validation
     if (!isValidPhone(formData.phone_number)) {
-      setError(phoneErrorMessage())
+      setError(t('phone.invalid', { example: phoneExample() }))
       return
     }
 
     if (formData.password !== formData.password_confirm) {
-      setError('Passwords do not match')
+      setError(t('auth.errorPasswordMismatch'))
       return
     }
 
     if (formData.password.length < 12) {
-      setError('Password must be at least 12 characters')
+      setError(t('auth.errorPasswordShort'))
       return
     }
 
@@ -67,7 +69,7 @@ export function RegisterPage() {
       const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
-      setError(response.error || 'Registration failed. Please try again.')
+      setError(response.error || t('auth.errorRegister'))
     }
   }
 
@@ -80,8 +82,8 @@ export function RegisterPage() {
           <AuthModeSwitch mode="register" disabled={isLoading} />
 
           <div className="auth-header">
-            <h1 className="auth-title">Create Account</h1>
-            <p className="auth-subtitle">Join TICKBRON to book amazing properties</p>
+            <h1 className="auth-title">{t('auth.createAccount')}</h1>
+            <p className="auth-subtitle">{t('auth.registerSubtitle')}</p>
           </div>
 
           {error && (
@@ -93,7 +95,7 @@ export function RegisterPage() {
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label htmlFor="full_name" className="auth-label">
-                Full Name
+                {t('auth.fullName')}
               </label>
               <input
                 id="full_name"
@@ -110,7 +112,7 @@ export function RegisterPage() {
 
             <div className="auth-field">
               <label htmlFor="email" className="auth-label">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -127,7 +129,7 @@ export function RegisterPage() {
 
             <div className="auth-field">
               <label htmlFor="phone_number" className="auth-label">
-                Phone Number
+                {t('auth.phone')}
               </label>
               <PhoneInput
                 id="phone_number"
@@ -142,7 +144,7 @@ export function RegisterPage() {
 
             <div className="auth-field">
               <label htmlFor="password" className="auth-label">
-                Password
+                {t('auth.password')}
               </label>
               <PasswordField
                 id="password"
@@ -153,12 +155,12 @@ export function RegisterPage() {
                 disabled={isLoading}
                 autoComplete="new-password"
               />
-              <p className="auth-hint">Must be at least 12 characters</p>
+              <p className="auth-hint">{t('auth.passwordHint')}</p>
             </div>
 
             <div className="auth-field">
               <label htmlFor="password_confirm" className="auth-label">
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <PasswordField
                 id="password_confirm"
@@ -168,21 +170,21 @@ export function RegisterPage() {
                 required
                 disabled={isLoading}
                 autoComplete="new-password"
-                showLabel="Show confirm password"
-                hideLabel="Hide confirm password"
+                showLabel={t('auth.showConfirmPassword')}
+                hideLabel={t('auth.hideConfirmPassword')}
               />
             </div>
 
             <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
             </Button>
           </form>
 
           <div className="auth-footer">
             <p className="auth-footer-text">
-              Already have an account?{' '}
+              {t('auth.haveAccount')}{' '}
               <Link to="/login" className="auth-link">
-                Sign in
+                {t('auth.signInLink')}
               </Link>
             </p>
           </div>
