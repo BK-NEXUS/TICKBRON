@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { PropertyAmenity, AmenityCategory } from '../adapters/propertyAdapter'
 import { AmenityIcon } from './AmenityIcon'
 
@@ -10,6 +11,7 @@ interface PropertyAmenitiesDetailProps {
  * Groups amenities by category with availability status
  */
 export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDetailProps) {
+  const { t } = useI18n()
   // Group amenities by category
   const groupedAmenities = amenities.reduce((acc, propertyAmenity) => {
     const category = propertyAmenity.amenity.category
@@ -30,14 +32,14 @@ export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDet
   if (amenities.length === 0) {
     return (
       <div className="property-amenities-detail property-amenities-detail--empty">
-        <p className="property-amenities-detail-empty">No amenities information available</p>
+        <p className="property-amenities-detail-empty">{t('amenities.empty')}</p>
       </div>
     )
   }
 
   return (
     <div className="property-amenities-detail">
-      <h2 className="property-amenities-detail-title">Amenities</h2>
+      <h2 className="property-amenities-detail-title">{t('amenities.title')}</h2>
       
       {categories.map(({ category, amenities: categoryAmenities }) => (
         <div key={category.id} className="property-amenities-category">
@@ -65,7 +67,7 @@ export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDet
                     </span>
                     {!propertyAmenity.is_available && (
                       <span className="property-amenity-item-status">
-                        Not available
+                        {t('amenities.unavailable')}
                       </span>
                     )}
                   </div>
@@ -78,7 +80,7 @@ export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDet
                   
                   {propertyAmenity.notes && (
                     <p className="property-amenity-item-notes">
-                      Note: {propertyAmenity.notes}
+                      {t('amenities.note', { note: propertyAmenity.notes })}
                     </p>
                   )}
                 </div>

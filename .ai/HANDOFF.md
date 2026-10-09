@@ -2454,3 +2454,11 @@ Footer, `AuthModeSwitch`, `PasswordField`, `LoginPage`, `RegisterPage` use `t()`
 - `HomePage` still has mock content in English only: the three testimonials (invented names and quotes), the four destination cards (Paris, Tokyo ...) and the "50K+ / 100K+ / 120+" figures. They are placeholders to be replaced by the Uzum-style home page; the fake testimonials should not go live.
 - Property type and amenity names in the search filters come from the API (English); translating them needs the backend translations.
 - Page trails set by other pages through `usePageTrail` (partner, admin, property) are still English until their chunks.
+
+## Strings to keys, chunk 3a: property page (frontend, 2026-10-09)
+Migrated (116 new keys): `PropertyDetailPage` (our own load errors are keys now, backend messages stay text), `PropertyDetailHeader`, `PropertyGallery`, `FavoriteButton`, `NearbyPlaces`, `DiningRestaurants`, `PropertyAmenitiesDetail`, `PropertyPoliciesDetail`, `RoomSelection`, `RoomCard`, `RatePlanCard`, `AvailabilityCalendar`, `DateRangeCalendar` (month title and weekday names come from `Intl` in the page language). `useI18n().formatDay` added ("Mon, Sep 28" localized); `utils/dates.formatDay` stays English for the partner calendar until its chunk. Night/day counts use plural forms (`rooms.nights`, `rate.days`).
+### Changed test assertions
+- `RoomCard.test.tsx`, `RatePlanCard.test.tsx`: the "✓ Selected" text became a lucide check icon plus "Selected" (no sticker/glyph); both the positive and the negative assertion now look for "Selected".
+### Found, not fixed
+- Names that come from the backend stay as sent: amenity and category names, policy titles and descriptions, room and rate plan names, cancellation policy text, bed configuration.
+- Chunks left: reviews, booking and payment, bookings/profile/favorites/support, partner, admin and Status, error and info pages, the rest of the shared components.

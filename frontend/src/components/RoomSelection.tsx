@@ -122,7 +122,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     if (requestId !== availabilityRequestId.current) return
 
     if (response.error || !response.data) {
-      setAvailabilityError(response.error || 'Could not load availability. Please try again.')
+      setAvailabilityError(response.error || t('rooms.errorAvailability'))
     } else {
       const rows = response.data.room_types
         .find(room => room.id === selectedRoomId)
@@ -149,7 +149,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     })
     if (requestId !== quoteRequestId.current) return
     setQuote(response?.data ?? null)
-    setQuoteError(response?.data ? null : response?.error || 'Could not price these dates. Please try again.')
+    setQuoteError(response?.data ? null : response?.error || t('rooms.errorQuote'))
     setQuoteLoading(false)
   }
 
@@ -176,13 +176,13 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     }
   }
 
-  const { formatMoney: formatAmount } = useI18n()
+  const { t, tp, formatMoney: formatAmount, formatDate } = useI18n()
   const formatMoney = (amount: string | number, code: string) =>
     formatAmount(Number(amount), code, { minDecimals: 0, maxDecimals: 2 })
 
   const formatLongDate = (date: string) => {
     const [year, month, day] = date.split('-').map(Number)
-    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    return formatDate(new Date(year, month - 1, day), {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     })
   }
@@ -190,18 +190,18 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
   if (roomTypes.length === 0) {
     return (
       <div className="room-selection room-selection--empty" tabIndex={-1}>
-        <p className="room-selection-empty">No rooms available for this property</p>
+        <p className="room-selection-empty">{t('rooms.none')}</p>
       </div>
     )
   }
 
   return (
     <div className="room-selection" tabIndex={-1}>
-      <h2 className="room-selection-title">Select Your Room</h2>
+      <h2 className="room-selection-title">{t('rooms.select')}</h2>
       
       {/* Room Types */}
       <div className="room-selection-section">
-        <h3 className="room-selection-section-title">Available Rooms</h3>
+        <h3 className="room-selection-section-title">{t('rooms.available')}</h3>
         <div className="room-selection-room-cards">
           {roomTypes.map(room => (
             <RoomCard
@@ -217,11 +217,11 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
       {/* Rate Plans */}
       {selectedRoom && ratePlans.length > 0 && (
         <div className="room-selection-section">
-          <h3 className="room-selection-section-title">Rate Plans for {selectedRoom.name}</h3>
+          <h3 className="room-selection-section-title">{t('rooms.ratePlansFor', { room: selectedRoom.name })}</h3>
           {loading ? (
             <div className="room-selection-loading" role="status" aria-live="polite">
               <div className="loading-spinner"></div>
-              <p>Loading rate plans...</p>
+              <p>{t('rooms.loadingRates')}</p>
             </div>
           ) : (
             <div className="room-selection-rate-plans">
@@ -241,11 +241,11 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
       {/* Availability Calendar */}
       {selectedRatePlan && (
         <div className="room-selection-section">
-          <h3 className="room-selection-section-title">Availability Calendar</h3>
+          <h3 className="room-selection-section-title">{t('rooms.calendar')}</h3>
           {availabilityLoading ? (
             <div className="room-selection-loading" role="status" aria-live="polite">
               <div className="loading-spinner"></div>
-              <p>Loading availability...</p>
+              <p>{t('rooms.loadingAvailability')}</p>
             </div>
           ) : availabilityError ? (
             <div className="alert alert-error" role="alert">
@@ -255,18 +255,18 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
                 className="btn btn-secondary"
                 onClick={() => loadAvailability(selectedRatePlan.id)}
               >
-                Try again
+                {t('rooms.tryAgain')}
               </button>
             </div>
           ) : dateInventory.length === 0 ? (
-            <p className="room-selection-empty">No availability for the next {AVAILABILITY_DAYS} days.</p>
+            <p className="room-selection-empty">{tp('rooms.noAvailability', AVAILABILITY_DAYS)}</p>
           ) : (
             <>
               <p className="room-selection-hint" aria-live="polite">
                 {!checkIn
-                  ? 'Choose your check-in date.'
+                  ? t('rooms.hintCheckIn')
                   : !checkOut
-                    ? 'Now choose your check-out date.'
+                    ? t('rooms.hintCheckOut')
                     : null}
               </p>
               <AvailabilityCalendar
@@ -286,31 +286,31 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
       {/* Selection Summary */}
       {selectedRoom && selectedRatePlan && checkIn && checkOut && (
         <div className="room-selection-summary">
-          <h3 className="room-selection-summary-title">Your Selection</h3>
+          <h3 className="room-selection-summary-title">{t('rooms.selection')}</h3>
           <div className="room-selection-summary-details">
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Room:</span>
+              <span className="room-selection-summary-label">{t('rooms.room')}</span>
               <span className="room-selection-summary-value">{selectedRoom.name}</span>
             </div>
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Rate Plan:</span>
+              <span className="room-selection-summary-label">{t('rooms.ratePlan')}</span>
               <span className="room-selection-summary-value">{selectedRatePlan.name}</span>
             </div>
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Check-in:</span>
+              <span className="room-selection-summary-label">{t('rooms.checkIn')}</span>
               <span className="room-selection-summary-value">{formatLongDate(checkIn)}</span>
             </div>
             <div className="room-selection-summary-item">
-              <span className="room-selection-summary-label">Check-out:</span>
+              <span className="room-selection-summary-label">{t('rooms.checkOut')}</span>
               <span className="room-selection-summary-value">{formatLongDate(checkOut)}</span>
             </div>
             <div className="room-selection-summary-item room-selection-summary-total">
-              <span className="room-selection-summary-label">Total:</span>
+              <span className="room-selection-summary-label">{t('rooms.total')}</span>
               <span className="room-selection-summary-value">
                 {quoteLoading
-                  ? 'Calculating...'
+                  ? t('rooms.calculating')
                   : quote
-                    ? `${quote.number_of_nights} ${quote.number_of_nights === 1 ? 'night' : 'nights'}, total ${formatMoney(quote.total_price, quote.currency)}`
+                    ? t('rooms.nightsTotal', { nights: tp('rooms.nights', quote.number_of_nights), total: formatMoney(quote.total_price, quote.currency) })
                     : '—'}
               </span>
             </div>
@@ -324,9 +324,9 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
             <button
               className="btn btn-primary btn-large room-selection-cta"
               onClick={handleProceedToBooking}
-              aria-label="Proceed to booking"
+              aria-label={t('rooms.proceedLabel')}
             >
-              Proceed to Booking
+              {t('rooms.proceed')}
             </button>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { I18nProvider } from './I18nContext'
 import { AuthProvider } from '../contexts/AuthContext'
 import { Footer } from '../components/Footer'
@@ -12,6 +12,13 @@ import { DestinationsPage } from '../pages/DestinationsPage'
 import { PropertyCard } from '../components/PropertyCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import type { Property } from '../adapters/propertyAdapter'
+import { RoomSelection } from '../components/RoomSelection'
+import { DateRangeCalendar } from '../components/DateRangeCalendar'
+import { PropertyPoliciesDetail } from '../components/PropertyPoliciesDetail'
+import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
+import { RatePlanCard } from '../components/RatePlanCard'
+import { FavoriteButton } from '../components/FavoriteButton'
+import { PropertyDetailPage } from '../pages/PropertyDetailPage'
 import type { Language } from './options'
 
 // Each migrated screen is rendered in Uzbek and Russian: a string left in English shows up here.
@@ -22,6 +29,7 @@ vi.mock('../adapters/propertyAdapter', () => ({
   propertyAdapter: {
     getFilterOptions: vi.fn().mockResolvedValue({ data: { property_types: [], features: [], amenities: [] } }),
     searchProperties: vi.fn().mockResolvedValue({ data: { results: [], count: 0 } }),
+    getPropertyById: vi.fn().mockResolvedValue({ error: 'Property not found' }),
   },
 }))
 
@@ -108,5 +116,66 @@ describe('migrated screens in uz and ru', () => {
     expect(screen.getByRole('button', { name: 'Orqaga' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: "Sahifa yo'li" })).toHaveTextContent('Bosh sahifa')
     expect(screen.getByText('Hozircha yo\'nalishlar yo\'q.')).toBeInTheDocument()
+  })
+
+  it('room selection and rate plan card in Russian', async () => {
+    const room = {
+      id: 1, name: 'Deluxe', description: '', base_price: 450000, currency: 'UZS', base_occupancy: 2,
+      max_occupancy: 3, bed_configuration: '1 king', room_size: 30, total_rooms: 4, rate_plans: [],
+    }
+    await renderIn('ru', <RoomSelection roomTypes={[room] as never} propertyId={1} />)
+    expect(screen.getByRole('heading', { name: 'Выберите номер' })).toBeInTheDocument()
+    expect(screen.getByText('Вместимость')).toBeInTheDocument()
+    expect(screen.getByText('2–3 чел.')).toBeInTheDocument()
+    expect(screen.getByText('за ночь')).toBeInTheDocument()
+  })
+
+  it('rate plan card: night plurals in Russian', async () => {
+    const plan = {
+      id: 1, name: 'Flex', rate_type: 'early_bird', description: '', base_price: 100, currency: 'USD',
+      min_nights: 2, max_nights: 21, cancellation_policy: '', advance_booking_days: 5,
+    }
+    await renderIn('ru', <RatePlanCard ratePlan={plan as never} isSelected />)
+    expect(screen.getByText('Раннее бронирование')).toBeInTheDocument()
+    expect(screen.getByText('2 ночи')).toBeInTheDocument()
+    expect(screen.getByText('21 ночь')).toBeInTheDocument()
+    expect(screen.getByText('5 дней')).toBeInTheDocument()
+    expect(screen.getByText('Выбрано')).toBeInTheDocument()
+  })
+
+  it('calendar weekdays and month in the page language', async () => {
+    await renderIn('ru', <DateRangeCalendar checkIn="2026-10-05" checkOut={null} onChange={() => {}} />)
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('октябрь 2026')
+    expect(screen.getByText('пн')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Предыдущий месяц' })).toBeInTheDocument()
+  })
+
+  it('policies, amenities and the favourite heart in Uzbek', async () => {
+    await renderIn('uz', (
+      <>
+        <PropertyPoliciesDetail policies={[{ policy_type: 'cancellation', title: 'Flex', description: 'x', is_strict: true }] as never} />
+        <PropertyAmenitiesDetail amenities={[]} />
+        <FavoriteButton propertyId={1} propertyName="Hotel" />
+      </>
+    ))
+    expect(screen.getByRole('heading', { name: 'Qoidalar' })).toBeInTheDocument()
+    expect(screen.getByText('Bekor qilish qoidalari')).toBeInTheDocument()
+    expect(screen.getByText("Qulayliklar haqida ma'lumot yo'q")).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "Hotel ni sevimlilarga qo'shish" })).toBeInTheDocument()
+  })
+
+  it('property page error state in Russian', async () => {
+    localStorage.setItem('tickbron.language', 'ru')
+    render(
+      <I18nProvider>
+        <AuthProvider>
+          <MemoryRouter initialEntries={['/property/9']}>
+            <Routes><Route path="/property/:id" element={<PropertyDetailPage />} /></Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </I18nProvider>,
+    )
+    expect(await screen.findByRole('heading', { name: 'Объект не найден' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Вернуться к результатам поиска' })).toBeInTheDocument()
   })
 })

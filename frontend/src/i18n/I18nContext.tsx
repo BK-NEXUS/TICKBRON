@@ -24,6 +24,8 @@ interface I18nValue {
   tp: (base: PluralKey, count: number, params?: Params) => string
   /** A date ("2026-10-09" or a Date) in the page language; '' when empty or invalid */
   formatDate: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string
+  /** "Mon, Sep 28" in the page language */
+  formatDay: (value: string | Date) => string
   /** In the currency the amount is in; the selected currency only when none is given */
   formatMoney: (amount: number | string, currency?: string, options?: MoneyOptions) => string
 }
@@ -68,6 +70,8 @@ function parseDate(value: string | Date): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+const DAY_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' }
+
 function buildValue(
   language: Language,
   currency: Currency,
@@ -84,6 +88,10 @@ function buildValue(
     formatDate: (value, options = { day: 'numeric', month: 'short', year: 'numeric' }) => {
       const date = value ? parseDate(value) : null
       return date ? new Intl.DateTimeFormat(LOCALES[language], options).format(date) : ''
+    },
+    formatDay: (value) => {
+      const date = value ? parseDate(value) : null
+      return date ? new Intl.DateTimeFormat(LOCALES[language], DAY_FORMAT).format(date) : ''
     },
     formatMoney: (amount, forCurrency = currency, options) => formatMoneyFor(amount, forCurrency, language, options),
   }

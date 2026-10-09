@@ -1,6 +1,6 @@
 import { DateInventory } from '../adapters/propertyAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
-import { formatDay, nightsBetween, toLocalDate } from '../utils/dates'
+import { nightsBetween, toLocalDate } from '../utils/dates'
 import { useI18n } from '../i18n/I18nContext'
 
 interface AvailabilityCalendarProps {
@@ -46,7 +46,7 @@ export function AvailabilityCalendar({
   maxNights,
 }: AvailabilityCalendarProps) {
   const byDate = new Map(inventory.map(row => [row.date, row]))
-  const { formatMoney } = useI18n()
+  const { t, tp, formatMoney, formatDay } = useI18n()
   const formatPrice = (price: number, code: string) =>
     formatMoney(price, code || currency, { minDecimals: 0, maxDecimals: 0 })
 
@@ -55,18 +55,18 @@ export function AvailabilityCalendar({
     for (const night of nights) {
       const row = byDate.get(night)
       const status = statusOf(row)
-      if (status === 'unavailable') return `${formatDay(night)} is not available. Choose other dates.`
-      if (status === 'fully-booked') return `${formatDay(night)} is sold out. Choose other dates.`
+      if (status === 'unavailable') return t('calendar.closedDay', { day: formatDay(night) })
+      if (status === 'fully-booked') return t('calendar.soldOutDay', { day: formatDay(night) })
     }
-    if (minNights && nights.length < minNights) return `Minimum stay is ${minNights} nights.`
-    if (maxNights && nights.length > maxNights) return `Maximum stay is ${maxNights} nights.`
+    if (minNights && nights.length < minNights) return t('calendar.minStay', { nights: tp('rooms.nights', minNights) })
+    if (maxNights && nights.length > maxNights) return t('calendar.maxStay', { nights: tp('rooms.nights', maxNights) })
     for (const night of nights) {
       const row = byDate.get(night)
       if (row?.min_stay && nights.length < row.min_stay) {
-        return `A stay including ${formatDay(night)} must be at least ${row.min_stay} nights.`
+        return t('calendar.minStayDay', { day: formatDay(night), nights: tp('rooms.nights', row.min_stay) })
       }
       if (row?.max_stay && nights.length > row.max_stay) {
-        return `A stay including ${formatDay(night)} can be at most ${row.max_stay} nights.`
+        return t('calendar.maxStayDay', { day: formatDay(night), nights: tp('rooms.nights', row.max_stay) })
       }
     }
     return null
@@ -75,7 +75,7 @@ export function AvailabilityCalendar({
   if (inventory.length === 0) {
     return (
       <div className="availability-calendar availability-calendar--empty">
-        <p className="availability-calendar-empty">No availability data available</p>
+        <p className="availability-calendar-empty">{t('calendar.none')}</p>
       </div>
     )
   }
@@ -115,15 +115,15 @@ export function AvailabilityCalendar({
       <div className="availability-calendar-legend">
         <div className="availability-calendar-legend-item">
           <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR.available }} />
-          <span>Available</span>
+          <span>{t('calendar.available')}</span>
         </div>
         <div className="availability-calendar-legend-item">
           <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR.limited }} />
-          <span>Limited</span>
+          <span>{t('calendar.limited')}</span>
         </div>
         <div className="availability-calendar-legend-item">
           <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR['fully-booked'] }} />
-          <span>Fully Booked</span>
+          <span>{t('calendar.fullyBooked')}</span>
         </div>
       </div>
     </DateRangeCalendar>

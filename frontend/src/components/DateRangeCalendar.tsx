@@ -1,5 +1,6 @@
+import { useI18n } from '../i18n/I18nContext'
 import { ReactNode, useState } from 'react'
-import { formatDay, toLocalDate } from '../utils/dates'
+import { toLocalDate } from '../utils/dates'
 
 export interface CalendarDayInfo {
   /** Can a stay start on this day? */
@@ -27,8 +28,6 @@ interface DateRangeCalendarProps {
   children?: ReactNode
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 function monthStart(value?: string | null): Date {
   if (value) {
     const [year, month] = value.split('-').map(Number)
@@ -54,6 +53,7 @@ export function DateRangeCalendar({
   className = '',
   children,
 }: DateRangeCalendarProps) {
+  const { t, formatDate, formatDay } = useI18n()
   const [month, setMonth] = useState(() => monthStart(initialMonth ?? checkIn))
   const [error, setError] = useState<string | null>(null)
 
@@ -86,7 +86,9 @@ export function DateRangeCalendar({
     ...Array(new Date(year, monthIndex, 1).getDay()).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => toLocalDate(new Date(year, monthIndex, i + 1))),
   ]
-  const title = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const title = formatDate(month, { month: 'long', year: 'numeric' })
+  // 2024-01-07 is a Sunday: the seven short weekday names in the page language, Sunday first
+  const weekdays = Array.from({ length: 7 }, (_, i) => formatDate(new Date(2024, 0, 7 + i), { weekday: 'short' }))
 
   const rangeClass = (date: string) => {
     if (date === checkIn) return 'availability-calendar-day--range-start availability-calendar-day--selected'
@@ -102,7 +104,7 @@ export function DateRangeCalendar({
           type="button"
           className="availability-calendar-nav availability-calendar-nav--prev"
           onClick={() => setMonth(new Date(year, monthIndex - 1, 1))}
-          aria-label="Previous month"
+          aria-label={t('calendar.previousMonth')}
         >
           ‹
         </button>
@@ -111,14 +113,14 @@ export function DateRangeCalendar({
           type="button"
           className="availability-calendar-nav availability-calendar-nav--next"
           onClick={() => setMonth(new Date(year, monthIndex + 1, 1))}
-          aria-label="Next month"
+          aria-label={t('calendar.nextMonth')}
         >
           ›
         </button>
       </div>
 
       <div className="availability-calendar-weekdays">
-        {WEEKDAYS.map(day => (
+        {weekdays.map(day => (
           <div key={day} className="availability-calendar-weekday">{day}</div>
         ))}
       </div>

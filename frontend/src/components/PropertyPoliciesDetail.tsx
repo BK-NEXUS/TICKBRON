@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { PropertyPolicy } from '../adapters/propertyAdapter'
 
 interface PropertyPoliciesDetailProps {
@@ -9,10 +11,11 @@ interface PropertyPoliciesDetailProps {
  * Shows check-in, cancellation, and other property policies with strictness indicators
  */
 export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetailProps) {
+  const { t } = useI18n()
   if (policies.length === 0) {
     return (
       <div className="property-policies-detail property-policies-detail--empty">
-        <p className="property-policies-detail-empty">No policy information available</p>
+        <p className="property-policies-detail-empty">{t('policies.empty')}</p>
       </div>
     )
   }
@@ -28,12 +31,12 @@ export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetail
 
   return (
     <div className="property-policies-detail">
-      <h2 className="property-policies-detail-title">Policies</h2>
+      <h2 className="property-policies-detail-title">{t('policies.title')}</h2>
       
       {Object.entries(groupedPolicies).map(([policyType, typePolicies]) => (
         <div key={policyType} className="property-policies-group">
           <h3 className="property-policies-group-title">
-            {formatPolicyType(policyType)}
+            {formatPolicyType(policyType, t)}
           </h3>
           
           {typePolicies.map((policy, index) => (
@@ -46,8 +49,8 @@ export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetail
               <div className="property-policy-item-header">
                 <h4 className="property-policy-item-title">{policy.title}</h4>
                 {policy.is_strict && (
-                  <span className="property-policy-item-badge" aria-label="Strict policy">
-                    Strict
+                  <span className="property-policy-item-badge" aria-label={t('policies.strictLabel')}>
+                    {t('policies.strict')}
                   </span>
                 )}
               </div>
@@ -63,18 +66,18 @@ export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetail
   )
 }
 
-function formatPolicyType(policyType: string): string {
+function formatPolicyType(policyType: string, t: (key: MessageKey) => string): string {
   switch (policyType) {
     case 'check_in':
-      return 'Check-in & Check-out'
+      return t('policies.check_in')
     case 'cancellation':
-      return 'Cancellation Policy'
+      return t('policies.cancellation')
     case 'house_rules':
-      return 'House Rules'
+      return t('policies.house_rules')
     case 'payment':
-      return 'Payment Policy'
+      return t('policies.payment')
     case 'security':
-      return 'Security Policy'
+      return t('policies.security')
     default:
       return policyType
         .split('_')

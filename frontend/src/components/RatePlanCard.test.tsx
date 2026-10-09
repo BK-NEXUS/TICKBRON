@@ -122,13 +122,13 @@ describe('RatePlanCard', () => {
   it('shows selected indicator when isSelected is true', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} isSelected={true} />)
     
-    expect(screen.getByText('✓ Selected')).toBeInTheDocument()
+    expect(screen.getByText('Selected')).toBeInTheDocument()
   })
 
   it('does not show selected indicator when isSelected is false', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} isSelected={false} />)
     
-    expect(screen.queryByText('✓ Selected')).not.toBeInTheDocument()
+    expect(screen.queryByText('Selected')).not.toBeInTheDocument()
   })
 
   it('applies selected styling when isSelected is true', () => {
