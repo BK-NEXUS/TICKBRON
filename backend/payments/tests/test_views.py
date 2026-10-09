@@ -138,10 +138,42 @@ class PaymentTransactionViewSetTests(TestCase):
         self.assertEqual(transaction.amount, Decimal('300.00'))
     
     def test_create_payment_idempotency(self):
-        """Test payment idempotency - duplicate request returns existing transaction."""
-        # Skip this test for now as it requires more complex setup
-        # The idempotency functionality is tested in the model tests
-        self.skipTest("Idempotency test requires more complex setup")
+        """The same idempotency key sent twice gives back the first transaction and creates no second one."""
+        data = {
+            'idempotency_key': 'test_key_repeat',
+            'booking': self.booking.id,
+            'provider': 'payme',
+            'amount': '300.00',
+            'currency': 'USD',
+            'payment_method_token': 'test_token'
+        }
+
+        first = self.client.post('/api/v1/payments/transactions/', data)
+        second = self.client.post('/api/v1/payments/transactions/', data)
+
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.data['id'], first.data['id'])
+        self.assertEqual(PaymentTransaction.objects.count(), 1)
+
+    def test_idempotency_key_of_another_user_is_rejected_without_revealing_it(self):
+        """A key already used by someone else is refused, and the other transaction is not shown."""
+        other = User.objects.create_user(email='other@example.com', password='TestPassword123!')
+        other_booking = Booking.objects.create(
+            guest=other, property=self.property, status='pending', payment_status='pending',
+            check_in=self.booking.check_in, check_out=self.booking.check_out, number_of_nights=3,
+            guest_count=2, total_price=Decimal('300.00'), currency='USD', confirmation_code='OTH345')
+        PaymentTransaction.objects.create(
+            idempotency_key='test_key_taken', booking=other_booking, provider='payme',
+            amount=Decimal('300.00'), currency='USD', status='pending')
+
+        response = self.client.post('/api/v1/payments/transactions/', {
+            'idempotency_key': 'test_key_taken', 'booking': self.booking.id, 'provider': 'payme',
+            'amount': '300.00', 'currency': 'USD', 'payment_method_token': 'test_token'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(PaymentTransaction.objects.filter(booking=self.booking).count(), 0)
+        self.assertNotIn(str(other_booking.id), str(response.data))
 
     def test_create_payment_adapter_error_does_not_leak_details(self):
         """audit #24: a PaymentAdapterError must not echo str(e) to the client."""
@@ -356,7 +388,24 @@ class PaymentTransactionViewSetTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_get_user_payment_transactions(self):
-        """Test that users can only see their own payment transactions."""
-        # Skip this test as it requires more complex setup to isolate test data
-        # The queryset filtering is tested in the model tests
-        self.skipTest("User isolation test requires more complex setup")
+        """A user lists and opens only their own payment transactions; another user's id answers 404."""
+        mine = PaymentTransaction.objects.create(
+            idempotency_key='mine', booking=self.booking, provider='payme', amount=Decimal('300.00'),
+            currency='USD', status='pending')
+        other = User.objects.create_user(email='other2@example.com', password='TestPassword123!')
+        other_booking = Booking.objects.create(
+            guest=other, property=self.property, status='pending', payment_status='pending',
+            check_in=self.booking.check_in, check_out=self.booking.check_out, number_of_nights=3,
+            guest_count=2, total_price=Decimal('300.00'), currency='USD', confirmation_code='OTH346')
+        theirs = PaymentTransaction.objects.create(
+            idempotency_key='theirs', booking=other_booking, provider='payme', amount=Decimal('300.00'),
+            currency='USD', status='pending')
+
+        listing = self.client.get('/api/v1/payments/transactions/')
+        ids = [row['id'] for row in listing.data.get('results', listing.data)]
+
+        self.assertEqual(listing.status_code, status.HTTP_200_OK)
+        self.assertEqual(ids, [mine.id])
+        self.assertEqual(self.client.get(f'/api/v1/payments/transactions/{mine.id}/').status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            self.client.get(f'/api/v1/payments/transactions/{theirs.id}/').status_code, status.HTTP_404_NOT_FOUND)
