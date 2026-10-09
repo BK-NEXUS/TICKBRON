@@ -2403,3 +2403,11 @@ All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages,
 - Amounts are shown in THEIR OWN currency. The currency selector does not convert yet (needs the R6 rate and approximate-sum fields on the property API).
 ### Found, not fixed
 - The Status screens use `utils/statusFormat.ts` (English, 2 decimals, "UZS 1,250.00" style). They need the same formatter when the Status texts move to keys.
+
+## Phone country selector with SVG flags (frontend, 2026-10-09)
+`PhoneInput` has a searchable country selector (button with flag + chevron, listbox of 45 countries with name and dial code; search by name or "+995"). Flags: dependency `country-flag-icons` 1.6.20 (MIT, SVG React components, only the 45 used are bundled; `components/CountryFlag.tsx`). `utils/phone.ts`: `PHONE_COUNTRIES` (dial code, min/max national digits, display groups; extra digits follow the last group), `countryFromPhone`, `isValidPhone(value, country?)` now accepts a complete number of ANY listed country when no country is given (all forms call it that way). A number pasted with "+" picks its country; a saved number arriving from the profile selects its country; changing the country clears a non-empty field. The backend (`phonenumbers`) stays the judge; lengths here are permissive ranges. Uzbekistan is the default and first in the list. The phone.ts emoji allowlist is gone from `noEmoji.test.ts`.
+### Changed test assertions (ProfilePage.test.tsx)
+- The saved test number `+1234567890` is now shown grouped (`+1 234 567 890`) because its country is detected; the "stops at a complete +998 number" test first picks Uzbekistan in the selector (the saved number is +1 now). Intent kept.
+### Found, not fixed
+- Country names are English only (no i18n keys yet); the "Search country" / "Country:" labels too.
+- Checked in Chromium at 390px and 1440px (register page); not checked with a screen reader.

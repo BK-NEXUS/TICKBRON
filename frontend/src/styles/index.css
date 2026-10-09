@@ -2046,14 +2046,104 @@ table .btn {
 
 .phone-input-country {
   position: absolute;
-  left: var(--spacing-md);
-  line-height: 1;
-  pointer-events: none;
+  left: var(--spacing-sm);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 var(--spacing-xs);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.phone-input-country:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.country-flag {
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.phone-country-panel {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  left: 0;
+  z-index: var(--z-dropdown);
+  width: min(320px, 100%);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.phone-country-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.phone-country-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font: inherit;
+}
+
+.phone-country-list {
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.phone-country-option {
+  font: inherit;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phone-country-option:hover,
+.phone-country-option--active {
+  background-color: var(--color-background-alt);
+}
+
+.phone-country-name {
+  flex: 1;
+}
+
+.phone-country-dial {
+  color: var(--color-text-secondary);
+}
+
+.phone-country-empty {
+  padding: var(--spacing-md);
+  color: var(--color-text-secondary);
 }
 
 .phone-input .phone-input-field {
   width: 100%;
-  padding-left: calc(var(--spacing-md) + 1.75em);
+  padding-left: 72px;
 }
 
 /* Access denied (route guards for /admin and /partner) */
