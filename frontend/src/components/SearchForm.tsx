@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { DateRangeCalendar } from './DateRangeCalendar'
@@ -55,6 +56,7 @@ const URL_PARAMS = {
  * - Browser back/forward navigation
  */
 export function SearchForm() {
+  const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   
@@ -97,69 +99,69 @@ export function SearchForm() {
 
     // Destination validation
     if (!data.destination.trim()) {
-      newErrors.destination = 'Destination is required'
+      newErrors.destination = t('searchForm.error.destinationRequired')
     } else if (data.destination.length < 2) {
-      newErrors.destination = 'Destination must be at least 2 characters'
+      newErrors.destination = t('searchForm.error.destinationShort')
     } else if (data.destination.length > 100) {
-      newErrors.destination = 'Destination must be less than 100 characters'
+      newErrors.destination = t('searchForm.error.destinationLong')
     }
 
     // Dates are optional (search by city only), but a range needs both ends
     if (!data.checkIn && data.checkOut) {
-      newErrors.checkIn = 'Check-in date is required'
+      newErrors.checkIn = t('searchForm.error.checkInRequired')
     } else if (data.checkIn) {
       const checkInDate = new Date(data.checkIn)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       
       if (checkInDate < today) {
-        newErrors.checkIn = 'Check-in date cannot be in the past'
+        newErrors.checkIn = t('searchForm.error.checkInPast')
       }
     }
 
     // Check-out date validation
     if (!data.checkOut && data.checkIn) {
-      newErrors.checkOut = 'Check-out date is required'
+      newErrors.checkOut = t('searchForm.error.checkOutRequired')
     } else if (data.checkOut && data.checkIn) {
       const checkInDate = new Date(data.checkIn)
       const checkOutDate = new Date(data.checkOut)
       
       if (checkOutDate <= checkInDate) {
-        newErrors.checkOut = 'Check-out date must be after check-in date'
+        newErrors.checkOut = t('searchForm.error.checkOutOrder')
       }
     }
 
     // Guests validation
     if (data.guests < 1) {
-      newErrors.guests = 'At least 1 guest is required'
+      newErrors.guests = t('searchForm.error.guestsMin')
     } else if (data.guests > 50) {
-      newErrors.guests = 'Maximum 50 guests allowed'
+      newErrors.guests = t('searchForm.error.guestsMax')
     }
 
     // Adults validation
     if (data.adults < 1) {
-      newErrors.adults = 'At least 1 adult is required'
+      newErrors.adults = t('searchForm.error.adultsMin')
     } else if (data.adults > 50) {
-      newErrors.adults = 'Maximum 50 adults allowed'
+      newErrors.adults = t('searchForm.error.adultsMax')
     }
 
     // Children validation
     if (data.children < 0) {
-      newErrors.children = 'Children cannot be negative'
+      newErrors.children = t('searchForm.error.childrenNegative')
     } else if (data.children > 20) {
-      newErrors.children = 'Maximum 20 children allowed'
+      newErrors.children = t('searchForm.error.childrenMax')
     }
 
     // Rooms validation
     if (data.rooms < 1) {
-      newErrors.rooms = 'At least 1 room is required'
+      newErrors.rooms = t('searchForm.error.roomsMin')
     } else if (data.rooms > 20) {
-      newErrors.rooms = 'Maximum 20 rooms allowed'
+      newErrors.rooms = t('searchForm.error.roomsMax')
     }
 
     // Validate guest composition
     if (data.adults + data.children !== data.guests) {
-      newErrors.guests = 'Total guests must equal adults + children'
+      newErrors.guests = t('searchForm.error.guestsTotal')
     }
 
     return newErrors
@@ -262,13 +264,13 @@ export function SearchForm() {
         {/* Destination */}
         <div className="search-form-field">
           <label htmlFor="destination" className="search-form-label">
-            Destination
+            {t('searchForm.destination')}
           </label>
           <input
             id="destination"
             type="text"
             className={`search-form-input ${errors.destination && touched.has('destination') ? 'search-form-input-error' : ''}`}
-            placeholder="Where are you going?"
+            placeholder={t('searchForm.destinationPlaceholder')}
             value={formData.destination}
             onChange={handleDestinationChange}
             onBlur={() => handleBlur('destination')}
@@ -285,7 +287,7 @@ export function SearchForm() {
         {/* Check-in Date */}
         <div className="search-form-field">
           <label htmlFor="checkIn" className="search-form-label">
-            Check-in
+            {t('searchForm.checkIn')}
           </label>
           <input
             id="checkIn"
@@ -310,7 +312,7 @@ export function SearchForm() {
         {/* Check-out Date */}
         <div className="search-form-field">
           <label htmlFor="checkOut" className="search-form-label">
-            Check-out
+            {t('searchForm.checkOut')}
           </label>
           <input
             id="checkOut"
@@ -333,16 +335,16 @@ export function SearchForm() {
         </div>
 
         {calendarOpen && (
-          <div className="search-form-calendar" role="dialog" aria-label="Choose your dates">
+          <div className="search-form-calendar" role="dialog" aria-label={t('searchForm.chooseDates')}>
             <div className="search-form-calendar-header">
               <span className="search-form-calendar-hint">
-                {!formData.checkIn || formData.checkOut ? 'Choose your check-in date' : 'Now choose your check-out date'}
+                {!formData.checkIn || formData.checkOut ? t('searchForm.hintCheckIn') : t('searchForm.hintCheckOut')}
               </span>
               <button
                 type="button"
                 className="btn btn-secondary btn-small"
                 onClick={() => setCalendarOpen(false)}
-                aria-label="Close calendar"
+                aria-label={t('searchForm.closeCalendar')}
               >
                 ✕
               </button>
@@ -358,7 +360,7 @@ export function SearchForm() {
         {/* Guests */}
         <div className="search-form-field">
           <label htmlFor="guests" className="search-form-label">
-            Guests
+            {t('searchForm.guests')}
           </label>
           <input
             id="guests"
@@ -382,7 +384,7 @@ export function SearchForm() {
         {/* Adults */}
         <div className="search-form-field">
           <label htmlFor="adults" className="search-form-label">
-            Adults
+            {t('searchForm.adults')}
           </label>
           <input
             id="adults"
@@ -406,7 +408,7 @@ export function SearchForm() {
         {/* Children */}
         <div className="search-form-field">
           <label htmlFor="children" className="search-form-label">
-            Children
+            {t('searchForm.children')}
           </label>
           <input
             id="children"
@@ -430,7 +432,7 @@ export function SearchForm() {
         {/* Rooms */}
         <div className="search-form-field">
           <label htmlFor="rooms" className="search-form-label">
-            Rooms
+            {t('searchForm.rooms')}
           </label>
           <input
             id="rooms"
@@ -454,7 +456,7 @@ export function SearchForm() {
         {/* Submit Button */}
         <div className="search-form-field search-form-submit">
           <button type="submit" className="btn btn-primary btn-large">
-            Search
+            {t('searchForm.search')}
           </button>
         </div>
       </div>

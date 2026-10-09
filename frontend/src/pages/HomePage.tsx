@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { SearchForm } from '../components/SearchForm'
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { ArrowRight, BadgeCheck, Building, Building2, Globe, Headset, Hotel, House, MapPin, ShieldCheck, Smartphone, Star, type LucideIcon } from 'lucide-react'
 
 // Mock data for homepage content
@@ -13,32 +15,32 @@ const FEATURED_DESTINATIONS = [
 
 interface PropertyType {
   id: number
-  name: string
+  nameKey: MessageKey
   icon: LucideIcon
-  description: string
+  descriptionKey: MessageKey
 }
 
 const PROPERTY_TYPES: PropertyType[] = [
-  { id: 1, name: 'Apartments', icon: Building2, description: 'Modern city living spaces' },
-  { id: 2, name: 'Houses', icon: House, description: 'Spacious family homes' },
-  { id: 3, name: 'Villas', icon: Hotel, description: 'Luxury vacation retreats' },
-  { id: 4, name: 'Studios', icon: Building, description: 'Compact urban spaces' },
+  { id: 1, nameKey: 'home.type.apartments', icon: Building2, descriptionKey: 'home.type.apartmentsText' },
+  { id: 2, nameKey: 'home.type.houses', icon: House, descriptionKey: 'home.type.housesText' },
+  { id: 3, nameKey: 'home.type.villas', icon: Hotel, descriptionKey: 'home.type.villasText' },
+  { id: 4, nameKey: 'home.type.studios', icon: Building, descriptionKey: 'home.type.studiosText' },
 ]
 
 interface Feature {
   id: number
   icon: LucideIcon
-  title: string
-  description: string
+  titleKey: MessageKey
+  descriptionKey: MessageKey
 }
 
 const FEATURES: Feature[] = [
-  { id: 1, icon: BadgeCheck, title: 'Verified Properties', description: 'All properties are verified for quality and safety' },
-  { id: 2, icon: ShieldCheck, title: 'Secure Payments', description: 'Protected transactions with multiple payment options' },
-  { id: 3, icon: Headset, title: '24/7 Support', description: 'Round-the-clock customer support for your peace of mind' },
-  { id: 4, icon: Star, title: 'Best Price Guarantee', description: "We match or beat any competitor's price" },
-  { id: 5, icon: Globe, title: 'Global Coverage', description: 'Properties available in 120+ countries' },
-  { id: 6, icon: Smartphone, title: 'Easy Booking', description: 'Book in minutes with our streamlined process' },
+  { id: 1, icon: BadgeCheck, titleKey: 'home.feature.verified', descriptionKey: 'home.feature.verifiedText' },
+  { id: 2, icon: ShieldCheck, titleKey: 'home.feature.payments', descriptionKey: 'home.feature.paymentsText' },
+  { id: 3, icon: Headset, titleKey: 'home.feature.support', descriptionKey: 'home.feature.supportText' },
+  { id: 4, icon: Star, titleKey: 'home.feature.price', descriptionKey: 'home.feature.priceText' },
+  { id: 5, icon: Globe, titleKey: 'home.feature.global', descriptionKey: 'home.feature.globalText' },
+  { id: 6, icon: Smartphone, titleKey: 'home.feature.booking', descriptionKey: 'home.feature.bookingText' },
 ]
 
 const TESTIMONIALS = [
@@ -65,31 +67,32 @@ const TESTIMONIALS = [
   },
 ]
 
-const STATS = [
-  { value: '50K+', label: 'Properties Listed' },
-  { value: '100K+', label: 'Happy Guests' },
-  { value: '120+', label: 'Countries' },
-  { value: '4.9', label: 'Average Rating' },
+const STATS: Array<{ value: string; labelKey: MessageKey }> = [
+  { value: '50K+', labelKey: 'home.stat.properties' },
+  { value: '100K+', labelKey: 'home.stat.guests' },
+  { value: '120+', labelKey: 'home.stat.countries' },
+  { value: '4.9', labelKey: 'home.stat.rating' },
 ]
 
 export function HomePage() {
   const navigate = useNavigate()
+  const { t, tp } = useI18n()
   return (
     <div className="home-page">
       {/* Hero Section */}
-      <section className="hero" aria-label="Search for properties">
+      <section className="hero" aria-label={t('home.heroLabel')}>
         <div className="hero-content">
-          <p className="hero-eyebrow">Uzbekistan & Central Asia</p>
-          <h1 className="hero-title">Find Your Perfect Stay</h1>
-          <p className="hero-subtitle">Discover unique homes and experiences around the world</p>
+          <p className="hero-eyebrow">{t('home.eyebrow')}</p>
+          <h1 className="hero-title">{t('home.title')}</h1>
+          <p className="hero-subtitle">{t('home.subtitle')}</p>
           <div className="hero-search">
             <SearchForm />
           </div>
-          <div className="hero-stats" role="region" aria-label="Platform statistics">
+          <div className="hero-stats" role="region" aria-label={t('home.statsLabel')}>
             {STATS.map((stat) => (
-              <div key={stat.label} className="hero-stat">
+              <div key={stat.labelKey} className="hero-stat">
                 <div className="hero-stat-value">{stat.value}</div>
-                <div className="hero-stat-label">{stat.label}</div>
+                <div className="hero-stat-label">{t(stat.labelKey)}</div>
               </div>
             ))}
           </div>
@@ -99,8 +102,8 @@ export function HomePage() {
       {/* Featured Destinations */}
       <section className="destinations" aria-labelledby="destinations-title">
         <div className="container">
-          <h2 id="destinations-title" className="section-title">Popular Destinations</h2>
-          <p className="section-subtitle">Explore our most sought-after locations</p>
+          <h2 id="destinations-title" className="section-title">{t('home.destinations.title')}</h2>
+          <p className="section-subtitle">{t('home.destinations.subtitle')}</p>
           <div className="destinations-grid" role="list">
             {FEATURED_DESTINATIONS.map((destination) => (
               <article key={destination.id} className="destination-card" role="listitem">
@@ -110,7 +113,7 @@ export function HomePage() {
                 <div className="destination-info">
                   <h3 className="destination-name">{destination.name}</h3>
                   <p className="destination-country">{destination.country}</p>
-                  <p className="destination-count">{destination.propertyCount} properties</p>
+                  <p className="destination-count">{tp('home.properties', destination.propertyCount)}</p>
                 </div>
               </article>
             ))}
@@ -121,16 +124,16 @@ export function HomePage() {
       {/* Property Types */}
       <section className="property-types" aria-labelledby="property-types-title">
         <div className="container">
-          <h2 id="property-types-title" className="section-title">Property Types</h2>
-          <p className="section-subtitle">Find the perfect accommodation for your needs</p>
+          <h2 id="property-types-title" className="section-title">{t('home.types.title')}</h2>
+          <p className="section-subtitle">{t('home.types.subtitle')}</p>
           <div className="property-types-grid" role="list">
             {PROPERTY_TYPES.map((type) => (
               <article key={type.id} className="property-type-card" role="listitem">
                 <div className="property-type-icon" aria-hidden="true">
                   <type.icon size={28} />
                 </div>
-                <h3 className="property-type-name">{type.name}</h3>
-                <p className="property-type-description">{type.description}</p>
+                <h3 className="property-type-name">{t(type.nameKey)}</h3>
+                <p className="property-type-description">{t(type.descriptionKey)}</p>
               </article>
             ))}
           </div>
@@ -140,16 +143,16 @@ export function HomePage() {
       {/* Features Section */}
       <section className="features" aria-labelledby="features-title">
         <div className="container">
-          <h2 id="features-title" className="section-title">Why Choose TICKBRON?</h2>
-          <p className="section-subtitle">Experience the difference with our premium service</p>
+          <h2 id="features-title" className="section-title">{t('home.features.title')}</h2>
+          <p className="section-subtitle">{t('home.features.subtitle')}</p>
           <div className="features-grid" role="list">
             {FEATURES.map((feature) => (
               <div key={feature.id} className="feature-card" role="listitem">
                 <div className="feature-icon" aria-hidden="true">
                   <feature.icon size={24} />
                 </div>
-                <h3 className="feature-title">{feature.title}</h3>
-                <p className="feature-description">{feature.description}</p>
+                <h3 className="feature-title">{t(feature.titleKey)}</h3>
+                <p className="feature-description">{t(feature.descriptionKey)}</p>
               </div>
             ))}
           </div>
@@ -159,12 +162,12 @@ export function HomePage() {
       {/* Testimonials */}
       <section className="testimonials" aria-labelledby="testimonials-title">
         <div className="container">
-          <h2 id="testimonials-title" className="section-title">What Our Guests Say</h2>
-          <p className="section-subtitle">Real experiences from real travelers</p>
+          <h2 id="testimonials-title" className="section-title">{t('home.testimonials.title')}</h2>
+          <p className="section-subtitle">{t('home.testimonials.subtitle')}</p>
           <div className="testimonials-grid" role="list">
             {TESTIMONIALS.map((testimonial) => (
               <article key={testimonial.id} className="testimonial-card" role="listitem">
-                <div className="testimonial-rating" aria-label={`Rating: ${testimonial.rating} out of 5 stars`}>
+                <div className="testimonial-rating" aria-label={t('home.testimonials.rating', { rating: testimonial.rating })}>
                   {Array.from({ length: testimonial.rating }).map((_, index) => (
                     <Star key={index} size={16} />
                   ))}
@@ -184,11 +187,11 @@ export function HomePage() {
       <section className="cta" aria-labelledby="cta-title">
         <div className="container">
           <div className="cta-content">
-            <h2 id="cta-title" className="cta-title">Ready to Start Your Journey?</h2>
-            <p className="cta-subtitle">Join millions of travelers who trust TICKBRON for their accommodations</p>
+            <h2 id="cta-title" className="cta-title">{t('home.cta.title')}</h2>
+            <p className="cta-subtitle">{t('home.cta.subtitle')}</p>
             <div className="cta-buttons">
               <button className="btn btn-primary btn-large" onClick={() => navigate('/search')}>
-                Browse Properties
+                {t('home.cta.browse')}
                 <ArrowRight size={18} />
               </button>
             </div>

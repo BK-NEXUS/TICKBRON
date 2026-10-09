@@ -61,7 +61,7 @@ describe('PropertyCard', () => {
     expect(screen.getByText('Paris, France')).toBeInTheDocument()
     expect(screen.getByText('4 guests')).toBeInTheDocument()
     expect(screen.getByText('2 bedrooms')).toBeInTheDocument()
-    expect(screen.getByText('1 bathrooms')).toBeInTheDocument()
+    expect(screen.getByText('1 bathroom')).toBeInTheDocument()
     expect(screen.getByText('€150')).toBeInTheDocument()
     expect(screen.getByText('per night')).toBeInTheDocument()
   })

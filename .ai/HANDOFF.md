@@ -2443,3 +2443,14 @@ Footer, `AuthModeSwitch`, `PasswordField`, `LoginPage`, `RegisterPage` use `t()`
 ### Found, not fixed
 - Footer text keeps the literal "2024" (the Footer test asserts it); it should show the current year.
 - Chunks left: search and home, property and booking and payment, bookings and profile and favorites and support, partner panel, admin and Status, error and empty states, info pages, remaining shared components.
+
+## Strings to keys, chunk 2: home, search, property card (frontend, 2026-10-09)
+- `useI18n()` gained `tp(base, count)` (plural forms by `Intl.PluralRules`: keys `x.one/.few/.many/.other`, `{count}` filled in; Russian has four forms, Uzbek one, English two) and `formatDate(value, options)` (date in the page language; a date without time is the calendar day). The catalog test accepts extra plural forms and requires `.other` everywhere.
+- Migrated (150 new keys, uz/ru/en): `HomePage` (static texts), `SearchResultsPage`, `SearchForm` (labels and all validation messages), `SearchFilters`, `SearchSort`, `ListViewMapView`, `PropertyCard`, `CoachMark`, `DestinationsPage`, `Breadcrumbs` (default trails; Back; "Home"). Option lists in `utils/searchFilters.ts` carry `labelKey` instead of `label`.
+- Failure messages we write ourselves are no longer stored as text in state (the results page and Destinations show the translated text at render, so they follow the language); backend messages stay as sent.
+### Changed test assertions (grammar of the new plural forms)
+- `SearchResultsPage.test.tsx`: "1 properties found" -> "1 property found"; `PropertyCard.test.tsx`: "1 bathrooms" -> "1 bathroom".
+### Found, not fixed
+- `HomePage` still has mock content in English only: the three testimonials (invented names and quotes), the four destination cards (Paris, Tokyo ...) and the "50K+ / 100K+ / 120+" figures. They are placeholders to be replaced by the Uzum-style home page; the fake testimonials should not go live.
+- Property type and amenity names in the search filters come from the API (English); translating them needs the backend translations.
+- Page trails set by other pages through `usePageTrail` (partner, admin, property) are still English until their chunks.

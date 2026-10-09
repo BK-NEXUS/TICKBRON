@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/messages/en'
 import type { SearchParams } from '../adapters/propertyAdapter'
 
 /**
@@ -25,12 +26,12 @@ export const EMPTY_FILTERS: FilterState = {
   min_rating: undefined,
 }
 
-export const FEATURE_OPTIONS = [
-  { id: 'wifi', label: 'WiFi' },
-  { id: 'parking', label: 'Parking' },
-  { id: 'ac', label: 'Air Conditioning' },
-  { id: 'heating', label: 'Heating' },
-  { id: 'elevator', label: 'Elevator' },
+export const FEATURE_OPTIONS: Array<{ id: string; labelKey: MessageKey }> = [
+  { id: 'wifi', labelKey: 'feature.wifi' },
+  { id: 'parking', labelKey: 'feature.parking' },
+  { id: 'ac', labelKey: 'feature.ac' },
+  { id: 'heating', labelKey: 'feature.heating' },
+  { id: 'elevator', labelKey: 'feature.elevator' },
 ]
 
 export const RATING_OPTIONS = [
@@ -41,12 +42,12 @@ export const RATING_OPTIONS = [
 
 export const DEFAULT_SORT = 'relevance'
 
-export const SORT_OPTIONS = [
-  { id: 'relevance', label: 'Relevance' },
-  { id: 'price_asc', label: 'Price: Low to High' },
-  { id: 'price_desc', label: 'Price: High to Low' },
-  { id: 'rating', label: 'Rating' },
-  { id: 'reviews', label: 'Number of Reviews' },
+export const SORT_OPTIONS: Array<{ id: string; labelKey: MessageKey }> = [
+  { id: 'relevance', labelKey: 'sort.relevance' },
+  { id: 'price_asc', labelKey: 'sort.price_asc' },
+  { id: 'price_desc', labelKey: 'sort.price_desc' },
+  { id: 'rating', labelKey: 'sort.rating' },
+  { id: 'reviews', labelKey: 'sort.reviews' },
 ]
 
 /** URL params owned by the sidebar and the sort select (the search form owns the rest) */

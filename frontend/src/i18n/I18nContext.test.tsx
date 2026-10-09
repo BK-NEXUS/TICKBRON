@@ -90,3 +90,57 @@ describe('t', () => {
     expect(screen.getByTestId('t')).toHaveTextContent('nope.missing|Open menu|Language: Русский')
   })
 })
+
+describe('tp (plural forms)', () => {
+  function Count({ n }: { n: number }) {
+    const { tp } = useI18n()
+    return <span data-testid="p">{tp('search.guests', n)}</span>
+  }
+  const show = (lang: string, n: number) => {
+    localStorage.setItem('tickbron.language', lang)
+    const { unmount } = render(<I18nProvider><Count n={n} /></I18nProvider>)
+    const text = screen.getByTestId('p').textContent
+    unmount()
+    localStorage.clear()
+    return text
+  }
+
+  it('picks the English forms', () => {
+    expect(show('en', 1)).toBe('1 guest')
+    expect(show('en', 3)).toBe('3 guests')
+  })
+
+  it('picks the Russian one / few / many forms', () => {
+    expect(show('ru', 1)).toBe('1 гость')
+    expect(show('ru', 2)).toBe('2 гостя')
+    expect(show('ru', 5)).toBe('5 гостей')
+    expect(show('ru', 21)).toBe('21 гость')
+  })
+
+  it('uses the single Uzbek form', () => {
+    expect(show('uz', 1)).toBe('1 mehmon')
+    expect(show('uz', 4)).toBe('4 mehmon')
+  })
+})
+
+describe('formatDate', () => {
+  it('writes the date in the page language', () => {
+    function D() {
+      const { formatDate } = useI18n()
+      return <span data-testid="d">{formatDate('2026-10-09', { day: 'numeric', month: 'long' })}</span>
+    }
+    localStorage.setItem('tickbron.language', 'ru')
+    render(<I18nProvider><D /></I18nProvider>)
+    expect(screen.getByTestId('d').textContent).toBe('9 октября')
+    localStorage.clear()
+  })
+
+  it('shows nothing for an empty or invalid date', () => {
+    function D({ value }: { value: string }) {
+      const { formatDate } = useI18n()
+      return <span data-testid="d">[{formatDate(value)}]</span>
+    }
+    render(<D value="" />)
+    expect(screen.getByTestId('d').textContent).toBe('[]')
+  })
+})

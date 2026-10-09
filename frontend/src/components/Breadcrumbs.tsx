@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
@@ -9,36 +11,42 @@ export interface Crumb {
   onClick?: () => void
 }
 
+interface TrailEntry {
+  labelKey: MessageKey
+  to?: string
+}
+
 /** Default trail per route (after Home) when the page does not set its own */
-const ROUTE_TRAILS: Array<[RegExp, Crumb[]]> = [
-  [/^\/login$/, [{ label: 'Sign In' }]],
-  [/^\/register$/, [{ label: 'Create Account' }]],
-  [/^\/bookings$/, [{ label: 'My Bookings' }]],
-  [/^\/booking$/, [{ label: 'Booking' }]],
-  [/^\/favorites$/, [{ label: 'My Favorites' }]],
-  [/^\/profile$/, [{ label: 'Profile' }]],
-  [/^\/partner$/, [{ label: 'Partner Dashboard' }]],
-  [/^\/admin$/, [{ label: 'Admin Dashboard' }]],
-  [/^\/admin\/support$/, [{ label: 'Admin Dashboard', to: '/admin' }, { label: 'Support Lookup' }]],
-  [/^\/admin\/customers\/\d+$/, [{ label: 'Admin Dashboard', to: '/admin' }, { label: 'Customer' }]],
-  [/^\/property\/\d+$/, [{ label: 'Properties', to: '/search' }, { label: 'Property' }]],
-  [/^\/destinations$/, [{ label: 'Destinations' }]],
-  [/^\/about$/, [{ label: 'About' }]],
-  [/^\/help$/, [{ label: 'Help Center' }]],
-  [/^\/contact$/, [{ label: 'Contact Us' }]],
-  [/^\/safety$/, [{ label: 'Safety' }]],
-  [/^\/terms$/, [{ label: 'Terms of Service' }]],
-  [/^\/privacy$/, [{ label: 'Privacy Policy' }]],
-  [/^\/cookies$/, [{ label: 'Cookie Policy' }]],
+const ROUTE_TRAILS: Array<[RegExp, TrailEntry[]]> = [
+  [/^\/login$/, [{ labelKey: 'auth.signIn' }]],
+  [/^\/register$/, [{ labelKey: 'auth.createAccount' }]],
+  [/^\/bookings$/, [{ labelKey: 'header.myBookings' }]],
+  [/^\/booking$/, [{ labelKey: 'crumb.booking' }]],
+  [/^\/favorites$/, [{ labelKey: 'crumb.myFavorites' }]],
+  [/^\/profile$/, [{ labelKey: 'crumb.profile' }]],
+  [/^\/partner$/, [{ labelKey: 'header.partnerDashboard' }]],
+  [/^\/admin$/, [{ labelKey: 'header.adminDashboard' }]],
+  [/^\/admin\/support$/, [{ labelKey: 'header.adminDashboard', to: '/admin' }, { labelKey: 'crumb.supportLookup' }]],
+  [/^\/admin\/customers\/\d+$/, [{ labelKey: 'header.adminDashboard', to: '/admin' }, { labelKey: 'crumb.customer' }]],
+  [/^\/property\/\d+$/, [{ labelKey: 'nav.properties', to: '/search' }, { labelKey: 'crumb.property' }]],
+  [/^\/destinations$/, [{ labelKey: 'footer.destinations' }]],
+  [/^\/about$/, [{ labelKey: 'nav.about' }]],
+  [/^\/help$/, [{ labelKey: 'footer.helpCenter' }]],
+  [/^\/contact$/, [{ labelKey: 'footer.contact' }]],
+  [/^\/safety$/, [{ labelKey: 'footer.safety' }]],
+  [/^\/terms$/, [{ labelKey: 'footer.terms' }]],
+  [/^\/privacy$/, [{ labelKey: 'footer.privacy' }]],
+  [/^\/cookies$/, [{ labelKey: 'footer.cookies' }]],
 ]
 
-function defaultTrail(pathname: string, search: string): Crumb[] {
+function defaultTrail(pathname: string, search: string, t: (key: MessageKey) => string): Crumb[] {
   if (pathname === '/search') {
     const destination = new URLSearchParams(search).get('destination')
-    return [{ label: destination || 'All properties' }]
+    return [{ label: destination || t('crumb.allProperties') }]
   }
   const match = ROUTE_TRAILS.find(([pattern]) => pattern.test(pathname))
-  return match ? match[1] : [{ label: 'Page not found' }]
+  const entries: TrailEntry[] = match ? match[1] : [{ labelKey: 'crumb.notFound' }]
+  return entries.map(({ labelKey, to }) => ({ label: t(labelKey), ...(to ? { to } : {}) }))
 }
 
 interface BreadcrumbContextValue {
@@ -79,11 +87,12 @@ export function Breadcrumbs() {
   const location = useLocation()
   const navigate = useNavigate()
   const { trail: pageTrail } = useContext(BreadcrumbContext)
+  const { t } = useI18n()
 
   if (location.pathname === '/') return null
 
-  const trail = pageTrail ?? defaultTrail(location.pathname, location.search)
-  const crumbs: Crumb[] = [{ label: 'Home', to: '/' }, ...trail]
+  const trail = pageTrail ?? defaultTrail(location.pathname, location.search, t)
+  const crumbs: Crumb[] = [{ label: t('crumb.home'), to: '/' }, ...trail]
 
   const handleBack = () => {
     // Inside a page with its own levels, Back steps up one level first
@@ -103,10 +112,10 @@ export function Breadcrumbs() {
 
   return (
     <div className="page-breadcrumbs container">
-      <button type="button" className="btn btn-ghost btn-sm" onClick={handleBack} aria-label="Back">
-        ← Back
+      <button type="button" className="btn btn-ghost btn-sm" onClick={handleBack} aria-label={t('crumb.back')}>
+        ← {t('crumb.back')}
       </button>
-      <nav aria-label="Breadcrumb">
+      <nav aria-label={t('crumb.trail')}>
         <ol className="page-breadcrumbs-list">
           {crumbs.map((crumb, index) => {
             const isCurrent = index === crumbs.length - 1
