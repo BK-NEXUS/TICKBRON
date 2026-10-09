@@ -228,3 +228,18 @@ def is_shown_now(promotion, today: date | None = None):
         and promotion.start_date <= today <= promotion.end_date
         and blocked_reason(promotion) is None
     )
+
+
+def tidy_statuses(today: date | None = None):
+    """
+    Nightly: expired promotions become `ended`, paid ones whose period has begun become `active`.
+    Only keeps `status` readable in the admin lists; serving is computed by `shown_now()`.
+    """
+    today = today or business_today()
+    live = Promotion.objects.filter(is_deleted=False)
+    ended = live.filter(status__in=Promotion.HOLDING_STATUSES, end_date__lt=today).update(
+        status=Promotion.STATUS_ENDED)
+    activated = live.filter(
+        status=Promotion.STATUS_SCHEDULED, paid_at__isnull=False, start_date__lte=today, end_date__gte=today,
+    ).update(status=Promotion.STATUS_ACTIVE)
+    return {'ended': ended, 'activated': activated}
