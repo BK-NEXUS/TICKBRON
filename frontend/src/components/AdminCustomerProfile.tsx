@@ -29,6 +29,8 @@ export function AdminCustomerProfile() {
     if (customerId) {
       loadProfile()
     }
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, bookingFilter])
 
   const loadProfile = async () => {

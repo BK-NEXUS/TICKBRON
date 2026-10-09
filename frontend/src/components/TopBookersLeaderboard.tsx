@@ -14,6 +14,8 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
 
   useEffect(() => {
     loadTopBookers()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, limit])
 
   const loadTopBookers = async () => {

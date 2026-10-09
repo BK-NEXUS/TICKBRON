@@ -37,6 +37,8 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
 
   useEffect(() => {
     loadRatePlans()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomTypeId])
 
   const loadRatePlans = async () => {
@@ -224,7 +226,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
     })
   }
 
-  const handleInputChange = (field: keyof CreateRatePlanRequest, value: any) => {
+  const handleInputChange = <K extends keyof CreateRatePlanRequest>(field: K, value: CreateRatePlanRequest[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }

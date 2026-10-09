@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { redirectPathFrom } from '../utils/redirect'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
@@ -34,7 +35,7 @@ export function LoginPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
+    return <Navigate to={redirectPathFrom(location.state)} replace />
   }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -47,7 +48,7 @@ export function LoginPage() {
     setIsLoading(false)
     
     if (response.success) {
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
       setError(response.error || 'Login failed. Please try again.')
@@ -85,7 +86,7 @@ export function LoginPage() {
     setIsLoading(false)
     
     if (response.success) {
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
       setError(response.error || 'Invalid code. Please try again.')

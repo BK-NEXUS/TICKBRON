@@ -26,7 +26,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should show authentication required when not authenticated', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: null,
       isAuthenticated: false,
     })
@@ -42,7 +42,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should show access denied for non-admin users', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: { ...mockUser, is_staff: false, is_superuser: false },
       isAuthenticated: true,
     })
@@ -58,7 +58,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should render dashboard for staff users', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: { ...mockUser, is_staff: true, is_superuser: false },
       isAuthenticated: true,
     })
@@ -75,7 +75,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should render dashboard for super-admin users', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
     })
@@ -92,7 +92,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should show create owner button for super-admin only', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
     })
@@ -107,7 +107,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should not show create owner button for staff users', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: { ...mockUser, is_staff: true, is_superuser: false },
       isAuthenticated: true,
     })
@@ -122,7 +122,7 @@ describe('AdminDashboardPage', () => {
   })
 
   it('should render navigation tabs', () => {
-    ;(useAuth as any).mockReturnValue({
+    (useAuth as never).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
     })

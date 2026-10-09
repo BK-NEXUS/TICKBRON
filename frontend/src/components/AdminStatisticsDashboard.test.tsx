@@ -46,7 +46,7 @@ describe('AdminStatisticsDashboard', () => {
   })
 
   it('should display loading state while fetching statistics', async () => {
-    ;(adminAdapter.getRegistrationStatistics as any).mockImplementation(
+    (adminAdapter.getRegistrationStatistics as never).mockImplementation(
       () => new Promise(() => {}) // Never resolves
     )
 
@@ -58,7 +58,7 @@ describe('AdminStatisticsDashboard', () => {
   })
 
   it('should display empty state when no data available', async () => {
-    ;(adminAdapter.getRegistrationStatistics as any).mockResolvedValue({
+    (adminAdapter.getRegistrationStatistics as never).mockResolvedValue({
       data: { type: 'rolling_12_months', data: [] },
       error: null,
     })
@@ -80,7 +80,7 @@ describe('AdminStatisticsDashboard', () => {
       ],
     }
 
-    ;(adminAdapter.getRegistrationStatistics as any).mockResolvedValue({
+    ;(adminAdapter.getRegistrationStatistics as never).mockResolvedValue({
       data: mockStatistics,
       error: null,
     })
@@ -95,7 +95,7 @@ describe('AdminStatisticsDashboard', () => {
   })
 
   it('should display error message when API call fails', async () => {
-    ;(adminAdapter.getRegistrationStatistics as any).mockResolvedValue({
+    (adminAdapter.getRegistrationStatistics as never).mockResolvedValue({
       data: null,
       error: 'Failed to load statistics',
     })

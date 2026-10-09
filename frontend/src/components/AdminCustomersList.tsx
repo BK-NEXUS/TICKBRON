@@ -34,6 +34,8 @@ export function AdminCustomersList() {
 
   useEffect(() => {
     loadCustomers()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, sortBy, sortOrder, currentPage, pageSize])
 
   const loadCustomers = async () => {

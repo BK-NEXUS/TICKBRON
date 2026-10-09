@@ -179,7 +179,7 @@ describe('SupportLookupPage', () => {
       updated_at: '2024-09-01T00:00:00Z',
     }
 
-    ;(adminAdapter.lookupBookingByReferenceCode as any).mockResolvedValue({
+    ;(adminAdapter.lookupBookingByReferenceCode as never).mockResolvedValue({
       data: mockBooking,
       error: null,
     })
@@ -215,7 +215,7 @@ describe('SupportLookupPage', () => {
       is_superuser: false,
     }
 
-    ;(adminAdapter.lookupBookingByReferenceCode as any).mockResolvedValue({
+    ;(adminAdapter.lookupBookingByReferenceCode as never).mockResolvedValue({
       data: null,
       error: null,
     })
@@ -249,7 +249,7 @@ describe('SupportLookupPage', () => {
       is_superuser: false,
     }
 
-    ;(adminAdapter.lookupBookingByReferenceCode as any).mockResolvedValue({
+    ;(adminAdapter.lookupBookingByReferenceCode as never).mockResolvedValue({
       data: null,
       error: 'Failed to look up booking',
     })
@@ -317,7 +317,7 @@ describe('SupportLookupPage', () => {
       updated_at: '2024-09-01T00:00:00Z',
     }
 
-    ;(adminAdapter.lookupBookingByReferenceCode as any).mockResolvedValue({
+    ;(adminAdapter.lookupBookingByReferenceCode as never).mockResolvedValue({
       data: mockBooking,
       error: null,
     })

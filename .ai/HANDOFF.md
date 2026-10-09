@@ -2427,3 +2427,13 @@ All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages,
 - Not checked in a browser (the booking flow needs the backend). Texts are English only until the i18n string migration.
 - `BookingPage.tsx:234` `handleChildrenChange` is unused (lint error already on master).
 - The Visa button on the method list opens the card form only in test mode; in the other modes it still goes to the backend test flow as before.
+
+## Lint cleanup (frontend, 2026-10-09)
+`npm run lint`: 277 problems (265 errors) -> 0 errors, 3 warnings. No test assertion changed.
+- 90 `no-extra-semi` fixed with `eslint --fix` (semicolons only).
+- 159 `as any` in tests -> `as never` (type-only); 5 `any` in code typed for real (`ErrorInfo`, generic `handleInputChange<K>` in 4 partner forms, `PartnerProperty` for the wizard's `onSuccess`, EmptyState mock props). New `utils/redirect.ts` (`redirectPathFrom`, tested) replaces five `(location.state as any)?.from?.pathname`.
+- 9 `exhaustive-deps` on fetch-on-change effects: left as they are with a `eslint-disable-next-line` and the reason (the loader is also the Retry action). 
+- Dead code removed: unused state `generatedPassword`, `handleChildrenChange`, ignored `currency` prop passing from `RoomSelection` to `RoomCard` (the prop on `RoomSelection` itself is still accepted), unused test imports, useless escapes in `styles/buttons.test.ts` (same regex).
+### Found, not fixed
+- 3 `react-refresh/only-export-components` warnings (`Breadcrumbs.tsx`, `Button.tsx`, `AuthContext.tsx`): they export a hook or helper next to a component; splitting files would change imports.
+- `npm audit` (18 findings, mostly dev tools) and the React Router 7 warnings were not touched.

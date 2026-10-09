@@ -25,7 +25,7 @@ describe('TopBookersLeaderboard', () => {
   })
 
   it('should display loading state while fetching data', async () => {
-    ;(adminAdapter.getTopBookers as any).mockImplementation(
+    (adminAdapter.getTopBookers as never).mockImplementation(
       () => new Promise(() => {}) // Never resolves
     )
 
@@ -37,7 +37,7 @@ describe('TopBookersLeaderboard', () => {
   })
 
   it('should display empty state when no data available', async () => {
-    ;(adminAdapter.getTopBookers as any).mockResolvedValue({
+    (adminAdapter.getTopBookers as never).mockResolvedValue({
       data: [],
       error: null,
     })
@@ -65,7 +65,7 @@ describe('TopBookersLeaderboard', () => {
       },
     ]
 
-    ;(adminAdapter.getTopBookers as any).mockResolvedValue({
+    ;(adminAdapter.getTopBookers as never).mockResolvedValue({
       data: mockTopBookers,
       error: null,
     })
@@ -102,7 +102,7 @@ describe('TopBookersLeaderboard', () => {
       },
     ]
 
-    ;(adminAdapter.getTopBookers as any).mockResolvedValue({
+    ;(adminAdapter.getTopBookers as never).mockResolvedValue({
       data: mockTopBookers,
       error: null,
     })
@@ -126,7 +126,7 @@ describe('TopBookersLeaderboard', () => {
       },
     ]
 
-    ;(adminAdapter.getTopBookers as any).mockResolvedValue({
+    ;(adminAdapter.getTopBookers as never).mockResolvedValue({
       data: mockTopBookers,
       error: null,
     })
@@ -139,7 +139,7 @@ describe('TopBookersLeaderboard', () => {
   })
 
   it('should display error message when API call fails', async () => {
-    ;(adminAdapter.getTopBookers as any).mockResolvedValue({
+    (adminAdapter.getTopBookers as never).mockResolvedValue({
       data: null,
       error: 'Failed to load top bookers',
     })

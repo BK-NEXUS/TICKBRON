@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const css = readFileSync(resolve(__dirname, 'index.css'), 'utf-8')
-const rule = (selector: string) => css.match(new RegExp(`\n${selector.replace(/[.[\]()]/g, '\$&')} \{([^}]*)\}`))?.[1] ?? ''
+const rule = (selector: string) => css.match(new RegExp(`\n${selector.replace(/[.[\]()]/g, '$&')} \\{([^}]*)\\}`))?.[1] ?? ''
 
 describe('button styles', () => {
   it('are pills and the primary button casts a brand-coloured shadow', () => {

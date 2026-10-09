@@ -37,6 +37,8 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
   useEffect(() => {
     loadDateInventory()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ratePlanId])
 
   const loadDateInventory = async () => {
@@ -231,7 +233,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     })
   }
 
-  const handleInputChange = (field: keyof CreateDateInventoryRequest, value: any) => {
+  const handleInputChange = <K extends keyof CreateDateInventoryRequest>(field: K, value: CreateDateInventoryRequest[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }

@@ -58,7 +58,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should render property moderation page', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -72,7 +72,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('each property card has a Region field for the Status section', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: [{ ...mockProperties[0], state: 'Tashkent' }, mockProperties[1]],
       error: null,
     })
@@ -86,7 +86,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should load properties on mount', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -99,7 +99,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display properties list', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -113,7 +113,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should show approve button for pending properties', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -127,7 +127,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should show reject button for pending properties', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -141,7 +141,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should show suspend button for active properties', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -162,7 +162,7 @@ describe('AdminPropertyModeration', () => {
       },
     ]
 
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    ;(adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: suspendedProperties,
       error: null,
     })
@@ -175,7 +175,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should open reject modal when reject button is clicked', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -189,12 +189,12 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should call approveProperty when approve button is clicked', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
 
-    ;(adminAdapter.approveProperty as any).mockResolvedValueOnce({
+    ;(adminAdapter.approveProperty as never).mockResolvedValueOnce({
       data: { ...mockProperties[0], status: 'active' },
       error: null,
     })
@@ -212,12 +212,12 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should call approveProperty with rejection reason when reject is submitted', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
 
-    ;(adminAdapter.approveProperty as any).mockResolvedValueOnce({
+    ;(adminAdapter.approveProperty as never).mockResolvedValueOnce({
       data: { ...mockProperties[0], status: 'rejected', rejection_reason: 'Invalid information' },
       error: null,
     })
@@ -231,12 +231,12 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should call suspendProperty when suspend button is clicked', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
 
-    ;(adminAdapter.suspendProperty as any).mockResolvedValueOnce({
+    ;(adminAdapter.suspendProperty as never).mockResolvedValueOnce({
       data: { ...mockProperties[1], status: 'suspended' },
       error: null,
     })
@@ -254,7 +254,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display loading state while loading', () => {
-    ;(adminAdapter.getProperties as any).mockImplementation(
+    (adminAdapter.getProperties as never).mockImplementation(
       () => new Promise(() => {})
     )
 
@@ -264,7 +264,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display empty state when no properties', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: [],
       error: null,
     })
@@ -277,7 +277,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display error message on API failure', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: null,
       error: 'Failed to load properties',
     })
@@ -290,7 +290,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should close reject modal when cancel is clicked', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -313,7 +313,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display property amenities tags', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })
@@ -326,7 +326,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('should display property status badges', async () => {
-    ;(adminAdapter.getProperties as any).mockResolvedValueOnce({
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,
       error: null,
     })

@@ -13,6 +13,8 @@ export function AdminStatisticsDashboard() {
 
   useEffect(() => {
     loadStatistics()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView])
 
   const loadStatistics = async () => {

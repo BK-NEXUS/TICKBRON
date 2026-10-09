@@ -231,12 +231,6 @@ export function BookingPage() {
     }
   }
 
-  const handleChildrenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target
-    const ages = value.split(',').map(age => parseInt(age.trim())).filter(age => !isNaN(age) && age >= 0)
-    setGuestDetails(prev => ({ ...prev, children: ages }))
-  }
-
   const addChild = () => {
     setGuestDetails(prev => ({ ...prev, children: [...prev.children, 0] }))
   }

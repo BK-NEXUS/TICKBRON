@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { redirectPathFrom } from '../utils/redirect'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
@@ -26,7 +27,7 @@ export function RegisterPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
+    return <Navigate to={redirectPathFrom(location.state)} replace />
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +64,7 @@ export function RegisterPage() {
     setIsLoading(false)
     
     if (response.success) {
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
       setError(response.error || 'Registration failed. Please try again.')

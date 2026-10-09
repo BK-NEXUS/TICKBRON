@@ -18,7 +18,6 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdCredentials, setCreatedCredentials] = useState<CreateHotelOwnerResponse | null>(null)
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
 
   const generatePassword = () => {
     const length = 16
@@ -28,15 +27,11 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
       password += charset.charAt(Math.floor(Math.random() * charset.length))
     }
     setFormData({ ...formData, password, password_confirm: password })
-    setGeneratedPassword(password)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
-    if (name === 'password' || name === 'password_confirm') {
-      setGeneratedPassword(null)
-    }
   }
 
   const validateForm = (): string | null => {
@@ -94,7 +89,6 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     })
     setError(null)
     setCreatedCredentials(null)
-    setGeneratedPassword(null)
   }
 
   const handleCancel = () => {

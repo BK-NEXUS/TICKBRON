@@ -3,7 +3,6 @@ import { useI18n } from '../i18n/I18nContext'
 
 interface RoomCardProps {
   room: RoomType
-  currency?: string
   onSelect?: (roomId: number) => void
   isSelected?: boolean
 }
@@ -12,7 +11,7 @@ interface RoomCardProps {
  * RoomCard component for displaying room information
  * Shows room details, occupancy, bed configuration, size, and pricing
  */
-export function RoomCard({ room, currency: _currency = 'USD', onSelect, isSelected = false }: RoomCardProps) {
+export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) {
   const { formatMoney } = useI18n()
   const formatPrice = (price: number, currencyCode: string) => {
     return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })

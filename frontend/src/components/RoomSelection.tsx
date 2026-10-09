@@ -49,7 +49,7 @@ interface RoomSelectionProps {
  * RoomSelection component for room/rate selection UI
  * Combines room cards, rate plan cards, and availability calendar
  */
-export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomSelectionProps) {
+export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
   const navigate = useNavigate()
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null)
@@ -207,7 +207,6 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
             <RoomCard
               key={room.id}
               room={room}
-              currency={currency}
               onSelect={handleRoomSelect}
               isSelected={selectedRoomId === room.id}
             />

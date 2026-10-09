@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { partnerAdapter, CreatePropertyRequest } from '../adapters/partnerAdapter'
+import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
 
 interface PartnerPropertyWizardProps {
-  onSuccess?: (property: any) => void
+  onSuccess?: (property: PartnerProperty) => void
   onCancel?: () => void
 }
 
@@ -37,7 +37,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     has_heating: false,
   })
 
-  const handleInputChange = (field: keyof CreatePropertyRequest, value: any) => {
+  const handleInputChange = <K extends keyof CreatePropertyRequest>(field: K, value: CreatePropertyRequest[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }
