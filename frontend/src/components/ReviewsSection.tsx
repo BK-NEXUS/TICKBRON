@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect } from 'react'
 import { accountAdapter, Review, PropertyScores, EligiblePropertiesResponse } from '../adapters/accountAdapter'
 import { ReviewForm } from './ReviewForm'
@@ -10,13 +12,15 @@ interface ReviewsSectionProps {
 }
 
 export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
+  const { t } = useI18n()
   const { isAuthenticated } = useAuth()
   const [propertyScores, setPropertyScores] = useState<PropertyScores | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [eligibleProperties, setEligibleProperties] = useState<EligiblePropertiesResponse | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // A backend message (text) or one of ours (key), so ours follow the page language
+  const [error, setError] = useState<{ text: string } | { key: MessageKey } | null>(null)
 
   useEffect(() => {
     const loadReviewsData = async () => {
@@ -27,7 +31,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
         // Load property scores
         const scoresResponse = await accountAdapter.getPropertyScores(propertyId)
         if (scoresResponse.error) {
-          setError(scoresResponse.error)
+          setError({ text: scoresResponse.error })
         } else if (scoresResponse.data) {
           setPropertyScores(scoresResponse.data)
         }
@@ -54,7 +58,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
 
         setLoading(false)
       } catch (err) {
-        setError('Failed to load reviews')
+        setError({ key: 'reviews.errorLoad' })
         setLoading(false)
       }
     }
@@ -87,7 +91,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
           }
         }
       } catch (err) {
-        setError('Failed to reload reviews')
+        setError({ key: 'reviews.errorReload' })
       }
     }
 
@@ -103,7 +107,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
       <div className="reviews-section reviews-section--loading">
         <div className="loading-state" role="status" aria-live="polite">
           <div className="loading-spinner"></div>
-          <p>Loading reviews...</p>
+          <p>{t('reviews.loading')}</p>
         </div>
       </div>
     )
@@ -113,8 +117,8 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
     return (
       <div className="reviews-section reviews-section--error">
         <div className="error-state" role="alert" aria-live="assertive">
-          <h2>Error Loading Reviews</h2>
-          <p>{error}</p>
+          <h2>{t('reviews.errorTitle')}</h2>
+          <p>{'text' in error ? error.text : t(error.key)}</p>
         </div>
       </div>
     )
@@ -122,7 +126,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
 
   return (
     <section className="reviews-section">
-      <h2 className="reviews-section-title">Reviews</h2>
+      <h2 className="reviews-section-title">{t('reviews.title')}</h2>
 
       {propertyScores && (
         <div className="reviews-section-breakdown">
@@ -136,7 +140,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
             className="btn btn-primary"
             onClick={() => setShowReviewForm(true)}
           >
-            Write a Review
+            {t('reviews.write')}
           </button>
         </div>
       )}
@@ -156,7 +160,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
 
       {reviews.length > 0 && (
         <div className="reviews-section-list">
-          <h3 className="reviews-section-list-title">Your Reviews</h3>
+          <h3 className="reviews-section-list-title">{t('reviews.yours')}</h3>
           <div className="reviews-section-cards">
             {reviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
@@ -168,7 +172,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
       {!isAuthenticated && (
         <div className="reviews-section-auth-cta">
           <p className="reviews-section-auth-text">
-            Log in to write a review for this property
+            {t('reviews.loginToWrite')}
           </p>
         </div>
       )}

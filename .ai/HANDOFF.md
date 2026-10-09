@@ -2462,3 +2462,6 @@ Migrated (116 new keys): `PropertyDetailPage` (our own load errors are keys now,
 ### Found, not fixed
 - Names that come from the backend stay as sent: amenity and category names, policy titles and descriptions, room and rate plan names, cancellation policy text, bed configuration.
 - Chunks left: reviews, booking and payment, bookings/profile/favorites/support, partner, admin and Status, error and info pages, the rest of the shared components.
+
+## Strings to keys, chunk 3b: reviews (frontend, 2026-10-09)
+`ReviewsSection`, `ReviewCard` (date in the page language), `ReviewForm`, `RatingBreakdown` use `t()`/`tp()` (32 keys `reviews.*`, `common.cancel`). Review titles, comments and names are user content and stay as written. No existing assertion changed.

@@ -19,6 +19,9 @@ import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
 import { RatePlanCard } from '../components/RatePlanCard'
 import { FavoriteButton } from '../components/FavoriteButton'
 import { PropertyDetailPage } from '../pages/PropertyDetailPage'
+import { ReviewForm } from '../components/ReviewForm'
+import { ReviewCard } from '../components/ReviewCard'
+import { RatingBreakdown } from '../components/RatingBreakdown'
 import type { Language } from './options'
 
 // Each migrated screen is rendered in Uzbek and Russian: a string left in English shows up here.
@@ -177,5 +180,27 @@ describe('migrated screens in uz and ru', () => {
     )
     expect(await screen.findByRole('heading', { name: 'Объект не найден' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Вернуться к результатам поиска' })).toBeInTheDocument()
+  })
+
+  it('review form in Uzbek', async () => {
+    await renderIn('uz', <ReviewForm propertyId={1} bookingId={2} onCancel={() => {}} />)
+    expect(screen.getByRole('heading', { name: 'Sharh yozish' })).toBeInTheDocument()
+    expect(screen.getAllByLabelText(/^Umumiy baho: \d yulduz$/)).toHaveLength(5)
+    expect(screen.getByLabelText('Sarlavha (ixtiyoriy)')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Bekor qilish' })).toBeInTheDocument()
+  })
+
+  it('review card date and rating breakdown plurals in Russian', async () => {
+    const review = { id: 1, overall_rating: 4, created_at: '2026-10-09T10:00:00Z', status: 'pending', cleanliness_rating: 5 }
+    await renderIn('ru', (
+      <>
+        <ReviewCard review={review as never} />
+        <RatingBreakdown propertyScores={{ average_rating: 4.5, total_reviews: 22, category_scores: { cleanliness_rating: 4.5 } } as never} />
+      </>
+    ))
+    expect(screen.getByText('9 октября 2026 г.')).toBeInTheDocument()
+    expect(screen.getByText('Ожидает одобрения')).toBeInTheDocument()
+    expect(screen.getByText('22 отзыва')).toBeInTheDocument()
+    expect(screen.getAllByText('Чистота').length).toBeGreaterThan(0)
   })
 })

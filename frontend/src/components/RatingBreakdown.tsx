@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { PropertyScores } from '../adapters/accountAdapter'
 import { StarIcon } from './StarIcon'
 
@@ -6,12 +8,13 @@ interface RatingBreakdownProps {
 }
 
 export function RatingBreakdown({ propertyScores }: RatingBreakdownProps) {
+  const { t, tp } = useI18n()
   const { average_rating, total_reviews, category_scores } = propertyScores
 
   if (!average_rating || total_reviews === 0) {
     return (
       <div className="rating-breakdown rating-breakdown--empty">
-        <p className="rating-breakdown-empty-text">No reviews yet</p>
+        <p className="rating-breakdown-empty-text">{t('reviews.none')}</p>
       </div>
     )
   }
@@ -23,19 +26,19 @@ export function RatingBreakdown({ propertyScores }: RatingBreakdownProps) {
         <div 
           className="rating-breakdown-bar-fill" 
           style={{ width: `${percentage}%` }}
-          aria-label={`Rating: ${score} out of 5`}
+          aria-label={t('reviews.scoreOf5', { score })}
           data-testid="rating-breakdown-bar-fill"
         />
       </div>
     )
   }
 
-  const categories = [
-    { key: 'cleanliness_rating', label: 'Cleanliness' },
-    { key: 'location_rating', label: 'Location' },
-    { key: 'value_rating', label: 'Value' },
-    { key: 'amenities_rating', label: 'Amenities' },
-    { key: 'service_rating', label: 'Service' },
+  const categories: Array<{ key: string; labelKey: MessageKey }> = [
+    { key: 'cleanliness_rating', labelKey: 'reviews.cleanliness' },
+    { key: 'location_rating', labelKey: 'reviews.location' },
+    { key: 'value_rating', labelKey: 'reviews.value' },
+    { key: 'amenities_rating', labelKey: 'reviews.amenities' },
+    { key: 'service_rating', labelKey: 'reviews.service' },
   ]
 
   return (
@@ -55,7 +58,7 @@ export function RatingBreakdown({ propertyScores }: RatingBreakdownProps) {
           </span>
         </div>
         <div className="rating-breakdown-reviews">
-          {total_reviews} {total_reviews === 1 ? 'review' : 'reviews'}
+          {tp('reviews.count', total_reviews)}
         </div>
       </div>
 
@@ -67,7 +70,7 @@ export function RatingBreakdown({ propertyScores }: RatingBreakdownProps) {
           return (
             <div key={category.key} className="rating-breakdown-category">
               <div className="rating-breakdown-category-header">
-                <span className="rating-breakdown-category-label">{category.label}</span>
+                <span className="rating-breakdown-category-label">{t(category.labelKey)}</span>
                 <span className="rating-breakdown-category-score">{score.toFixed(1)}</span>
               </div>
               {renderProgressBar(score)}
