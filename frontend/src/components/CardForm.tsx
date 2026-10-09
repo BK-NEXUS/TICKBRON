@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { useEffect, useState } from 'react'
 import { FlaskConical } from 'lucide-react'
 import {
@@ -12,11 +14,11 @@ interface CardFormProps {
   disabled?: boolean
 }
 
-const ERRORS: Record<Field, string> = {
-  number: 'Enter a valid card number.',
-  expiry: 'Enter a valid expiry date (MM/YY).',
-  cvv: 'Enter the 3 digit security code.',
-  holder: 'Enter the name as printed on the card.',
+const ERRORS: Record<Field, MessageKey> = {
+  number: 'card.errorNumber',
+  expiry: 'card.errorExpiry',
+  cvv: 'card.errorCvv',
+  holder: 'card.errorHolder',
 }
 
 const CHECKS: Record<Field, (value: string) => boolean> = {
@@ -28,6 +30,7 @@ const CHECKS: Record<Field, (value: string) => boolean> = {
 
 /** Card details for the TEST payment mode. Nothing typed here is sent, stored or logged. */
 export function CardForm({ onValidityChange, disabled }: CardFormProps) {
+  const { t } = useI18n()
   const [values, setValues] = useState<Record<Field, string>>({ number: '', expiry: '', cvv: '', holder: '' })
   const [touched, setTouched] = useState<Record<Field, boolean>>({ number: false, expiry: false, cvv: false, holder: false })
 
@@ -52,21 +55,18 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
 
   const error = (field: Field) =>
     showError(field) && (
-      <span id={`card-${field}-error`} className="booking-form-error" role="alert">{ERRORS[field]}</span>
+      <span id={`card-${field}-error`} className="booking-form-error" role="alert">{t(ERRORS[field])}</span>
     )
 
   return (
     <div className="card-form">
       <div className="card-form-notice" role="note">
         <FlaskConical size={18} aria-hidden="true" />
-        <span>
-          <strong>Test mode.</strong> Card details are not sent or stored. Real payments are made on the
-          Payme, Click or Visa page.
-        </span>
+        <span>{t('card.testNotice')}</span>
       </div>
 
       <div className="booking-form-field">
-        <label htmlFor="card-number" className="booking-form-label">Card number</label>
+        <label htmlFor="card-number" className="booking-form-label">{t('card.number')}</label>
         <input
           {...fieldProps('number')}
           type="text"
@@ -80,7 +80,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
 
       <div className="card-form-row">
         <div className="booking-form-field">
-          <label htmlFor="card-expiry" className="booking-form-label">Expiry (MM/YY)</label>
+          <label htmlFor="card-expiry" className="booking-form-label">{t('card.expiry')}</label>
           <input
             {...fieldProps('expiry')}
             type="text"
@@ -92,7 +92,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
           {error('expiry')}
         </div>
         <div className="booking-form-field">
-          <label htmlFor="card-cvv" className="booking-form-label">CVV</label>
+          <label htmlFor="card-cvv" className="booking-form-label">{t('card.cvv')}</label>
           <input
             {...fieldProps('cvv')}
             type="password"
@@ -107,7 +107,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
       </div>
 
       <div className="booking-form-field">
-        <label htmlFor="card-holder" className="booking-form-label">Name on card</label>
+        <label htmlFor="card-holder" className="booking-form-label">{t('card.holder')}</label>
         <input
           {...fieldProps('holder')}
           type="text"

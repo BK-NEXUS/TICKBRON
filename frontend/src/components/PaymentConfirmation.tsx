@@ -19,6 +19,8 @@ interface PaymentConfirmationProps {
  * PaymentConfirmation component for displaying successful payment confirmation
  * Shows payment details, booking information, and next steps
  */
+const STATUS_NAMES = ['pending', 'processing', 'completed', 'failed', 'refunded', 'partially_refunded'] as const
+
 export function PaymentConfirmation({ 
   payment, 
   bookingDetails, 
@@ -36,16 +38,14 @@ export function PaymentConfirmation({
     return names[provider]
   }
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  }
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
 
-  const { formatMoney } = useI18n()
+  const formatDate = (dateString: string): string =>
+    formatLocalDate(dateString, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+
+  const statusText = (STATUS_NAMES as readonly string[]).includes(payment.status)
+    ? t(`pay.statusName.${payment.status as (typeof STATUS_NAMES)[number]}`)
+    : payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
 
   const formatAmount = (amount: number, currency: string): string => {
     return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
@@ -65,50 +65,50 @@ export function PaymentConfirmation({
     <div className="payment-confirmation">
       <div className="payment-confirmation-header">
         <div className="payment-confirmation-icon" aria-hidden="true">✓</div>
-        <h2 className="payment-confirmation-title">Payment Successful!</h2>
+        <h2 className="payment-confirmation-title">{t('pay.confirmTitle')}</h2>
         <p className="payment-confirmation-subtitle">
-          Your payment has been processed successfully
+          {t('pay.confirmText')}
         </p>
       </div>
 
       <div className="payment-confirmation-content">
         <div className="payment-confirmation-section">
-          <h3 className="payment-confirmation-section-title">Payment Details</h3>
+          <h3 className="payment-confirmation-section-title">{t('pay.detailsTitle')}</h3>
           <div className="payment-confirmation-details">
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Transaction ID:</span>
+              <span className="payment-confirmation-label">{t('pay.transactionId')}</span>
               <span className="payment-confirmation-value">{payment.idempotency_key}</span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Provider:</span>
+              <span className="payment-confirmation-label">{t('pay.provider')}</span>
               <span className="payment-confirmation-value">{getProviderName(payment.provider)}</span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Amount Paid:</span>
+              <span className="payment-confirmation-label">{t('pay.amountPaid')}</span>
               <span className="payment-confirmation-value payment-confirmation-value--amount">
                 {formatAmount(payment.amount, payment.currency)}
               </span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Payment Date:</span>
+              <span className="payment-confirmation-label">{t('pay.paymentDate')}</span>
               <span className="payment-confirmation-value">
                 {formatDate(payment.created_at)}
               </span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Status:</span>
+              <span className="payment-confirmation-label">{t('pay.statusLabel')}</span>
               <span className="payment-confirmation-value payment-confirmation-value--status">
-                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                {statusText}
               </span>
             </div>
           </div>
         </div>
 
         <div className="payment-confirmation-section">
-          <h3 className="payment-confirmation-section-title">Booking Details</h3>
+          <h3 className="payment-confirmation-section-title">{t('pay.bookingTitle')}</h3>
           <div className="payment-confirmation-details">
             <div className="payment-confirmation-item payment-confirmation-item--code">
-              <span className="payment-confirmation-label">Booking Reference:</span>
+              <span className="payment-confirmation-label">{t('pay.reference')}</span>
               <div className="payment-confirmation-code-container">
                 <span className="payment-confirmation-value payment-confirmation-value--code payment-confirmation-value--monospace">
                   {bookingDetails.confirmation_code}
@@ -116,24 +116,24 @@ export function PaymentConfirmation({
                 <button
                   className="payment-confirmation-copy-btn"
                   onClick={handleCopyCode}
-                  aria-label="Copy booking reference code"
-                  title="Copy booking reference code"
+                  aria-label={t('pay.copyLabel')}
+                  title={t('pay.copyLabel')}
                 >
                   {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? t('pay.copied') : t('pay.copy')}
                 </button>
               </div>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Property:</span>
+              <span className="payment-confirmation-label">{t('pay.property')}</span>
               <span className="payment-confirmation-value">{bookingDetails.property_name}</span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Check-in:</span>
+              <span className="payment-confirmation-label">{t('pay.checkIn')}</span>
               <span className="payment-confirmation-value">{formatDate(bookingDetails.check_in)}</span>
             </div>
             <div className="payment-confirmation-item">
-              <span className="payment-confirmation-label">Check-out:</span>
+              <span className="payment-confirmation-label">{t('pay.checkOut')}</span>
               <span className="payment-confirmation-value">{formatDate(bookingDetails.check_out)}</span>
             </div>
           </div>
@@ -143,15 +143,15 @@ export function PaymentConfirmation({
           <div className="payment-confirmation-info-item">
             <div className="payment-confirmation-info-icon" aria-hidden="true"><Mail size={24} /></div>
             <div className="payment-confirmation-info-text">
-              <strong>Confirmation email sent</strong>
-              <p>You will receive a confirmation email with your booking details shortly.</p>
+              <strong>{t('pay.emailSent')}</strong>
+              <p>{t('pay.emailText')}</p>
             </div>
           </div>
           <div className="payment-confirmation-info-item">
             <div className="payment-confirmation-info-icon" aria-hidden="true"><Smartphone size={24} /></div>
             <div className="payment-confirmation-info-text">
-              <strong>Manage your booking</strong>
-              <p>You can view and manage your booking from your account at any time.</p>
+              <strong>{t('pay.manage')}</strong>
+              <p>{t('pay.manageText')}</p>
             </div>
           </div>
         </div>
@@ -161,16 +161,16 @@ export function PaymentConfirmation({
         <button 
           className="btn btn-primary btn-large"
           onClick={onViewBookings}
-          aria-label="View my bookings"
+          aria-label={t('pay.viewBookingsLabel')}
         >
-          View My Bookings
+          {t('pay.viewBookings')}
         </button>
         <button 
           className="btn btn-secondary"
           onClick={onBackToProperty}
-          aria-label="Return to property page"
+          aria-label={t('pay.backToPropertyLabel')}
         >
-          Back to Property
+          {t('pay.backToProperty')}
         </button>
       </div>
     </div>

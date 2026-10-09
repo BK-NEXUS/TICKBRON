@@ -19,6 +19,11 @@ import { PropertyAmenitiesDetail } from '../components/PropertyAmenitiesDetail'
 import { RatePlanCard } from '../components/RatePlanCard'
 import { FavoriteButton } from '../components/FavoriteButton'
 import { PropertyDetailPage } from '../pages/PropertyDetailPage'
+import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
+import { PaymentProcessing } from '../components/PaymentProcessing'
+import { PaymentConfirmation } from '../components/PaymentConfirmation'
+import { PaymentFailure } from '../components/PaymentFailure'
+import { CardForm } from '../components/CardForm'
 import { ReviewForm } from '../components/ReviewForm'
 import { ReviewCard } from '../components/ReviewCard'
 import { RatingBreakdown } from '../components/RatingBreakdown'
@@ -202,5 +207,39 @@ describe('migrated screens in uz and ru', () => {
     expect(screen.getByText('Ожидает одобрения')).toBeInTheDocument()
     expect(screen.getByText('22 отзыва')).toBeInTheDocument()
     expect(screen.getAllByText('Чистота').length).toBeGreaterThan(0)
+  })
+
+  it('payment method list and card form in Uzbek', async () => {
+    await renderIn('uz', (
+      <>
+        <PaymentMethodSelector selectedProvider="payme" onProviderSelect={() => {}} />
+        <CardForm onValidityChange={() => {}} />
+      </>
+    ))
+    expect(screen.getByText("To'lov usulini tanlang")).toBeInTheDocument()
+    expect(screen.getByText('Mashhur')).toBeInTheDocument()
+    expect(screen.getByLabelText('Karta raqami')).toBeInTheDocument()
+    expect(screen.getByRole('note')).toHaveTextContent('Sinov rejimi')
+  })
+
+  it('payment processing, confirmation and failure in Russian', async () => {
+    const payment = { id: 7, provider: 'payme', amount: '450000', currency: 'UZS', status: 'completed', created_at: '2026-10-09T10:00:00Z' }
+    await renderIn('ru', (
+      <>
+        <PaymentProcessing provider="click" amount={100} currency="USD" status="processing" />
+        <PaymentConfirmation
+          payment={payment as never}
+          bookingDetails={{ property_name: 'Hotel', check_in: '2026-10-10', check_out: '2026-10-12', confirmation_code: 'AB12CD' }}
+          onViewBookings={() => {}}
+          onBackToProperty={() => {}}
+        />
+        <PaymentFailure provider="visa" amount={100} currency="USD" onRetry={() => {}} onCancel={() => {}} onTryDifferentMethod={() => {}} />
+      </>
+    ))
+    expect(screen.getByText('Обработка платежа через Click...')).toBeInTheDocument()
+    expect(screen.getByText('Платёж выполнен!')).toBeInTheDocument()
+    expect(screen.getByText('Выполнен')).toBeInTheDocument()
+    expect(screen.getByText('Проверьте данные карты и попробуйте ещё раз.', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Выбрать другой способ оплаты')).toBeInTheDocument()
   })
 })

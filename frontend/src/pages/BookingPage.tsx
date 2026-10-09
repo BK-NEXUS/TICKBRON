@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -12,7 +13,7 @@ import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
 import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { isValidPhone, phoneExample } from '../utils/phone'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
@@ -43,7 +44,12 @@ interface GuestDetails {
  * BookingPage component for the booking flow
  * Includes guest details form, price summary, validation, and confirmation states
  */
+/** A backend message (text) or one of ours (key): ours are translated when shown, also when set inside an effect */
+type Message = { text: string } | { key: MessageKey }
+const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
+
 export function BookingPage() {
+  const { t, tp, formatMoney: formatAmount, formatDate } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated } = useAuth()
@@ -70,9 +76,9 @@ export function BookingPage() {
   usePageTrail(property ? [
     { label: property.city, to: searchUrlForCity(property.city) },
     { label: propertyDisplayName(property), to: `/property/${property.id}` },
-    { label: 'Booking' },
+    { label: t('booking.crumb') },
   ] : null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Message | null>(null)
   const [step, setStep] = useState<'details' | 'payment' | 'processing' | 'confirmation' | 'success' | 'failure'>('details')
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null)
   const [cardValid, setCardValid] = useState(false)
@@ -83,7 +89,7 @@ export function BookingPage() {
   // GET /properties/{id}/quote/: priced by the same backend code that charges the booking,
   // so the total shown here is the amount paid. There is no local fallback price.
   const [quote, setQuote] = useState<StayQuote | null>(null)
-  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const [quoteError, setQuoteError] = useState<Message | null>(null)
   const quoteRequestId = useRef(0)
   const roomsForQuote = Math.max(1, guestDetails.number_of_rooms || 1)
 
@@ -99,7 +105,7 @@ export function BookingPage() {
   useEffect(() => {
     const state = location.state as BookingState
     if (!state) {
-      setError('Missing booking information. Please select a room and try again.')
+      setError({ key: 'booking.errorMissing' })
       setLoading(false)
       return
     }
@@ -142,7 +148,7 @@ export function BookingPage() {
       if (response?.data) {
         setQuote(response.data)
       } else {
-        setQuoteError(response?.error || 'Could not price this stay. Please go back and choose other dates.')
+        setQuoteError(failure(response?.error, 'booking.errorQuote'))
       }
     }
     loadQuote()
@@ -159,7 +165,7 @@ export function BookingPage() {
         // Load property details
         const propertyResponse = await propertyAdapter.getPropertyById(bookingState.propertyId)
         if (propertyResponse.error || !propertyResponse.data) {
-          setError(propertyResponse.error || 'Failed to load property details')
+          setError(failure(propertyResponse.error, 'booking.errorProperty'))
           setLoading(false)
           return
         }
@@ -170,7 +176,7 @@ export function BookingPage() {
         const foundRatePlan = foundRoomType?.rate_plans?.find(rp => rp.id === bookingState.ratePlanId)
         
         if (!foundRoomType || !foundRatePlan) {
-          setError('Room or rate plan not found')
+          setError({ key: 'booking.errorRoom' })
           setLoading(false)
           return
         }
@@ -179,7 +185,7 @@ export function BookingPage() {
         setRatePlan(foundRatePlan)
         setLoading(false)
       } catch (err) {
-        setError('Failed to load booking information')
+        setError({ key: 'booking.errorLoad' })
         setLoading(false)
       }
     }
@@ -191,7 +197,6 @@ export function BookingPage() {
   // null while neither is known or when the stay cannot be booked
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
-  const { formatMoney: formatAmount } = useI18n()
   // The test card form stands in for the Visa page only while the backend runs in test payment mode
   const needsCard = selectedProvider === 'visa' && isCardTestMode()
   const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
@@ -202,10 +207,14 @@ export function BookingPage() {
     const prices = (quote?.nights ?? []).map(night => Number(night.price))
     const uniform = prices.length > 0 && prices.every(price => price === prices[0])
     const format = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 0 })
-    const nightWord = nights === 1 ? 'night' : 'nights'
-    const nightsText = uniform ? `${format(prices[0])} × ${nights} ${nightWord}` : `${nights} ${nightWord}`
-    return roomsForQuote > 1 ? `${nightsText} × ${roomsForQuote} rooms` : nightsText
+    const nightsLabel = tp('rooms.nights', nights)
+    const nightsText = uniform ? t('booking.breakdown', { price: format(prices[0]), nights: nightsLabel }) : nightsLabel
+    return roomsForQuote > 1 ? t('booking.times', { text: nightsText, rooms: tp('booking.roomsCount', roomsForQuote) }) : nightsText
   }
+
+  const messageText = (message: Message | null) => (message ? ('text' in message ? message.text : t(message.key)) : null)
+  const errorText = messageText(error)
+  const quoteErrorText = messageText(quoteError)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -253,33 +262,33 @@ export function BookingPage() {
     const errors: Record<string, string> = {}
 
     if (!guestDetails.first_name.trim()) {
-      errors.first_name = 'First name is required'
+      errors.first_name = t('booking.firstNameRequired')
     } else if (guestDetails.first_name.trim().length < 2) {
-      errors.first_name = 'First name must be at least 2 characters'
+      errors.first_name = t('booking.firstNameShort')
     }
 
     if (!guestDetails.last_name.trim()) {
-      errors.last_name = 'Last name is required'
+      errors.last_name = t('booking.lastNameRequired')
     } else if (guestDetails.last_name.trim().length < 2) {
-      errors.last_name = 'Last name must be at least 2 characters'
+      errors.last_name = t('booking.lastNameShort')
     }
 
     if (!guestDetails.email.trim()) {
-      errors.email = 'Email is required'
+      errors.email = t('booking.emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestDetails.email)) {
-      errors.email = 'Please enter a valid email address'
+      errors.email = t('booking.emailInvalid')
     }
 
     if (guestDetails.phone_number && !isValidPhone(guestDetails.phone_number)) {
-      errors.phone_number = phoneErrorMessage()
+      errors.phone_number = t('phone.invalid', { example: phoneExample() })
     }
 
     if (guestDetails.number_of_rooms < 1) {
-      errors.number_of_rooms = 'Number of rooms must be at least 1'
+      errors.number_of_rooms = t('booking.roomsMin')
     }
 
     if (guestDetails.children.some(age => age < 0 || age > 17)) {
-      errors.children = 'Children ages must be between 0 and 17'
+      errors.children = t('booking.childrenRange')
     }
 
     setValidationErrors(errors)
@@ -294,7 +303,7 @@ export function BookingPage() {
     }
 
     if (!bookingState || !property) {
-      setError('Missing booking information')
+      setError({ key: 'booking.errorInfo' })
       return
     }
 
@@ -320,7 +329,7 @@ export function BookingPage() {
       const response = await bookingAdapter.createBooking(bookingRequest)
       
       if (response.error || !response.data) {
-        setError(response.error || 'Failed to create booking')
+        setError(failure(response.error, 'booking.errorCreate'))
         setSubmitting(false)
         return
       }
@@ -329,14 +338,14 @@ export function BookingPage() {
       setStep('payment')
       setSubmitting(false)
     } catch (err) {
-      setError('Failed to create booking. Please try again.')
+      setError({ key: 'booking.errorCreateRetry' })
       setSubmitting(false)
     }
   }
 
   const handleConfirmBooking = async () => {
     if (!booking || !selectedProvider) {
-      setError('Missing booking or payment method')
+      setError({ key: 'booking.errorMethod' })
       return
     }
 
@@ -369,7 +378,7 @@ export function BookingPage() {
       const paymentResponse = await paymentAdapter.createPayment(paymentRequest)
 
       if (paymentResponse.error || !paymentResponse.data) {
-        setPaymentError(paymentResponse.error || 'Failed to initiate payment')
+        setPaymentError(paymentResponse.error || t('booking.errorPayInit'))
         setPaymentStatus('failed')
         setStep('failure')
         setSubmitting(false)
@@ -383,7 +392,7 @@ export function BookingPage() {
       const confirmResponse = await paymentAdapter.confirmPayment(paymentResponse.data.id)
 
       if (confirmResponse.error || !confirmResponse.data) {
-        setPaymentError(confirmResponse.error || 'Failed to confirm payment')
+        setPaymentError(confirmResponse.error || t('booking.errorPayConfirm'))
         setPaymentStatus('failed')
         setStep('failure')
         setSubmitting(false)
@@ -395,7 +404,7 @@ export function BookingPage() {
       setStep('confirmation')
       setSubmitting(false)
     } catch (err) {
-      setPaymentError('Payment processing failed. Please try again.')
+      setPaymentError(t('booking.errorPayFailed'))
       setPaymentStatus('failed')
       setStep('failure')
       setSubmitting(false)
@@ -435,7 +444,7 @@ export function BookingPage() {
         <div className="container">
           <div className="loading-state" role="status" aria-live="polite">
             <div className="loading-spinner"></div>
-            <p>Loading booking information...</p>
+            <p>{t('booking.loading')}</p>
           </div>
         </div>
       </div>
@@ -447,14 +456,14 @@ export function BookingPage() {
       <div className="booking-page booking-page--error">
         <div className="container">
           <div className="error-state" role="alert" aria-live="assertive">
-            <h2>Booking Error</h2>
-            <p>{error}</p>
+            <h2>{t('booking.errorTitle')}</h2>
+            <p>{errorText}</p>
             <button 
               className="btn btn-primary"
               onClick={handleBackToProperty}
-              aria-label="Return to property page"
+              aria-label={t('booking.backToPropertyLabel')}
             >
-              Back to Property
+              {t('booking.backToProperty')}
             </button>
           </div>
         </div>
@@ -470,42 +479,32 @@ export function BookingPage() {
             <div className="success-icon">
               <Check size={36} />
             </div>
-            <h1>Booking Confirmed!</h1>
-            <p>Your booking has been successfully created.</p>
+            <h1>{t('booking.confirmedTitle')}</h1>
+            <p>{t('booking.confirmedText')}</p>
             
             <div className="booking-confirmation-details">
               <div className="booking-confirmation-item">
-                <span className="booking-confirmation-label">Confirmation Code:</span>
+                <span className="booking-confirmation-label">{t('booking.confirmationCode')}</span>
                 <span className="booking-confirmation-value">{booking.confirmation_code}</span>
               </div>
               <div className="booking-confirmation-item">
-                <span className="booking-confirmation-label">Property:</span>
+                <span className="booking-confirmation-label">{t('booking.property')}</span>
                 <span className="booking-confirmation-value">{booking.property_name}</span>
               </div>
               <div className="booking-confirmation-item">
-                <span className="booking-confirmation-label">Check-in:</span>
+                <span className="booking-confirmation-label">{t('booking.checkIn')}</span>
                 <span className="booking-confirmation-value">
-                  {new Date(booking.check_in).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  {formatDate(booking.check_in, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
               <div className="booking-confirmation-item">
-                <span className="booking-confirmation-label">Check-out:</span>
+                <span className="booking-confirmation-label">{t('booking.checkOut')}</span>
                 <span className="booking-confirmation-value">
-                  {new Date(booking.check_out).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  {formatDate(booking.check_out, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
               <div className="booking-confirmation-item">
-                <span className="booking-confirmation-label">Total Price:</span>
+                <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
                 <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
               </div>
             </div>
@@ -514,16 +513,16 @@ export function BookingPage() {
               <button 
                 className="btn btn-primary"
                 onClick={() => navigate('/bookings')}
-                aria-label="View my bookings"
+                aria-label={t('booking.viewBookingsLabel')}
               >
-                View My Bookings
+                {t('booking.viewBookings')}
               </button>
               <button 
                 className="btn btn-secondary"
                 onClick={handleBackToProperty}
-                aria-label="Return to property page"
+                aria-label={t('booking.backToPropertyLabel')}
               >
-                Back to Property
+                {t('booking.backToProperty')}
               </button>
             </div>
           </div>
@@ -541,11 +540,11 @@ export function BookingPage() {
               <button 
                 className="btn btn-link booking-page-back"
                 onClick={() => setStep('details')}
-                aria-label="Back to guest details"
+                aria-label={t('booking.backToDetailsLabel')}
               >
-                ← Back to Details
+                ← {t('booking.backToDetails')}
               </button>
-              <h1>Payment Method</h1>
+              <h1>{t('booking.paymentMethod')}</h1>
             </div>
 
             <PaymentMethodSelector
@@ -560,7 +559,7 @@ export function BookingPage() {
               <div className="payment-method-actions">
                 {error && (
                   <div className="booking-form-error" role="alert" aria-live="assertive">
-                    {error}
+                    {errorText}
                   </div>
                 )}
                 <button 
@@ -569,7 +568,7 @@ export function BookingPage() {
                   disabled={submitting || (needsCard && !cardValid)}
                   aria-busy={submitting}
                 >
-                  {submitting ? 'Processing...' : `Pay with ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)}`}
+                  {submitting ? t('booking.processing') : t('pay.payWith', { provider: selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1) })}
                 </button>
               </div>
             )}
@@ -577,7 +576,7 @@ export function BookingPage() {
 
           <aside className="booking-page-sidebar">
             <div className="booking-summary-card">
-              <h3 className="booking-summary-title">Price Summary</h3>
+              <h3 className="booking-summary-title">{t('booking.summary')}</h3>
               
               {property && (
                 <div className="booking-summary-property">
@@ -605,7 +604,7 @@ export function BookingPage() {
                       </div>
 
                       <div className="booking-summary-total">
-                        <span className="booking-summary-total-label">Total</span>
+                        <span className="booking-summary-total-label">{t('booking.total')}</span>
                         <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
                       </div>
                     </>
@@ -619,8 +618,8 @@ export function BookingPage() {
                     <Clock size={20} />
                   </div>
                   <div className="booking-summary-expiry-text">
-                    <strong>Booking expires in 15 minutes</strong>
-                    <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>
+                    <strong>{t('booking.expires')}</strong>
+                    <div>{t('booking.expiresBefore', { time: new Date(booking.expires_at).toLocaleTimeString() })}</div>
                   </div>
                 </div>
               )}
@@ -692,22 +691,22 @@ export function BookingPage() {
             <button 
               className="btn btn-link booking-page-back"
               onClick={handleBackToProperty}
-              aria-label="Back to property"
+              aria-label={t('booking.backArrowProperty')}
             >
-              ← Back to Property
+              ← {t('booking.backToProperty')}
             </button>
-            <h1>Complete Your Booking</h1>
+            <h1>{t('booking.complete')}</h1>
           </div>
 
           {step === 'details' && (
             <form onSubmit={handleSubmit} className="booking-form">
               <div className="booking-form-section">
-                <h2 className="booking-form-section-title">Guest Details</h2>
+                <h2 className="booking-form-section-title">{t('booking.guestDetails')}</h2>
                 
                 <div className="booking-form-row">
                   <div className="booking-form-field">
                     <label htmlFor="first_name" className="booking-form-label">
-                      First Name <span className="required">*</span>
+                      {t('booking.firstName')} <span className="required">*</span>
                     </label>
                     <input
                       type="text"
@@ -730,7 +729,7 @@ export function BookingPage() {
 
                   <div className="booking-form-field">
                     <label htmlFor="last_name" className="booking-form-label">
-                      Last Name <span className="required">*</span>
+                      {t('booking.lastName')} <span className="required">*</span>
                     </label>
                     <input
                       type="text"
@@ -754,7 +753,7 @@ export function BookingPage() {
 
                 <div className="booking-form-field">
                   <label htmlFor="email" className="booking-form-label">
-                    Email <span className="required">*</span>
+                    {t('booking.email')} <span className="required">*</span>
                   </label>
                   <input
                     type="email"
@@ -777,7 +776,7 @@ export function BookingPage() {
 
                 <div className="booking-form-field">
                   <label htmlFor="phone_number" className="booking-form-label">
-                    Phone Number
+                    {t('booking.phone')}
                   </label>
                   <PhoneInput
                     id="phone_number"
@@ -797,7 +796,7 @@ export function BookingPage() {
 
                 <div className="booking-form-field">
                   <label htmlFor="number_of_rooms" className="booking-form-label">
-                    Number of Rooms <span className="required">*</span>
+                    {t('booking.numberOfRooms')} <span className="required">*</span>
                   </label>
                   <input
                     type="number"
@@ -819,12 +818,12 @@ export function BookingPage() {
                 </div>
 
                 <div className="booking-form-field">
-                  <label className="booking-form-label">Children (Ages 0-17)</label>
+                  <label className="booking-form-label">{t('booking.childrenAges')}</label>
                   <div className="booking-form-children">
                     {guestDetails.children.map((age, index) => (
                       <div key={index} className="booking-form-child-item">
                         <label htmlFor={`child_age_${index}`} className="booking-form-child-label">
-                          Child {index + 1}
+                          {t('booking.child', { number: index + 1 })}
                         </label>
                         <input
                           type="number"
@@ -839,9 +838,9 @@ export function BookingPage() {
                           type="button"
                           className="btn btn-link booking-form-child-remove"
                           onClick={() => removeChild(index)}
-                          aria-label={`Remove child ${index + 1}`}
+                          aria-label={t('booking.removeChildLabel', { number: index + 1 })}
                         >
-                          Remove
+                          {t('booking.remove')}
                         </button>
                       </div>
                     ))}
@@ -850,7 +849,7 @@ export function BookingPage() {
                       className="btn btn-secondary booking-form-child-add"
                       onClick={addChild}
                     >
-                      + Add Child
+                      + {t('booking.addChild')}
                     </button>
                   </div>
                   {validationErrors.children && (
@@ -862,7 +861,7 @@ export function BookingPage() {
 
                 <div className="booking-form-field">
                   <label htmlFor="special_requests" className="booking-form-label">
-                    Special Requests
+                    {t('booking.requests')}
                   </label>
                   <textarea
                     id="special_requests"
@@ -871,14 +870,14 @@ export function BookingPage() {
                     onChange={handleInputChange}
                     className="booking-form-textarea"
                     rows={4}
-                    placeholder="Any special requests for your stay..."
+                    placeholder={t('booking.requestsPlaceholder')}
                   />
                 </div>
               </div>
 
               {error && (
                 <div className="booking-form-error" role="alert" aria-live="assertive">
-                  {error}
+                  {errorText}
                 </div>
               )}
 
@@ -888,61 +887,51 @@ export function BookingPage() {
                 disabled={submitting || !quote}
                 aria-busy={submitting}
               >
-                {submitting ? 'Processing...' : 'Continue to Payment'}
+                {submitting ? t('booking.processing') : t('booking.continue')}
               </button>
             </form>
           )}
 
           {step === 'confirmation' && booking && (
             <div className="booking-confirmation">
-              <h2 className="booking-confirmation-title">Review Your Booking</h2>
+              <h2 className="booking-confirmation-title">{t('booking.review')}</h2>
               
               <div className="booking-confirmation-summary">
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Property:</span>
+                  <span className="booking-confirmation-label">{t('booking.property')}</span>
                   <span className="booking-confirmation-value">{booking.property_name}</span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Room:</span>
+                  <span className="booking-confirmation-label">{t('booking.room')}</span>
                   <span className="booking-confirmation-value">{roomType?.name}</span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Rate Plan:</span>
+                  <span className="booking-confirmation-label">{t('booking.ratePlan')}</span>
                   <span className="booking-confirmation-value">{ratePlan?.name}</span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Check-in:</span>
+                  <span className="booking-confirmation-label">{t('booking.checkIn')}</span>
                   <span className="booking-confirmation-value">
-                    {new Date(booking.check_in).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                    {formatDate(booking.check_in, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Check-out:</span>
+                  <span className="booking-confirmation-label">{t('booking.checkOut')}</span>
                   <span className="booking-confirmation-value">
-                    {new Date(booking.check_out).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                    {formatDate(booking.check_out, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Guests:</span>
+                  <span className="booking-confirmation-label">{t('booking.guests')}</span>
                   <span className="booking-confirmation-value">{booking.guest_count}</span>
                 </div>
                 <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">Total Price:</span>
+                  <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
                   <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
                 </div>
                 {booking.special_requests && (
                   <div className="booking-confirmation-item">
-                    <span className="booking-confirmation-label">Special Requests:</span>
+                    <span className="booking-confirmation-label">{t('booking.specialRequests')}</span>
                     <span className="booking-confirmation-value">{booking.special_requests}</span>
                   </div>
                 )}
@@ -950,7 +939,7 @@ export function BookingPage() {
 
               {error && (
                 <div className="booking-confirmation-error" role="alert" aria-live="assertive">
-                  {error}
+                  {errorText}
                 </div>
               )}
 
@@ -961,14 +950,14 @@ export function BookingPage() {
                   disabled={submitting}
                   aria-busy={submitting}
                 >
-                  {submitting ? 'Confirming...' : 'Confirm Booking'}
+                  {submitting ? t('booking.confirming') : t('booking.confirm')}
                 </button>
                 <button 
                   className="btn btn-secondary"
                   onClick={() => setStep('details')}
                   disabled={submitting}
                 >
-                  Back to Details
+                  {t('booking.backToDetails')}
                 </button>
               </div>
             </div>
@@ -977,7 +966,7 @@ export function BookingPage() {
 
         <aside className="booking-page-sidebar">
           <div className="booking-summary-card">
-            <h3 className="booking-summary-title">Price Summary</h3>
+            <h3 className="booking-summary-title">{t('booking.summary')}</h3>
             
             {property && (
               <div className="booking-summary-property">
@@ -997,9 +986,9 @@ export function BookingPage() {
 
                 {totalPrice === null ? (
                   quoteError ? (
-                    <div className="booking-summary-error" role="alert">{quoteError}</div>
+                    <div className="booking-summary-error" role="alert">{quoteErrorText}</div>
                   ) : (
-                    <div className="booking-summary-loading" role="status">Calculating price...</div>
+                    <div className="booking-summary-loading" role="status">{t('booking.calculating')}</div>
                   )
                 ) : (
                   <>
@@ -1011,7 +1000,7 @@ export function BookingPage() {
 
                       {ratePlan.deposit_required && ratePlan.deposit_percentage && (
                         <div className="booking-summary-item">
-                          <span className="booking-summary-label">Deposit ({ratePlan.deposit_percentage}%)</span>
+                          <span className="booking-summary-label">{t('booking.deposit', { percent: ratePlan.deposit_percentage })}</span>
                           <span className="booking-summary-value">
                             {formatMoney(totalPrice * (ratePlan.deposit_percentage / 100))}
                           </span>
@@ -1020,7 +1009,7 @@ export function BookingPage() {
                     </div>
 
                     <div className="booking-summary-total">
-                      <span className="booking-summary-total-label">Total</span>
+                      <span className="booking-summary-total-label">{t('booking.total')}</span>
                       <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
                     </div>
                   </>
@@ -1032,8 +1021,8 @@ export function BookingPage() {
               <div className="booking-summary-expiry">
                 <div className="booking-summary-expiry-icon"><Clock size={20} aria-hidden="true" /></div>
                 <div className="booking-summary-expiry-text">
-                  <strong>Booking expires in 15 minutes</strong>
-                  <div>Please complete your booking before {new Date(booking.expires_at).toLocaleTimeString()}</div>
+                  <strong>{t('booking.expires')}</strong>
+                  <div>{t('booking.expiresBefore', { time: new Date(booking.expires_at).toLocaleTimeString() })}</div>
                 </div>
               </div>
             )}

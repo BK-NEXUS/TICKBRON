@@ -2465,3 +2465,9 @@ Migrated (116 new keys): `PropertyDetailPage` (our own load errors are keys now,
 
 ## Strings to keys, chunk 3b: reviews (frontend, 2026-10-09)
 `ReviewsSection`, `ReviewCard` (date in the page language), `ReviewForm`, `RatingBreakdown` use `t()`/`tp()` (32 keys `reviews.*`, `common.cancel`). Review titles, comments and names are user content and stay as written. No existing assertion changed.
+
+## Strings to keys, chunk 3c: booking and payment (frontend, 2026-10-09)
+Migrated (151 new keys `booking.*`, `pay.*`, `card.*`): `BookingPage` (form, validation messages, review step, success, price summary; its own error and quote messages are stored as `{ key }` or `{ text }` so they follow the language, also when set inside an effect), `PaymentMethodSelector`, `PaymentProcessing`, `PaymentConfirmation` (date in the page language, payment status names), `PaymentFailure` (default error and tips per provider), `CardForm`. The pay button reads "Pay with Payme" / "Payme orqali to'lash" / "Оплатить через Payme". No existing assertion changed. `i18n/bookingScreen.test.tsx` covers the booking page (its own file because it mocks `useAuth`).
+### Found, not fixed
+- `BookingPage.tsx`: the deposit amount is computed in the browser (`totalPrice * deposit_percentage / 100`); money must come from the backend (quote). Also the "Booking expires in 15 minutes" text is a constant, not derived from `expires_at`.
+- Payment statuses that come from the API and are not in the list (`pay.statusName.*`) are shown capitalized in English.
