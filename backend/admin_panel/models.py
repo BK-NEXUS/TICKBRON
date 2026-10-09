@@ -83,6 +83,12 @@ class AdminAccessLog(models.Model):
         ('no_show_report_approve', 'Approved a no-show report'),
         ('no_show_report_reject', 'Rejected a no-show report'),
         ('no_show_report_reverse', 'Corrected a no-show report decision'),
+        ('promotion_create', 'Created a hotel promotion'),
+        ('promotion_update', 'Changed a hotel promotion'),
+        ('promotion_pause', 'Paused a hotel promotion'),
+        ('promotion_resume', 'Resumed a hotel promotion'),
+        ('promotion_cancel', 'Cancelled a hotel promotion'),
+        ('promotion_mark_paid', 'Recorded the payment of a hotel promotion'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
@@ -104,7 +110,8 @@ class AdminAccessLog(models.Model):
 
     # The only keys `details` may hold: non-personal facts, flat scalar values
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
-                             'refund_id', 'export', 'rows', 'report_id'})
+                             'refund_id', 'export', 'rows', 'report_id',
+                             'promotion_id', 'property_id', 'start_date', 'end_date', 'amount'})
 
     @classmethod
     def _check_details(cls, details):

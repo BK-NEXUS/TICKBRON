@@ -57,8 +57,21 @@ ADMIN_ENDPOINTS = [
     ('post', f'{A}/no-show-reports/1/approve/'),
     ('post', f'{A}/no-show-reports/1/reject/'),
     ('post', f'{A}/no-show-reports/1/reverse/'),
+    ('get', f'{A}/promotions/'),  # R10 reads: staff may look
+    ('get', f'{A}/promotions/1/'),
+    ('get', f'{A}/promotions/1/stats/'),
+    ('get', f'{A}/promotion-hotels/?q=ab'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
+# R10 promotions: every change is super-admin only, staff get 403 too
+PROMOTION_WRITES = [
+    ('post', f'{A}/promotions/'),
+    ('patch', f'{A}/promotions/1/'),
+    ('post', f'{A}/promotions/1/pause/'),
+    ('post', f'{A}/promotions/1/resume/'),
+    ('post', f'{A}/promotions/1/cancel/'),
+    ('post', f'{A}/promotions/1/mark-paid/'),
+]
 # Geography dictionary management (G3): super-admin only, staff get 403 too
 GEOGRAPHY_ENDPOINTS = [
     (method, f'{A}/geography/{kind}/{suffix}')
@@ -68,7 +81,7 @@ GEOGRAPHY_ENDPOINTS = [
         ('get', '1/'), ('put', '1/'), ('patch', '1/'), ('delete', '1/'),
     )
 ]
-ALL_ADMIN_ENDPOINTS = ADMIN_ENDPOINTS + SUPERADMIN_ONLY + GEOGRAPHY_ENDPOINTS
+ALL_ADMIN_ENDPOINTS = ADMIN_ENDPOINTS + SUPERADMIN_ONLY + GEOGRAPHY_ENDPOINTS + PROMOTION_WRITES
 
 
 @pytest.fixture
@@ -123,6 +136,11 @@ class TestAdminPanelAccessMatrix:
 
     @pytest.mark.parametrize('method,url', GEOGRAPHY_ENDPOINTS)
     def test_geography_is_super_admin_only(self, accounts, method, url):
+        assert call(accounts['staff'], method, url).status_code == 403
+        assert call(accounts['superadmin'], method, url).status_code not in (401, 403)
+
+    @pytest.mark.parametrize('method,url', PROMOTION_WRITES)
+    def test_promotion_changes_are_super_admin_only(self, accounts, method, url):
         assert call(accounts['staff'], method, url).status_code == 403
         assert call(accounts['superadmin'], method, url).status_code not in (401, 403)
 

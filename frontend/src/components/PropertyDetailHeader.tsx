@@ -1,5 +1,7 @@
+import { useI18n } from '../i18n/I18nContext'
 import { Property } from '../adapters/propertyAdapter'
 import { FavoriteButton } from './FavoriteButton'
+import { StarIcon } from './StarIcon'
 
 interface PropertyDetailHeaderProps {
   property: Property
@@ -10,7 +12,8 @@ interface PropertyDetailHeaderProps {
  * Shows property name, location, rating, and key details
  */
 export function PropertyDetailHeader({ property }: PropertyDetailHeaderProps) {
-  const translation = property.translations[0] || { name: 'Property', description: '' }
+  const { t, tp } = useI18n()
+  const translation = property.translations[0] || { name: t('property.defaultName'), description: '' }
   const rating = property.rating || 0
   const reviewCount = property.review_count || 0
 
@@ -32,27 +35,27 @@ export function PropertyDetailHeader({ property }: PropertyDetailHeaderProps) {
             
             {property.rating && (
               <div className="property-detail-header-rating">
-                <span className="property-detail-header-rating-value">★ {rating.toFixed(1)}</span>
-                <span className="property-detail-header-reviews">({reviewCount} reviews)</span>
+                <span className="property-detail-header-rating-value"><StarIcon /> {rating.toFixed(1)}</span>
+                <span className="property-detail-header-reviews">{tp('property.reviews', reviewCount)}</span>
               </div>
             )}
           </div>
 
           <div className="property-detail-header-meta">
             <div className="property-detail-header-meta-item">
-              <span className="property-detail-header-meta-label">Property Type</span>
+              <span className="property-detail-header-meta-label">{t('property.propertyType')}</span>
               <span className="property-detail-header-meta-value">{property.property_type.name}</span>
             </div>
             <div className="property-detail-header-meta-item">
-              <span className="property-detail-header-meta-label">Guests</span>
+              <span className="property-detail-header-meta-label">{t('property.guests')}</span>
               <span className="property-detail-header-meta-value">{property.max_guests}</span>
             </div>
             <div className="property-detail-header-meta-item">
-              <span className="property-detail-header-meta-label">Bedrooms</span>
+              <span className="property-detail-header-meta-label">{t('property.bedrooms')}</span>
               <span className="property-detail-header-meta-value">{property.bedrooms}</span>
             </div>
             <div className="property-detail-header-meta-item">
-              <span className="property-detail-header-meta-label">Bathrooms</span>
+              <span className="property-detail-header-meta-label">{t('property.bathrooms')}</span>
               <span className="property-detail-header-meta-value">{property.bathrooms}</span>
             </div>
           </div>

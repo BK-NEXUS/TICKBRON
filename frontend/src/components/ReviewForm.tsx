@@ -1,5 +1,7 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { accountAdapter, CreateReviewRequest } from '../adapters/accountAdapter'
+import { StarIcon } from './StarIcon'
 
 interface ReviewFormProps {
   propertyId: number
@@ -9,6 +11,7 @@ interface ReviewFormProps {
 }
 
 export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }: ReviewFormProps) {
+  const { t } = useI18n()
   const [overallRating, setOverallRating] = useState(0)
   const [cleanlinessRating, setCleanlinessRating] = useState(0)
   const [locationRating, setLocationRating] = useState(0)
@@ -23,17 +26,17 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
   const RatingInput = ({ label, value, onChange }: { label: string; value: number; onChange: (rating: number) => void }) => (
     <div className="review-form-rating">
       <label className="review-form-rating-label">{label}</label>
-      <div className="review-form-stars" role="radiogroup" aria-label={`${label} rating`}>
+      <div className="review-form-stars" role="radiogroup" aria-label={t('reviews.ratingGroup', { label })}>
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
             className={`review-form-star ${star <= value ? 'review-form-star--active' : ''}`}
             onClick={() => onChange(star)}
-            aria-label={`${label} ${star} stars`}
+            aria-label={t('reviews.starsLabel', { label, count: star })}
             aria-pressed={star <= value}
           >
-            ★
+            <StarIcon />
           </button>
         ))}
       </div>
@@ -46,14 +49,14 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
     setIsLoading(true)
 
     if (overallRating < 1 || overallRating > 5) {
-      setError('Overall rating is required')
+      setError(t('reviews.errorOverall'))
       setIsLoading(false)
       return
     }
 
     // The backend ties every review to a completed stay (booking)
     if (!bookingId) {
-      setError('You can review this property after a completed stay.')
+      setError(t('reviews.errorStay'))
       setIsLoading(false)
       return
     }
@@ -87,7 +90,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
 
   return (
     <form className="review-form" onSubmit={handleSubmit}>
-      <h3 className="review-form-title">Write a Review</h3>
+      <h3 className="review-form-title">{t('reviews.formTitle')}</h3>
 
       {error && (
         <div className="review-form-error" role="alert" aria-live="assertive">
@@ -96,35 +99,35 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
       )}
 
       <RatingInput
-        label="Overall Rating"
+        label={t('reviews.overall')}
         value={overallRating}
         onChange={setOverallRating}
       />
 
       <div className="review-form-category-ratings">
-        <h4 className="review-form-category-title">Category Ratings (Optional)</h4>
+        <h4 className="review-form-category-title">{t('reviews.categoriesOptional')}</h4>
         <RatingInput
-          label="Cleanliness"
+          label={t('reviews.cleanliness')}
           value={cleanlinessRating}
           onChange={setCleanlinessRating}
         />
         <RatingInput
-          label="Location"
+          label={t('reviews.location')}
           value={locationRating}
           onChange={setLocationRating}
         />
         <RatingInput
-          label="Value"
+          label={t('reviews.value')}
           value={valueRating}
           onChange={setValueRating}
         />
         <RatingInput
-          label="Amenities"
+          label={t('reviews.amenities')}
           value={amenitiesRating}
           onChange={setAmenitiesRating}
         />
         <RatingInput
-          label="Service"
+          label={t('reviews.service')}
           value={serviceRating}
           onChange={setServiceRating}
         />
@@ -132,7 +135,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
 
       <div className="review-form-field">
         <label htmlFor="review-title" className="review-form-label">
-          Title (Optional)
+          {t('reviews.titleOptional')}
         </label>
         <input
           id="review-title"
@@ -147,7 +150,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
 
       <div className="review-form-field">
         <label htmlFor="review-comment" className="review-form-label">
-          Comment (Optional)
+          {t('reviews.commentOptional')}
         </label>
         <textarea
           id="review-comment"
@@ -165,7 +168,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
           className="btn btn-primary"
           disabled={isLoading}
         >
-          {isLoading ? 'Submitting...' : 'Submit Review'}
+          {isLoading ? t('reviews.submitting') : t('reviews.submit')}
         </button>
         {onCancel && (
           <button
@@ -174,7 +177,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
             onClick={onCancel}
             disabled={isLoading}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
       </div>

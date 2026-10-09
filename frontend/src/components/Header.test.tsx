@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Header } from './Header'
 import { AuthProvider } from '../contexts/AuthContext'
+import { I18nProvider } from '../i18n/I18nContext'
 
 // Mock the auth adapter
 vi.mock('../adapters/authAdapter', () => ({
@@ -14,16 +15,34 @@ vi.mock('../adapters/authAdapter', () => ({
 describe('Header', () => {
   const renderWithAuthProvider = async (component: React.ReactElement) => {
     const result = render(
-      <AuthProvider>
-        <BrowserRouter>
-          {component}
-        </BrowserRouter>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            {component}
+          </BrowserRouter>
+        </AuthProvider>
+      </I18nProvider>
     )
     // Let what the page loads on mount (e.g. the auth check) finish inside act
     await act(async () => {})
     return result
   }
+
+  it('switches the navigation to Uzbek and Russian from the language selector', async () => {
+    localStorage.clear()
+    await renderWithAuthProvider(<Header />)
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Language/ }))
+    fireEvent.click(screen.getByText("O'zbekcha"))
+    expect(screen.getByRole('link', { name: 'Bosh sahifa' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('uz')
+
+    fireEvent.click(screen.getByRole('button', { name: /^Til/ }))
+    fireEvent.click(screen.getByText('Русский'))
+    expect(screen.getByRole('link', { name: 'Главная' })).toBeInTheDocument()
+    localStorage.clear()
+  })
 
   it('renders the logo', async () => {
     await renderWithAuthProvider(<Header />)
@@ -100,7 +119,12 @@ describe('Header', () => {
 
   it('renders currency selector', async () => {
     await renderWithAuthProvider(<Header />)
-    expect(screen.getByText('USD')).toBeInTheDocument()
+    expect(screen.getByText('UZS')).toBeInTheDocument()
+  })
+
+  it('has a light/dark theme button', async () => {
+    await renderWithAuthProvider(<Header />)
+    expect(screen.getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeInTheDocument()
   })
 
   it('renders mobile menu toggle', async () => {

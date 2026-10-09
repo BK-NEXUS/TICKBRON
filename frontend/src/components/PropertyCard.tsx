@@ -2,6 +2,8 @@ import { Property } from '../adapters/propertyAdapter'
 import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
+import { StarIcon } from './StarIcon'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PropertyCardProps {
   property: Property
@@ -14,7 +16,8 @@ interface PropertyCardProps {
  */
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const navigate = useNavigate()
-  const translation = property.translations[0] || { name: 'Unknown Property', description: '' }
+  const { t, tp, formatMoney } = useI18n()
+  const translation = property.translations[0] || { name: t('card.unknown'), description: '' }
   const rating = property.rating || property.average_rating || 0
   const reviewCount = property.review_count || 0
 
@@ -25,13 +28,9 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
     navigate(`/property/${property.id}`)
   }
 
+
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
+    return formatMoney(price, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const getLocationString = () => {
@@ -45,7 +44,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      aria-label={`${translation.name} in ${getLocationString()}`}
+      aria-label={t('card.ariaLabel', { name: translation.name, location: getLocationString() })}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
@@ -69,7 +68,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         <FavoriteButton propertyId={property.id} propertyName={translation.name} />
         {rating > 0 && (
           <div className="property-card-rating">
-            <span className="property-card-rating-value">★ {rating.toFixed(1)}</span>
+            <span className="property-card-rating-value"><StarIcon /> {rating.toFixed(1)}</span>
             <span className="property-card-reviews">({reviewCount})</span>
           </div>
         )}
@@ -83,39 +82,39 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         
         <div className="property-card-details">
           <span className="property-card-detail">
-            {property.max_guests} guests
+            {tp('card.guests', property.max_guests)}
           </span>
           <span className="property-card-detail">
-            {property.bedrooms} bedrooms
+            {tp('card.bedrooms', property.bedrooms)}
           </span>
           <span className="property-card-detail">
-            {property.bathrooms} bathrooms
+            {tp('card.bathrooms', property.bathrooms)}
           </span>
         </div>
 
         <div className="property-card-amenities">
           {property.has_wifi && (
-            <span className="property-card-amenity" title="WiFi">
+            <span className="property-card-amenity" title={t('feature.wifi')}>
               <Wifi size={16} />
             </span>
           )}
           {property.has_parking && (
-            <span className="property-card-amenity" title="Parking">
+            <span className="property-card-amenity" title={t('feature.parking')}>
               <Car size={16} />
             </span>
           )}
           {property.has_ac && (
-            <span className="property-card-amenity" title="Air Conditioning">
+            <span className="property-card-amenity" title={t('feature.ac')}>
               <Snowflake size={16} />
             </span>
           )}
           {property.has_heating && (
-            <span className="property-card-amenity" title="Heating">
+            <span className="property-card-amenity" title={t('feature.heating')}>
               <Flame size={16} />
             </span>
           )}
           {property.has_elevator && (
-            <span className="property-card-amenity" title="Elevator">
+            <span className="property-card-amenity" title={t('feature.elevator')}>
               <ArrowUpDown size={16} />
             </span>
           )}
@@ -126,10 +125,10 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
             <span className="property-card-price-value">
               {formatPrice(property.base_price, property.currency)}
             </span>
-            <span className="property-card-price-period">per night</span>
+            <span className="property-card-price-period">{t('card.perNight')}</span>
           </div>
           <button className="btn btn-secondary btn-small property-card-cta">
-            View Details
+            {t('card.viewDetails')}
           </button>
         </div>
       </div>

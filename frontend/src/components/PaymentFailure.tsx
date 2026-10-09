@@ -1,5 +1,7 @@
+import type { MessageKey } from '../i18n/messages/en'
 import { PaymentProvider } from '../adapters/paymentAdapter'
 import { CircleX, TriangleAlert } from 'lucide-react'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentFailureProps {
   provider: PaymentProvider
@@ -33,46 +35,25 @@ export function PaymentFailure({
     return names[provider]
   }
 
+  const { t, formatMoney } = useI18n()
+
   const formatAmount = (amount: number, currency: string): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
+    return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const getErrorMessage = (error?: string): string => {
     if (error) return error
     
-    const defaultErrors: Record<PaymentProvider, string> = {
-      payme: 'Payment failed. Please check your Payme account and try again.',
-      click: 'Payment failed. Please check your Click account and try again.',
-      visa: 'Payment failed. Please check your card details and try again.',
-    }
-    return defaultErrors[provider]
+    return t(`pay.failDefault.${provider}`)
   }
 
   const getHelpfulTips = (provider: PaymentProvider): string[] => {
-    const tips: Record<PaymentProvider, string[]> = {
-      payme: [
-        'Ensure you have sufficient funds in your Payme account',
-        'Check your internet connection',
-        'Verify your Payme account is active',
-      ],
-      click: [
-        'Ensure you have sufficient funds in your Click account',
-        'Check your internet connection',
-        'Verify your Click account is active',
-      ],
-      visa: [
-        'Check your card details are correct',
-        'Ensure you have sufficient funds',
-        'Verify your card is not expired',
-        'Check with your bank if the transaction was declined',
-      ],
+    const tips: Record<PaymentProvider, MessageKey[]> = {
+      payme: ['pay.tip.funds.payme', 'pay.tip.internet', 'pay.tip.active.payme'],
+      click: ['pay.tip.funds.click', 'pay.tip.internet', 'pay.tip.active.click'],
+      visa: ['pay.tip.cardDetails', 'pay.tip.funds.visa', 'pay.tip.expired', 'pay.tip.bank'],
     }
-    return tips[provider]
+    return tips[provider].map(key => t(key))
   }
 
   const helpfulTips = getHelpfulTips(provider)
@@ -81,9 +62,9 @@ export function PaymentFailure({
     <div className="payment-failure">
       <div className="payment-failure-header">
         <div className="payment-failure-icon" aria-hidden="true"><CircleX size={48} /></div>
-        <h2 className="payment-failure-title">Payment Failed</h2>
+        <h2 className="payment-failure-title">{t('pay.failTitle')}</h2>
         <p className="payment-failure-subtitle">
-          We couldn't process your payment
+          {t('pay.failText')}
         </p>
       </div>
 
@@ -91,18 +72,18 @@ export function PaymentFailure({
         <div className="payment-failure-error" role="alert" aria-live="assertive">
           <div className="payment-failure-error-icon" aria-hidden="true"><TriangleAlert size={24} /></div>
           <div className="payment-failure-error-text">
-            <strong>Error:</strong>
+            <strong>{t('pay.errorLabel')}</strong>
             <p>{getErrorMessage(error)}</p>
           </div>
         </div>
 
         <div className="payment-failure-details">
           <div className="payment-failure-detail">
-            <span className="payment-failure-detail-label">Provider:</span>
+            <span className="payment-failure-detail-label">{t('pay.provider')}</span>
             <span className="payment-failure-detail-value">{getProviderName(provider)}</span>
           </div>
           <div className="payment-failure-detail">
-            <span className="payment-failure-detail-label">Amount:</span>
+            <span className="payment-failure-detail-label">{t('pay.amount')}</span>
             <span className="payment-failure-detail-value">
               {formatAmount(amount, currency)}
             </span>
@@ -110,7 +91,7 @@ export function PaymentFailure({
         </div>
 
         <div className="payment-failure-tips">
-          <h3 className="payment-failure-tips-title">What you can try:</h3>
+          <h3 className="payment-failure-tips-title">{t('pay.tips')}</h3>
           <ul className="payment-failure-tips-list">
             {helpfulTips.map((tip, index) => (
               <li key={index} className="payment-failure-tips-item">
@@ -122,7 +103,7 @@ export function PaymentFailure({
 
         <div className="payment-failure-support">
           <p className="payment-failure-support-text">
-            If the problem persists, please contact our support team for assistance.
+            {t('pay.support')}
           </p>
         </div>
       </div>
@@ -131,23 +112,23 @@ export function PaymentFailure({
         <button 
           className="btn btn-primary btn-large"
           onClick={onRetry}
-          aria-label="Retry payment"
+          aria-label={t('pay.retryLabel')}
         >
-          Try Again
+          {t('pay.retry')}
         </button>
         <button 
           className="btn btn-secondary"
           onClick={onTryDifferentMethod}
-          aria-label="Try a different payment method"
+          aria-label={t('pay.differentMethodLabel')}
         >
-          Try Different Payment Method
+          {t('pay.differentMethod')}
         </button>
         <button 
           className="btn btn-link"
           onClick={onCancel}
-          aria-label="Cancel booking"
+          aria-label={t('pay.cancelBookingLabel')}
         >
-          Cancel Booking
+          {t('pay.cancelBooking')}
         </button>
       </div>
     </div>

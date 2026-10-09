@@ -1,3 +1,4 @@
+import { textKeys, useI18n, useTexts } from '../i18n/I18nContext'
 import { useEffect, useId, useState } from 'react'
 import { statusAdapter, PartnerStatus } from '../adapters/statusAdapter'
 import { useStatusPeriod } from '../hooks/useStatusPeriod'
@@ -9,26 +10,29 @@ import { PartnerArrivals } from './PartnerArrivals'
 import { PartnerHotelStatus } from './PartnerHotelStatus'
 import { chartCurrencies, formatCount, formatDate, formatMoneyList } from '../utils/statusFormat'
 
-const TEXT = {
-  title: 'Status',
-  subtitle: 'Your numbers on TICKBRON. Stayed guests lead; counted bookings (confirmed and completed) are shown separately. By check-in date.',
-  loading: 'Loading your numbers...',
-  since: 'On TICKBRON since',
-  guestsLabel: 'Guests via TICKBRON',
-  properties: 'Your properties',
-  noProperties: 'No properties yet. Numbers appear here once guests book them.',
-  headers: { property: 'Property', location: 'Location', counted: 'Counted', stayed: 'Stayed bookings', guests: 'Guests', revenue: 'Revenue' },
-  yearTitle: 'Year overview',
-  chartYear: 'Chart year',
-  chartCurrency: 'Chart currency',
-  noRevenue: (year: number) => `No revenue in ${year}.`,
-}
+const TEXT_KEYS = textKeys({
+  title: 'partner.status',
+  subtitle: 'status.subtitle2',
+  loading: 'status.loading3',
+  since: 'status.since',
+  guestsLabel: 'status.guestsLabel',
+  properties: 'status.properties',
+  noProperties: 'status.noProperties',
+  headers: { property: 'crumb.property', location: 'property.location', counted: 'status.counted', stayed: 'status.stayed', guests: 'searchForm.guests', revenue: 'status.revenue' },
+  yearTitle: 'status.yearTitle',
+  chartYear: 'status.chartYear',
+  chartCurrency: 'status.chartCurrency',
+
+})
 
 /**
  * Partner panel > Status: the owner's own numbers (summary, series, reconciliation, arrivals, CSV)
  * and a page per own hotel. Revenue is one amount per currency.
  */
 export function PartnerStatusTab() {
+  const TEXT = useTexts(TEXT_KEYS)
+  const i18n = useI18n()
+  const { t } = i18n
   const id = useId()
   const { params, period, range, granularity, setPeriod, setRange, setGranularity } = useStatusPeriod()
   const [year, setYear] = useState<number | undefined>(undefined)
@@ -89,7 +93,7 @@ export function PartnerStatusTab() {
           <StatusReport
             period={data.period} periodRange={data.period_range} totals={data.totals} series={data.series}
             granularity={granularity} onGranularityChange={setGranularity} reconciliation={data.reconciliation}
-            lead={{ label: TEXT.since, value: formatDate(data.since) }} guestsLabel={TEXT.guestsLabel}
+            lead={{ label: TEXT.since, value: formatDate(data.since, i18n) }} guestsLabel={TEXT.guestsLabel}
           />
 
           {data.properties.length === 0 ? (
@@ -150,7 +154,7 @@ export function PartnerStatusTab() {
             {chartCurrency ? (
               <StatusMonthlyChart months={data.monthly} year={data.year} metric="revenue" currency={chartCurrency} />
             ) : (
-              <div className="empty-state"><p>{TEXT.noRevenue(data.year)}</p></div>
+              <div className="empty-state"><p>{t('status.noRevenueIn', { year: data.year })}</p></div>
             )}
             <StatusMonthlyChart months={data.monthly} year={data.year} metric="guests" />
           </div>

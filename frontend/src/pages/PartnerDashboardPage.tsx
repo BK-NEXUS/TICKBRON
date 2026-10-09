@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { Lock, House, Calendar, BedDouble, Banknote } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,6 +19,7 @@ type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calend
 const propertyName = (property: PartnerProperty) => property.name || property.city
 
 export function PartnerDashboardPage() {
+  const { t } = useI18n()
   const { user, isAuthenticated } = useAuth()
   const [currentView, setCurrentView] = useState<DashboardView>('properties')
   const [properties, setProperties] = useState<PartnerProperty[]>([])
@@ -32,6 +34,8 @@ export function PartnerDashboardPage() {
     if (isAuthenticated) {
       loadProperties()
     }
+    // Reloads on sign-in only; a language change must not refetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])
 
   const loadProperties = async () => {
@@ -47,7 +51,7 @@ export function PartnerDashboardPage() {
         setProperties(response.data)
       }
     } catch (err) {
-      setError('Failed to load properties. Please try again.')
+      setError(t('partner.failedToLoadProperties'))
     } finally {
       setLoading(false)
     }
@@ -101,11 +105,11 @@ export function PartnerDashboardPage() {
 
   // Home › Partner Dashboard › Hotel › Room type › Rate plan, shown by the layout's Breadcrumbs.
   // Each level is a button that goes back to that view; Back steps up one level.
-  const trail: Crumb[] = [{ label: 'Partner Dashboard' }]
-  if (currentView !== 'properties') trail[0] = { label: 'Partner Dashboard', onClick: handleBackToProperties }
-  if (currentView === 'add-property') trail.push({ label: 'Add Property' })
-  if (currentView === 'bookings') trail.push({ label: 'Bookings' })
-  if (currentView === 'status') trail.push({ label: 'Status' })
+  const trail: Crumb[] = [{ label: t('header.partnerDashboard') }]
+  if (currentView !== 'properties') trail[0] = { label: t('header.partnerDashboard'), onClick: handleBackToProperties }
+  if (currentView === 'add-property') trail.push({ label: t('partner.addProperty') })
+  if (currentView === 'bookings') trail.push({ label: t('partner.bookings') })
+  if (currentView === 'status') trail.push({ label: t('partner.status') })
   if (selectedProperty && ['rooms', 'rates', 'availability', 'calendar'].includes(currentView)) {
     trail.push(currentView === 'rooms'
       ? { label: propertyName(selectedProperty) }
@@ -126,9 +130,9 @@ export function PartnerDashboardPage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Authentication required"
-            message="Please sign in to access the partner dashboard."
-            ctaText="Sign In"
+            title={t('partner.authenticationRequired')}
+            message={t('partner.pleaseSignInTo')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -137,14 +141,14 @@ export function PartnerDashboardPage() {
   }
 
   const renderNavigation = () => (
-    <nav className="partner-dashboard-nav" aria-label="Partner dashboard navigation">
+    <nav className="partner-dashboard-nav" aria-label={t('partner.partnerDashboardNavigation')}>
       <button
         onClick={() => setCurrentView('properties')}
         className={`nav-item ${currentView === 'properties' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'properties' ? 'page' : undefined}
       >
         <span className="nav-icon"><House size={18} /></span>
-        <span className="nav-label">Properties</span>
+        <span className="nav-label">{t('nav.properties')}</span>
       </button>
       <button
         onClick={() => setCurrentView('bookings')}
@@ -152,7 +156,7 @@ export function PartnerDashboardPage() {
         aria-current={currentView === 'bookings' ? 'page' : undefined}
       >
         <span className="nav-icon"><Calendar size={18} /></span>
-        <span className="nav-label">Bookings</span>
+        <span className="nav-label">{t('partner.bookings')}</span>
       </button>
       <button
         onClick={() => setCurrentView('status')}
@@ -166,7 +170,7 @@ export function PartnerDashboardPage() {
             <rect x="12" y="1" width="3" height="14" rx="0.5" />
           </svg>
         </span>
-        <span className="nav-label">Status</span>
+        <span className="nav-label">{t('partner.status')}</span>
       </button>
       {selectedProperty && (
         <>
@@ -176,7 +180,7 @@ export function PartnerDashboardPage() {
             aria-current={currentView === 'rooms' ? 'page' : undefined}
           >
             <span className="nav-icon"><BedDouble size={18} /></span>
-            <span className="nav-label">Rooms</span>
+            <span className="nav-label">{t('searchForm.rooms')}</span>
           </button>
           {calendarRoomType && (
             <button
@@ -185,7 +189,7 @@ export function PartnerDashboardPage() {
               aria-current={currentView === 'calendar' ? 'page' : undefined}
             >
               <span className="nav-icon"><Calendar size={18} /></span>
-              <span className="nav-label">Calendar</span>
+              <span className="nav-label">{t('partner.calendar')}</span>
             </button>
           )}
           {selectedRoomType && (
@@ -196,7 +200,7 @@ export function PartnerDashboardPage() {
                 aria-current={currentView === 'rates' ? 'page' : undefined}
               >
                 <span className="nav-icon"><Banknote size={18} /></span>
-                <span className="nav-label">Rates</span>
+                <span className="nav-label">{t('partner.rates')}</span>
               </button>
               {selectedRatePlan && (
                 <button
@@ -205,7 +209,7 @@ export function PartnerDashboardPage() {
                   aria-current={currentView === 'availability' ? 'page' : undefined}
                 >
                   <span className="nav-icon"><Calendar size={18} /></span>
-                  <span className="nav-label">Availability</span>
+                  <span className="nav-label">{t('partner.availability')}</span>
                 </button>
               )}
             </>
@@ -218,13 +222,13 @@ export function PartnerDashboardPage() {
   const renderPropertiesView = () => (
     <div className="partner-properties-view">
       <div className="properties-view-header">
-        <h1 className="properties-view-title">My Properties</h1>
+        <h1 className="properties-view-title">{t('partner.myProperties')}</h1>
         <button
           onClick={() => setCurrentView('add-property')}
           className="btn btn-primary"
-          aria-label="Add new property"
+          aria-label={t('partner.addNewProperty')}
         >
-          + Add Property
+          + {t('partner.addProperty')}
         </button>
       </div>
 
@@ -236,14 +240,14 @@ export function PartnerDashboardPage() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading properties...
+          {t('search.loading')}
         </div>
       ) : properties.length === 0 ? (
         <EmptyState
           icon={<House size={40} />}
-          title="No properties yet"
-          message="Start by listing your first property to begin accepting bookings."
-          ctaText="Add Your First Property"
+          title={t('partner.noPropertiesYet')}
+          message={t('partner.startByListingYour')}
+          ctaText={t('partner.addYourFirstProperty')}
           onClick={() => setCurrentView('add-property')}
         />
       ) : (
@@ -261,37 +265,37 @@ export function PartnerDashboardPage() {
                 {property.address_line2 && <p className="property-address">{property.address_line2}</p>}
                 <div className="property-details">
                   <div className="property-detail">
-                    <span className="detail-label">Guests:</span>
+                    <span className="detail-label">{t('booking.guests')}</span>
                     <span className="detail-value">{property.max_guests}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Bedrooms:</span>
+                    <span className="detail-label">{t('partner.bedrooms')}</span>
                     <span className="detail-value">{property.bedrooms}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Bathrooms:</span>
+                    <span className="detail-label">{t('partner.bathrooms')}</span>
                     <span className="detail-value">{property.bathrooms}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Base Price:</span>
+                    <span className="detail-label">{t('partner.basePrice')}</span>
                     <span className="detail-value">{property.base_price} {property.currency}</span>
                   </div>
                 </div>
                 <div className="property-amenities">
-                  {property.has_wifi && <span className="amenity-tag">WiFi</span>}
-                  {property.has_parking && <span className="amenity-tag">Parking</span>}
-                  {property.has_ac && <span className="amenity-tag">AC</span>}
-                  {property.has_heating && <span className="amenity-tag">Heating</span>}
-                  {property.has_elevator && <span className="amenity-tag">Elevator</span>}
+                  {property.has_wifi && <span className="amenity-tag">{t('feature.wifi')}</span>}
+                  {property.has_parking && <span className="amenity-tag">{t('feature.parking')}</span>}
+                  {property.has_ac && <span className="amenity-tag">{t('partner.ac')}</span>}
+                  {property.has_heating && <span className="amenity-tag">{t('feature.heating')}</span>}
+                  {property.has_elevator && <span className="amenity-tag">{t('feature.elevator')}</span>}
                 </div>
               </div>
               <div className="property-card-footer">
                 <button
                   onClick={() => handlePropertySelect(property)}
                   className="btn btn-secondary"
-                  aria-label={`Manage ${propertyName(property)}`}
+                  aria-label={t('partner.manageProperty', { name: propertyName(property) })}
                 >
-                  Manage
+                  {t('partner.manage')}
                 </button>
               </div>
             </div>
@@ -359,8 +363,8 @@ export function PartnerDashboardPage() {
     <div className="partner-dashboard-page">
       <div className="container container-large-desktop">
         <div className="dashboard-header">
-          <h1 className="dashboard-title">Partner Dashboard</h1>
-          <p className="dashboard-subtitle">Welcome, {user.first_name || user.email}</p>
+          <h1 className="dashboard-title">{t('header.partnerDashboard')}</h1>
+          <p className="dashboard-subtitle">{t('admin.welcome', { name: user.first_name || user.email })}</p>
         </div>
 
         {renderNavigation()}

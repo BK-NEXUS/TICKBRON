@@ -1,18 +1,20 @@
+import { useI18n } from '../i18n/I18nContext'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Heart, Search, User } from 'lucide-react'
 
 export function MobileBottomNavigation() {
   const location = useLocation()
+  const { t } = useI18n()
 
   const navItems = [
-    { path: '/', label: 'Search', icon: Search },
-    { path: '/bookings', label: 'My Bookings', icon: CalendarDays },
-    { path: '/favorites', label: 'Favorites', icon: Heart },
-    { path: '/profile', label: 'Profile', icon: User },
+    { path: '/', label: t('nav.mobile.search'), icon: Search },
+    { path: '/bookings', label: t('nav.mobile.bookings'), icon: CalendarDays },
+    { path: '/favorites', label: t('nav.mobile.favorites'), icon: Heart },
+    { path: '/profile', label: t('nav.mobile.profile'), icon: User },
   ]
 
   return (
-    <nav className="mobile-bottom-navigation" role="navigation" aria-label="Main navigation">
+    <nav className="mobile-bottom-navigation" role="navigation" aria-label={t('nav.mobile.main')}>
       <ul className="mobile-bottom-nav-list">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || 

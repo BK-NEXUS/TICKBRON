@@ -76,9 +76,9 @@ describe('DiningRestaurants', () => {
   it('renders restaurant ratings when available', () => {
     render(<DiningRestaurants restaurants={mockRestaurants} />)
     
-    expect(screen.getByText('★ 4.9')).toBeInTheDocument()
-    expect(screen.getByText('★ 4.5')).toBeInTheDocument()
-    expect(screen.getByText('★ 4.7')).toBeInTheDocument()
+    expect(screen.getByText('4.9').querySelector('.star-icon')).not.toBeNull()
+    expect(screen.getByText('4.5').querySelector('.star-icon')).not.toBeNull()
+    expect(screen.getByText('4.7').querySelector('.star-icon')).not.toBeNull()
   })
 
   it('renders restaurant price ranges', () => {
@@ -130,7 +130,7 @@ describe('DiningRestaurants', () => {
     render(<DiningRestaurants restaurants={restaurantsWithoutRating} />)
     
     expect(screen.getByText('Unknown Restaurant')).toBeInTheDocument()
-    expect(screen.queryByText(/★/)).not.toBeInTheDocument()
+    expect(document.querySelector('.star-icon')).toBeNull()
   })
 
   it('handles restaurants without address', () => {

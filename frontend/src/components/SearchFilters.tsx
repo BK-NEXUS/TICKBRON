@@ -1,7 +1,9 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { AmenityIcon } from './AmenityIcon'
 import { CoachMark } from './CoachMark'
 import { FEATURE_OPTIONS, FilterState, RATING_OPTIONS, hasActiveFilters } from '../utils/searchFilters'
+import { StarIcon } from './StarIcon'
 
 export type { FilterState } from '../utils/searchFilters'
 
@@ -24,6 +26,7 @@ interface SearchFiltersProps {
 export function SearchFilters({
   filters, onFiltersChange, onClearFilters, propertyTypes, featureCounts, amenities = [],
 }: SearchFiltersProps) {
+  const { t } = useI18n()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handlePropertyTypeChange = (propertyType: number) => {
@@ -73,21 +76,21 @@ export function SearchFilters({
   return (
     <aside className="search-filters">
       <div className="search-filters-header">
-        <h2 className="search-filters-title">Filters</h2>
+        <h2 className="search-filters-title">{t('filters.title')}</h2>
         <div className="search-filters-header-button" style={{ position: 'relative' }}>
           {hasActiveFilters(filters) && (
             <>
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={handleClearFilters}
-                aria-label="Clear all filters"
+                aria-label={t('filters.clearAllLabel')}
               >
-                Clear All
+                {t('filters.clearAll')}
               </button>
               <CoachMark
                 featureId="search-filters-clear"
-                title="Clear Filters"
-                message="Quickly remove all applied filters to see more results."
+                title={t('filters.coachTitle')}
+                message={t('filters.coachText')}
                 position="bottom"
               />
             </>
@@ -98,7 +101,7 @@ export function SearchFilters({
       <div className={`search-filters-content ${isExpanded ? 'search-filters-content-expanded' : ''}`}>
         {/* Property Type Filter */}
         <div className="search-filter-section">
-          <h3 className="search-filter-section-title">Property Type</h3>
+          <h3 className="search-filter-section-title">{t('filters.propertyType')}</h3>
           <div className="search-filter-options">
             {propertyTypes.map(type => (
               <label key={type.id} className="search-filter-option">
@@ -124,36 +127,36 @@ export function SearchFilters({
 
         {/* Price Range Filter */}
         <div className="search-filter-section">
-          <h3 className="search-filter-section-title">Price Range</h3>
+          <h3 className="search-filter-section-title">{t('filters.priceRange')}</h3>
           <div className="search-filter-price-range">
             <div className="search-filter-price-input">
               <label htmlFor="min_price" className="search-filter-price-label">
-                Min Price
+                {t('filters.minPrice')}
               </label>
               <input
                 id="min_price"
                 type="number"
                 min="0"
-                placeholder="No minimum"
+                placeholder={t('filters.noMin')}
                 value={filters.min_price !== undefined ? filters.min_price : ''}
                 onChange={(e) => handleMinPriceChange(e.target.value)}
                 className="search-filter-input-field"
-                aria-label="Minimum price"
+                aria-label={t('filters.minPriceLabel')}
               />
             </div>
             <div className="search-filter-price-input">
               <label htmlFor="max_price" className="search-filter-price-label">
-                Max Price
+                {t('filters.maxPrice')}
               </label>
               <input
                 id="max_price"
                 type="number"
                 min="0"
-                placeholder="No maximum"
+                placeholder={t('filters.noMax')}
                 value={filters.max_price !== undefined ? filters.max_price : ''}
                 onChange={(e) => handleMaxPriceChange(e.target.value)}
                 className="search-filter-input-field"
-                aria-label="Maximum price"
+                aria-label={t('filters.maxPriceLabel')}
               />
             </div>
           </div>
@@ -161,7 +164,7 @@ export function SearchFilters({
 
         {/* Guest Rating Filter */}
         <div className="search-filter-section">
-          <h3 className="search-filter-section-title">Guest Rating</h3>
+          <h3 className="search-filter-section-title">{t('filters.guestRating')}</h3>
           <div className="search-filter-options">
             {RATING_OPTIONS.map(option => (
               <label key={option.value} className="search-filter-option">
@@ -175,9 +178,9 @@ export function SearchFilters({
                     if (filters.min_rating === option.value) handleRatingChange(option.value)
                   }}
                   className="search-filter-input"
-                  aria-label={`Rating ${option.label}`}
+                  aria-label={t('filters.ratingLabel', { value: option.label })}
                 />
-                <span className="search-filter-label">★ {option.label}</span>
+                <span className="search-filter-label"><StarIcon /> {option.label}</span>
               </label>
             ))}
           </div>
@@ -185,7 +188,7 @@ export function SearchFilters({
 
         {/* Amenities Filter (property features) */}
         <div className="search-filter-section">
-          <h3 className="search-filter-section-title">Amenities</h3>
+          <h3 className="search-filter-section-title">{t('filters.amenities')}</h3>
           <div className="search-filter-amenities">
             {FEATURE_OPTIONS.map(feature => (
               <label key={feature.id} className="search-filter-amenity">
@@ -194,10 +197,10 @@ export function SearchFilters({
                   checked={filters.features.includes(feature.id)}
                   onChange={() => handleFeatureToggle(feature.id)}
                   className="search-filter-checkbox"
-                  aria-label={feature.label}
+                  aria-label={t(feature.labelKey)}
                 />
                 <span className="search-filter-amenity-icon"><AmenityIcon slug={feature.id} /></span>
-                <span className="search-filter-amenity-label">{feature.label}</span>
+                <span className="search-filter-amenity-label">{t(feature.labelKey)}</span>
                 {featureCounts?.[feature.id] !== undefined && (
                   <span className="search-filter-count">{featureCounts[feature.id]}</span>
                 )}
@@ -209,7 +212,7 @@ export function SearchFilters({
         {/* Facilities Filter (searchable amenities from the backend) */}
         {amenities.length > 0 && (
           <div className="search-filter-section">
-            <h3 className="search-filter-section-title">Facilities</h3>
+            <h3 className="search-filter-section-title">{t('filters.facilities')}</h3>
             <div className="search-filter-amenities">
               {amenities.map(amenity => (
                 <label key={amenity.id} className="search-filter-amenity">
@@ -237,7 +240,7 @@ export function SearchFilters({
         aria-expanded={isExpanded}
         aria-controls="search-filters-content"
       >
-        {isExpanded ? 'Show Less' : 'Show More'}
+        {isExpanded ? t('filters.showLess') : t('filters.showMore')}
       </button>
     </aside>
   )

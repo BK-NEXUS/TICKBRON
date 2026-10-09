@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'admin_panel',
     'geography',
     'currency',
+    'promotions',
     
     # Third-party apps
     'rest_framework',
@@ -358,6 +359,11 @@ CELERY_BEAT_SCHEDULE = {
     'complete-finished-stays': {
         'task': 'bookings.tasks.complete_finished_stays',
         'schedule': crontab(hour=0, minute=5),
+    },
+    # R10: expired hotel promotions end, paid ones that started become active, 00:10 Asia/Tashkent
+    'end-expired-promotions': {
+        'task': 'promotions.tasks.end_expired_promotions',
+        'schedule': crontab(hour=0, minute=10),
     },
 }
 

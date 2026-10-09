@@ -2379,3 +2379,144 @@ Branch `feat/fe-surfaces`. `src/styles/surfaces.css` (loaded after `index.css`, 
 ### Found, not fixed
 - Date inputs use the native picker; `DateRangeCalendar`/`AvailabilityCalendar` keep their own look.
 - Status components were only restyled through shared classes (no logic touched).
+
+## Languages foundation, R5 base (frontend, 2026-10-09)
+Branch `claude/loyha-organish-22tsk4`. Plan: `.ai/PLAN_R5.md`. Frontend only, no API change.
+- `src/i18n/`: `I18nProvider` + `useI18n()` -> `{ language, currency, setLanguage, setCurrency, t, formatMoney }`. uz/ru/en catalogs in `messages/` (a test checks every key and {placeholder} exists in all three). Choice kept in localStorage (`tickbron.language`, `tickbron.currency`), `<html lang>` follows. Defaults: browser language if uz/ru/en else uz; currency UZS. Outside the provider the hook gives English (isolated tests).
+- `formatMoney(amount, 'UZS'|'USD', language)`: "1 250 000 so'm" / "сум" / "UZS" (NBSP groups, whole sums), USD "$1,250.00". Display only, no conversion; the 28 existing `Intl.NumberFormat('en-US')` call sites are NOT migrated yet (frontend item 3).
+- `LanguageSelector` / `CurrencySelector`: only uz/ru/en and UZS/USD; flags are inline SVG (`FlagIcon`), lucide chevron/check. Their emoji allowlist entries in `noEmoji.test.ts` are removed.
+- First consumer: `Header` (nav, menu, buttons). Wrapped in `App.tsx`.
+### Changed test assertions
+- `LanguageSelector.test.tsx`, `CurrencySelector.test.tsx` rewritten for the new option lists and SVG flags (same scenarios: render, open, select, close, selected mark, className). `Header.test.tsx`: currency now shows `UZS` (new default, was the placeholder `USD`).
+### Found, not fixed
+- `noEmoji.test.ts` fails on master too: the star `★` in `DiningRestaurants.tsx:58` and `NearbyPlaces.tsx:42` (and their tests) matches the emoji regex.
+- Remaining i18n work: move the other strings to keys (8 chunks), migrate price formatting, USD display with approximate sum (needs R6 rate fields), E2E flow H, native-speaker review of uz/ru texts.
+
+## Language and currency on phones (frontend, 2026-10-09)
+`MobileMenu` now has two `SegmentedControl`s (UZ/RU/EN with the native name as accessible name, UZS/USD) between the links and the Login/Sign Up footer; choosing keeps the menu open. Its title, links, close button and auth buttons use `t()` (5 new `menu.*` keys in uz/ru/en). Checked in Chromium at 390px (ru). Tests: 4 new in `MobileMenu.test.tsx`; no assertion changed.
+
+## Star icon instead of the star character (frontend, 2026-10-09)
+`StarIcon` (lucide Star, filled, `currentColor`) replaces the star character in 10 places (cards, property header and page, reviews, rating breakdown, review form, search filter, nearby places, dining). `noEmoji.test.ts` passes again (it failed on master). Test assertions that looked for the star text now look for `.star-icon` (same intent: rating shown, nothing shown without a rating, 5 stars per review). Not checked visually in a browser beyond the header.
+
+## Money display migrated to one formatter (frontend, 2026-10-09)
+All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages, payment steps, property and room cards, partner bookings, admin customer/property views, support lookup) now call `useI18n().formatMoney(amount, currencyOfTheAmount, { minDecimals, maxDecimals })`. UZS amounts read "450 000 so'm" / "сум" / "UZS" by page language; every other currency is formatted exactly as before, so no existing assertion changed. New: options in `formatMoney`, a UZS component test (PropertyCard), tests for decimals / EUR / unknown code.
+- Amounts are shown in THEIR OWN currency. The currency selector does not convert yet (needs the R6 rate and approximate-sum fields on the property API).
+### Found, not fixed
+- The Status screens use `utils/statusFormat.ts` (English, 2 decimals, "UZS 1,250.00" style). They need the same formatter when the Status texts move to keys.
+
+## Phone country selector with SVG flags (frontend, 2026-10-09)
+`PhoneInput` has a searchable country selector (button with flag + chevron, listbox of 45 countries with name and dial code; search by name or "+995"). Flags: dependency `country-flag-icons` 1.6.20 (MIT, SVG React components, only the 45 used are bundled; `components/CountryFlag.tsx`). `utils/phone.ts`: `PHONE_COUNTRIES` (dial code, min/max national digits, display groups; extra digits follow the last group), `countryFromPhone`, `isValidPhone(value, country?)` now accepts a complete number of ANY listed country when no country is given (all forms call it that way). A number pasted with "+" picks its country; a saved number arriving from the profile selects its country; changing the country clears a non-empty field. The backend (`phonenumbers`) stays the judge; lengths here are permissive ranges. Uzbekistan is the default and first in the list. The phone.ts emoji allowlist is gone from `noEmoji.test.ts`.
+### Changed test assertions (ProfilePage.test.tsx)
+- The saved test number `+1234567890` is now shown grouped (`+1 234 567 890`) because its country is detected; the "stops at a complete +998 number" test first picks Uzbekistan in the selector (the saved number is +1 now). Intent kept.
+### Found, not fixed
+- Country names are English only (no i18n keys yet); the "Search country" / "Country:" labels too.
+- Checked in Chromium at 390px and 1440px (register page); not checked with a screen reader.
+
+## Dark mode (frontend, 2026-10-09)
+- Tokens: second set of colour and shadow tokens in `tokens.css`, applied by `@media (prefers-color-scheme: dark)` (unless `data-theme="light"`) and by `:root[data-theme='dark']`; the two blocks are tested identical. `color-scheme` set so native controls follow. Dark text/control pairs are contrast-tested (AA 4.5 text, 3:1 controls; 46 token tests).
+- New tokens (light value unchanged): `--color-surface` (cards/menus), `--color-text-strong`, `--color-saffron-solid` (fill under white text), `--color-header-bg`, `--color-float-bg`, `--color-cream-deep`. In `index.css` 35 declarations were re-pointed (backgrounds of cloud-white -> surface, pomegranate/saffron fills -> solid tokens, gold-dark/teal text -> pomegranate/text-strong) so each foreground/background pair can flip separately; identical in light.
+- `theme/ThemeContext.tsx` (system | light | dark, remembered in `localStorage` `tickbron.theme`, `data-theme` on `<html>` only after a choice) and `ThemeToggle` (sun/moon lucide icon, `aria-pressed`, texts `theme.toDark/toLight` in uz/ru/en) in the header and the mobile menu.
+### Found, not fixed
+- Checked in Chromium (dark system setting, 1440px): home, login, search shell. NOT checked: pages with data (property cards, booking, partner and admin tables, Status charts) because no backend ran; raw colours remain in about 40 rules (status badges with their own pastel background and dark text, WhatsApp/Telegram button colours) and may need a pass.
+- 390px dark not checked.
+
+## Card form, test mode only (frontend, 2026-10-09)
+`CardForm` (number 16 digits + Luhn, expiry MM/YY not in the past and at most 20 years ahead, CVV 3 digits as a password field, name on card) with a visible "Test mode. Card details are not sent or stored" note. It appears in `BookingPage` only for Visa and only when `isCardTestMode()`: `VITE_PAYMENT_TEST_MODE=true` AND not a production build; the Pay button stays disabled until the card looks valid. The component reports only a valid/invalid flag to the page: the values are not passed up, put in the payment request, stored or logged (the payment API call is unchanged). Real mode: Payme/Click/Visa pages, never a card number on our site. `.env.example` documents the flag; set it together with backend `PAYMENT_TEST_MODE=True`.
+- Tests: 14 utils, 8 component, 3 env, 3 BookingPage. No existing assertion changed.
+### Found, not fixed
+- Not checked in a browser (the booking flow needs the backend). Texts are English only until the i18n string migration.
+- `BookingPage.tsx:234` `handleChildrenChange` is unused (lint error already on master).
+- The Visa button on the method list opens the card form only in test mode; in the other modes it still goes to the backend test flow as before.
+
+## Lint cleanup (frontend, 2026-10-09)
+`npm run lint`: 277 problems (265 errors) -> 0 errors, 3 warnings. No test assertion changed.
+- 90 `no-extra-semi` fixed with `eslint --fix` (semicolons only).
+- 159 `as any` in tests -> `as never` (type-only); 5 `any` in code typed for real (`ErrorInfo`, generic `handleInputChange<K>` in 4 partner forms, `PartnerProperty` for the wizard's `onSuccess`, EmptyState mock props). New `utils/redirect.ts` (`redirectPathFrom`, tested) replaces five `(location.state as any)?.from?.pathname`.
+- 9 `exhaustive-deps` on fetch-on-change effects: left as they are with a `eslint-disable-next-line` and the reason (the loader is also the Retry action). 
+- Dead code removed: unused state `generatedPassword`, `handleChildrenChange`, ignored `currency` prop passing from `RoomSelection` to `RoomCard` (the prop on `RoomSelection` itself is still accepted), unused test imports, useless escapes in `styles/buttons.test.ts` (same regex).
+### Found, not fixed
+- 3 `react-refresh/only-export-components` warnings (`Breadcrumbs.tsx`, `Button.tsx`, `AuthContext.tsx`): they export a hook or helper next to a component; splitting files would change imports.
+- `npm audit` (18 findings, mostly dev tools) and the React Router 7 warnings were not touched.
+
+## Strings to keys, chunk 1: shell and auth (frontend, 2026-10-09)
+Footer, `AuthModeSwitch`, `PasswordField`, `LoginPage`, `RegisterPage` use `t()` (54 new keys `footer.*`, `auth.*`, `phone.invalid`, uz/ru/en). Error fallbacks too; messages that come from the backend stay as the backend sends them. `src/i18n/screens.test.tsx` renders each migrated screen in uz or ru and fails when English is left: add every new chunk there. uz and ru texts are machine-quality and need a native speaker. No existing assertion changed (English is the default outside the provider).
+### Found, not fixed
+- Footer text keeps the literal "2024" (the Footer test asserts it); it should show the current year.
+- Chunks left: search and home, property and booking and payment, bookings and profile and favorites and support, partner panel, admin and Status, error and empty states, info pages, remaining shared components.
+
+## Strings to keys, chunk 2: home, search, property card (frontend, 2026-10-09)
+- `useI18n()` gained `tp(base, count)` (plural forms by `Intl.PluralRules`: keys `x.one/.few/.many/.other`, `{count}` filled in; Russian has four forms, Uzbek one, English two) and `formatDate(value, options)` (date in the page language; a date without time is the calendar day). The catalog test accepts extra plural forms and requires `.other` everywhere.
+- Migrated (150 new keys, uz/ru/en): `HomePage` (static texts), `SearchResultsPage`, `SearchForm` (labels and all validation messages), `SearchFilters`, `SearchSort`, `ListViewMapView`, `PropertyCard`, `CoachMark`, `DestinationsPage`, `Breadcrumbs` (default trails; Back; "Home"). Option lists in `utils/searchFilters.ts` carry `labelKey` instead of `label`.
+- Failure messages we write ourselves are no longer stored as text in state (the results page and Destinations show the translated text at render, so they follow the language); backend messages stay as sent.
+### Changed test assertions (grammar of the new plural forms)
+- `SearchResultsPage.test.tsx`: "1 properties found" -> "1 property found"; `PropertyCard.test.tsx`: "1 bathrooms" -> "1 bathroom".
+### Found, not fixed
+- `HomePage` still has mock content in English only: the three testimonials (invented names and quotes), the four destination cards (Paris, Tokyo ...) and the "50K+ / 100K+ / 120+" figures. They are placeholders to be replaced by the Uzum-style home page; the fake testimonials should not go live.
+- Property type and amenity names in the search filters come from the API (English); translating them needs the backend translations.
+- Page trails set by other pages through `usePageTrail` (partner, admin, property) are still English until their chunks.
+
+## Strings to keys, chunk 3a: property page (frontend, 2026-10-09)
+Migrated (116 new keys): `PropertyDetailPage` (our own load errors are keys now, backend messages stay text), `PropertyDetailHeader`, `PropertyGallery`, `FavoriteButton`, `NearbyPlaces`, `DiningRestaurants`, `PropertyAmenitiesDetail`, `PropertyPoliciesDetail`, `RoomSelection`, `RoomCard`, `RatePlanCard`, `AvailabilityCalendar`, `DateRangeCalendar` (month title and weekday names come from `Intl` in the page language). `useI18n().formatDay` added ("Mon, Sep 28" localized); `utils/dates.formatDay` stays English for the partner calendar until its chunk. Night/day counts use plural forms (`rooms.nights`, `rate.days`).
+### Changed test assertions
+- `RoomCard.test.tsx`, `RatePlanCard.test.tsx`: the "✓ Selected" text became a lucide check icon plus "Selected" (no sticker/glyph); both the positive and the negative assertion now look for "Selected".
+### Found, not fixed
+- Names that come from the backend stay as sent: amenity and category names, policy titles and descriptions, room and rate plan names, cancellation policy text, bed configuration.
+- Chunks left: reviews, booking and payment, bookings/profile/favorites/support, partner, admin and Status, error and info pages, the rest of the shared components.
+
+## Strings to keys, chunk 3b: reviews (frontend, 2026-10-09)
+`ReviewsSection`, `ReviewCard` (date in the page language), `ReviewForm`, `RatingBreakdown` use `t()`/`tp()` (32 keys `reviews.*`, `common.cancel`). Review titles, comments and names are user content and stay as written. No existing assertion changed.
+
+## Strings to keys, chunk 3c: booking and payment (frontend, 2026-10-09)
+Migrated (151 new keys `booking.*`, `pay.*`, `card.*`): `BookingPage` (form, validation messages, review step, success, price summary; its own error and quote messages are stored as `{ key }` or `{ text }` so they follow the language, also when set inside an effect), `PaymentMethodSelector`, `PaymentProcessing`, `PaymentConfirmation` (date in the page language, payment status names), `PaymentFailure` (default error and tips per provider), `CardForm`. The pay button reads "Pay with Payme" / "Payme orqali to'lash" / "Оплатить через Payme". No existing assertion changed. `i18n/bookingScreen.test.tsx` covers the booking page (its own file because it mocks `useAuth`).
+### Found, not fixed
+- `BookingPage.tsx`: the deposit amount is computed in the browser (`totalPrice * deposit_percentage / 100`); money must come from the backend (quote). Also the "Booking expires in 15 minutes" text is a constant, not derived from `expires_at`.
+- Payment statuses that come from the API and are not in the list (`pay.statusName.*`) are shown capitalized in English.
+
+## Strings to keys, chunk 4: guest account pages and shell (frontend, 2026-10-09)
+Migrated (98 keys): `BookingsPage`, `FavoritesPage`, `ProfilePage`, `NotFoundPage`, `AccessDeniedPage` + `RequireAccess` (the `area` prop is now `'partner' | 'admin'`), `MobileBottomNavigation`, the error screen (`ErrorFallback`, uses theme tokens instead of inline colours) and the Suspense loader. `ErrorBoundary` now sits inside the theme and language providers. New `utils/statusText.ts` (booking and payment status names; an unknown status is shown capitalized) with keys `status.booking.*`, `status.payment.*` for the partner and admin chunks. Profile dates follow the page language.
+### Changed test assertions (real display fixes)
+- Prices were written as `$400 USD` / `$100 USD / night` (wrong for sums: "$450000 UZS"); now `formatMoney`: `BookingsPage.test.tsx` "$400 USD" -> "$400", `FavoritesPage.test.tsx` "$100 USD / night" -> "$100 / night" (and 150).
+- `ProfilePage.test.tsx`: the preferred contact method now reads "WhatsApp" (was "Whatsapp"), so three `getByText('WhatsApp')` would match both the label and the value; they now name the element (`selector: 'label'` / `'p'`). The old test of the value only passed because of the typo.
+### Found, not fixed
+- Chunks left: partner panel, admin and Status (largest), `SupportLookupPage`, `InfoPage` (about/help/terms/privacy texts; the legal ones need the lawyer), the status helpers in `utils/statusFormat.ts` and Status labels.
+
+## Strings to keys, chunk 5: partner panel (frontend, 2026-10-09)
+Migrated (237 keys `partner.*`, uz/ru/en): `PartnerDashboardPage` (nav, breadcrumb trail, empty states), `PartnerBookingsView`, `PartnerRoomsManagement`, `PartnerRatesManagement`, `PartnerAvailabilityManagement`, `PartnerRoomCalendar` (dates via `useI18n().formatDay`), `PartnerPropertyWizard`. Validation, success and confirm messages are keys now. A helper script was used for the mechanical part (plain JSX text, attributes, setters); dynamic strings were done by hand. No existing assertion changed.
+### Found, not fixed
+- Not yet migrated in the partner area: the Status tab, hotel Status screen and arrivals (they share the Status components with the admin: next chunk).
+- The partner forms use plain `<select>` option texts like "Flexible" for cancellation policy; the values sent to the API are unchanged.
+
+## Strings to keys, chunk 6: admin panel, Status, support lookup, info pages (frontend, 2026-10-09)
+Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminDashboardPage`, `AdminStatisticsDashboard`, `AdminUserManagement`, `AdminCustomersList`, `AdminCustomerProfile`, `AdminPropertyModeration`, `AdminAmenityManagement`, `CreateHotelOwnerAccount`, `TopBookersLeaderboard`, `SupportLookupPage`, every Status component (admin and partner), and the seven `InfoPage` texts.
+- `useTexts(TEXT_KEYS)` / `textKeys()` in `i18n/I18nContext.tsx`: the Status components keep their `TEXT.title` call sites; the old `const TEXT = { ... }` objects became key maps (nested objects allowed).
+- `utils/statusFormat.ts` (`periodLabel`, `monthLabel`, `formatDate`) and `utils/statusPeriod.ts` (`validateCustomRange`, preset `labelKey`) take an optional `i18n` argument and fall back to `englishI18n`, so their unit tests are unchanged. Period/month names and dates follow the page language.
+- `StatusRankedTable` takes `noun` as a message key (`status.nounHotels` ...); a plain word still works.
+- No existing assertion changed.
+### Found, not fixed
+- The legal texts (terms, privacy, cookies) are still the short temporary summaries, now in three languages; the lawyer must review each language. The uz and ru texts everywhere are machine-quality and need a native speaker.
+- Status numbers and money still use English formatting (`1,250.00`, `UZS 1,250.00`) in `utils/statusFormat.ts` (`formatCount`, `formatMoney`).
+- Backend-provided names (hotel, amenity, category, policy texts) stay as sent.
+
+## Strings to keys, last pieces and E2E flow H (frontend, 2026-10-09)
+- Phone selector: country names come from `Intl.DisplayNames` in uz/ru (English keeps the app's own list, so "Turkey" stays "Turkey"); search matches the localized and the English name; its labels are keys. `PropertyRegionField`, `CardForm` placeholders and the profile Cancel button migrated. `useI18n().regionName(code, fallback)` added.
+- `e2e/user-flows.e2e.ts` flow H: the two selectors that opened the language menu (`getByRole('button', { name: /EN/ })`, `/RU|EN/`) now use `.language-selector-button`: the button's accessible name is "Language: English" (the visible "EN" is decorative). I could not run Playwright against the full backend here; the same steps were checked by hand against the dev server (menu offers O'zbekcha, Русский, English; Russian home page; back to English; `<html lang>` follows).
+- Every user-facing screen now reads its text from the uz/ru/en catalogs (1,370 keys; `src/i18n/screens.test.tsx` has 29 render checks in uz/ru).
+### Found, not fixed
+- Native date inputs show the browser's own format (mm/dd/yyyy) whatever the page language.
+- Backend-sent names and messages (property and amenity names, validation errors, notification texts) are not translated by the frontend.
+
+## Promotions plan R10 written (docs, 2026-10-09)
+`.ai/PLAN_R10.md` (DRAFT, waits for the owner's approval; no code changed). Covers the "Reklama" backend: price list, owner requests, super-admin promotions, search top slots (only hotels that match the guest's query), home carousel, impression and click counting, expiry task, audit, tests and 10 client decisions with defaults.
+
+## Promotions plan R10 v2 (docs, 2026-10-09)
+Plan rewritten after the owner's answers: one big auto-rotating banner (8 in rotation) at the top of the search page and on the home page, 2-column hotel list below, no owner requests (super-admin finds the hotel by name and presses "Reklama qilish"), no price list, no owner stats. Waits for the owner's "ha". No code changed.
+
+
+## R10 promotions backend done (2026-10-09)
+Commits S1-S6 on `claude/loyha-organish-22tsk4`: app `promotions` (models, one service module, public endpoints, super-admin API, nightly task, demo data in `seed_demo_stats`), `properties/search.py` now exposes `filtered_queryset()` (search behaviour unchanged), `promoted` key in search. Contract in `API_CONTRACT.md`, release notes in `RELEASE_CHECKLIST.md`. Plan: `PLAN_R10.md` v2.
+- A real race was found by the concurrency test and fixed: two simultaneous `mark-paid` calls both succeeded. Promotion rows are now re-read under `select_for_update` in every status change.
+- Decision vs plan: the home endpoint is not cached for 60 s because every response counts views; the DB constraint `btree_gist` was not added (the transaction check plus the row lock is tested with 4 parallel requests).
+- EXPLAIN of the shown-now query on the demo data: index scans, 0.3 ms.
+- Changed test assertions: none (existing tests untouched; access-matrix test only gained rows).
+- Found, not fixed: `Property` has no star-class field, so banners show the review rating only; `PropertySearchService._apply_text_search` matches ANY word (a query like "Pricey Street" also finds every hotel on a "Street"); the access-matrix test takes about 4 minutes (password hashing in fixtures).
+READY FOR FRONTEND: R10 promotions (banner carousel on search and home, 2-column list, admin "Reklama" screen).

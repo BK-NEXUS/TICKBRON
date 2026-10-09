@@ -3,6 +3,7 @@ import { Lock, Ban } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { adminAdapter, SupportLookupBooking } from '../adapters/adminAdapter'
 import { EmptyState } from '../components/EmptyState'
+import { useI18n } from '../i18n/I18nContext'
 
 export function SupportLookupPage() {
   const { user, isAuthenticated } = useAuth()
@@ -16,7 +17,7 @@ export function SupportLookupPage() {
     e.preventDefault()
     
     if (!referenceCode.trim()) {
-      setError('Please enter a reference code')
+      setError(t('admin.pleaseEnterAReference'))
       return
     }
 
@@ -35,7 +36,7 @@ export function SupportLookupPage() {
         setError(null)
       }
     } catch (err) {
-      setError('Failed to look up booking. Please try again.')
+      setError(t('admin.failedToLookUp'))
       setBooking(null)
     } finally {
       setLoading(false)
@@ -50,11 +51,10 @@ export function SupportLookupPage() {
     })
   }
 
+  const { t, formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const getStatusClass = (status: string) => {
@@ -78,9 +78,9 @@ export function SupportLookupPage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Authentication required"
-            message="Please sign in to access the support lookup tool."
-            ctaText="Sign In"
+            title={t('partner.authenticationRequired')}
+            message={t('admin.pleaseSignInTo2')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -94,9 +94,9 @@ export function SupportLookupPage() {
         <div className="container">
           <EmptyState
             icon={<Ban size={40} />}
-            title="Access Denied"
-            message="You do not have permission to access the support lookup tool."
-            ctaText="Go to Home"
+            title={t('denied.title')}
+            message={t('admin.youDoNotHave2')}
+            ctaText={t('admin.goToHome')}
             ctaLink="/"
           />
         </div>
@@ -108,29 +108,29 @@ export function SupportLookupPage() {
     <div className="support-lookup-page">
       <div className="container">
         <div className="admin-view-header">
-          <h1 className="admin-view-title">Support Lookup</h1>
-          <p className="admin-view-subtitle">Look up booking details by reference code</p>
+          <h1 className="admin-view-title">{t('crumb.supportLookup')}</h1>
+          <p className="admin-view-subtitle">{t('admin.lookUpBookingDetails')}</p>
         </div>
 
         <form onSubmit={handleSearch} className="support-search-form">
           <div className="search-input-group">
-            <label htmlFor="reference-code">Reference Code</label>
+            <label htmlFor="reference-code">{t('admin.referenceCode')}</label>
             <input
               id="reference-code"
               type="text"
               value={referenceCode}
               onChange={(e) => setReferenceCode(e.target.value.toUpperCase())}
-              placeholder="Enter 6-character reference code (e.g., ABC123)"
+              placeholder={t('admin.enter6CharacterReference')}
               maxLength={6}
               className="search-input"
               aria-describedby="reference-code-help"
             />
             <p id="reference-code-help" className="input-help">
-              Enter the 6-character reference code provided by the guest
+              {t('admin.enterThe6Character')}
             </p>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Searching...' : 'Look Up Booking'}
+            {loading ? t('admin.searching') : t('admin.lookUpBooking')}
           </button>
         </form>
 
@@ -142,15 +142,15 @@ export function SupportLookupPage() {
 
         {searched && !loading && !error && !booking && (
           <div className="empty-state">
-            <p>No booking found with reference code "{referenceCode}"</p>
-            <p>Please verify the code and try again.</p>
+            <p>{t('admin.noBookingFound', { code: referenceCode })}</p>
+            <p>{t('admin.pleaseVerifyTheCode')}</p>
           </div>
         )}
 
         {booking && (
           <div className="booking-details">
             <div className="booking-details-header">
-              <h2>Booking Details</h2>
+              <h2>{t('pay.bookingTitle')}</h2>
               <span className={`status-badge ${getStatusClass(booking.status)}`}>
                 {booking.status}
               </span>
@@ -158,36 +158,36 @@ export function SupportLookupPage() {
 
             <div className="booking-details-grid">
               <div className="booking-detail-section">
-                <h3>Reference Information</h3>
+                <h3>{t('admin.referenceInformation')}</h3>
                 <dl className="detail-list">
                   <div className="detail-item">
-                    <dt>Reference Code</dt>
+                    <dt>{t('admin.referenceCode')}</dt>
                     <dd className="reference-code">{booking.reference_code}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Booking ID</dt>
+                    <dt>{t('admin.bookingId')}</dt>
                     <dd>{booking.id}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Status</dt>
+                    <dt>{t('partner.status')}</dt>
                     <dd>{booking.status}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Payment Status</dt>
+                    <dt>{t('admin.paymentStatus')}</dt>
                     <dd>{booking.payment_status}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="booking-detail-section">
-                <h3>Customer Information</h3>
+                <h3>{t('admin.customerInformation')}</h3>
                 <dl className="detail-list">
                   <div className="detail-item">
-                    <dt>Name</dt>
+                    <dt>{t('admin.name')}</dt>
                     <dd>{booking.customer.full_name}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Email</dt>
+                    <dt>{t('auth.email')}</dt>
                     <dd>
                       <a href={`mailto:${booking.customer.email}`} className="contact-link">
                         {booking.customer.email}
@@ -195,7 +195,7 @@ export function SupportLookupPage() {
                     </dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Phone</dt>
+                    <dt>{t('profile.contact.phone')}</dt>
                     <dd>
                       <a href={`tel:${booking.customer.phone_number}`} className="contact-link">
                         {booking.customer.phone_number}
@@ -204,7 +204,7 @@ export function SupportLookupPage() {
                   </div>
                   {booking.customer.whatsapp && (
                     <div className="detail-item">
-                      <dt>WhatsApp</dt>
+                      <dt>{t('profile.whatsapp')}</dt>
                       <dd>
                         <a href={`https://wa.me/${booking.customer.whatsapp}`} className="contact-link" target="_blank" rel="noopener noreferrer">
                           {booking.customer.whatsapp}
@@ -214,7 +214,7 @@ export function SupportLookupPage() {
                   )}
                   {booking.customer.telegram && (
                     <div className="detail-item">
-                      <dt>Telegram</dt>
+                      <dt>{t('profile.telegram')}</dt>
                       <dd>
                         <a href={`https://t.me/${booking.customer.telegram}`} className="contact-link" target="_blank" rel="noopener noreferrer">
                           {booking.customer.telegram}
@@ -223,55 +223,55 @@ export function SupportLookupPage() {
                     </div>
                   )}
                   <div className="detail-item">
-                    <dt>Preferred Contact</dt>
+                    <dt>{t('admin.preferredContact')}</dt>
                     <dd>{booking.customer.preferred_contact_method}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="booking-detail-section">
-                <h3>Property Information</h3>
+                <h3>{t('admin.propertyInformation')}</h3>
                 <dl className="detail-list">
                   <div className="detail-item">
-                    <dt>Property Name</dt>
+                    <dt>{t('admin.propertyName')}</dt>
                     <dd>{booking.property.name}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Location</dt>
+                    <dt>{t('property.location')}</dt>
                     <dd>{booking.property.city}, {booking.property.country}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Address</dt>
+                    <dt>{t('admin.address')}</dt>
                     <dd>{booking.property.address_line1}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Room</dt>
+                    <dt>{t('admin.room')}</dt>
                     <dd>{booking.room ? `${booking.room.name} (${booking.room.rate_plan})` : 'N/A'}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="booking-detail-section">
-                <h3>Booking Details</h3>
+                <h3>{t('pay.bookingTitle')}</h3>
                 <dl className="detail-list">
                   <div className="detail-item">
-                    <dt>Check-in</dt>
+                    <dt>{t('searchForm.checkIn')}</dt>
                     <dd>{formatDate(booking.check_in)}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Check-out</dt>
+                    <dt>{t('searchForm.checkOut')}</dt>
                     <dd>{formatDate(booking.check_out)}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Number of Nights</dt>
+                    <dt>{t('admin.numberOfNights')}</dt>
                     <dd>{booking.number_of_nights}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Total Price</dt>
+                    <dt>{t('admin.totalPrice')}</dt>
                     <dd>{formatCurrency(booking.total_price, booking.currency)}</dd>
                   </div>
                   <div className="detail-item">
-                    <dt>Booked On</dt>
+                    <dt>{t('admin.bookedOn')}</dt>
                     <dd>{formatDate(booking.created_at)}</dd>
                   </div>
                 </dl>

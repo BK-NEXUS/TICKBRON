@@ -20,7 +20,7 @@ vi.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-const mockUseAuth = useAuth as any
+const mockUseAuth = useAuth as never
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(

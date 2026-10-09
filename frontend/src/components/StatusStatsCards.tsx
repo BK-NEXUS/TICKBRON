@@ -1,3 +1,4 @@
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import type { StatusFullTotals } from '../adapters/statusAdapter'
 import { formatCount, formatMoneyList } from '../utils/statusFormat'
 
@@ -11,31 +12,32 @@ interface StatusStatsCardsProps {
   guestsLabel?: string
 }
 
-const TEXT = {
+const TEXT_KEYS = textKeys({
   // TODO: show stayed_guests (persons) when the API provides it
-  stayed: 'Stayed bookings',
-  stayedHint: 'completed bookings',
-  counted: 'Counted',
-  countedHint: 'confirmed and completed bookings',
-  upcoming: 'Upcoming',
-  upcomingHint: 'confirmed, check-in after today (not limited by the period)',
-  guests: 'Guests',
-  guestsHint: 'persons in counted bookings',
-  unique: 'Unique customers',
-  uniqueHint: 'distinct accounts',
-  nights: 'Nights',
-  roomNights: 'room nights',
-  revenue: 'Revenue',
-  revenueHint: 'paid minus refunded, per currency',
-  value: 'Booking value',
-  valueHint: 'total price of counted bookings, per currency',
-  fullyRefunded: 'Fully refunded',
-  fullyRefundedHint: 'left out of every other number',
-  noShow: 'No-show',
-  noShowHint: 'guest did not arrive',
-  noShowReported: 'No-show reported',
-  noShowReportedHint: 'waiting for a decision',
-}
+  stayed: 'status.stayed',
+  stayedHint: 'status.stayedHint',
+  counted: 'status.counted',
+  countedHint: 'status.countedHint',
+  upcoming: 'bookings.filterUpcoming',
+  upcomingHint: 'status.upcomingHint',
+  guests: 'searchForm.guests',
+  guestsHint: 'status.guestsHint',
+  unique: 'status.unique',
+  uniqueHint: 'status.uniqueHint',
+  nights: 'status.nights',
+  roomNights: 'status.roomNights',
+  revenue: 'status.revenue',
+  revenueHint: 'status.revenueHint',
+  value: 'status.value',
+  valueHint: 'status.valueHint',
+  fullyRefunded: 'status.fullyRefunded',
+  fullyRefundedHint: 'status.fullyRefundedHint',
+  noShow: 'status.booking.no_show',
+  noShowHint: 'status.noShowHint',
+  noShowReported: 'status.noShowReported',
+  noShowReportedHint: 'status.noShowReportedHint',
+
+})
 
 interface Card {
   label: string
@@ -44,7 +46,9 @@ interface Card {
   headline?: boolean
 }
 
-function cardsOf(totals: StatusFullTotals, guestsLabel: string): Card[] {
+type Text = { [K in keyof typeof TEXT_KEYS]: string }
+
+function cardsOf(totals: StatusFullTotals, guestsLabel: string, TEXT: Text): Card[] {
   const cards: Card[] = [
     { label: TEXT.stayed, value: formatCount(totals.stayed), hint: TEXT.stayedHint, headline: true },
     { label: TEXT.counted, value: formatCount(totals.counted), hint: TEXT.countedHint },
@@ -66,7 +70,9 @@ function cardsOf(totals: StatusFullTotals, guestsLabel: string): Card[] {
 }
 
 /** R12a summary cards: "stayed" is the headline; counted and upcoming are separate; money is per currency */
-export function StatusStatsCards({ totals, caption, lead, guestsLabel = TEXT.guests }: StatusStatsCardsProps) {
+export function StatusStatsCards({ totals, caption, lead, guestsLabel: guestsLabelProp }: StatusStatsCardsProps) {
+  const TEXT = useTexts(TEXT_KEYS)
+  const guestsLabel = guestsLabelProp ?? TEXT.guests
   return (
     <div className="status-cards">
       {lead && (
@@ -75,7 +81,7 @@ export function StatusStatsCards({ totals, caption, lead, guestsLabel = TEXT.gue
           <span className="status-card-value">{lead.value}</span>
         </div>
       )}
-      {cardsOf(totals, guestsLabel).map(card => (
+      {cardsOf(totals, guestsLabel, TEXT).map(card => (
         <div key={card.label} className={`status-card${card.headline ? ' status-card--headline' : ''}`}>
           <span className="status-card-label">{card.label}</span>
           <span className="status-card-value">{card.value}</span>

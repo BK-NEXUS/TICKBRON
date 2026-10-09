@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerDateInventory, CreateDateInventoryRequest, UpdateDateInventoryRequest, BulkPriceRequest } from '../adapters/partnerAdapter'
 
@@ -9,6 +10,7 @@ interface PartnerAvailabilityManagementProps {
 type ViewMode = 'list' | 'create' | 'edit' | 'bulk-price'
 
 export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: PartnerAvailabilityManagementProps) {
+  const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [dateInventory, setDateInventory] = useState<PartnerDateInventory[]>([])
   const [selectedInventory, setSelectedInventory] = useState<PartnerDateInventory | null>(null)
@@ -37,6 +39,8 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
   useEffect(() => {
     loadDateInventory()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ratePlanId])
 
   const loadDateInventory = async () => {
@@ -56,7 +60,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         setDateInventory(ratePlanInventory)
       }
     } catch (err) {
-      setError('Failed to load date inventory. Please try again.')
+      setError(t('partner.failedToLoadDate'))
     } finally {
       setLoading(false)
     }
@@ -77,14 +81,14 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         return
       }
 
-      setSuccessMessage('Date inventory created successfully')
+      setSuccessMessage(t('partner.dateInventoryCreatedSuccessfully'))
       setViewMode('list')
       resetForm()
       loadDateInventory()
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to create date inventory. Please try again.')
+      setError(t('partner.failedToCreateDate'))
       setLoading(false)
     }
   }
@@ -114,7 +118,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         return
       }
 
-      setSuccessMessage('Date inventory updated successfully')
+      setSuccessMessage(t('partner.dateInventoryUpdatedSuccessfully'))
       setViewMode('list')
       resetForm()
       setSelectedInventory(null)
@@ -122,13 +126,13 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to update date inventory. Please try again.')
+      setError(t('partner.failedToUpdateDate'))
       setLoading(false)
     }
   }
 
   const handleDelete = async (inventoryId: number) => {
-    if (!confirm('Are you sure you want to delete this date inventory?')) return
+    if (!confirm(t('partner.areYouSureYou3'))) return
 
     setLoading(true)
     setError(null)
@@ -142,12 +146,12 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         return
       }
 
-      setSuccessMessage('Date inventory deleted successfully')
+      setSuccessMessage(t('partner.dateInventoryDeletedSuccessfully'))
       loadDateInventory()
 
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to delete date inventory. Please try again.')
+      setError(t('partner.failedToDeleteDate'))
       setLoading(false)
     }
   }
@@ -165,14 +169,14 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         return
       }
 
-      setSuccessMessage('Price updated for the selected dates')
+      setSuccessMessage(t('partner.priceUpdatedForThe'))
       setViewMode('list')
       setBulkSaving(false)
       loadDateInventory()
 
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to update the price. Please try again.')
+      setError(t('partner.failedToUpdateThe'))
       setBulkSaving(false)
     }
   }
@@ -195,23 +199,23 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
   const validateForm = (): boolean => {
     if (!formData.date) {
-      setError('Date is required')
+      setError(t('partner.dateIsRequired'))
       return false
     }
     if (formData.available_rooms < 0) {
-      setError('Available rooms cannot be negative')
+      setError(t('partner.availableRoomsCannotBe'))
       return false
     }
     if (formData.price < 0) {
-      setError('Price must be positive')
+      setError(t('partner.priceMustBePositive'))
       return false
     }
     if (formData.minimum_stay < 1) {
-      setError('Minimum stay must be at least 1 night')
+      setError(t('partner.minimumStayMustBe'))
       return false
     }
     if (formData.maximum_stay < formData.minimum_stay) {
-      setError('Maximum stay cannot be less than minimum stay')
+      setError(t('partner.maximumStayCannotBe'))
       return false
     }
     return true
@@ -231,16 +235,16 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     })
   }
 
-  const handleInputChange = (field: keyof CreateDateInventoryRequest, value: any) => {
+  const handleInputChange = <K extends keyof CreateDateInventoryRequest>(field: K, value: CreateDateInventoryRequest[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }
 
   const getAvailabilityStatus = (inventory: PartnerDateInventory) => {
-    if (!inventory.is_available) return 'Unavailable'
-    if (inventory.available_rooms === 0) return 'Fully Booked'
-    if (inventory.available_rooms <= 3) return 'Limited'
-    return 'Available'
+    if (!inventory.is_available) return t('partner.unavailable')
+    if (inventory.available_rooms === 0) return t('partner.fullyBooked')
+    if (inventory.available_rooms <= 3) return t('partner.limited')
+    return t('partner.available')
   }
 
   const getAvailabilityClass = (inventory: PartnerDateInventory) => {
@@ -253,7 +257,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const renderListView = () => (
     <div className="partner-availability-list">
       <div className="availability-list-header">
-        <h2 className="availability-list-title">Date Inventory for {ratePlanName}</h2>
+        <h2 className="availability-list-title">{t('partner.dateInventoryFor', { name: ratePlanName })}</h2>
         <div className="availability-list-header-actions">
           <button
             onClick={() => {
@@ -262,9 +266,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
               setViewMode('bulk-price')
             }}
             className="btn btn-secondary"
-            aria-label={`Bulk price edit for ${ratePlanName}`}
+            aria-label={t('partner.bulkPriceFor', { name: ratePlanName })}
           >
-            Bulk price edit
+            {t('partner.bulkPriceEdit')}
           </button>
           <button
             onClick={() => {
@@ -272,9 +276,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
               setViewMode('create')
             }}
             className="btn btn-primary"
-            aria-label="Add new date inventory"
+            aria-label={t('partner.addNewDateInventory')}
           >
-            + Add Date Inventory
+            + {t('partner.addDateInventoryButton')}
           </button>
         </div>
       </div>
@@ -293,25 +297,25 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading date inventory...
+          {t('partner.loadingDateInventory')}
         </div>
       ) : dateInventory.length === 0 ? (
         <div className="empty-state">
-          <p>No date inventory found for this rate plan.</p>
-          <p>Click "Add Date Inventory" to create your first date inventory entry.</p>
+          <p>{t('partner.noDateInventoryFound')}</p>
+          <p>{t('partner.clickAddDateInventory')}</p>
         </div>
       ) : (
         <div className="date-inventory-table">
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Available</th>
-                <th>Booked</th>
-                <th>Price</th>
-                <th>Min/Max Stay</th>
-                <th>Actions</th>
+                <th>{t('partner.date')}</th>
+                <th>{t('partner.status')}</th>
+                <th>{t('calendar.available')}</th>
+                <th>{t('partner.booked')}</th>
+                <th>{t('partner.price')}</th>
+                <th>{t('partner.minMaxStay')}</th>
+                <th>{t('partner.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -326,21 +330,21 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
                   <td>{inventory.available_rooms}</td>
                   <td>{inventory.booked_rooms}</td>
                   <td>{inventory.price} {inventory.currency}</td>
-                  <td>{inventory.minimum_stay} - {inventory.maximum_stay} nights</td>
+                  <td>{t('partner.minMaxNightsValue', { min: inventory.minimum_stay, max: inventory.maximum_stay })}</td>
                   <td>
                     <button
                       onClick={() => handleEdit(inventory)}
                       className="btn btn-secondary btn-sm"
-                      aria-label={`Edit inventory for ${inventory.date}`}
+                      aria-label={t('partner.editInventoryFor', { date: inventory.date })}
                     >
-                      Edit
+                      {t('partner.edit')}
                     </button>
                     <button
                       onClick={() => handleDelete(inventory.id)}
                       className="btn btn-danger btn-sm"
-                      aria-label={`Delete inventory for ${inventory.date}`}
+                      aria-label={t('partner.deleteInventoryFor', { date: inventory.date })}
                     >
-                      Delete
+                      {t('partner.delete')}
                     </button>
                   </td>
                 </tr>
@@ -356,7 +360,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     <div className="partner-availability-form">
       <div className="availability-form-header">
         <h2 className="availability-form-title">
-          {viewMode === 'create' ? 'Create Date Inventory' : 'Edit Date Inventory'}
+          {viewMode === 'create' ? t('partner.createDateInventory') : t('partner.editDateInventory')}
         </h2>
         <button
           onClick={() => {
@@ -365,9 +369,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             setSelectedInventory(null)
           }}
           className="btn btn-tertiary"
-          aria-label="Cancel and return to list"
+          aria-label={t('partner.cancelAndReturnTo')}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
@@ -382,7 +386,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">
-          <label htmlFor="inventory_date">Date *</label>
+          <label htmlFor="inventory_date">{t('partner.date2')}</label>
           <input
             id="inventory_date"
             type="date"
@@ -394,13 +398,13 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             disabled={viewMode === 'edit'}
           />
           {viewMode === 'edit' && (
-            <small className="form-hint">Date cannot be changed after creation</small>
+            <small className="form-hint">{t('partner.dateCannotBeChanged')}</small>
           )}
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="available_rooms">Available Rooms *</label>
+            <label htmlFor="available_rooms">{t('partner.availableRooms')}</label>
             <input
               id="available_rooms"
               type="number"
@@ -414,7 +418,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
           </div>
 
           <div className="form-group">
-            <label htmlFor="price">Price *</label>
+            <label htmlFor="price">{t('partner.price2')}</label>
             <input
               id="price"
               type="number"
@@ -430,7 +434,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         </div>
 
         <div className="form-group">
-          <label htmlFor="currency">Currency *</label>
+          <label htmlFor="currency">{t('partner.currency')}</label>
           <select
             id="currency"
             value={formData.currency}
@@ -439,15 +443,15 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             required
             aria-required="true"
           >
-            <option value="USD">USD - US Dollar</option>
-            <option value="EUR">EUR - Euro</option>
-            <option value="UZS">UZS - Uzbekistani Som</option>
+            <option value="USD">{t('partner.usdUsDollar')}</option>
+            <option value="EUR">{t('partner.eurEuro')}</option>
+            <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
           </select>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="minimum_stay">Minimum Stay (nights) *</label>
+            <label htmlFor="minimum_stay">{t('partner.minimumStayNights')}</label>
             <input
               id="minimum_stay"
               type="number"
@@ -461,7 +465,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
           </div>
 
           <div className="form-group">
-            <label htmlFor="maximum_stay">Maximum Stay (nights) *</label>
+            <label htmlFor="maximum_stay">{t('partner.maximumStayNights')}</label>
             <input
               id="maximum_stay"
               type="number"
@@ -482,19 +486,19 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
               checked={formData.is_available}
               onChange={(e) => handleInputChange('is_available', e.target.checked)}
             />
-            <span>Available for Booking</span>
+            <span>{t('partner.availableForBooking')}</span>
           </label>
         </div>
 
         <div className="form-group">
-          <label htmlFor="notes">Notes</label>
+          <label htmlFor="notes">{t('partner.notes')}</label>
           <textarea
             id="notes"
             value={formData.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
             className="form-input"
             rows={3}
-            placeholder="Optional notes about this date (e.g., special events, maintenance, etc.)"
+            placeholder={t('partner.optionalNotesAboutThis')}
           />
         </div>
 
@@ -504,7 +508,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Saving...' : viewMode === 'create' ? 'Create Date Inventory' : 'Update Date Inventory'}
+            {loading ? t('partner.saving') : viewMode === 'create' ? t('partner.createDateInventory') : t('partner.updateDateInventory')}
           </button>
         </div>
       </form>
@@ -514,13 +518,13 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const renderBulkPriceView = () => (
     <div className="partner-availability-form">
       <div className="availability-form-header">
-        <h2 className="availability-form-title">Bulk price edit for {ratePlanName}</h2>
+        <h2 className="availability-form-title">{t('partner.bulkPriceFor', { name: ratePlanName })}</h2>
         <button
           onClick={() => setViewMode('list')}
           className="btn btn-tertiary"
-          aria-label="Cancel and return to list"
+          aria-label={t('partner.cancelAndReturnTo')}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
@@ -533,7 +537,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       <form className="availability-form" onSubmit={(e) => { e.preventDefault(); handleBulkPriceApply() }}>
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="bulk_date_from">From *</label>
+            <label htmlFor="bulk_date_from">{t('partner.from')}</label>
             <input
               id="bulk_date_from"
               type="date"
@@ -546,7 +550,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
           </div>
 
           <div className="form-group">
-            <label htmlFor="bulk_date_to">To (exclusive) *</label>
+            <label htmlFor="bulk_date_to">{t('partner.toExclusive')}</label>
             <input
               id="bulk_date_to"
               type="date"
@@ -556,12 +560,12 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
               required
               aria-required="true"
             />
-            <small className="form-hint">The last night priced is the day before this date.</small>
+            <small className="form-hint">{t('partner.theLastNightPriced')}</small>
           </div>
         </div>
 
         <div className="form-group">
-          <label htmlFor="bulk_price">Nightly price *</label>
+          <label htmlFor="bulk_price">{t('partner.nightlyPrice')}</label>
           <input
             id="bulk_price"
             type="number"
@@ -581,7 +585,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             className="btn btn-primary"
             disabled={bulkSaving}
           >
-            {bulkSaving ? 'Applying...' : 'Apply'}
+            {bulkSaving ? t('partner.applying') : t('partner.apply')}
           </button>
         </div>
       </form>

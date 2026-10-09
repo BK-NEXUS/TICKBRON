@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
 import { PropertyRegionField } from './PropertyRegionField'
+import { useI18n } from '../i18n/I18nContext'
 
 export function AdminPropertyModeration() {
   const [properties, setProperties] = useState<AdminProperty[]>([])
@@ -13,6 +14,8 @@ export function AdminPropertyModeration() {
 
   useEffect(() => {
     loadProperties()
+    // Loads once; the loader is also the Retry action, so it stays a plain function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadProperties = async () => {
@@ -32,7 +35,7 @@ export function AdminPropertyModeration() {
         setProperties(sortedProperties)
       }
     } catch (err) {
-      setError('Failed to load properties. Please try again.')
+      setError(t('partner.failedToLoadProperties'))
     } finally {
       setLoading(false)
     }
@@ -52,7 +55,7 @@ export function AdminPropertyModeration() {
         await loadProperties()
       }
     } catch (err) {
-      setError('Failed to approve property. Please try again.')
+      setError(t('admin.failedToApproveProperty'))
     } finally {
       setActionLoading(null)
     }
@@ -82,7 +85,7 @@ export function AdminPropertyModeration() {
         await loadProperties()
       }
     } catch (err) {
-      setError('Failed to reject property. Please try again.')
+      setError(t('admin.failedToRejectProperty'))
     } finally {
       setActionLoading(null)
     }
@@ -109,7 +112,7 @@ export function AdminPropertyModeration() {
         await loadProperties()
       }
     } catch (err) {
-      setError('Failed to suspend property. Please try again.')
+      setError(t('admin.failedToSuspendProperty'))
     } finally {
       setActionLoading(null)
     }
@@ -130,26 +133,19 @@ export function AdminPropertyModeration() {
     }
   }
 
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatLocalDate(dateString)
 
   return (
     <div className="admin-property-moderation">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">Property Moderation</h1>
-        <p className="admin-view-subtitle">Review and moderate property submissions</p>
+        <h1 className="admin-view-title">{t('admin.propertyModeration')}</h1>
+        <p className="admin-view-subtitle">{t('admin.reviewAndModerateProperty')}</p>
       </div>
 
       {error && (
@@ -160,12 +156,12 @@ export function AdminPropertyModeration() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading properties...
+          {t('search.loading')}
         </div>
       ) : properties.length === 0 ? (
         <div className="empty-state">
-          <p>No properties found for moderation.</p>
-          <p>Properties will appear here once hotel-owners submit them.</p>
+          <p>{t('admin.noPropertiesFoundFor')}</p>
+          <p>{t('admin.propertiesWillAppearHere')}</p>
         </div>
       ) : (
         <div className="properties-list">
@@ -178,7 +174,7 @@ export function AdminPropertyModeration() {
                   </h3>
                   <p className="property-address">{property.address_line1}</p>
                   {property.address_line2 && <p className="property-address">{property.address_line2}</p>}
-                  <p className="property-owner">Owner: {property.owner_name || `ID: ${property.owner}`}</p>
+                  <p className="property-owner">{t('admin.ownerLine', { name: property.owner_name || t('admin.idValue', { id: property.owner }) })}</p>
                 </div>
                 <div className="property-status-badges">
                   <span className={`property-status ${getStatusClass(property.status)}`}>
@@ -190,28 +186,28 @@ export function AdminPropertyModeration() {
               <div className="property-card-body">
                 <div className="property-details-grid">
                   <div className="property-detail">
-                    <span className="detail-label">Max Guests:</span>
+                    <span className="detail-label">{t('partner.maxGuests2')}</span>
                     <span className="detail-value">{property.max_guests}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Bedrooms:</span>
+                    <span className="detail-label">{t('partner.bedrooms')}</span>
                     <span className="detail-value">{property.bedrooms}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Bathrooms:</span>
+                    <span className="detail-label">{t('partner.bathrooms')}</span>
                     <span className="detail-value">{property.bathrooms}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Base Price:</span>
+                    <span className="detail-label">{t('partner.basePrice')}</span>
                     <span className="detail-value">{formatCurrency(property.base_price, property.currency)}</span>
                   </div>
                   <div className="property-detail">
-                    <span className="detail-label">Created:</span>
+                    <span className="detail-label">{t('admin.created')}</span>
                     <span className="detail-value">{formatDate(property.created_at)}</span>
                   </div>
                   {property.approved_at && (
                     <div className="property-detail">
-                      <span className="detail-label">Approved:</span>
+                      <span className="detail-label">{t('admin.approved')}</span>
                       <span className="detail-value">{formatDate(property.approved_at)}</span>
                     </div>
                   )}
@@ -225,19 +221,19 @@ export function AdminPropertyModeration() {
 
                 {property.rejection_reason && (
                   <div className="property-rejection-reason">
-                    <span className="detail-label">Rejection Reason:</span>
+                    <span className="detail-label">{t('admin.rejectionReason')}</span>
                     <p className="detail-value">{property.rejection_reason}</p>
                   </div>
                 )}
 
                 <div className="property-amenities">
-                  <span className="detail-label">Features:</span>
+                  <span className="detail-label">{t('admin.features')}</span>
                   <div className="amenities-tags">
-                    {property.has_elevator && <span className="amenity-tag">Elevator</span>}
-                    {property.has_parking && <span className="amenity-tag">Parking</span>}
-                    {property.has_wifi && <span className="amenity-tag">WiFi</span>}
-                    {property.has_ac && <span className="amenity-tag">Air Conditioning</span>}
-                    {property.has_heating && <span className="amenity-tag">Heating</span>}
+                    {property.has_elevator && <span className="amenity-tag">{t('feature.elevator')}</span>}
+                    {property.has_parking && <span className="amenity-tag">{t('feature.parking')}</span>}
+                    {property.has_wifi && <span className="amenity-tag">{t('feature.wifi')}</span>}
+                    {property.has_ac && <span className="amenity-tag">{t('feature.ac')}</span>}
+                    {property.has_heating && <span className="amenity-tag">{t('feature.heating')}</span>}
                   </div>
                 </div>
               </div>
@@ -250,17 +246,17 @@ export function AdminPropertyModeration() {
                         onClick={() => handleApprove(property.id)}
                         disabled={actionLoading === property.id}
                         className="btn btn-primary"
-                        aria-label={`Approve property at ${property.city}, ${property.country}`}
+                        aria-label={t('admin.approveAt', { place: `${property.city}, ${property.country}` })}
                       >
-                        {actionLoading === property.id ? 'Processing...' : 'Approve'}
+                        {actionLoading === property.id ? t('pay.processingShort') : t('admin.approve')}
                       </button>
                       <button
                         onClick={() => handleRejectClick(property.id, `${property.city}, ${property.country}`)}
                         disabled={actionLoading === property.id}
                         className="btn btn-secondary"
-                        aria-label={`Reject property at ${property.city}, ${property.country}`}
+                        aria-label={t('admin.rejectAt', { place: `${property.city}, ${property.country}` })}
                       >
-                        Reject
+                        {t('admin.reject')}
                       </button>
                     </>
                   )}
@@ -269,9 +265,9 @@ export function AdminPropertyModeration() {
                       onClick={() => handleSuspend(property.id)}
                       disabled={actionLoading === property.id}
                       className="btn btn-danger"
-                      aria-label={`Suspend property at ${property.city}, ${property.country}`}
+                      aria-label={t('admin.suspendAt', { place: `${property.city}, ${property.country}` })}
                     >
-                      {actionLoading === property.id ? 'Processing...' : 'Suspend'}
+                      {actionLoading === property.id ? t('pay.processingShort') : t('admin.suspend')}
                     </button>
                   )}
                   {property.status === 'suspended' && (
@@ -279,9 +275,9 @@ export function AdminPropertyModeration() {
                       onClick={() => handleApprove(property.id)}
                       disabled={actionLoading === property.id}
                       className="btn btn-primary"
-                      aria-label={`Reactivate property at ${property.city}, ${property.country}`}
+                      aria-label={t('admin.reactivateAt', { place: `${property.city}, ${property.country}` })}
                     >
-                      {actionLoading === property.id ? 'Processing...' : 'Reactivate'}
+                      {actionLoading === property.id ? t('pay.processingShort') : t('admin.reactivate')}
                     </button>
                   )}
                 </div>
@@ -294,11 +290,11 @@ export function AdminPropertyModeration() {
       {rejectModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reject-modal-title">
           <div className="modal-content" ref={dialogRef} tabIndex={-1}>
-            <h2 id="reject-modal-title" className="modal-title">Reject Property</h2>
-            <p className="modal-subtitle">You are rejecting: {rejectModal.propertyName}</p>
+            <h2 id="reject-modal-title" className="modal-title">{t('admin.rejectProperty')}</h2>
+            <p className="modal-subtitle">{t('admin.rejecting', { name: rejectModal.propertyName })}</p>
             
             <div className="form-group">
-              <label htmlFor="rejection-reason">Rejection Reason (required):</label>
+              <label htmlFor="rejection-reason">{t('admin.rejectionReasonRequired')}</label>
               <textarea
                 id="rejection-reason"
                 value={rejectionReason}
@@ -307,7 +303,7 @@ export function AdminPropertyModeration() {
                 rows={4}
                 required
                 aria-required="true"
-                placeholder="Please provide a reason for rejection..."
+                placeholder={t('admin.pleaseProvideAReason')}
               />
             </div>
 
@@ -317,14 +313,14 @@ export function AdminPropertyModeration() {
                 disabled={!rejectionReason.trim() || actionLoading === rejectModal.propertyId}
                 className="btn btn-danger"
               >
-                {actionLoading === rejectModal.propertyId ? 'Processing...' : 'Reject Property'}
+                {actionLoading === rejectModal.propertyId ? t('pay.processingShort') : t('admin.rejectProperty')}
               </button>
               <button
                 onClick={handleRejectCancel}
                 disabled={actionLoading === rejectModal.propertyId}
                 className="btn btn-secondary"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

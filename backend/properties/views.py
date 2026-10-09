@@ -14,6 +14,8 @@ from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
 from currency.rates import uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
+from promotions.search import promoted_for_search, serialize_banners
+from promotions.stats import IMPRESSION, record as record_stat
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
     PaginatedSearchResponseSerializer, PropertyDetailSerializer,
@@ -36,6 +38,19 @@ class SearchRateThrottle(AnonRateThrottle):
         if TESTING:
             return True
         return super().allow_request(request, view)
+
+
+def _promoted_banners(request, search_service, search_params, page):
+    """Paid banners for the top of the first results page; advertising must never break a search."""
+    if page != 1:
+        return []
+    try:
+        entries = promoted_for_search(search_service, search_params)
+        record_stat(IMPRESSION, [promotion.pk for promotion, _ in entries], request)
+        return serialize_banners(request, entries)
+    except Exception:
+        logger.exception('Promoted banners failed')
+        return []
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -121,7 +136,8 @@ def property_search(request):
         'results': results_serializer.data,
         'page': search_results.get('page', 1),
         'page_size': search_results.get('page_size', 20),
-        'total_pages': search_results.get('total_pages', 1)
+        'total_pages': search_results.get('total_pages', 1),
+        'promoted': _promoted_banners(request, search_service, search_params, search_results.get('page', 1)),
     }
     
     return Response(response_data, status=status.HTTP_200_OK)

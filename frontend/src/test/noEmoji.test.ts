@@ -8,16 +8,6 @@ const EMOJI = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u
 // Copyright, registered and trademark signs are text, not decoration
 const ALLOWED_SIGNS = /[©®™]/g
 
-// TODO: remove once the SVG country selector replaces the flag emoji
-const ALLOWED_FILES = new Set([
-  'src/utils/phone.ts',
-  // TODO: the i18n session owns these two; remove when its language and currency selectors are done
-  'src/components/LanguageSelector.tsx',
-  'src/components/LanguageSelector.test.tsx',
-  'src/components/CurrencySelector.tsx',
-  'src/components/CurrencySelector.test.tsx',
-])
-
 const SCANNED_EXTENSIONS = /\.(tsx?|css|html|json|svg)$/
 
 function filesUnder(dir: string): string[] {
@@ -36,7 +26,7 @@ describe('no emoji in the UI', () => {
 
     for (const file of files) {
       const name = relative(ROOT, file).split(sep).join('/')
-      if (name === self || ALLOWED_FILES.has(name)) continue
+      if (name === self) continue
       readFileSync(file, 'utf-8').split(/\r?\n/).forEach((line, index) => {
         if (EMOJI.test(line.replace(ALLOWED_SIGNS, ''))) hits.push(`${name}:${index + 1}: ${line.trim().slice(0, 80)}`)
       })

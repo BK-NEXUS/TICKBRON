@@ -334,7 +334,7 @@ describe('SearchResultsPage', () => {
     render(<RouterProvider router={router} />)
 
     await waitFor(() => {
-      expect(screen.getByText('1 properties found')).toBeInTheDocument()
+      expect(screen.getByText('1 property found')).toBeInTheDocument()
     })
   })
 

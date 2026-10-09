@@ -129,7 +129,7 @@ describe('CreateHotelOwnerAccount', () => {
       date_joined: '2024-01-01T00:00:00Z',
     }
 
-    ;(adminAdapter.createHotelOwner as any).mockResolvedValueOnce({
+    ;(adminAdapter.createHotelOwner as never).mockResolvedValueOnce({
       data: mockResponse,
       error: null,
     })
@@ -182,7 +182,7 @@ describe('CreateHotelOwnerAccount', () => {
       date_joined: '2024-01-01T00:00:00Z',
     }
 
-    ;(adminAdapter.createHotelOwner as any).mockResolvedValueOnce({
+    ;(adminAdapter.createHotelOwner as never).mockResolvedValueOnce({
       data: mockResponse,
       error: null,
     })
@@ -218,7 +218,7 @@ describe('CreateHotelOwnerAccount', () => {
   })
 
   it('should display error message on API failure', async () => {
-    ;(adminAdapter.createHotelOwner as any).mockResolvedValueOnce({
+    (adminAdapter.createHotelOwner as never).mockResolvedValueOnce({
       data: null,
       error: 'Super-admin required',
     })
@@ -270,7 +270,7 @@ describe('CreateHotelOwnerAccount', () => {
       date_joined: '2024-01-01T00:00:00Z',
     }
 
-    ;(adminAdapter.createHotelOwner as any).mockResolvedValueOnce({
+    ;(adminAdapter.createHotelOwner as never).mockResolvedValueOnce({
       data: mockResponse,
       error: null,
     })

@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 
 interface CoachMarkProps {
@@ -17,6 +18,7 @@ export function CoachMark({
   showOnce = true,
   onClose 
 }: CoachMarkProps) {
+  const { t } = useI18n()
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function CoachMark({
         <button 
           className="coach-mark-close" 
           onClick={handleClose}
-          aria-label="Close coach mark"
+          aria-label={t('coach.close')}
         >
           ×
         </button>

@@ -1,4 +1,6 @@
+import { Check } from 'lucide-react'
 import { RatePlan } from '../adapters/propertyAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 interface RatePlanCardProps {
   ratePlan: RatePlan
@@ -11,33 +13,22 @@ interface RatePlanCardProps {
  * Shows rate plan details, pricing, cancellation policy, and deposit information
  */
 export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePlanCardProps) {
+  const { t, tp, formatMoney } = useI18n()
   const formatPrice = (price: number, currencyCode: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
+    return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const formatRateType = (rateType: string) => {
     switch (rateType) {
       case 'standard':
-        return 'Standard'
       case 'non_refundable':
-        return 'Non-Refundable'
       case 'early_bird':
-        return 'Early Bird'
       case 'last_minute':
-        return 'Last Minute'
       case 'long_stay':
-        return 'Long Stay'
       case 'seasonal':
-        return 'Seasonal'
       case 'corporate':
-        return 'Corporate'
       case 'promo':
-        return 'Promotional'
+        return t(`rate.${rateType}`)
       default:
         return rateType
           .split('_')
@@ -69,7 +60,7 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
           <span className="rate-plan-card-price-value">
             {formatPrice(ratePlan.base_price, ratePlan.currency)}
           </span>
-          <span className="rate-plan-card-price-period">per night</span>
+          <span className="rate-plan-card-price-period">{t('room.perNight')}</span>
         </div>
       </div>
 
@@ -77,38 +68,38 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
 
       <div className="rate-plan-card-details">
         <div className="rate-plan-card-detail">
-          <span className="rate-plan-card-detail-label">Minimum Stay</span>
-          <span className="rate-plan-card-detail-value">{ratePlan.min_nights} night{ratePlan.min_nights !== 1 ? 's' : ''}</span>
+          <span className="rate-plan-card-detail-label">{t('rate.minStay')}</span>
+          <span className="rate-plan-card-detail-value">{tp('rooms.nights', ratePlan.min_nights)}</span>
         </div>
 
         <div className="rate-plan-card-detail">
-          <span className="rate-plan-card-detail-label">Maximum Stay</span>
-          <span className="rate-plan-card-detail-value">{ratePlan.max_nights} night{ratePlan.max_nights !== 1 ? 's' : ''}</span>
+          <span className="rate-plan-card-detail-label">{t('rate.maxStay')}</span>
+          <span className="rate-plan-card-detail-value">{tp('rooms.nights', ratePlan.max_nights)}</span>
         </div>
 
         <div className="rate-plan-card-detail">
-          <span className="rate-plan-card-detail-label">Cancellation</span>
+          <span className="rate-plan-card-detail-label">{t('rate.cancellation')}</span>
           <span className="rate-plan-card-detail-value">{ratePlan.cancellation_policy}</span>
         </div>
 
         {ratePlan.deposit_required && ratePlan.deposit_percentage && (
           <div className="rate-plan-card-detail rate-plan-card-detail--deposit">
-            <span className="rate-plan-card-detail-label">Deposit Required</span>
+            <span className="rate-plan-card-detail-label">{t('rate.deposit')}</span>
             <span className="rate-plan-card-detail-value">{ratePlan.deposit_percentage}%</span>
           </div>
         )}
 
         {ratePlan.advance_booking_days && (
           <div className="rate-plan-card-detail">
-            <span className="rate-plan-card-detail-label">Advance Booking</span>
-            <span className="rate-plan-card-detail-value">{ratePlan.advance_booking_days} days</span>
+            <span className="rate-plan-card-detail-label">{t('rate.advance')}</span>
+            <span className="rate-plan-card-detail-value">{tp('rate.days', ratePlan.advance_booking_days)}</span>
           </div>
         )}
       </div>
 
       {isSelected && (
-        <div className="rate-plan-card-selected-indicator" aria-label="Selected rate plan">
-          ✓ Selected
+        <div className="rate-plan-card-selected-indicator" aria-label={t('rate.selectedLabel')}>
+          <Check size={14} aria-hidden="true" /> {t('rate.selected')}
         </div>
       )}
     </div>

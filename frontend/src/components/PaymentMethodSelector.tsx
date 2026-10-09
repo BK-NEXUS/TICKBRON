@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Briefcase, CreditCard, Smartphone, type LucideIcon } from 'lucide-react'
 import { PaymentProvider } from '../adapters/paymentAdapter'
@@ -21,27 +22,28 @@ interface PaymentMethodSelectorProps {
  * Supports Payme, Click, and Visa payment methods
  */
 export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disabled }: PaymentMethodSelectorProps) {
+  const { t } = useI18n()
   const [focusedProvider, setFocusedProvider] = useState<PaymentProvider | null>(null)
 
   const paymentMethods: PaymentMethodOption[] = [
     {
       id: 'payme' as PaymentProvider,
       name: 'Payme',
-      description: 'Fast and secure mobile payments',
+      description: t('pay.payme'),
       icon: Smartphone,
       popular: true,
     },
     {
       id: 'click' as PaymentProvider,
       name: 'Click',
-      description: 'Uzbekistan\'s leading payment system',
+      description: t('pay.click'),
       icon: CreditCard,
       popular: false,
     },
     {
       id: 'visa' as PaymentProvider,
       name: 'Visa',
-      description: 'Global credit and debit cards',
+      description: t('pay.visa'),
       icon: Briefcase,
       popular: false,
     },
@@ -62,7 +64,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
 
   return (
     <div className="payment-method-selector">
-      <h3 className="payment-method-selector-title">Select Payment Method</h3>
+      <h3 className="payment-method-selector-title">{t('pay.select')}</h3>
       <div className="payment-method-selector-grid">
         {paymentMethods.map((method) => (
           <div
@@ -90,7 +92,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
               <div className="payment-method-card-name">
                 {method.name}
                 {method.popular && (
-                  <span className="payment-method-card-badge">Popular</span>
+                  <span className="payment-method-card-badge">{t('pay.popular')}</span>
                 )}
               </div>
               <div className="payment-method-card-description">
@@ -108,7 +110,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
       {selectedProvider && (
         <div className="payment-method-selector-selected">
           <span className="payment-method-selector-selected-label">
-            Selected: {paymentMethods.find(m => m.id === selectedProvider)?.name}
+            {t('pay.selectedProvider', { name: paymentMethods.find(m => m.id === selectedProvider)?.name ?? '' })}
           </span>
         </div>
       )}

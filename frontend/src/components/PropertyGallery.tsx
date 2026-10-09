@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { House } from 'lucide-react'
 import { Property } from '../adapters/propertyAdapter'
@@ -11,6 +12,7 @@ interface PropertyGalleryProps {
  * Supports thumbnail navigation and responsive layout
  */
 export function PropertyGallery({ property }: PropertyGalleryProps) {
+  const { t } = useI18n()
   const [currentIndex, setCurrentIndex] = useState(0)
   
   // Get gallery images from property.gallery organized by photo type
@@ -48,13 +50,13 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
       className="property-gallery"
       onKeyDown={handleKeyDown}
       role="region"
-      aria-label="Property image gallery"
+      aria-label={t('gallery.label')}
     >
       <div className="property-gallery-main">
         <button
           className="property-gallery-nav property-gallery-nav--prev"
           onClick={goToPrevious}
-          aria-label="Previous image"
+          aria-label={t('gallery.previous')}
           disabled={displayImages.length <= 1}
         >
           ‹
@@ -69,7 +71,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
         <button
           className="property-gallery-nav property-gallery-nav--next"
           onClick={goToNext}
-          aria-label="Next image"
+          aria-label={t('gallery.next')}
           disabled={displayImages.length <= 1}
         >
           ›
@@ -85,7 +87,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
                 index === currentIndex ? 'property-gallery-thumbnail--active' : ''
               }`}
               onClick={() => selectImage(index)}
-              aria-label={`View image ${index + 1}`}
+              aria-label={t('gallery.view', { number: index + 1 })}
               aria-pressed={index === currentIndex}
             >
               <div className="property-gallery-thumbnail-placeholder">

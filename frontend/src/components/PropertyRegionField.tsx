@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { FormEvent, useEffect, useId, useRef, useState } from 'react'
 import { statusAdapter } from '../adapters/statusAdapter'
 
@@ -10,6 +11,7 @@ interface PropertyRegionFieldProps {
 
 /** Admin: set a property's region, used by Status (country > region > hotel) */
 export function PropertyRegionField({ propertyId, region, onSaved }: PropertyRegionFieldProps) {
+  const { t } = useI18n()
   const id = useId()
   const [saved, setSaved] = useState(region ?? '')
   const [value, setValue] = useState(region ?? '')
@@ -45,23 +47,23 @@ export function PropertyRegionField({ propertyId, region, onSaved }: PropertyReg
     current.current = `${propertyId}:${next}`
     setSaved(next)
     setValue(next)
-    setMessage('Region saved')
+    setMessage(t('region.regionSaved'))
     onSaved?.(next || null)
   }
 
   return (
     <form className="property-region-field" onSubmit={handleSubmit}>
-      <label htmlFor={`${id}-region`} className="detail-label">Region</label>
+      <label htmlFor={`${id}-region`} className="detail-label">{t('region.region')}</label>
       <input
         id={`${id}-region`}
         type="text"
         maxLength={150}
-        placeholder="Unspecified"
+        placeholder={t('region.unspecified')}
         value={value}
         onChange={e => { setValue(e.target.value); setMessage(null) }}
       />
       <button type="submit" className="btn btn-secondary btn-small" disabled={saving || value.trim() === saved}>
-        {saving ? 'Saving...' : 'Save region'}
+        {saving ? t('profile.saving') : t('region.saveRegion')}
       </button>
       {message && <span role="status" className="property-region-saved">{message}</span>}
       {error && <span role="alert" className="property-region-error">{error}</span>}

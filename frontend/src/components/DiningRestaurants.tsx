@@ -1,4 +1,6 @@
+import { useI18n } from '../i18n/I18nContext'
 import { Restaurant } from '../adapters/propertyAdapter'
+import { StarIcon } from './StarIcon'
 
 interface DiningRestaurantsProps {
   restaurants?: Restaurant[]
@@ -9,10 +11,11 @@ interface DiningRestaurantsProps {
  * Shows cuisine, distance, rating, and price range information
  */
 export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) {
+  const { t } = useI18n()
   if (restaurants.length === 0) {
     return (
       <div className="dining-restaurants dining-restaurants--empty">
-        <p className="dining-restaurants-empty">No restaurant information available</p>
+        <p className="dining-restaurants-empty">{t('dining.empty')}</p>
       </div>
     )
   }
@@ -23,13 +26,13 @@ export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) 
   const formatPriceRange = (priceRange: string) => {
     switch (priceRange) {
       case '$':
-        return 'Budget-friendly'
+        return t('dining.budget')
       case '$$':
-        return 'Moderate'
+        return t('dining.moderate')
       case '$$$':
-        return 'Expensive'
+        return t('dining.expensive')
       case '$$$$':
-        return 'Fine dining'
+        return t('dining.fine')
       default:
         return priceRange
     }
@@ -37,7 +40,7 @@ export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) 
 
   return (
     <div className="dining-restaurants">
-      <h2 className="dining-restaurants-title">Dining & Restaurants</h2>
+      <h2 className="dining-restaurants-title">{t('dining.title')}</h2>
       
       <div className="dining-restaurants-list">
         {sortedRestaurants.map((restaurant) => (
@@ -55,7 +58,7 @@ export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) 
             <div className="dining-restaurant-item-details">
               {restaurant.rating && (
                 <div className="dining-restaurant-item-rating">
-                  <span className="dining-restaurant-item-rating-value">★ {restaurant.rating.toFixed(1)}</span>
+                  <span className="dining-restaurant-item-rating-value"><StarIcon /> {restaurant.rating.toFixed(1)}</span>
                 </div>
               )}
               

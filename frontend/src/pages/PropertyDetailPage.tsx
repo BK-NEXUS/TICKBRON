@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/messages/en'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { propertyAdapter, Property } from '../adapters/propertyAdapter'
@@ -13,23 +14,27 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
+import { StarIcon } from '../components/StarIcon'
+import { useI18n } from '../i18n/I18nContext'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
  * Includes gallery, header, and responsive interaction patterns
  */
 export function PropertyDetailPage() {
+  const { t, tp, formatMoney } = useI18n()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // A message from the backend (text) or one of ours (key), so ours follow the page language
+  const [error, setError] = useState<{ text: string } | { key: MessageKey } | null>(null)
 
   useEffect(() => {
     const loadProperty = async () => {
       if (!id) {
-        setError('Property ID is required')
+        setError({ key: 'property.errorIdRequired' })
         setLoading(false)
         return
       }
@@ -37,7 +42,7 @@ export function PropertyDetailPage() {
       try {
         const propertyId = parseInt(id, 10)
         if (isNaN(propertyId)) {
-          setError('Invalid property ID')
+          setError({ key: 'property.errorIdInvalid' })
           setLoading(false)
           return
         }
@@ -45,17 +50,17 @@ export function PropertyDetailPage() {
         const response = await propertyAdapter.getPropertyById(propertyId)
         
         if (response.error) {
-          setError(response.error)
+          setError({ text: response.error })
           setLoading(false)
         } else if (response.data) {
           setProperty(response.data)
           setLoading(false)
         } else {
-          setError('Property not found')
+          setError({ key: 'property.errorNotFound' })
           setLoading(false)
         }
       } catch (err) {
-        setError('Failed to load property details')
+        setError({ key: 'property.errorLoad' })
         setLoading(false)
       }
     }
@@ -66,7 +71,7 @@ export function PropertyDetailPage() {
   // SEO metadata
   useEffect(() => {
     if (property) {
-      const translation = property.translations[0] || { name: property.name || 'Property', description: property.description || '' }
+      const translation = property.translations[0] || { name: property.name || '', description: property.description || '' }
       document.title = `${translation.name} | TICKBRON — Online Booking`
       
       // Update meta description
@@ -94,7 +99,7 @@ export function PropertyDetailPage() {
         <div className="container">
           <div className="loading-state" role="status" aria-live="polite">
             <div className="loading-spinner"></div>
-            <p>Loading property details...</p>
+            <p>{t('property.loading')}</p>
           </div>
         </div>
       </div>
@@ -106,14 +111,14 @@ export function PropertyDetailPage() {
       <div className="property-detail-page property-detail-page--error">
         <div className="container">
           <div className="error-state" role="alert" aria-live="assertive">
-            <h2>Property Not Found</h2>
-            <p>{error || 'The property you are looking for does not exist.'}</p>
+            <h2>{t('property.notFoundTitle')}</h2>
+            <p>{error ? ('text' in error ? error.text : t(error.key)) : t('property.notFoundText')}</p>
             <button 
               className="btn btn-primary"
               onClick={() => navigate('/search')}
-              aria-label="Return to search results"
+              aria-label={t('property.backToSearchLabel')}
             >
-              Back to Search
+              {t('property.backToSearch')}
             </button>
           </div>
         </div>
@@ -121,7 +126,7 @@ export function PropertyDetailPage() {
     )
   }
 
-  const translation = property.translations[0] || { name: property.name || 'Property', description: property.description || '' }
+  const translation = property.translations[0] || { name: property.name || t('property.defaultName'), description: property.description || '' }
 
   return (
     <div className="property-detail-page">
@@ -131,28 +136,28 @@ export function PropertyDetailPage() {
       <div className="container property-detail-content">
         <div className="property-detail-main">
           <section className="property-detail-section">
-            <h2 className="property-detail-section-title">About this property</h2>
+            <h2 className="property-detail-section-title">{t('property.about')}</h2>
             <p className="property-detail-description">{translation.description}</p>
           </section>
 
           <section className="property-detail-section">
-            <h2 className="property-detail-section-title">Property details</h2>
+            <h2 className="property-detail-section-title">{t('property.details')}</h2>
             <div className="property-detail-info">
               <div className="property-detail-info-item">
-                <span className="property-detail-info-label">Guests</span>
+                <span className="property-detail-info-label">{t('property.guests')}</span>
                 <span className="property-detail-info-value">{property.max_guests}</span>
               </div>
               <div className="property-detail-info-item">
-                <span className="property-detail-info-label">Bedrooms</span>
+                <span className="property-detail-info-label">{t('property.bedrooms')}</span>
                 <span className="property-detail-info-value">{property.bedrooms}</span>
               </div>
               <div className="property-detail-info-item">
-                <span className="property-detail-info-label">Bathrooms</span>
+                <span className="property-detail-info-label">{t('property.bathrooms')}</span>
                 <span className="property-detail-info-value">{property.bathrooms}</span>
               </div>
               {property.total_area && (
                 <div className="property-detail-info-item">
-                  <span className="property-detail-info-label">Total Area</span>
+                  <span className="property-detail-info-label">{t('property.area')}</span>
                   <span className="property-detail-info-value">{property.total_area} m²</span>
                 </div>
               )}
@@ -160,7 +165,7 @@ export function PropertyDetailPage() {
           </section>
 
           <section className="property-detail-section">
-            <h2 className="property-detail-section-title">Location</h2>
+            <h2 className="property-detail-section-title">{t('property.location')}</h2>
             <address className="property-detail-address">
               {property.address_line1 && <p>{property.address_line1}</p>}
               {property.address_line2 && <p>{property.address_line2}</p>}
@@ -203,20 +208,15 @@ export function PropertyDetailPage() {
           <div className="property-detail-booking-card">
             <div className="property-detail-price">
               <span className="property-detail-price-value">
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: property.currency,
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                }).format(property.base_price)}
+                {formatMoney(property.base_price, property.currency, { minDecimals: 0, maxDecimals: 0 })}
               </span>
-              <span className="property-detail-price-period">per night</span>
+              <span className="property-detail-price-period">{t('card.perNight')}</span>
             </div>
             
             {property.rating && (
               <div className="property-detail-rating">
-                <span className="property-detail-rating-value">★ {property.rating.toFixed(1)}</span>
-                <span className="property-detail-reviews">({property.review_count} reviews)</span>
+                <span className="property-detail-rating-value"><StarIcon /> {property.rating.toFixed(1)}</span>
+                <span className="property-detail-reviews">{tp('property.reviews', property.review_count ?? 0)}</span>
               </div>
             )}
 
@@ -237,9 +237,9 @@ export function PropertyDetailPage() {
                   navigate('/login', { state: { from: `/property/${id}` } })
                 }
               }}
-              aria-label={isAuthenticated ? 'Select room to book' : 'Login to book'}
+              aria-label={isAuthenticated ? t('property.selectRoomLabel') : t('property.loginToBookLabel')}
             >
-              {isAuthenticated ? 'Book Now' : 'Login to Book'}
+              {isAuthenticated ? t('property.bookNow') : t('property.loginToBook')}
             </button>
           </div>
         </aside>

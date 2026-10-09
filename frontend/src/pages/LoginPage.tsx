@@ -3,21 +3,23 @@ import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { isValidPhone, phoneExample } from '../utils/phone'
+import { redirectPathFrom } from '../utils/redirect'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { SegmentedControl, type SegmentedOption } from '../components/SegmentedControl'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { useI18n } from '../i18n/I18nContext'
 
 type LoginMethod = 'password' | 'phone'
 
-const LOGIN_METHODS: SegmentedOption<LoginMethod>[] = [
-  { value: 'password', label: 'Email & Password' },
-  { value: 'phone', label: 'Phone & SMS Code' },
-]
-
 export function LoginPage() {
+  const { t } = useI18n()
+  const loginMethods: SegmentedOption<LoginMethod>[] = [
+    { value: 'password', label: t('auth.methodPassword') },
+    { value: 'phone', label: t('auth.methodPhone') },
+  ]
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,7 +36,7 @@ export function LoginPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
+    return <Navigate to={redirectPathFrom(location.state)} replace />
   }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -47,10 +49,10 @@ export function LoginPage() {
     setIsLoading(false)
     
     if (response.success) {
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
-      setError(response.error || 'Login failed. Please try again.')
+      setError(response.error || t('auth.errorLogin'))
     }
   }
 
@@ -58,7 +60,7 @@ export function LoginPage() {
     e.preventDefault()
     setError('')
     if (!isValidPhone(phoneNumber)) {
-      setError(phoneErrorMessage())
+      setError(t('phone.invalid', { example: phoneExample() }))
       return
     }
     setIsLoading(true)
@@ -71,7 +73,7 @@ export function LoginPage() {
       setOtpRequested(true)
       setTestOtpCode(otpResponse.otp_code)
     } else {
-      setError(otpResponse.error || 'Failed to send code. Please try again.')
+      setError(otpResponse.error || t('auth.errorSendCode'))
     }
   }
 
@@ -85,10 +87,10 @@ export function LoginPage() {
     setIsLoading(false)
     
     if (response.success) {
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
-      setError(response.error || 'Invalid code. Please try again.')
+      setError(response.error || t('auth.errorInvalidCode'))
     }
   }
 
@@ -103,7 +105,7 @@ export function LoginPage() {
     if (response.success) {
       setTestOtpCode(response.otp_code)
     } else {
-      setError(response.error || 'Failed to resend code. Please try again.')
+      setError(response.error || t('auth.errorResend'))
     }
   }
 
@@ -116,15 +118,15 @@ export function LoginPage() {
           <AuthModeSwitch mode="login" disabled={isLoading} />
 
           <div className="auth-header">
-            <h1 className="auth-title">Welcome Back</h1>
-            <p className="auth-subtitle">Sign in to your TICKBRON account</p>
+            <h1 className="auth-title">{t('auth.welcomeBack')}</h1>
+            <p className="auth-subtitle">{t('auth.signInSubtitle')}</p>
           </div>
 
           <SegmentedControl<LoginMethod>
             fullWidth
             disabled={isLoading}
-            aria-label="Login method"
-            options={LOGIN_METHODS}
+            aria-label={t('auth.loginMethod')}
+            options={loginMethods}
             value={loginMethod}
             onChange={setLoginMethod}
           />
@@ -139,7 +141,7 @@ export function LoginPage() {
             <form className="auth-form" onSubmit={handlePasswordSubmit}>
               <div className="auth-field">
                 <label htmlFor="email" className="auth-label">
-                  Email
+                  {t('auth.email')}
                 </label>
                 <input
                   id="email"
@@ -155,7 +157,7 @@ export function LoginPage() {
 
               <div className="auth-field">
                 <label htmlFor="password" className="auth-label">
-                  Password
+                  {t('auth.password')}
                 </label>
                 <PasswordField
                   id="password"
@@ -168,14 +170,14 @@ export function LoginPage() {
               </div>
 
               <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? t('auth.signingIn') : t('auth.signIn')}
               </Button>
             </form>
           ) : (
             <form className="auth-form" onSubmit={otpRequested ? handleOTPSubmit : handleRequestOTP}>
               <div className="auth-field">
                 <label htmlFor="phone_number" className="auth-label">
-                  Phone Number
+                  {t('auth.phone')}
                 </label>
                 <PhoneInput
                   id="phone_number"
@@ -189,13 +191,13 @@ export function LoginPage() {
 
               {!otpRequested ? (
                 <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
-                  {isLoading ? 'Sending code...' : 'Send Code'}
+                  {isLoading ? t('auth.sendingCode') : t('auth.sendCode')}
                 </Button>
               ) : (
                 <>
                   <div className="auth-field">
                     <label htmlFor="otp_code" className="auth-label">
-                      Enter 6-digit Code
+                      {t('auth.enterCode')}
                     </label>
                     <input
                       id="otp_code"
@@ -214,16 +216,16 @@ export function LoginPage() {
 
                   {testOtpCode && import.meta.env.MODE !== 'production' && (
                     <div className="auth-test-mode">
-                      <small>Test mode code: <strong>{testOtpCode}</strong></small>
+                      <small>{t('auth.testCode')} <strong>{testOtpCode}</strong></small>
                     </div>
                   )}
 
                   <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
-                    {isLoading ? 'Verifying...' : 'Verify & Sign In'}
+                    {isLoading ? t('auth.verifying') : t('auth.verifyAndSignIn')}
                   </Button>
 
                   <Button variant="link" className="auth-resend" onClick={handleResendOTP} disabled={isLoading}>
-                    Resend Code
+                    {t('auth.resendCode')}
                   </Button>
                 </>
               )}
@@ -232,9 +234,9 @@ export function LoginPage() {
 
           <div className="auth-footer">
             <p className="auth-footer-text">
-              Don't have an account?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/register" className="auth-link">
-                Sign up
+                {t('auth.signUp')}
               </Link>
             </p>
           </div>

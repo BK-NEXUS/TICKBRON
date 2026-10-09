@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -14,6 +15,7 @@ import { EmptyState } from '../components/EmptyState'
 type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'create-owner'
 
 export function AdminDashboardPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const [currentView, setCurrentView] = useState<AdminView>('properties')
@@ -44,9 +46,9 @@ export function AdminDashboardPage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Authentication required"
-            message="Please sign in to access the admin dashboard."
-            ctaText="Sign In"
+            title={t('partner.authenticationRequired')}
+            message={t('admin.pleaseSignInTo')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -62,9 +64,9 @@ export function AdminDashboardPage() {
         <div className="container">
           <EmptyState
             icon={<Ban size={40} />}
-            title="Access Denied"
-            message="You do not have permission to access the admin dashboard."
-            ctaText="Go to Home"
+            title={t('denied.title')}
+            message={t('admin.youDoNotHave')}
+            ctaText={t('admin.goToHome')}
             ctaLink="/"
           />
         </div>
@@ -73,14 +75,14 @@ export function AdminDashboardPage() {
   }
 
   const renderNavigation = () => (
-    <nav className="admin-dashboard-nav" aria-label="Admin dashboard navigation">
+    <nav className="admin-dashboard-nav" aria-label={t('admin.adminDashboardNavigation')}>
       <button
         onClick={() => setCurrentView('properties')}
         className={`nav-item ${currentView === 'properties' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'properties' ? 'page' : undefined}
       >
         <span className="nav-icon"><House size={18} /></span>
-        <span className="nav-label">Properties</span>
+        <span className="nav-label">{t('nav.properties')}</span>
       </button>
       <button
         onClick={() => setCurrentView('amenities')}
@@ -88,7 +90,7 @@ export function AdminDashboardPage() {
         aria-current={currentView === 'amenities' ? 'page' : undefined}
       >
         <span className="nav-icon"><Bell size={18} /></span>
-        <span className="nav-label">Amenities</span>
+        <span className="nav-label">{t('filters.amenities')}</span>
       </button>
       <button
         onClick={() => setCurrentView('users')}
@@ -96,7 +98,7 @@ export function AdminDashboardPage() {
         aria-current={currentView === 'users' ? 'page' : undefined}
       >
         <span className="nav-icon"><Users size={18} /></span>
-        <span className="nav-label">Users</span>
+        <span className="nav-label">{t('status.users')}</span>
       </button>
       <button
         onClick={() => setCurrentView('customers')}
@@ -104,7 +106,7 @@ export function AdminDashboardPage() {
         aria-current={currentView === 'customers' ? 'page' : undefined}
       >
         <span className="nav-icon"><User size={18} /></span>
-        <span className="nav-label">Customers</span>
+        <span className="nav-label">{t('admin.customers')}</span>
       </button>
       <button
         onClick={() => setCurrentView('statistics')}
@@ -112,7 +114,7 @@ export function AdminDashboardPage() {
         aria-current={currentView === 'statistics' ? 'page' : undefined}
       >
         <span className="nav-icon"><ChartColumn size={18} /></span>
-        <span className="nav-label">Statistics</span>
+        <span className="nav-label">{t('status.statistics')}</span>
       </button>
       <button
         onClick={() => setCurrentView('status')}
@@ -126,14 +128,14 @@ export function AdminDashboardPage() {
             <rect x="12" y="1" width="3" height="14" rx="0.5" />
           </svg>
         </span>
-        <span className="nav-label">Status</span>
+        <span className="nav-label">{t('partner.status')}</span>
       </button>
       <button
         onClick={() => navigate('/admin/support')}
         className="nav-item"
       >
         <span className="nav-icon"><Search size={18} /></span>
-        <span className="nav-label">Support Lookup</span>
+        <span className="nav-label">{t('crumb.supportLookup')}</span>
       </button>
       {user.is_superuser && (
         <button
@@ -142,7 +144,7 @@ export function AdminDashboardPage() {
           aria-current={showCreateOwner ? 'page' : undefined}
         >
           <span className="nav-icon"><Plus size={18} /></span>
-          <span className="nav-label">Create Owner</span>
+          <span className="nav-label">{t('admin.createOwner')}</span>
         </button>
       )}
     </nav>
@@ -182,11 +184,11 @@ export function AdminDashboardPage() {
     <div className="admin-dashboard-page">
       <div className="container container-large-desktop">
         <div className="dashboard-header">
-          <h1 className="dashboard-title">Admin Dashboard</h1>
+          <h1 className="dashboard-title">{t('header.adminDashboard')}</h1>
           <p className="dashboard-subtitle">
-            Welcome, {user.first_name || user.email}
-            {user.is_superuser && <span className="role-badge role-badge--super-admin">Super Admin</span>}
-            {user.is_staff && !user.is_superuser && <span className="role-badge role-badge--staff">Staff</span>}
+            {t('admin.welcome', { name: user.first_name || user.email })}
+            {user.is_superuser && <span className="role-badge role-badge--super-admin">{t('admin.superAdmin')}</span>}
+            {user.is_staff && !user.is_superuser && <span className="role-badge role-badge--staff">{t('admin.staff')}</span>}
           </p>
         </div>
 

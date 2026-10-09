@@ -200,7 +200,7 @@ describe('FavoritesPage', () => {
       })
 
       expect(screen.getByText('Tashkent, Uzbekistan')).toBeInTheDocument()
-      expect(screen.getByText('$100 USD / night')).toBeInTheDocument()
+      expect(screen.getByText('$100 / night')).toBeInTheDocument()
       expect(screen.getByText('Great place!')).toBeInTheDocument()
     })
 
@@ -212,7 +212,7 @@ describe('FavoritesPage', () => {
       })
 
       expect(screen.getByText('Samarkand, Uzbekistan')).toBeInTheDocument()
-      expect(screen.getByText('$150 USD / night')).toBeInTheDocument()
+      expect(screen.getByText('$150 / night')).toBeInTheDocument()
     })
 
     it('should remove favorite when remove button clicked', async () => {

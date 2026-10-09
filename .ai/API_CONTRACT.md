@@ -959,3 +959,27 @@ Additive only, no field renamed or removed. Every headline number now exists as 
 - Reconciliation blocks (today, this_week, this_month, this_year, all_time) already carried persons: `counted.guests` and `stayed.guests` next to `counted.bookings` and `stayed.bookings`. Unchanged.
 - Consistency (tested): for one period, SUM(`stayed_guests`) over all users == over all hotels; a guest's per-hotel `stayed_guests` == the completed persons of that guest at that hotel.
 - **Meta on every statistics response** (same level as `period` and `period_range`): `business_date` (today in Asia/Tashkent, `YYYY-MM-DD`; after 00:00 Tashkent it is already the next day) and `no_show_report_window_days` (integer, setting `NO_SHOW_REPORT_WINDOW_DAYS`, default 7: "stayed" numbers of the last N days after check-out can still change). Endpoints: countries, regions, region hotels, flat hotels, hotel detail, users, user detail (admin) and `/partner/status/`, `/partner/status/hotels/{id}/` (owner). Not on `status/arrivals/`; CSV exports are unchanged.
+
+
+## 2026-10-09 R10: hotel promotions ("Reklama") - banner carousel
+
+Only the super-admin promotes a hotel (the owner asks the super-admin outside the platform). A promotion is shown only when ALL are true: paid (`paid_at` set), status `scheduled`/`active`, today (Asia/Tashkent business date) is inside `start_date..end_date`, the hotel is active, and the optional place scope matches the hotel. No online payment: the super-admin types the agreed price (a record only) and presses mark-paid.
+
+### Public
+- `GET /api/v1/properties/search/` gets an extra key `promoted`: list (max 8, display order) of full search cards (same fields as `results` items) plus `promotion_id`. Page 1 only (`[]` on other pages). Only hotels that match the guest's own filters (text, location, price, guests, features, rating, dates) are returned. `results` and `count` are unchanged (a promoted hotel may also be in the normal list). Never fails the search: on an internal error `promoted` is `[]`.
+- `GET /api/v1/promotions/home/[?country=<geography country id>]` -> `{results: [card + promotion_id]}`, max 8. 400 on a bad `country`. Not cached (each response counts views).
+- `POST /api/v1/promotions/<promotion_id>/click/` -> 204; 404 if the promotion is not shown now (nothing counted). Call it when a banner is opened.
+- Order: higher `priority` first; equal priority rotates, a different order each business day (stable within a day).
+- Counting: a view = returned in a response; a click = the POST. One count per visitor per hour (Redis `cache.add`, key holds a salted hash, no IP/user stored). If the cache is down nothing is counted. Throttle 60/min per IP on home and click.
+
+### Super-admin (`/api/v1/admin-panel/`; GET = staff or super-admin, every change = super-admin only)
+- `GET promotion-hotels/?q=` (>= 2 chars; name, address or city) -> `{results: [{id, name, city, status, has_running_promotion}]}`, max 20, any hotel status.
+- `GET promotions/` paginated (`count`, `results`); filters `q` (hotel name), `status`, `paid=true|false`, `from`, `to` (periods overlapping the range, YYYY-MM-DD), `ordering` = `start|-start|priority|-priority|clicks|-clicks` (default `-start`).
+- `POST promotions/` body `{property, start_date, end_date, priority?, country_ref?, region_ref?, city_ref?, price_amount?, price_currency?, note?}` -> 201 promotion. Starts unpaid/`scheduled`.
+- `GET|PATCH promotions/<id>/` (PATCH: dates, priority, scope, price_amount, price_currency, note; status, payment and hotel can never be set here).
+- `POST promotions/<id>/pause/`, `resume/`, `cancel/` (body `{reason}` required), `mark-paid/`.
+- `GET promotions/<id>/stats/?from=&to=` -> `{days: [{date, impressions, clicks, ctr}], totals: {...}}` (`ctr` = clicks / impressions * 100, `null` without views).
+- Promotion object: `id, property {id,name,city,status}, start_date, end_date, priority, country_ref, region_ref, city_ref, price_amount, price_currency, note, paid, paid_at, status, cancelled_reason, is_shown_now, blocked_reason (null | hotel_not_active | outside_scope), total_impressions, total_clicks, created_at`.
+- Errors: 400 `{error, code}` with codes `bad_dates, start_in_past, too_long (max 365 days), bad_priority (0-100), bad_price, bad_currency, note_too_long, bad_scope, overlap (same hotel, same dates), bad_status, already_paid, reason_required, reason_too_long, nothing_to_change, invalid_query`; 404 `not_found`.
+- Audit (`GET audit-log/`): `promotion_create, promotion_update, promotion_pause, promotion_resume, promotion_cancel, promotion_mark_paid` (ids, dates, amount, currency only).
+- Nightly task 00:10 Asia/Tashkent: expired promotions become `ended`, paid ones that started become `active` (serving never waits for it).

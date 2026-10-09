@@ -9,6 +9,7 @@ from bookings.views_noshow import (
     admin_no_show_report_approve, admin_no_show_report_detail, admin_no_show_report_reject,
     admin_no_show_report_reverse, admin_no_show_reports,
 )
+from promotions import admin_views as promotion_views
 from payments.admin_views import refund_mark_done, refund_retry, refunds_needs_attention
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
@@ -80,4 +81,13 @@ urlpatterns = [
     path('properties/<int:property_id>/region/', admin_property_region, name='admin-property-region'),
     path('payments/transactions/', admin_payment_transactions, name='admin-payment-transactions'),
     path('bookings/lookup/', admin_booking_lookup_by_reference, name='admin-booking-lookup'),
+    path('promotion-hotels/', promotion_views.promotion_hotels, name='admin-promotion-hotels'),
+    path('promotions/', promotion_views.promotions, name='admin-promotions'),
+    path('promotions/<int:promotion_id>/', promotion_views.promotion_detail, name='admin-promotion-detail'),
+    path('promotions/<int:promotion_id>/pause/', promotion_views.promotion_pause, name='admin-promotion-pause'),
+    path('promotions/<int:promotion_id>/resume/', promotion_views.promotion_resume, name='admin-promotion-resume'),
+    path('promotions/<int:promotion_id>/cancel/', promotion_views.promotion_cancel, name='admin-promotion-cancel'),
+    path('promotions/<int:promotion_id>/mark-paid/', promotion_views.promotion_mark_paid,
+         name='admin-promotion-mark-paid'),
+    path('promotions/<int:promotion_id>/stats/', promotion_views.promotion_stats, name='admin-promotion-stats'),
 ]

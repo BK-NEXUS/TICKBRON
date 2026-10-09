@@ -31,7 +31,7 @@ describe('ReviewCard', () => {
   it('should render overall rating stars', () => {
     render(<ReviewCard review={mockReview} />)
 
-    const stars = screen.getAllByText('★')
+    const stars = document.querySelectorAll('.review-card-star .star-icon')
     expect(stars).toHaveLength(5) // 5 stars for overall rating
   })
 
@@ -139,7 +139,7 @@ describe('ReviewCard', () => {
 
     render(<ReviewCard review={minimalReview} />)
 
-    expect(screen.getAllByText('★')).toHaveLength(5) // 5 stars overall
+    expect(document.querySelectorAll('.review-card-star .star-icon')).toHaveLength(5) // 5 stars overall
     expect(screen.getByText(/January 15, 2025/)).toBeInTheDocument()
   })
 })

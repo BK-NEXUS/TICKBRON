@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { Lock, Heart, House } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -9,10 +10,8 @@ import { markFavoriteRemoved } from '../hooks/useFavorites'
 /** Display name of a favorite: its first translation, else the city */
 const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
 
-/** "100.00" -> "$100", "99.50" -> "$99.5" */
-const favoritePrice = (favorite: Favorite) => `$${Number(favorite.property_base_price)}`
-
 export function FavoritesPage() {
+  const { t, tp, formatMoney } = useI18n()
   const { isAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,9 +57,9 @@ export function FavoritesPage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Sign in required"
-            message="Please sign in to view your favorite properties."
-            ctaText="Sign In"
+            title={t('common.signInRequired')}
+            message={t('favorites.signInText')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -74,9 +73,9 @@ export function FavoritesPage() {
         <div className="container">
           <div className="loading-state">
             <div className="spinner" role="status" aria-live="polite">
-              <span className="sr-only">Loading...</span>
+              <span className="sr-only">{t('common.loading')}</span>
             </div>
-            <p>Loading favorites...</p>
+            <p>{t('favorites.loading')}</p>
           </div>
         </div>
       </div>
@@ -93,7 +92,7 @@ export function FavoritesPage() {
               onClick={() => window.location.reload()}
               className="btn btn-primary"
             >
-              Try Again
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -107,9 +106,9 @@ export function FavoritesPage() {
         <div className="container">
           <EmptyState
             icon={<Heart size={40} />}
-            title="No favorites yet"
-            message="Save your favorite properties to view them here."
-            ctaText="Explore Properties"
+            title={t('favorites.emptyTitle')}
+            message={t('favorites.emptyText')}
+            ctaText={t('favorites.emptyCta')}
             ctaLink="/search"
           />
         </div>
@@ -120,8 +119,8 @@ export function FavoritesPage() {
   return (
     <div className="favorites-page">
       <div className="container">
-        <h1 className="favorites-page-title">My Favorites</h1>
-        <p className="favorites-page-count">{favorites.length} properties saved</p>
+        <h1 className="favorites-page-title">{t('favorites.title')}</h1>
+        <p className="favorites-page-count">{tp('favorites.count', favorites.length)}</p>
         
         <div className="favorites-grid">
           {favorites.map((favorite) => (
@@ -150,7 +149,7 @@ export function FavoritesPage() {
                 </p>
                 
                 <p className="favorite-card-price">
-                  {favoritePrice(favorite)} {favorite.property_currency} / night
+                  {t('favorites.perNight', { price: formatMoney(favorite.property_base_price, favorite.property_currency, { minDecimals: 0, maxDecimals: 2 }) })}
                 </p>
                 
                 {favorite.notes && (
@@ -162,9 +161,9 @@ export function FavoritesPage() {
                 <button
                   onClick={() => handleRemoveFavorite(favorite.id)}
                   className="btn btn-danger"
-                  aria-label={`Remove ${favoriteName(favorite)} from favorites`}
+                  aria-label={t('fav.remove', { name: favoriteName(favorite) })}
                 >
-                  Remove
+                  {t('favorites.remove')}
                 </button>
               </div>
             </div>

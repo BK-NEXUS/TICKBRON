@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerBooking } from '../adapters/partnerAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 export function PartnerBookingsView() {
   const [bookings, setBookings] = useState<PartnerBooking[]>([])
@@ -10,6 +11,8 @@ export function PartnerBookingsView() {
 
   useEffect(() => {
     loadBookings()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, paymentStatusFilter])
 
   const loadBookings = async () => {
@@ -32,7 +35,7 @@ export function PartnerBookingsView() {
         setBookings(sortedBookings)
       }
     } catch (err) {
-      setError('Failed to load bookings. Please try again.')
+      setError(t('partner.failedToLoadBookings'))
     } finally {
       setLoading(false)
     }
@@ -72,62 +75,55 @@ export function PartnerBookingsView() {
     }
   }
 
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatLocalDate(dateString)
 
   return (
     <div className="partner-bookings-view">
       <div className="bookings-view-header">
-        <h1 className="bookings-view-title">Partner Bookings</h1>
-        <p className="bookings-view-subtitle">View and manage bookings for your properties</p>
+        <h1 className="bookings-view-title">{t('partner.partnerBookings')}</h1>
+        <p className="bookings-view-subtitle">{t('partner.viewAndManageBookings')}</p>
       </div>
 
       <div className="bookings-filters">
         <div className="filter-group">
-          <label htmlFor="status-filter">Booking Status:</label>
+          <label htmlFor="status-filter">{t('partner.bookingStatus')}</label>
           <select
             id="status-filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="filter-select"
-            aria-label="Filter by booking status"
+            aria-label={t('partner.filterByBookingStatus')}
           >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="no_show">No Show</option>
+            <option value="all">{t('partner.allStatuses')}</option>
+            <option value="pending">{t('pay.statusName.pending')}</option>
+            <option value="confirmed">{t('status.booking.confirmed')}</option>
+            <option value="completed">{t('pay.statusName.completed')}</option>
+            <option value="cancelled">{t('status.booking.cancelled')}</option>
+            <option value="no_show">{t('partner.noShow')}</option>
           </select>
         </div>
 
         <div className="filter-group">
-          <label htmlFor="payment-status-filter">Payment Status:</label>
+          <label htmlFor="payment-status-filter">{t('partner.paymentStatus')}</label>
           <select
             id="payment-status-filter"
             value={paymentStatusFilter}
             onChange={(e) => setPaymentStatusFilter(e.target.value)}
             className="filter-select"
-            aria-label="Filter by payment status"
+            aria-label={t('partner.filterByPaymentStatus')}
           >
-            <option value="all">All Payment Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-            <option value="partially_refunded">Partially Refunded</option>
+            <option value="all">{t('partner.allPaymentStatuses')}</option>
+            <option value="pending">{t('pay.statusName.pending')}</option>
+            <option value="paid">{t('status.payment.paid')}</option>
+            <option value="failed">{t('pay.statusName.failed')}</option>
+            <option value="refunded">{t('pay.statusName.refunded')}</option>
+            <option value="partially_refunded">{t('partner.partiallyRefunded')}</option>
           </select>
         </div>
       </div>
@@ -140,12 +136,12 @@ export function PartnerBookingsView() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading bookings...
+          {t('bookings.loading')}
         </div>
       ) : bookings.length === 0 ? (
         <div className="empty-state">
-          <p>No bookings found matching your filters.</p>
-          <p>Bookings will appear here once guests start booking your properties.</p>
+          <p>{t('partner.noBookingsFoundMatching')}</p>
+          <p>{t('partner.bookingsWillAppearHere')}</p>
         </div>
       ) : (
         <div className="bookings-list">
@@ -154,7 +150,7 @@ export function PartnerBookingsView() {
               <div className="booking-card-header">
                 <div className="booking-property-info">
                   <h3 className="booking-property-name">{booking.property_name}</h3>
-                  <p className="booking-confirmation-code">Confirmation: {booking.confirmation_code}</p>
+                  <p className="booking-confirmation-code">{t('partner.confirmationLine', { code: booking.confirmation_code })}</p>
                 </div>
                 <div className="booking-status-badges">
                   <span className={`booking-status ${getStatusClass(booking.status)}`}>
@@ -169,34 +165,34 @@ export function PartnerBookingsView() {
               <div className="booking-card-body">
                 <div className="booking-details-grid">
                   <div className="booking-detail">
-                    <span className="detail-label">Guest:</span>
+                    <span className="detail-label">{t('partner.guest')}</span>
                     <span className="detail-value">{booking.guest_name}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Check-in:</span>
+                    <span className="detail-label">{t('rooms.checkIn')}</span>
                     <span className="detail-value">{formatDate(booking.check_in)}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Check-out:</span>
+                    <span className="detail-label">{t('rooms.checkOut')}</span>
                     <span className="detail-value">{formatDate(booking.check_out)}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Nights:</span>
+                    <span className="detail-label">{t('bookings.nights')}</span>
                     <span className="detail-value">{booking.number_of_nights}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Guests:</span>
+                    <span className="detail-label">{t('booking.guests')}</span>
                     <span className="detail-value">{booking.guest_count}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Total:</span>
+                    <span className="detail-label">{t('rooms.total')}</span>
                     <span className="detail-value">{formatCurrency(booking.total_price, booking.currency)}</span>
                   </div>
                 </div>
 
                 {booking.special_requests && (
                   <div className="booking-special-requests">
-                    <span className="detail-label">Special Requests:</span>
+                    <span className="detail-label">{t('booking.specialRequests')}</span>
                     <p className="detail-value">{booking.special_requests}</p>
                   </div>
                 )}
@@ -205,7 +201,7 @@ export function PartnerBookingsView() {
               <div className="booking-card-footer">
                 <div className="booking-dates">
                   <small className="booking-created">
-                    Booked on {formatDate(booking.created_at)}
+                    {t('partner.bookedOn', { date: formatDate(booking.created_at) })}
                   </small>
                 </div>
               </div>

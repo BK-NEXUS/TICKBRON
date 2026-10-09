@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { render, screen } from '@testing-library/react'
 import { PartnerDashboardPage } from './PartnerDashboardPage'
 import { AuthProvider } from '../contexts/AuthContext'
 
@@ -32,7 +33,9 @@ vi.mock('../components/PartnerBookingsView', () => ({
 }))
 
 vi.mock('../components/EmptyState', () => ({
-  EmptyState: ({ icon, title, message, ctaText, onClick }: any) => (
+  EmptyState: ({ icon, title, message, ctaText, onClick }: {
+    icon?: ReactNode; title: string; message?: string; ctaText?: string; onClick?: () => void
+  }) => (
     <div data-testid="empty-state">
       <span>{icon}</span>
       <h2>{title}</h2>

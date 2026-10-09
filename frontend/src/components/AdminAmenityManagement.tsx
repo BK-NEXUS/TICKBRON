@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { SegmentedControl } from './SegmentedControl'
 import { 
@@ -14,6 +15,7 @@ type ViewMode = 'amenities' | 'categories'
 type FormMode = 'create' | 'edit' | null
 
 export function AdminAmenityManagement() {
+  const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('amenities')
   const [amenities, setAmenities] = useState<AdminAmenity[]>([])
   const [categories, setCategories] = useState<AdminAmenityCategory[]>([])
@@ -45,6 +47,8 @@ export function AdminAmenityManagement() {
 
   useEffect(() => {
     loadData()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode])
 
   const loadData = async () => {
@@ -70,7 +74,7 @@ export function AdminAmenityManagement() {
         }
       }
     } catch (err) {
-      setError('Failed to load data. Please try again.')
+      setError(t('admin.failedToLoadData'))
     } finally {
       setLoading(false)
     }
@@ -91,7 +95,7 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to create amenity. Please try again.')
+      setError(t('admin.failedToCreateAmenity'))
     } finally {
       setActionLoading(null)
     }
@@ -124,14 +128,14 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to update amenity. Please try again.')
+      setError(t('admin.failedToUpdateAmenity'))
     } finally {
       setActionLoading(null)
     }
   }
 
   const handleDeleteAmenity = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this amenity?')) return
+    if (!confirm(t('admin.areYouSureYou2'))) return
 
     setActionLoading(id)
     setError(null)
@@ -145,7 +149,7 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to delete amenity. Please try again.')
+      setError(t('admin.failedToDeleteAmenity'))
     } finally {
       setActionLoading(null)
     }
@@ -166,7 +170,7 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to create category. Please try again.')
+      setError(t('admin.failedToCreateCategory'))
     } finally {
       setActionLoading(null)
     }
@@ -198,14 +202,14 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to update category. Please try again.')
+      setError(t('admin.failedToUpdateCategory'))
     } finally {
       setActionLoading(null)
     }
   }
 
   const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this category? This will affect all amenities in this category.')) return
+    if (!confirm(t('admin.areYouSureYou3'))) return
 
     setActionLoading(id)
     setError(null)
@@ -219,7 +223,7 @@ export function AdminAmenityManagement() {
         await loadData()
       }
     } catch (err) {
-      setError('Failed to delete category. Please try again.')
+      setError(t('admin.failedToDeleteCategory'))
     } finally {
       setActionLoading(null)
     }
@@ -293,18 +297,18 @@ export function AdminAmenityManagement() {
   return (
     <div className="admin-amenity-management">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">Amenity Management</h1>
-        <p className="admin-view-subtitle">Manage amenity categories and amenities</p>
+        <h1 className="admin-view-title">{t('admin.amenityManagement')}</h1>
+        <p className="admin-view-subtitle">{t('admin.manageAmenityCategoriesAnd')}</p>
       </div>
 
       <SegmentedControl<ViewMode>
         mode="tabs"
-        aria-label="Amenity views"
+        aria-label={t('admin.amenityViews')}
         value={viewMode}
         onChange={setViewMode}
         options={[
-          { value: 'amenities', label: 'Amenities' },
-          { value: 'categories', label: 'Categories' },
+          { value: 'amenities', label: t('amenities.title') },
+          { value: 'categories', label: t('admin.categories') },
         ]}
       />
 
@@ -317,13 +321,15 @@ export function AdminAmenityManagement() {
       {formMode && (
         <div className="form-panel">
           <h2 className="form-panel-title">
-            {formMode === 'create' ? `Create ${viewMode === 'amenities' ? 'Amenity' : 'Category'}` : `Edit ${viewMode === 'amenities' ? 'Amenity' : 'Category'}`}
+            {formMode === 'create'
+              ? (viewMode === 'amenities' ? t('admin.createAmenity') : t('admin.createCategory'))
+              : (viewMode === 'amenities' ? t('admin.editAmenity') : t('admin.editCategory'))}
           </h2>
           
           {viewMode === 'amenities' ? (
             <div className="form-fields">
               <div className="form-group">
-                <label htmlFor="amenity-category">Category:</label>
+                <label htmlFor="amenity-category">{t('admin.category')}</label>
                 <select
                   id="amenity-category"
                   value={amenityForm.category}
@@ -331,14 +337,14 @@ export function AdminAmenityManagement() {
                   className="form-control"
                   required
                 >
-                  <option value={0}>Select a category</option>
+                  <option value={0}>{t('admin.selectACategory')}</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="amenity-name">Name:</label>
+                <label htmlFor="amenity-name">{t('admin.name2')}</label>
                 <input
                   id="amenity-name"
                   type="text"
@@ -349,7 +355,7 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="amenity-slug">Slug:</label>
+                <label htmlFor="amenity-slug">{t('admin.slug')}</label>
                 <input
                   id="amenity-slug"
                   type="text"
@@ -360,7 +366,7 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="amenity-description">Description:</label>
+                <label htmlFor="amenity-description">{t('admin.description')}</label>
                 <textarea
                   id="amenity-description"
                   value={amenityForm.description}
@@ -370,18 +376,18 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="amenity-icon">Icon:</label>
+                <label htmlFor="amenity-icon">{t('admin.icon')}</label>
                 <input
                   id="amenity-icon"
                   type="text"
                   value={amenityForm.icon}
                   onChange={(e) => setAmenityForm({ ...amenityForm, icon: e.target.value })}
                   className="form-control"
-                  placeholder="e.g., wifi, parking, pool"
+                  placeholder={t('admin.eGWifiParking')}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="amenity-sort-order">Sort Order:</label>
+                <label htmlFor="amenity-sort-order">{t('admin.sortOrder')}</label>
                 <input
                   id="amenity-sort-order"
                   type="number"
@@ -397,7 +403,7 @@ export function AdminAmenityManagement() {
                   checked={amenityForm.is_searchable}
                   onChange={(e) => setAmenityForm({ ...amenityForm, is_searchable: e.target.checked })}
                 />
-                <label htmlFor="amenity-searchable">Searchable in filters</label>
+                <label htmlFor="amenity-searchable">{t('admin.searchableInFilters')}</label>
               </div>
               <div className="form-actions">
                 <button
@@ -405,21 +411,21 @@ export function AdminAmenityManagement() {
                   disabled={actionLoading !== null}
                   className="btn btn-primary"
                 >
-                  {actionLoading !== null ? 'Processing...' : (formMode === 'create' ? 'Create' : 'Update')}
+                  {actionLoading !== null ? t('booking.processing') : (formMode === 'create' ? t('admin.create') : t('admin.update'))}
                 </button>
                 <button
                   onClick={closeForm}
                   disabled={actionLoading !== null}
                   className="btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
           ) : (
             <div className="form-fields">
               <div className="form-group">
-                <label htmlFor="category-name">Name:</label>
+                <label htmlFor="category-name">{t('admin.name2')}</label>
                 <input
                   id="category-name"
                   type="text"
@@ -430,7 +436,7 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="category-slug">Slug:</label>
+                <label htmlFor="category-slug">{t('admin.slug')}</label>
                 <input
                   id="category-slug"
                   type="text"
@@ -441,7 +447,7 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="category-description">Description:</label>
+                <label htmlFor="category-description">{t('admin.description')}</label>
                 <textarea
                   id="category-description"
                   value={categoryForm.description}
@@ -451,18 +457,18 @@ export function AdminAmenityManagement() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="category-icon">Icon:</label>
+                <label htmlFor="category-icon">{t('admin.icon')}</label>
                 <input
                   id="category-icon"
                   type="text"
                   value={categoryForm.icon}
                   onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
                   className="form-control"
-                  placeholder="e.g., kitchen, bathroom, entertainment"
+                  placeholder={t('admin.eGKitchenBathroom')}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="category-sort-order">Sort Order:</label>
+                <label htmlFor="category-sort-order">{t('admin.sortOrder')}</label>
                 <input
                   id="category-sort-order"
                   type="number"
@@ -477,14 +483,14 @@ export function AdminAmenityManagement() {
                   disabled={actionLoading !== null}
                   className="btn btn-primary"
                 >
-                  {actionLoading !== null ? 'Processing...' : (formMode === 'create' ? 'Create' : 'Update')}
+                  {actionLoading !== null ? t('booking.processing') : (formMode === 'create' ? t('admin.create') : t('admin.update'))}
                 </button>
                 <button
                   onClick={closeForm}
                   disabled={actionLoading !== null}
                   className="btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -494,27 +500,27 @@ export function AdminAmenityManagement() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading {viewMode === 'amenities' ? 'amenities' : 'categories'}...
+          {viewMode === 'amenities' ? t('admin.loadingAmenities') : t('admin.loadingCategories')}
         </div>
       ) : viewMode === 'amenities' && amenities.length === 0 ? (
         <div className="empty-state">
-          <p>No amenities found.</p>
+          <p>{t('admin.noAmenitiesFound')}</p>
           <button onClick={openCreateForm} className="btn btn-primary">
-            Create First Amenity
+            {t('admin.createFirstAmenity')}
           </button>
         </div>
       ) : viewMode === 'categories' && categories.length === 0 ? (
         <div className="empty-state">
-          <p>No categories found.</p>
+          <p>{t('admin.noCategoriesFound')}</p>
           <button onClick={openCreateForm} className="btn btn-primary">
-            Create First Category
+            {t('admin.createFirstCategory')}
           </button>
         </div>
       ) : (
         <div className="items-list">
           <div className="list-header">
             <button onClick={openCreateForm} className="btn btn-primary">
-              Create {viewMode === 'amenities' ? 'Amenity' : 'Category'}
+              {viewMode === 'amenities' ? t('admin.createAmenity') : t('admin.createCategory')}
             </button>
           </div>
           
@@ -525,18 +531,18 @@ export function AdminAmenityManagement() {
                   <div className="item-info">
                     <h3 className="item-name">{amenity.name}</h3>
                     <p className="item-slug">{amenity.slug}</p>
-                    <p className="item-category">Category: {amenity.category_name || `ID: ${amenity.category}`}</p>
+                    <p className="item-category">{t('admin.categoryLine', { name: amenity.category_name || t('admin.idValue', { id: amenity.category }) })}</p>
                   </div>
                   <div className="item-badges">
-                    {amenity.is_searchable && <span className="badge badge-success">Searchable</span>}
+                    {amenity.is_searchable && <span className="badge badge-success">{t('admin.searchable')}</span>}
                   </div>
                 </div>
                 <div className="item-card-body">
                   <p className="item-description">{amenity.description}</p>
                   <div className="item-details">
-                    <span className="detail-label">Icon:</span>
+                    <span className="detail-label">{t('admin.icon')}</span>
                     <span className="detail-value">{amenity.icon || 'None'}</span>
-                    <span className="detail-label">Sort Order:</span>
+                    <span className="detail-label">{t('admin.sortOrder')}</span>
                     <span className="detail-value">{amenity.sort_order}</span>
                   </div>
                 </div>
@@ -547,14 +553,14 @@ export function AdminAmenityManagement() {
                       disabled={actionLoading === amenity.id}
                       className="btn btn-secondary"
                     >
-                      Edit
+                      {t('partner.edit')}
                     </button>
                     <button
                       onClick={() => handleDeleteAmenity(amenity.id)}
                       disabled={actionLoading === amenity.id}
                       className="btn btn-danger"
                     >
-                      {actionLoading === amenity.id ? 'Deleting...' : 'Delete'}
+                      {actionLoading === amenity.id ? t('admin.deleting') : t('partner.delete')}
                     </button>
                   </div>
                 </div>
@@ -572,9 +578,9 @@ export function AdminAmenityManagement() {
                 <div className="item-card-body">
                   <p className="item-description">{category.description}</p>
                   <div className="item-details">
-                    <span className="detail-label">Icon:</span>
+                    <span className="detail-label">{t('admin.icon')}</span>
                     <span className="detail-value">{category.icon || 'None'}</span>
-                    <span className="detail-label">Sort Order:</span>
+                    <span className="detail-label">{t('admin.sortOrder')}</span>
                     <span className="detail-value">{category.sort_order}</span>
                   </div>
                 </div>
@@ -585,14 +591,14 @@ export function AdminAmenityManagement() {
                       disabled={actionLoading === category.id}
                       className="btn btn-secondary"
                     >
-                      Edit
+                      {t('partner.edit')}
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(category.id)}
                       disabled={actionLoading === category.id}
                       className="btn btn-danger"
                     >
-                      {actionLoading === category.id ? 'Deleting...' : 'Delete'}
+                      {actionLoading === category.id ? t('admin.deleting') : t('partner.delete')}
                     </button>
                   </div>
                 </div>

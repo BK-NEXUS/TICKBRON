@@ -61,7 +61,7 @@ describe('AdminCustomersList', () => {
   }
 
   it('should render the customers list with header', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -75,7 +75,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should render search bar and controls', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -90,7 +90,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should render customers table with data', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -108,7 +108,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should render loading state', () => {
-    ;(adminAdapter.getCustomers as any).mockImplementation(() => new Promise(() => {}))
+    (adminAdapter.getCustomers as never).mockImplementation(() => new Promise(() => {}))
 
     render(<AdminCustomersList />)
 
@@ -116,7 +116,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should render empty state when no customers', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: { count: 0, next: null, previous: null, results: [] },
       error: null,
     })
@@ -129,7 +129,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should render error state', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: null,
       error: 'Failed to load customers',
     })
@@ -142,7 +142,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should handle search input change', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -160,7 +160,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should handle sort field change', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -178,7 +178,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should handle sort order toggle', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -196,7 +196,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should handle page size change', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -221,7 +221,7 @@ describe('AdminCustomersList', () => {
       results: mockCustomersResponse.results,
     }
 
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    ;(adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: paginatedResponse,
       error: null,
     })
@@ -256,7 +256,7 @@ describe('AdminCustomersList', () => {
       results: mockCustomersResponse.results,
     }
 
-    ;(adminAdapter.getCustomers as any)
+    ;(adminAdapter.getCustomers as never)
       .mockResolvedValueOnce({ data: firstPage, error: null })
       .mockResolvedValueOnce({ data: secondPage, error: null })
       .mockResolvedValueOnce({ data: firstPage, error: null })
@@ -292,7 +292,7 @@ describe('AdminCustomersList', () => {
       results: mockCustomersResponse.results,
     }
 
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    ;(adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: singlePageResponse,
       error: null,
     })
@@ -311,7 +311,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should display customer data in table columns', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -355,7 +355,7 @@ describe('AdminCustomersList', () => {
       ],
     }
 
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    ;(adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: customersWithMissingData,
       error: null,
     })
@@ -408,7 +408,7 @@ describe('AdminCustomersList', () => {
       ],
     }
 
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    ;(adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: customersWithStatuses,
       error: null,
     })
@@ -422,7 +422,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should format currency correctly', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -436,7 +436,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should format dates correctly', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })
@@ -450,7 +450,7 @@ describe('AdminCustomersList', () => {
   })
 
   it('should display contact method labels correctly', async () => {
-    ;(adminAdapter.getCustomers as any).mockResolvedValueOnce({
+    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
       data: mockCustomersResponse,
       error: null,
     })

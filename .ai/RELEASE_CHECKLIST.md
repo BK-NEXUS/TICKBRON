@@ -301,3 +301,12 @@ Before any real payment, each item below must be tested end to end in the provid
 - [ ] **Partial refunds are unverified with Payme, Click and Visa.** A no-show refund is 50% of the payment, so in real mode it is stored as `needs_manual` and staff pay it by hand (see Refunds above). Verify each provider's partial refund in its sandbox before turning it on.
 - [ ] **A lawyer must review the refund wording** shown to guests (`no_show_refund_statement`, in every language) and the owner/staff texts before launch; the 50% promise is a contract term.
 - [ ] Settings to confirm: `NO_SHOW_REFUND_PERCENT` (50), `NO_SHOW_REPORT_WINDOW_DAYS` (7), `NO_SHOW_FLAG_*`, `THROTTLE_NO_SHOW_REPORT_RATE` (20/hour).
+
+
+## Hotel promotions (R10, 2026-10-09)
+
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** R10 migrations: `promotions/0001` (two new tables) and `admin_panel/0009` (audit actions). Both reversible; no existing table gets a column.
+- [ ] **Celery beat must be running** (task `promotions.tasks.end_expired_promotions`, 00:10 Asia/Tashkent). Without it statuses in the admin list stay stale; guests are still served correctly (computed from dates).
+- [ ] **Redis must be the cache in production** (`USE_REDIS_CACHE`): view and click counts are deduplicated there. With a failing cache nothing is counted (a warning `Promotion counter skipped` is logged).
+- [ ] A lawyer confirms the exact "Reklama" label wording and advertising-law requirements in Uzbekistan (the frontend label is an i18n key).
+- [ ] Prices, invoices and refunds for advertising are handled outside the platform; the super-admin records `mark-paid` and the agreed price.

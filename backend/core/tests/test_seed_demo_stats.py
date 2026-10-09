@@ -135,3 +135,31 @@ class TestSeedDemoStatsPayments:
         refunds = Refund.objects.filter(booking__in=bookings)
         assert refunds.count() == bookings.filter(status='cancelled').count()
         assert all(r.status == 'succeeded' and r.amount == r.payment.amount for r in refunds.select_related('payment'))
+
+
+@pytest.mark.django_db
+class TestSeedDemoPromotions:
+    @pytest.fixture(autouse=True)
+    def debug_on(self, settings):
+        settings.DEBUG = True
+
+    def test_seeds_running_unpaid_and_expired_promotions_with_numbers(self):
+        from promotions import service
+        from promotions.models import Promotion, PromotionDailyStat
+
+        run_seed()
+
+        assert Promotion.objects.count() == 7
+        shown = service.shown_now()
+        assert shown.count() == 5
+        assert Promotion.objects.filter(paid_at__isnull=True).count() == 1
+        assert Promotion.objects.filter(status='ended').count() == 1
+        assert PromotionDailyStat.objects.filter(promotion__in=shown, clicks__gt=0).exists()
+
+    def test_rerun_does_not_duplicate_promotions(self):
+        from promotions.models import Promotion
+
+        run_seed()
+        run_seed()
+
+        assert Promotion.objects.count() == 7

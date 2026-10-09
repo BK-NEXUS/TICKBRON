@@ -7,6 +7,7 @@ import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
 import { SearchForm } from '../components/SearchForm'
+import { useI18n } from '../i18n/I18nContext'
 import {
   EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, rememberSearch, writeFiltersToUrl,
 } from '../utils/searchFilters'
@@ -19,6 +20,7 @@ type LoadingState = 'idle' | 'loading' | 'success' | 'error'
  * so results can be shared, refreshed and reached again with the back button.
  */
 export function SearchResultsPage() {
+  const { t, tp, formatDate } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   
   const [loadingState, setLoadingState] = useState<LoadingState>('idle')
@@ -83,7 +85,7 @@ export function SearchResultsPage() {
       } catch (err) {
         if (cancelled) return
         console.error('Failed to load search results:', err)
-        setError('Failed to load search results. Please try again.')
+        setError(null)
         setLoadingState('error')
       }
     }
@@ -119,16 +121,10 @@ export function SearchResultsPage() {
   }
 
   // Get search context for display
-  const destination = searchParams.get('destination') || 'All destinations'
+  const destination = searchParams.get('destination') || t('search.allDestinations')
   const checkIn = searchParams.get('check_in')
   const checkOut = searchParams.get('check_out')
   const guests = searchParams.get('guests')
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
 
   return (
     <div className="search-results-page">
@@ -141,7 +137,7 @@ export function SearchResultsPage() {
           
           <div className="search-results-context">
             <h1 className="search-results-title">
-              Properties in {destination}
+              {t('search.title', { destination })}
             </h1>
             <div className="search-results-meta">
               {(checkIn || checkOut || guests) && (
@@ -149,12 +145,12 @@ export function SearchResultsPage() {
                   {checkIn && <span>{formatDate(checkIn)}</span>}
                   {checkIn && checkOut && <span> → </span>}
                   {checkOut && <span>{formatDate(checkOut)}</span>}
-                  {guests && <span> • {guests} guest{guests !== '1' ? 's' : ''}</span>}
+                  {guests && <span> • {tp('search.guests', Number(guests))}</span>}
                 </div>
               )}
               <div className="search-results-count">
                 {loadingState === 'success' && (
-                  <span>{totalCount} properties found</span>
+                  <span>{tp('search.found', totalCount)}</span>
                 )}
               </div>
             </div>
@@ -190,7 +186,7 @@ export function SearchResultsPage() {
               {loadingState === 'loading' && (
                 <div className="search-results-loading" role="status" aria-live="polite">
                   <div className="search-results-loading-spinner" aria-hidden="true"></div>
-                  <p>Loading properties...</p>
+                  <p>{t('search.loading')}</p>
                   <div className="search-results-grid search-results-skeletons" aria-hidden="true">
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div key={index} className="property-card skeleton-card">
@@ -209,13 +205,13 @@ export function SearchResultsPage() {
               {/* Error State */}
               {loadingState === 'error' && (
                 <div className="search-results-error" role="alert">
-                  <h2>Unable to load properties</h2>
-                  <p>{error}</p>
+                  <h2>{t('search.errorTitle')}</h2>
+                  <p>{error ?? t('search.errorLoad')}</p>
                   <button 
                     className="btn btn-secondary"
                     onClick={() => window.location.reload()}
                   >
-                    Try Again
+                    {t('search.tryAgain')}
                   </button>
                 </div>
               )}
@@ -223,13 +219,13 @@ export function SearchResultsPage() {
               {/* Empty State */}
               {loadingState === 'success' && properties.length === 0 && (
                 <div className="search-results-empty" role="status">
-                  <h2>No properties found</h2>
-                  <p>Try adjusting your search criteria or filters to find more properties.</p>
+                  <h2>{t('search.emptyTitle')}</h2>
+                  <p>{t('search.emptyText')}</p>
                   <button 
                     className="btn btn-secondary"
                     onClick={handleClearFilters}
                   >
-                    Clear Filters
+                    {t('search.clearFilters')}
                   </button>
                 </div>
               )}
@@ -248,9 +244,9 @@ export function SearchResultsPage() {
                       <div className="search-results-map-placeholder">
                         <div className="search-results-map-placeholder-content">
                           <span className="search-results-map-placeholder-icon"><MapIcon size={48} /></span>
-                          <h2>Map View</h2>
-                          <p>Map integration will be implemented in a future checkpoint.</p>
-                          <p>Current view: {properties.length} properties on map</p>
+                          <h2>{t('search.mapTitle')}</h2>
+                          <p>{t('search.mapSoon')}</p>
+                          <p>{tp('search.mapCount', properties.length)}</p>
                         </div>
                       </div>
                     </div>

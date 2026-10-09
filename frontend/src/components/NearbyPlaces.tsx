@@ -1,4 +1,6 @@
+import { useI18n } from '../i18n/I18nContext'
 import { NearbyPlace } from '../adapters/propertyAdapter'
+import { StarIcon } from './StarIcon'
 
 interface NearbyPlacesProps {
   places?: NearbyPlace[]
@@ -9,10 +11,11 @@ interface NearbyPlacesProps {
  * Shows distance, rating, and category information
  */
 export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
+  const { t } = useI18n()
   if (places.length === 0) {
     return (
       <div className="nearby-places nearby-places--empty">
-        <p className="nearby-places-empty">No nearby places information available</p>
+        <p className="nearby-places-empty">{t('nearby.empty')}</p>
       </div>
     )
   }
@@ -22,7 +25,7 @@ export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
 
   return (
     <div className="nearby-places">
-      <h2 className="nearby-places-title">What's Nearby</h2>
+      <h2 className="nearby-places-title">{t('nearby.title')}</h2>
       
       <div className="nearby-places-list">
         {sortedPlaces.map((place) => (
@@ -39,7 +42,7 @@ export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
             
             {place.rating && (
               <div className="nearby-place-item-rating">
-                <span className="nearby-place-item-rating-value">★ {place.rating.toFixed(1)}</span>
+                <span className="nearby-place-item-rating-value"><StarIcon /> {place.rating.toFixed(1)}</span>
               </div>
             )}
             

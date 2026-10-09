@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PropertyCard } from './PropertyCard'
 import { Property } from '../adapters/propertyAdapter'
+import { I18nProvider } from '../i18n/I18nContext'
 
 // Mock React Router
 const mockNavigate = vi.fn()
@@ -60,7 +61,7 @@ describe('PropertyCard', () => {
     expect(screen.getByText('Paris, France')).toBeInTheDocument()
     expect(screen.getByText('4 guests')).toBeInTheDocument()
     expect(screen.getByText('2 bedrooms')).toBeInTheDocument()
-    expect(screen.getByText('1 bathrooms')).toBeInTheDocument()
+    expect(screen.getByText('1 bathroom')).toBeInTheDocument()
     expect(screen.getByText('€150')).toBeInTheDocument()
     expect(screen.getByText('per night')).toBeInTheDocument()
   })
@@ -77,7 +78,7 @@ describe('PropertyCard', () => {
   it('displays rating when available', () => {
     render(<PropertyCard property={mockProperty} />)
 
-    expect(screen.getByText('★ 4.8')).toBeInTheDocument()
+    expect(screen.getByText('4.8').querySelector('.star-icon')).not.toBeNull()
     expect(screen.getByText('(127)')).toBeInTheDocument()
   })
 
@@ -85,7 +86,7 @@ describe('PropertyCard', () => {
     const propertyWithoutRating = { ...mockProperty, rating: undefined, review_count: undefined }
     render(<PropertyCard property={propertyWithoutRating} />)
 
-    expect(screen.queryByText('★')).not.toBeInTheDocument()
+    expect(document.querySelector('.star-icon')).toBeNull()
   })
 
   it('displays amenities icons', () => {
@@ -95,6 +96,16 @@ describe('PropertyCard', () => {
     expect(screen.getByTitle('Air Conditioning')).toBeInTheDocument()
     expect(screen.getByTitle('Heating')).toBeInTheDocument()
     expect(screen.getByTitle('Elevator')).toBeInTheDocument()
+  })
+
+  it('writes a sum price in the language of the page', () => {
+    localStorage.setItem('tickbron.language', 'uz')
+    const sumProperty = { ...mockProperty, currency: 'UZS', base_price: 450000 }
+    render(<I18nProvider><PropertyCard property={sumProperty} /></I18nProvider>)
+    localStorage.clear()
+
+    // The text matcher turns the non-breaking spaces into plain ones, so read the raw text
+    expect(document.querySelector('.property-card-price-value')?.textContent).toBe("450\u00a0000\u00a0so'm")
   })
 
   it('does not display amenities that are not available', () => {

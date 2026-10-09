@@ -131,7 +131,7 @@ body {
 
 /* Header */
 .header {
-  background-color: rgba(242, 237, 231, 0.92);
+  background-color: var(--color-header-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
@@ -287,6 +287,12 @@ body {
 
 .language-selector-button:hover {
   border-color: var(--color-text-primary);
+}
+
+.flag-icon {
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 .language-flag {
@@ -518,6 +524,14 @@ body {
   color: var(--color-pomegranate);
 }
 
+.mobile-menu-preferences {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
 .mobile-menu-footer {
   padding: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
@@ -708,7 +722,7 @@ body {
   padding: 0;
   background: none;
   border-radius: var(--radius-sm);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   text-decoration: underline;
   text-underline-offset: 3px;
   font-weight: var(--font-weight-medium);
@@ -1116,10 +1130,10 @@ table .btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   background:
     radial-gradient(120px 80px at 50% 30%, rgba(220, 185, 105, 0.3), transparent 70%),
-    linear-gradient(135deg, var(--color-cream), #E7DECF);
+    linear-gradient(135deg, var(--color-cream), var(--color-cream-deep));
 }
 
 .property-card-rating {
@@ -1179,7 +1193,7 @@ table .btn {
 
 .property-card-location svg {
   flex-shrink: 0;
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
 }
 
 .property-card-details {
@@ -1206,7 +1220,7 @@ table .btn {
   width: 30px;
   height: 30px;
   border-radius: var(--radius-sm);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   background-color: rgba(188, 156, 89, 0.12);
   border: 1px solid rgba(188, 156, 89, 0.28);
 }
@@ -1513,7 +1527,7 @@ table .btn {
   font-size: 64px;
   display: block;
   margin-bottom: var(--spacing-md);
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
 }
 
 .search-results-map-placeholder h2 {
@@ -1813,7 +1827,7 @@ table .btn {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   background: linear-gradient(135deg, rgba(220, 185, 105, 0.24), rgba(188, 156, 89, 0.12));
   border: 1px solid rgba(188, 156, 89, 0.35);
 }
@@ -1868,7 +1882,7 @@ table .btn {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   background: linear-gradient(135deg, rgba(220, 185, 105, 0.24), rgba(188, 156, 89, 0.12));
   border: 1px solid rgba(188, 156, 89, 0.35);
 }
@@ -1915,7 +1929,7 @@ table .btn {
 .testimonial-rating {
   display: flex;
   gap: 2px;
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   margin-bottom: var(--spacing-md);
 }
 
@@ -2032,14 +2046,104 @@ table .btn {
 
 .phone-input-country {
   position: absolute;
-  left: var(--spacing-md);
-  line-height: 1;
-  pointer-events: none;
+  left: var(--spacing-sm);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 var(--spacing-xs);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.phone-input-country:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.country-flag {
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.phone-country-panel {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  left: 0;
+  z-index: var(--z-dropdown);
+  width: min(320px, 100%);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.phone-country-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.phone-country-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font: inherit;
+}
+
+.phone-country-list {
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.phone-country-option {
+  font: inherit;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phone-country-option:hover,
+.phone-country-option--active {
+  background-color: var(--color-background-alt);
+}
+
+.phone-country-name {
+  flex: 1;
+}
+
+.phone-country-dial {
+  color: var(--color-text-secondary);
+}
+
+.phone-country-empty {
+  padding: var(--spacing-md);
+  color: var(--color-text-secondary);
 }
 
 .phone-input .phone-input-field {
   width: 100%;
-  padding-left: calc(var(--spacing-md) + 1.75em);
+  padding-left: 72px;
 }
 
 /* Access denied (route guards for /admin and /partner) */
@@ -2570,7 +2674,7 @@ table .btn {
   transform: translateY(-50%);
   width: 48px;
   height: 48px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-float-bg);
   border: 1px solid var(--color-border);
   border-radius: 50%;
   font-size: 32px;
@@ -2803,7 +2907,7 @@ table .btn {
 
 .property-detail-rating-value {
   font-weight: var(--font-weight-semibold);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
 }
 
 .property-detail-reviews {
@@ -3471,7 +3575,7 @@ table .btn {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   color: white;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
@@ -4135,7 +4239,7 @@ table .btn {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   color: white;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
@@ -4266,7 +4370,7 @@ table .btn {
 
 .availability-calendar-day--range-start,
 .availability-calendar-day--range-end {
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   border-color: var(--color-pomegranate);
 }
 
@@ -5010,7 +5114,7 @@ table .btn {
 }
 
 .bookings-filter--active {
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   border-color: var(--color-pomegranate);
   color: white;
 }
@@ -5243,7 +5347,7 @@ table .btn {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5584,7 +5688,7 @@ table .btn {
   padding-block: var(--spacing-xl) var(--spacing-3xl);
   background:
     radial-gradient(800px 400px at 50% -10%, rgba(220, 185, 105, 0.18), transparent 60%),
-    linear-gradient(160deg, var(--color-cream), var(--color-background-alt) 60%, #EAE2D5);
+    linear-gradient(160deg, var(--color-cream), var(--color-background-alt) 60%, var(--color-cream-deep));
 }
 
 .auth-container {
@@ -5722,7 +5826,7 @@ table .btn {
 }
 
 .auth-link {
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   text-decoration: underline;
   text-underline-offset: 3px;
   font-weight: var(--font-weight-medium);
@@ -5779,7 +5883,7 @@ table .btn {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   color: var(--color-cloud-white);
   display: flex;
   align-items: center;
@@ -6776,7 +6880,7 @@ table .btn {
 
 .rating-breakdown-bar-fill {
   height: 100%;
-  background-color: var(--color-saffron);
+  background-color: var(--color-saffron-solid);
   border-radius: var(--radius-full);
   transition: width var(--transition-base);
 }
@@ -6945,7 +7049,7 @@ table .btn {
 }
 
 .role-badge--staff {
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   color: white;
 }
 
@@ -6997,7 +7101,7 @@ table .btn {
 
 .nav-item--active,
 .nav-item--active:hover {
-  background-color: var(--color-pomegranate);
+  background-color: var(--color-gold-dark);
   border-color: var(--color-pomegranate);
   color: white;
   box-shadow: var(--shadow-sm);
@@ -7782,7 +7886,7 @@ table .btn {
 
 .customer-booking-count {
   font-weight: var(--font-weight-semibold);
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
   text-align: center;
 }
 
@@ -8041,7 +8145,7 @@ table .btn {
 
 /* Header User Dropdown - Admin Link */
 .header-user-dropdown-item--admin {
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -8129,7 +8233,7 @@ table .btn {
 
 .contact-value--preferred {
   font-weight: var(--font-weight-semibold);
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
 }
 
 .contact-link {
@@ -8291,7 +8395,7 @@ table .btn {
 .booking-reference {
   font-family: monospace;
   font-weight: var(--font-weight-semibold);
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
 }
 
 .booking-property,
@@ -8446,7 +8550,7 @@ table .btn {
 }
 
 .customer-link {
-  color: var(--color-registan-teal);
+  color: var(--color-text-strong);
   text-decoration: none;
   font-weight: var(--font-weight-semibold);
   transition: color var(--transition-fast);
@@ -8607,7 +8711,7 @@ table .btn {
 }
 
 .statistics-section {
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-top: 3px solid var(--color-gold);
   border-radius: var(--radius-lg);
@@ -8688,7 +8792,7 @@ table .btn {
 
 /* Top Bookers Leaderboard Styles */
 .top-bookers-leaderboard {
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -8770,7 +8874,7 @@ table .btn {
 }
 
 .support-search-form {
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -8816,7 +8920,7 @@ table .btn {
 }
 
 .booking-details {
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -8853,7 +8957,7 @@ table .btn {
 }
 
 .status-badge--pending {
-  background: var(--color-saffron);
+  background: var(--color-saffron-solid);
   color: var(--color-cloud-white);
 }
 
@@ -8964,7 +9068,7 @@ table .btn {
   min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background-color: var(--color-cloud-white);
+  background-color: var(--color-surface);
   color: var(--color-error);
   font-size: var(--font-size-xl);
   line-height: 1;
@@ -9025,7 +9129,7 @@ table .btn {
   gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   text-align: left;
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-left: 4px solid var(--color-gold);
   border-radius: var(--radius-lg);
@@ -9137,7 +9241,7 @@ table .btn {
   cursor: pointer;
   font: inherit;
   font-weight: var(--font-weight-semibold);
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -9160,7 +9264,7 @@ table .btn {
   flex-direction: column;
   gap: var(--spacing-xs);
   padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
@@ -9255,7 +9359,7 @@ table .btn {
 }
 
 .status-chart {
-  background: var(--color-cloud-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -9341,11 +9445,70 @@ table .btn {
   border: none;
   cursor: pointer;
   font: inherit;
-  color: var(--color-gold-dark);
+  color: var(--color-pomegranate);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .partner-status .customers-table-container {
   margin-bottom: var(--spacing-lg);
+}
+
+/* Card form (test payment mode only) */
+.card-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.card-form-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-tint);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.card-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* Error fallback and page loader (shown outside the normal layout) */
+.error-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  text-align: center;
+  background-color: var(--color-background-alt);
+  color: var(--color-text-primary);
+}
+
+.error-fallback-title {
+  margin-bottom: var(--spacing-md);
+}
+
+.error-fallback-text {
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
 }

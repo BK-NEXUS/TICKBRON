@@ -266,7 +266,7 @@ describe('errorHandler', () => {
     })
 
     it('returns default message for unknown types', () => {
-      const result = getUserErrorMessage({} as any)
+      const result = getUserErrorMessage({} as never)
       
       expect(result).toBe('An unexpected error occurred')
     })

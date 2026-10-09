@@ -57,8 +57,8 @@ describe('PropertyDetailHeader', () => {
   it('renders the rating when available', () => {
     render(<PropertyDetailHeader property={mockProperty} />)
     
-    const rating = screen.getByText('★ 4.5')
-    expect(rating).toBeInTheDocument()
+    const rating = screen.getByText('4.5')
+    expect(rating.querySelector('.star-icon')).not.toBeNull()
   })
 
   it('renders the review count', () => {
@@ -100,8 +100,7 @@ describe('PropertyDetailHeader', () => {
     const propertyWithoutRating = { ...mockProperty, rating: undefined }
     render(<PropertyDetailHeader property={propertyWithoutRating} />)
     
-    const rating = screen.queryByText(/★/)
-    expect(rating).not.toBeInTheDocument()
+    expect(document.querySelector('.star-icon')).toBeNull()
   })
 
   it('handles missing translation gracefully', () => {

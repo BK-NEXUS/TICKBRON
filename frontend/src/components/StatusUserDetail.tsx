@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
 import { statusAdapter, StatusPeriodParams, StatusUserDetail as UserDetail } from '../adapters/statusAdapter'
 import { StatusPeriodSelector } from './StatusPeriodSelector'
@@ -17,20 +19,33 @@ interface StatusUserDetailProps {
   onRangeChange: (range: DateRange) => void
 }
 
-const TEXT = {
-  loading: 'Loading user...',
-  phone: 'Phone',
-  email: 'Email',
-  joined: 'Joined',
-  hotelsVisited: 'Hotels visited',
-  hotelsTitle: 'Hotels',
-  noHotels: 'No hotels in this period.',
-  historyTitle: 'Booking history',
-  noHistory: 'No bookings in this period.',
-  hotelHeaders: ['Hotel', 'Location', 'Bookings', 'Stayed bookings', 'Nights', 'Guests', 'Spent'],
-  historyHeaders: ['Reference', 'Hotel', 'Check-in', 'Check-out', 'Nights', 'Rooms', 'Guests', 'Status', 'Total', 'Paid', 'Refunded'],
-  charged: 'charged',
-}
+const TEXT_KEYS = textKeys({
+  loading: 'status.loading4',
+  phone: 'profile.contact.phone',
+  email: 'auth.email',
+  joined: 'status.joined',
+  hotelsVisited: 'status.hotelsVisited',
+  hotelsTitle: 'status.title',
+  noHotels: 'status.noHotels',
+  historyTitle: 'status.historyTitle',
+  noHistory: 'status.empty',
+  hotel: 'status.hotel',
+  location: 'status.location',
+  bookings: 'status.bookings',
+  stayed: 'status.stayed',
+  nights: 'status.nights',
+  guests: 'status.guests',
+  spent: 'status.spent',
+  reference: 'status.reference',
+  checkIn: 'booking.checkIn2',
+  checkOut: 'booking.checkOut2',
+  rooms: 'status.rooms2',
+  statusCol: 'status.statusCol',
+  total: 'booking.total',
+  paid: 'status.paid',
+  refunded: 'status.refunded',
+  charged: 'status.charged',
+})
 
 const NUMERIC_HOTEL_COLUMNS = new Set([2, 3, 4, 5, 6])
 const NUMERIC_HISTORY_COLUMNS = new Set([4, 5, 6, 8, 9, 10])
@@ -43,6 +58,8 @@ function periodParams(period: string, range: DateRange | null | undefined): Stat
 
 /** Admin Status > Users > one guest: totals, hotels visited, per-hotel table and booking history */
 export function StatusUserDetail({ userId, period, range, onPeriodChange, onRangeChange }: StatusUserDetailProps) {
+  const i18n = useI18n()
+  const TEXT = useTexts(TEXT_KEYS)
   const [page, setPage] = useState({ key: `${period}|${range?.from}|${range?.to}`, value: 1 })
   const [data, setData] = useState<UserDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -77,7 +94,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
           <dl className="status-hotel-info">
             <div><dt>{TEXT.email}</dt><dd>{data.user.email}</dd></div>
             <div><dt>{TEXT.phone}</dt><dd>{data.user.phone || '—'}</dd></div>
-            <div><dt>{TEXT.joined}</dt><dd>{formatDate(data.user.date_joined)}</dd></div>
+            <div><dt>{TEXT.joined}</dt><dd>{formatDate(data.user.date_joined, i18n)}</dd></div>
           </dl>
         </>
       )}
@@ -91,7 +108,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
         <div className="alert alert-error" role="alert">{error}</div>
       ) : data && (
         <>
-          <StatusStatsCards totals={data.totals} caption={periodLabel(data.period, data.period_range)} />
+          <StatusStatsCards totals={data.totals} caption={periodLabel(data.period, data.period_range, i18n)} />
           <StatusStayedNote periodRange={data.period_range} />
 
           <dl className="status-hotel-info">
@@ -106,7 +123,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
               <table className="customers-table status-table" aria-label={TEXT.hotelsTitle}>
                 <thead>
                   <tr>
-                    {TEXT.hotelHeaders.map((header, index) => (
+                    {[TEXT.hotel, TEXT.location, TEXT.bookings, TEXT.stayed, TEXT.nights, TEXT.guests, TEXT.spent].map((header, index) => (
                       <th key={header} scope="col" className={NUMERIC_HOTEL_COLUMNS.has(index) ? 'status-cell--numeric' : undefined}>
                         {header}
                       </th>
@@ -139,7 +156,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
                 <table className="customers-table status-table" aria-label={TEXT.historyTitle}>
                   <thead>
                     <tr>
-                      {TEXT.historyHeaders.map((header, index) => (
+                      {[TEXT.reference, TEXT.hotel, TEXT.checkIn, TEXT.checkOut, TEXT.nights, TEXT.rooms, TEXT.guests, TEXT.statusCol, TEXT.total, TEXT.paid, TEXT.refunded].map((header, index) => (
                         <th key={header} scope="col" className={NUMERIC_HISTORY_COLUMNS.has(index) ? 'status-cell--numeric' : undefined}>
                           {header}
                         </th>
@@ -151,8 +168,8 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
                       <tr key={booking.id}>
                         <td>{booking.reference}</td>
                         <td>{booking.hotel.name}</td>
-                        <td>{formatDate(booking.check_in)}</td>
-                        <td>{formatDate(booking.check_out)}</td>
+                        <td>{formatDate(booking.check_in, i18n)}</td>
+                        <td>{formatDate(booking.check_out, i18n)}</td>
                         <td className="status-cell--numeric">{formatCount(booking.nights)}</td>
                         <td className="status-cell--numeric">{formatCount(booking.rooms)}</td>
                         <td className="status-cell--numeric">{formatCount(booking.guests)}</td>

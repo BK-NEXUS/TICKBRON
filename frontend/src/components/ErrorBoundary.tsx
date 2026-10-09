@@ -1,4 +1,5 @@
-import { Component, ReactNode } from 'react'
+import { ErrorFallback } from './ErrorFallback'
+import { Component, ErrorInfo, ReactNode } from 'react'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -25,7 +26,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console in development
     if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an error:', error, errorInfo)
@@ -39,31 +40,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return this.props.fallback
       }
 
-      return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          padding: '20px',
-          textAlign: 'center',
-          backgroundColor: '#F2EDE7'
-        }}>
-          <h1 style={{ color: '#3E382D', marginBottom: '16px' }}>
-            Something went wrong
-          </h1>
-          <p style={{ color: '#3E382D', marginBottom: '24px' }}>
-            We apologize for the inconvenience. Please refresh the page or try again later.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn btn-primary"
-          >
-            Refresh Page
-          </button>
-        </div>
-      )
+      return <ErrorFallback />
     }
 
     return this.props.children

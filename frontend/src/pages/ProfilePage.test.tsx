@@ -253,7 +253,7 @@ describe('ProfilePage', () => {
     it('should display WhatsApp', () => {
       renderWithRouter(<ProfilePage />)
 
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'label' })).toBeInTheDocument()
       expect(screen.getByText('+9876543210')).toBeInTheDocument()
     })
 
@@ -271,7 +271,7 @@ describe('ProfilePage', () => {
 
       renderWithRouter(<ProfilePage />)
 
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'label' })).toBeInTheDocument()
       expect(screen.getByText('Not provided')).toBeInTheDocument()
     })
 
@@ -304,7 +304,7 @@ describe('ProfilePage', () => {
       renderWithRouter(<ProfilePage />)
 
       expect(screen.getByText('Preferred Contact Method')).toBeInTheDocument()
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'p' })).toBeInTheDocument()
     })
 
     it('should display "Email" as default when preferred contact method is missing', () => {
@@ -505,7 +505,8 @@ describe('ProfilePage', () => {
 
       expect(screen.getByLabelText('First Name')).toHaveValue('John')
       expect(screen.getByLabelText('Last Name')).toHaveValue('Doe')
-      expect(screen.getByLabelText('Phone Number')).toHaveValue('+1234567890')
+      // The saved number's country (+1) is picked from its dial code and the number is grouped
+      expect(screen.getByLabelText('Phone Number')).toHaveValue('+1 234 567 890')
       expect(screen.getByLabelText('WhatsApp')).toHaveValue('+9876543210')
       expect(screen.getByLabelText('Telegram')).toHaveValue('@johndoe')
     })
@@ -515,6 +516,9 @@ describe('ProfilePage', () => {
       fireEvent.click(screen.getByText('Edit Profile'))
       const phoneInput = screen.getByLabelText('Phone Number')
 
+      // The saved test number belongs to +1, so pick Uzbekistan in the country selector first
+      fireEvent.click(screen.getByRole('button', { name: /Country: / }))
+      fireEvent.click(screen.getByRole('option', { name: /Uzbekistan/ }))
       fireEvent.change(phoneInput, { target: { value: '9012345678901' } })
 
       expect(phoneInput).toHaveValue('+998 90 123 45 67')

@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Heart } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +13,7 @@ interface FavoriteButtonProps {
 
 /** Heart toggle: saves / removes a property; sends visitors who are not logged in to the login page. */
 export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: FavoriteButtonProps) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { isAuthenticated, isFavorite, toggle } = useFavorites()
   const [saving, setSaving] = useState(false)
@@ -38,8 +40,8 @@ export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: F
       onKeyDown={(event) => event.stopPropagation()}
       disabled={saving}
       aria-pressed={saved}
-      aria-label={saved ? `Remove ${propertyName} from favorites` : `Save ${propertyName} to favorites`}
-      title={saved ? 'Remove from favorites' : 'Save to favorites'}
+      aria-label={saved ? t('fav.remove', { name: propertyName }) : t('fav.save', { name: propertyName })}
+      title={saved ? t('fav.removeTitle') : t('fav.saveTitle')}
     >
       <Heart size={18} aria-hidden="true" fill={saved ? 'currentColor' : 'none'} />
       {variant === 'detail' && <span className="favorite-button-label">{saved ? 'Saved' : 'Save'}</span>}

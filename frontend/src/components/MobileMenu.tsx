@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
+import { ThemeToggle } from './ThemeToggle'
+import { SegmentedControl } from './SegmentedControl'
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
+import { CURRENCIES, LANGUAGES } from '../i18n/options'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -9,18 +14,19 @@ interface MobileMenuProps {
 }
 
 interface NavLink {
-  label: string
+  labelKey: MessageKey
   href: string
 }
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Properties', href: '/search' },
-  { label: 'About', href: '/about' },
-  { label: 'Help', href: '/help' },
+  { labelKey: 'nav.home', href: '/' },
+  { labelKey: 'nav.properties', href: '/search' },
+  { labelKey: 'nav.about', href: '/about' },
+  { labelKey: 'nav.help', href: '/help' },
 ]
 
 export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = false }: MobileMenuProps) {
+  const { t, language, setLanguage, currency, setCurrency } = useI18n()
   const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
@@ -58,14 +64,14 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation menu"
+        aria-label={t('menu.navigation')}
       >
         <div className="mobile-menu-header">
-          <h2 className="mobile-menu-title">Menu</h2>
+          <h2 className="mobile-menu-title">{t('menu.title')}</h2>
           <button
             className="mobile-menu-close"
             onClick={onClose}
-            aria-label="Close menu"
+            aria-label={t('menu.close')}
           >
             ✕
           </button>
@@ -80,17 +86,35 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
                   className="mobile-menu-link"
                   onClick={onClose}
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </a>
               </li>
             ))}
           </ul>
         </nav>
 
+        <div className="mobile-menu-preferences">
+          <SegmentedControl
+            aria-label={t('menu.language')}
+            value={language}
+            onChange={setLanguage}
+            fullWidth
+            options={LANGUAGES.map(({ code, name }) => ({ value: code, label: code.toUpperCase(), ariaLabel: name }))}
+          />
+          <SegmentedControl
+            aria-label={t('menu.currency')}
+            value={currency}
+            onChange={setCurrency}
+            fullWidth
+            options={CURRENCIES.map(({ code }) => ({ value: code, label: code }))}
+          />
+          <ThemeToggle className="mobile-menu-theme-toggle" />
+        </div>
+
         {!isAuthenticated && (
           <div className="mobile-menu-footer">
-            <a href="/login" className="btn btn-secondary btn-full" onClick={onClose}>Login</a>
-            <a href="/register" className="btn btn-primary btn-full" onClick={onClose}>Sign Up</a>
+            <a href="/login" className="btn btn-secondary btn-full" onClick={onClose}>{t('header.login')}</a>
+            <a href="/register" className="btn btn-primary btn-full" onClick={onClose}>{t('header.signUp')}</a>
           </div>
         )}
       </div>

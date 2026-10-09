@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import type { StatusMonth } from '../adapters/statusAdapter'
 import { formatCount, formatMoney, monthLabel } from '../utils/statusFormat'
 
@@ -11,6 +12,8 @@ interface StatusMonthlyChartProps {
 
 /** Simple bar chart (same approach as the statistics dashboard): one bar per month */
 export function StatusMonthlyChart({ months, year, metric, currency }: StatusMonthlyChartProps) {
+  const i18n = useI18n()
+  const { t } = i18n
   const valueOf = (month: StatusMonth) => metric === 'guests'
     ? month.guests
     : Number(month.revenue.find(item => item.currency === currency)?.amount ?? 0)
@@ -19,7 +22,9 @@ export function StatusMonthlyChart({ months, year, metric, currency }: StatusMon
     : formatMoney({ currency: currency ?? '', amount: String(valueOf(month)) })
 
   const max = Math.max(0, ...months.map(valueOf))
-  const title = metric === 'guests' ? `Guests per month in ${year}` : `Revenue (${currency}) per month in ${year}`
+  const title = metric === 'guests'
+    ? t('status.guestsPerMonth', { year })
+    : t('status.revenuePerMonth', { currency: currency ?? '', year })
 
   return (
     <div className="status-chart">
@@ -39,7 +44,7 @@ export function StatusMonthlyChart({ months, year, metric, currency }: StatusMon
                     {value > 0 && <span className="bar-label">{labelOf(month)}</span>}
                   </div>
                 </div>
-                <div className="bar-period">{monthLabel(month.month)}</div>
+                <div className="bar-period">{monthLabel(month.month, i18n)}</div>
               </div>
             )
           })}

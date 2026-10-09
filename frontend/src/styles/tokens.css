@@ -1,7 +1,10 @@
 /* TICKBRON design tokens. Imported first; the only place raw values are defined.
-   A dark theme later needs only a second set of the colour and shadow tokens under [data-theme='dark']. */
+   The dark theme is a second set of the colour and shadow tokens: it follows the system setting unless the
+   user picked a theme (data-theme on <html>). The two dark blocks at the end must stay identical (tested). */
 
 :root {
+  color-scheme: light;
+
   /* TICKBRON brand palette (measured from the client logo, 2026-09-25).
      Legacy token names are kept so components need no changes.
      Contrast (WCAG 2.1): see .ai/checkpoints/frontend_brand.md */
@@ -43,6 +46,13 @@
   --color-focus: var(--color-gold-dark);
   --color-tint: rgba(188, 156, 89, 0.14);         /* tinted fill: tonal buttons, hover, active segment */
   --color-tint-strong: rgba(188, 156, 89, 0.28);
+
+  --color-header-bg: rgba(242, 237, 231, 0.92);   /* frosted header and floating bars */
+  --color-float-bg: rgba(255, 255, 255, 0.94);
+  --color-cream-deep: #E7DECF;                    /* darker end of cream gradients */
+  --color-surface: var(--color-cloud-white);      /* cards, panels, menus: the white that turns dark */
+  --color-text-strong: var(--color-registan-teal); /* emphasised text, one step darker than secondary */
+  --color-saffron-solid: #7D5518;                  /* amber used as a fill under white text; does not change in dark */
 
   --color-success: var(--color-sprout-green);
   --color-warning: var(--color-saffron);
@@ -138,4 +148,66 @@
 
 @media (min-width: 1024px) {
   :root { --gutter: 32px; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+  color-scheme: dark;
+
+    --color-background: #1B1812;
+    --color-background-alt: #231F18;
+    --color-surface: #26221A;
+  --color-header-bg: rgba(27, 24, 18, 0.92);
+  --color-float-bg: rgba(38, 34, 26, 0.94);
+  --color-cream: #231F18;
+  --color-cream-deep: #1A1710;
+    --color-text-primary: #F2EDE7;
+    --color-text-strong: #E9E0CF;
+    --color-text-secondary: #CBC1AE;
+    --color-text-tertiary: #B7AC97;
+    --color-pomegranate: #DCB969;
+    --color-border: #3A3429;
+    --color-border-control: #968C79;
+    --color-focus: #DCB969;
+    --color-tint: rgba(220, 185, 105, 0.16);
+    --color-tint-strong: rgba(220, 185, 105, 0.30);
+    --color-error: #F29A94;
+    --color-success: #86C99F;
+    --color-saffron: #E6B968;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30), 0 2px 6px -2px rgba(0, 0, 0, 0.30);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 14px -6px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.28), 0 12px 24px -10px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.28), 0 20px 40px -16px rgba(0, 0, 0, 0.65);
+    --shadow-xl: 0 10px 20px rgba(0, 0, 0, 0.30), 0 32px 64px -24px rgba(0, 0, 0, 0.75);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-background: #1B1812;
+  --color-background-alt: #231F18;
+  --color-surface: #26221A;
+  --color-header-bg: rgba(27, 24, 18, 0.92);
+  --color-float-bg: rgba(38, 34, 26, 0.94);
+  --color-cream: #231F18;
+  --color-cream-deep: #1A1710;
+  --color-text-primary: #F2EDE7;
+  --color-text-strong: #E9E0CF;
+  --color-text-secondary: #CBC1AE;
+  --color-text-tertiary: #B7AC97;
+  --color-pomegranate: #DCB969;
+  --color-border: #3A3429;
+  --color-border-control: #968C79;
+  --color-focus: #DCB969;
+  --color-tint: rgba(220, 185, 105, 0.16);
+  --color-tint-strong: rgba(220, 185, 105, 0.30);
+  --color-error: #F29A94;
+  --color-success: #86C99F;
+  --color-saffron: #E6B968;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30), 0 2px 6px -2px rgba(0, 0, 0, 0.30);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 14px -6px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.28), 0 12px 24px -10px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.28), 0 20px 40px -16px rgba(0, 0, 0, 0.65);
+  --shadow-xl: 0 10px 20px rgba(0, 0, 0, 0.30), 0 32px 64px -24px rgba(0, 0, 0, 0.75);
 }

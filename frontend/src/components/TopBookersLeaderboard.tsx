@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { Medal } from 'lucide-react'
 import { adminAdapter, TopBooker } from '../adapters/adminAdapter'
@@ -8,12 +9,15 @@ interface TopBookersLeaderboardProps {
 }
 
 export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBookersLeaderboardProps) {
+  const { t } = useI18n()
   const [topBookers, setTopBookers] = useState<TopBooker[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadTopBookers()
+  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, limit])
 
   const loadTopBookers = async () => {
@@ -29,7 +33,7 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
         setTopBookers(response.data)
       }
     } catch (err) {
-      setError('Failed to load top bookers. Please try again.')
+      setError(t('admin.failedToLoadTop'))
     } finally {
       setLoading(false)
     }
@@ -38,24 +42,24 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
   const getPeriodLabel = () => {
     switch (period) {
       case 'this_month':
-        return 'This Month'
+        return t('admin.periodThisMonth')
       case 'this_year':
-        return 'This Year'
+        return t('admin.periodThisYear')
       case 'all_time':
       default:
-        return 'All Time'
+        return t('admin.periodAllTime')
     }
   }
 
   const getRankBadge = (rank: number) => {
     if (rank > 3) return `#${rank}`
-    return <Medal size={20} className={`rank-medal rank-medal--${rank}`} aria-label={`Rank ${rank}`} role="img" />
+    return <Medal size={20} className={`rank-medal rank-medal--${rank}`} aria-label={t('admin.rankLabel', { rank })} role="img" />
   }
 
   return (
     <div className="top-bookers-leaderboard">
       <div className="leaderboard-header">
-        <h2 className="leaderboard-title">Top Bookers Leaderboard</h2>
+        <h2 className="leaderboard-title">{t('admin.topBookersLeaderboard')}</h2>
         <span className="leaderboard-period">{getPeriodLabel()}</span>
       </div>
 
@@ -67,20 +71,20 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading leaderboard...
+          {t('admin.loadingLeaderboard')}
         </div>
       ) : topBookers.length === 0 ? (
         <div className="empty-state">
-          <p>No booking data available for this period.</p>
+          <p>{t('admin.noBookingDataAvailable')}</p>
         </div>
       ) : (
         <div className="leaderboard-table-container">
           <table className="leaderboard-table" role="table">
             <thead>
               <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">Customer</th>
-                <th scope="col">Completed Bookings</th>
+                <th scope="col">{t('admin.rank')}</th>
+                <th scope="col">{t('crumb.customer')}</th>
+                <th scope="col">{t('admin.completedBookings')}</th>
               </tr>
             </thead>
             <tbody>
