@@ -12,7 +12,7 @@ interface PartnerRatesManagementProps {
 type ViewMode = 'list' | 'create' | 'edit'
 
 export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvailability }: PartnerRatesManagementProps) {
-  const { t } = useI18n()
+  const { t, tp } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [ratePlans, setRatePlans] = useState<PartnerRatePlan[]>([])
   const [selectedRatePlan, setSelectedRatePlan] = useState<PartnerRatePlan | null>(null)
@@ -236,7 +236,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
   const renderListView = () => (
     <div className="partner-rates-list">
       <div className="rates-list-header">
-        <h2 className="rates-list-title">Rate Plans for {roomTypeName}</h2>
+        <h2 className="rates-list-title">{t('partner.ratePlansFor', { name: roomTypeName })}</h2>
         <button
           onClick={() => {
             resetForm()
@@ -309,7 +309,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                   {ratePlan.advance_booking_days && (
                     <div className="rate-plan-detail">
                       <span className="detail-label">{t('partner.advanceBooking')}</span>
-                      <span className="detail-value">{ratePlan.advance_booking_days} days</span>
+                      <span className="detail-value">{tp('rate.days', ratePlan.advance_booking_days)}</span>
                     </div>
                   )}
                 </div>

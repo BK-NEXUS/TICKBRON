@@ -257,7 +257,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const renderListView = () => (
     <div className="partner-availability-list">
       <div className="availability-list-header">
-        <h2 className="availability-list-title">Date Inventory for {ratePlanName}</h2>
+        <h2 className="availability-list-title">{t('partner.dateInventoryFor', { name: ratePlanName })}</h2>
         <div className="availability-list-header-actions">
           <button
             onClick={() => {
@@ -330,7 +330,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
                   <td>{inventory.available_rooms}</td>
                   <td>{inventory.booked_rooms}</td>
                   <td>{inventory.price} {inventory.currency}</td>
-                  <td>{inventory.minimum_stay} - {inventory.maximum_stay} nights</td>
+                  <td>{t('partner.minMaxNightsValue', { min: inventory.minimum_stay, max: inventory.maximum_stay })}</td>
                   <td>
                     <button
                       onClick={() => handleEdit(inventory)}
@@ -518,7 +518,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const renderBulkPriceView = () => (
     <div className="partner-availability-form">
       <div className="availability-form-header">
-        <h2 className="availability-form-title">Bulk price edit for {ratePlanName}</h2>
+        <h2 className="availability-form-title">{t('partner.bulkPriceFor', { name: ratePlanName })}</h2>
         <button
           onClick={() => setViewMode('list')}
           className="btn btn-tertiary"

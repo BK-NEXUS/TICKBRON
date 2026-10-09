@@ -292,7 +292,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
               </h3>
 
               <div className="form-group">
-                <label htmlFor="edit-available-rooms">Available rooms (of {totalRooms})</label>
+                <label htmlFor="edit-available-rooms">{t('partner.availableRoomsOf', { total: totalRooms })}</label>
                 <input
                   id="edit-available-rooms"
                   type="number"
@@ -362,7 +362,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
           <div className="modal-content" ref={dialogRef} tabIndex={-1}>
             <h2 id="block-modal-title" className="modal-title">{t('partner.externalBooking')}</h2>
-            <p className="modal-subtitle">Take rooms out of sale for {roomTypeName} (sold via Booking.com, phone, etc.)</p>
+            <p className="modal-subtitle">{t('partner.takeRoomsOut', { name: roomTypeName })}</p>
 
             {blockError && (
               <div className="alert alert-error" role="alert" aria-live="polite">{blockError}</div>

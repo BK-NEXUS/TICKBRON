@@ -364,7 +364,7 @@ export function PartnerDashboardPage() {
       <div className="container container-large-desktop">
         <div className="dashboard-header">
           <h1 className="dashboard-title">{t('header.partnerDashboard')}</h1>
-          <p className="dashboard-subtitle">Welcome, {user.first_name || user.email}</p>
+          <p className="dashboard-subtitle">{t('admin.welcome', { name: user.first_name || user.email })}</p>
         </div>
 
         {renderNavigation()}

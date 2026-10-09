@@ -1,3 +1,4 @@
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useId, useState } from 'react'
 import type { StatusGranularity, StatusSeriesRow } from '../adapters/statusAdapter'
 import { chartCurrencies } from '../utils/statusFormat'
@@ -10,14 +11,16 @@ interface StatusSeriesSectionProps {
   onGranularityChange: (granularity: StatusGranularity) => void
 }
 
-const TEXT = {
-  currency: 'Revenue currency',
-  empty: 'No bookings in this period.',
-  noRevenue: 'No revenue in this period.',
-}
+const TEXT_KEYS = textKeys({
+  currency: 'status.currency',
+  empty: 'status.empty',
+  noRevenue: 'status.noRevenue',
+
+})
 
 /** The period's series as charts (stayed, guests, revenue per currency) with the bucket size and currency choice */
 export function StatusSeriesSection({ series, granularity, onGranularityChange }: StatusSeriesSectionProps) {
+  const TEXT = useTexts(TEXT_KEYS)
   const id = useId()
   const [currency, setCurrency] = useState<string | null>(null)
   const currencies = chartCurrencies(series)

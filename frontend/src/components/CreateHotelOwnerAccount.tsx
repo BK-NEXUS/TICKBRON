@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
@@ -7,6 +8,7 @@ interface CreateHotelOwnerAccountProps {
 }
 
 export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwnerAccountProps) {
+  const { t } = useI18n()
   const [formData, setFormData] = useState<CreateHotelOwnerRequest>({
     email: '',
     first_name: '',
@@ -35,15 +37,15 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   }
 
   const validateForm = (): string | null => {
-    if (!formData.email.trim()) return 'Email is required'
-    if (!formData.first_name.trim()) return 'First name is required'
-    if (!formData.last_name.trim()) return 'Last name is required'
-    if (!formData.password) return 'Password is required'
-    if (formData.password.length < 12) return 'Password must be at least 12 characters'
-    if (formData.password !== formData.password_confirm) return 'Passwords do not match'
+    if (!formData.email.trim()) return t('admin.errEmail')
+    if (!formData.first_name.trim()) return t('admin.errFirstName')
+    if (!formData.last_name.trim()) return t('admin.errLastName')
+    if (!formData.password) return t('admin.errPassword')
+    if (formData.password.length < 12) return t('admin.errPasswordShort')
+    if (formData.password !== formData.password_confirm) return t('admin.errPasswordMismatch')
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) return 'Please enter a valid email address'
+    if (!emailRegex.test(formData.email)) return t('admin.errEmailInvalid')
     
     return null
   }
@@ -72,7 +74,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
         }
       }
     } catch (err) {
-      setError('Failed to create hotel owner account. Please try again.')
+      setError(t('admin.failedToCreateHotel'))
     } finally {
       setLoading(false)
     }
@@ -102,44 +104,44 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
       <div className="create-hotel-owner-account">
         <div className="success-panel">
           <div className="success-icon">✓</div>
-          <h2 className="success-title">Hotel Owner Account Created Successfully</h2>
-          <p className="success-subtitle">Please share these credentials with the hotel owner</p>
+          <h2 className="success-title">{t('admin.hotelOwnerAccountCreated')}</h2>
+          <p className="success-subtitle">{t('admin.pleaseShareTheseCredentials')}</p>
           
           <div className="credentials-display">
             <div className="credential-item">
-              <span className="credential-label">Email:</span>
+              <span className="credential-label">{t('admin.email')}</span>
               <span className="credential-value">{createdCredentials.email}</span>
             </div>
             <div className="credential-item">
-              <span className="credential-label">Name:</span>
+              <span className="credential-label">{t('admin.name2')}</span>
               <span className="credential-value">{createdCredentials.full_name}</span>
             </div>
             <div className="credential-item">
-              <span className="credential-label">Password:</span>
+              <span className="credential-label">{t('admin.password')}</span>
               <span className="credential-value password-value">{formData.password}</span>
             </div>
             <div className="credential-item">
-              <span className="credential-label">Account ID:</span>
+              <span className="credential-label">{t('admin.accountId')}</span>
               <span className="credential-value">{createdCredentials.id}</span>
             </div>
           </div>
 
           <div className="security-notice">
-            <p className="notice-title">Security Notice:</p>
+            <p className="notice-title">{t('admin.securityNotice')}</p>
             <ul className="notice-list">
-              <li>These credentials are shown only once</li>
-              <li>Please save them securely before closing this panel</li>
-              <li>The hotel owner should change their password after first login</li>
-              <li>Do not share these credentials via unsecured channels</li>
+              <li>{t('admin.theseCredentialsAreShown')}</li>
+              <li>{t('admin.pleaseSaveThemSecurely')}</li>
+              <li>{t('admin.theHotelOwnerShould')}</li>
+              <li>{t('admin.doNotShareThese')}</li>
             </ul>
           </div>
 
           <div className="success-actions">
             <button onClick={handleReset} className="btn btn-primary">
-              Create Another Account
+              {t('admin.createAnotherAccount')}
             </button>
             <button onClick={handleCancel} className="btn btn-secondary">
-              Close
+              {t('admin.close')}
             </button>
           </div>
         </div>
@@ -150,8 +152,8 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   return (
     <div className="create-hotel-owner-account">
       <div className="form-panel">
-        <h2 className="form-panel-title">Create Hotel Owner Account</h2>
-        <p className="form-panel-subtitle">Super-admin only: Create a new hotel owner account</p>
+        <h2 className="form-panel-title">{t('admin.createHotelOwnerAccount')}</h2>
+        <p className="form-panel-subtitle">{t('admin.superAdminOnlyCreate')}</p>
 
         {error && (
           <div className="alert alert-error" role="alert" aria-live="polite">
@@ -161,7 +163,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
 
         <form onSubmit={handleSubmit} className="form-fields">
           <div className="form-group">
-            <label htmlFor="email">Email Address:</label>
+            <label htmlFor="email">{t('admin.emailAddress')}</label>
             <input
               id="email"
               name="email"
@@ -171,12 +173,12 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               className="form-control"
               required
               autoComplete="email"
-              placeholder="owner@example.com"
+              placeholder={t('admin.ownerExampleCom')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="first_name">First Name:</label>
+            <label htmlFor="first_name">{t('admin.firstName')}</label>
             <input
               id="first_name"
               name="first_name"
@@ -186,12 +188,12 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               className="form-control"
               required
               autoComplete="given-name"
-              placeholder="John"
+              placeholder={t('admin.john')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="last_name">Last Name:</label>
+            <label htmlFor="last_name">{t('admin.lastName')}</label>
             <input
               id="last_name"
               name="last_name"
@@ -201,12 +203,12 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               className="form-control"
               required
               autoComplete="family-name"
-              placeholder="Doe"
+              placeholder={t('admin.doe')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone_number">Phone Number (optional):</label>
+            <label htmlFor="phone_number">{t('admin.phoneNumberOptional')}</label>
             <input
               id="phone_number"
               name="phone_number"
@@ -220,7 +222,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">{t('admin.password')}</label>
             <div className="password-input-group">
               <input
                 id="password"
@@ -231,23 +233,23 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
                 className="form-control"
                 required
                 autoComplete="new-password"
-                placeholder="Enter password or generate one"
+                placeholder={t('admin.enterPasswordOrGenerate')}
                 minLength={12}
               />
               <button
                 type="button"
                 onClick={generatePassword}
                 className="btn btn-secondary password-generate-btn"
-                aria-label="Generate random password"
+                aria-label={t('admin.generateRandomPassword')}
               >
-                Generate
+                {t('admin.generate')}
               </button>
             </div>
-            <small className="form-hint">Password must be at least 12 characters</small>
+            <small className="form-hint">{t('auth.errorPasswordShort')}</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="password_confirm">Confirm Password:</label>
+            <label htmlFor="password_confirm">{t('admin.confirmPassword')}</label>
             <input
               id="password_confirm"
               name="password_confirm"
@@ -257,7 +259,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               className="form-control"
               required
               autoComplete="new-password"
-              placeholder="Confirm password"
+              placeholder={t('admin.confirmPassword2')}
               minLength={12}
             />
           </div>
@@ -268,7 +270,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               disabled={loading}
               className="btn btn-primary"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
             </button>
             <button
               type="button"
@@ -276,18 +278,18 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               disabled={loading}
               className="btn btn-secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>
 
         <div className="security-info">
-          <p className="info-title">Important:</p>
+          <p className="info-title">{t('admin.important')}</p>
           <ul className="info-list">
-            <li>Only super-admins can create hotel owner accounts</li>
-            <li>Credentials will be shown once after creation</li>
-            <li>Password must be at least 12 characters</li>
-            <li>Passwords are hashed and never stored in plain text</li>
+            <li>{t('admin.onlySuperAdminsCan')}</li>
+            <li>{t('admin.credentialsWillBeShown')}</li>
+            <li>{t('auth.errorPasswordShort')}</li>
+            <li>{t('admin.passwordsAreHashedAnd')}</li>
           </ul>
         </div>
       </div>

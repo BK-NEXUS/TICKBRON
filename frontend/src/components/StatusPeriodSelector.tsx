@@ -1,3 +1,4 @@
+import { textKeys, useI18n, useTexts } from '../i18n/I18nContext'
 import { useId, useState } from 'react'
 import { STATUS_PRESET_PERIODS, validateCustomRange, type DateRange } from '../utils/statusPeriod'
 
@@ -13,20 +14,19 @@ interface StatusPeriodSelectorProps {
   today?: Date
 }
 
-const TEXT = {
-  period: 'Period',
-  year: 'Year',
-  month: 'Month',
-  from: 'From',
-  to: 'To',
-  apply: 'Apply',
-  all: 'All time',
-  aYear: 'A year',
-  aMonth: 'A month',
-  custom: 'Custom range',
-  months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December'],
-}
+const TEXT_KEYS = textKeys({
+  period: 'status.period',
+  year: 'status.year',
+  month: 'status.month',
+  from: 'status.from',
+  to: 'status.to',
+  apply: 'partner.apply',
+  all: 'status.all',
+  aYear: 'status.aYear',
+  aMonth: 'status.aMonth',
+  custom: 'status.custom',
+
+})
 const YEARS_BACK = 5
 const PRESETS = STATUS_PRESET_PERIODS.map(preset => preset.value as string)
 
@@ -37,6 +37,9 @@ function modeOf(value: string): string {
 
 /** Period filter for the Status sections: all time, a preset, a year, a month or a custom range */
 export function StatusPeriodSelector({ value, onChange, range, onRangeChange, today = new Date() }: StatusPeriodSelectorProps) {
+  const TEXT = useTexts(TEXT_KEYS)
+  const i18n = useI18n()
+  const { t, formatDate } = i18n
   const id = useId()
   const [customChosen, setCustomChosen] = useState(false)
   const [from, setFrom] = useState(range?.from ?? '')
@@ -62,7 +65,7 @@ export function StatusPeriodSelector({ value, onChange, range, onRangeChange, to
   }
 
   const applyRange = () => {
-    const message = validateCustomRange(from, to)
+    const message = validateCustomRange(from, to, i18n)
     setRangeError(message)
     if (message) return
     setCustomChosen(false)
@@ -74,7 +77,7 @@ export function StatusPeriodSelector({ value, onChange, range, onRangeChange, to
       <label htmlFor={`${id}-mode`}>{TEXT.period}</label>
       <select id={`${id}-mode`} value={mode} onChange={e => handleMode(e.target.value)}>
         <option value="all">{TEXT.all}</option>
-        {STATUS_PRESET_PERIODS.map(preset => <option key={preset.value} value={preset.value}>{preset.label}</option>)}
+        {STATUS_PRESET_PERIODS.map(preset => <option key={preset.value} value={preset.value}>{t(preset.labelKey)}</option>)}
         <option value="year">{TEXT.aYear}</option>
         <option value="month">{TEXT.aMonth}</option>
         {onRangeChange && <option value="custom">{TEXT.custom}</option>}
@@ -95,9 +98,9 @@ export function StatusPeriodSelector({ value, onChange, range, onRangeChange, to
         <>
           <label htmlFor={`${id}-month`} className="sr-only">{TEXT.month}</label>
           <select id={`${id}-month`} value={month} onChange={e => onChange(`${year}-${e.target.value}`)}>
-            {TEXT.months.map((name, index) => {
+            {Array.from({ length: 12 }, (_, index) => {
               const number = String(index + 1).padStart(2, '0')
-              return <option key={number} value={number}>{name}</option>
+              return <option key={number} value={number}>{formatDate(new Date(2024, index, 1), { month: 'long' })}</option>
             })}
           </select>
         </>

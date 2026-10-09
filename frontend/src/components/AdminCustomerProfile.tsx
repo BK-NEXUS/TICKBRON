@@ -48,7 +48,7 @@ export function AdminCustomerProfile() {
         setProfile(response.data)
       }
     } catch (err) {
-      setError('Failed to load customer profile. Please try again.')
+      setError(t('admin.failedToLoadCustomer'))
     } finally {
       setLoading(false)
     }
@@ -56,7 +56,7 @@ export function AdminCustomerProfile() {
 
   const handleAddNote = async () => {
     if (!customerId || !noteText.trim()) {
-      setNoteError('Please enter a note')
+      setNoteError(t('admin.noteEmpty'))
       return
     }
 
@@ -75,7 +75,7 @@ export function AdminCustomerProfile() {
         await loadProfile()
       }
     } catch (err) {
-      setNoteError('Failed to add note. Please try again.')
+      setNoteError(t('admin.noteAddFailed'))
     } finally {
       setNoteSaving(false)
     }
@@ -93,7 +93,7 @@ export function AdminCustomerProfile() {
 
   const handleUpdateNote = async (noteId: number) => {
     if (!customerId || !editingNoteText.trim()) {
-      setNoteError('Please enter a note')
+      setNoteError(t('admin.noteEmpty'))
       return
     }
 
@@ -113,7 +113,7 @@ export function AdminCustomerProfile() {
         await loadProfile()
       }
     } catch (err) {
-      setNoteError('Failed to update note. Please try again.')
+      setNoteError(t('admin.noteUpdateFailed'))
     } finally {
       setNoteSaving(false)
     }
@@ -122,7 +122,7 @@ export function AdminCustomerProfile() {
   const handleDeleteNote = async (noteId: number) => {
     if (!customerId) return
 
-    if (!confirm('Are you sure you want to delete this note?')) {
+    if (!confirm(t('admin.areYouSureYou'))) {
       return
     }
 
@@ -139,24 +139,16 @@ export function AdminCustomerProfile() {
         await loadProfile()
       }
     } catch (err) {
-      setNoteError('Failed to delete note. Please try again.')
+      setNoteError(t('admin.noteDeleteFailed'))
     } finally {
       setNoteSaving(false)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const formatDate = (dateString: string) =>
+    dateString ? formatLocalDate(dateString, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('admin.na')
 
-  const { formatMoney } = useI18n()
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     return formatMoney(amount, currency)
@@ -204,7 +196,7 @@ export function AdminCustomerProfile() {
     return (
       <div className="admin-customer-profile">
         <div className="loading-state" role="status" aria-live="polite">
-          Loading customer profile...
+          {t('admin.loadingCustomerProfile')}
         </div>
       </div>
     )
@@ -220,7 +212,7 @@ export function AdminCustomerProfile() {
         )}
         {!profile && !error && (
           <div className="empty-state">
-            <p>Customer not found.</p>
+            <p>{t('admin.customerNotFound')}</p>
           </div>
         )}
       </div>
@@ -235,9 +227,9 @@ export function AdminCustomerProfile() {
       <button
         className="btn btn-ghost btn-sm"
         onClick={() => navigate('/admin')}
-        aria-label="Back to admin dashboard"
+        aria-label={t('admin.backToAdminDashboard')}
       >
-        ← Back to Admin Dashboard
+        ← {t('admin.backArrow')}
       </button>
 
       {/* Customer Header */}
@@ -245,10 +237,10 @@ export function AdminCustomerProfile() {
         <div className="customer-info">
           <h1 className="customer-name">{customer.full_name}</h1>
           <div className="customer-meta">
-            <span className="customer-id">ID: {customer.id}</span>
-            <span className="customer-joined">Joined: {formatDate(customer.date_joined)}</span>
+            <span className="customer-id">{t('admin.idValue', { id: customer.id })}</span>
+            <span className="customer-joined">{t('admin.joinedOn', { date: formatDate(customer.date_joined) })}</span>
             {customer.last_login && (
-              <span className="customer-last-login">Last login: {formatDate(customer.last_login)}</span>
+              <span className="customer-last-login">{t('admin.lastLoginOn', { date: formatDate(customer.last_login) })}</span>
             )}
           </div>
         </div>
@@ -256,63 +248,63 @@ export function AdminCustomerProfile() {
         {/* Contact Info */}
         <div className="customer-contact-info">
           <div className="contact-item">
-            <span className="contact-label">Email:</span>
+            <span className="contact-label">{t('admin.email')}</span>
             <span className="contact-value">{customer.email}</span>
             <a
               href={`mailto:${customer.email}`}
               className="contact-link contact-link--email"
-              aria-label={`Send email to ${customer.email}`}
+              aria-label={t('admin.sendEmailTo', { value: customer.email })}
             >
-              Email
+              {t('auth.email')}
             </a>
           </div>
 
           <div className="contact-item">
-            <span className="contact-label">Phone:</span>
+            <span className="contact-label">{t('admin.phone')}</span>
             <span className="contact-value">{customer.phone_number}</span>
             <a
               href={`tel:${formatPhoneNumber(customer.phone_number)}`}
               className="contact-link contact-link--phone"
-              aria-label={`Call ${customer.phone_number}`}
+              aria-label={t('admin.callNumber', { value: customer.phone_number })}
             >
-              Call
+              {t('admin.call')}
             </a>
           </div>
 
           {customer.whatsapp && (
             <div className="contact-item">
-              <span className="contact-label">WhatsApp:</span>
+              <span className="contact-label">{t('admin.whatsapp')}</span>
               <span className="contact-value">{customer.whatsapp}</span>
               <a
                 href={getWhatsAppLink(customer.whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="contact-link contact-link--whatsapp"
-                aria-label={`Open WhatsApp chat with ${customer.whatsapp}`}
+                aria-label={t('admin.openWhatsApp', { value: customer.whatsapp })}
               >
-                WhatsApp
+                {t('profile.whatsapp')}
               </a>
             </div>
           )}
 
           {customer.telegram && (
             <div className="contact-item">
-              <span className="contact-label">Telegram:</span>
+              <span className="contact-label">{t('admin.telegram')}</span>
               <span className="contact-value">{customer.telegram}</span>
               <a
                 href={getTelegramLink(customer.telegram)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="contact-link contact-link--telegram"
-                aria-label={`Open Telegram chat with ${customer.telegram}`}
+                aria-label={t('admin.openTelegram', { value: customer.telegram })}
               >
-                Telegram
+                {t('profile.telegram')}
               </a>
             </div>
           )}
 
           <div className="contact-item">
-            <span className="contact-label">Preferred Contact:</span>
+            <span className="contact-label">{t('admin.preferredContact2')}</span>
             <span className="contact-value contact-value--preferred">
               {customer.preferred_contact_method}
             </span>
@@ -322,21 +314,21 @@ export function AdminCustomerProfile() {
         {/* Account Status */}
         <div className="customer-status">
           <div className="status-item">
-            <span className="status-label">Account Status:</span>
+            <span className="status-label">{t('admin.accountStatus')}</span>
             <span className={`status-badge ${customer.is_active ? 'status-badge--active' : 'status-badge--inactive'}`}>
-              {customer.is_active ? 'Active' : 'Inactive'}
+              {customer.is_active ? t('profile.active') : t('profile.inactive')}
             </span>
           </div>
           <div className="status-item">
-            <span className="status-label">Email Verified:</span>
+            <span className="status-label">{t('admin.emailVerified')}</span>
             <span className={`status-badge ${customer.email_verified ? 'status-badge--verified' : 'status-badge--unverified'}`}>
-              {customer.email_verified ? 'Verified' : 'Unverified'}
+              {customer.email_verified ? t('profile.verified') : t('admin.unverified')}
             </span>
           </div>
           <div className="status-item">
-            <span className="status-label">Phone Verified:</span>
+            <span className="status-label">{t('admin.phoneVerified')}</span>
             <span className={`status-badge ${customer.phone_verified ? 'status-badge--verified' : 'status-badge--unverified'}`}>
-              {customer.phone_verified ? 'Verified' : 'Unverified'}
+              {customer.phone_verified ? t('profile.verified') : t('admin.unverified')}
             </span>
           </div>
         </div>
@@ -345,13 +337,13 @@ export function AdminCustomerProfile() {
       {/* Tabs */}
       <SegmentedControl<TabType>
         mode="tabs"
-        aria-label="Customer sections"
+        aria-label={t('admin.customerSections')}
         value={activeTab}
         onChange={setActiveTab}
         options={[
-          { value: 'bookings', label: `Bookings (${profile.bookings.length})`, controls: 'bookings-panel' },
-          { value: 'payments', label: `Payments (${profile.payments.length})`, controls: 'payments-panel' },
-          { value: 'notes', label: `Internal Notes (${profile.internal_notes.length})`, controls: 'notes-panel' },
+          { value: 'bookings', label: t('admin.tabBookings', { count: profile.bookings.length }), controls: 'bookings-panel' },
+          { value: 'payments', label: t('admin.tabPayments', { count: profile.payments.length }), controls: 'payments-panel' },
+          { value: 'notes', label: t('admin.tabNotes', { count: profile.internal_notes.length }), controls: 'notes-panel' },
         ]}
       />
 
@@ -361,40 +353,40 @@ export function AdminCustomerProfile() {
           <div className="tab-panel" id="bookings-panel" role="tabpanel">
             <div className="bookings-filter">
               <label htmlFor="booking-filter" className="filter-label">
-                Filter bookings:
+                {t('admin.filterBookings')}
               </label>
               <select
                 id="booking-filter"
                 className="filter-select"
                 value={bookingFilter}
                 onChange={(e) => setBookingFilter(e.target.value as BookingFilterType)}
-                aria-label="Filter bookings by status"
+                aria-label={t('admin.filterBookingsByStatus')}
               >
-                <option value="all">All Bookings</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="all">{t('admin.allBookings')}</option>
+                <option value="upcoming">{t('bookings.filterUpcoming')}</option>
+                <option value="completed">{t('pay.statusName.completed')}</option>
+                <option value="cancelled">{t('status.booking.cancelled')}</option>
               </select>
             </div>
 
             {profile.bookings.length === 0 ? (
               <div className="empty-state">
-                <p>No bookings found for this customer.</p>
+                <p>{t('admin.noBookingsFoundFor')}</p>
               </div>
             ) : (
-              <table className="bookings-table" role="table" aria-label="Customer bookings">
+              <table className="bookings-table" role="table" aria-label={t('admin.customerBookings')}>
                 <thead>
                   <tr>
-                    <th scope="col">Reference</th>
-                    <th scope="col">Property</th>
-                    <th scope="col">City</th>
-                    <th scope="col">Check-in</th>
-                    <th scope="col">Check-out</th>
-                    <th scope="col">Nights</th>
-                    <th scope="col">Total</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Payment</th>
-                    <th scope="col">Created</th>
+                    <th scope="col">{t('status.reference')}</th>
+                    <th scope="col">{t('crumb.property')}</th>
+                    <th scope="col">{t('admin.city')}</th>
+                    <th scope="col">{t('searchForm.checkIn')}</th>
+                    <th scope="col">{t('searchForm.checkOut')}</th>
+                    <th scope="col">{t('status.nights')}</th>
+                    <th scope="col">{t('booking.total')}</th>
+                    <th scope="col">{t('partner.status')}</th>
+                    <th scope="col">{t('admin.payment')}</th>
+                    <th scope="col">{t('status.created')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -430,18 +422,18 @@ export function AdminCustomerProfile() {
           <div className="tab-panel" id="payments-panel" role="tabpanel">
             {profile.payments.length === 0 ? (
               <div className="empty-state">
-                <p>No payments found for this customer.</p>
+                <p>{t('admin.noPaymentsFoundFor')}</p>
               </div>
             ) : (
-              <table className="payments-table" role="table" aria-label="Customer payments">
+              <table className="payments-table" role="table" aria-label={t('admin.customerPayments')}>
                 <thead>
                   <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Booking ID</th>
-                    <th scope="col">Provider</th>
-                    <th scope="col">Amount</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Created</th>
+                    <th scope="col">{t('admin.id')}</th>
+                    <th scope="col">{t('admin.bookingId')}</th>
+                    <th scope="col">{t('admin.provider')}</th>
+                    <th scope="col">{t('admin.amount')}</th>
+                    <th scope="col">{t('partner.status')}</th>
+                    <th scope="col">{t('status.created')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -470,25 +462,25 @@ export function AdminCustomerProfile() {
             {/* Add Note Form */}
             <div className="add-note-form">
               <label htmlFor="new-note" className="note-label">
-                Add Internal Note:
+                {t('admin.addInternalNote')}
               </label>
               <textarea
                 id="new-note"
                 className="note-textarea"
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Enter internal note for staff reference..."
+                placeholder={t('admin.enterInternalNoteFor')}
                 rows={3}
-                aria-label="New internal note"
+                aria-label={t('admin.newInternalNote')}
               />
               <div className="note-actions">
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleAddNote}
                   disabled={noteSaving || !noteText.trim()}
-                  aria-label="Add note"
+                  aria-label={t('admin.addNote')}
                 >
-                  {noteSaving ? 'Adding...' : 'Add Note'}
+                  {noteSaving ? t('admin.adding') : t('admin.addNote2')}
                 </button>
               </div>
             </div>
@@ -502,7 +494,7 @@ export function AdminCustomerProfile() {
             {/* Notes List */}
             {profile.internal_notes.length === 0 ? (
               <div className="empty-state">
-                <p>No internal notes for this customer.</p>
+                <p>{t('admin.noInternalNotesFor')}</p>
               </div>
             ) : (
               <div className="notes-list">
@@ -514,9 +506,9 @@ export function AdminCustomerProfile() {
                         <span className="note-author-email">{note.author_email}</span>
                       </div>
                       <div className="note-dates">
-                        <span className="note-created">Created: {formatDate(note.created_at)}</span>
+                        <span className="note-created">{t('admin.noteCreated', { date: formatDate(note.created_at) })}</span>
                         {note.updated_at !== note.created_at && (
-                          <span className="note-updated">Updated: {formatDate(note.updated_at)}</span>
+                          <span className="note-updated">{t('admin.noteUpdated', { date: formatDate(note.updated_at) })}</span>
                         )}
                       </div>
                     </div>
@@ -528,23 +520,23 @@ export function AdminCustomerProfile() {
                           value={editingNoteText}
                           onChange={(e) => setEditingNoteText(e.target.value)}
                           rows={3}
-                          aria-label={`Edit note from ${note.author_name}`}
+                          aria-label={t('admin.editNoteFrom', { author: note.author_name })}
                         />
                         <div className="note-edit-actions">
                           <button
                             className="btn btn-primary btn-sm"
                             onClick={() => handleUpdateNote(note.id)}
                             disabled={noteSaving || !editingNoteText.trim()}
-                            aria-label="Save note"
+                            aria-label={t('admin.saveNote')}
                           >
-                            {noteSaving ? 'Saving...' : 'Save'}
+                            {noteSaving ? t('profile.saving') : t('partner.save')}
                           </button>
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={handleCancelEditNote}
-                            aria-label="Cancel edit"
+                            aria-label={t('admin.cancelEdit')}
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </div>
                       </div>
@@ -555,16 +547,16 @@ export function AdminCustomerProfile() {
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => handleEditNote(note)}
-                            aria-label={`Edit note from ${note.author_name}`}
+                            aria-label={t('admin.editNoteFrom', { author: note.author_name })}
                           >
-                            Edit
+                            {t('partner.edit')}
                           </button>
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => handleDeleteNote(note.id)}
-                            aria-label={`Delete note from ${note.author_name}`}
+                            aria-label={t('admin.deleteNoteFrom', { author: note.author_name })}
                           >
-                            Delete
+                            {t('partner.delete')}
                           </button>
                         </div>
                       </div>

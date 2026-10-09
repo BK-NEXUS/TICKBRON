@@ -26,6 +26,16 @@ import { PaymentFailure } from '../components/PaymentFailure'
 import { CardForm } from '../components/CardForm'
 import { BookingsPage } from '../pages/BookingsPage'
 import { PartnerDashboardPage } from '../pages/PartnerDashboardPage'
+import { AdminDashboardPage } from '../pages/AdminDashboardPage'
+import { SupportLookupPage } from '../pages/SupportLookupPage'
+import { InfoPage } from '../pages/InfoPage'
+import { StatusStatsCards } from '../components/StatusStatsCards'
+import { StatusReconciliationBlock } from '../components/StatusReconciliationBlock'
+import { StatusStayedNote } from '../components/StatusStayedNote'
+import { StatusPeriodSelector } from '../components/StatusPeriodSelector'
+import { StatusPagination } from '../components/StatusPagination'
+import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
+import { TOTALS, RECONCILIATION } from '../test/statusFixtures'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { FavoritesPage } from '../pages/FavoritesPage'
@@ -314,5 +324,61 @@ describe('migrated screens in uz and ru', () => {
     expect(screen.getByText('Obyektingizni joylashtiring')).toBeInTheDocument()
     expect(screen.getByText('Asosiy ma\'lumotlar')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Keyingi' })).toBeInTheDocument()
+  })
+
+  it('info pages in Uzbek and Russian', async () => {
+    await renderIn('uz', <InfoPage slug="help" />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Yordam markazi' })).toBeInTheDocument()
+    expect(screen.getByText('Joyni qanday bron qilaman?')).toBeInTheDocument()
+  })
+
+  it('privacy page in Russian', async () => {
+    await renderIn('ru', <InfoPage slug="privacy" />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Политика конфиденциальности' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Смотреть объекты' })).toBeInTheDocument()
+  })
+
+  it('admin pages (signed out) in Uzbek', async () => {
+    await renderIn('uz', (
+      <>
+        <AdminDashboardPage />
+        <SupportLookupPage />
+      </>
+    ))
+    expect(screen.getByText("Admin paneliga kirish uchun tizimga kiring.")).toBeInTheDocument()
+    expect(screen.getByText("Yordam qidiruvi vositasiga kirish uchun tizimga kiring.")).toBeInTheDocument()
+  })
+
+  it('status cards, reconciliation and the stayed note in Russian', async () => {
+    await renderIn('ru', (
+      <>
+        <StatusStatsCards totals={TOTALS} caption="Всё время" />
+        <StatusReconciliationBlock reconciliation={RECONCILIATION} today={new Date(2026, 9, 7)} />
+        <StatusStayedNote today={new Date(2026, 9, 7)} />
+      </>
+    ))
+    expect(screen.getAllByText('Состоявшиеся бронирования').length).toBeGreaterThan(0)
+    expect(screen.getByRole('table', { name: 'Сверка' })).toBeInTheDocument()
+    expect(screen.getByText('Эта неделя')).toBeInTheDocument()
+    expect(screen.getAllByRole('note').some(note => note.textContent?.includes('могут измениться'))).toBe(true)
+  })
+
+  it('status period selector months and pagination in Russian', async () => {
+    await renderIn('ru', (
+      <>
+        <StatusPeriodSelector value="2026-04" onChange={() => {}} />
+        <StatusPagination page={2} count={100} hasPrevious hasNext onPage={() => {}} />
+      </>
+    ))
+    expect(screen.getByRole('option', { name: 'апрель' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Последние 7 дней' })).toBeInTheDocument()
+    expect(screen.getByText('Страница 2 из 5')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Следующая страница' })).toBeInTheDocument()
+  })
+
+  it('create hotel owner form in Uzbek', async () => {
+    await renderIn('uz', <CreateHotelOwnerAccount />)
+    expect(screen.getByText('Mehmonxona egasi hisobini yaratish', { selector: 'h2, h3' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Email manzil:')).toBeInTheDocument()
   })
 })

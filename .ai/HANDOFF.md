@@ -2485,3 +2485,14 @@ Migrated (237 keys `partner.*`, uz/ru/en): `PartnerDashboardPage` (nav, breadcru
 ### Found, not fixed
 - Not yet migrated in the partner area: the Status tab, hotel Status screen and arrivals (they share the Status components with the admin: next chunk).
 - The partner forms use plain `<select>` option texts like "Flexible" for cancellation policy; the values sent to the API are unchanged.
+
+## Strings to keys, chunk 6: admin panel, Status, support lookup, info pages (frontend, 2026-10-09)
+Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminDashboardPage`, `AdminStatisticsDashboard`, `AdminUserManagement`, `AdminCustomersList`, `AdminCustomerProfile`, `AdminPropertyModeration`, `AdminAmenityManagement`, `CreateHotelOwnerAccount`, `TopBookersLeaderboard`, `SupportLookupPage`, every Status component (admin and partner), and the seven `InfoPage` texts.
+- `useTexts(TEXT_KEYS)` / `textKeys()` in `i18n/I18nContext.tsx`: the Status components keep their `TEXT.title` call sites; the old `const TEXT = { ... }` objects became key maps (nested objects allowed).
+- `utils/statusFormat.ts` (`periodLabel`, `monthLabel`, `formatDate`) and `utils/statusPeriod.ts` (`validateCustomRange`, preset `labelKey`) take an optional `i18n` argument and fall back to `englishI18n`, so their unit tests are unchanged. Period/month names and dates follow the page language.
+- `StatusRankedTable` takes `noun` as a message key (`status.nounHotels` ...); a plain word still works.
+- No existing assertion changed.
+### Found, not fixed
+- The legal texts (terms, privacy, cookies) are still the short temporary summaries, now in three languages; the lawyer must review each language. The uz and ru texts everywhere are machine-quality and need a native speaker.
+- Status numbers and money still use English formatting (`1,250.00`, `UZS 1,250.00`) in `utils/statusFormat.ts` (`formatCount`, `formatMoney`).
+- Backend-provided names (hotel, amenity, category, policy texts) stay as sent.

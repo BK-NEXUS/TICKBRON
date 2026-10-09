@@ -1,16 +1,17 @@
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { adminAdapter, AdminCustomer, GetCustomersParams } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'
 
 const SORT_FIELDS = [
-  { value: 'registration_date', label: 'Registration Date' },
-  { value: 'full_name', label: 'Name' },
-  { value: 'email', label: 'Email' },
-  { value: 'total_booking_count', label: 'Booking Count' },
-  { value: 'last_booking_date', label: 'Last Booking Date' },
-  { value: 'total_amount_paid', label: 'Total Paid' },
-  { value: 'customer_status', label: 'Status' },
+  { value: 'registration_date', labelKey: 'admin.registrationDate' },
+  { value: 'full_name', labelKey: 'admin.name' },
+  { value: 'email', labelKey: 'auth.email' },
+  { value: 'total_booking_count', labelKey: 'admin.bookingCount' },
+  { value: 'last_booking_date', labelKey: 'admin.lastBookingDate' },
+  { value: 'total_amount_paid', labelKey: 'admin.totalPaid' },
+  { value: 'customer_status', labelKey: 'status.statusCol' },
 ] as const
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
@@ -62,7 +63,7 @@ export function AdminCustomersList() {
         setPreviousPage(response.data.previous)
       }
     } catch (err) {
-      setError('Failed to load customers. Please try again.')
+      setError(t('admin.failedToLoadCustomers'))
     } finally {
       setLoading(false)
     }
@@ -102,16 +103,9 @@ export function AdminCustomersList() {
     return status === 'active' ? 'status-badge--active' : 'status-badge--inactive'
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => (dateString ? formatLocalDate(dateString) : t('admin.na'))
 
-  const { formatMoney } = useI18n()
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
     return formatMoney(amount, currency)
@@ -132,8 +126,8 @@ export function AdminCustomersList() {
   return (
     <div className="admin-customers-list">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">Customers Directory</h1>
-        <p className="admin-view-subtitle">View and search customer information with booking history</p>
+        <h1 className="admin-view-title">{t('admin.customersDirectory')}</h1>
+        <p className="admin-view-subtitle">{t('admin.viewAndSearchCustomer')}</p>
       </div>
 
       {error && (
@@ -146,34 +140,34 @@ export function AdminCustomersList() {
       <div className="customers-controls">
         <div className="search-bar">
           <label htmlFor="customer-search" className="search-label">
-            Search by name, phone, email, or ID:
+            {t('admin.searchByNamePhone')}
           </label>
           <input
             id="customer-search"
             type="text"
             className="search-input"
-            placeholder="Enter search term..."
+            placeholder={t('admin.enterSearchTerm')}
             value={searchQuery}
             onChange={handleSearchChange}
-            aria-label="Search customers"
+            aria-label={t('admin.searchCustomers')}
           />
         </div>
 
         <div className="sort-controls">
           <div className="sort-field">
             <label htmlFor="sort-by" className="sort-label">
-              Sort by:
+              {t('sort.label')}
             </label>
             <select
               id="sort-by"
               className="sort-select"
               value={sortBy}
               onChange={handleSortChange}
-              aria-label="Sort customers by"
+              aria-label={t('admin.sortCustomersBy')}
             >
               {SORT_FIELDS.map(field => (
                 <option key={field.value} value={field.value}>
-                  {field.label}
+                  {t(field.labelKey)}
                 </option>
               ))}
             </select>
@@ -182,21 +176,21 @@ export function AdminCustomersList() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleSortOrderToggle}
-            aria-label={`Sort order: ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+            aria-label={t('admin.sortOrderLabel', { order: sortOrder === 'asc' ? t('status.ascending') : t('status.descending') })}
           >
-            {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+            {sortOrder === 'asc' ? <ArrowUp size={14} aria-hidden="true" /> : <ArrowDown size={14} aria-hidden="true" />} {sortOrder === 'asc' ? t('admin.asc') : t('admin.desc')}
           </button>
 
           <div className="page-size-control">
             <label htmlFor="page-size" className="page-size-label">
-              Per page:
+              {t('admin.perPage')}
             </label>
             <select
               id="page-size"
               className="page-size-select"
               value={pageSize}
               onChange={handlePageSizeChange}
-              aria-label="Items per page"
+              aria-label={t('admin.itemsPerPage')}
             >
               {PAGE_SIZE_OPTIONS.map(size => (
                 <option key={size} value={size}>
@@ -211,36 +205,36 @@ export function AdminCustomersList() {
       {/* Loading State */}
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading customers...
+          {t('admin.loadingCustomers')}
         </div>
       ) : customers.length === 0 ? (
         <div className="empty-state">
-          <p>No customers found.</p>
-          <p>Customers will appear here once they register or make bookings.</p>
+          <p>{t('admin.noCustomersFound')}</p>
+          <p>{t('admin.customersWillAppearHere')}</p>
         </div>
       ) : (
         <>
           {/* Customers Table */}
           <div className="customers-table-container">
             <div className="customers-count">
-              <p>Total customers: {totalCount}</p>
+              <p>{t('admin.totalCustomers', { count: totalCount })}</p>
             </div>
 
-            <table className="customers-table" role="table" aria-label="Customers directory">
+            <table className="customers-table" role="table" aria-label={t('admin.customersDirectory2')}>
               <thead>
                 <tr>
-                  <th scope="col">ID</th>
-                  <th scope="col">Registration Date</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Phone</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">WhatsApp</th>
-                  <th scope="col">Telegram</th>
-                  <th scope="col">Preferred Contact</th>
-                  <th scope="col">Booking Count</th>
-                  <th scope="col">Last Booking Date</th>
-                  <th scope="col">Total Paid</th>
-                  <th scope="col">Status</th>
+                  <th scope="col">{t('admin.id')}</th>
+                  <th scope="col">{t('admin.registrationDate')}</th>
+                  <th scope="col">{t('admin.name')}</th>
+                  <th scope="col">{t('profile.contact.phone')}</th>
+                  <th scope="col">{t('auth.email')}</th>
+                  <th scope="col">{t('profile.whatsapp')}</th>
+                  <th scope="col">{t('profile.telegram')}</th>
+                  <th scope="col">{t('admin.preferredContact')}</th>
+                  <th scope="col">{t('admin.bookingCount')}</th>
+                  <th scope="col">{t('admin.lastBookingDate')}</th>
+                  <th scope="col">{t('admin.totalPaid')}</th>
+                  <th scope="col">{t('partner.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,7 +261,7 @@ export function AdminCustomersList() {
                     <td className="customer-total-paid">{formatCurrency(customer.total_amount_paid)}</td>
                     <td className="customer-status">
                       <span className={`status-badge ${getStatusClass(customer.customer_status)}`}>
-                        {customer.customer_status === 'active' ? 'Active' : 'Inactive'}
+                        {customer.customer_status === 'active' ? t('profile.active') : t('profile.inactive')}
                       </span>
                     </td>
                   </tr>
@@ -277,19 +271,19 @@ export function AdminCustomersList() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="pagination-controls" role="navigation" aria-label="Pagination">
+          <div className="pagination-controls" role="navigation" aria-label={t('status.pagination')}>
             <button
               className="btn btn-secondary btn-sm"
               onClick={handlePreviousPage}
               disabled={!previousPage || currentPage === 1}
-              aria-label="Previous page"
+              aria-label={t('admin.previousPage')}
             >
-              Previous
+              {t('admin.previous')}
             </button>
             
             <div className="pagination-info">
               <span aria-live="polite">
-                Page {currentPage} of {totalPages}
+                {t('admin.pageOf', { page: currentPage, total: totalPages })}
               </span>
             </div>
             
@@ -297,9 +291,9 @@ export function AdminCustomersList() {
               className="btn btn-secondary btn-sm"
               onClick={handleNextPage}
               disabled={!nextPage || currentPage === totalPages}
-              aria-label="Next page"
+              aria-label={t('admin.nextPage')}
             >
-              Next
+              {t('partner.next')}
             </button>
           </div>
         </>

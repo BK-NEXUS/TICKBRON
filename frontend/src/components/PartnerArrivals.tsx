@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
 import { SegmentedControl } from './SegmentedControl'
 import { statusAdapter, ArrivalsDay, PartnerArrivalsPage } from '../adapters/statusAdapter'
@@ -11,23 +13,26 @@ interface PartnerArrivalsProps {
 
 const ARRIVALS_PAGE_SIZE = 50
 
-const TEXT = {
-  title: 'Arrivals',
-  today: 'Today',
-  tomorrow: 'Tomorrow',
-  loading: 'Loading arrivals...',
-  empty: (day: ArrivalsDay) => `No arrivals ${day}.`,
-  headers: { reference: 'Reference', guest: 'Guest', hotel: 'Hotel', rooms: 'Room types', roomCount: 'Rooms', nights: 'Nights',
-    guests: 'Guests', checkIn: 'Check-in', checkOut: 'Check-out', phone: 'Phone', requests: 'Special requests' },
-}
+const TEXT_KEYS = textKeys({
+  title: 'status.title2',
+  today: 'status.today',
+  tomorrow: 'status.tomorrow',
+  loading: 'status.loading',
+  emptyToday: 'status.noArrivalsToday',
+  emptyTomorrow: 'status.noArrivalsTomorrow',
+  headers: { reference: 'status.reference', guest: 'status.guest', hotel: 'status.hotel', rooms: 'status.rooms', roomCount: 'searchForm.rooms', nights: 'status.nights',
+    guests: 'searchForm.guests', checkIn: 'searchForm.checkIn', checkOut: 'searchForm.checkOut', phone: 'profile.contact.phone', requests: 'status.requests' },
 
-const DAYS: { value: ArrivalsDay; label: string }[] = [
-  { value: 'today', label: TEXT.today },
-  { value: 'tomorrow', label: TEXT.tomorrow },
-]
+})
 
 /** Owner Status: confirmed bookings checking in today or tomorrow. The phone is only its last 4 digits. */
 export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
+  const i18n = useI18n()
+  const TEXT = useTexts(TEXT_KEYS)
+  const days: { value: ArrivalsDay; label: string }[] = [
+    { value: 'today', label: TEXT.today },
+    { value: 'tomorrow', label: TEXT.tomorrow },
+  ]
   const [day, setDay] = useState<ArrivalsDay>('today')
   const [pageState, setPageState] = useState({ day: 'today' as ArrivalsDay, page: 1 })
   const [data, setData] = useState<PartnerArrivalsPage | null>(null)
@@ -56,8 +61,8 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
     <section className="partner-arrivals" aria-busy={loading}>
       <h3 className="status-chart-title">{TEXT.title}</h3>
       <div className="status-controls">
-        <SegmentedControl<ArrivalsDay> aria-label={TEXT.title} options={DAYS} value={day} onChange={setDay} />
-        {data && <span className="status-card-caption">{formatDate(data.date)}</span>}
+        <SegmentedControl<ArrivalsDay> aria-label={TEXT.title} options={days} value={day} onChange={setDay} />
+        {data && <span className="status-card-caption">{formatDate(data.date, i18n)}</span>}
       </div>
 
       {error ? (
@@ -65,7 +70,7 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
       ) : !data ? (
         <div className="loading-state" role="status" aria-live="polite">{TEXT.loading}</div>
       ) : rows.length === 0 ? (
-        <div className="empty-state"><p>{TEXT.empty(day)}</p></div>
+        <div className="empty-state"><p>{day === 'today' ? TEXT.emptyToday : TEXT.emptyTomorrow}</p></div>
       ) : (
         <>
           <div className="customers-table-container">
@@ -95,8 +100,8 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
                     <td className="status-cell--numeric">{formatCount(arrival.rooms)}</td>
                     <td className="status-cell--numeric">{formatCount(arrival.nights)}</td>
                     <td className="status-cell--numeric">{formatCount(arrival.guests)}</td>
-                    <td>{formatDate(arrival.check_in)}</td>
-                    <td>{formatDate(arrival.check_out)}</td>
+                    <td>{formatDate(arrival.check_in, i18n)}</td>
+                    <td>{formatDate(arrival.check_out, i18n)}</td>
                     <td>{`•••• ${arrival.phone_last4}`}</td>
                     <td>{arrival.special_requests || '—'}</td>
                   </tr>

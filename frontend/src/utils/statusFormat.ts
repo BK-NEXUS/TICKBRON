@@ -3,11 +3,9 @@
 
 import type { Money } from '../adapters/statusAdapter'
 import { STATUS_PRESET_PERIODS } from './statusPeriod'
+import { englishI18n, type I18nValue } from '../i18n/I18nContext'
 
 const COUNT = new Intl.NumberFormat('en-US')
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December']
 
 export function formatCount(value: number): string {
   return COUNT.format(value)
@@ -28,25 +26,27 @@ export function formatMoneyList(list: Money[]): string {
   return list.length ? list.map(formatMoney).join(' · ') : '—'
 }
 
-/** "2026-04" -> "Apr" */
-export function monthLabel(month: string): string {
-  return MONTHS[Number(month.slice(5, 7)) - 1] ?? month
+/** "2026-04" -> "Apr" (in the page language) */
+export function monthLabel(month: string, i18n: I18nValue = englishI18n): string {
+  return /^\d{4}-\d{2}$/.test(month) ? i18n.formatDate(`${month}-01`, { month: 'short' }) : month
 }
 
 /** "all" -> "All time", "last_7_days" -> "Last 7 days", "2026-04" -> "April 2026", custom -> its dates */
-export function periodLabel(period: string, range?: { from: string | null; to: string | null }): string {
-  if (period === 'all') return 'All time'
-  if (period === 'custom') return range?.from && range.to ? `${range.from} – ${range.to}` : 'Custom range'
+export function periodLabel(
+  period: string,
+  range?: { from: string | null; to: string | null },
+  i18n: I18nValue = englishI18n,
+): string {
+  if (period === 'all') return i18n.t('status.all')
+  if (period === 'custom') return range?.from && range.to ? `${range.from} – ${range.to}` : i18n.t('status.custom')
   const preset = STATUS_PRESET_PERIODS.find(item => item.value === period)
-  if (preset) return preset.label
-  if (/^\d{4}-\d{2}$/.test(period)) return `${MONTH_NAMES[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`
+  if (preset) return i18n.t(preset.labelKey)
+  if (/^\d{4}-\d{2}$/.test(period)) return i18n.formatDate(`${period}-01`, { month: 'long', year: 'numeric' })
   return period
 }
 
-export function formatDate(value: string): string {
-  // Date-only strings are calendar days: format them without a time zone shift
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+export function formatDate(value: string, i18n: I18nValue = englishI18n): string {
+  return i18n.formatDate(value)
 }
 
 /** Currencies with revenue in a series, the largest total first (the chart's default) */

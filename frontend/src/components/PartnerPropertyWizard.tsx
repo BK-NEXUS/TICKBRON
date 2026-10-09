@@ -450,7 +450,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     <div className="partner-property-wizard">
       <div className="wizard-header">
         <h1 className="wizard-title">{t('partner.listYourProperty')}</h1>
-        <p className="wizard-subtitle">Step {getStepNumber()} of {getTotalSteps()}</p>
+        <p className="wizard-subtitle">{t('partner.stepOf', { step: getStepNumber(), total: getTotalSteps() })}</p>
         <div className="wizard-progress">
           <div 
             className="wizard-progress-bar" 

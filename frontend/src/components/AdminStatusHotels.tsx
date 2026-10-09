@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useId, useState } from 'react'
 import { statusAdapter, AdminStatusHotel } from '../adapters/statusAdapter'
 import { StatusRankedTable } from './StatusRankedTable'
@@ -14,30 +16,33 @@ interface AdminStatusHotelsProps {
   onOpen: (hotel: AdminStatusHotel) => void
 }
 
-const TEXT = {
-  title: 'Hotels',
-  subtitle: 'Top 1,000 hotels. Counted = confirmed and completed bookings; stayed = completed. Revenue per currency.',
-  sortBy: 'Sort by',
-  order: 'Order',
-  ascending: 'Ascending',
-  descending: 'Descending',
+const TEXT_KEYS = textKeys({
+  title: 'status.title',
+  subtitle: 'status.subtitle',
+  sortBy: 'status.sortBy',
+  order: 'status.order',
+  ascending: 'status.ascending',
+  descending: 'status.descending',
   columns: {
-    hotel: 'Hotel', location: 'Location', status: 'Status', rating: 'Rating', created: 'Created', counted: 'Counted',
-    stayed: 'Stayed bookings', guests: 'Guests', nights: 'Nights', revenue: 'Revenue',
+    hotel: 'status.hotel', location: 'property.location', status: 'partner.status', rating: 'sort.rating', created: 'status.created', counted: 'status.counted',
+    stayed: 'status.stayed', guests: 'searchForm.guests', nights: 'status.nights', revenue: 'status.revenue',
   },
-}
+
+})
 
 const SORTS = [
-  { value: 'revenue', label: 'Revenue (UZS)' },
-  { value: 'bookings', label: 'Bookings' },
-  { value: 'guests', label: 'Guests' },
-  { value: 'nights', label: 'Nights' },
-  { value: 'rating', label: 'Rating' },
-  { value: 'created_at', label: 'Created date' },
-]
+  { value: 'revenue', labelKey: 'status.sortRevenueUzs' },
+  { value: 'bookings', labelKey: 'status.bookings' },
+  { value: 'guests', labelKey: 'status.guests' },
+  { value: 'nights', labelKey: 'status.nights' },
+  { value: 'rating', labelKey: 'sort.rating' },
+  { value: 'created_at', labelKey: 'status.createdDate' },
+] as const
 
 /** Admin Status > Hotels: every hotel in one list, sorted and paginated by the backend, with CSV export */
 export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange, onOpen }: AdminStatusHotelsProps) {
+  const i18n = useI18n()
+  const TEXT = useTexts(TEXT_KEYS)
   const id = useId()
   const [sort, setSort] = useState('bookings')
   const [descending, setDescending] = useState(true)
@@ -47,7 +52,7 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
     <div className="status-field">
       <label htmlFor={`${id}-sort`}>{TEXT.sortBy}</label>
       <select id={`${id}-sort`} value={sort} onChange={e => setSort(e.target.value)}>
-        {SORTS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+        {SORTS.map(option => <option key={option.value} value={option.value}>{i18n.t(option.labelKey)}</option>)}
       </select>
       <label htmlFor={`${id}-order`} className="sr-only">{TEXT.order}</label>
       <select id={`${id}-order`} value={descending ? 'desc' : 'asc'} onChange={e => setDescending(e.target.value === 'desc')}>
@@ -62,7 +67,7 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
       <StatusRankedTable<AdminStatusHotel>
         title={TEXT.title}
         subtitle={TEXT.subtitle}
-        noun="hotels"
+        noun="status.nounHotels"
         period={period}
         onPeriodChange={onPeriodChange}
         range={range}
@@ -85,7 +90,7 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
           { header: TEXT.columns.location, render: row => `${row.city}, ${row.region}, ${row.country_code}` },
           { header: TEXT.columns.status, render: row => row.status },
           { header: TEXT.columns.rating, numeric: true, render: row => row.rating ?? '—' },
-          { header: TEXT.columns.created, render: row => formatDate(row.created_at) },
+          { header: TEXT.columns.created, render: row => formatDate(row.created_at, i18n) },
           { header: TEXT.columns.counted, numeric: true, render: row => formatCount(row.bookings) },
           { header: TEXT.columns.stayed, numeric: true, render: row => formatCount(row.stayed) },
           { header: TEXT.columns.guests, numeric: true, render: row => formatCount(row.guests) },

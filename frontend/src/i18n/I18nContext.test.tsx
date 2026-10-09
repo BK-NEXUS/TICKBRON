@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { I18nProvider, useI18n } from './I18nContext'
+import { I18nProvider, useI18n, useTexts } from './I18nContext'
 
 function Probe() {
   const { language, currency, t, formatMoney, setLanguage, setCurrency } = useI18n()
@@ -142,5 +142,18 @@ describe('formatDate', () => {
     }
     render(<D value="" />)
     expect(screen.getByTestId('d').textContent).toBe('[]')
+  })
+})
+
+describe('useTexts', () => {
+  it('translates an object of keys and keeps its shape', () => {
+    function Texts() {
+      const TEXT = useTexts({ home: 'nav.home', help: 'nav.help' })
+      return <span data-testid="texts">{TEXT.home}|{TEXT.help}</span>
+    }
+    localStorage.setItem('tickbron.language', 'ru')
+    render(<I18nProvider><Texts /></I18nProvider>)
+    expect(screen.getByTestId('texts').textContent).toBe('Главная|Помощь')
+    localStorage.clear()
   })
 })

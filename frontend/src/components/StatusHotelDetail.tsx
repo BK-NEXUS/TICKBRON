@@ -1,3 +1,4 @@
+import { textKeys, useI18n, useTexts } from '../i18n/I18nContext'
 import { useEffect, useId, useState } from 'react'
 import {
   statusAdapter, StatusDetailParams, StatusGranularity, StatusHotelDetail as HotelDetail,
@@ -17,19 +18,19 @@ interface StatusHotelDetailProps {
   onRangeChange: (range: DateRange) => void
 }
 
-const TEXT = {
-  loading: 'Loading hotel...',
-  location: 'Location',
-  status: 'Status',
-  registered: 'Registered',
-  owner: 'Owner',
-  ownerPhone: 'Owner phone',
-  ownerEmail: 'Owner email',
-  chartYear: 'Chart year',
-  chartCurrency: 'Chart currency',
-  yearTitle: 'Year overview',
-  noRevenue: (year: number) => `No revenue in ${year}.`,
-}
+const TEXT_KEYS = textKeys({
+  loading: 'status.loading2',
+  location: 'property.location',
+  status: 'partner.status',
+  registered: 'status.registered',
+  owner: 'status.owner',
+  ownerPhone: 'status.ownerPhone',
+  ownerEmail: 'status.ownerEmail',
+  chartYear: 'status.chartYear',
+  chartCurrency: 'status.chartCurrency',
+  yearTitle: 'status.yearTitle',
+
+})
 
 function requestOf(
   period: string, range: DateRange | null | undefined, granularity: StatusGranularity | undefined, year: number | undefined,
@@ -43,6 +44,9 @@ function requestOf(
 
 /** Admin Status > one hotel: info, owner contact, R12a totals, series, reconciliation and the monthly year chart */
 export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRangeChange }: StatusHotelDetailProps) {
+  const TEXT = useTexts(TEXT_KEYS)
+  const i18n = useI18n()
+  const { t } = i18n
   const id = useId()
   const [year, setYear] = useState<number | undefined>(undefined)
   const [granularity, setGranularity] = useState<StatusGranularity | undefined>(undefined)
@@ -83,7 +87,7 @@ export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRa
           <dl className="status-hotel-info">
             <div><dt>{TEXT.location}</dt><dd>{hotel.city}, {hotel.region}, {hotel.country}</dd></div>
             <div><dt>{TEXT.status}</dt><dd>{hotel.status}</dd></div>
-            <div><dt>{TEXT.registered}</dt><dd>{formatDate(hotel.registered_at)}</dd></div>
+            <div><dt>{TEXT.registered}</dt><dd>{formatDate(hotel.registered_at, i18n)}</dd></div>
             <div><dt>{TEXT.owner}</dt><dd>{hotel.owner.name}</dd></div>
             <div><dt>{TEXT.ownerPhone}</dt><dd>{hotel.owner.phone || '—'}</dd></div>
             <div><dt>{TEXT.ownerEmail}</dt><dd>{hotel.owner.email}</dd></div>
@@ -127,7 +131,7 @@ export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRa
             {chartCurrency ? (
               <StatusMonthlyChart months={data.monthly} year={data.year} metric="revenue" currency={chartCurrency} />
             ) : (
-              <div className="empty-state"><p>{TEXT.noRevenue(data.year)}</p></div>
+              <div className="empty-state"><p>{t('status.noRevenueIn', { year: data.year })}</p></div>
             )}
             <StatusMonthlyChart months={data.monthly} year={data.year} metric="guests" />
           </div>

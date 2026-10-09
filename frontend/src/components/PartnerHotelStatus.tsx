@@ -1,3 +1,4 @@
+import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
 import { statusAdapter, PartnerHotelStatus as HotelStatus } from '../adapters/statusAdapter'
 import { useStatusPeriod } from '../hooks/useStatusPeriod'
@@ -12,15 +13,17 @@ interface PartnerHotelStatusProps {
 
 const NOT_FOUND = 404
 
-const TEXT = {
-  loading: 'Loading hotel...',
-  back: 'Back to Status',
-  notFoundTitle: 'Hotel not found',
-  notFoundText: 'This hotel does not exist or is not one of yours.',
-}
+const TEXT_KEYS = textKeys({
+  loading: 'status.loading2',
+  back: 'status.back',
+  notFoundTitle: 'status.notFoundTitle',
+  notFoundText: 'status.notFoundText',
+
+})
 
 /** Partner panel > Status > one of the owner's own hotels. Another owner's hotel is a "not found" page. */
 export function PartnerHotelStatus({ hotelId, onBack }: PartnerHotelStatusProps) {
+  const TEXT = useTexts(TEXT_KEYS)
   const { params, period, range, granularity, setPeriod, setRange, setGranularity } = useStatusPeriod()
   const [data, setData] = useState<HotelStatus | null>(null)
   const [loading, setLoading] = useState(true)

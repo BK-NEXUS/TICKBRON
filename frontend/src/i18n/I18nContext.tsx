@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- the provider, its hooks and helpers belong together */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { en, type Catalog, type MessageKey, type PluralKey } from './messages/en'
 import { uz } from './messages/uz'
@@ -100,6 +101,10 @@ function buildValue(
 // Used when a component renders without the provider (isolated tests): English text, UZS
 const I18nContext = createContext<I18nValue>(buildValue('en', DEFAULT_CURRENCY, () => {}, () => {}))
 
+/** English text and dates for plain functions (utilities, tests) that are not given the page's i18n */
+export const englishI18n: I18nValue = buildValue('en', DEFAULT_CURRENCY, () => {}, () => {})
+export type { I18nValue }
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(initialLanguage)
   const [currency, setCurrencyState] = useState<Currency>(initialCurrency)
@@ -124,5 +129,30 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useI18n = () => useContext(I18nContext)
+
+type TextTree = { readonly [name: string]: MessageKey | TextTree | ((...args: never[]) => unknown) }
+type Translated<T> = {
+  -readonly [K in keyof T]: T[K] extends MessageKey
+    ? string
+    : T[K] extends (...args: never[]) => unknown ? T[K] : T[K] extends object ? Translated<T[K]> : T[K]
+}
+
+/** Declares a tree of message keys (nested objects allowed); keeps the literal key types for `useTexts`. */
+export const textKeys = <const T extends TextTree>(tree: T): T => tree
+
+// Strings that are not message keys (ids such as 'day') come back unchanged, so a tree may hold both
+function translateNode(node: unknown, t: (key: MessageKey) => string): unknown {
+  if (typeof node === 'string') return t(node as MessageKey)
+  if (Array.isArray(node)) return node.map(item => translateNode(item, t))
+  if (node !== null && typeof node === 'object') {
+    return Object.fromEntries(Object.entries(node).map(([name, value]) => [name, translateNode(value, t)]))
+  }
+  return node
+}
+
+/** Translates a tree of message keys at once: `const TEXT = useTexts(TEXT_KEYS)` keeps `TEXT.title` call sites unchanged. */
+export function useTexts<T extends TextTree>(tree: T): Translated<T> {
+  const { t } = useI18n()
+  return translateNode(tree, t) as Translated<T>
+}

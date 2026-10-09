@@ -1,13 +1,17 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { adminAdapter, AdminUser } from '../adapters/adminAdapter'
 
 export function AdminUserManagement() {
+  const { t, formatDate: formatLocalDate } = useI18n()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadUsers()
+    // Loads once; the loader is also the Retry action, so it stays a plain function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadUsers = async () => {
@@ -27,7 +31,7 @@ export function AdminUserManagement() {
         setUsers(sortedUsers)
       }
     } catch (err) {
-      setError('Failed to load users. Please try again.')
+      setError(t('admin.failedToLoadUsers'))
     } finally {
       setLoading(false)
     }
@@ -41,39 +45,25 @@ export function AdminUserManagement() {
   }
 
   const getRoleLabel = (role: string, isStaff: boolean, isSuperuser: boolean) => {
-    if (isSuperuser) return 'Super Admin'
-    if (isStaff) return 'Staff'
-    if (role === 'hotel-owner') return 'Hotel Owner'
-    return 'User'
+    if (isSuperuser) return t('admin.superAdmin')
+    if (isStaff) return t('admin.staff')
+    if (role === 'hotel-owner') return t('admin.roleHotelOwner')
+    return t('admin.roleUser')
   }
 
   const getStatusClass = (isActive: boolean) => {
     return isActive ? 'status-badge--active' : 'status-badge--inactive'
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatLocalDate(dateString)
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const formatDateTime = (dateString: string) => formatLocalDate(dateString, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   return (
     <div className="admin-user-management">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">User Management</h1>
-        <p className="admin-view-subtitle">View and manage user accounts</p>
+        <h1 className="admin-view-title">{t('admin.userManagement')}</h1>
+        <p className="admin-view-subtitle">{t('admin.viewAndManageUser')}</p>
       </div>
 
       {error && (
@@ -84,17 +74,17 @@ export function AdminUserManagement() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading users...
+          {t('admin.loadingUsers')}
         </div>
       ) : users.length === 0 ? (
         <div className="empty-state">
-          <p>No users found.</p>
-          <p>Users will appear here once they register or are created.</p>
+          <p>{t('admin.noUsersFound')}</p>
+          <p>{t('admin.usersWillAppearHere')}</p>
         </div>
       ) : (
         <div className="users-list">
           <div className="users-count">
-            <p>Total users: {users.length}</p>
+            <p>{t('admin.totalUsers', { count: users.length })}</p>
           </div>
           
           {users.map(user => (
@@ -110,7 +100,7 @@ export function AdminUserManagement() {
                     {getRoleLabel(user.role, user.is_staff, user.is_superuser)}
                   </span>
                   <span className={`status-badge ${getStatusClass(user.is_active)}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? t('profile.active') : t('profile.inactive')}
                   </span>
                 </div>
               </div>
@@ -118,23 +108,23 @@ export function AdminUserManagement() {
               <div className="user-card-body">
                 <div className="user-details-grid">
                   <div className="user-detail">
-                    <span className="detail-label">First Name:</span>
+                    <span className="detail-label">{t('admin.firstName')}</span>
                     <span className="detail-value">{user.first_name || 'N/A'}</span>
                   </div>
                   <div className="user-detail">
-                    <span className="detail-label">Last Name:</span>
+                    <span className="detail-label">{t('admin.lastName')}</span>
                     <span className="detail-value">{user.last_name || 'N/A'}</span>
                   </div>
                   <div className="user-detail">
-                    <span className="detail-label">Phone:</span>
+                    <span className="detail-label">{t('admin.phone')}</span>
                     <span className="detail-value">{user.phone_number || 'N/A'}</span>
                   </div>
                   <div className="user-detail">
-                    <span className="detail-label">Member Since:</span>
+                    <span className="detail-label">{t('admin.memberSince')}</span>
                     <span className="detail-value">{formatDate(user.date_joined)}</span>
                   </div>
                   <div className="user-detail">
-                    <span className="detail-label">Last Login:</span>
+                    <span className="detail-label">{t('admin.lastLogin')}</span>
                     <span className="detail-value">{user.last_login ? formatDateTime(user.last_login) : 'Never'}</span>
                   </div>
                 </div>
@@ -143,7 +133,7 @@ export function AdminUserManagement() {
               <div className="user-card-footer">
                 <div className="user-dates">
                   <small className="user-created">
-                    Joined on {formatDate(user.date_joined)}
+                    {t('admin.joinedOnShort', { date: formatDate(user.date_joined) })}
                   </small>
                 </div>
               </div>

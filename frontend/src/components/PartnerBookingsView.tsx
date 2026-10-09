@@ -75,19 +75,13 @@ export function PartnerBookingsView() {
     }
   }
 
-  const { t, formatMoney } = useI18n()
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
 
   const formatCurrency = (amount: number, currency: string) => {
     return formatMoney(amount, currency)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatLocalDate(dateString)
 
   return (
     <div className="partner-bookings-view">
@@ -156,7 +150,7 @@ export function PartnerBookingsView() {
               <div className="booking-card-header">
                 <div className="booking-property-info">
                   <h3 className="booking-property-name">{booking.property_name}</h3>
-                  <p className="booking-confirmation-code">Confirmation: {booking.confirmation_code}</p>
+                  <p className="booking-confirmation-code">{t('partner.confirmationLine', { code: booking.confirmation_code })}</p>
                 </div>
                 <div className="booking-status-badges">
                   <span className={`booking-status ${getStatusClass(booking.status)}`}>
@@ -207,7 +201,7 @@ export function PartnerBookingsView() {
               <div className="booking-card-footer">
                 <div className="booking-dates">
                   <small className="booking-created">
-                    Booked on {formatDate(booking.created_at)}
+                    {t('partner.bookedOn', { date: formatDate(booking.created_at) })}
                   </small>
                 </div>
               </div>

@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { Link } from 'react-router-dom'
 
 /**
@@ -8,89 +10,90 @@ import { Link } from 'react-router-dom'
 export type InfoPageSlug = 'about' | 'help' | 'contact' | 'safety' | 'terms' | 'privacy' | 'cookies'
 
 interface Section {
-  heading: string
-  body: string
+  heading: MessageKey
+  body: MessageKey
 }
 
-const PAGES: Record<InfoPageSlug, { title: string; intro: string; sections: Section[] }> = {
+const PAGES: Record<InfoPageSlug, { title: MessageKey; intro: MessageKey; sections: Section[] }> = {
   about: {
-    title: 'About TICKBRON',
-    intro: 'TICKBRON is an online booking platform for hotels and guesthouses in Uzbekistan and Central Asia.',
+    title: 'info.about.title',
+    intro: 'info.about.intro',
     sections: [
-      { heading: 'What we do', body: 'Guests search stays by city and dates, see the real price for every night before booking, and pay online. Hotel owners manage their rooms, rates and availability in the partner panel.' },
-      { heading: 'Verified properties', body: 'Every property is checked and approved by our team before it appears in search.' },
+      { heading: 'info.about.h1', body: 'info.about.b1' },
+      { heading: 'info.about.h2', body: 'info.about.b2' },
     ],
   },
   help: {
-    title: 'Help Center',
-    intro: 'Answers to the most common questions about booking with TICKBRON.',
+    title: 'info.help.title',
+    intro: 'info.help.intro',
     sections: [
-      { heading: 'How do I book a stay?', body: 'Search for a city, open a property, choose a room and rate, pick your check-in and check-out dates in the calendar and continue to booking and payment.' },
-      { heading: 'Where can I see my bookings?', body: 'Log in and open "My Bookings" from the menu. Each booking has a reference code you can give to our support team.' },
-      { heading: 'Can I cancel a booking?', body: 'Open the booking in "My Bookings". The cancellation terms of the rate you booked apply.' },
-      { heading: 'I did not receive my login code', body: 'Check that your phone number is in international format, e.g. +998 90 123 45 67, and request a new code after a minute.' },
+      { heading: 'info.help.h1', body: 'info.help.b1' },
+      { heading: 'info.help.h2', body: 'info.help.b2' },
+      { heading: 'info.help.h3', body: 'info.help.b3' },
+      { heading: 'info.help.h4', body: 'info.help.b4' },
     ],
   },
   contact: {
-    title: 'Contact Us',
-    intro: 'Our support team helps guests and hotel owners with bookings, payments and accounts.',
+    title: 'info.contact.title',
+    intro: 'info.contact.intro',
     sections: [
-      { heading: 'Bookings and payments', body: 'Have your booking reference code ready (6 letters and digits, shown on the confirmation page and in "My Bookings").' },
-      { heading: 'Hotel owners', body: 'Accounts for hotel owners are created by the TICKBRON team. Contact us to list your property.' },
+      { heading: 'info.contact.h1', body: 'info.contact.b1' },
+      { heading: 'info.contact.h2', body: 'info.contact.b2' },
     ],
   },
   safety: {
-    title: 'Safety',
-    intro: 'How we keep your stay and your account safe.',
+    title: 'info.safety.title',
+    intro: 'info.safety.intro',
     sections: [
-      { heading: 'Secure payments', body: 'Payments go through licensed payment providers. TICKBRON never asks for your card details by phone or message.' },
-      { heading: 'Your account', body: 'Never share your login code. Our team will never ask you for it.' },
-      { heading: 'Verified properties', body: 'Properties are approved by our team before guests can book them.' },
+      { heading: 'info.safety.h1', body: 'info.safety.b1' },
+      { heading: 'info.safety.h2', body: 'info.safety.b2' },
+      { heading: 'info.safety.h3', body: 'info.safety.b3' },
     ],
   },
   terms: {
-    title: 'Terms of Service',
-    intro: 'A short summary of the rules for using TICKBRON.',
+    title: 'info.terms.title',
+    intro: 'info.terms.intro',
     sections: [
-      { heading: 'Bookings', body: 'A booking is an agreement between the guest and the property. The price shown before payment is the price you pay; the rate you choose sets the cancellation terms.' },
-      { heading: 'Accounts', body: 'You are responsible for the details you enter and for keeping your login code private.' },
-      { heading: 'Properties', body: 'Hotel owners are responsible for keeping their descriptions, prices and availability correct.' },
+      { heading: 'info.terms.h1', body: 'info.terms.b1' },
+      { heading: 'info.terms.h2', body: 'info.terms.b2' },
+      { heading: 'info.terms.h3', body: 'info.terms.b3' },
     ],
   },
   privacy: {
-    title: 'Privacy Policy',
-    intro: 'What personal data TICKBRON keeps and why.',
+    title: 'info.privacy.title',
+    intro: 'info.privacy.intro',
     sections: [
-      { heading: 'What we collect', body: 'Your name, email address, phone number and your bookings, so that properties can receive your reservation and we can support you.' },
-      { heading: 'Who sees it', body: 'The property you book sees the guest details of that booking. Payment providers receive what they need to process the payment.' },
-      { heading: 'Your choices', body: 'You can update your profile at any time. Contact us to delete your account.' },
+      { heading: 'info.privacy.h1', body: 'info.privacy.b1' },
+      { heading: 'info.privacy.h2', body: 'info.privacy.b2' },
+      { heading: 'info.privacy.h3', body: 'info.privacy.b3' },
     ],
   },
   cookies: {
-    title: 'Cookie Policy',
-    intro: 'TICKBRON uses only the cookies it needs to work.',
+    title: 'info.cookies.title',
+    intro: 'info.cookies.intro',
     sections: [
-      { heading: 'Session cookie', body: 'Keeps you logged in while you browse.' },
-      { heading: 'Security cookie', body: 'Protects forms against cross-site request forgery (CSRF).' },
-      { heading: 'Preferences', body: 'Some settings, such as dismissed tips, are kept in your browser storage.' },
+      { heading: 'info.cookies.h1', body: 'info.cookies.b1' },
+      { heading: 'info.cookies.h2', body: 'info.cookies.b2' },
+      { heading: 'info.cookies.h3', body: 'info.cookies.b3' },
     ],
   },
 }
 
 export function InfoPage({ slug }: { slug: InfoPageSlug }) {
+  const { t } = useI18n()
   const page = PAGES[slug]
   return (
     <div className="info-page container">
-      <h1 className="info-page-title">{page.title}</h1>
-      <p className="info-page-intro">{page.intro}</p>
+      <h1 className="info-page-title">{t(page.title)}</h1>
+      <p className="info-page-intro">{t(page.intro)}</p>
       {page.sections.map(section => (
         <section key={section.heading} className="info-page-section">
-          <h2>{section.heading}</h2>
-          <p>{section.body}</p>
+          <h2>{t(section.heading)}</h2>
+          <p>{t(section.body)}</p>
         </section>
       ))}
       <p className="info-page-footer">
-        <Link to="/search" className="btn btn-primary">Browse properties</Link>
+        <Link to="/search" className="btn btn-primary">{t('info.browse')}</Link>
       </p>
     </div>
   )

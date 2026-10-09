@@ -110,7 +110,7 @@ export function PaymentMethodSelector({ selectedProvider, onProviderSelect, disa
       {selectedProvider && (
         <div className="payment-method-selector-selected">
           <span className="payment-method-selector-selected-label">
-            Selected: {paymentMethods.find(m => m.id === selectedProvider)?.name}
+            {t('pay.selectedProvider', { name: paymentMethods.find(m => m.id === selectedProvider)?.name ?? '' })}
           </span>
         </div>
       )}

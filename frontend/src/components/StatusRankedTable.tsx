@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
 import { ReactNode, useEffect, useId, useState } from 'react'
 import type { StatusListParams, StatusPage, StatusResponse } from '../adapters/statusAdapter'
 import { StatusPeriodSelector } from './StatusPeriodSelector'
@@ -45,6 +47,9 @@ export function StatusRankedTable<T>({
   title, subtitle, noun, period, onPeriodChange, range, onRangeChange, toolbar, renderActions, reloadKey = '',
   load, rowKey, rowLabel, onOpen, columns,
 }: StatusRankedTableProps<T>) {
+  const { t } = useI18n()
+  // `noun` is a message key (or a plain word, which comes back unchanged)
+  const nounText = t(noun as MessageKey)
   const id = useId()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -103,12 +108,12 @@ export function StatusRankedTable<T>({
 
       <div className="status-controls">
         <div className="status-search">
-          <label htmlFor={`${id}-search`} className="sr-only">Search {noun}</label>
+          <label htmlFor={`${id}-search`} className="sr-only">{t('status.searchNoun', { noun: nounText })}</label>
           <input
             id={`${id}-search`}
             type="search"
             className="search-input"
-            placeholder={`Search ${noun}...`}
+            placeholder={t('status.searchNounPlaceholder', { noun: nounText })}
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
           />
@@ -123,10 +128,10 @@ export function StatusRankedTable<T>({
       {error ? (
         <div className="alert alert-error" role="alert">{error}</div>
       ) : loading ? (
-        <div className="loading-state" role="status" aria-live="polite">Loading {noun}...</div>
+        <div className="loading-state" role="status" aria-live="polite">{t('status.loadingNoun', { noun: nounText })}</div>
       ) : rows.length === 0 ? (
         <div className="empty-state">
-          <p>{search ? `No ${noun} match "${search}".` : `No ${noun} found for this period.`}</p>
+          <p>{search ? t('status.noMatch', { noun: nounText, search }) : t('status.noneForPeriod', { noun: nounText })}</p>
         </div>
       ) : (
         <>

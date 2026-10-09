@@ -226,7 +226,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
   const renderListView = () => (
     <div className="partner-rooms-list">
       <div className="rooms-list-header">
-        <h2 className="rooms-list-title">Room Types for {propertyName}</h2>
+        <h2 className="rooms-list-title">{t('partner.roomTypesFor', { name: propertyName })}</h2>
         <button
           onClick={() => {
             resetForm()

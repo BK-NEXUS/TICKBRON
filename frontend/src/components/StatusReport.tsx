@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import type {
   PeriodRange, StatusFullTotals, StatusGranularity, StatusReconciliation, StatusSeriesRow,
 } from '../adapters/statusAdapter'
@@ -25,9 +26,10 @@ interface StatusReportProps {
 export function StatusReport({
   period, periodRange, totals, series, granularity, onGranularityChange, reconciliation, lead, guestsLabel,
 }: StatusReportProps) {
+  const i18n = useI18n()
   return (
     <>
-      <StatusStatsCards totals={totals} caption={periodLabel(period, periodRange)} lead={lead} guestsLabel={guestsLabel} />
+      <StatusStatsCards totals={totals} caption={periodLabel(period, periodRange, i18n)} lead={lead} guestsLabel={guestsLabel} />
       <StatusStayedNote periodRange={periodRange} />
       <StatusBookingStatusCounts counts={totals.booking_status} />
       <StatusSeriesSection series={series} granularity={granularity} onGranularityChange={onGranularityChange} />
