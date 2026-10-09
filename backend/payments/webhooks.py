@@ -99,6 +99,13 @@ class WebhookProcessor:
             logger.info(f"Webhook event {provider_event_id} already processed")
             return existing_event, False
 
+        # Checked before the event is stored: an expired delivery must not
+        # occupy the event id the provider's genuine retry will use
+        timestamp = self._extract_timestamp(payload)
+        if timestamp and not self.adapter.validate_timestamp(timestamp):
+            self._record_expired(payload, signature, provider_event_id, timestamp)
+            raise SignatureValidationError("Webhook timestamp too old")
+
         try:
             with transaction.atomic():
                 webhook_event = WebhookEvent.objects.create(
@@ -107,6 +114,8 @@ class WebhookProcessor:
                     payload=payload,
                     signature=signature,
                     signature_valid=True,
+                    timestamp=timestamp,
+                    timestamp_valid=True,
                     status='received'
                 )
         except IntegrityError:
@@ -114,19 +123,6 @@ class WebhookProcessor:
             return self._find_existing_event(provider_event_id), False
 
         try:
-            # Validate timestamp
-            timestamp = self._extract_timestamp(payload)
-            webhook_event.timestamp = timestamp
-            
-            if timestamp and not self.adapter.validate_timestamp(timestamp):
-                webhook_event.timestamp_valid = False
-                webhook_event.status = 'invalid_signature'
-                webhook_event.error_message = 'Webhook timestamp too old'
-                webhook_event.save()
-                raise SignatureValidationError("Webhook timestamp too old")
-            
-            webhook_event.timestamp_valid = True
-            
             # Process webhook with adapter
             processed_data = self.adapter.process_webhook(payload, signature)
             
@@ -259,6 +255,27 @@ class WebhookProcessor:
         )
         return webhook_event
     
+    def _record_expired(self, payload: Dict[str, any], signature: str,
+                        claimed_event_id: str, timestamp) -> WebhookEvent:
+        """Keep a record of a validly signed but expired webhook, under a synthetic ID."""
+        webhook_event = WebhookEvent.objects.create(
+            provider=self.provider,
+            provider_event_id=f"expired_{uuid.uuid4().hex}",
+            payload=payload,
+            signature=signature,
+            signature_valid=True,
+            timestamp=timestamp,
+            timestamp_valid=False,
+            status='invalid_signature',
+            error_message=f"Webhook timestamp too old (claimed event id: {claimed_event_id[:100]})"
+        )
+        PaymentAuditLog.log_action(
+            action='webhook_received',
+            webhook_event=webhook_event,
+            details={'error': 'Webhook timestamp too old'}
+        )
+        return webhook_event
+
     def _apply_payment_status(self, payment_transaction: PaymentTransaction,
                               processed_data: Dict[str, any], webhook_event: WebhookEvent) -> None:
         """

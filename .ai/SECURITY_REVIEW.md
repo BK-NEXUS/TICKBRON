@@ -38,7 +38,7 @@ Severity: Critical / High (fixed now, each with a proof test that failed before 
 
 ## Medium (open)
 
-### M-1 Emails are case-sensitive
+### M-1 Emails are case-sensitive — FIXED (feat/be-security-vip)
 - Evidence: `users/models.py:26` `normalize_email` lowercases only the domain; login looks up `email=` exactly (`users/views.py:133`). `Alice@x.uz` and `alice@x.uz` can be two accounts.
 - Fix: lowercase emails on save, case-insensitive unique constraint (migration after a duplicate check), `iexact` lookups.
 
@@ -46,7 +46,7 @@ Severity: Critical / High (fixed now, each with a proof test that failed before 
 - Evidence: `payments/webhooks.py:121` validates the timestamp only `if timestamp`; replay protection then relies on the event id alone.
 - Fix: require a timestamp (or provider-specific replay data) when the real Payme/Click formats are integrated.
 
-### M-3 Expired webhook blocks the genuine retry
+### M-3 Expired webhook blocks the genuine retry — FIXED (feat/be-security-vip)
 - Evidence: `payments/webhooks.py:104-126` stores the event under its real `provider_event_id` before the timestamp check; a later valid delivery of the same id is answered "already processed".
 - Fix: check the timestamp before creating the event, or store expired ones under a synthetic id like invalid signatures.
 
