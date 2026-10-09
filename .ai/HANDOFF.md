@@ -2507,3 +2507,6 @@ Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminD
 
 ## Promotions plan R10 written (docs, 2026-10-09)
 `.ai/PLAN_R10.md` (DRAFT, waits for the owner's approval; no code changed). Covers the "Reklama" backend: price list, owner requests, super-admin promotions, search top slots (only hotels that match the guest's query), home carousel, impression and click counting, expiry task, audit, tests and 10 client decisions with defaults.
+
+## Promotions plan R10 v2 (docs, 2026-10-09)
+Plan rewritten after the owner's answers: one big auto-rotating banner (8 in rotation) at the top of the search page and on the home page, 2-column hotel list below, no owner requests (super-admin finds the hotel by name and presses "Reklama qilish"), no price list, no owner stats. Waits for the owner's "ha". No code changed.
