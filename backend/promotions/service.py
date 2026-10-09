@@ -14,6 +14,7 @@ from promotions.models import Promotion
 from properties.models import Property
 
 MAX_DAYS = 365
+MAX_START_AHEAD_DAYS = 730
 MAX_PRIORITY = 100
 MAX_NOTE = 500
 MAX_PRICE = Decimal('999999999999.99')
@@ -45,6 +46,8 @@ def _check_dates(start, end, today, *, check_start_in_past):
         raise PromotionError('bad_dates', 'End date is before the start date')
     if check_start_in_past and start < today:
         raise PromotionError('start_in_past', 'Start date is in the past')
+    if (start - today).days > MAX_START_AHEAD_DAYS:
+        raise PromotionError('start_too_far', f'Start date is more than {MAX_START_AHEAD_DAYS} days ahead')
     if (end - start).days + 1 > MAX_DAYS:
         raise PromotionError('too_long', f'A promotion lasts at most {MAX_DAYS} days')
 

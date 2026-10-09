@@ -2520,3 +2520,10 @@ Commits S1-S6 on `claude/loyha-organish-22tsk4`: app `promotions` (models, one s
 - Changed test assertions: none (existing tests untouched; access-matrix test only gained rows).
 - Found, not fixed: `Property` has no star-class field, so banners show the review rating only; `PropertySearchService._apply_text_search` matches ANY word (a query like "Pricey Street" also finds every hotel on a "Street"); the access-matrix test takes about 4 minutes (password hashing in fixtures).
 READY FOR FRONTEND: R10 promotions (banner carousel on search and home, 2-column list, admin "Reklama" screen).
+
+
+## Backend security test of promotions + backend scan (2026-10-09)
+- New `promotions/tests/test_security.py` (82 tests): SQL/wildcard/XSS/template text in every query param, mass assignment on create/patch, CSRF with a real session, deactivated admin, staff/owner/guest escalation, spoofed `X-Forwarded-For`/cookies/user-agent cannot inflate counters, throttles, owner data and payment data never in public JSON, audit rows only whitelisted keys, absurd numbers/dates/JSON shapes, 2 MB body, 10 duplicate creates give one row.
+- Real gaps found and fixed: `?country=` accepted non-ASCII digits (now ASCII only); a start date years ahead was accepted (now at most 730 days ahead, code `start_too_far`).
+- Scans: `bandit` 0 medium, 1 high (MD5 in `payments/adapters.py:442` is the Click protocol itself; its check uses `hmac.compare_digest`); `pip-audit` no known vulnerabilities; `manage.py check --deploy` only warns `SECURE_SSL_REDIRECT` (env-driven, set `SECURE_SSL_REDIRECT=true` in production unless the proxy redirects).
+- Found, not fixed: the old `config/*security_check*.py` scripts are stale (must run as `python -m config.<name>`; several look for `admin/views.py`, now `admin_panel/`; checkpoint 13/14 scripts error on setup). The pytest suite is the real check.

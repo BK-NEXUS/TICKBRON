@@ -983,3 +983,5 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 - Errors: 400 `{error, code}` with codes `bad_dates, start_in_past, too_long (max 365 days), bad_priority (0-100), bad_price, bad_currency, note_too_long, bad_scope, overlap (same hotel, same dates), bad_status, already_paid, reason_required, reason_too_long, nothing_to_change, invalid_query`; 404 `not_found`.
 - Audit (`GET audit-log/`): `promotion_create, promotion_update, promotion_pause, promotion_resume, promotion_cancel, promotion_mark_paid` (ids, dates, amount, currency only).
 - Nightly task 00:10 Asia/Tashkent: expired promotions become `ended`, paid ones that started become `active` (serving never waits for it).
+
+- `start_too_far` (start date more than 730 days ahead) is also a 400 code of `POST/PATCH promotions/`; `?country=` accepts ASCII digits only.
