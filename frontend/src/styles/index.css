@@ -9512,3 +9512,268 @@ table .btn {
   font-size: var(--font-size-lg);
   color: var(--color-text-primary);
 }
+
+/* ===== Promo carousel (R10 "Reklama"): one big hotel banner at a time ===== */
+.promo-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-background-alt);
+  box-shadow: var(--shadow-md);
+}
+
+.promo-carousel--loading {
+  animation: promo-carousel-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes promo-carousel-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.promo-carousel-viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+}
+
+.promo-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 400ms ease-in-out, visibility 0s linear 400ms;
+}
+
+.promo-slide--active {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.promo-slide-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.promo-slide-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.promo-slide-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  background-color: var(--color-background-alt);
+}
+
+.promo-slide-badge {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-float-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Text sits on a dark gradient so it stays readable on any photo, in light and dark theme */
+.promo-slide-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-lg);
+  background: linear-gradient(to top, rgba(20, 17, 12, 0.88), rgba(20, 17, 12, 0.55) 55%, rgba(20, 17, 12, 0));
+  color: #ffffff;
+}
+
+.promo-slide-name {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.promo-slide-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+  font-size: var(--font-size-base);
+}
+
+.promo-slide-location,
+.promo-slide-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.promo-slide-price {
+  font-weight: 700;
+}
+
+.promo-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-control);
+  border-radius: 50%;
+  background-color: var(--color-float-bg);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast);
+}
+
+.promo-carousel-nav:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.promo-carousel-nav--prev {
+  left: var(--spacing-md);
+}
+
+.promo-carousel-nav--next {
+  right: var(--spacing-md);
+}
+
+.promo-carousel-controls {
+  position: absolute;
+  right: var(--spacing-md);
+  bottom: var(--spacing-md);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-float-bg);
+}
+
+.promo-carousel-dots {
+  display: flex;
+  align-items: center;
+}
+
+/* The dot is small to look at but 24px to hit */
+.promo-carousel-dot {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.promo-carousel-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.promo-carousel-dot--active::after {
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-gold-dark);
+  opacity: 1;
+}
+
+.promo-carousel-pause {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.promo-carousel-nav:focus-visible,
+.promo-carousel-dot:focus-visible,
+.promo-carousel-pause:focus-visible,
+.promo-slide-link:focus-visible {
+  outline: 3px solid var(--color-gold-dark);
+  outline-offset: -3px;
+}
+
+/* Wide screens: a banner strip, not a poster */
+@media (min-width: 768px) {
+  .promo-carousel {
+    aspect-ratio: 16 / 6;
+  }
+}
+
+@media (min-width: 1440px) {
+  .promo-carousel {
+    aspect-ratio: 16 / 5;
+  }
+}
+
+/* Phones: smaller text, no arrows (swipe and dots instead) */
+@media (max-width: 767px) {
+  .promo-carousel-nav {
+    display: none;
+  }
+
+  .promo-slide-info {
+    padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
+    padding-right: 120px;
+  }
+
+  .promo-slide-name {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-slide {
+    transition: none;
+  }
+
+  .promo-carousel--loading {
+    animation: none;
+  }
+}
