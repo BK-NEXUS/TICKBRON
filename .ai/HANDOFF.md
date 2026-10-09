@@ -2504,3 +2504,6 @@ Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminD
 ### Found, not fixed
 - Native date inputs show the browser's own format (mm/dd/yyyy) whatever the page language.
 - Backend-sent names and messages (property and amenity names, validation errors, notification texts) are not translated by the frontend.
+
+## Promotions plan R10 written (docs, 2026-10-09)
+`.ai/PLAN_R10.md` (DRAFT, waits for the owner's approval; no code changed). Covers the "Reklama" backend: price list, owner requests, super-admin promotions, search top slots (only hotels that match the guest's query), home carousel, impression and click counting, expiry task, audit, tests and 10 client decisions with defaults.
