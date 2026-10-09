@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AdminDashboardPage } from './AdminDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
 import { MemoryRouter } from 'react-router-dom'
 import { BreadcrumbProvider, Breadcrumbs } from '../components/Breadcrumbs'
+import { promotionAdapter } from '../adapters/promotionAdapter'
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext')
+// Only the Advertising screen uses this adapter
+vi.mock('../adapters/promotionAdapter', () => ({
+  promotionAdapter: { listPromotions: vi.fn(), searchHotels: vi.fn() },
+}))
 
 describe('AdminDashboardPage', () => {
   const mockUser = {
@@ -165,5 +170,42 @@ describe('AdminDashboardPage', () => {
     // "Admin Dashboard" in the page breadcrumbs leaves the Status section
     fireEvent.click(screen.getByRole('button', { name: 'Admin Dashboard' }))
     expect(screen.queryByRole('heading', { name: 'Status' })).not.toBeInTheDocument()
+  })
+
+  describe('Advertising section', () => {
+    function openAdvertising(user: typeof mockUser) {
+      vi.mocked(useAuth).mockReturnValue({ user, isAuthenticated: true } as unknown as ReturnType<typeof useAuth>)
+      vi.mocked(promotionAdapter.listPromotions).mockResolvedValue({
+        data: { count: 0, next: null, previous: null, results: [] }, error: null, code: null,
+      })
+      render(
+        <MemoryRouter>
+          <AdminDashboardPage />
+        </MemoryRouter>
+      )
+      const nav = screen.getByRole('button', { name: 'Advertising' })
+      fireEvent.click(nav)
+      return nav
+    }
+
+    it('is in the navigation without an emoji and opens the screen', async () => {
+      const nav = openAdvertising(mockUser)
+      expect(nav.textContent).toBe('Advertising')
+      expect(nav).toHaveAttribute('aria-current', 'page')
+      expect(await screen.findByText('No promotions yet.')).toBeInTheDocument()
+    })
+
+    it('a super-admin can find hotels to promote', async () => {
+      openAdvertising(mockUser)
+      await screen.findByText('No promotions yet.')
+      expect(screen.getByLabelText('Find a hotel by name')).toBeInTheDocument()
+    })
+
+    it('staff see the screen read-only', async () => {
+      openAdvertising({ ...mockUser, is_superuser: false })
+      await waitFor(() => expect(screen.getByText('No promotions yet.')).toBeInTheDocument())
+      expect(screen.queryByLabelText('Find a hotel by name')).toBeNull()
+      expect(screen.getByText(/Only a super-admin can change them/)).toBeInTheDocument()
+    })
   })
 })

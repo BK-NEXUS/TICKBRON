@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -9,10 +9,11 @@ import { AdminUserManagement } from '../components/AdminUserManagement'
 import { AdminCustomersList } from '../components/AdminCustomersList'
 import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard'
 import { AdminStatusSection } from '../components/AdminStatusSection'
+import { AdminPromotions } from '../components/AdminPromotions'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
@@ -131,6 +132,14 @@ export function AdminDashboardPage() {
         <span className="nav-label">{t('partner.status')}</span>
       </button>
       <button
+        onClick={() => setCurrentView('promotions')}
+        className={`nav-item ${currentView === 'promotions' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'promotions' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Megaphone size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('promoAdmin.nav')}</span>
+      </button>
+      <button
         onClick={() => navigate('/admin/support')}
         className="nav-item"
       >
@@ -175,6 +184,8 @@ export function AdminDashboardPage() {
         return <AdminStatisticsDashboard />
       case 'status':
         return <AdminStatusSection onExit={() => setCurrentView('properties')} />
+      case 'promotions':
+        return <AdminPromotions isSuperAdmin={Boolean(user.is_superuser)} />
       default:
         return <AdminPropertyModeration />
     }
