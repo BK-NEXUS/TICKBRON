@@ -2510,3 +2510,13 @@ Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminD
 
 ## Promotions plan R10 v2 (docs, 2026-10-09)
 Plan rewritten after the owner's answers: one big auto-rotating banner (8 in rotation) at the top of the search page and on the home page, 2-column hotel list below, no owner requests (super-admin finds the hotel by name and presses "Reklama qilish"), no price list, no owner stats. Waits for the owner's "ha". No code changed.
+
+
+## R10 promotions backend done (2026-10-09)
+Commits S1-S6 on `claude/loyha-organish-22tsk4`: app `promotions` (models, one service module, public endpoints, super-admin API, nightly task, demo data in `seed_demo_stats`), `properties/search.py` now exposes `filtered_queryset()` (search behaviour unchanged), `promoted` key in search. Contract in `API_CONTRACT.md`, release notes in `RELEASE_CHECKLIST.md`. Plan: `PLAN_R10.md` v2.
+- A real race was found by the concurrency test and fixed: two simultaneous `mark-paid` calls both succeeded. Promotion rows are now re-read under `select_for_update` in every status change.
+- Decision vs plan: the home endpoint is not cached for 60 s because every response counts views; the DB constraint `btree_gist` was not added (the transaction check plus the row lock is tested with 4 parallel requests).
+- EXPLAIN of the shown-now query on the demo data: index scans, 0.3 ms.
+- Changed test assertions: none (existing tests untouched; access-matrix test only gained rows).
+- Found, not fixed: `Property` has no star-class field, so banners show the review rating only; `PropertySearchService._apply_text_search` matches ANY word (a query like "Pricey Street" also finds every hotel on a "Street"); the access-matrix test takes about 4 minutes (password hashing in fixtures).
+READY FOR FRONTEND: R10 promotions (banner carousel on search and home, 2-column list, admin "Reklama" screen).
