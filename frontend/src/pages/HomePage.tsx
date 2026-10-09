@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
+import { PromoCarousel } from '../components/PromoCarousel'
 import { SearchForm } from '../components/SearchForm'
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
@@ -77,6 +80,17 @@ const STATS: Array<{ value: string; labelKey: MessageKey }> = [
 export function HomePage() {
   const navigate = useNavigate()
   const { t, tp } = useI18n()
+  // null until the answer arrives, so the banner space is reserved once and then kept or removed
+  const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    promotionAdapter.getHomePromotions()
+      .then(result => { if (!cancelled) setPromoted(result.data ?? []) })
+      .catch(() => { if (!cancelled) setPromoted([]) })
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <div className="home-page">
       {/* Hero Section */}
@@ -98,6 +112,10 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      <div className="container home-promo">
+        <PromoCarousel items={promoted ?? []} loading={promoted === null} />
+      </div>
 
       {/* Featured Destinations */}
       <section className="destinations" aria-labelledby="destinations-title">

@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom'
 import { HomePage } from './HomePage'
+
+// The home page asks the backend for banners; these tests are about the rest of the page,
+// so the request never answers (no state change after a synchronous test has ended)
+vi.mock('../adapters/promotionAdapter', () => ({
+  promotionAdapter: { getHomePromotions: vi.fn(() => new Promise(() => {})), trackClick: vi.fn() },
+}))
 
 describe('HomePage', () => {
   it('renders the hero section', () => {
