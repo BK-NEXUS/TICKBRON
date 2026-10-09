@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanRequest } from '../adapters/partnerAdapter'
 
@@ -11,6 +12,7 @@ interface PartnerRatesManagementProps {
 type ViewMode = 'list' | 'create' | 'edit'
 
 export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvailability }: PartnerRatesManagementProps) {
+  const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [ratePlans, setRatePlans] = useState<PartnerRatePlan[]>([])
   const [selectedRatePlan, setSelectedRatePlan] = useState<PartnerRatePlan | null>(null)
@@ -56,7 +58,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         setRatePlans(roomTypeRatePlans)
       }
     } catch (err) {
-      setError('Failed to load rate plans. Please try again.')
+      setError(t('partner.failedToLoadRate'))
     } finally {
       setLoading(false)
     }
@@ -77,14 +79,14 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         return
       }
 
-      setSuccessMessage('Rate plan created successfully')
+      setSuccessMessage(t('partner.ratePlanCreatedSuccessfully'))
       setViewMode('list')
       resetForm()
       loadRatePlans()
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to create rate plan. Please try again.')
+      setError(t('partner.failedToCreateRate'))
       setLoading(false)
     }
   }
@@ -120,7 +122,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         return
       }
 
-      setSuccessMessage('Rate plan updated successfully')
+      setSuccessMessage(t('partner.ratePlanUpdatedSuccessfully'))
       setViewMode('list')
       resetForm()
       setSelectedRatePlan(null)
@@ -128,13 +130,13 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to update rate plan. Please try again.')
+      setError(t('partner.failedToUpdateRate'))
       setLoading(false)
     }
   }
 
   const handleDelete = async (ratePlanId: number) => {
-    if (!confirm('Are you sure you want to delete this rate plan?')) return
+    if (!confirm(t('partner.areYouSureYou2'))) return
 
     setLoading(true)
     setError(null)
@@ -148,12 +150,12 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         return
       }
 
-      setSuccessMessage('Rate plan deleted successfully')
+      setSuccessMessage(t('partner.ratePlanDeletedSuccessfully'))
       loadRatePlans()
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to delete rate plan. Please try again.')
+      setError(t('partner.failedToDeleteRate'))
       setLoading(false)
     }
   }
@@ -181,27 +183,27 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      setError('Rate plan name is required')
+      setError(t('partner.ratePlanNameIs'))
       return false
     }
     if (!formData.slug.trim()) {
-      setError('Slug is required')
+      setError(t('partner.slugIsRequired'))
       return false
     }
     if (formData.min_nights < 1) {
-      setError('Minimum nights must be at least 1')
+      setError(t('partner.minimumNightsMustBe'))
       return false
     }
     if (formData.max_nights < formData.min_nights) {
-      setError('Maximum nights cannot be less than minimum nights')
+      setError(t('partner.maximumNightsCannotBe'))
       return false
     }
     if (formData.base_price < 0) {
-      setError('Base price must be positive')
+      setError(t('partner.basePriceMustBe'))
       return false
     }
     if (formData.deposit_required && (formData.deposit_percentage === undefined || formData.deposit_percentage < 0 || formData.deposit_percentage > 100)) {
-      setError('Deposit percentage must be between 0 and 100 when deposit is required')
+      setError(t('partner.depositPercentageMustBe'))
       return false
     }
     return true
@@ -241,9 +243,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             setViewMode('create')
           }}
           className="btn btn-primary"
-          aria-label="Add new rate plan"
+          aria-label={t('partner.addNewRatePlan')}
         >
-          + Add Rate Plan
+          + {t('partner.addRatePlanButton')}
         </button>
       </div>
 
@@ -261,12 +263,12 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading rate plans...
+          {t('rooms.loadingRates')}
         </div>
       ) : ratePlans.length === 0 ? (
         <div className="empty-state">
-          <p>No rate plans found for this room type.</p>
-          <p>Click "Add Rate Plan" to create your first rate plan.</p>
+          <p>{t('partner.noRatePlansFound')}</p>
+          <p>{t('partner.clickAddRatePlan')}</p>
         </div>
       ) : (
         <div className="rate-plans-grid">
@@ -276,7 +278,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                 <h3 className="rate-plan-name">{ratePlan.name}</h3>
                 <div className="rate-plan-badges">
                   <span className={`rate-plan-badge ${ratePlan.is_active ? 'rate-plan-badge--active' : 'rate-plan-badge--inactive'}`}>
-                    {ratePlan.is_active ? 'Active' : 'Inactive'}
+                    {ratePlan.is_active ? t('profile.active') : t('profile.inactive')}
                   </span>
                   <span className="rate-plan-badge rate-plan-badge--type">
                     {ratePlan.rate_type}
@@ -287,26 +289,26 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                 <p className="rate-plan-description">{ratePlan.description}</p>
                 <div className="rate-plan-details">
                   <div className="rate-plan-detail">
-                    <span className="detail-label">Base Price:</span>
+                    <span className="detail-label">{t('partner.basePrice')}</span>
                     <span className="detail-value">{ratePlan.base_price} {ratePlan.currency}</span>
                   </div>
                   <div className="rate-plan-detail">
-                    <span className="detail-label">Min/Max Nights:</span>
+                    <span className="detail-label">{t('partner.minMaxNights')}</span>
                     <span className="detail-value">{ratePlan.min_nights} - {ratePlan.max_nights}</span>
                   </div>
                   <div className="rate-plan-detail">
-                    <span className="detail-label">Cancellation:</span>
+                    <span className="detail-label">{t('partner.cancellation')}</span>
                     <span className="detail-value">{ratePlan.cancellation_policy}</span>
                   </div>
                   {ratePlan.deposit_required && (
                     <div className="rate-plan-detail">
-                      <span className="detail-label">Deposit:</span>
+                      <span className="detail-label">{t('partner.deposit')}</span>
                       <span className="detail-value">{ratePlan.deposit_percentage}%</span>
                     </div>
                   )}
                   {ratePlan.advance_booking_days && (
                     <div className="rate-plan-detail">
-                      <span className="detail-label">Advance Booking:</span>
+                      <span className="detail-label">{t('partner.advanceBooking')}</span>
                       <span className="detail-value">{ratePlan.advance_booking_days} days</span>
                     </div>
                   )}
@@ -317,24 +319,24 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                   <button
                     onClick={() => onManageAvailability({ id: ratePlan.id, name: ratePlan.name })}
                     className="btn btn-primary"
-                    aria-label={`Manage availability for ${ratePlan.name}`}
+                    aria-label={t('partner.manageAvailabilityFor', { name: ratePlan.name })}
                   >
-                    Availability
+                    {t('partner.availability')}
                   </button>
                 )}
                 <button
                   onClick={() => handleEdit(ratePlan)}
                   className="btn btn-secondary"
-                  aria-label={`Edit ${ratePlan.name}`}
+                  aria-label={t('partner.editNamed', { name: ratePlan.name })}
                 >
-                  Edit
+                  {t('partner.edit')}
                 </button>
                 <button
                   onClick={() => handleDelete(ratePlan.id)}
                   className="btn btn-danger"
-                  aria-label={`Delete ${ratePlan.name}`}
+                  aria-label={t('partner.deleteNamed', { name: ratePlan.name })}
                 >
-                  Delete
+                  {t('partner.delete')}
                 </button>
               </div>
             </div>
@@ -348,7 +350,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
     <div className="partner-rates-form">
       <div className="rates-form-header">
         <h2 className="rates-form-title">
-          {viewMode === 'create' ? 'Create Rate Plan' : 'Edit Rate Plan'}
+          {viewMode === 'create' ? t('partner.createRatePlan') : t('partner.editRatePlan')}
         </h2>
         <button
           onClick={() => {
@@ -357,9 +359,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             setSelectedRatePlan(null)
           }}
           className="btn btn-tertiary"
-          aria-label="Cancel and return to list"
+          aria-label={t('partner.cancelAndReturnTo')}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
@@ -374,7 +376,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">
-          <label htmlFor="rate_name">Rate Plan Name *</label>
+          <label htmlFor="rate_name">{t('partner.ratePlanName')}</label>
           <input
             id="rate_name"
             type="text"
@@ -387,7 +389,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         </div>
 
         <div className="form-group">
-          <label htmlFor="rate_slug">Slug *</label>
+          <label htmlFor="rate_slug">{t('partner.slug')}</label>
           <input
             id="rate_slug"
             type="text"
@@ -397,11 +399,11 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             required
             aria-required="true"
           />
-          <small className="form-hint">URL-friendly identifier (e.g., "standard-rate")</small>
+          <small className="form-hint">{t('partner.urlFriendlyIdentifierE2')}</small>
         </div>
 
         <div className="form-group">
-          <label htmlFor="rate_type">Rate Type *</label>
+          <label htmlFor="rate_type">{t('partner.rateType')}</label>
           <select
             id="rate_type"
             value={formData.rate_type}
@@ -410,19 +412,19 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             required
             aria-required="true"
           >
-            <option value="standard">Standard</option>
-            <option value="non_refundable">Non-Refundable</option>
-            <option value="early_bird">Early Bird</option>
-            <option value="last_minute">Last Minute</option>
-            <option value="long_stay">Long Stay</option>
-            <option value="seasonal">Seasonal</option>
-            <option value="corporate">Corporate</option>
-            <option value="promo">Promo</option>
+            <option value="standard">{t('rate.standard')}</option>
+            <option value="non_refundable">{t('rate.non_refundable')}</option>
+            <option value="early_bird">{t('rate.early_bird')}</option>
+            <option value="last_minute">{t('rate.last_minute')}</option>
+            <option value="long_stay">{t('rate.long_stay')}</option>
+            <option value="seasonal">{t('rate.seasonal')}</option>
+            <option value="corporate">{t('rate.corporate')}</option>
+            <option value="promo">{t('partner.promo')}</option>
           </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="rate_description">Description</label>
+          <label htmlFor="rate_description">{t('partner.description')}</label>
           <textarea
             id="rate_description"
             value={formData.description}
@@ -434,7 +436,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="base_price">Base Price *</label>
+            <label htmlFor="base_price">{t('partner.basePrice2')}</label>
             <input
               id="base_price"
               type="number"
@@ -449,7 +451,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
           </div>
 
           <div className="form-group">
-            <label htmlFor="currency">Currency *</label>
+            <label htmlFor="currency">{t('partner.currency')}</label>
             <select
               id="currency"
               value={formData.currency}
@@ -458,16 +460,16 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
               required
               aria-required="true"
             >
-              <option value="USD">USD - US Dollar</option>
-              <option value="EUR">EUR - Euro</option>
-              <option value="UZS">UZS - Uzbekistani Som</option>
+              <option value="USD">{t('partner.usdUsDollar')}</option>
+              <option value="EUR">{t('partner.eurEuro')}</option>
+              <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
             </select>
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="min_nights">Minimum Nights *</label>
+            <label htmlFor="min_nights">{t('partner.minimumNights')}</label>
             <input
               id="min_nights"
               type="number"
@@ -481,7 +483,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
           </div>
 
           <div className="form-group">
-            <label htmlFor="max_nights">Maximum Nights *</label>
+            <label htmlFor="max_nights">{t('partner.maximumNights')}</label>
             <input
               id="max_nights"
               type="number"
@@ -496,7 +498,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         </div>
 
         <div className="form-group">
-          <label htmlFor="cancellation_policy">Cancellation Policy *</label>
+          <label htmlFor="cancellation_policy">{t('partner.cancellationPolicy')}</label>
           <select
             id="cancellation_policy"
             value={formData.cancellation_policy}
@@ -505,10 +507,10 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             required
             aria-required="true"
           >
-            <option value="flexible">Flexible</option>
-            <option value="moderate">Moderate</option>
-            <option value="strict">Strict</option>
-            <option value="non_refundable">Non-Refundable</option>
+            <option value="flexible">{t('partner.flexible')}</option>
+            <option value="moderate">{t('dining.moderate')}</option>
+            <option value="strict">{t('policies.strict')}</option>
+            <option value="non_refundable">{t('rate.non_refundable')}</option>
           </select>
         </div>
 
@@ -519,7 +521,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
               checked={formData.is_active}
               onChange={(e) => handleInputChange('is_active', e.target.checked)}
             />
-            <span>Active</span>
+            <span>{t('profile.active')}</span>
           </label>
         </div>
 
@@ -530,13 +532,13 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
               checked={formData.deposit_required}
               onChange={(e) => handleInputChange('deposit_required', e.target.checked)}
             />
-            <span>Deposit Required</span>
+            <span>{t('rate.deposit')}</span>
           </label>
         </div>
 
         {formData.deposit_required && (
           <div className="form-group">
-            <label htmlFor="deposit_percentage">Deposit Percentage *</label>
+            <label htmlFor="deposit_percentage">{t('partner.depositPercentage')}</label>
             <input
               id="deposit_percentage"
               type="number"
@@ -553,7 +555,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         )}
 
         <div className="form-group">
-          <label htmlFor="advance_booking_days">Advance Booking Days</label>
+          <label htmlFor="advance_booking_days">{t('partner.advanceBookingDays')}</label>
           <input
             id="advance_booking_days"
             type="number"
@@ -562,7 +564,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             onChange={(e) => handleInputChange('advance_booking_days', e.target.value ? parseInt(e.target.value) : undefined)}
             className="form-input"
           />
-          <small className="form-hint">Minimum days in advance required for booking (optional)</small>
+          <small className="form-hint">{t('partner.minimumDaysInAdvance')}</small>
         </div>
 
         <div className="form-actions">
@@ -571,7 +573,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
             className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Saving...' : viewMode === 'create' ? 'Create Rate Plan' : 'Update Rate Plan'}
+            {loading ? t('partner.saving') : viewMode === 'create' ? t('partner.createRatePlan') : t('partner.updateRatePlan')}
           </button>
         </div>
       </form>

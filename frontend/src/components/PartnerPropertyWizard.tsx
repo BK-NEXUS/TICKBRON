@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
 
@@ -9,6 +10,7 @@ interface PartnerPropertyWizardProps {
 type WizardStep = 'basic' | 'location' | 'amenities' | 'pricing' | 'confirm'
 
 export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWizardProps) {
+  const { t } = useI18n()
   const [currentStep, setCurrentStep] = useState<WizardStep>('basic')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,29 +48,29 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     switch (step) {
       case 'basic':
         if (!formData.max_guests || formData.max_guests < 1) {
-          setError('Max guests must be at least 1')
+          setError(t('partner.maxGuestsMustBe'))
           return false
         }
         if (!formData.bedrooms || formData.bedrooms < 1) {
-          setError('Bedrooms must be at least 1')
+          setError(t('partner.bedroomsMustBeAt'))
           return false
         }
         if (!formData.bathrooms || formData.bathrooms < 1) {
-          setError('Bathrooms must be at least 1')
+          setError(t('partner.bathroomsMustBeAt'))
           return false
         }
         return true
       case 'location':
         if (!formData.address_line1.trim()) {
-          setError('Address line 1 is required')
+          setError(t('partner.addressLine1Is'))
           return false
         }
         if (!formData.city.trim()) {
-          setError('City is required')
+          setError(t('partner.cityIsRequired'))
           return false
         }
         if (!formData.country.trim()) {
-          setError('Country is required')
+          setError(t('partner.countryIsRequired'))
           return false
         }
         return true
@@ -76,7 +78,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
         return true // No required fields
       case 'pricing':
         if (!formData.base_price || formData.base_price < 0) {
-          setError('Base price must be positive')
+          setError(t('partner.basePriceMustBe'))
           return false
         }
         return true
@@ -124,7 +126,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
         onSuccess(response.data)
       }
     } catch (err) {
-      setError('Failed to create property. Please try again.')
+      setError(t('partner.failedToCreateProperty'))
       setLoading(false)
     }
   }
@@ -134,10 +136,10 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       case 'basic':
         return (
           <div className="wizard-step">
-            <h2 className="wizard-step-title">Basic Information</h2>
+            <h2 className="wizard-step-title">{t('partner.basicInformation')}</h2>
             <div className="wizard-form">
               <div className="form-group">
-                <label htmlFor="max_guests">Max Guests *</label>
+                <label htmlFor="max_guests">{t('partner.maxGuests')}</label>
                 <input
                   id="max_guests"
                   type="number"
@@ -149,7 +151,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="bedrooms">Bedrooms *</label>
+                <label htmlFor="bedrooms">{t('partner.bedrooms2')}</label>
                 <input
                   id="bedrooms"
                   type="number"
@@ -161,7 +163,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="bathrooms">Bathrooms *</label>
+                <label htmlFor="bathrooms">{t('partner.bathrooms2')}</label>
                 <input
                   id="bathrooms"
                   type="number"
@@ -174,7 +176,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="total_area">Total Area (sq m)</label>
+                <label htmlFor="total_area">{t('partner.totalAreaSqM')}</label>
                 <input
                   id="total_area"
                   type="number"
@@ -185,7 +187,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="floor_number">Floor Number</label>
+                <label htmlFor="floor_number">{t('partner.floorNumber')}</label>
                 <input
                   id="floor_number"
                   type="number"
@@ -201,10 +203,10 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       case 'location':
         return (
           <div className="wizard-step">
-            <h2 className="wizard-step-title">Location Details</h2>
+            <h2 className="wizard-step-title">{t('partner.locationDetails')}</h2>
             <div className="wizard-form">
               <div className="form-group">
-                <label htmlFor="address_line1">Address Line 1 *</label>
+                <label htmlFor="address_line1">{t('partner.addressLine1')}</label>
                 <input
                   id="address_line1"
                   type="text"
@@ -215,7 +217,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="address_line2">Address Line 2</label>
+                <label htmlFor="address_line2">{t('partner.addressLine2')}</label>
                 <input
                   id="address_line2"
                   type="text"
@@ -225,7 +227,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="city">City *</label>
+                <label htmlFor="city">{t('partner.city')}</label>
                 <input
                   id="city"
                   type="text"
@@ -236,7 +238,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="state">State/Region</label>
+                <label htmlFor="state">{t('partner.stateRegion')}</label>
                 <input
                   id="state"
                   type="text"
@@ -246,7 +248,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="postal_code">Postal Code</label>
+                <label htmlFor="postal_code">{t('partner.postalCode')}</label>
                 <input
                   id="postal_code"
                   type="text"
@@ -256,7 +258,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="country">Country *</label>
+                <label htmlFor="country">{t('partner.country')}</label>
                 <input
                   id="country"
                   type="text"
@@ -267,7 +269,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="latitude">Latitude</label>
+                <label htmlFor="latitude">{t('partner.latitude')}</label>
                 <input
                   id="latitude"
                   type="number"
@@ -278,7 +280,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="longitude">Longitude</label>
+                <label htmlFor="longitude">{t('partner.longitude')}</label>
                 <input
                   id="longitude"
                   type="number"
@@ -295,7 +297,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       case 'amenities':
         return (
           <div className="wizard-step">
-            <h2 className="wizard-step-title">Amenities & Features</h2>
+            <h2 className="wizard-step-title">{t('partner.amenitiesFeatures')}</h2>
             <div className="wizard-form">
               <div className="form-group checkbox-group">
                 <label>
@@ -304,7 +306,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                     checked={formData.has_elevator}
                     onChange={(e) => handleInputChange('has_elevator', e.target.checked)}
                   />
-                  <span>Elevator</span>
+                  <span>{t('feature.elevator')}</span>
                 </label>
               </div>
               <div className="form-group checkbox-group">
@@ -314,7 +316,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                     checked={formData.has_parking}
                     onChange={(e) => handleInputChange('has_parking', e.target.checked)}
                   />
-                  <span>Parking</span>
+                  <span>{t('feature.parking')}</span>
                 </label>
               </div>
               <div className="form-group checkbox-group">
@@ -324,7 +326,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                     checked={formData.has_wifi}
                     onChange={(e) => handleInputChange('has_wifi', e.target.checked)}
                   />
-                  <span>WiFi</span>
+                  <span>{t('feature.wifi')}</span>
                 </label>
               </div>
               <div className="form-group checkbox-group">
@@ -334,7 +336,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                     checked={formData.has_ac}
                     onChange={(e) => handleInputChange('has_ac', e.target.checked)}
                   />
-                  <span>Air Conditioning</span>
+                  <span>{t('feature.ac')}</span>
                 </label>
               </div>
               <div className="form-group checkbox-group">
@@ -344,7 +346,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                     checked={formData.has_heating}
                     onChange={(e) => handleInputChange('has_heating', e.target.checked)}
                   />
-                  <span>Heating</span>
+                  <span>{t('feature.heating')}</span>
                 </label>
               </div>
             </div>
@@ -354,10 +356,10 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       case 'pricing':
         return (
           <div className="wizard-step">
-            <h2 className="wizard-step-title">Pricing</h2>
+            <h2 className="wizard-step-title">{t('partner.pricing')}</h2>
             <div className="wizard-form">
               <div className="form-group">
-                <label htmlFor="base_price">Base Price per Night *</label>
+                <label htmlFor="base_price">{t('partner.basePricePerNight')}</label>
                 <input
                   id="base_price"
                   type="number"
@@ -370,7 +372,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="currency">Currency *</label>
+                <label htmlFor="currency">{t('partner.currency')}</label>
                 <select
                   id="currency"
                   value={formData.currency}
@@ -378,9 +380,9 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   className="form-input"
                   aria-required="true"
                 >
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="UZS">UZS - Uzbekistani Som</option>
+                  <option value="USD">{t('partner.usdUsDollar')}</option>
+                  <option value="EUR">{t('partner.eurEuro')}</option>
+                  <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
                 </select>
               </div>
             </div>
@@ -390,41 +392,41 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       case 'confirm':
         return (
           <div className="wizard-step">
-            <h2 className="wizard-step-title">Confirm Property Details</h2>
+            <h2 className="wizard-step-title">{t('partner.confirmPropertyDetails')}</h2>
             <div className="wizard-summary">
               <div className="summary-section">
-                <h3>Basic Information</h3>
-                <p><strong>Max Guests:</strong> {formData.max_guests}</p>
-                <p><strong>Bedrooms:</strong> {formData.bedrooms}</p>
-                <p><strong>Bathrooms:</strong> {formData.bathrooms}</p>
-                {formData.total_area && <p><strong>Total Area:</strong> {formData.total_area} sq m</p>}
-                {formData.floor_number && <p><strong>Floor:</strong> {formData.floor_number}</p>}
+                <h3>{t('partner.basicInformation')}</h3>
+                <p><strong>{t('partner.maxGuests2')}</strong> {formData.max_guests}</p>
+                <p><strong>{t('partner.bedrooms')}</strong> {formData.bedrooms}</p>
+                <p><strong>{t('partner.bathrooms')}</strong> {formData.bathrooms}</p>
+                {formData.total_area && <p><strong>{t('partner.totalArea')}</strong> {formData.total_area} sq m</p>}
+                {formData.floor_number && <p><strong>{t('partner.floor')}</strong> {formData.floor_number}</p>}
               </div>
               <div className="summary-section">
-                <h3>Location</h3>
-                <p><strong>Address:</strong> {formData.address_line1}</p>
-                {formData.address_line2 && <p><strong>Address Line 2:</strong> {formData.address_line2}</p>}
-                <p><strong>City:</strong> {formData.city}</p>
-                {formData.state && <p><strong>State:</strong> {formData.state}</p>}
-                {formData.postal_code && <p><strong>Postal Code:</strong> {formData.postal_code}</p>}
-                <p><strong>Country:</strong> {formData.country}</p>
+                <h3>{t('property.location')}</h3>
+                <p><strong>{t('partner.address')}</strong> {formData.address_line1}</p>
+                {formData.address_line2 && <p><strong>{t('partner.addressLine22')}</strong> {formData.address_line2}</p>}
+                <p><strong>{t('partner.city2')}</strong> {formData.city}</p>
+                {formData.state && <p><strong>{t('partner.state')}</strong> {formData.state}</p>}
+                {formData.postal_code && <p><strong>{t('partner.postalCode2')}</strong> {formData.postal_code}</p>}
+                <p><strong>{t('partner.country2')}</strong> {formData.country}</p>
                 {formData.latitude && formData.longitude && (
-                  <p><strong>Coordinates:</strong> {formData.latitude}, {formData.longitude}</p>
+                  <p><strong>{t('partner.coordinates')}</strong> {formData.latitude}, {formData.longitude}</p>
                 )}
               </div>
               <div className="summary-section">
-                <h3>Amenities</h3>
+                <h3>{t('filters.amenities')}</h3>
                 <ul>
-                  {formData.has_elevator && <li>Elevator</li>}
-                  {formData.has_parking && <li>Parking</li>}
-                  {formData.has_wifi && <li>WiFi</li>}
-                  {formData.has_ac && <li>Air Conditioning</li>}
-                  {formData.has_heating && <li>Heating</li>}
+                  {formData.has_elevator && <li>{t('feature.elevator')}</li>}
+                  {formData.has_parking && <li>{t('feature.parking')}</li>}
+                  {formData.has_wifi && <li>{t('feature.wifi')}</li>}
+                  {formData.has_ac && <li>{t('feature.ac')}</li>}
+                  {formData.has_heating && <li>{t('feature.heating')}</li>}
                 </ul>
               </div>
               <div className="summary-section">
-                <h3>Pricing</h3>
-                <p><strong>Base Price:</strong> {formData.base_price} {formData.currency} per night</p>
+                <h3>{t('partner.pricing')}</h3>
+                <p><strong>{t('partner.basePrice')}</strong> {formData.base_price} {formData.currency} per night</p>
               </div>
             </div>
           </div>
@@ -447,7 +449,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
   return (
     <div className="partner-property-wizard">
       <div className="wizard-header">
-        <h1 className="wizard-title">List Your Property</h1>
+        <h1 className="wizard-title">{t('partner.listYourProperty')}</h1>
         <p className="wizard-subtitle">Step {getStepNumber()} of {getTotalSteps()}</p>
         <div className="wizard-progress">
           <div 
@@ -477,7 +479,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
             className="btn btn-secondary"
             disabled={loading}
           >
-            Back
+            {t('crumb.back')}
           </button>
         )}
         
@@ -488,7 +490,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
             className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Creating Property...' : 'Create Property'}
+            {loading ? t('partner.creatingProperty') : t('partner.createProperty')}
           </button>
         ) : (
           <button
@@ -497,7 +499,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
             className="btn btn-primary"
             disabled={loading}
           >
-            Next
+            {t('partner.next')}
           </button>
         )}
 
@@ -508,7 +510,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
             className="btn btn-ghost"
             disabled={loading}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
       </div>

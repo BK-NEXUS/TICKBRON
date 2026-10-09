@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRoomType, CreateRoomTypeRequest, UpdateRoomTypeRequest } from '../adapters/partnerAdapter'
 
@@ -13,6 +14,7 @@ interface PartnerRoomsManagementProps {
 type ViewMode = 'list' | 'create' | 'edit'
 
 export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates, onManageCalendar }: PartnerRoomsManagementProps) {
+  const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [roomTypes, setRoomTypes] = useState<PartnerRoomType[]>([])
   const [selectedRoomType, setSelectedRoomType] = useState<PartnerRoomType | null>(null)
@@ -55,7 +57,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         setRoomTypes(propertyRoomTypes)
       }
     } catch (err) {
-      setError('Failed to load room types. Please try again.')
+      setError(t('partner.failedToLoadRoom'))
     } finally {
       setLoading(false)
     }
@@ -76,14 +78,14 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         return
       }
 
-      setSuccessMessage('Room type created successfully')
+      setSuccessMessage(t('partner.roomTypeCreatedSuccessfully'))
       setViewMode('list')
       resetForm()
       loadRoomTypes()
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to create room type. Please try again.')
+      setError(t('partner.failedToCreateRoom'))
       setLoading(false)
     }
   }
@@ -116,7 +118,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         return
       }
 
-      setSuccessMessage('Room type updated successfully')
+      setSuccessMessage(t('partner.roomTypeUpdatedSuccessfully'))
       setViewMode('list')
       resetForm()
       setSelectedRoomType(null)
@@ -124,13 +126,13 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to update room type. Please try again.')
+      setError(t('partner.failedToUpdateRoom'))
       setLoading(false)
     }
   }
 
   const handleDelete = async (roomTypeId: number) => {
-    if (!confirm('Are you sure you want to delete this room type?')) return
+    if (!confirm(t('partner.areYouSureYou'))) return
 
     setLoading(true)
     setError(null)
@@ -144,12 +146,12 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         return
       }
 
-      setSuccessMessage('Room type deleted successfully')
+      setSuccessMessage(t('partner.roomTypeDeletedSuccessfully'))
       loadRoomTypes()
       
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      setError('Failed to delete room type. Please try again.')
+      setError(t('partner.failedToDeleteRoom'))
       setLoading(false)
     }
   }
@@ -174,27 +176,27 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      setError('Room name is required')
+      setError(t('partner.roomNameIsRequired'))
       return false
     }
     if (!formData.slug.trim()) {
-      setError('Slug is required')
+      setError(t('partner.slugIsRequired'))
       return false
     }
     if (formData.base_occupancy < 1) {
-      setError('Base occupancy must be at least 1')
+      setError(t('partner.baseOccupancyMustBe'))
       return false
     }
     if (formData.max_occupancy < formData.base_occupancy) {
-      setError('Max occupancy cannot be less than base occupancy')
+      setError(t('partner.maxOccupancyCannotBe'))
       return false
     }
     if (formData.total_rooms < 1) {
-      setError('Total rooms must be at least 1')
+      setError(t('partner.totalRoomsMustBe'))
       return false
     }
     if (formData.base_price < 0) {
-      setError('Base price must be positive')
+      setError(t('partner.basePriceMustBe'))
       return false
     }
     return true
@@ -231,9 +233,9 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             setViewMode('create')
           }}
           className="btn btn-primary"
-          aria-label="Add new room type"
+          aria-label={t('partner.addNewRoomType')}
         >
-          + Add Room Type
+          + {t('partner.addRoomTypeButton')}
         </button>
       </div>
 
@@ -251,12 +253,12 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading room types...
+          {t('partner.loadingRoomTypes')}
         </div>
       ) : roomTypes.length === 0 ? (
         <div className="empty-state">
-          <p>No room types found for this property.</p>
-          <p>Click "Add Room Type" to create your first room type.</p>
+          <p>{t('partner.noRoomTypesFound')}</p>
+          <p>{t('partner.clickAddRoomType')}</p>
         </div>
       ) : (
         <div className="room-types-grid">
@@ -270,25 +272,25 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
                 <p className="room-type-description">{roomType.description}</p>
                 <div className="room-type-details">
                   <div className="room-type-detail">
-                    <span className="detail-label">Occupancy:</span>
+                    <span className="detail-label">{t('partner.occupancy')}</span>
                     <span className="detail-value">{roomType.base_occupancy} - {roomType.max_occupancy} guests</span>
                   </div>
                   <div className="room-type-detail">
-                    <span className="detail-label">Total Rooms:</span>
+                    <span className="detail-label">{t('partner.totalRooms')}</span>
                     <span className="detail-value">{roomType.total_rooms}</span>
                   </div>
                   <div className="room-type-detail">
-                    <span className="detail-label">Base Price:</span>
+                    <span className="detail-label">{t('partner.basePrice')}</span>
                     <span className="detail-value">{roomType.base_price} {roomType.currency}</span>
                   </div>
                   {roomType.room_size && (
                     <div className="room-type-detail">
-                      <span className="detail-label">Room Size:</span>
+                      <span className="detail-label">{t('partner.roomSize')}</span>
                       <span className="detail-value">{roomType.room_size} sq m</span>
                     </div>
                   )}
                   <div className="room-type-detail">
-                    <span className="detail-label">Bed Configuration:</span>
+                    <span className="detail-label">{t('partner.bedConfiguration')}</span>
                     <span className="detail-value">{roomType.bed_configuration}</span>
                   </div>
                 </div>
@@ -298,33 +300,33 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
                   <button
                     onClick={() => onManageRates({ id: roomType.id, name: roomType.name })}
                     className="btn btn-primary"
-                    aria-label={`Manage rates and availability for ${roomType.name}`}
+                    aria-label={t('partner.manageRatesFor', { name: roomType.name })}
                   >
-                    Rates &amp; availability
+                    {t('partner.ratesAndAvailability')}
                   </button>
                 )}
                 {onManageCalendar && (
                   <button
                     onClick={() => onManageCalendar({ id: roomType.id, name: roomType.name, totalRooms: roomType.total_rooms })}
                     className="btn btn-secondary"
-                    aria-label={`Manage calendar for ${roomType.name}`}
+                    aria-label={t('partner.manageCalendarFor', { name: roomType.name })}
                   >
-                    Calendar
+                    {t('partner.calendar')}
                   </button>
                 )}
                 <button
                   onClick={() => handleEdit(roomType)}
                   className="btn btn-secondary"
-                  aria-label={`Edit ${roomType.name}`}
+                  aria-label={t('partner.editNamed', { name: roomType.name })}
                 >
-                  Edit
+                  {t('partner.edit')}
                 </button>
                 <button
                   onClick={() => handleDelete(roomType.id)}
                   className="btn btn-danger"
-                  aria-label={`Delete ${roomType.name}`}
+                  aria-label={t('partner.deleteNamed', { name: roomType.name })}
                 >
-                  Delete
+                  {t('partner.delete')}
                 </button>
               </div>
             </div>
@@ -338,7 +340,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
     <div className="partner-rooms-form">
       <div className="rooms-form-header">
         <h2 className="rooms-form-title">
-          {viewMode === 'create' ? 'Create Room Type' : 'Edit Room Type'}
+          {viewMode === 'create' ? t('partner.createRoomType') : t('partner.editRoomType')}
         </h2>
         <button
           onClick={() => {
@@ -347,9 +349,9 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             setSelectedRoomType(null)
           }}
           className="btn btn-tertiary"
-          aria-label="Cancel and return to list"
+          aria-label={t('partner.cancelAndReturnTo')}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
@@ -364,7 +366,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">
-          <label htmlFor="room_name">Room Name *</label>
+          <label htmlFor="room_name">{t('partner.roomName')}</label>
           <input
             id="room_name"
             type="text"
@@ -377,7 +379,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         </div>
 
         <div className="form-group">
-          <label htmlFor="room_slug">Slug *</label>
+          <label htmlFor="room_slug">{t('partner.slug')}</label>
           <input
             id="room_slug"
             type="text"
@@ -387,11 +389,11 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             required
             aria-required="true"
           />
-          <small className="form-hint">URL-friendly identifier (e.g., "deluxe-suite")</small>
+          <small className="form-hint">{t('partner.urlFriendlyIdentifierE')}</small>
         </div>
 
         <div className="form-group">
-          <label htmlFor="room_description">Description</label>
+          <label htmlFor="room_description">{t('partner.description')}</label>
           <textarea
             id="room_description"
             value={formData.description}
@@ -403,7 +405,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="base_occupancy">Base Occupancy *</label>
+            <label htmlFor="base_occupancy">{t('partner.baseOccupancy')}</label>
             <input
               id="base_occupancy"
               type="number"
@@ -417,7 +419,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           </div>
 
           <div className="form-group">
-            <label htmlFor="max_occupancy">Max Occupancy *</label>
+            <label htmlFor="max_occupancy">{t('partner.maxOccupancy')}</label>
             <input
               id="max_occupancy"
               type="number"
@@ -433,7 +435,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="total_rooms">Total Rooms *</label>
+            <label htmlFor="total_rooms">{t('partner.totalRooms2')}</label>
             <input
               id="total_rooms"
               type="number"
@@ -447,7 +449,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           </div>
 
           <div className="form-group">
-            <label htmlFor="room_size">Room Size (sq m)</label>
+            <label htmlFor="room_size">{t('partner.roomSizeSqM')}</label>
             <input
               id="room_size"
               type="number"
@@ -461,7 +463,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="base_price">Base Price *</label>
+            <label htmlFor="base_price">{t('partner.basePrice2')}</label>
             <input
               id="base_price"
               type="number"
@@ -476,7 +478,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           </div>
 
           <div className="form-group">
-            <label htmlFor="currency">Currency *</label>
+            <label htmlFor="currency">{t('partner.currency')}</label>
             <select
               id="currency"
               value={formData.currency}
@@ -485,22 +487,22 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
               required
               aria-required="true"
             >
-              <option value="USD">USD - US Dollar</option>
-              <option value="EUR">EUR - Euro</option>
-              <option value="UZS">UZS - Uzbekistani Som</option>
+              <option value="USD">{t('partner.usdUsDollar')}</option>
+              <option value="EUR">{t('partner.eurEuro')}</option>
+              <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
             </select>
           </div>
         </div>
 
         <div className="form-group">
-          <label htmlFor="bed_configuration">Bed Configuration *</label>
+          <label htmlFor="bed_configuration">{t('partner.bedConfiguration2')}</label>
           <input
             id="bed_configuration"
             type="text"
             value={formData.bed_configuration}
             onChange={(e) => handleInputChange('bed_configuration', e.target.value)}
             className="form-input"
-            placeholder="e.g., 1 King Bed, 2 Queen Beds"
+            placeholder={t('partner.eG1King')}
             required
             aria-required="true"
           />
@@ -512,7 +514,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Saving...' : viewMode === 'create' ? 'Create Room Type' : 'Update Room Type'}
+            {loading ? t('partner.saving') : viewMode === 'create' ? t('partner.createRoomType') : t('partner.updateRoomType')}
           </button>
         </div>
       </form>

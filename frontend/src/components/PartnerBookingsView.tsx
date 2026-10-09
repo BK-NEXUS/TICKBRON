@@ -35,7 +35,7 @@ export function PartnerBookingsView() {
         setBookings(sortedBookings)
       }
     } catch (err) {
-      setError('Failed to load bookings. Please try again.')
+      setError(t('partner.failedToLoadBookings'))
     } finally {
       setLoading(false)
     }
@@ -75,7 +75,7 @@ export function PartnerBookingsView() {
     }
   }
 
-  const { formatMoney } = useI18n()
+  const { t, formatMoney } = useI18n()
 
   const formatCurrency = (amount: number, currency: string) => {
     return formatMoney(amount, currency)
@@ -92,44 +92,44 @@ export function PartnerBookingsView() {
   return (
     <div className="partner-bookings-view">
       <div className="bookings-view-header">
-        <h1 className="bookings-view-title">Partner Bookings</h1>
-        <p className="bookings-view-subtitle">View and manage bookings for your properties</p>
+        <h1 className="bookings-view-title">{t('partner.partnerBookings')}</h1>
+        <p className="bookings-view-subtitle">{t('partner.viewAndManageBookings')}</p>
       </div>
 
       <div className="bookings-filters">
         <div className="filter-group">
-          <label htmlFor="status-filter">Booking Status:</label>
+          <label htmlFor="status-filter">{t('partner.bookingStatus')}</label>
           <select
             id="status-filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="filter-select"
-            aria-label="Filter by booking status"
+            aria-label={t('partner.filterByBookingStatus')}
           >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="no_show">No Show</option>
+            <option value="all">{t('partner.allStatuses')}</option>
+            <option value="pending">{t('pay.statusName.pending')}</option>
+            <option value="confirmed">{t('status.booking.confirmed')}</option>
+            <option value="completed">{t('pay.statusName.completed')}</option>
+            <option value="cancelled">{t('status.booking.cancelled')}</option>
+            <option value="no_show">{t('partner.noShow')}</option>
           </select>
         </div>
 
         <div className="filter-group">
-          <label htmlFor="payment-status-filter">Payment Status:</label>
+          <label htmlFor="payment-status-filter">{t('partner.paymentStatus')}</label>
           <select
             id="payment-status-filter"
             value={paymentStatusFilter}
             onChange={(e) => setPaymentStatusFilter(e.target.value)}
             className="filter-select"
-            aria-label="Filter by payment status"
+            aria-label={t('partner.filterByPaymentStatus')}
           >
-            <option value="all">All Payment Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-            <option value="partially_refunded">Partially Refunded</option>
+            <option value="all">{t('partner.allPaymentStatuses')}</option>
+            <option value="pending">{t('pay.statusName.pending')}</option>
+            <option value="paid">{t('status.payment.paid')}</option>
+            <option value="failed">{t('pay.statusName.failed')}</option>
+            <option value="refunded">{t('pay.statusName.refunded')}</option>
+            <option value="partially_refunded">{t('partner.partiallyRefunded')}</option>
           </select>
         </div>
       </div>
@@ -142,12 +142,12 @@ export function PartnerBookingsView() {
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
-          Loading bookings...
+          {t('bookings.loading')}
         </div>
       ) : bookings.length === 0 ? (
         <div className="empty-state">
-          <p>No bookings found matching your filters.</p>
-          <p>Bookings will appear here once guests start booking your properties.</p>
+          <p>{t('partner.noBookingsFoundMatching')}</p>
+          <p>{t('partner.bookingsWillAppearHere')}</p>
         </div>
       ) : (
         <div className="bookings-list">
@@ -171,34 +171,34 @@ export function PartnerBookingsView() {
               <div className="booking-card-body">
                 <div className="booking-details-grid">
                   <div className="booking-detail">
-                    <span className="detail-label">Guest:</span>
+                    <span className="detail-label">{t('partner.guest')}</span>
                     <span className="detail-value">{booking.guest_name}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Check-in:</span>
+                    <span className="detail-label">{t('rooms.checkIn')}</span>
                     <span className="detail-value">{formatDate(booking.check_in)}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Check-out:</span>
+                    <span className="detail-label">{t('rooms.checkOut')}</span>
                     <span className="detail-value">{formatDate(booking.check_out)}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Nights:</span>
+                    <span className="detail-label">{t('bookings.nights')}</span>
                     <span className="detail-value">{booking.number_of_nights}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Guests:</span>
+                    <span className="detail-label">{t('booking.guests')}</span>
                     <span className="detail-value">{booking.guest_count}</span>
                   </div>
                   <div className="booking-detail">
-                    <span className="detail-label">Total:</span>
+                    <span className="detail-label">{t('rooms.total')}</span>
                     <span className="detail-value">{formatCurrency(booking.total_price, booking.currency)}</span>
                   </div>
                 </div>
 
                 {booking.special_requests && (
                   <div className="booking-special-requests">
-                    <span className="detail-label">Special Requests:</span>
+                    <span className="detail-label">{t('booking.specialRequests')}</span>
                     <p className="detail-value">{booking.special_requests}</p>
                   </div>
                 )}

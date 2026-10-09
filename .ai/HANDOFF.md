@@ -2479,3 +2479,9 @@ Migrated (98 keys): `BookingsPage`, `FavoritesPage`, `ProfilePage`, `NotFoundPag
 - `ProfilePage.test.tsx`: the preferred contact method now reads "WhatsApp" (was "Whatsapp"), so three `getByText('WhatsApp')` would match both the label and the value; they now name the element (`selector: 'label'` / `'p'`). The old test of the value only passed because of the typo.
 ### Found, not fixed
 - Chunks left: partner panel, admin and Status (largest), `SupportLookupPage`, `InfoPage` (about/help/terms/privacy texts; the legal ones need the lawyer), the status helpers in `utils/statusFormat.ts` and Status labels.
+
+## Strings to keys, chunk 5: partner panel (frontend, 2026-10-09)
+Migrated (237 keys `partner.*`, uz/ru/en): `PartnerDashboardPage` (nav, breadcrumb trail, empty states), `PartnerBookingsView`, `PartnerRoomsManagement`, `PartnerRatesManagement`, `PartnerAvailabilityManagement`, `PartnerRoomCalendar` (dates via `useI18n().formatDay`), `PartnerPropertyWizard`. Validation, success and confirm messages are keys now. A helper script was used for the mechanical part (plain JSX text, attributes, setters); dynamic strings were done by hand. No existing assertion changed.
+### Found, not fixed
+- Not yet migrated in the partner area: the Status tab, hotel Status screen and arrivals (they share the Status components with the admin: next chunk).
+- The partner forms use plain `<select>` option texts like "Flexible" for cancellation policy; the values sent to the API are unchanged.

@@ -25,6 +25,9 @@ import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
 import { CardForm } from '../components/CardForm'
 import { BookingsPage } from '../pages/BookingsPage'
+import { PartnerDashboardPage } from '../pages/PartnerDashboardPage'
+import { PartnerBookingsView } from '../components/PartnerBookingsView'
+import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { FavoritesPage } from '../pages/FavoritesPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { NotFoundPage } from '../pages/NotFoundPage'
@@ -45,6 +48,12 @@ vi.mock('../adapters/propertyAdapter', () => ({
     getFilterOptions: vi.fn().mockResolvedValue({ data: { property_types: [], features: [], amenities: [] } }),
     searchProperties: vi.fn().mockResolvedValue({ data: { results: [], count: 0 } }),
     getPropertyById: vi.fn().mockResolvedValue({ error: 'Property not found' }),
+  },
+}))
+vi.mock('../adapters/partnerAdapter', () => ({
+  partnerAdapter: {
+    getBookings: vi.fn().mockResolvedValue({ data: [] }),
+    getProperties: vi.fn().mockResolvedValue({ data: [] }),
   },
 }))
 
@@ -285,5 +294,25 @@ describe('migrated screens in uz and ru', () => {
     spy.mockRestore()
     expect(screen.getByRole('heading', { name: 'Nimadir xato ketdi' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sahifani yangilash' })).toBeInTheDocument()
+  })
+
+  it('partner dashboard (signed out) and bookings view in Russian', async () => {
+    await renderIn('ru', (
+      <>
+        <PartnerDashboardPage />
+        <PartnerBookingsView />
+      </>
+    ))
+    expect(screen.getByText('Требуется аутентификация')).toBeInTheDocument()
+    expect(screen.getByLabelText('Фильтр по статусу бронирования')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Неявка' })).toBeInTheDocument()
+    expect(await screen.findByText('Бронирований по заданным фильтрам не найдено.')).toBeInTheDocument()
+  })
+
+  it('property wizard in Uzbek', async () => {
+    await renderIn('uz', <PartnerPropertyWizard />)
+    expect(screen.getByText('Obyektingizni joylashtiring')).toBeInTheDocument()
+    expect(screen.getByText('Asosiy ma\'lumotlar')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Keyingi' })).toBeInTheDocument()
   })
 })

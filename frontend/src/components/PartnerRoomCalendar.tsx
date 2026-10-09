@@ -1,10 +1,12 @@
+import type { MessageKey } from '../i18n/messages/en'
+import { useI18n } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import {
   partnerAdapter, PartnerRoomInventory, PartnerBlock,
 } from '../adapters/partnerAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
-import { addDays, formatDay, nightsBetween, toLocalDate } from '../utils/dates'
+import { addDays, nightsBetween, toLocalDate } from '../utils/dates'
 
 interface PartnerRoomCalendarProps {
   roomTypeId: number
@@ -23,11 +25,11 @@ const STATUS_COLOR: Record<Status, string> = {
   closed: 'var(--color-text-tertiary)',
 }
 
-const STATUS_LABEL: Record<Status, string> = {
-  free: 'Free',
-  'partly-sold': 'Partly sold',
-  full: 'Full',
-  closed: 'Closed',
+const STATUS_LABEL: Record<Status, MessageKey> = {
+  free: 'partner.statusFree',
+  'partly-sold': 'partner.statusPartlySold',
+  full: 'partner.statusFull',
+  closed: 'partner.statusClosed',
 }
 
 /** How far ahead room inventory and blocks are fetched in one shot. */
@@ -51,6 +53,7 @@ function statusOf(row: PartnerRoomInventory | undefined, totalRooms: number): St
  * the room count that decides whether a room can still be sold (audit #31).
  */
 export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, initialMonth }: PartnerRoomCalendarProps) {
+  const { t, formatDay } = useI18n()
   const [rows, setRows] = useState<PartnerRoomInventory[]>([])
   const [blocks, setBlocks] = useState<PartnerBlock[]>([])
   const [loading, setLoading] = useState(false)
@@ -139,7 +142,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
       setSaving(false)
       return
     }
-    setSuccessMessage(`Saved ${formatDay(checkIn)}`)
+    setSuccessMessage(t('partner.savedDay', { day: formatDay(checkIn) }))
     clearSelection()
     setSaving(false)
     await loadCalendarData()
@@ -158,7 +161,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
       setSaving(false)
       return
     }
-    setSuccessMessage(`Saved ${formatDay(checkIn)} to ${formatDay(addDays(checkOut, -1))}`)
+    setSuccessMessage(t('partner.savedRange', { from: formatDay(checkIn), to: formatDay(addDays(checkOut, -1)) }))
     clearSelection()
     setSaving(false)
     await loadCalendarData()
@@ -194,20 +197,20 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     }
     setBlockSaving(false)
     setBlockModalOpen(false)
-    setSuccessMessage('External booking block created')
+    setSuccessMessage(t('partner.externalBookingBlockCreated'))
     clearSelection()
     await loadCalendarData()
   }
 
   const handleRemoveBlock = async (block: PartnerBlock) => {
-    if (!confirm(`Remove the block for ${block.note}? The rooms will become sellable again.`)) return
+    if (!confirm(t('partner.confirmRemoveBlock', { note: block.note }))) return
     setError(null)
     const response = await partnerAdapter.deleteBlock(block.id)
     if (response.error) {
       setError(response.error)
       return
     }
-    setSuccessMessage('Block removed')
+    setSuccessMessage(t('partner.blockRemoved'))
     await loadCalendarData()
   }
 
@@ -216,14 +219,14 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   return (
     <div className="partner-room-calendar">
       <div className="partner-calendar-header">
-        <h2 className="partner-calendar-title">Calendar for {roomTypeName}</h2>
+        <h2 className="partner-calendar-title">{t('partner.calendarFor', { name: roomTypeName })}</h2>
         <button
           type="button"
           onClick={openBlockModal}
           className="btn btn-primary"
-          aria-label={`External booking for ${roomTypeName}`}
+          aria-label={t('partner.externalFor', { name: roomTypeName })}
         >
-          External booking
+          {t('partner.externalBooking')}
         </button>
       </div>
 
@@ -235,7 +238,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
       )}
 
       {loading ? (
-        <div className="loading-state" role="status" aria-live="polite">Loading calendar...</div>
+        <div className="loading-state" role="status" aria-live="polite">{t('partner.loadingCalendar')}</div>
       ) : (
         <div className="partner-calendar-body">
           <DateRangeCalendar
@@ -274,18 +277,18 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
               {(Object.keys(STATUS_LABEL) as Status[]).map((status) => (
                 <div key={status} className="availability-calendar-legend-item">
                   <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR[status] }} />
-                  <span>{STATUS_LABEL[status]}</span>
+                  <span>{t(STATUS_LABEL[status])}</span>
                 </div>
               ))}
             </div>
           </DateRangeCalendar>
 
           {checkIn && (
-            <div className="partner-calendar-day-panel" role="region" aria-label="Edit day">
+            <div className="partner-calendar-day-panel" role="region" aria-label={t('partner.editDay')}>
               <h3 className="partner-calendar-day-panel-title">
                 {isRange
-                  ? `Editing ${formatDay(checkIn)} to ${formatDay(addDays(checkOut as string, -1))}`
-                  : `Editing ${formatDay(checkIn)}`}
+                  ? t('partner.editingRange', { from: formatDay(checkIn), to: formatDay(addDays(checkOut as string, -1)) })
+                  : t('partner.editingDay', { day: formatDay(checkIn) })}
               </h3>
 
               <div className="form-group">
@@ -308,7 +311,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                     checked={editOpen}
                     onChange={(e) => setEditOpen(e.target.checked)}
                   />
-                  <span>Open for booking</span>
+                  <span>{t('partner.openForBooking')}</span>
                 </label>
               </div>
 
@@ -319,10 +322,10 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                   disabled={saving}
                   className="btn btn-secondary"
                 >
-                  {saving ? 'Saving...' : 'Save'}
+                  {saving ? t('profile.saving') : t('partner.save')}
                 </button>
                 <button type="button" onClick={clearSelection} className="btn btn-tertiary">
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -330,22 +333,22 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
 
           {blocks.length > 0 && (
             <div className="partner-calendar-blocks">
-              <h3 className="partner-calendar-blocks-title">External booking blocks</h3>
+              <h3 className="partner-calendar-blocks-title">{t('partner.externalBookingBlocks')}</h3>
               <ul className="partner-calendar-blocks-list">
                 {blocks.map((block) => (
                   <li key={block.id} className="partner-calendar-block-item">
                     <span className="partner-calendar-block-dates">
                       {formatDay(block.date_from)} - {formatDay(addDays(block.date_to, -1))}
                     </span>
-                    <span className="partner-calendar-block-rooms">{block.rooms} room(s)</span>
+                    <span className="partner-calendar-block-rooms">{t('partner.blockRooms', { count: block.rooms })}</span>
                     <span className="partner-calendar-block-note">{block.note}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveBlock(block)}
                       className="btn btn-danger btn-sm"
-                      aria-label={`Remove block ${block.note} for ${roomTypeName}`}
+                      aria-label={t('partner.removeBlockFor', { note: block.note, name: roomTypeName })}
                     >
-                      Remove
+                      {t('booking.remove')}
                     </button>
                   </li>
                 ))}
@@ -358,7 +361,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
       {blockModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
           <div className="modal-content" ref={dialogRef} tabIndex={-1}>
-            <h2 id="block-modal-title" className="modal-title">External booking</h2>
+            <h2 id="block-modal-title" className="modal-title">{t('partner.externalBooking')}</h2>
             <p className="modal-subtitle">Take rooms out of sale for {roomTypeName} (sold via Booking.com, phone, etc.)</p>
 
             {blockError && (
@@ -367,7 +370,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="block-date-from">From *</label>
+                <label htmlFor="block-date-from">{t('partner.from')}</label>
                 <input
                   id="block-date-from"
                   type="date"
@@ -379,7 +382,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="block-date-to">To (exclusive) *</label>
+                <label htmlFor="block-date-to">{t('partner.toExclusive')}</label>
                 <input
                   id="block-date-to"
                   type="date"
@@ -393,7 +396,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
             </div>
 
             <div className="form-group">
-              <label htmlFor="block-rooms">Rooms *</label>
+              <label htmlFor="block-rooms">{t('partner.rooms')}</label>
               <input
                 id="block-rooms"
                 type="number"
@@ -408,14 +411,14 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
             </div>
 
             <div className="form-group">
-              <label htmlFor="block-note">Note *</label>
+              <label htmlFor="block-note">{t('partner.note')}</label>
               <input
                 id="block-note"
                 type="text"
                 value={blockNote}
                 onChange={(e) => setBlockNote(e.target.value)}
                 className="form-input"
-                placeholder='e.g. "Booking.com", "phone"'
+                placeholder={t('partner.notePlaceholder')}
                 required
                 aria-required="true"
               />
@@ -428,10 +431,10 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                 disabled={blockSaving || !blockNote.trim()}
                 className="btn btn-primary"
               >
-                {blockSaving ? 'Creating...' : 'Create block'}
+                {blockSaving ? t('partner.creating') : t('partner.createBlock')}
               </button>
               <button type="button" onClick={closeBlockModal} disabled={blockSaving} className="btn btn-secondary">
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
