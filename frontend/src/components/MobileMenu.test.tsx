@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MobileMenu } from './MobileMenu'
+import { I18nProvider } from '../i18n/I18nContext'
 
 describe('MobileMenu', () => {
   it('does not render when closed', () => {
@@ -81,5 +82,42 @@ describe('MobileMenu', () => {
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement)
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  describe('language and currency on phones', () => {
+    beforeEach(() => localStorage.clear())
+    afterEach(() => localStorage.clear())
+
+    const renderMenu = () =>
+      render(<I18nProvider><MobileMenu isOpen={true} onClose={vi.fn()} /></I18nProvider>)
+
+    it('offers the three languages and the two currencies', () => {
+      renderMenu()
+      const language = screen.getByRole('group', { name: 'Language' })
+      expect(within(language).getAllByRole('button').map(b => b.textContent)).toEqual(['UZ', 'RU', 'EN'])
+      const currency = screen.getByRole('group', { name: 'Currency' })
+      expect(within(currency).getAllByRole('button').map(b => b.textContent)).toEqual(['UZS', 'USD'])
+    })
+
+    it('marks the active language and currency', () => {
+      renderMenu()
+      expect(within(screen.getByRole('group', { name: 'Currency' })).getByRole('button', { name: 'UZS' }))
+        .toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('switches the menu text and the page language', () => {
+      renderMenu()
+      fireEvent.click(screen.getByRole('button', { name: 'Русский' }))
+      expect(screen.getByRole('link', { name: 'Главная' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Язык' })).toBeInTheDocument()
+      expect(document.documentElement.lang).toBe('ru')
+    })
+
+    it('keeps the menu open when a language or currency is chosen', () => {
+      const onClose = vi.fn()
+      render(<I18nProvider><MobileMenu isOpen={true} onClose={onClose} /></I18nProvider>)
+      fireEvent.click(screen.getByRole('button', { name: 'USD' }))
+      expect(onClose).not.toHaveBeenCalled()
+    })
   })
 })

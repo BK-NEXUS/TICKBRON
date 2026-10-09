@@ -524,6 +524,14 @@ body {
   color: var(--color-pomegranate);
 }
 
+.mobile-menu-preferences {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
 .mobile-menu-footer {
   padding: var(--spacing-lg);
   border-top: 1px solid var(--color-border);

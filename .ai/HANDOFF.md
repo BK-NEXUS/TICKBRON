@@ -2390,5 +2390,7 @@ Branch `claude/loyha-organish-22tsk4`. Plan: `.ai/PLAN_R5.md`. Frontend only, no
 - `LanguageSelector.test.tsx`, `CurrencySelector.test.tsx` rewritten for the new option lists and SVG flags (same scenarios: render, open, select, close, selected mark, className). `Header.test.tsx`: currency now shows `UZS` (new default, was the placeholder `USD`).
 ### Found, not fixed
 - `noEmoji.test.ts` fails on master too: the star `★` in `DiningRestaurants.tsx:58` and `NearbyPlaces.tsx:42` (and their tests) matches the emoji regex.
-- Language and currency selectors are hidden on phones and `MobileMenu` has none, so a phone user cannot switch language yet.
 - Remaining i18n work: move the other strings to keys (8 chunks), migrate price formatting, USD display with approximate sum (needs R6 rate fields), E2E flow H, native-speaker review of uz/ru texts.
+
+## Language and currency on phones (frontend, 2026-10-09)
+`MobileMenu` now has two `SegmentedControl`s (UZ/RU/EN with the native name as accessible name, UZS/USD) between the links and the Login/Sign Up footer; choosing keeps the menu open. Its title, links, close button and auth buttons use `t()` (5 new `menu.*` keys in uz/ru/en). Checked in Chromium at 390px (ru). Tests: 4 new in `MobileMenu.test.tsx`; no assertion changed.
