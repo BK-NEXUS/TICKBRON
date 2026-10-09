@@ -86,7 +86,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
             type="text"
             inputMode="numeric"
             autoComplete="cc-exp"
-            placeholder="MM/YY"
+            placeholder={t('card.placeholderExpiry')}
             onChange={(e) => set('expiry', formatExpiry(e.target.value))}
           />
           {error('expiry')}
@@ -112,7 +112,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
           {...fieldProps('holder')}
           type="text"
           autoComplete="cc-name"
-          placeholder="NAME SURNAME"
+          placeholder={t('card.placeholderHolder')}
           onChange={(e) => set('holder', e.target.value)}
         />
         {error('holder')}

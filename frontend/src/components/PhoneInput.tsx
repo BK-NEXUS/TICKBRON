@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import { CountryFlag } from './CountryFlag'
@@ -23,12 +24,13 @@ interface PhoneInputProps {
 
 const COUNTRIES = Object.values(PHONE_COUNTRIES)
 
-function searchCountries(query: string) {
+function searchCountries(query: string, nameOf: (item: (typeof COUNTRIES)[number]) => string) {
   const text = query.trim().toLowerCase()
   const digits = text.replace(/\D/g, '')
   if (!text) return COUNTRIES
   return COUNTRIES.filter(item =>
-    item.name.toLowerCase().includes(text) || (digits !== '' && item.dialCode.startsWith(digits)),
+    nameOf(item).toLowerCase().includes(text) || item.name.toLowerCase().includes(text)
+      || (digits !== '' && item.dialCode.startsWith(digits)),
   )
 }
 
@@ -49,13 +51,15 @@ export function PhoneInput({
   autoComplete = 'tel',
   ...aria
 }: PhoneInputProps) {
+  const { t, regionName } = useI18n()
   const [country, setCountry] = useState<PhoneCountryCode>(() => countryFromPhone(value) ?? initialCountry)
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const selected = PHONE_COUNTRIES[country]
-  const label = `${selected.name} (+${selected.dialCode})`
+  const nameOf = (item: (typeof COUNTRIES)[number]) => regionName(item.code, item.name)
+  const label = `${nameOf(selected)} (+${selected.dialCode})`
 
   // A number that arrives from outside (a saved profile) brings its own country
   useEffect(() => {
@@ -95,7 +99,7 @@ export function PhoneInput({
     onChange(toPhoneValue(text, target))
   }
 
-  const results = searchCountries(query)
+  const results = searchCountries(query, nameOf)
 
   return (
     <div className="phone-input" ref={rootRef}>
@@ -104,7 +108,7 @@ export function PhoneInput({
         ref={buttonRef}
         className="phone-input-country"
         title={label}
-        aria-label={`Country: ${label}`}
+        aria-label={t('phone.countryLabel', { name: label })}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         disabled={disabled}
@@ -135,8 +139,8 @@ export function PhoneInput({
             <input
               type="search"
               autoFocus
-              aria-label="Search country"
-              placeholder="Search country"
+              aria-label={t('phone.search')}
+              placeholder={t('phone.search')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -148,7 +152,7 @@ export function PhoneInput({
               }}
             />
           </div>
-          <ul className="phone-country-list" role="listbox" aria-label="Countries">
+          <ul className="phone-country-list" role="listbox" aria-label={t('phone.countries')}>
             {results.map(item => (
               <li key={item.code} role="presentation">
                 <button
@@ -159,12 +163,12 @@ export function PhoneInput({
                   onClick={() => choose(item.code as PhoneCountryCode)}
                 >
                   <CountryFlag code={item.code as PhoneCountryCode} />
-                  <span className="phone-country-name">{item.name}</span>
+                  <span className="phone-country-name">{nameOf(item)}</span>
                   <span className="phone-country-dial">+{item.dialCode}</span>
                 </button>
               </li>
             ))}
-            {results.length === 0 && <li className="phone-country-empty">No country found</li>}
+            {results.length === 0 && <li className="phone-country-empty">{t('phone.none')}</li>}
           </ul>
         </div>
       )}

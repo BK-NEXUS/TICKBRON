@@ -269,7 +269,7 @@ export function ProfilePage() {
                       onClick={handleCancel}
                       disabled={saving}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </form>

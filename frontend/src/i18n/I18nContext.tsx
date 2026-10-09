@@ -25,6 +25,8 @@ interface I18nValue {
   tp: (base: PluralKey, count: number, params?: Params) => string
   /** A date ("2026-10-09" or a Date) in the page language; '' when empty or invalid */
   formatDate: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string
+  /** Country name in the page language (English names come from the app's own list) */
+  regionName: (code: string, fallback: string) => string
   /** "Mon, Sep 28" in the page language */
   formatDay: (value: string | Date) => string
   /** In the currency the amount is in; the selected currency only when none is given */
@@ -89,6 +91,14 @@ function buildValue(
     formatDate: (value, options = { day: 'numeric', month: 'short', year: 'numeric' }) => {
       const date = value ? parseDate(value) : null
       return date ? new Intl.DateTimeFormat(LOCALES[language], options).format(date) : ''
+    },
+    regionName: (code, fallback) => {
+      if (language === 'en') return fallback
+      try {
+        return new Intl.DisplayNames(LOCALES[language], { type: 'region' }).of(code) ?? fallback
+      } catch {
+        return fallback
+      }
     },
     formatDay: (value) => {
       const date = value ? parseDate(value) : null

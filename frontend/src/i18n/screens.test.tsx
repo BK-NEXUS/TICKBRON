@@ -36,6 +36,8 @@ import { StatusPeriodSelector } from '../components/StatusPeriodSelector'
 import { StatusPagination } from '../components/StatusPagination'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { TOTALS, RECONCILIATION } from '../test/statusFixtures'
+import { PhoneInput } from '../components/PhoneInput'
+import { fireEvent } from '@testing-library/react'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { FavoritesPage } from '../pages/FavoritesPage'
@@ -380,5 +382,16 @@ describe('migrated screens in uz and ru', () => {
     await renderIn('uz', <CreateHotelOwnerAccount />)
     expect(screen.getByText('Mehmonxona egasi hisobini yaratish', { selector: 'h2, h3' })).toBeInTheDocument()
     expect(screen.getByLabelText('Email manzil:')).toBeInTheDocument()
+  })
+
+  it('phone country selector names the countries in the page language', async () => {
+    await renderIn('ru', <PhoneInput id="p" value="" onChange={() => {}} />)
+    const button = screen.getByRole('button', { name: 'Страна: Узбекистан (+998)' })
+    fireEvent.click(button)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Поиск страны' }), { target: { value: 'казах' } })
+    expect(screen.getAllByRole('option')).toHaveLength(1)
+    expect(screen.getByRole('option')).toHaveTextContent('Казахстан')
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Поиск страны' }), { target: { value: 'zzz' } })
+    expect(screen.getByText('Страна не найдена')).toBeInTheDocument()
   })
 })

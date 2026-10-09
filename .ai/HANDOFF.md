@@ -2496,3 +2496,11 @@ Migrated (about 480 new keys `admin.*`, `status.*`, `info.*`; uz/ru/en): `AdminD
 - The legal texts (terms, privacy, cookies) are still the short temporary summaries, now in three languages; the lawyer must review each language. The uz and ru texts everywhere are machine-quality and need a native speaker.
 - Status numbers and money still use English formatting (`1,250.00`, `UZS 1,250.00`) in `utils/statusFormat.ts` (`formatCount`, `formatMoney`).
 - Backend-provided names (hotel, amenity, category, policy texts) stay as sent.
+
+## Strings to keys, last pieces and E2E flow H (frontend, 2026-10-09)
+- Phone selector: country names come from `Intl.DisplayNames` in uz/ru (English keeps the app's own list, so "Turkey" stays "Turkey"); search matches the localized and the English name; its labels are keys. `PropertyRegionField`, `CardForm` placeholders and the profile Cancel button migrated. `useI18n().regionName(code, fallback)` added.
+- `e2e/user-flows.e2e.ts` flow H: the two selectors that opened the language menu (`getByRole('button', { name: /EN/ })`, `/RU|EN/`) now use `.language-selector-button`: the button's accessible name is "Language: English" (the visible "EN" is decorative). I could not run Playwright against the full backend here; the same steps were checked by hand against the dev server (menu offers O'zbekcha, Русский, English; Russian home page; back to English; `<html lang>` follows).
+- Every user-facing screen now reads its text from the uz/ru/en catalogs (1,370 keys; `src/i18n/screens.test.tsx` has 29 render checks in uz/ru).
+### Found, not fixed
+- Native date inputs show the browser's own format (mm/dd/yyyy) whatever the page language.
+- Backend-sent names and messages (property and amenity names, validation errors, notification texts) are not translated by the frontend.

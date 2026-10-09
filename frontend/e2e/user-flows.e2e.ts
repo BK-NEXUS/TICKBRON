@@ -480,7 +480,7 @@ test('G access control for admin pages', async ({ page, audit }) => {
 test('H language switch uz / ru / en', async ({ page, audit }) => {
   await step(audit, 'H1 language-menu', async () => {
     await page.goto('/')
-    await page.getByRole('button', { name: /EN/ }).first().click()
+    await page.locator('.language-selector-button').first().click()
     await expect.soft(page.getByText(/O['‘’]zbek|Uzbek/i), 'Uzbek should be offered').not.toHaveCount(0)
     await expect.soft(page.getByText('Русский'), 'Russian should be offered').not.toHaveCount(0)
   })
@@ -503,7 +503,7 @@ test('H language switch uz / ru / en', async ({ page, audit }) => {
 
   await step(audit, 'H4 back-to-english', async () => {
     await page.goto('/')
-    await page.getByRole('button', { name: /RU|EN/ }).first().click()
+    await page.locator('.language-selector-button').first().click()
     const english = page.getByText('English').first()
     if (await english.isVisible()) await english.click()
     await expect(page.getByRole('heading', { name: 'Find Your Perfect Stay' })).toBeVisible()

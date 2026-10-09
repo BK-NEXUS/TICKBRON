@@ -1323,6 +1323,16 @@ export const en = {
   'info.cookies.h3': "Preferences",
   'info.cookies.b3': "Some settings, such as dismissed tips, are kept in your browser storage.",
   'info.browse': "Browse properties",
+  'region.regionSaved': "Region saved",
+  'region.region': "Region",
+  'region.unspecified': "Unspecified",
+  'region.saveRegion': "Save region",
+  'phone.countryLabel': "Country: {name}",
+  'phone.search': "Search country",
+  'phone.countries': "Countries",
+  'phone.none': "No country found",
+  'card.placeholderExpiry': "MM/YY",
+  'card.placeholderHolder': "NAME SURNAME",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always
