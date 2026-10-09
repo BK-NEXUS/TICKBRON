@@ -205,3 +205,26 @@ def ordered(queryset, today: date | None = None, limit: int | None = None):
     today = today or business_today()
     items = sorted(queryset, key=lambda promotion: _rotation_key(promotion, today))
     return items[:limit] if limit is not None else items
+
+
+def blocked_reason(promotion):
+    """Why a promotion cannot be seen by guests even though it is paid and running, or None."""
+    prop = promotion.property
+    if prop.is_deleted or not prop.is_active or prop.status != 'active':
+        return 'hotel_not_active'
+    for ref in ('country_ref', 'region_ref', 'city_ref'):
+        wanted = getattr(promotion, f'{ref}_id')
+        if wanted is not None and wanted != getattr(prop, f'{ref}_id'):
+            return 'outside_scope'
+    return None
+
+
+def is_shown_now(promotion, today: date | None = None):
+    today = today or business_today()
+    return (
+        not promotion.is_deleted
+        and promotion.status in (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE)
+        and promotion.paid_at is not None
+        and promotion.start_date <= today <= promotion.end_date
+        and blocked_reason(promotion) is None
+    )
