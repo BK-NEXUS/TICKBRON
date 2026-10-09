@@ -270,6 +270,8 @@ export interface SearchResponse {
   page: number
   page_size: number
   total_pages: number
+  /** Paid banners for the top of page 1 (R10); absent on older backends and on other pages */
+  promoted?: Array<Property & { promotion_id: number }>
 }
 
 export interface PropertyDetailResponse extends Property {

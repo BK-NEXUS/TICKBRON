@@ -110,7 +110,9 @@ function extractServerError(errorData: unknown): { message?: string; code?: stri
   if (typeof errorData.error === 'string') {
     const fieldErrors = extractFieldErrors(errorData.details)
     const message = fieldErrors ? `${errorData.error.replace(/\.?$/, '.')} ${formatFieldErrors(fieldErrors)}` : errorData.error
-    return { message, fieldErrors }
+    // The promotions and no-show endpoints send a stable machine-readable `code` next to the text
+    const code = typeof errorData.code === 'string' ? errorData.code : undefined
+    return { message, code, fieldErrors }
   }
 
   // c) {detail}
