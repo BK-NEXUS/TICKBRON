@@ -253,7 +253,7 @@ describe('ProfilePage', () => {
     it('should display WhatsApp', () => {
       renderWithRouter(<ProfilePage />)
 
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'label' })).toBeInTheDocument()
       expect(screen.getByText('+9876543210')).toBeInTheDocument()
     })
 
@@ -271,7 +271,7 @@ describe('ProfilePage', () => {
 
       renderWithRouter(<ProfilePage />)
 
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'label' })).toBeInTheDocument()
       expect(screen.getByText('Not provided')).toBeInTheDocument()
     })
 
@@ -304,7 +304,7 @@ describe('ProfilePage', () => {
       renderWithRouter(<ProfilePage />)
 
       expect(screen.getByText('Preferred Contact Method')).toBeInTheDocument()
-      expect(screen.getByText('WhatsApp')).toBeInTheDocument()
+      expect(screen.getByText('WhatsApp', { selector: 'p' })).toBeInTheDocument()
     })
 
     it('should display "Email" as default when preferred contact method is missing', () => {

@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/I18nContext'
+import { statusText } from '../utils/statusText'
 import { useState, useEffect } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { Lock, Calendar } from 'lucide-react'
@@ -6,18 +8,12 @@ import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 
-/** "2025-02-01" -> "Feb 1, 2025" (parsed as a calendar date, so no time-zone shift) */
-function formatBookingDate(isoDate: string) {
-  const [year, month, day] = isoDate.split('-').map(Number)
-  if (!year || !month || !day) return isoDate
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 interface BookingCardProps {
   booking: Booking
 }
 
 function BookingCard({ booking }: BookingCardProps) {
+  const { t, formatDate, formatMoney } = useI18n()
   const [copied, setCopied] = useState(false)
 
   const handleCopyCode = async () => {
@@ -40,7 +36,7 @@ function BookingCard({ booking }: BookingCardProps) {
             </Link>
           </h3>
           <div className="booking-card-confirmation-container">
-            <span className="booking-card-confirmation-label">Booking Reference:</span>
+            <span className="booking-card-confirmation-label">{t('bookings.reference')}</span>
             <div className="booking-card-confirmation-code-wrapper">
               <span className="booking-card-confirmation-code">
                 {booking.confirmation_code}
@@ -48,8 +44,8 @@ function BookingCard({ booking }: BookingCardProps) {
               <button
                 className="booking-card-copy-btn"
                 onClick={handleCopyCode}
-                aria-label="Copy booking reference code"
-                title="Copy booking reference code"
+                aria-label={t('bookings.copyLabel')}
+                title={t('bookings.copyLabel')}
               >
                 {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               </button>
@@ -57,44 +53,44 @@ function BookingCard({ booking }: BookingCardProps) {
           </div>
         </div>
         <div className={`booking-card-status booking-card-status--${booking.status}`}>
-          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          {statusText('status.booking', booking.status, t)}
         </div>
       </div>
       
       <div className="booking-card-details">
         <div className="booking-card-detail">
-          <span className="booking-card-detail-label">Check-in:</span>
-          <span className="booking-card-detail-value">{formatBookingDate(booking.check_in)}</span>
+          <span className="booking-card-detail-label">{t('bookings.checkIn')}</span>
+          <span className="booking-card-detail-value">{formatDate(booking.check_in)}</span>
         </div>
         <div className="booking-card-detail">
-          <span className="booking-card-detail-label">Check-out:</span>
-          <span className="booking-card-detail-value">{formatBookingDate(booking.check_out)}</span>
+          <span className="booking-card-detail-label">{t('bookings.checkOut')}</span>
+          <span className="booking-card-detail-value">{formatDate(booking.check_out)}</span>
         </div>
         <div className="booking-card-detail">
-          <span className="booking-card-detail-label">Nights:</span>
+          <span className="booking-card-detail-label">{t('bookings.nights')}</span>
           <span className="booking-card-detail-value">{booking.number_of_nights}</span>
         </div>
         <div className="booking-card-detail">
-          <span className="booking-card-detail-label">Guests:</span>
+          <span className="booking-card-detail-label">{t('bookings.guests')}</span>
           <span className="booking-card-detail-value">{booking.guest_count}</span>
         </div>
         <div className="booking-card-detail">
-          <span className="booking-card-detail-label">Total:</span>
+          <span className="booking-card-detail-label">{t('bookings.total')}</span>
           <span className="booking-card-detail-value">
-            ${booking.total_price} {booking.currency}
+            {formatMoney(booking.total_price, booking.currency, { minDecimals: 0, maxDecimals: 2 })}
           </span>
         </div>
       </div>
       
       <div className="booking-card-footer">
         <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
-          Payment: {booking.payment_status.charAt(0).toUpperCase() + booking.payment_status.slice(1)}
+          {t('bookings.payment', { status: statusText('status.payment', booking.payment_status, t) })}
         </div>
         <Link 
           to={`/property/${booking.property}`}
           className="btn btn-secondary"
         >
-          View Property
+          {t('bookings.viewProperty')}
         </Link>
       </div>
     </div>
@@ -104,6 +100,7 @@ function BookingCard({ booking }: BookingCardProps) {
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function BookingsPage() {
+  const { t } = useI18n()
   const { isAuthenticated } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filter, setFilter] = useState<BookingFilter>('all')
@@ -162,9 +159,9 @@ export function BookingsPage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Sign in required"
-            message="Please sign in to view your booking history."
-            ctaText="Sign In"
+            title={t('common.signInRequired')}
+            message={t('bookings.signInText')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -178,9 +175,9 @@ export function BookingsPage() {
         <div className="container">
           <div className="loading-state">
             <div className="spinner" role="status" aria-live="polite">
-              <span className="sr-only">Loading...</span>
+              <span className="sr-only">{t('common.loading')}</span>
             </div>
-            <p>Loading bookings...</p>
+            <p>{t('bookings.loading')}</p>
           </div>
         </div>
       </div>
@@ -197,7 +194,7 @@ export function BookingsPage() {
               onClick={() => window.location.reload()}
               className="btn btn-primary"
             >
-              Try Again
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -211,9 +208,9 @@ export function BookingsPage() {
         <div className="container">
           <EmptyState
             icon={<Calendar size={40} />}
-            title="No bookings yet"
-            message="Start exploring amazing properties and book your first stay."
-            ctaText="Search Properties"
+            title={t('bookings.emptyTitle')}
+            message={t('bookings.emptyText')}
+            ctaText={t('bookings.emptyCta')}
             ctaLink="/"
           />
         </div>
@@ -224,36 +221,36 @@ export function BookingsPage() {
   return (
     <div className="bookings-page">
       <div className="container">
-        <h1 className="bookings-page-title">My Bookings</h1>
+        <h1 className="bookings-page-title">{t('bookings.title')}</h1>
         
         <div className="bookings-filters">
           <button
             className={`bookings-filter ${filter === 'all' ? 'bookings-filter--active' : ''}`}
             onClick={() => setFilter('all')}
-            aria-label="Show all bookings"
+            aria-label={t('bookings.showAll')}
           >
-            All
+            {t('bookings.filterAll')}
           </button>
           <button
             className={`bookings-filter ${filter === 'upcoming' ? 'bookings-filter--active' : ''}`}
             onClick={() => setFilter('upcoming')}
-            aria-label="Show upcoming bookings"
+            aria-label={t('bookings.showUpcoming')}
           >
-            Upcoming
+            {t('bookings.filterUpcoming')}
           </button>
           <button
             className={`bookings-filter ${filter === 'completed' ? 'bookings-filter--active' : ''}`}
             onClick={() => setFilter('completed')}
-            aria-label="Show completed bookings"
+            aria-label={t('bookings.showCompleted')}
           >
-            Completed
+            {t('bookings.filterCompleted')}
           </button>
           <button
             className={`bookings-filter ${filter === 'cancelled' ? 'bookings-filter--active' : ''}`}
             onClick={() => setFilter('cancelled')}
-            aria-label="Show cancelled bookings"
+            aria-label={t('bookings.showCancelled')}
           >
-            Cancelled
+            {t('bookings.filterCancelled')}
           </button>
         </div>
         

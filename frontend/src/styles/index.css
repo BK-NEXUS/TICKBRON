@@ -9482,3 +9482,33 @@ table .btn {
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-md);
 }
+
+/* Error fallback and page loader (shown outside the normal layout) */
+.error-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  text-align: center;
+  background-color: var(--color-background-alt);
+  color: var(--color-text-primary);
+}
+
+.error-fallback-title {
+  margin-bottom: var(--spacing-md);
+}
+
+.error-fallback-text {
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+}

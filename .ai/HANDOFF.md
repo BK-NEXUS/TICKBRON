@@ -2471,3 +2471,11 @@ Migrated (151 new keys `booking.*`, `pay.*`, `card.*`): `BookingPage` (form, val
 ### Found, not fixed
 - `BookingPage.tsx`: the deposit amount is computed in the browser (`totalPrice * deposit_percentage / 100`); money must come from the backend (quote). Also the "Booking expires in 15 minutes" text is a constant, not derived from `expires_at`.
 - Payment statuses that come from the API and are not in the list (`pay.statusName.*`) are shown capitalized in English.
+
+## Strings to keys, chunk 4: guest account pages and shell (frontend, 2026-10-09)
+Migrated (98 keys): `BookingsPage`, `FavoritesPage`, `ProfilePage`, `NotFoundPage`, `AccessDeniedPage` + `RequireAccess` (the `area` prop is now `'partner' | 'admin'`), `MobileBottomNavigation`, the error screen (`ErrorFallback`, uses theme tokens instead of inline colours) and the Suspense loader. `ErrorBoundary` now sits inside the theme and language providers. New `utils/statusText.ts` (booking and payment status names; an unknown status is shown capitalized) with keys `status.booking.*`, `status.payment.*` for the partner and admin chunks. Profile dates follow the page language.
+### Changed test assertions (real display fixes)
+- Prices were written as `$400 USD` / `$100 USD / night` (wrong for sums: "$450000 UZS"); now `formatMoney`: `BookingsPage.test.tsx` "$400 USD" -> "$400", `FavoritesPage.test.tsx` "$100 USD / night" -> "$100 / night" (and 150).
+- `ProfilePage.test.tsx`: the preferred contact method now reads "WhatsApp" (was "Whatsapp"), so three `getByText('WhatsApp')` would match both the label and the value; they now name the element (`selector: 'label'` / `'p'`). The old test of the value only passed because of the typo.
+### Found, not fixed
+- Chunks left: partner panel, admin and Status (largest), `SupportLookupPage`, `InfoPage` (about/help/terms/privacy texts; the legal ones need the lawyer), the status helpers in `utils/statusFormat.ts` and Status labels.

@@ -24,6 +24,13 @@ import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
 import { CardForm } from '../components/CardForm'
+import { BookingsPage } from '../pages/BookingsPage'
+import { FavoritesPage } from '../pages/FavoritesPage'
+import { ProfilePage } from '../pages/ProfilePage'
+import { NotFoundPage } from '../pages/NotFoundPage'
+import { AccessDeniedPage } from '../pages/AccessDeniedPage'
+import { MobileBottomNavigation } from '../components/MobileBottomNavigation'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ReviewForm } from '../components/ReviewForm'
 import { ReviewCard } from '../components/ReviewCard'
 import { RatingBreakdown } from '../components/RatingBreakdown'
@@ -241,5 +248,42 @@ describe('migrated screens in uz and ru', () => {
     expect(screen.getByText('Выполнен')).toBeInTheDocument()
     expect(screen.getByText('Проверьте данные карты и попробуйте ещё раз.', { exact: false })).toBeInTheDocument()
     expect(screen.getByText('Выбрать другой способ оплаты')).toBeInTheDocument()
+  })
+
+  it('signed-out pages: bookings, favorites and profile in Uzbek', async () => {
+    await renderIn('uz', (
+      <>
+        <BookingsPage />
+        <FavoritesPage />
+        <ProfilePage />
+      </>
+    ))
+    expect(screen.getByText("Bronlar tarixini ko'rish uchun tizimga kiring.")).toBeInTheDocument()
+    expect(screen.getByText("Sevimli obyektlarni ko'rish uchun tizimga kiring.")).toBeInTheDocument()
+    expect(screen.getByText("Profilni ko'rish uchun tizimga kiring.")).toBeInTheDocument()
+    expect(screen.getAllByText('Kirish talab qilinadi')).toHaveLength(3)
+  })
+
+  it('not found, access denied and the phone navigation in Russian', async () => {
+    await renderIn('ru', (
+      <>
+        <NotFoundPage />
+        <AccessDeniedPage area="admin" signedIn />
+        <MobileBottomNavigation />
+      </>
+    ))
+    expect(screen.getByRole('heading', { name: 'Страница не найдена' })).toBeInTheDocument()
+    expect(screen.getByText('У вашего аккаунта нет прав на открытие раздела «панель администратора».')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument()
+    expect(screen.getByText('Избранное')).toBeInTheDocument()
+  })
+
+  it('error screen in Uzbek', async () => {
+    const Boom = () => { throw new Error('boom') }
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await renderIn('uz', <ErrorBoundary><Boom /></ErrorBoundary>)
+    spy.mockRestore()
+    expect(screen.getByRole('heading', { name: 'Nimadir xato ketdi' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sahifani yangilash' })).toBeInTheDocument()
   })
 })

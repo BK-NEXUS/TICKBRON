@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Lock, Calendar, Heart, House } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -5,9 +6,10 @@ import { EmptyState } from '../components/EmptyState'
 import { Link } from 'react-router-dom'
 import { canUsePartnerPanel } from '../utils/roles'
 import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneErrorMessage } from '../utils/phone'
+import { isValidPhone, phoneExample } from '../utils/phone'
 
 export function ProfilePage() {
+  const { t, formatDate } = useI18n()
   const { user, isAuthenticated, updateProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -55,7 +57,7 @@ export function ProfilePage() {
     // Checked only when changed: a number saved before validation existed is sent back as it is
     const phoneChanged = editForm.phone_number !== (user?.phone_number || '')
     if (phoneChanged && editForm.phone_number && !isValidPhone(editForm.phone_number)) {
-      setError(phoneErrorMessage())
+      setError(t('phone.invalid', { example: phoneExample() }))
       return
     }
 
@@ -67,10 +69,10 @@ export function ProfilePage() {
         setIsEditing(false)
         setTimeout(() => setSuccess(false), 3000)
       } else {
-        setError(response.error || 'Failed to update profile')
+        setError(response.error || t('profile.errorUpdate'))
       }
     } catch (err) {
-      setError('An error occurred while updating your profile')
+      setError(t('profile.errorUpdateGeneric'))
     } finally {
       setSaving(false)
     }
@@ -82,9 +84,9 @@ export function ProfilePage() {
         <div className="container">
           <EmptyState
             icon={<Lock size={40} />}
-            title="Sign in required"
-            message="Please sign in to view your profile."
-            ctaText="Sign In"
+            title={t('common.signInRequired')}
+            message={t('profile.signInText')}
+            ctaText={t('auth.signIn')}
             ctaLink="/login"
           />
         </div>
@@ -111,11 +113,11 @@ export function ProfilePage() {
               <p className="profile-email">{user.email}</p>
               <div className="profile-status">
                 <span className={`profile-status-badge ${user.is_active ? 'profile-status-badge--active' : 'profile-status-badge--inactive'}`}>
-                  {user.is_active ? 'Active' : 'Inactive'}
+                  {user.is_active ? t('profile.active') : t('profile.inactive')}
                 </span>
                 {user.email_verified && (
                   <span className="profile-status-badge profile-status-badge--verified">
-                    Verified
+                    {t('profile.verified')}
                   </span>
                 )}
               </div>
@@ -124,51 +126,51 @@ export function ProfilePage() {
               <button
                 className="btn btn-secondary profile-edit-button"
                 onClick={handleEdit}
-                aria-label="Edit profile"
+                aria-label={t('profile.edit')}
               >
-                Edit Profile
+                {t('profile.edit')}
               </button>
             )}
           </div>
 
           <div className="profile-details">
             <div className="profile-section">
-              <h2 className="profile-section-title">Personal Information</h2>
+              <h2 className="profile-section-title">{t('profile.personal')}</h2>
               <div className="profile-field">
-                <label className="profile-field-label">First Name</label>
-                <p className="profile-field-value">{user.first_name || 'Not provided'}</p>
+                <label className="profile-field-label">{t('profile.firstName')}</label>
+                <p className="profile-field-value">{user.first_name || t('profile.notProvided')}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Last Name</label>
-                <p className="profile-field-value">{user.last_name || 'Not provided'}</p>
+                <label className="profile-field-label">{t('profile.lastName')}</label>
+                <p className="profile-field-value">{user.last_name || t('profile.notProvided')}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Email</label>
+                <label className="profile-field-label">{t('profile.email')}</label>
                 <p className="profile-field-value">{user.email}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Phone Number</label>
-                <p className="profile-field-value">{user.phone_number || 'Not provided'}</p>
+                <label className="profile-field-label">{t('profile.phone')}</label>
+                <p className="profile-field-value">{user.phone_number || t('profile.notProvided')}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">WhatsApp</label>
-                <p className="profile-field-value">{user.whatsapp || 'Not provided'}</p>
+                <label className="profile-field-label">{t('profile.whatsapp')}</label>
+                <p className="profile-field-value">{user.whatsapp || t('profile.notProvided')}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Telegram</label>
-                <p className="profile-field-value">{user.telegram || 'Not provided'}</p>
+                <label className="profile-field-label">{t('profile.telegram')}</label>
+                <p className="profile-field-value">{user.telegram || t('profile.notProvided')}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Preferred Contact Method</label>
+                <label className="profile-field-label">{t('profile.contactMethod')}</label>
                 <p className="profile-field-value">
-                  {user.preferred_contact_method ? user.preferred_contact_method.charAt(0).toUpperCase() + user.preferred_contact_method.slice(1) : 'Email'}
+                  {t(`profile.contact.${user.preferred_contact_method || 'email'}`)}
                 </p>
               </div>
             </div>
 
             {isEditing && (
               <div className="profile-section">
-                <h2 className="profile-section-title">Edit Profile</h2>
+                <h2 className="profile-section-title">{t('profile.edit')}</h2>
                 <form onSubmit={handleSave} className="profile-edit-form">
                   {error && (
                     <div className="profile-form-error" role="alert" aria-live="assertive">
@@ -177,12 +179,12 @@ export function ProfilePage() {
                   )}
                   {success && (
                     <div className="profile-form-success" role="status" aria-live="polite">
-                      Profile updated successfully!
+                      {t('profile.saved')}
                     </div>
                   )}
                   <div className="profile-form-row">
                     <div className="profile-form-field">
-                      <label htmlFor="first_name" className="profile-form-label">First Name</label>
+                      <label htmlFor="first_name" className="profile-form-label">{t('profile.firstName')}</label>
                       <input
                         type="text"
                         id="first_name"
@@ -193,7 +195,7 @@ export function ProfilePage() {
                       />
                     </div>
                     <div className="profile-form-field">
-                      <label htmlFor="last_name" className="profile-form-label">Last Name</label>
+                      <label htmlFor="last_name" className="profile-form-label">{t('profile.lastName')}</label>
                       <input
                         type="text"
                         id="last_name"
@@ -205,7 +207,7 @@ export function ProfilePage() {
                     </div>
                   </div>
                   <div className="profile-form-field">
-                    <label htmlFor="phone_number" className="profile-form-label">Phone Number</label>
+                    <label htmlFor="phone_number" className="profile-form-label">{t('profile.phone')}</label>
                     <PhoneInput
                       id="phone_number"
                       name="phone_number"
@@ -215,7 +217,7 @@ export function ProfilePage() {
                     />
                   </div>
                   <div className="profile-form-field">
-                    <label htmlFor="whatsapp" className="profile-form-label">WhatsApp</label>
+                    <label htmlFor="whatsapp" className="profile-form-label">{t('profile.whatsapp')}</label>
                     <input
                       type="tel"
                       id="whatsapp"
@@ -223,11 +225,11 @@ export function ProfilePage() {
                       value={editForm.whatsapp}
                       onChange={handleInputChange}
                       className="profile-form-input"
-                      placeholder="Optional"
+                      placeholder={t('profile.optional')}
                     />
                   </div>
                   <div className="profile-form-field">
-                    <label htmlFor="telegram" className="profile-form-label">Telegram</label>
+                    <label htmlFor="telegram" className="profile-form-label">{t('profile.telegram')}</label>
                     <input
                       type="text"
                       id="telegram"
@@ -235,11 +237,11 @@ export function ProfilePage() {
                       value={editForm.telegram}
                       onChange={handleInputChange}
                       className="profile-form-input"
-                      placeholder="@username (optional)"
+                      placeholder={t('profile.telegramPlaceholder')}
                     />
                   </div>
                   <div className="profile-form-field">
-                    <label htmlFor="preferred_contact_method" className="profile-form-label">Preferred Contact Method</label>
+                    <label htmlFor="preferred_contact_method" className="profile-form-label">{t('profile.contactMethod')}</label>
                     <select
                       id="preferred_contact_method"
                       name="preferred_contact_method"
@@ -247,10 +249,10 @@ export function ProfilePage() {
                       onChange={handleInputChange}
                       className="profile-form-select"
                     >
-                      <option value="email">Email</option>
-                      <option value="phone">Phone</option>
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="telegram">Telegram</option>
+                      <option value="email">{t('profile.contact.email')}</option>
+                      <option value="phone">{t('profile.contact.phone')}</option>
+                      <option value="whatsapp">{t('profile.contact.whatsapp')}</option>
+                      <option value="telegram">{t('profile.contact.telegram')}</option>
                     </select>
                   </div>
                   <div className="profile-form-actions">
@@ -259,7 +261,7 @@ export function ProfilePage() {
                       className="btn btn-primary"
                       disabled={saving}
                     >
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? t('profile.saving') : t('profile.save')}
                     </button>
                     <button
                       type="button"
@@ -275,42 +277,42 @@ export function ProfilePage() {
             )}
 
             <div className="profile-section">
-              <h2 className="profile-section-title">Account Information</h2>
+              <h2 className="profile-section-title">{t('profile.account')}</h2>
               <div className="profile-field">
-                <label className="profile-field-label">Member Since</label>
+                <label className="profile-field-label">{t('profile.memberSince')}</label>
                 <p className="profile-field-value">
-                  {user.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Unknown'}
+                  {user.date_joined ? formatDate(user.date_joined) : t('profile.unknown')}
                 </p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Last Login</label>
+                <label className="profile-field-label">{t('profile.lastLogin')}</label>
                 <p className="profile-field-value">
-                  {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
+                  {user.last_login ? formatDate(user.last_login, { dateStyle: 'medium', timeStyle: 'short' }) : t('profile.never')}
                 </p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">Two-Factor Authentication</label>
+                <label className="profile-field-label">{t('profile.twoFactor')}</label>
                 <p className="profile-field-value">
-                  {user.two_factor_enabled ? 'Enabled' : 'Disabled'}
+                  {user.two_factor_enabled ? t('profile.enabled') : t('profile.disabled')}
                 </p>
               </div>
             </div>
 
             <div className="profile-section">
-              <h2 className="profile-section-title">Quick Links</h2>
+              <h2 className="profile-section-title">{t('profile.quickLinks')}</h2>
               <div className="profile-links">
                 <Link to="/bookings" className="profile-link">
                   <span className="profile-link-icon"><Calendar size={18} /></span>
-                  <span className="profile-link-text">My Bookings</span>
+                  <span className="profile-link-text">{t('header.myBookings')}</span>
                 </Link>
                 <Link to="/favorites" className="profile-link">
                   <span className="profile-link-icon"><Heart size={18} /></span>
-                  <span className="profile-link-text">My Favorites</span>
+                  <span className="profile-link-text">{t('crumb.myFavorites')}</span>
                 </Link>
                 {canUsePartnerPanel(user) && (
                   <Link to="/partner" className="profile-link">
                     <span className="profile-link-icon"><House size={18} /></span>
-                    <span className="profile-link-text">Partner Dashboard</span>
+                    <span className="profile-link-text">{t('header.partnerDashboard')}</span>
                   </Link>
                 )}
               </div>

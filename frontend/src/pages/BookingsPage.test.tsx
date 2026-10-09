@@ -250,7 +250,7 @@ describe('BookingsPage', () => {
       expect(screen.getAllByText('Guests:')).toHaveLength(3)
       expect(screen.getAllByText('2')).toHaveLength(3)
       expect(screen.getAllByText('Total:')).toHaveLength(3)
-      expect(screen.getByText('$400 USD')).toBeInTheDocument()
+      expect(screen.getByText('$400')).toBeInTheDocument()
     })
 
     it('should display copy button for booking reference code', async () => {

@@ -1,3 +1,4 @@
+import { useI18n } from './i18n/I18nContext'
 import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './theme/ThemeContext'
@@ -28,25 +29,15 @@ const DestinationsPage = lazy(() => import('./pages/DestinationsPage'))
 
 // Loading component for Suspense fallback
 function PageLoader() {
-  return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '100vh',
-      fontSize: '18px',
-      color: '#3E382D'
-    }}>
-      Loading...
-    </div>
-  )
+  const { t } = useI18n()
+  return <div className="page-loader">{t('common.loading')}</div>
 }
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <I18nProvider>
+    <ThemeProvider>
+      <I18nProvider>
+        <ErrorBoundary>
           <AuthProvider>
             <Router>
               <Suspense fallback={<PageLoader />}>
@@ -59,10 +50,10 @@ function App() {
                     <Route path="bookings" element={<BookingsPage />} />
                     <Route path="favorites" element={<FavoritesPage />} />
                     <Route path="profile" element={<ProfilePage />} />
-                    <Route element={<RequireAccess allow={canUsePartnerPanel} area="the partner dashboard" />}>
+                    <Route element={<RequireAccess allow={canUsePartnerPanel} area="partner" />}>
                       <Route path="partner" element={<PartnerDashboardPage />} />
                     </Route>
-                    <Route element={<RequireAccess allow={canUseAdminPanel} area="the admin dashboard" />}>
+                    <Route element={<RequireAccess allow={canUseAdminPanel} area="admin" />}>
                       <Route path="admin" element={<AdminDashboardPage />} />
                       <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
                       <Route path="admin/support" element={<SupportLookupPage />} />
@@ -79,9 +70,9 @@ function App() {
               </Suspense>
             </Router>
           </AuthProvider>
-        </I18nProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </I18nProvider>
+    </ThemeProvider>
   )
 }
 
