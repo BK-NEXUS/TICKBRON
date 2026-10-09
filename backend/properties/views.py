@@ -14,7 +14,8 @@ from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
 from currency.rates import uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
-from promotions.search import promoted_for_search
+from promotions.search import promoted_for_search, serialize_banners
+from promotions.stats import IMPRESSION, record as record_stat
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
     PaginatedSearchResponseSerializer, PropertyDetailSerializer,
@@ -45,9 +46,8 @@ def _promoted_banners(request, search_service, search_params, page):
         return []
     try:
         entries = promoted_for_search(search_service, search_params)
-        items = PropertySearchResultSerializer(
-            [prop for _, prop in entries], many=True, context={'rate_request': request}).data
-        return [{**item, 'promotion_id': promotion.pk} for item, (promotion, _) in zip(items, entries)]
+        record_stat(IMPRESSION, [promotion.pk for promotion, _ in entries], request)
+        return serialize_banners(request, entries)
     except Exception:
         logger.exception('Promoted banners failed')
         return []
