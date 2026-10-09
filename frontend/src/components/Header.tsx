@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LanguageSelector } from './LanguageSelector'
 import { CurrencySelector } from './CurrencySelector'
+import { ThemeToggle } from './ThemeToggle'
 import { MobileMenu } from './MobileMenu'
 import { BrandLogo } from './BrandLogo'
 import { useAuth } from '../contexts/AuthContext'
@@ -87,6 +88,7 @@ export function Header() {
               onCurrencyChange={setCurrency}
               className="header-currency-selector"
             />
+            <ThemeToggle className="header-theme-toggle" />
             <div className="header-auth-buttons">
               {isAuthenticated ? (
                 <div className="header-user-menu">

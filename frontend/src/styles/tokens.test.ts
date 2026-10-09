@@ -111,3 +111,74 @@ describe('container', () => {
     expect(indexCss).toMatch(/\.container-large-desktop \{\s*max-width: var\(--container-wide\)/)
   })
 })
+
+describe('dark theme', () => {
+  const mediaBlock = tokensCss.match(
+    /@media \(prefers-color-scheme: dark\)\s*\{\s*:root:not\(\[data-theme='light'\]\)\s*\{([^}]*)\}\s*\}/,
+  )?.[1]
+  const attributeBlock = tokensCss.match(/:root\[data-theme='dark'\]\s*\{([^}]*)\}/)?.[1]
+  const parse = (block: string) =>
+    new Map([...block.matchAll(/^\s*(--[\w-]+):\s*([^;]+);/gm)].map(([, name, value]) => [name, value.trim()]))
+
+  it('is defined for the system setting and for the explicit choice, with the same values', () => {
+    expect(mediaBlock).toBeDefined()
+    expect(attributeBlock).toBeDefined()
+    expect([...parse(mediaBlock!)]).toEqual([...parse(attributeBlock!)])
+  })
+
+  it('declares color-scheme so native controls and scrollbars follow the theme', () => {
+    expect(tokensCss).toMatch(/:root\s*\{[^}]*color-scheme: light/)
+    expect(attributeBlock).toContain('color-scheme: dark')
+  })
+
+  const dark = () => parse(attributeBlock!)
+  const resolve = (name: string): string => {
+    const value = dark().get(name) ?? declared.get(name)
+    if (!value) throw new Error(`Missing token ${name}`)
+    const alias = value.match(/^var\((--[\w-]+)\)$/)
+    return alias ? resolve(alias[1]) : value
+  }
+  const darkContrast = (foreground: string, background: string) => {
+    const [lighter, darker] = [luminance(resolve(foreground)), luminance(resolve(background))].sort((a, b) => b - a)
+    return (lighter + 0.05) / (darker + 0.05)
+  }
+
+  const textPairs: Array<[string, string]> = [
+    ['--color-text-primary', '--color-background'],
+    ['--color-text-primary', '--color-background-alt'],
+    ['--color-text-primary', '--color-surface'],
+    ['--color-text-strong', '--color-surface'],
+    ['--color-text-secondary', '--color-background'],
+    ['--color-text-secondary', '--color-surface'],
+    ['--color-text-tertiary', '--color-background'],
+    ['--color-text-tertiary', '--color-surface'],
+    ['--color-pomegranate', '--color-background'],
+    ['--color-pomegranate', '--color-surface'],
+    ['--color-on-primary', '--color-primary'],
+    ['--color-error', '--color-background'],
+    ['--color-error', '--color-surface'],
+    ['--color-success', '--color-background'],
+    ['--color-success', '--color-surface'],
+    ['--color-warning', '--color-background'],
+    ['--color-warning', '--color-surface'],
+  ]
+  it.each(textPairs)('text %s on %s is at least 4.5:1', (foreground, background) => {
+    expect(darkContrast(foreground, background)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  const uiPairs: Array<[string, string]> = [
+    ['--color-focus', '--color-background'],
+    ['--color-focus', '--color-surface'],
+    ['--color-border-control', '--color-background'],
+    ['--color-border-control', '--color-surface'],
+  ]
+  it.each(uiPairs)('control %s on %s is at least 3:1', (foreground, background) => {
+    expect(darkContrast(foreground, background)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('has the new surface tokens in the light theme too', () => {
+    for (const name of ['--color-surface', '--color-text-strong', '--color-saffron-solid']) {
+      expect(token(name)).toBeTruthy()
+    }
+  })
+})

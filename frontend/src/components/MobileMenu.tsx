@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
+import { ThemeToggle } from './ThemeToggle'
 import { SegmentedControl } from './SegmentedControl'
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
@@ -107,6 +108,7 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
             fullWidth
             options={CURRENCIES.map(({ code }) => ({ value: code, label: code }))}
           />
+          <ThemeToggle className="mobile-menu-theme-toggle" />
         </div>
 
         {!isAuthenticated && (

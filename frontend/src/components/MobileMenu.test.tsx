@@ -113,6 +113,11 @@ describe('MobileMenu', () => {
       expect(document.documentElement.lang).toBe('ru')
     })
 
+    it('has the theme button next to them', () => {
+      renderMenu()
+      expect(screen.getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeInTheDocument()
+    })
+
     it('keeps the menu open when a language or currency is chosen', () => {
       const onClose = vi.fn()
       render(<I18nProvider><MobileMenu isOpen={true} onClose={onClose} /></I18nProvider>)

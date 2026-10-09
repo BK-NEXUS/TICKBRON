@@ -169,7 +169,7 @@ textarea.form-input {
   pointer-events: auto;
   width: calc(100% - 2 * var(--gutter));
   padding-inline: var(--spacing-lg);
-  background-color: rgba(242, 237, 231, 0.92);
+  background-color: var(--color-header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
@@ -183,7 +183,7 @@ textarea.form-input {
   right: var(--gutter);
   bottom: calc(var(--spacing-12) + env(safe-area-inset-bottom));
   padding: var(--spacing-xs);
-  background-color: rgba(255, 255, 255, 0.94);
+  background-color: var(--color-float-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);

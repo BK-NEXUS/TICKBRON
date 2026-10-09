@@ -20,6 +20,8 @@ export const uz: Record<MessageKey, string> = {
   'menu.navigation': "Navigatsiya menyusi",
   'menu.language': "Til",
   'menu.currency': "Valyuta",
+  'theme.toDark': "Tungi rejimga o'tish",
+  'theme.toLight': "Kunduzgi rejimga o'tish",
   'language.label': 'Til: {name}',
   'currency.label': 'Valyuta: {name}',
   'currency.UZS': "O'zbek so'mi",

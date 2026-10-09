@@ -18,6 +18,8 @@ export const en = {
   'menu.navigation': "Navigation menu",
   'menu.language': "Language",
   'menu.currency': "Currency",
+  'theme.toDark': "Switch to dark theme",
+  'theme.toLight': "Switch to light theme",
   'language.label': 'Language: {name}',
   'currency.label': 'Currency: {name}',
   'currency.UZS': 'Uzbek sum',

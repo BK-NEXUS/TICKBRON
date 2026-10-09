@@ -20,6 +20,8 @@ export const ru: Record<MessageKey, string> = {
   'menu.navigation': "Меню навигации",
   'menu.language': "Язык",
   'menu.currency': "Валюта",
+  'theme.toDark': "Включить тёмную тему",
+  'theme.toLight': "Включить светлую тему",
   'language.label': 'Язык: {name}',
   'currency.label': 'Валюта: {name}',
   'currency.UZS': 'Узбекский сум',

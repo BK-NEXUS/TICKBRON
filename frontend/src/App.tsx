@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './theme/ThemeContext'
 import { I18nProvider } from './i18n/I18nContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { MainLayout } from './layout/MainLayout'
@@ -44,40 +45,42 @@ function PageLoader() {
 function App() {
   return (
     <ErrorBoundary>
-      <I18nProvider>
-        <AuthProvider>
-          <Router>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<MainLayout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="search" element={<SearchResultsPage />} />
-                  <Route path="property/:id" element={<PropertyDetailPage />} />
-                  <Route path="booking" element={<BookingPage />} />
-                  <Route path="bookings" element={<BookingsPage />} />
-                  <Route path="favorites" element={<FavoritesPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route element={<RequireAccess allow={canUsePartnerPanel} area="the partner dashboard" />}>
-                    <Route path="partner" element={<PartnerDashboardPage />} />
+      <ThemeProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <Router>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<MainLayout />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="search" element={<SearchResultsPage />} />
+                    <Route path="property/:id" element={<PropertyDetailPage />} />
+                    <Route path="booking" element={<BookingPage />} />
+                    <Route path="bookings" element={<BookingsPage />} />
+                    <Route path="favorites" element={<FavoritesPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route element={<RequireAccess allow={canUsePartnerPanel} area="the partner dashboard" />}>
+                      <Route path="partner" element={<PartnerDashboardPage />} />
+                    </Route>
+                    <Route element={<RequireAccess allow={canUseAdminPanel} area="the admin dashboard" />}>
+                      <Route path="admin" element={<AdminDashboardPage />} />
+                      <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
+                      <Route path="admin/support" element={<SupportLookupPage />} />
+                    </Route>
+                    <Route path="destinations" element={<DestinationsPage />} />
+                    {(['about', 'help', 'contact', 'safety', 'terms', 'privacy', 'cookies'] as const).map(slug => (
+                      <Route key={slug} path={slug} element={<InfoPage slug={slug} />} />
+                    ))}
+                    <Route path="*" element={<NotFoundPage />} />
                   </Route>
-                  <Route element={<RequireAccess allow={canUseAdminPanel} area="the admin dashboard" />}>
-                    <Route path="admin" element={<AdminDashboardPage />} />
-                    <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
-                    <Route path="admin/support" element={<SupportLookupPage />} />
-                  </Route>
-                  <Route path="destinations" element={<DestinationsPage />} />
-                  {(['about', 'help', 'contact', 'safety', 'terms', 'privacy', 'cookies'] as const).map(slug => (
-                    <Route key={slug} path={slug} element={<InfoPage slug={slug} />} />
-                  ))}
-                  <Route path="*" element={<NotFoundPage />} />
-                </Route>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-              </Routes>
-            </Suspense>
-          </Router>
-        </AuthProvider>
-      </I18nProvider>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                </Routes>
+              </Suspense>
+            </Router>
+          </AuthProvider>
+        </I18nProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }

@@ -2411,3 +2411,11 @@ All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages,
 ### Found, not fixed
 - Country names are English only (no i18n keys yet); the "Search country" / "Country:" labels too.
 - Checked in Chromium at 390px and 1440px (register page); not checked with a screen reader.
+
+## Dark mode (frontend, 2026-10-09)
+- Tokens: second set of colour and shadow tokens in `tokens.css`, applied by `@media (prefers-color-scheme: dark)` (unless `data-theme="light"`) and by `:root[data-theme='dark']`; the two blocks are tested identical. `color-scheme` set so native controls follow. Dark text/control pairs are contrast-tested (AA 4.5 text, 3:1 controls; 46 token tests).
+- New tokens (light value unchanged): `--color-surface` (cards/menus), `--color-text-strong`, `--color-saffron-solid` (fill under white text), `--color-header-bg`, `--color-float-bg`, `--color-cream-deep`. In `index.css` 35 declarations were re-pointed (backgrounds of cloud-white -> surface, pomegranate/saffron fills -> solid tokens, gold-dark/teal text -> pomegranate/text-strong) so each foreground/background pair can flip separately; identical in light.
+- `theme/ThemeContext.tsx` (system | light | dark, remembered in `localStorage` `tickbron.theme`, `data-theme` on `<html>` only after a choice) and `ThemeToggle` (sun/moon lucide icon, `aria-pressed`, texts `theme.toDark/toLight` in uz/ru/en) in the header and the mobile menu.
+### Found, not fixed
+- Checked in Chromium (dark system setting, 1440px): home, login, search shell. NOT checked: pages with data (property cards, booking, partner and admin tables, Status charts) because no backend ran; raw colours remain in about 40 rules (status badges with their own pastel background and dark text, WhatsApp/Telegram button colours) and may need a pass.
+- 390px dark not checked.

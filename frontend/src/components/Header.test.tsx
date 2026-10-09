@@ -122,6 +122,11 @@ describe('Header', () => {
     expect(screen.getByText('UZS')).toBeInTheDocument()
   })
 
+  it('has a light/dark theme button', async () => {
+    await renderWithAuthProvider(<Header />)
+    expect(screen.getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeInTheDocument()
+  })
+
   it('renders mobile menu toggle', async () => {
     await renderWithAuthProvider(<Header />)
     const toggle = screen.getByLabelText('Open menu')
