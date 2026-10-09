@@ -115,6 +115,15 @@ NOTIFICATION_CODES = {
         'title': 'Booking {booking_reference} marked as a no-show',
         'message': 'Your booking {booking_reference} was marked as a no-show. No refund is due for it.',
     },
+    'registration_attempt': {
+        'type': 'system',
+        'params': (),
+        'title': 'Registration attempt with your contact details',
+        'message': (
+            'Someone tried to register with your email or phone number. '
+            'Your account was not changed; if it was not you, no action is needed.'
+        ),
+    },
     'refund_succeeded': {
         'type': 'payment',
         'params': ('refund_id', 'booking_id', 'booking_reference', 'amount', 'currency'),

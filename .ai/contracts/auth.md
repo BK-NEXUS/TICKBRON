@@ -5,7 +5,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 ## Authentication Methods
 
 ### Password-Based Authentication
-- POST `/api/v1/auth/register/` - User registration
+- POST `/api/v1/auth/register/` - User registration. CHANGED 2026-10-09 (SECURITY_REVIEW M-5): always 202 `{"detail": "Registration received. You can now log in with your email and password."}` for a new AND an already-registered email/phone (no enumeration), no session is started and no user object is returned; the client logs in afterwards with `POST /auth/login/`. The owner of an already-used contact gets an in-app notification (`registration_attempt`, type system). Invalid input (format, password rules, mismatch) is still 400 with field errors. Emails are lowercased (M-1)
   - Required fields: `email`, `full_name`, `phone_number`, `password`, `password_confirm`
   - Optional fields: `first_name`, `last_name` (nullable), `whatsapp`, `telegram`, `preferred_contact_method`
   - Auto-logs in user after successful registration
@@ -41,14 +41,14 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - `authenticated` (added 2026-09-28): whether this session is logged in. The SPA asks it on page load and only calls `/auth/me/` when it is true, so anonymous visits make no 401 request (browser console error)
   - The `csrftoken` cookie is HttpOnly, so the SPA cannot read it; it takes the token from this endpoint instead
   - Every POST/PUT/PATCH/DELETE from a logged-in session must send it as the `X-CSRFToken` header, otherwise 403 `{"error": {"code": "error", "message": "CSRF Failed: CSRF token missing.", ...}}`
-  - Django rotates the token on login (password, OTP verify, register auto-login); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write
+  - Django rotates the token on login (password, OTP verify); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write
 
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
   - Includes read-only `is_staff` and `is_superuser` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; only super-admins can use `POST /admin-panel/users/create-hotel-owner/`. The flags only drive the UI: the backend still checks permissions on every request, and `PATCH /auth/me/update/` cannot change them
   - Includes read-only `role` (string or null, added 2026-09-26): `"hotel-owner"` for owner accounts, null for regular users. Only a super-admin assigns it (`POST /admin-panel/users/create-hotel-owner/`); register, OTP and `PATCH /auth/me/update/` ignore any `role` in the body. The UI shows partner entry points only for `role == "hotel-owner"` or staff
-  - The same user object (with both flags and `role`) is returned by register, login, OTP verify, refresh and `PATCH /auth/me/update/`
+  - The same user object (with both flags and `role`) is returned by login, OTP verify, refresh and `PATCH /auth/me/update/`
 - POST `/api/v1/auth/refresh/` - Refresh session
 - PATCH `/api/v1/auth/me/update/` - Update user profile
   - Required authentication

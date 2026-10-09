@@ -19,7 +19,7 @@ from users.models import User
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 from users import lockout
 from users.validators import parse_phone_number
-from users.services import OTPService
+from users.services import OTPService, register_account
 from common.request import get_client_ip
 
 # Check if running in test mode
@@ -27,6 +27,7 @@ TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 # One message for every failed login, so responses do not reveal whether an
 # email exists or an account is locked
+REGISTRATION_ACCEPTED_MESSAGE = 'Registration received. You can now log in with your email and password.'
 LOGIN_FAILED_MESSAGE = 'Invalid credentials. If you have made several failed attempts, please try again later.'
 
 
@@ -99,19 +100,15 @@ def register(request):
     """
     Register a new user.
     
-    Creates a new user account with email and password.
-    Uses session-based authentication with secure cookies.
+    Creates a new user account with email and password. The answer is the
+    same when the email or phone is already registered (the owner is notified
+    in-app instead), and no session is started: the client logs in afterwards.
     """
     serializer = UserRegistrationSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        # Auto-login after registration
-        login(request, user)
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    register_account(serializer.validated_data)
+    return Response({'detail': REGISTRATION_ACCEPTED_MESSAGE}, status=status.HTTP_202_ACCEPTED)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

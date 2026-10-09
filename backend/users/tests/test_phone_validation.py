@@ -54,15 +54,15 @@ class TestRegister:
         response = APIClient().post(
             '/api/v1/auth/register/', register_payload('+998 90 123 45 67'), format='json'
         )
-        assert response.status_code == 201, response.data
+        assert response.status_code == 202, response.data
         assert User.objects.get(email='newcomer@example.com').phone_number == '+998901234567'
 
     def test_formatted_duplicate_is_caught(self, user):
         response = APIClient().post(
             '/api/v1/auth/register/', register_payload('+998 90 111 22 33'), format='json'
         )
-        assert response.status_code == 400
-        assert 'already exists' in error_text(response)
+        assert response.status_code == 202
+        assert not User.objects.filter(email='newcomer@example.com').exists()
 
 
 @pytest.mark.django_db

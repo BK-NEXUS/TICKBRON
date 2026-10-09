@@ -5,6 +5,7 @@ import pytest
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from users.models import User
+from users.services import register_account
 from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
 
 
@@ -55,7 +56,8 @@ class TestUserRegistrationSerializer(TestCase):
         serializer = UserRegistrationSerializer(data=data)
         assert serializer.is_valid()
         
-        user = serializer.save()
+        register_account(serializer.validated_data)
+        user = User.objects.get(email=data['email'])
         assert user.email == 'newuser@example.com'
         assert user.full_name == 'New User'
         assert user.phone_number == '+998901234567'
@@ -128,7 +130,8 @@ class TestUserRegistrationSerializer(TestCase):
         serializer = UserRegistrationSerializer(data=data)
         assert serializer.is_valid()
         
-        user = serializer.save()
+        register_account(serializer.validated_data)
+        user = User.objects.get(email=data['email'])
         assert user.full_name == 'New User'
         assert user.first_name is None
         assert user.last_name is None
@@ -149,7 +152,8 @@ class TestUserRegistrationSerializer(TestCase):
         serializer = UserRegistrationSerializer(data=data)
         assert serializer.is_valid()
         
-        user = serializer.save()
+        register_account(serializer.validated_data)
+        user = User.objects.get(email=data['email'])
         assert user.whatsapp == '+998901234567'
         assert user.telegram == '@telegramuser'
         assert user.preferred_contact_method == 'whatsapp'

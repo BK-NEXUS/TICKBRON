@@ -45,7 +45,7 @@ def test_register_rejects_weak_password(password):
 def test_register_accepts_strong_password():
     response = _register(APIClient(), STRONG_PASSWORD, 99)
 
-    assert response.status_code == 201
+    assert response.status_code == 202
 
 
 @pytest.mark.django_db

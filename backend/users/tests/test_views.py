@@ -29,21 +29,18 @@ class TestAuthViews(TestCase):
         """Test user registration endpoint with simplified fields."""
         response = self.client.post('/api/v1/auth/register/', self.user_data)
         
-        assert response.status_code == status.HTTP_201_CREATED
-        assert User.objects.filter(email='test@example.com').exists()
-        assert 'email' in response.data
-        assert response.data['email'] == 'test@example.com'
-        assert response.data['full_name'] == 'Test User'
-        assert response.data['phone_number'] == '+998901234567'
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        user = User.objects.get(email='test@example.com')
+        assert user.full_name == 'Test User'
+        assert user.phone_number == '+998901234567'
+        assert 'email' not in response.data
     
-    def test_register_user_auto_login(self):
-        """Test that user is automatically logged in after registration."""
+    def test_register_user_does_not_start_a_session(self):
+        """Registration answers the same for new and existing contacts, so it cannot log in."""
         response = self.client.post('/api/v1/auth/register/', self.user_data)
         
-        # Check if session was created (user should be logged in)
-        assert response.status_code == status.HTTP_201_CREATED
-        # In a real scenario, we'd check session cookies, but for API testing
-        # we verify the user was created successfully
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert '_auth_user_id' not in self.client.session
     
     def test_register_duplicate_email(self):
         """Test registration with duplicate email."""
@@ -53,10 +50,11 @@ class TestAuthViews(TestCase):
             password='testpass123'
         )
         
-        # Try to register with same email
+        # Try to register with same email: same answer as for a new address, no second account
         response = self.client.post('/api/v1/auth/register/', self.user_data)
         
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert User.objects.filter(email='test@example.com').count() == 1
     
     def test_login_valid_credentials(self):
         """Test login with valid credentials."""

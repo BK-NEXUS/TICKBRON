@@ -54,7 +54,7 @@ Severity: Critical / High (fixed now, each with a proof test that failed before 
 - Evidence: `GET /admin-panel/users/` returns every user (`admin_panel/views.py` `AdminUserViewSet.list`, no pagination); `GET /partner/bookings/` returns all bookings with one extra query per booking (`partner/views.py:354`); `GET /bookings/` (own bookings) unpaginated; `GET /properties/{id}/availability/` without dates returns every DateInventory row (`properties/serializers.py:528-553`).
 - Fix: paginate (page size cap), require/cap the availability date range. Frontend contract change, so coordinate (R14 performance).
 
-### M-5 Registration reveals existing accounts
+### M-5 Registration reveals existing accounts — FIXED (feat/be-security-vip; in-app notification instead of email, no email sending exists)
 - Evidence: `POST /auth/register/` answers duplicate email (409) / phone ("already registered") differently from success (HANDOFF auth section). Login and OTP do not enumerate.
 - Fix: same response for new and existing contacts plus a notification to the existing owner (needs email/SMS sending).
 

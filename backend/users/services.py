@@ -5,7 +5,10 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
-from django.db import transaction
+from django.contrib.auth.hashers import make_password
+from django.db import IntegrityError, transaction
+from django.db.models import Q
+from accounts.notifications import notify
 from common.exceptions import ExternalServiceException
 from common.privacy import mask_phone
 from users import lockout
@@ -18,6 +21,30 @@ logger = logging.getLogger(__name__)
 # OTP endpoints do not reveal which phone numbers have accounts
 OTP_REQUESTED_MESSAGE = 'If this phone number is registered, a verification code has been sent.'
 OTP_INVALID_MESSAGE = 'Invalid or expired OTP code'
+
+
+def register_account(validated_data):
+    """
+    Create the account, or tell the existing owner that their email or phone was used.
+
+    The caller answers the same either way (SECURITY_REVIEW M-5), so nothing
+    here may change what the requester can observe, including the time spent.
+    """
+    data = {key: value for key, value in validated_data.items() if key != 'password_confirm'}
+    password = data.pop('password')
+    existing = User.objects.filter(
+        Q(email__iexact=data['email']) | Q(phone_number=data['phone_number'])
+    ).first()
+    if existing is not None:
+        make_password(password)
+        notify(existing, 'registration_attempt', {})
+        return
+    try:
+        with transaction.atomic():
+            User.objects.create_user(password=password, **data)
+    except IntegrityError:
+        # A concurrent registration took the contact first; the answer stays the same
+        return
 
 
 class OTPService:

@@ -187,7 +187,7 @@ class APISmokeTestV2:
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
         
-        if response.status_code == 201:
+        if response.status_code == 202:
             # Verify user was created
             user_exists = User.objects.filter(email=unique_email).exists()
             if user_exists:
@@ -200,7 +200,7 @@ class APISmokeTestV2:
                 self.test_user_password = test_password
                 return True
             else:
-                print(f"\nFAIL: User not found in database despite 201 response")
+                print(f"\nFAIL: User not found in database despite 202 response")
                 return False
         else:
             print(f"\nFAIL: Registration failed with status {response.status_code}")

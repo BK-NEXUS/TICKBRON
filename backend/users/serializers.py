@@ -83,7 +83,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration.
     """
-    # Declared so only validate_email checks uniqueness (the model validator is case-sensitive)
+    # Declared so the model's uniqueness validator does not answer "taken" (M-5, see users.services)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
@@ -100,29 +100,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
     
     def validate_email(self, value):
-        """Validate format and uniqueness ignoring case (the field validator is case-sensitive)."""
         EmailFormatValidator().validate(value)
-        return validate_unique_email(User.objects.normalize_email(value))
+        return User.objects.normalize_email(value)
     
     def validate_phone_number(self, value):
-        """Validate phone number format and uniqueness."""
+        """Validate phone number format; whether it is taken is decided in users.services."""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone number is required.")
-        return validate_unique_phone_number(validate_phone_number_format(value))
+        return validate_phone_number_format(value)
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         validate_new_password(attrs)
         return attrs
-    
-    def create(self, validated_data):
-        validated_data.pop('password_confirm')
-        password = validated_data.pop('password')
-        user = User.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
 
 
 class UserLoginSerializer(serializers.Serializer):

@@ -46,16 +46,17 @@ class TestEmailCaseInEndpoints(TestCase):
             'email': 'Alice@Example.uz', 'full_name': 'Second Alice', 'phone_number': '+998901230099',
             'password': PASSWORD, 'password_confirm': PASSWORD,
         }, format='json')
-        assert response.status_code == 400
+        assert response.status_code == 202
         assert User.objects.filter(email__iexact='alice@example.uz').count() == 1
+        assert not User.objects.filter(full_name='Second Alice').exists()
 
     def test_register_stores_lowercase_email(self):
         response = self.client.post('/api/v1/auth/register/', {
             'email': 'Carol@Example.uz', 'full_name': 'Carol', 'phone_number': '+998901230098',
             'password': PASSWORD, 'password_confirm': PASSWORD,
         }, format='json')
-        assert response.status_code == 201
-        assert User.objects.get(pk=response.json()['id']).email == 'carol@example.uz'
+        assert response.status_code == 202
+        assert User.objects.get(full_name='Carol').email == 'carol@example.uz'
 
     def test_admin_created_owner_with_case_variant_email_is_rejected(self):
         admin = User.objects.create_superuser(email='root@example.uz', password=PASSWORD)
