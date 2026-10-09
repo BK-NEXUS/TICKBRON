@@ -103,6 +103,7 @@ class Command(BaseCommand):
             hotels = self._seed_hotels(owner_role, today)
             guests = self._seed_guests(rng, today)
             summary = self._seed_bookings(rng, today, hotels, guests)
+            self._seed_promotions(rng, hotels)
         self._print_summary(hotels, summary)
 
     def _demo_user(self, email, full_name, phone_number, joined, role=None):
@@ -261,6 +262,33 @@ class Command(BaseCommand):
             )
         else:
             Refund.objects.filter(idempotency_key=refund_key).delete()
+
+    @staticmethod
+    def _seed_promotions(rng, hotels):
+        """Five running paid promotions with numbers, one unpaid, one expired (R10 demo for the banners)."""
+        from common.dates import business_today
+        from promotions.models import Promotion, PromotionDailyStat
+
+        today = business_today()
+        plan = [(0, 10, True, 'active')] * 5 + [(0, 10, False, 'scheduled'), (-20, 10, True, 'ended')]
+        for index, (start, days, paid, state) in enumerate(plan):
+            prop = hotels[index]['property']
+            if Promotion.objects.filter(property=prop).exists():
+                continue
+            first = today + timedelta(days=start)
+            promotion = Promotion.objects.create(
+                property=prop, start_date=first, end_date=first + timedelta(days=days - 1), priority=index % 3 * 10,
+                price_amount=Decimal('1500000'), price_currency='UZS', status=state,
+                paid_at=timezone.now() if paid else None, note='DEMO')
+            if not paid:
+                continue
+            for day in range(days):
+                date = first + timedelta(days=day)
+                if date > today:
+                    break
+                views = rng.randint(80, 400)
+                PromotionDailyStat.objects.create(
+                    promotion=promotion, date=date, impressions=views, clicks=rng.randint(3, views // 10))
 
     def _print_summary(self, hotels, statuses):
         write = self.stdout.write

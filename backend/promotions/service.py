@@ -84,6 +84,11 @@ def _lock_property(property_id):
     Property.objects.select_for_update().only('id').get(pk=property_id)
 
 
+def _lock_promotion(promotion):
+    # Re-reads the row under a lock so two admins acting at once see each other's result
+    promotion.refresh_from_db(from_queryset=Promotion.objects.select_for_update())
+
+
 def create_promotion(*, actor, property, start_date, end_date, priority=0, country_ref=None, region_ref=None,
                      city_ref=None, price_amount=None, price_currency='UZS', note=''):
     price_currency = (price_currency or '').strip().upper()
@@ -108,7 +113,7 @@ def update_promotion(promotion, *, actor, **changes):
         raise PromotionError('bad_field', f'Cannot change: {sorted(unknown)}')
     with transaction.atomic():
         _lock_property(promotion.property_id)
-        promotion.refresh_from_db()
+        _lock_promotion(promotion)
         if promotion.status not in EDITABLE_STATUSES:
             raise PromotionError('bad_status', 'This promotion can no longer be changed')
         if 'price_currency' in changes:
@@ -130,7 +135,7 @@ def update_promotion(promotion, *, actor, **changes):
 
 def _transition(promotion, actor, action, allowed, new_status, **extra):
     with transaction.atomic():
-        promotion.refresh_from_db()
+        _lock_promotion(promotion)
         if promotion.status not in allowed:
             raise PromotionError('bad_status', f'Cannot do this to a {promotion.status} promotion')
         promotion.status = new_status
@@ -164,7 +169,7 @@ def cancel(promotion, *, actor, reason):
 
 def mark_paid(promotion, *, actor):
     with transaction.atomic():
-        promotion.refresh_from_db()
+        _lock_promotion(promotion)
         if promotion.paid_at is not None:
             raise PromotionError('already_paid', 'Payment is already recorded')
         if promotion.status not in EDITABLE_STATUSES:
