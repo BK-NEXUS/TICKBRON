@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
 import { PropertyRegionField } from './PropertyRegionField'
+import { useI18n } from '../i18n/I18nContext'
 
 export function AdminPropertyModeration() {
   const [properties, setProperties] = useState<AdminProperty[]>([])
@@ -130,11 +131,10 @@ export function AdminPropertyModeration() {
     }
   }
 
+  const { formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const formatDate = (dateString: string) => {

@@ -1,5 +1,6 @@
 import { PaymentProvider, PaymentStatus } from '../adapters/paymentAdapter'
 import { CircleCheck, CircleX, CreditCard, Hourglass, Undo2, type LucideIcon } from 'lucide-react'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentProcessingProps {
   provider: PaymentProvider
@@ -14,6 +15,7 @@ interface PaymentProcessingProps {
  * Shows loading animation and status updates during payment processing
  */
 export function PaymentProcessing({ provider, amount, currency, status, message }: PaymentProcessingProps) {
+  const { formatMoney } = useI18n()
   const getProviderName = (provider: PaymentProvider): string => {
     const names: Record<PaymentProvider, string> = {
       payme: 'Payme',
@@ -84,12 +86,7 @@ export function PaymentProcessing({ provider, amount, currency, status, message 
           <div className="payment-processing-detail">
             <span className="payment-processing-detail-label">Amount:</span>
             <span className="payment-processing-detail-value">
-              {new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(amount)}
+              {formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })}
             </span>
           </div>
           <div className="payment-processing-detail">

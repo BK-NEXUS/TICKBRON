@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerBooking } from '../adapters/partnerAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 export function PartnerBookingsView() {
   const [bookings, setBookings] = useState<PartnerBooking[]>([])
@@ -72,11 +73,10 @@ export function PartnerBookingsView() {
     }
   }
 
+  const { formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const formatDate = (dateString: string) => {

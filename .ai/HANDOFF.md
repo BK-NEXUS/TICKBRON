@@ -2397,3 +2397,9 @@ Branch `claude/loyha-organish-22tsk4`. Plan: `.ai/PLAN_R5.md`. Frontend only, no
 
 ## Star icon instead of the star character (frontend, 2026-10-09)
 `StarIcon` (lucide Star, filled, `currentColor`) replaces the star character in 10 places (cards, property header and page, reviews, rating breakdown, review form, search filter, nearby places, dining). `noEmoji.test.ts` passes again (it failed on master). Test assertions that looked for the star text now look for `.star-icon` (same intent: rating shown, nothing shown without a rating, 5 stars per review). Not checked visually in a browser beyond the header.
+
+## Money display migrated to one formatter (frontend, 2026-10-09)
+All 15 local `Intl.NumberFormat('en-US', currency ...)` formatters (guest pages, payment steps, property and room cards, partner bookings, admin customer/property views, support lookup) now call `useI18n().formatMoney(amount, currencyOfTheAmount, { minDecimals, maxDecimals })`. UZS amounts read "450 000 so'm" / "сум" / "UZS" by page language; every other currency is formatted exactly as before, so no existing assertion changed. New: options in `formatMoney`, a UZS component test (PropertyCard), tests for decimals / EUR / unknown code.
+- Amounts are shown in THEIR OWN currency. The currency selector does not convert yet (needs the R6 rate and approximate-sum fields on the property API).
+### Found, not fixed
+- The Status screens use `utils/statusFormat.ts` (English, 2 decimals, "UZS 1,250.00" style). They need the same formatter when the Status texts move to keys.

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { en, type MessageKey } from './messages/en'
 import { uz } from './messages/uz'
 import { ru } from './messages/ru'
-import { formatMoney as formatMoneyFor } from './format'
+import { formatMoney as formatMoneyFor, type MoneyOptions } from './format'
 import {
   DEFAULT_CURRENCY, DEFAULT_LANGUAGE, isCurrency, isLanguage, type Currency, type Language,
 } from './options'
@@ -19,7 +19,8 @@ interface I18nValue {
   setLanguage: (language: Language) => void
   setCurrency: (currency: Currency) => void
   t: (key: MessageKey, params?: Params) => string
-  formatMoney: (amount: number | string, currency?: Currency) => string
+  /** In the currency the amount is in; the selected currency only when none is given */
+  formatMoney: (amount: number | string, currency?: string, options?: MoneyOptions) => string
 }
 
 // Browser storage can be blocked (private window, site data off): the app must work without it
@@ -61,7 +62,7 @@ function buildValue(
     setLanguage,
     setCurrency,
     t: (key, params) => translate(language, key, params),
-    formatMoney: (amount, forCurrency = currency) => formatMoneyFor(amount, forCurrency, language),
+    formatMoney: (amount, forCurrency = currency, options) => formatMoneyFor(amount, forCurrency, language, options),
   }
 }
 

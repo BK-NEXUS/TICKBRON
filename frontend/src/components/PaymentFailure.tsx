@@ -1,5 +1,6 @@
 import { PaymentProvider } from '../adapters/paymentAdapter'
 import { CircleX, TriangleAlert } from 'lucide-react'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentFailureProps {
   provider: PaymentProvider
@@ -33,13 +34,10 @@ export function PaymentFailure({
     return names[provider]
   }
 
+  const { formatMoney } = useI18n()
+
   const formatAmount = (amount: number, currency: string): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
+    return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const getErrorMessage = (error?: string): string => {

@@ -3,6 +3,7 @@ import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
 import { StarIcon } from './StarIcon'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PropertyCardProps {
   property: Property
@@ -26,13 +27,10 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
     navigate(`/property/${property.id}`)
   }
 
+  const { formatMoney } = useI18n()
+
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
+    return formatMoney(price, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const getLocationString = () => {

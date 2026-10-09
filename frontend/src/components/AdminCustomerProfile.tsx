@@ -3,6 +3,7 @@ import { SegmentedControl } from './SegmentedControl'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminAdapter } from '../adapters/adminAdapter'
 import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 type TabType = 'bookings' | 'payments' | 'notes'
 type BookingFilterType = 'all' | 'upcoming' | 'completed' | 'cancelled'
@@ -153,11 +154,10 @@ export function AdminCustomerProfile() {
     })
   }
 
+  const { formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const formatPhoneNumber = (phone: string) => {

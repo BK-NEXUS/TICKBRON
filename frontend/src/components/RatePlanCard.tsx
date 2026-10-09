@@ -1,4 +1,5 @@
 import { RatePlan } from '../adapters/propertyAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 interface RatePlanCardProps {
   ratePlan: RatePlan
@@ -11,13 +12,9 @@ interface RatePlanCardProps {
  * Shows rate plan details, pricing, cancellation policy, and deposit information
  */
 export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePlanCardProps) {
+  const { formatMoney } = useI18n()
   const formatPrice = (price: number, currencyCode: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
+    return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const formatRateType = (rateType: string) => {

@@ -3,6 +3,7 @@ import { Lock, Ban } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { adminAdapter, SupportLookupBooking } from '../adapters/adminAdapter'
 import { EmptyState } from '../components/EmptyState'
+import { useI18n } from '../i18n/I18nContext'
 
 export function SupportLookupPage() {
   const { user, isAuthenticated } = useAuth()
@@ -50,11 +51,10 @@ export function SupportLookupPage() {
     })
   }
 
+  const { formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const getStatusClass = (status: string) => {

@@ -11,6 +11,7 @@ import {
 import { RoomCard } from './RoomCard'
 import { RatePlanCard } from './RatePlanCard'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
+import { useI18n } from '../i18n/I18nContext'
 
 /** How far ahead the availability calendar loads, in days */
 const AVAILABILITY_DAYS = 90
@@ -175,10 +176,9 @@ export function RoomSelection({ roomTypes, propertyId, currency = 'USD' }: RoomS
     }
   }
 
+  const { formatMoney: formatAmount } = useI18n()
   const formatMoney = (amount: string | number, code: string) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: code, minimumFractionDigits: 0, maximumFractionDigits: 2,
-    }).format(Number(amount))
+    formatAmount(Number(amount), code, { minDecimals: 0, maxDecimals: 2 })
 
   const formatLongDate = (date: string) => {
     const [year, month, day] = date.split('-').map(Number)

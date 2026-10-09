@@ -1,4 +1,5 @@
 import { RoomType } from '../adapters/propertyAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 interface RoomCardProps {
   room: RoomType
@@ -12,13 +13,9 @@ interface RoomCardProps {
  * Shows room details, occupancy, bed configuration, size, and pricing
  */
 export function RoomCard({ room, currency: _currency = 'USD', onSelect, isSelected = false }: RoomCardProps) {
+  const { formatMoney } = useI18n()
   const formatPrice = (price: number, currencyCode: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
+    return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })
   }
 
   return (

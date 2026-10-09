@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PropertyCard } from './PropertyCard'
 import { Property } from '../adapters/propertyAdapter'
+import { I18nProvider } from '../i18n/I18nContext'
 
 // Mock React Router
 const mockNavigate = vi.fn()
@@ -95,6 +96,16 @@ describe('PropertyCard', () => {
     expect(screen.getByTitle('Air Conditioning')).toBeInTheDocument()
     expect(screen.getByTitle('Heating')).toBeInTheDocument()
     expect(screen.getByTitle('Elevator')).toBeInTheDocument()
+  })
+
+  it('writes a sum price in the language of the page', () => {
+    localStorage.setItem('tickbron.language', 'uz')
+    const sumProperty = { ...mockProperty, currency: 'UZS', base_price: 450000 }
+    render(<I18nProvider><PropertyCard property={sumProperty} /></I18nProvider>)
+    localStorage.clear()
+
+    // The text matcher turns the non-breaking spaces into plain ones, so read the raw text
+    expect(document.querySelector('.property-card-price-value')?.textContent).toBe("450\u00a0000\u00a0so'm")
   })
 
   it('does not display amenities that are not available', () => {

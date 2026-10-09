@@ -14,6 +14,7 @@ import { isValidPhone, phoneErrorMessage } from '../utils/phone'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
+import { useI18n } from '../i18n/I18nContext'
 
 interface BookingState {
   propertyId: number
@@ -187,18 +188,15 @@ export function BookingPage() {
   // null while neither is known or when the stay cannot be booked
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
-  const formatMoney = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(value)
+  const { formatMoney: formatAmount } = useI18n()
+  const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
 
   /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
   const priceBreakdownLabel = (): string => {
     const nights = quote?.number_of_nights ?? calculateNumberOfNights()
     const prices = (quote?.nights ?? []).map(night => Number(night.price))
     const uniform = prices.length > 0 && prices.every(price => price === prices[0])
-    const format = (value: number) => new Intl.NumberFormat('en-US', {
-      style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0,
-    }).format(value)
+    const format = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 0 })
     const nightWord = nights === 1 ? 'night' : 'nights'
     const nightsText = uniform ? `${format(prices[0])} × ${nights} ${nightWord}` : `${nights} ${nightWord}`
     return roomsForQuote > 1 ? `${nightsText} × ${roomsForQuote} rooms` : nightsText

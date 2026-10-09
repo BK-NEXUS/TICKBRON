@@ -31,4 +31,18 @@ describe('formatMoney', () => {
   it('shows a dash for a value that is not a number', () => {
     expect(formatMoney('abc', 'UZS', 'uz')).toBe('—')
   })
+
+  it('honours the number of decimals a screen asks for', () => {
+    expect(formatMoney(120, 'USD', 'en', { minDecimals: 0, maxDecimals: 0 })).toBe('$120')
+    expect(formatMoney(119.5, 'USD', 'en', { minDecimals: 0, maxDecimals: 2 })).toBe('$119.5')
+    expect(formatMoney(120, 'USD', 'en', { minDecimals: 0, maxDecimals: 2 })).toBe('$120')
+  })
+
+  it('formats other ISO currencies the English way', () => {
+    expect(formatMoney(60, 'EUR', 'uz', { minDecimals: 0, maxDecimals: 0 })).toBe('€60')
+  })
+
+  it('shows an unknown currency code as text instead of throwing', () => {
+    expect(formatMoney('12.5', 'XX', 'en')).toBe('XX 12.50')
+  })
 })

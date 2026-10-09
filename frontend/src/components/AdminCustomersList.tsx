@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { adminAdapter, AdminCustomer, GetCustomersParams } from '../adapters/adminAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 const SORT_FIELDS = [
   { value: 'registration_date', label: 'Registration Date' },
@@ -108,11 +109,10 @@ export function AdminCustomersList() {
     })
   }
 
+  const { formatMoney } = useI18n()
+
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount)
+    return formatMoney(amount, currency)
   }
 
   const getContactMethodLabel = (method: string) => {

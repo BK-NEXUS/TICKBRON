@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Check, Copy, Mail, Smartphone } from 'lucide-react'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
+import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentConfirmationProps {
   payment: PaymentTransaction
@@ -44,13 +45,10 @@ export function PaymentConfirmation({
     })
   }
 
+  const { formatMoney } = useI18n()
+
   const formatAmount = (amount: number, currency: string): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
+    return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
   const handleCopyCode = async () => {

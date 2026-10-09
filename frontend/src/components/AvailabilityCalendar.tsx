@@ -1,6 +1,7 @@
 import { DateInventory } from '../adapters/propertyAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
 import { formatDay, nightsBetween, toLocalDate } from '../utils/dates'
+import { useI18n } from '../i18n/I18nContext'
 
 interface AvailabilityCalendarProps {
   inventory: DateInventory[]
@@ -45,10 +46,9 @@ export function AvailabilityCalendar({
   maxNights,
 }: AvailabilityCalendarProps) {
   const byDate = new Map(inventory.map(row => [row.date, row]))
+  const { formatMoney } = useI18n()
   const formatPrice = (price: number, code: string) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: code || currency, minimumFractionDigits: 0, maximumFractionDigits: 0,
-    }).format(price)
+    formatMoney(price, code || currency, { minDecimals: 0, maxDecimals: 0 })
 
   const validateRange = (start: string, end: string): string | null => {
     const nights = nightsBetween(start, end)
