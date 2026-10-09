@@ -1144,3 +1144,6 @@ Commit format:
 - ✅ SMS_TEST_MODE correctly implemented for non-production builds only
 - ✅ Ready for production deployment
 
+
+## 2026-10-09 R10 promotions
+- Banner carousel on the search page (above filters and list) and on the home page; search list is two columns; admin "Advertising" screen. Details in `HANDOFF.md`.

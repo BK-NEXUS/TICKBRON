@@ -9760,7 +9760,12 @@ table .btn {
 
   .promo-slide-info {
     padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
-    padding-right: 120px;
+  }
+
+  /* On a phone the controls go to the top right so they never cover the price */
+  .promo-carousel-controls {
+    top: var(--spacing-md);
+    bottom: auto;
   }
 
   .promo-slide-name {
@@ -9815,6 +9820,12 @@ table .btn {
   .search-results-toolbar {
     flex-wrap: wrap;
     gap: var(--spacing-sm);
+  }
+
+  .search-results-grid .property-card {
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
   }
 
   .search-results-grid .property-card-image {
