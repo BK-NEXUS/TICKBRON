@@ -2574,3 +2574,9 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 - E2E C: waits until the button is enabled, clicks only when the hotel is not yet saved (a half-finished earlier run could leave it saved, and a click would then remove it), waits for `aria-pressed="true"`; expects "1 property saved" and `/\$60/` (the card says "$60 / night"). Corrected, not weakened.
 - Result against the seeded stack (test modes on): user-flows A-H all 8 pass.
 - Found, not fixed: a failed save is still silent (the button just stays unpressed, no message).
+
+## Security hardening, batch 1 (webhooks + throttles), 2026-10-10
+- Webhook: only `processed` events are replays; a `failed`/`received` event is reprocessed on the provider's retry (money-loss bug: paid booking expired unpaid). Processing runs in one transaction. Unparseable timestamps are rejected with 400 instead of 500 (`payments/adapters.py`). Transactions are matched by provider as well as provider id.
+- Login/register/OTP throttles are keyed by IP for everyone, including logged-in sessions (`users/views.py` `IPRateThrottle`). A per-email login throttle was NOT added: it would let anyone block a victim's login (see `users/lockout.py`).
+- Tests added: `payments/tests/test_payment_security.py` (3), `users/tests/test_rate_limiting.py` (2). No assertion changed.
+- Found, not fixed: remaining security items are listed in `/root/.claude/plans` batch 2 (phone pre-hijack N-1, proxy/HSTS settings N-3/N-6, OTP hashing, login CSRF, etc.); need PLAN_SECURITY.md and owner approval.

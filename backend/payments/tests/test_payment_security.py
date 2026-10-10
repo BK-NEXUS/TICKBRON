@@ -368,6 +368,48 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
         assert 'already processed' in second.data['message']
         assert PaymentAuditLog.objects.filter(action='payment_completed').count() == 1
 
+    def test_failed_event_is_reprocessed_when_provider_retries(self):
+        """A processing error must not turn the provider's retry into a silent no-op."""
+        with mock.patch('payments.webhooks.WebhookProcessor._apply_payment_status',
+                        side_effect=RuntimeError('db down')):
+            failed = self._post_webhook('evt-retry')
+        assert failed.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        retry = self._post_webhook('evt-retry')
+
+        assert retry.status_code == status.HTTP_200_OK
+        self.tx.refresh_from_db()
+        self.booking.refresh_from_db()
+        assert self.tx.status == 'completed'
+        assert self.booking.status == 'confirmed'
+
+    def test_out_of_range_timestamp_does_not_crash_webhook(self):
+        from payments.adapters import get_payment_adapter
+
+        payload = {'id': 'evt-ts', 'transaction_id': 'txn-wh-1', 'status': 'completed',
+                   'amount': '30000', 'currency': 'USD', 'timestamp': 1e30}
+        signature = get_payment_adapter('payme').generate_signature(payload, self.SECRET)
+        with self.settings(PAYME_SECRET_KEY=self.SECRET):
+            response = self.provider_client.post(
+                '/api/v1/payments/webhook/payme/', payload, format='json', HTTP_X_SIGNATURE=signature
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_webhook_cannot_settle_another_providers_transaction(self):
+        from payments.adapters import get_payment_adapter
+
+        payload = {'id': 'evt-cross', 'transaction_id': 'txn-wh-1', 'status': 'completed',
+                   'amount': '300.00', 'currency': 'USD', 'timestamp': int(timezone.now().timestamp())}
+        signature = get_payment_adapter('click').generate_signature(payload, self.SECRET)
+        with self.settings(CLICK_SECRET_KEY=self.SECRET):
+            self.provider_client.post(
+                '/api/v1/payments/webhook/click/', payload, format='json', HTTP_X_SIGNATURE=signature
+            )
+
+        self.tx.refresh_from_db()
+        assert self.tx.status == 'processing'
+
     def test_payment_for_cancelled_booking_is_recorded_and_flagged(self):
         from payments.models import PaymentAuditLog
 

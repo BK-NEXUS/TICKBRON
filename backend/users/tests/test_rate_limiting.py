@@ -52,6 +52,34 @@ class LoginRateLimitingTest(TestCase):
                      "Expected rate limit (429) to trigger after 10 login attempts")
 
 
+class LoggedInSessionRateLimitingTest(TestCase):
+    """A throwaway account must not lift the login and register limits."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email='throwaway@example.com', password='testpassword123',
+            first_name='Throw', last_name='Away'
+        )
+        self.client.force_login(self.user)
+
+    @patch('users.views.TESTING', False)
+    def test_login_limit_applies_to_logged_in_session(self):
+        statuses = [
+            self.client.post('/api/v1/auth/login/', {'email': 'victim@example.com', 'password': 'x'}).status_code
+            for _ in range(12)
+        ]
+        self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, statuses)
+
+    @patch('users.views.TESTING', False)
+    def test_register_limit_applies_to_logged_in_session(self):
+        statuses = [
+            self.client.post('/api/v1/auth/register/', {'email': f'n{i}@example.com'}).status_code
+            for i in range(7)
+        ]
+        self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, statuses)
+
+
 class RegisterRateLimitingTest(TestCase):
     """Tests for registration endpoint rate limiting - 5 requests per minute per IP."""
 

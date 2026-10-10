@@ -95,65 +95,38 @@ class WebhookProcessor:
         # Replay of an already recorded (validly signed) event: acknowledge it
         # without processing it again, so providers stop retrying
         existing_event = self._find_existing_event(provider_event_id)
-        if existing_event is not None:
+        if existing_event is not None and existing_event.status == 'processed':
             logger.info(f"Webhook event {provider_event_id} already processed")
             return existing_event, False
 
+        if existing_event is not None:
+            # An earlier delivery failed before the payment was applied. The
+            # provider's retry must get another chance, otherwise a paid
+            # booking would expire unpaid.
+            webhook_event = existing_event
+            webhook_event.status = 'received'
+            webhook_event.error_message = ''
+            webhook_event.save(update_fields=['status', 'error_message', 'updated_at'])
+        else:
+            try:
+                with transaction.atomic():
+                    webhook_event = WebhookEvent.objects.create(
+                        provider=self.provider,
+                        provider_event_id=provider_event_id,
+                        payload=payload,
+                        signature=signature,
+                        signature_valid=True,
+                        status='received'
+                    )
+            except IntegrityError:
+                # A concurrent delivery of the same event won the race
+                return self._find_existing_event(provider_event_id), False
+
         try:
+            self._reject_stale_timestamp(webhook_event, payload)
             with transaction.atomic():
-                webhook_event = WebhookEvent.objects.create(
-                    provider=self.provider,
-                    provider_event_id=provider_event_id,
-                    payload=payload,
-                    signature=signature,
-                    signature_valid=True,
-                    status='received'
-                )
-        except IntegrityError:
-            # A concurrent delivery of the same event won the race
-            return self._find_existing_event(provider_event_id), False
-
-        try:
-            # Validate timestamp
-            timestamp = self._extract_timestamp(payload)
-            webhook_event.timestamp = timestamp
-            
-            if timestamp and not self.adapter.validate_timestamp(timestamp):
-                webhook_event.timestamp_valid = False
-                webhook_event.status = 'invalid_signature'
-                webhook_event.error_message = 'Webhook timestamp too old'
-                webhook_event.save()
-                raise SignatureValidationError("Webhook timestamp too old")
-            
-            webhook_event.timestamp_valid = True
-            
-            # Process webhook with adapter
-            processed_data = self.adapter.process_webhook(payload, signature)
-            
-            # Update webhook event with processed data
-            webhook_event.status = 'processed'
-            webhook_event.processed_at = timezone.now()
-            
-            # Link to payment transaction if possible, then apply the outcome
-            payment_transaction = self._link_to_payment_transaction(processed_data)
-            if payment_transaction:
-                webhook_event.payment_transaction = payment_transaction
-                self._apply_payment_status(payment_transaction, processed_data, webhook_event)
-
-            webhook_event.save()
-            
-            # Create audit log
-            PaymentAuditLog.log_action(
-                action='webhook_processed',
-                webhook_event=webhook_event,
-                payment_transaction=payment_transaction,
-                details={'processed_data': self._serialize_for_json(processed_data)}
-            )
-            
-            return webhook_event, True
-            
+                return self._process_event(webhook_event, payload, signature), True
         except SignatureValidationError as e:
-            # Log the error
             PaymentAuditLog.log_action(
                 action='webhook_received',
                 webhook_event=webhook_event,
@@ -161,11 +134,10 @@ class WebhookProcessor:
             )
             raise
         except Exception as e:
-            # Handle other errors
             webhook_event.status = 'failed'
             webhook_event.error_message = str(e)
             webhook_event.save()
-            
+
             PaymentAuditLog.log_action(
                 action='webhook_received',
                 webhook_event=webhook_event,
@@ -173,7 +145,46 @@ class WebhookProcessor:
             )
             logger.error(f"Webhook processing error: {e}")
             raise
-    
+
+    def _process_event(self, webhook_event: WebhookEvent, payload: Dict[str, any],
+                       signature: str) -> WebhookEvent:
+        """Apply one validly signed event; runs inside a single transaction."""
+        processed_data = self.adapter.process_webhook(payload, signature)
+
+        webhook_event.status = 'processed'
+        webhook_event.processed_at = timezone.now()
+
+        # Link to payment transaction if possible, then apply the outcome
+        payment_transaction = self._link_to_payment_transaction(processed_data)
+        if payment_transaction:
+            webhook_event.payment_transaction = payment_transaction
+            self._apply_payment_status(payment_transaction, processed_data, webhook_event)
+
+        webhook_event.save()
+
+        PaymentAuditLog.log_action(
+            action='webhook_processed',
+            webhook_event=webhook_event,
+            payment_transaction=payment_transaction,
+            details={'processed_data': self._serialize_for_json(processed_data)}
+        )
+        return webhook_event
+
+    def _reject_stale_timestamp(self, webhook_event: WebhookEvent, payload: Dict[str, any]) -> None:
+        """Record the timestamp and refuse events older than the adapter allows."""
+        timestamp = self._extract_timestamp(payload)
+        webhook_event.timestamp = timestamp
+
+        if timestamp and not self.adapter.validate_timestamp(timestamp):
+            webhook_event.timestamp_valid = False
+            webhook_event.status = 'invalid_signature'
+            webhook_event.error_message = 'Webhook timestamp too old'
+            webhook_event.save()
+            raise SignatureValidationError("Webhook timestamp too old")
+
+        webhook_event.timestamp_valid = True
+
+
     def _extract_event_id(self, payload: Dict[str, any]) -> str:
         """
         Extract provider event ID from payload.
@@ -218,7 +229,7 @@ class WebhookProcessor:
                     elif isinstance(timestamp_value, str):
                         # ISO format string
                         return datetime.fromisoformat(timestamp_value.replace('Z', '+00:00'))
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, OverflowError, OSError):
                     continue
         
         return None
@@ -338,6 +349,7 @@ class WebhookProcessor:
         if provider_transaction_id:
             try:
                 return PaymentTransaction.objects.get(
+                    provider=self.provider,
                     provider_transaction_id=provider_transaction_id
                 )
             except PaymentTransaction.DoesNotExist:
