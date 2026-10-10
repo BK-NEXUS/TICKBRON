@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { propertyAdapter } from '../adapters/propertyAdapter'
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
@@ -7,6 +8,14 @@ import { HomePage } from './HomePage'
 // so the request never answers (no state change after a synchronous test has ended)
 vi.mock('../adapters/promotionAdapter', () => ({
   promotionAdapter: { getHomePromotions: vi.fn(() => new Promise(() => {})), trackClick: vi.fn() },
+}))
+
+// The hotel lists and the property-type strip ask the backend too: no answer in these tests either
+vi.mock('../adapters/propertyAdapter', () => ({
+  propertyAdapter: {
+    searchProperties: vi.fn(() => new Promise(() => {})),
+    getFilterOptions: vi.fn(() => new Promise(() => {})),
+  },
 }))
 
 describe('HomePage', () => {
@@ -57,123 +66,15 @@ describe('HomePage', () => {
     expect(screen.getByLabelText('Rooms')).toBeInTheDocument()
   })
 
-  it('renders hero statistics', () => {
+  it('has no invented numbers, destinations or testimonials any more', () => {
     render(
       <BrowserRouter>
         <HomePage />
       </BrowserRouter>
     )
-    expect(screen.getByText('50K+')).toBeInTheDocument()
-    expect(screen.getByText('Properties Listed')).toBeInTheDocument()
-    expect(screen.getByText('100K+')).toBeInTheDocument()
-    expect(screen.getByText('Happy Guests')).toBeInTheDocument()
-    expect(screen.getByText('120+')).toBeInTheDocument()
-    expect(screen.getByText('Countries')).toBeInTheDocument()
-    expect(screen.getByText('4.9')).toBeInTheDocument()
-    expect(screen.getByText('Average Rating')).toBeInTheDocument()
-  })
-
-  it('renders the popular destinations section', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Popular Destinations')).toBeInTheDocument()
-    expect(screen.getByText('Explore our most sought-after locations')).toBeInTheDocument()
-    expect(screen.getByText('Paris')).toBeInTheDocument()
-    expect(screen.getByText('Tokyo')).toBeInTheDocument()
-    expect(screen.getByText('New York')).toBeInTheDocument()
-    expect(screen.getByText('London')).toBeInTheDocument()
-  })
-
-  it('renders destination property counts', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('1250 properties')).toBeInTheDocument()
-    expect(screen.getByText('980 properties')).toBeInTheDocument()
-    expect(screen.getByText('1100 properties')).toBeInTheDocument()
-    expect(screen.getByText('890 properties')).toBeInTheDocument()
-  })
-
-  it('renders the property types section', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Property Types')).toBeInTheDocument()
-    expect(screen.getByText('Find the perfect accommodation for your needs')).toBeInTheDocument()
-    expect(screen.getByText('Apartments')).toBeInTheDocument()
-    expect(screen.getByText('Houses')).toBeInTheDocument()
-    expect(screen.getByText('Villas')).toBeInTheDocument()
-    expect(screen.getByText('Studios')).toBeInTheDocument()
-  })
-
-  it('renders property type descriptions', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Modern city living spaces')).toBeInTheDocument()
-    expect(screen.getByText('Spacious family homes')).toBeInTheDocument()
-    expect(screen.getByText('Luxury vacation retreats')).toBeInTheDocument()
-    expect(screen.getByText('Compact urban spaces')).toBeInTheDocument()
-  })
-
-  it('renders the enhanced features section', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Why Choose TICKBRON?')).toBeInTheDocument()
-    expect(screen.getByText('Experience the difference with our premium service')).toBeInTheDocument()
-    expect(screen.getByText('Verified Properties')).toBeInTheDocument()
-    expect(screen.getByText('Secure Payments')).toBeInTheDocument()
-    expect(screen.getByText('24/7 Support')).toBeInTheDocument()
-    expect(screen.getByText('Best Price Guarantee')).toBeInTheDocument()
-    expect(screen.getByText('Global Coverage')).toBeInTheDocument()
-    expect(screen.getByText('Easy Booking')).toBeInTheDocument()
-  })
-
-  it('renders the testimonials section', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('What Our Guests Say')).toBeInTheDocument()
-    expect(screen.getByText('Real experiences from real travelers')).toBeInTheDocument()
-    expect(screen.getByText('Sarah Johnson')).toBeInTheDocument()
-    expect(screen.getByText('Michael Chen')).toBeInTheDocument()
-    expect(screen.getByText('Emma Wilson')).toBeInTheDocument()
-  })
-
-  it('renders testimonial content', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('New York, USA')).toBeInTheDocument()
-    expect(screen.getByText('Singapore')).toBeInTheDocument()
-    expect(screen.getByText('London, UK')).toBeInTheDocument()
-  })
-
-  it('renders the CTA section', () => {
-    render(
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Ready to Start Your Journey?')).toBeInTheDocument()
-    expect(screen.getByText('Join millions of travelers who trust TICKBRON for their accommodations')).toBeInTheDocument()
-    expect(screen.getByText('Browse Properties')).toBeInTheDocument()
+    for (const fake of ['50K+', '100K+', '120+', 'Paris', 'Tokyo', 'Sarah Johnson', 'Michael Chen', 'Join millions']) {
+      expect(screen.queryByText(new RegExp(fake))).not.toBeInTheDocument()
+    }
   })
 
   it('does not offer "List Your Property": owner accounts are created by a super-admin', () => {
@@ -182,11 +83,11 @@ describe('HomePage', () => {
         <HomePage />
       </BrowserRouter>
     )
-    expect(screen.getByText('Browse Properties')).toBeInTheDocument()
+    expect(screen.getByText('Browse all hotels')).toBeInTheDocument()
     expect(screen.queryByText(/list your property/i)).not.toBeInTheDocument()
   })
 
-  it('Browse Properties opens the list of all properties', () => {
+  it('Browse all hotels opens the list of all properties', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
@@ -195,8 +96,19 @@ describe('HomePage', () => {
         </Routes>
       </MemoryRouter>
     )
-    fireEvent.click(screen.getByText('Browse Properties'))
+    fireEvent.click(screen.getByText('Browse all hotels'))
     expect(screen.getByRole('heading', { name: 'All properties page' })).toBeInTheDocument()
+  })
+
+  it('asks for the top rated and the cheapest hotels, eight each', () => {
+    render(
+      <BrowserRouter>
+        <HomePage />
+      </BrowserRouter>
+    )
+    expect(propertyAdapter.searchProperties).toHaveBeenCalledWith({ sort: 'rating', page_size: 8 })
+    expect(propertyAdapter.searchProperties).toHaveBeenCalledWith({ sort: 'price_asc', page_size: 8 })
+    expect(propertyAdapter.getFilterOptions).toHaveBeenCalled()
   })
 
   it('maintains semantic HTML structure', () => {

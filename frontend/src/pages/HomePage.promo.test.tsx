@@ -6,6 +6,13 @@ import { I18nProvider } from '../i18n/I18nContext'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
 import { settle } from '../test/utils'
 
+// The hotel lists and the type strip are tested on their own; here they never answer
+vi.mock('../adapters/propertyAdapter', () => ({
+  propertyAdapter: {
+    searchProperties: vi.fn(() => new Promise(() => {})),
+    getFilterOptions: vi.fn(() => new Promise(() => {})),
+  },
+}))
 vi.mock('../adapters/promotionAdapter', () => ({
   promotionAdapter: { getHomePromotions: vi.fn(), trackClick: vi.fn() },
 }))
@@ -37,7 +44,7 @@ describe('HomePage promo banner', () => {
     vi.clearAllMocks()
   })
 
-  it('shows the banners between the hero and the destinations', async () => {
+  it('shows the banners between the hero and the property types', async () => {
     vi.mocked(promotionAdapter.getHomePromotions).mockResolvedValue({
       data: [banner(1, 'Alpha'), banner(2, 'Beta')], error: null, code: null,
     })
@@ -45,9 +52,9 @@ describe('HomePage promo banner', () => {
     const carousel = await screen.findByRole('region', { name: 'Featured hotels' })
     expect(carousel).toHaveTextContent('Alpha')
     const hero = document.querySelector('.hero') as HTMLElement
-    const destinations = document.querySelector('.destinations') as HTMLElement
+    const types = document.querySelector('.home-types') as HTMLElement
     expect(hero.compareDocumentPosition(carousel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(carousel.compareDocumentPosition(destinations) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(carousel.compareDocumentPosition(types) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('asks the backend once', async () => {

@@ -114,9 +114,8 @@ describe('migrated screens in uz and ru', () => {
   it('home page', async () => {
     await renderIn('uz', <HomePage />)
     expect(screen.getByRole('heading', { name: "O'zingizga mos joyni toping" })).toBeInTheDocument()
-    expect(screen.getByText("Mashhur yo'nalishlar")).toBeInTheDocument()
-    expect(screen.getByText('Mamnun mehmonlar')).toBeInTheDocument()
-    expect(screen.queryByText('Popular Destinations')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Barcha mehmonxonalarni ko\'rish' })).toBeInTheDocument()
+    expect(screen.queryByText('Browse all hotels')).not.toBeInTheDocument()
   })
 
   it('search form and filters in Russian', async () => {
