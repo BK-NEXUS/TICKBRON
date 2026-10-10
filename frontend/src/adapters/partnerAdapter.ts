@@ -251,6 +251,13 @@ export interface UpdateRoomInventoryRequest {
   is_available?: boolean
 }
 
+/** Prices per day of one rate plan; both dates inclusive */
+export interface GetDateInventoryParams {
+  rate_plan?: number
+  date_from?: string
+  date_to?: string
+}
+
 export interface GetRoomInventoryParams {
   room_type?: number
   date_from?: string
@@ -545,8 +552,13 @@ class PartnerAdapter {
    * List hotel-owner's date inventory
    * Integrates with GET /api/v1/partner/inventory/ endpoint
    */
-  async getDateInventory(): Promise<ApiResponse<PartnerDateInventory[]>> {
-    return this.requestAll<PartnerDateInventory>('/api/v1/partner/inventory/')
+  async getDateInventory(params: GetDateInventoryParams = {}): Promise<ApiResponse<PartnerDateInventory[]>> {
+    const search = new URLSearchParams()
+    if (params.rate_plan !== undefined) search.append('rate_plan', String(params.rate_plan))
+    if (params.date_from) search.append('date_from', params.date_from)
+    if (params.date_to) search.append('date_to', params.date_to)
+    const query = search.toString()
+    return this.requestAll<PartnerDateInventory>(`/api/v1/partner/inventory/${query ? `?${query}` : ''}`)
   }
 
   /**

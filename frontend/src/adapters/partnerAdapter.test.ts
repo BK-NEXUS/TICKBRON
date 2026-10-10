@@ -743,6 +743,25 @@ describe('PartnerAdapter', () => {
       )
     })
 
+    it('should list the prices of one rate plan for a date range', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+
+      await adapter.getDateInventory({ rate_plan: 5, date_from: '2026-10-01', date_to: '2026-10-31' })
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/inventory/?rate_plan=5&date_from=2026-10-01&date_to=2026-10-31`,
+        expect.anything(),
+      )
+    })
+
+    it('should keep listing all date inventory without filters', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+
+      await adapter.getDateInventory()
+
+      expect(fetch).toHaveBeenCalledWith(`${mockBaseUrl}/api/v1/partner/inventory/`, expect.anything())
+    })
+
     it('should update room inventory', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => mockRow } as Response)
 
