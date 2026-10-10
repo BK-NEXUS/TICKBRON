@@ -1022,6 +1022,79 @@ describe('BookingPage', () => {
       }, { timeout: 5000 })
     })
 
+    describe('what the payment asks for (the booking charge, never the hotel price)', () => {
+      const usdBooking = {
+        ...mockBooking,
+        charge_amount: '2354590.00',
+        charge_currency: 'UZS',
+        exchange_rate: { rate: '11772.950000', date: '2025-01-15', source: 'cbu.uz', stale: false },
+      }
+
+      async function payWithPayme() {
+        renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Continue to Payment'))
+        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
+        fireEvent.click(screen.getByText(/Pay with Payme/))
+      }
+
+      it('sends the UZS charge of a booking priced in dollars', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        await payWithPayme()
+        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
+        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
+          expect.objectContaining({ booking: 1, provider: 'payme', amount: '2354590.00', currency: 'UZS' }),
+        )
+      })
+
+      it('sends the same numbers for a booking priced in so\'m', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({
+          data: {
+            ...mockBooking, total_price: 500000, currency: 'UZS', charge_amount: '500000.00', charge_currency: 'UZS',
+            exchange_rate: { rate: '1.000000', date: null, source: 'identity', stale: false },
+          },
+          error: null,
+        })
+        await payWithPayme()
+        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
+        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
+          expect.objectContaining({ amount: '500000.00', currency: 'UZS' }),
+        )
+      })
+
+      it('falls back to the booking price when an old booking has no charge fields (charge = price)', async () => {
+        await payWithPayme()
+        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
+        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
+          expect.objectContaining({ amount: '500', currency: 'USD' }),
+        )
+      })
+
+      it('never sends the hotel-currency price when the booking has a charge', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        await payWithPayme()
+        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
+        const request = mockPaymentAdapter.createPayment.mock.calls[0][0]
+        expect(request.currency).not.toBe('USD')
+        expect(String(request.amount)).not.toBe('500')
+      })
+
+      it('retries with the same charge after a failed payment', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        mockPaymentAdapter.createPayment.mockResolvedValueOnce({ data: null, error: 'Provider unavailable' })
+        await payWithPayme()
+        fireEvent.click(await screen.findByRole('button', { name: 'Retry payment' }, { timeout: 5000 }))
+        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
+        fireEvent.click(screen.getByText(/Pay with Payme/))
+        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(2))
+        const [first, second] = mockPaymentAdapter.createPayment.mock.calls.map(call => call[0])
+        expect([second.amount, second.currency]).toEqual([first.amount, first.currency])
+        expect(second.amount).toBe('2354590.00')
+      })
+    })
+
     it('should show payment failure on payment error', async () => {
       mockPaymentAdapter.createPayment.mockResolvedValue({
         data: null,

@@ -52,7 +52,7 @@ export function PaymentConfirmation({
     ? t(`pay.statusName.${payment.status as (typeof STATUS_NAMES)[number]}`)
     : payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
 
-  const formatAmount = (amount: number, currency: string): string => {
+  const formatAmount = (amount: number | string, currency: string): string => {
     return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 

@@ -1,3 +1,4 @@
+import type { ExchangeRateInfo } from './bookingAdapter'
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 
@@ -63,6 +64,10 @@ export interface Booking {
   booking_items: BookingItem[]
   created_at: string
   updated_at: string
+  /** What the guest is charged, in UZS for bookings made since R6; absent on older bookings (charge = price) */
+  charge_amount?: string
+  charge_currency?: string
+  exchange_rate?: ExchangeRateInfo | null
   /** R12b: what the guest is told about the no-show refund */
   no_show_refund_percent?: number
   no_show_refund_amount?: string | null

@@ -1,3 +1,4 @@
+import { chargeOf } from '../utils/charge'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
@@ -357,6 +358,7 @@ export function BookingPage() {
     setPaymentStatus('pending')
 
     try {
+      const charge = chargeOf(booking)
       // Generate idempotency key for payment
       const idempotencyKey = paymentAdapter.generateIdempotencyKey()
       
@@ -369,8 +371,9 @@ export function BookingPage() {
         idempotency_key: idempotencyKey,
         booking: booking.id,
         provider: selectedProvider,
-        amount: booking.total_price,
-        currency: booking.currency,
+        // The backend accepts only the booking's own charge (the UZS snapshot), not the hotel price
+        amount: charge.amount,
+        currency: charge.currency,
         client_ip: clientIp || undefined,
         user_agent: userAgent,
       }
