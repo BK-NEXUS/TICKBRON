@@ -2597,3 +2597,7 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 - Changed assertion: `core/tests/test_r4_permission_matrix.py` docs rule `PUBLIC` -> `STAFF` (the requirement changed; the matrix now also checks that guests and anonymous are refused).
 - Photo upload: at most 40 megapixels per photo and 50 photos per property (`partner/serializers.py` constants, 400 on violation). Tests in `partner/tests/test_partner_api.py`.
 - Found, not fixed: uploaded photo file names are still the client's (predictable public path); `common/tests/test_models.py` asserts the exact path, so randomising it needs an owner decision on that test.
+
+## Security hardening, batch 1 items L-4 and L-5, 2026-10-10
+- L-4: `FavoriteSerializer.property` is read-only; PATCH/PUT can no longer repoint a favorite to a property that `FavoriteCreateSerializer` would refuse (inactive, deleted). Notes stay editable. Tests in `accounts/tests/test_views.py`.
+- L-5: checked, no change needed: OTP logs use `mask_phone`, request logs use the user id (`common/middleware.py`).
