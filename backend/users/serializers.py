@@ -38,10 +38,12 @@ def validate_unique_phone_number(value, instance=None):
     """
     Check phone number uniqueness after normalization.
 
-    The model's UniqueValidator runs on the raw input, so a number with extra
-    whitespace would slip past it and fail at the database instead.
+    Only a number already VERIFIED by another account is taken; an unproven
+    claim does not block (N-1: it would let anyone squat a number). Checking
+    after normalization matters because a number with extra whitespace would
+    otherwise slip past and fail at the database instead.
     """
-    users = User.objects.filter(phone_number=value)
+    users = User.objects.filter(phone_number=value, phone_verified=True)
     if instance is not None:
         users = users.exclude(pk=instance.pk)
     if users.exists():

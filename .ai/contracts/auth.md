@@ -44,6 +44,7 @@ A phone number on an account is only a claim until its owner proves it by SMS. B
   - 200 returns the user object with `phone_verified: true`
   - 400 `{"error": "Invalid or expired OTP code", "code": "otp_invalid"}` for a wrong or expired code or a locked account (a locked account does not check the code)
   - Changing the phone number on the profile resets `phone_verified` to false
+  - Uniqueness (N-1 stage 2, 2026-10-10): only a VERIFIED number is unique (DB constraint `users_phone_unique_when_verified`). Register, profile update and create-hotel-owner accept a number that others merely claim without proof, and refuse one a verified account already holds (400 `phone_number`). When an account proves a number, other accounts that only claimed it lose it (their `phone_number` becomes null). If another account proves the number first, `confirm` answers 400 `otp_invalid`
 
 ## CSRF
 - GET `/api/v1/auth/csrf/` - Get a CSRF token (public, no auth)

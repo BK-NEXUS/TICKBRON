@@ -5,7 +5,7 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from common.exceptions import ExternalServiceException
 from common.privacy import mask_phone
 from users import lockout
@@ -156,7 +156,13 @@ class OTPService:
             locked_user = User.objects.select_for_update().get(pk=user.pk)
             if lockout.is_locked(locked_user, client_ip):
                 return {'success': False, 'message': OTP_INVALID_MESSAGE}
-            if locked_user.verify_otp(otp_code):
+            try:
+                verified = locked_user.verify_otp(otp_code)
+            except IntegrityError:
+                # Another account proved this number first; the unique-among-verified rule refused ours
+                logger.warning(f"Phone verification refused, number already verified elsewhere: {mask_phone(locked_user.phone_number)}")
+                return {'success': False, 'message': OTP_INVALID_MESSAGE}
+            if verified:
                 lockout.record_success(locked_user, client_ip)
                 return {'success': True, 'message': 'Phone number verified', 'user': locked_user}
             lockout.record_failure(locked_user, client_ip)

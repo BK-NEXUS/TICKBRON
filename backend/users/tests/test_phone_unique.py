@@ -15,14 +15,17 @@ class TestPhoneNumberUniqueness(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        # N-1: only a VERIFIED number is unique, so the holder in these tests is verified
         self.owner = User.objects.create_user(
-            email='owner@example.com', password='testpass123', phone_number='+998901230001'
+            email='owner@example.com', password='testpass123', phone_number='+998901230001',
+            phone_verified=True,
         )
 
     def test_database_rejects_duplicate_phone(self):
         with pytest.raises(IntegrityError):
             User.objects.create_user(
-                email='dup@example.com', password='testpass123', phone_number='+998901230001'
+                email='dup@example.com', password='testpass123', phone_number='+998901230001',
+                phone_verified=True,
             )
 
     def test_blank_phone_numbers_are_stored_as_null(self):
@@ -90,6 +93,7 @@ class TestPhoneUniqueMigration(TransactionTestCase):
 
     before = [('users', '0005_user_preferred_contact_method_user_telegram_and_more')]
     after = [('users', '0006_user_phone_number_unique')]
+    latest = [('users', '0007_phone_number_unique_when_verified')]
 
     def _migrate(self, targets):
         executor = MigrationExecutor(connection)
@@ -99,7 +103,7 @@ class TestPhoneUniqueMigration(TransactionTestCase):
 
     def tearDown(self):
         # Leave the schema at the latest migration for the following tests
-        self._migrate(self.after)
+        self._migrate(self.latest)
 
     def test_migration_stops_on_duplicate_phone_numbers(self):
         old_apps = self._migrate(self.before)
