@@ -1,3 +1,4 @@
+import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
@@ -547,6 +548,8 @@ export function BookingPage() {
               <h1>{t('booking.paymentMethod')}</h1>
             </div>
 
+            <NoShowRefundNote info={booking} />
+
             <PaymentMethodSelector
               selectedProvider={selectedProvider}
               onProviderSelect={setSelectedProvider}
@@ -657,6 +660,7 @@ export function BookingPage() {
               check_out: booking.check_out,
               confirmation_code: booking.confirmation_code,
             }}
+            noShowRefund={booking}
             onViewBookings={() => navigate('/bookings')}
             onBackToProperty={handleBackToProperty}
           />
@@ -1012,6 +1016,7 @@ export function BookingPage() {
                       <span className="booking-summary-total-label">{t('booking.total')}</span>
                       <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
                     </div>
+                    <NoShowRefundNote info={quote} />
                   </>
                 )}
               </>

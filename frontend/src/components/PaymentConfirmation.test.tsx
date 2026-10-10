@@ -45,6 +45,37 @@ describe('PaymentConfirmation', () => {
     })
   })
 
+  it('repeats the no-show refund sentence on the confirmation', () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        noShowRefund={{
+          no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
+          no_show_refund_text_key: 'no_show_refund_statement',
+          no_show_refund_text_params: { percent: 50, amount: '450000.00' },
+        }}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    expect(screen.getByTestId('no-show-refund-note')).toHaveTextContent('50% of your payment')
+  })
+
+  it('shows no refund sentence on the confirmation when there is none', () => {
+    render(
+      <PaymentConfirmation
+        payment={mockPayment}
+        bookingDetails={mockBookingDetails}
+        onViewBookings={mockOnViewBookings}
+        onBackToProperty={mockOnBackToProperty}
+      />
+    )
+
+    expect(screen.queryByTestId('no-show-refund-note')).toBeNull()
+  })
+
   it('should render payment confirmation header', () => {
     render(
       <PaymentConfirmation

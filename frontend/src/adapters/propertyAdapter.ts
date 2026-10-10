@@ -181,6 +181,11 @@ export interface StayQuote {
   currency: string
   nights: Array<{ date: string; price: string }>
   total_price: string
+  /** R12b: what the guest is told about the no-show refund */
+  no_show_refund_percent?: number
+  no_show_refund_amount?: string | null
+  no_show_refund_text_key?: string | null
+  no_show_refund_text_params?: { percent: number; amount: string | null } | null
 }
 
 export interface AvailabilityParams {

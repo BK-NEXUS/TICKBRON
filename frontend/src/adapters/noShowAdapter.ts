@@ -5,6 +5,14 @@ import { readApiError } from '../utils/errorHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
+/** What a guest is told about the no-show refund; the backend sends numbers and a text key, never the sentence. */
+export interface NoShowRefundInfo {
+  no_show_refund_percent?: number
+  no_show_refund_amount?: string | null
+  no_show_refund_text_key?: string | null
+  no_show_refund_text_params?: { percent: number; amount: string | null } | null
+}
+
 export type NoShowReportStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn'
 
 export interface OwnerNoShowReport {

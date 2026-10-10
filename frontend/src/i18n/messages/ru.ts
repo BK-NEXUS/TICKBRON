@@ -437,6 +437,8 @@ export const ru: Catalog = {
   'noShowAdmin.commentHint': "От 10 до 500 символов, обычный текст. Отель его увидит.",
   'noShowAdmin.approveAndRefund': "Подтвердить и вернуть деньги",
   'noShowAdmin.sending': "Отправка...",
+  'no_show_refund_statement': "Если вы не приедете и это будет подтверждено, вернём {percent}% платежа ({amount}).",
+  'no_show_refund_statement_percent': "Если вы не приедете и это будет подтверждено, вернём {percent}% платежа.",
   'gallery.label': "Галерея фотографий объекта",
   'gallery.previous': "Предыдущее фото",
   'gallery.next': "Следующее фото",

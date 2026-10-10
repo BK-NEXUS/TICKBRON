@@ -230,6 +230,28 @@ describe('BookingsPage', () => {
       expect(screen.getByText('Test Property 3')).toBeInTheDocument()
     })
 
+    it('shows the no-show refund sentence only on bookings that carry the promise', async () => {
+      mockAccountAdapter.getBookings.mockResolvedValue({
+        data: [
+          {
+            ...mockBookings[0],
+            no_show_refund_percent: 50, no_show_refund_amount: '200000.00',
+            no_show_refund_text_key: 'no_show_refund_statement',
+            no_show_refund_text_params: { percent: 50, amount: '200000.00' },
+          },
+          { ...mockBookings[1], no_show_refund_percent: 0, no_show_refund_amount: null, no_show_refund_text_key: null, no_show_refund_text_params: null },
+        ],
+        error: null,
+      })
+      renderWithRouter(<BookingsPage />)
+
+      await screen.findByText('Test Property 1')
+      const notes = screen.getAllByTestId('no-show-refund-note')
+      expect(notes).toHaveLength(1)
+      const card = screen.getByText('Test Property 1').closest('.booking-card') as HTMLElement
+      expect(card).toContainElement(notes[0])
+    })
+
     it('should display booking details', async () => {
       renderWithRouter(<BookingsPage />)
 

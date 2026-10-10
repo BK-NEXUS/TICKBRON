@@ -421,6 +421,8 @@ export const en = {
   'noShowAdmin.commentHint': "10 to 500 characters, plain text. The hotel will see it.",
   'noShowAdmin.approveAndRefund': "Approve and refund",
   'noShowAdmin.sending': "Sending...",
+  'no_show_refund_statement': "If you do not arrive and this is confirmed, {percent}% of your payment ({amount}) is refunded.",
+  'no_show_refund_statement_percent': "If you do not arrive and this is confirmed, {percent}% of your payment is refunded.",
   'gallery.label': "Property image gallery",
   'gallery.previous': "Previous image",
   'gallery.next': "Next image",

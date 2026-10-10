@@ -1,3 +1,4 @@
+import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import { useI18n } from '../i18n/I18nContext'
 import { statusText } from '../utils/statusText'
 import { useState, useEffect } from 'react'
@@ -82,6 +83,8 @@ function BookingCard({ booking }: BookingCardProps) {
         </div>
       </div>
       
+      <NoShowRefundNote info={booking} />
+
       <div className="booking-card-footer">
         <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
           {t('bookings.payment', { status: statusText('status.payment', booking.payment_status, t) })}

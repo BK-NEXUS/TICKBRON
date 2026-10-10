@@ -423,6 +423,8 @@ export const uz: Catalog = {
   'noShowAdmin.commentHint': "10 dan 500 gacha belgi, oddiy matn. Mehmonxona buni ko'radi.",
   'noShowAdmin.approveAndRefund': "Tasdiqlash va qaytarish",
   'noShowAdmin.sending': "Yuborilmoqda...",
+  'no_show_refund_statement': "Agar siz kelmasangiz va bu tasdiqlansa, to'lovning {percent}% i ({amount}) qaytariladi.",
+  'no_show_refund_statement_percent': "Agar siz kelmasangiz va bu tasdiqlansa, to'lovning {percent}% i qaytariladi.",
   'gallery.label': "Obyekt rasmlari galereyasi",
   'gallery.previous': "Oldingi rasm",
   'gallery.next': "Keyingi rasm",

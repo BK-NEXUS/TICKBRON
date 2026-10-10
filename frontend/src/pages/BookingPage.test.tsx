@@ -581,6 +581,28 @@ describe('BookingPage', () => {
         expect(screen.getByText('5 nights')).toBeInTheDocument()
       })
 
+      it('shows the no-show refund sentence from the quote beside the total', async () => {
+        mockPropertyAdapter.getQuote.mockResolvedValue({
+          data: {
+            ...quote('515.00').data,
+            no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
+            no_show_refund_text_key: 'no_show_refund_statement',
+            no_show_refund_text_params: { percent: 50, amount: '450000.00' },
+          },
+          error: null,
+        })
+        renderWithRouter(<BookingPage />)
+
+        const note = await screen.findByTestId('no-show-refund-note')
+        expect(note).toHaveTextContent('50% of your payment')
+      })
+
+      it('shows no refund sentence when the quote has none', async () => {
+        renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
+        expect(screen.queryByTestId('no-show-refund-note')).toBeNull()
+      })
+
       it('asks for a new quote when the number of rooms changes', async () => {
         mockPropertyAdapter.getQuote.mockImplementation(async (_id: number, params: { rooms: number }) =>
           quote(params.rooms === 2 ? '1030.00' : '515.00', params.rooms))
@@ -879,6 +901,28 @@ describe('BookingPage', () => {
       expect(screen.getByText('Payme')).toBeInTheDocument()
       expect(screen.getByText('Click')).toBeInTheDocument()
       expect(screen.getByText('Visa')).toBeInTheDocument()
+    })
+
+    it('shows the no-show refund sentence of the created booking before the guest pays', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: {
+          ...mockBooking,
+          no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
+          no_show_refund_text_key: 'no_show_refund_statement',
+          no_show_refund_text_params: { percent: 50, amount: '450000.00' },
+        },
+        error: null,
+      })
+      renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+      fireEvent.click(screen.getByText('Continue to Payment'))
+      await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+
+      // The sentence stands above the payment methods, so it is read before choosing how to pay
+      const note = screen.getByTestId('no-show-refund-note')
+      const methods = screen.getByText('Select Payment Method')
+      expect(note.compareDocumentPosition(methods) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(note).toHaveTextContent('50% of your payment')
     })
 
     describe('card form (test mode)', () => {

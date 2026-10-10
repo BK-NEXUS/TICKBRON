@@ -63,6 +63,11 @@ export interface Booking {
   booking_items: BookingItem[]
   created_at: string
   updated_at: string
+  /** R12b: what the guest is told about the no-show refund */
+  no_show_refund_percent?: number
+  no_show_refund_amount?: string | null
+  no_show_refund_text_key?: string | null
+  no_show_refund_text_params?: { percent: number; amount: string | null } | null
 }
 
 // Review types from backend contract
