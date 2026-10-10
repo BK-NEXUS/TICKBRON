@@ -7,10 +7,12 @@ import { Link } from 'react-router-dom'
 import { canUsePartnerPanel } from '../utils/roles'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneExample } from '../utils/phone'
+import { PhoneVerifyDialog } from '../components/PhoneVerifyDialog'
 
 export function ProfilePage() {
   const { t, formatDate } = useI18n()
-  const { user, isAuthenticated, updateProfile } = useAuth()
+  const { user, isAuthenticated, updateProfile, refreshUser } = useAuth()
+  const [verifyingPhone, setVerifyingPhone] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
     first_name: user?.first_name || '',
@@ -151,6 +153,21 @@ export function ProfilePage() {
               <div className="profile-field">
                 <label className="profile-field-label">{t('profile.phone')}</label>
                 <p className="profile-field-value">{user.phone_number || t('profile.notProvided')}</p>
+                {user.phone_number && (
+                  <p className="profile-phone-status">
+                    <span className={`profile-phone-badge ${user.phone_verified ? 'profile-phone-badge--ok' : 'profile-phone-badge--warn'}`}>
+                      {user.phone_verified ? t('profile.phoneVerified') : t('profile.phoneNotVerified')}
+                    </span>
+                    {!user.phone_verified && (
+                      <>
+                        <button type="button" className="btn btn-secondary btn-small" onClick={() => setVerifyingPhone(true)}>
+                          {t('profile.verifyPhone')}
+                        </button>
+                        <small className="form-hint">{t('profile.verifyPhoneHint')}</small>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">{t('profile.whatsapp')}</label>
@@ -320,6 +337,16 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+      {verifyingPhone && user.phone_number && (
+        <PhoneVerifyDialog
+          phone={user.phone_number}
+          onClose={() => setVerifyingPhone(false)}
+          onVerified={async () => {
+            await refreshUser()
+            setVerifyingPhone(false)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # OTP endpoints do not reveal which phone numbers have accounts
 OTP_REQUESTED_MESSAGE = 'If this phone number is registered, a verification code has been sent.'
 OTP_INVALID_MESSAGE = 'Invalid or expired OTP code'
+PHONE_CODE_SENT_MESSAGE = 'A verification code has been sent to your phone number.'
 
 
 class OTPService:
@@ -68,7 +69,8 @@ class OTPService:
         code, so callers cannot tell them apart from registered numbers.
         """
         try:
-            user = User.objects.filter(phone_number=phone_number).first()
+            # Only a number proven by SMS may log in; an unproven claim could belong to an attacker
+            user = User.objects.filter(phone_number=phone_number, phone_verified=True).first()
 
             # A locked account gets no new code, so re-requesting cannot restart guessing
             if user is None or lockout.is_locked(user, client_ip):
@@ -105,7 +107,7 @@ class OTPService:
         try:
             # Row lock serializes concurrent guesses so attempt counters cannot be raced
             with transaction.atomic():
-                user = User.objects.select_for_update().get(phone_number=phone_number)
+                user = User.objects.select_for_update().get(phone_number=phone_number, phone_verified=True)
                 
                 # Check the lock before looking at the code, so a locked account
                 # never reveals whether a guess was correct
@@ -134,3 +136,28 @@ class OTPService:
                 'success': False,
                 'message': 'An error occurred while verifying the OTP code.'
             }
+
+    def send_phone_verification(self, user: User, client_ip: str = None) -> dict:
+        """
+        Send a code to the logged-in user's own number to prove they own it.
+
+        The number always comes from the account, never from the client.
+        """
+        if not self._is_test_mode():
+            raise ExternalServiceException('SMS provider is not configured.', service_name='SMS')
+        self._log_test_mode_call('send_phone_verification', phone_number=mask_phone(user.phone_number))
+        if lockout.is_locked(user, client_ip):
+            return {'success': True, 'message': PHONE_CODE_SENT_MESSAGE}
+        return {'success': True, 'message': PHONE_CODE_SENT_MESSAGE, 'otp_code': user.generate_otp()}
+
+    def confirm_phone_verification(self, user: User, otp_code: str, client_ip: str = None) -> dict:
+        """Check the code sent by send_phone_verification; success marks the number verified."""
+        with transaction.atomic():
+            locked_user = User.objects.select_for_update().get(pk=user.pk)
+            if lockout.is_locked(locked_user, client_ip):
+                return {'success': False, 'message': OTP_INVALID_MESSAGE}
+            if locked_user.verify_otp(otp_code):
+                lockout.record_success(locked_user, client_ip)
+                return {'success': True, 'message': 'Phone number verified', 'user': locked_user}
+            lockout.record_failure(locked_user, client_ip)
+            return {'success': False, 'message': OTP_INVALID_MESSAGE}

@@ -16,7 +16,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
 from django.middleware.csrf import get_token
 from users.models import User
-from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer
+from users.serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer, RequestOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer, ConfirmPhoneSerializer
 from users import lockout
 from users.validators import parse_phone_number
 from users.services import OTPService
@@ -341,3 +341,41 @@ def verify_otp(request):
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([OTPRequestRateThrottle])
+def request_phone_verification(request):
+    """
+    Send a code to the logged-in user's own phone number.
+
+    The number is taken from the account; anything the client sends is ignored.
+    """
+    user = request.user
+    if not user.phone_number:
+        return Response({'error': 'Add a phone number first.', 'code': 'phone_missing'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    if user.phone_verified:
+        return Response({'error': 'This phone number is already verified.', 'code': 'phone_already_verified'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    result = OTPService().send_phone_verification(user, client_ip=get_client_ip(request))
+    return Response(result, status=status.HTTP_200_OK)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([OTPVerifyRateThrottle])
+def confirm_phone_verification(request):
+    """Check the code sent to the user's number; success marks the number verified."""
+    serializer = ConfirmPhoneSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    result = OTPService().confirm_phone_verification(
+        request.user, serializer.validated_data['otp_code'], client_ip=get_client_ip(request)
+    )
+    if not result['success']:
+        return Response({'error': result['message'], 'code': 'otp_invalid'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(UserSerializer(result['user']).data, status=status.HTTP_200_OK)

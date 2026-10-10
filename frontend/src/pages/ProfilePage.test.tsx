@@ -4,6 +4,11 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProfilePage } from './ProfilePage'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
+import { authAdapter } from '../adapters/authAdapter'
+
+vi.mock('../adapters/authAdapter', () => ({
+  authAdapter: { requestPhoneVerification: vi.fn(), confirmPhoneVerification: vi.fn() },
+}))
 
 // Mock AuthContext
 vi.mock('../contexts/AuthContext', () => ({
@@ -655,5 +660,51 @@ describe('ProfilePage', () => {
         expect(screen.getByText('Update failed')).toBeInTheDocument()
       })
     })
+  })
+})
+
+describe('ProfilePage phone verification (N-1)', () => {
+  const renderPhone = (user: Record<string, unknown>, refreshUser = vi.fn().mockResolvedValue(undefined)) => {
+    mockUseAuth.mockReturnValue({ user, isAuthenticated: true, isLoading: false, updateProfile: vi.fn(), refreshUser })
+    renderWithRouter(<ProfilePage />)
+    return { refreshUser }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(authAdapter.requestPhoneVerification).mockResolvedValue({ success: true, otp_code: '123456' })
+  })
+
+  it('marks an unverified number and offers to verify it', () => {
+    renderPhone({ ...mockUser, phone_verified: false })
+
+    expect(screen.getByText('Not verified', { selector: '.profile-phone-badge' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Verify phone' })).toBeInTheDocument()
+  })
+
+  it('marks a verified number and offers nothing', () => {
+    renderPhone({ ...mockUser, phone_verified: true })
+
+    expect(screen.getByText('Verified', { selector: '.profile-phone-badge' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
+  })
+
+  it('shows no badge when there is no phone number', () => {
+    renderPhone({ ...mockUser, phone_number: '', phone_verified: false })
+
+    expect(document.querySelector('.profile-phone-badge')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
+  })
+
+  it('opens the code dialog, and after a correct code refreshes the profile and closes it', async () => {
+    vi.mocked(authAdapter.confirmPhoneVerification).mockResolvedValue({ success: true, user: { id: 1, phone_verified: true } as never })
+    const { refreshUser } = renderPhone({ ...mockUser, phone_verified: false })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verify phone' }))
+    fireEvent.change(await screen.findByLabelText('SMS code'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }))
+
+    await waitFor(() => expect(refreshUser).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })

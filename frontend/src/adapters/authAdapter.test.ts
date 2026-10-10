@@ -431,6 +431,72 @@ describe('AuthAdapter', () => {
   })
 })
 
+describe('AuthAdapter phone verification (N-1)', () => {
+  let adapter: AuthAdapter
+  let mockFetch: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    adapter = new AuthAdapter('http://test-api')
+    mockFetch = vi.fn()
+    global.fetch = mockFetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('asks for a code for the logged-in user without sending any phone number', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, otp_code: '123456' }) })
+
+    const response = await adapter.requestPhoneVerification()
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://test-api/api/v1/auth/phone/verify/request/',
+      expect.objectContaining({ method: 'POST', credentials: 'include', body: '{}' }),
+    )
+    expect(response).toEqual({ success: true, otp_code: '123456' })
+  })
+
+  it('keeps the error code when the code cannot be sent', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'This phone number is already verified.', code: 'phone_already_verified' }),
+    })
+
+    const response = await adapter.requestPhoneVerification()
+
+    expect(response.success).toBe(false)
+    expect(response.code).toBe('phone_already_verified')
+  })
+
+  it('confirms the code and returns the updated user', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1, phone_verified: true }) })
+
+    const response = await adapter.confirmPhoneVerification('123456')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://test-api/api/v1/auth/phone/verify/confirm/',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ otp_code: '123456' }) }),
+    )
+    expect(response.success).toBe(true)
+    expect(response.user?.phone_verified).toBe(true)
+  })
+
+  it('reports a wrong code with its error code', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'Invalid or expired OTP code', code: 'otp_invalid' }),
+    })
+
+    const response = await adapter.confirmPhoneVerification('000000')
+
+    expect(response.success).toBe(false)
+    expect(response.code).toBe('otp_invalid')
+  })
+})
+
 describe('authAdapter singleton', () => {
   it('exports a singleton instance', () => {
     expect(authAdapter).toBeInstanceOf(AuthAdapter)

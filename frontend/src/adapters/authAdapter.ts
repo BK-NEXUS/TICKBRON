@@ -20,6 +20,8 @@ export interface User {
   date_joined: string
   last_login?: string
   email_verified: boolean
+  // True once the number was proven by an SMS code; only then can it be used to log in
+  phone_verified?: boolean
   two_factor_enabled: boolean
   is_staff?: boolean
   is_superuser?: boolean
@@ -68,6 +70,8 @@ export interface OTPResponse {
   success: boolean
   otp_code?: string
   error?: string
+  /** Machine-readable reason from the backend, e.g. 'phone_already_verified' */
+  code?: string
   detail?: string
 }
 
@@ -75,6 +79,8 @@ export interface AuthResponse {
   success: boolean
   user?: User
   error?: string
+  /** Machine-readable reason from the backend, e.g. 'otp_invalid' */
+  code?: string
   detail?: string
 }
 
@@ -107,6 +113,7 @@ class AuthAdapter {
         return {
           success: false,
           error: apiError.message,
+          code: apiError.code,
         }
       }
 
@@ -222,6 +229,31 @@ class AuthAdapter {
     return this.changeSession('/api/v1/auth/otp/verify/', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  }
+
+  /** Send a code to the logged-in user's own number; the backend takes the number from the account. */
+  async requestPhoneVerification(): Promise<OTPResponse> {
+    const response = await apiFetch(`${this.baseUrl}/api/v1/auth/phone/verify/request/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    }).catch(() => null)
+    if (!response) return { success: false, error: 'Network error occurred' }
+    if (!response.ok) {
+      const apiError = await readApiError(response)
+      return { success: false, error: apiError.message, code: apiError.code }
+    }
+    const data = await response.json()
+    return { success: true, otp_code: data.otp_code }
+  }
+
+  /** Prove the number with the SMS code; success returns the user with phone_verified true. */
+  async confirmPhoneVerification(otpCode: string): Promise<AuthResponse> {
+    return this.request('/api/v1/auth/phone/verify/confirm/', {
+      method: 'POST',
+      body: JSON.stringify({ otp_code: otpCode }),
     })
   }
 }

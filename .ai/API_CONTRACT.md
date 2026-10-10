@@ -9,7 +9,8 @@ Core endpoints:
 - POST `/api/v1/auth/login/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
-- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26)
+- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26, `phone_verified` added 2026-10-10)
+- POST `/api/v1/auth/phone/verify/request/` and `/confirm/` ✅ IMPLEMENTED (N-1, 2026-10-10; see contracts/auth.md): prove the logged-in user's own phone number by SMS; only a verified number can log in by SMS
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24; `features`, `min_rating`, `sort=reviews`, real date availability, `average_rating`/`review_count` added 2026-09-28)
 - GET `/api/v1/properties/filter-options/` ✅ IMPLEMENTED (2026-09-28)

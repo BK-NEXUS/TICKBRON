@@ -5075,6 +5075,30 @@ table .btn {
   margin: 0;
 }
 
+.profile-phone-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-xs) 0 0;
+}
+
+.profile-phone-badge {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid currentColor;
+}
+
+.profile-phone-badge--ok {
+  color: var(--color-success);
+}
+
+.profile-phone-badge--warn {
+  color: var(--color-warning);
+}
+
 .profile-links {
   display: flex;
   flex-direction: column;

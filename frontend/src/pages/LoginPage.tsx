@@ -175,6 +175,7 @@ export function LoginPage() {
             </form>
           ) : (
             <form className="auth-form" onSubmit={otpRequested ? handleOTPSubmit : handleRequestOTP}>
+              <p className="auth-hint">{t('auth.smsNeedsVerifiedPhone')}</p>
               <div className="auth-field">
                 <label htmlFor="phone_number" className="auth-label">
                   {t('auth.phone')}

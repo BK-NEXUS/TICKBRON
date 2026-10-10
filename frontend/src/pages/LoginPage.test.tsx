@@ -36,6 +36,16 @@ describe('LoginPage', () => {
   })
 
   describe('rendering', () => {
+    it('tells the user SMS sign-in needs a number verified in the profile (N-1)', async () => {
+      await renderWithRouter(<LoginPage />)
+      const hint = 'SMS sign-in works only for a phone number you have verified in your profile.'
+
+      expect(screen.queryByText(hint)).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Phone & SMS Code' }))
+
+      expect(screen.getByText(hint)).toBeInTheDocument()
+    })
+
     it('marks the selected login method (the other one is a real choice)', async () => {
       await renderWithRouter(<LoginPage />)
 

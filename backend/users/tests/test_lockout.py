@@ -22,7 +22,8 @@ class LockoutTestBase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
-            email='owner@example.com', password=PASSWORD, phone_number='+998901250001'
+            email='owner@example.com', password=PASSWORD, phone_number='+998901250001',
+            phone_verified=True,  # N-1: only a verified number can use SMS login
         )
 
     def login(self, password, ip, email='owner@example.com'):

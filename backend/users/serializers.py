@@ -62,8 +62,8 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
-                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
-        read_only_fields = ['id', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
+                  'email_verified', 'phone_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
+        read_only_fields = ['id', 'date_joined', 'last_login', 'is_staff', 'is_superuser', 'phone_verified']
 
     def get_full_name(self, obj):
         return obj.get_full_name()
@@ -161,6 +161,16 @@ class VerifyOTPSerializer(serializers.Serializer):
         """Validate OTP code format."""
         if not value or not value.strip():
             raise serializers.ValidationError("OTP code is required.")
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError("OTP code must be 6 digits.")
+        return value.strip()
+
+
+class ConfirmPhoneSerializer(serializers.Serializer):
+    """The code that proves the logged-in user owns their phone number."""
+    otp_code = serializers.CharField(max_length=6)
+
+    def validate_otp_code(self, value):
         if not value.isdigit() or len(value) != 6:
             raise serializers.ValidationError("OTP code must be 6 digits.")
         return value.strip()

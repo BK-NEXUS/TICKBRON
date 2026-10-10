@@ -24,7 +24,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Rate limited: 3 requests/minute per phone number
   - Returns OTP code in response when `SMS_TEST_MODE=True`
   - `SMS_TEST_MODE` defaults to `False`; with it off and no SMS provider configured, returns 503
-  - Always 200 `{"success": true, "message": "If this phone number is registered, a verification code has been sent."}` for registered, unknown and locked numbers (no account enumeration); only registered, unlocked numbers get a code. Does not create users
+  - Always 200 `{"success": true, "message": "If this phone number is registered, a verification code has been sent."}` for registered, unknown and locked numbers (no account enumeration); only a number that its account has VERIFIED (`phone_verified` true) and that is not locked gets a code; an unverified number gets the same response and no code (N-1, 2026-10-10). Does not create users
 
 - POST `/api/v1/auth/otp/verify/` - Verify OTP and login
   - Required fields: `phone_number`, `otp_code` (6 digits)
@@ -33,7 +33,17 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Maximum 3 verification attempts per OTP
   - Rate limited: 5 requests/minute per phone number (429 when exceeded)
   - Same lockout as password login (per IP and account-wide), counted across all issued codes; while locked the code is not checked
-  - Unknown number, wrong/expired code and locked account all return the same 400 `{"success": false, "message": "Invalid or expired OTP code"}`
+  - Unknown number, unverified number, wrong/expired code and locked account all return the same 400 `{"success": false, "message": "Invalid or expired OTP code"}` (N-1: an unverified number cannot log in, so registering with someone else's number gives no access when they sign in by SMS)
+
+### Phone verification (N-1, 2026-10-10)
+A phone number on an account is only a claim until its owner proves it by SMS. Both endpoints need a session; the number always comes from the account, anything the client sends is ignored. Throttled like OTP (3/min request, 5/min confirm), same per-IP lockout, same code storage (5 minutes, 3 attempts).
+- POST `/api/v1/auth/phone/verify/request/` - send a 6-digit code to the logged-in user's own number
+  - 200 `{"success": true, "message": ..., "otp_code": "..."}` (`otp_code` only when `SMS_TEST_MODE=True`; with it off and no SMS provider: 503)
+  - 400 `{"error": ..., "code": "phone_missing"}` when the account has no number; 400 `{"error": ..., "code": "phone_already_verified"}` when it is already verified
+- POST `/api/v1/auth/phone/verify/confirm/` - body `{"otp_code": "123456"}`
+  - 200 returns the user object with `phone_verified: true`
+  - 400 `{"error": "Invalid or expired OTP code", "code": "otp_invalid"}` for a wrong or expired code or a locked account (a locked account does not check the code)
+  - Changing the phone number on the profile resets `phone_verified` to false
 
 ## CSRF
 - GET `/api/v1/auth/csrf/` - Get a CSRF token (public, no auth)
@@ -47,6 +57,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
   - Includes read-only `is_staff` and `is_superuser` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; only super-admins can use `POST /admin-panel/users/create-hotel-owner/`. The flags only drive the UI: the backend still checks permissions on every request, and `PATCH /auth/me/update/` cannot change them
+  - Includes read-only `phone_verified` (bool, added 2026-10-10): true after the number was proven by `POST /auth/phone/verify/confirm/`. Only then can the number be used for SMS login
   - Includes read-only `role` (string or null, added 2026-09-26): `"hotel-owner"` for owner accounts, null for regular users. Only a super-admin assigns it (`POST /admin-panel/users/create-hotel-owner/`); register, OTP and `PATCH /auth/me/update/` ignore any `role` in the body. The UI shows partner entry points only for `role == "hotel-owner"` or staff
   - The same user object (with both flags and `role`) is returned by register, login, OTP verify, refresh and `PATCH /auth/me/update/`
 - POST `/api/v1/auth/refresh/` - Refresh session
