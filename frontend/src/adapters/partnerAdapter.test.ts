@@ -650,6 +650,30 @@ describe('PartnerAdapter', () => {
     })
   })
 
+  describe('Reportable bookings (no-show)', () => {
+    it('asks only for bookings the owner can still report', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => [] } as Response)
+
+      await adapter.getPartnerBookings(undefined, undefined, true)
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/bookings/?reportable=true`,
+        expect.objectContaining({ credentials: 'include' })
+      )
+    })
+
+    it('does not send the flag when it is off', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => [] } as Response)
+
+      await adapter.getPartnerBookings('confirmed', undefined, false)
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/bookings/?status=confirmed`,
+        expect.objectContaining({ credentials: 'include' })
+      )
+    })
+  })
+
   describe('Error Handling', () => {
     it('should handle network errors', async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'))

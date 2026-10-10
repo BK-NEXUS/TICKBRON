@@ -338,6 +338,10 @@ export interface PartnerBooking {
   confirmation_code: string
   created_at: string
   updated_at: string
+  /** R12b: true while the owner may still report that the guest did not arrive */
+  can_report_no_show?: boolean
+  /** Last day (YYYY-MM-DD) the report can be filed; null when not reportable */
+  report_deadline?: string | null
 }
 
 // API Response types
@@ -704,10 +708,11 @@ class PartnerAdapter {
    * List bookings for hotel-owner's properties
    * Integrates with GET /api/v1/partner/bookings/ endpoint
    */
-  async getPartnerBookings(status?: string, paymentStatus?: string): Promise<ApiResponse<PartnerBooking[]>> {
+  async getPartnerBookings(status?: string, paymentStatus?: string, reportableOnly = false): Promise<ApiResponse<PartnerBooking[]>> {
     const params = new URLSearchParams()
     if (status) params.append('status', status)
     if (paymentStatus) params.append('payment_status', paymentStatus)
+    if (reportableOnly) params.append('reportable', 'true')
 
     const endpoint = `/api/v1/partner/bookings/${params.toString() ? `?${params.toString()}` : ''}`
     return this.request<PartnerBooking[]>(endpoint)
