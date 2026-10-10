@@ -9943,3 +9943,34 @@ table .btn {
   color: var(--color-text-primary);
   font-family: var(--font-family-heading);
 }
+
+/* ===== No-show reports (R12b): owner and staff screens ===== */
+.booking-no-show {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.no-show-report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.no-show-report-stay {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 44px;
+}

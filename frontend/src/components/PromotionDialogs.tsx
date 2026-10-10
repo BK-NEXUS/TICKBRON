@@ -1,28 +1,9 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent, ReactNode } from 'react'
-import { useDialogFocus } from '../hooks/useDialogFocus'
+import type { FormEvent } from 'react'
+import { DialogModal as Modal } from './DialogModal'
 import { useI18n } from '../i18n/I18nContext'
 import { promotionAdapter, type AdminPromotion, type PromotionStats } from '../adapters/promotionAdapter'
 import { promotionErrorKey } from '../utils/promotionErrors'
-
-interface ModalProps {
-  titleId: string
-  title: string
-  onClose: () => void
-  children: ReactNode
-}
-
-function Modal({ titleId, title, onClose, children }: ModalProps) {
-  const dialogRef = useDialogFocus<HTMLDivElement>(true, onClose)
-  return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <div className="modal-content" ref={dialogRef} tabIndex={-1}>
-        <h2 id={titleId} className="modal-title">{title}</h2>
-        {children}
-      </div>
-    </div>
-  )
-}
 
 interface HotelRef {
   id: number
