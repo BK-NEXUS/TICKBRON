@@ -544,3 +544,46 @@ class TestRefunds(PaymentSecurityTestBase):
         self.booking.refresh_from_db()
         assert self.tx.status == 'refunded'
         assert self.booking.payment_status == 'pending'
+
+
+class TestOneActivePaymentPerBooking(PaymentSecurityTestBase):
+    """N-5: a double click or a second provider must not create a second charge."""
+
+    def _pay(self, key):
+        return self.client.post(TRANSACTIONS_URL, self._payment_data(self.booking, key), format='json')
+
+    def test_second_payment_while_one_is_processing_is_refused(self):
+        self._create_transaction(self.booking, 'k-first', tx_status='processing')
+
+        response = self._pay('k-second')
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert PaymentTransaction.objects.filter(booking=self.booking).count() == 1
+
+    def test_second_payment_after_a_completed_one_is_refused(self):
+        self._create_transaction(self.booking, 'k-done', tx_status='completed')
+
+        assert self._pay('k-again').status_code == status.HTTP_409_CONFLICT
+
+    def test_fresh_pending_payment_blocks_a_double_click(self):
+        self._create_transaction(self.booking, 'k-click', tx_status='pending')
+
+        assert self._pay('k-click-2').status_code == status.HTTP_409_CONFLICT
+
+    def test_stale_pending_payment_does_not_block_a_retry(self):
+        old = self._create_transaction(self.booking, 'k-old', tx_status='pending')
+        PaymentTransaction.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(minutes=30))
+
+        assert self._pay('k-retry').status_code == status.HTTP_201_CREATED
+
+    def test_failed_payment_does_not_block_a_retry(self):
+        self._create_transaction(self.booking, 'k-bad', tx_status='failed')
+
+        assert self._pay('k-retry-2').status_code == status.HTTP_201_CREATED
+
+    def test_same_key_still_replays_the_original(self):
+        first = self._pay('k-same')
+        second = self._pay('k-same')
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_200_OK

@@ -2584,3 +2584,7 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 ## Security hardening, batch 1 item N-7 (booking holds), 2026-10-10
 - `number_of_rooms` max 10; at most 3 pending bookings per guest (429 `too_many_pending_bookings`, a cancelled or paid booking frees a slot); booking creation throttled (`booking_create`, 30/hour per user, env `THROTTLE_BOOKING_CREATE_RATE`). Tests: `bookings/tests/test_n7_pending_caps.py`.
 - Changed assertion: `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` expected throttle-rate dict now includes `booking_create` (exact equality kept; anon/user unchanged), same pattern as R12b.
+
+## Security hardening, batch 1 item N-5 (one active payment per booking), 2026-10-10
+- `POST /payments/transactions/` returns 409 `payment_already_active` when the booking already has a `processing` or `completed` payment, or a `pending` one younger than 5 minutes (double click). Older pending and failed payments do not block a retry. The booking row is locked for the check. Same idempotency key still replays the original (200). Tests: `TestOneActivePaymentPerBooking` in `payments/tests/test_payment_security.py`. No assertion changed.
+- Found, not fixed: a paid-but-unconfirmable booking is only written to the audit log ("manual refund required"); it should also appear in the refunds needs-attention queue.
