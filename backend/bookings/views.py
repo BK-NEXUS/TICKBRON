@@ -8,14 +8,30 @@ from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
 logger = logging.getLogger('tickbron')
+
+# Unpaid holds block inventory for 15 minutes each; without a cap one free
+# account could keep a whole hotel unavailable
+MAX_PENDING_BOOKINGS_PER_GUEST = 3
+
+
+class BookingCreateThrottle(UserRateThrottle):
+    """Booking creation per user (settings: THROTTLE_BOOKING_CREATE_RATE)."""
+    scope = 'booking_create'
+
+    def allow_request(self, request, view):
+        if settings.TESTING:
+            return True
+        return super().allow_request(request, view)
 
 
 class BookingViewSet(mixins.CreateModelMixin,
@@ -41,6 +57,11 @@ class BookingViewSet(mixins.CreateModelMixin,
             is_deleted=False
         ).select_related('guest', 'property').prefetch_related('booking_items', 'property__translations')
     
+    def get_throttles(self):
+        if self.action == 'create':
+            return [BookingCreateThrottle()]
+        return super().get_throttles()
+
     def create(self, request, *args, **kwargs):
         """
         Create a new booking with transaction-safe inventory locking.
@@ -57,6 +78,16 @@ class BookingViewSet(mixins.CreateModelMixin,
         Returns:
             Created booking with confirmation code
         """
+        pending = Booking.objects.filter(
+            guest=request.user, status='pending', is_deleted=False
+        ).count()
+        if pending >= MAX_PENDING_BOOKINGS_PER_GUEST:
+            return Response(
+                {'error': 'Too many unpaid bookings. Pay or cancel one first.',
+                 'code': 'too_many_pending_bookings'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
         serializer = BookingCreateSerializer(
             data=request.data,
             context={'request': request}

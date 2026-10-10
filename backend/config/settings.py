@@ -285,6 +285,7 @@ REST_FRAMEWORK = {
         # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
         'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
         # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
+        'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
     },
 }

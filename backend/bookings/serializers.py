@@ -101,7 +101,7 @@ class BookingCreateSerializer(serializers.Serializer):
     guest_email = serializers.EmailField(required=False, allow_blank=True)
     
     # Room and children information
-    number_of_rooms = serializers.IntegerField(min_value=1, default=1)
+    number_of_rooms = serializers.IntegerField(min_value=1, max_value=10, default=1)
     children = serializers.ListField(
         child=serializers.IntegerField(min_value=0, max_value=17),
         required=False,

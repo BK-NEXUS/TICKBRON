@@ -2580,3 +2580,7 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 - Login/register/OTP throttles are keyed by IP for everyone, including logged-in sessions (`users/views.py` `IPRateThrottle`). A per-email login throttle was NOT added: it would let anyone block a victim's login (see `users/lockout.py`).
 - Tests added: `payments/tests/test_payment_security.py` (3), `users/tests/test_rate_limiting.py` (2). No assertion changed.
 - Found, not fixed: remaining security items are listed in `/root/.claude/plans` batch 2 (phone pre-hijack N-1, proxy/HSTS settings N-3/N-6, OTP hashing, login CSRF, etc.); need PLAN_SECURITY.md and owner approval.
+
+## Security hardening, batch 1 item N-7 (booking holds), 2026-10-10
+- `number_of_rooms` max 10; at most 3 pending bookings per guest (429 `too_many_pending_bookings`, a cancelled or paid booking frees a slot); booking creation throttled (`booking_create`, 30/hour per user, env `THROTTLE_BOOKING_CREATE_RATE`). Tests: `bookings/tests/test_n7_pending_caps.py`.
+- Changed assertion: `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` expected throttle-rate dict now includes `booking_create` (exact equality kept; anon/user unchanged), same pattern as R12b.
