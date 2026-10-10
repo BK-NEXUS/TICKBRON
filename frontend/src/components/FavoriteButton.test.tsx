@@ -10,7 +10,7 @@ import { resetFavoritesStore } from '../hooks/useFavorites'
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }))
 
-const auth = { isAuthenticated: false, user: null as { id: number } | null }
+const auth = { isAuthenticated: false, isLoading: false, user: null as { id: number } | null }
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => auth }))
 
 vi.mock('../adapters/accountAdapter', () => ({
@@ -24,6 +24,7 @@ describe('FavoriteButton', () => {
     vi.clearAllMocks()
     resetFavoritesStore()
     auth.isAuthenticated = false
+    auth.isLoading = false
     auth.user = null
   })
 
@@ -34,6 +35,52 @@ describe('FavoriteButton', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/login', expect.objectContaining({ state: expect.anything() }))
     expect(accountAdapter.addFavorite).not.toHaveBeenCalled()
+  })
+
+  it('ignores a click while the session is still being checked: a logged-in guest must not be sent to the login page', () => {
+    auth.isLoading = true
+    render(<FavoriteButton propertyId={5} propertyName="Hotel Tashkent" />)
+
+    const button = screen.getByRole('button', { name: 'Save Hotel Tashkent to favorites' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    fireEvent.click(button)
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(accountAdapter.addFavorite).not.toHaveBeenCalled()
+  })
+
+  it('works again once the session check is done', async () => {
+    auth.isLoading = true
+    const view = render(<FavoriteButton propertyId={5} propertyName="Hotel Tashkent" />)
+    expect(screen.getByRole('button', { name: 'Save Hotel Tashkent to favorites' })).toBeDisabled()
+
+    auth.isLoading = false
+    auth.isAuthenticated = true
+    auth.user = { id: 3 }
+    vi.mocked(accountAdapter.getFavorites).mockResolvedValue({ data: [], error: null })
+    vi.mocked(accountAdapter.addFavorite).mockResolvedValue({ data: null, error: null })
+    view.rerender(<FavoriteButton propertyId={5} propertyName="Hotel Tashkent" />)
+
+    const button = await screen.findByRole('button', { name: 'Save Hotel Tashkent to favorites' })
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    expect(accountAdapter.addFavorite).toHaveBeenCalledWith(5)
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('stays unpressed when the save fails', async () => {
+    auth.isAuthenticated = true
+    auth.user = { id: 3 }
+    vi.mocked(accountAdapter.getFavorites).mockResolvedValue({ data: [], error: null })
+    vi.mocked(accountAdapter.addFavorite).mockResolvedValue({ data: null, error: 'Server error' })
+    render(<FavoriteButton propertyId={5} propertyName="Hotel Tashkent" />)
+
+    const button = await screen.findByRole('button', { name: 'Save Hotel Tashkent to favorites' })
+    fireEvent.click(button)
+    await waitFor(() => expect(accountAdapter.addFavorite).toHaveBeenCalled())
+    await waitFor(() => expect(button).toBeEnabled())
+    expect(button).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('adds the property for a logged-in user', async () => {

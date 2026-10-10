@@ -33,6 +33,7 @@ ACCESS = [
     (r'^/api/v1/auth/(me|refresh|me/update)/$', None, AUTHENTICATED),
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
+    (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
     (r'^/api/v1/payments/webhook/payme/$', None, PUBLIC),  # signature-checked, no session
     (r'^/api/v1/payments/transactions/999999/refund/$', None, STAFF),
     (r'^/api/v1/payments/webhooks/', None, STAFF),
@@ -47,6 +48,7 @@ ACCESS = [
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/refunds/\d+/(mark-done|retry)/$', None, SUPERADMIN),  # R12
+    (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
     (r'^/api/v1/admin-panel/', None, STAFF),
 ]
 

@@ -90,6 +90,25 @@ describe('FavoritesPage', () => {
     })
   })
 
+  describe('Session check', () => {
+    it('shows loading, not "Sign in required", while the session is still being checked', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: true,
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      })
+
+      renderWithRouter(<FavoritesPage />)
+
+      expect(screen.queryByText('Sign in required')).not.toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeInTheDocument()
+    })
+  })
+
   describe('Loading state', () => {
     it('should show loading state initially', () => {
       mockUseAuth.mockReturnValue({

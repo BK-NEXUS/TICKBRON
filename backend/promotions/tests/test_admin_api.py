@@ -1,5 +1,6 @@
 """Super-admin promotion API: find a hotel, create and manage promotions, read statistics."""
 from datetime import timedelta
+from functools import partial
 
 import pytest
 from rest_framework.test import APIClient
@@ -34,6 +35,10 @@ def staff():
 @pytest.fixture
 def hotel():
     return make_hotel(make_owner('o@example.com'), name='Registan Plaza', city_ref=uz_city())
+
+
+def listed_ids(client, **query):
+    return {row['id'] for row in client.get(f'{A}/promotions/', query).json()['results']}
 
 
 def payload(hotel, start=0, days=7, **extra):
@@ -76,8 +81,8 @@ class TestHotelSearch:
 
 class TestCreate:
     def test_creates_unpaid_promotion(self, admin, hotel):
-        response = admin.post(f'{A}/promotions/', payload(hotel, priority=10, price_amount='2500000',
-                                                           price_currency='UZS', note='Invoice 7'), format='json')
+        body = payload(hotel, priority=10, price_amount='2500000', price_currency='UZS', note='Invoice 7')
+        response = admin.post(f'{A}/promotions/', body, format='json')
         assert response.status_code == 201, response.content
         body = response.json()
         assert body['status'] == 'scheduled'
@@ -116,8 +121,8 @@ class TestCreate:
         assert admin.post(f'{A}/promotions/', {'property': hotel.pk}, format='json').status_code == 400
 
     def test_status_and_paid_cannot_be_set_on_create(self, admin, hotel):
-        response = admin.post(f'{A}/promotions/', payload(hotel, status='active', paid=True,
-                                                           paid_at='2026-01-01T00:00:00Z'), format='json')
+        body = payload(hotel, status='active', paid=True, paid_at='2026-01-01T00:00:00Z')
+        response = admin.post(f'{A}/promotions/', body, format='json')
         body = response.json()
         assert (body['status'], body['paid']) == ('scheduled', False)
 
@@ -140,7 +145,7 @@ class TestList:
         other = make_hotel(make_owner('b@example.com'), name='Bukhara Palace')
         paid = make_promotion(hotel)
         unpaid = make_promotion(other, paid=False)
-        ids = lambda **q: {r['id'] for r in admin.get(f'{A}/promotions/', q).json()['results']}
+        ids = partial(listed_ids, admin)
         assert ids(q='bukhara') == {unpaid.pk}
         assert ids(paid='true') == {paid.pk}
         assert ids(paid='false') == {unpaid.pk}
@@ -159,7 +164,7 @@ class TestList:
 
     def test_date_filter_matches_overlapping_periods(self, admin, hotel):
         promo = make_promotion(hotel, start_offset=10, days=5)
-        ids = lambda **q: {r['id'] for r in admin.get(f'{A}/promotions/', q).json()['results']}
+        ids = partial(listed_ids, admin)
         assert ids(**{'from': (today() + timedelta(days=14)).isoformat()}) == {promo.pk}
         assert ids(**{'from': (today() + timedelta(days=16)).isoformat()}) == set()
         assert ids(to=(today() + timedelta(days=9)).isoformat()) == set()

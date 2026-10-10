@@ -1,4 +1,12 @@
-"""All promotion rules in one place: dates, overlap, who is shown now, order, lifecycle, audit."""
+"""
+All promotion business rules live here; views only call these functions.
+
+What a promotion is: one paid period during which one hotel may appear in the banner carousel.
+  1. create_promotion / update_promotion  check dates, price, place and "no overlap for the same hotel"
+  2. pause / resume / cancel / mark_paid   change the state (every change is written to the audit log)
+  3. shown_now / ordered                   decide which promotions guests see, and in which order
+  4. tidy_statuses                         nightly clean-up of the `status` column (used by the Celery task)
+"""
 import hashlib
 import re
 from datetime import date
@@ -13,18 +21,23 @@ from common.dates import business_today
 from promotions.models import Promotion
 from properties.models import Property
 
-MAX_DAYS = 365
-MAX_PRIORITY = 100
-MAX_NOTE = 500
-MAX_PRICE = Decimal('999999999999.99')
+MAX_DAYS = 365                # longest single promotion
+MAX_START_AHEAD_DAYS = 730    # catches typos such as the year 2062; a real booking is never planned further ahead
+MAX_PRIORITY = 100            # 0 = normal, higher = shown earlier in the carousel
+MAX_NOTE = 500                # internal note length (the admin must not paste contact data here)
+MAX_PRICE = Decimal('999999999999.99')  # fits the DecimalField(14, 2) column
+# States in which a promotion can still be changed; ended and cancelled ones are history
 EDITABLE_STATUSES = (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE, Promotion.STATUS_PAUSED)
 CURRENCY_RE = re.compile(r'^[A-Z]{3}$')
+# The only fields update_promotion accepts: hotel, status and payment can never be changed through it
 UPDATABLE_FIELDS = frozenset({
     'start_date', 'end_date', 'priority', 'country_ref', 'region_ref', 'city_ref',
     'price_amount', 'price_currency', 'note'})
 
 
 class PromotionError(Exception):
+    """A rule was broken. `code` is a stable machine-readable name the API returns; `message` is for people."""
+
     def __init__(self, code, message=''):
         super().__init__(message or code)
         self.code = code
@@ -32,6 +45,7 @@ class PromotionError(Exception):
 
 
 def _audit(actor, action, promotion):
+    """Write one audit row. Only ids, dates and the agreed amount: no names, notes or contact data."""
     details = {'promotion_id': promotion.pk, 'property_id': promotion.property_id,
                'start_date': promotion.start_date.isoformat(), 'end_date': promotion.end_date.isoformat()}
     if action in ('promotion_create', 'promotion_mark_paid') and promotion.price_amount is not None:
@@ -41,15 +55,19 @@ def _audit(actor, action, promotion):
 
 
 def _check_dates(start, end, today, *, check_start_in_past):
+    """`check_start_in_past` is off when an edit keeps the old start date of a promotion already running."""
     if end < start:
         raise PromotionError('bad_dates', 'End date is before the start date')
     if check_start_in_past and start < today:
         raise PromotionError('start_in_past', 'Start date is in the past')
+    if (start - today).days > MAX_START_AHEAD_DAYS:
+        raise PromotionError('start_too_far', f'Start date is more than {MAX_START_AHEAD_DAYS} days ahead')
     if (end - start).days + 1 > MAX_DAYS:
         raise PromotionError('too_long', f'A promotion lasts at most {MAX_DAYS} days')
 
 
 def _check_values(priority, price_amount, price_currency, note):
+    """Range checks for the plain values an admin types."""
     if not 0 <= priority <= MAX_PRIORITY:
         raise PromotionError('bad_priority', f'Priority must be between 0 and {MAX_PRIORITY}')
     if price_amount is not None and not Decimal('0') <= price_amount <= MAX_PRICE:
@@ -61,6 +79,7 @@ def _check_values(priority, price_amount, price_currency, note):
 
 
 def _check_scope(country, region, city):
+    """A place limit must be consistent: the chosen city lies in the chosen region, the region in the country."""
     if city and region and city.region_id != region.pk:
         raise PromotionError('bad_scope', 'City is not in the chosen region')
     if region and country and region.country_id != country.pk:
@@ -70,6 +89,7 @@ def _check_scope(country, region, city):
 
 
 def _check_overlap(property_id, start, end, exclude_pk=None):
+    """One hotel cannot hold two promotions on the same day. Cancelled and ended periods do not count."""
     clash = Promotion.objects.filter(
         property_id=property_id, is_deleted=False, status__in=Promotion.HOLDING_STATUSES,
         start_date__lte=end, end_date__gte=start)
@@ -91,6 +111,10 @@ def _lock_promotion(promotion):
 
 def create_promotion(*, actor, property, start_date, end_date, priority=0, country_ref=None, region_ref=None,
                      city_ref=None, price_amount=None, price_currency='UZS', note=''):
+    """
+    Create an unpaid promotion (status `scheduled`). It is shown only after mark_paid() and only inside its dates.
+    The hotel row is locked while checking, so two admins creating at the same moment cannot both pass.
+    """
     price_currency = (price_currency or '').strip().upper()
     note = (note or '').strip()
     _check_dates(start_date, end_date, business_today(), check_start_in_past=True)
@@ -108,6 +132,7 @@ def create_promotion(*, actor, property, start_date, end_date, priority=0, count
 
 
 def update_promotion(promotion, *, actor, **changes):
+    """Change dates, priority, place, price or note. Dates run the same checks as create (own period ignored)."""
     unknown = set(changes) - UPDATABLE_FIELDS
     if unknown:
         raise PromotionError('bad_field', f'Cannot change: {sorted(unknown)}')
@@ -134,6 +159,7 @@ def update_promotion(promotion, *, actor, **changes):
 
 
 def _transition(promotion, actor, action, allowed, new_status, **extra):
+    """Move to `new_status` if the current status is in `allowed`; re-read under a lock to be race-safe."""
     with transaction.atomic():
         _lock_promotion(promotion)
         if promotion.status not in allowed:
@@ -147,17 +173,20 @@ def _transition(promotion, actor, action, allowed, new_status, **extra):
 
 
 def pause(promotion, *, actor):
+    """Hide the promotion for now; its dates stay reserved."""
     return _transition(promotion, actor, 'promotion_pause',
                        (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE), Promotion.STATUS_PAUSED)
 
 
 def resume(promotion, *, actor):
+    """Show it again: `active` if it was already paid and started, otherwise back to `scheduled`."""
     started_and_paid = promotion.paid_at is not None and promotion.start_date <= business_today()
     return _transition(promotion, actor, 'promotion_resume', (Promotion.STATUS_PAUSED,),
                        Promotion.STATUS_ACTIVE if started_and_paid else Promotion.STATUS_SCHEDULED)
 
 
 def cancel(promotion, *, actor, reason):
+    """Stop for good and free the dates. A reason is required for the books; refunds are settled outside."""
     reason = (reason or '').strip()
     if not reason:
         raise PromotionError('reason_required', 'A reason is required')
@@ -168,6 +197,7 @@ def cancel(promotion, *, actor, reason):
 
 
 def mark_paid(promotion, *, actor):
+    """Record that the client paid (outside the platform). Only now can the promotion be shown."""
     with transaction.atomic():
         _lock_promotion(promotion)
         if promotion.paid_at is not None:
@@ -201,6 +231,7 @@ def shown_now(today: date | None = None):
 
 
 def _rotation_key(promotion, today):
+    """Sort key: higher priority first; the hash of (date, id) shuffles equal priorities once per day."""
     digest = hashlib.sha256(f'{today.isoformat()}:{promotion.pk}'.encode()).hexdigest()
     return -promotion.priority, digest
 
@@ -225,6 +256,7 @@ def blocked_reason(promotion):
 
 
 def is_shown_now(promotion, today: date | None = None):
+    """Python twin of shown_now() for one loaded promotion (admin screens). Keep the two in step."""
     today = today or business_today()
     return (
         not promotion.is_deleted

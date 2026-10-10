@@ -1,3 +1,6 @@
+import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
+import { chargeOf } from '../utils/charge'
+import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
@@ -356,6 +359,7 @@ export function BookingPage() {
     setPaymentStatus('pending')
 
     try {
+      const charge = chargeOf(booking)
       // Generate idempotency key for payment
       const idempotencyKey = paymentAdapter.generateIdempotencyKey()
       
@@ -368,8 +372,9 @@ export function BookingPage() {
         idempotency_key: idempotencyKey,
         booking: booking.id,
         provider: selectedProvider,
-        amount: booking.total_price,
-        currency: booking.currency,
+        // The backend accepts only the booking's own charge (the UZS snapshot), not the hotel price
+        amount: charge.amount,
+        currency: charge.currency,
         client_ip: clientIp || undefined,
         user_agent: userAgent,
       }
@@ -505,7 +510,7 @@ export function BookingPage() {
               </div>
               <div className="booking-confirmation-item">
                 <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
-                <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
+                <span className="booking-confirmation-value"><ChargeMain booking={booking} /><ChargeNotes booking={booking} /></span>
               </div>
             </div>
 
@@ -546,6 +551,8 @@ export function BookingPage() {
               </button>
               <h1>{t('booking.paymentMethod')}</h1>
             </div>
+
+            <NoShowRefundNote info={booking} />
 
             <PaymentMethodSelector
               selectedProvider={selectedProvider}
@@ -605,8 +612,9 @@ export function BookingPage() {
 
                       <div className="booking-summary-total">
                         <span className="booking-summary-total-label">{t('booking.total')}</span>
-                        <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
+                        <span className="booking-summary-total-value"><ChargeMain booking={booking} /></span>
                       </div>
+                      <ChargeNotes booking={booking} />
                     </>
                   )}
                 </>
@@ -636,8 +644,8 @@ export function BookingPage() {
         <div className="container">
           <PaymentProcessing
             provider={selectedProvider}
-            amount={booking.total_price}
-            currency={booking.currency}
+            amount={chargeOf(booking).amount}
+            currency={chargeOf(booking).currency}
             status={paymentStatus}
           />
         </div>
@@ -657,6 +665,7 @@ export function BookingPage() {
               check_out: booking.check_out,
               confirmation_code: booking.confirmation_code,
             }}
+            noShowRefund={booking}
             onViewBookings={() => navigate('/bookings')}
             onBackToProperty={handleBackToProperty}
           />
@@ -671,8 +680,8 @@ export function BookingPage() {
         <div className="container">
           <PaymentFailure
             provider={selectedProvider}
-            amount={booking.total_price}
-            currency={booking.currency}
+            amount={chargeOf(booking).amount}
+            currency={chargeOf(booking).currency}
             error={paymentError || undefined}
             onRetry={handleRetryPayment}
             onTryDifferentMethod={handleTryDifferentMethod}
@@ -927,7 +936,7 @@ export function BookingPage() {
                 </div>
                 <div className="booking-confirmation-item">
                   <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
-                  <span className="booking-confirmation-value">{formatMoney(Number(booking.total_price))}</span>
+                  <span className="booking-confirmation-value"><ChargeMain booking={booking} /><ChargeNotes booking={booking} /></span>
                 </div>
                 {booking.special_requests && (
                   <div className="booking-confirmation-item">
@@ -1012,6 +1021,14 @@ export function BookingPage() {
                       <span className="booking-summary-total-label">{t('booking.total')}</span>
                       <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
                     </div>
+                    {quote?.uzs_total && (
+                      <p className="charge-notes">
+                        <span className="charge-approx">
+                          {t('charge.inSom', { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
+                        </span>
+                      </p>
+                    )}
+                    <NoShowRefundNote info={quote} />
                   </>
                 )}
               </>

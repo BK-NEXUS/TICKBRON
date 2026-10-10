@@ -32,7 +32,7 @@ def home_promotions(request):
     country_id = None
     raw = request.query_params.get('country')
     if raw is not None:
-        if not raw.isdigit() or int(raw) < 1:
+        if not (raw.isascii() and raw.isdigit()) or int(raw) < 1:
             return Response({'error': 'Invalid country', 'details': 'country must be a positive integer'},
                             status=status.HTTP_400_BAD_REQUEST)
         country_id = int(raw)

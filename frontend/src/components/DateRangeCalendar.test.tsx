@@ -28,6 +28,26 @@ const cell = (container: HTMLElement, date: string) =>
   container.querySelector(`[data-date="${date}"]`) as HTMLElement
 
 describe('DateRangeCalendar', () => {
+  it('tells the screen which month is shown, at the start and after every move', () => {
+    const onMonthChange = vi.fn()
+    render(<Harness onMonthChange={onMonthChange} />)
+    expect(onMonthChange).toHaveBeenLastCalledWith('2030-03')
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(onMonthChange).toHaveBeenLastCalledWith('2030-04')
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(onMonthChange).toHaveBeenLastCalledWith('2030-02')
+    expect(onMonthChange).toHaveBeenCalledTimes(4)
+  })
+
+  it('does not repeat the month notice when something else re-renders it', () => {
+    const onMonthChange = vi.fn()
+    const { container } = render(<Harness onMonthChange={onMonthChange} />)
+    fireEvent.click(cell(container, day(5)))
+    fireEvent.click(cell(container, day(8)))
+    expect(onMonthChange).toHaveBeenCalledTimes(1)
+  })
+
   it('first click picks check-in, second click picks check-out', () => {
     const onRange = vi.fn()
     const { container } = render(<Harness onRange={onRange} />)

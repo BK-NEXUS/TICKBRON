@@ -158,7 +158,8 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
       await page.getByRole('button', { name: 'Search', exact: true }).click()
     }
     await expect(page).toHaveURL(/\/search/)
-    const hotel = page.getByRole('heading', { name: TASHKENT })
+    // The home page also lists this hotel (twice): look only inside the search results
+    const hotel = page.locator('.search-results-grid').getByRole('heading', { name: TASHKENT })
     await expect.soft(hotel, 'search with dates should list the Tashkent hotel').toBeVisible()
     if (!(await hotel.isVisible())) {
       // Continue with a date-less search so the later steps can still be checked
@@ -171,7 +172,7 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
   })
 
   await step(audit, 'A3 open-property', async () => {
-    await page.getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
+    await page.locator('.search-results-grid').getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
     await expect(page).toHaveURL(/\/property\/\d+/)
     await expect(page.getByRole('heading', { level: 1, name: TASHKENT })).toBeVisible()
   })
@@ -218,15 +219,16 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(code).toBeVisible()
     shared.referenceCode = (await code.textContent())?.trim()
     expect(shared.referenceCode).toMatch(/^[A-Z2-9]{6}$/)
-    const paid = await amountNextTo(page, 'Amount Paid:')
-    // Hard check: what the guest saw is what was charged
-    expect(paid, `amount paid ($${paid}) should equal the total shown before payment ($${summaryTotal})`)
-      .toBe(summaryTotal)
-    // ...and what the backend stored for the booking and its payment
+    // Money is charged in so'm: what the guest was shown as paid is the booking's stored charge
+    const paidText = await page.getByText('Amount Paid:').first().locator('..').innerText()
+    const paid = Number(paidText.replace(/^Amount Paid:/, '').replace(/\D/g, ''))
     const bookings = await (await page.request.get(`${API}/api/v1/bookings/`)).json()
     const rows = Array.isArray(bookings) ? bookings : bookings.results
     const stored = rows.find((b: { confirmation_code: string }) => b.confirmation_code === shared.referenceCode)
-    expect(Number(stored.total_price), 'backend booking total = total shown').toBe(summaryTotal)
+    expect(Number(stored.total_price), 'backend booking total = hotel price shown before payment').toBe(summaryTotal)
+    expect(stored.charge_currency).toBe('UZS')
+    expect(paid, `amount paid (${paidText}) should equal the stored charge (${stored.charge_amount})`)
+      .toBe(Math.round(Number(stored.charge_amount)))
   })
 
   await step(audit, 'A8 my-bookings', async () => {
@@ -239,7 +241,7 @@ test('B payment failure shows the failure screen and retry works', async ({ page
   await step(audit, 'B0 login-and-open-property', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
     await page.goto('/search?destination=Tashkent')
-    await page.getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
+    await page.locator('.search-results-grid').getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
     await pickStay(page, 'Standard Double', 'Standard Rate', { nights: 1, skip: 1 })
     await page.getByRole('button', { name: 'Proceed to booking' }).click()
   })
@@ -274,7 +276,11 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
     const favoriteButton = page.getByRole('button', { name: /favou?rite|save/i })
     await expect.soft(favoriteButton, 'property page should have an add-to-favorites button').not.toHaveCount(0)
     if (await favoriteButton.count()) {
-      await favoriteButton.first().click()
+      // Wait for the session check to finish (the button is disabled until then) and for the save itself
+      await expect(favoriteButton.first()).toBeEnabled()
+      // A run that stopped half way can leave the hotel saved: clicking it then would remove it
+      if ((await favoriteButton.first().getAttribute('aria-pressed')) !== 'true') await favoriteButton.first().click()
+      await expect(favoriteButton.first()).toHaveAttribute('aria-pressed', 'true')
     } else {
       // No UI control: add through the API so listing and removal can still be checked
       const response = await api(page, 'POST', '/api/v1/me/favorites/', { property: propertyId })
@@ -285,9 +291,9 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
   await step(audit, 'C2 favorites-page-lists-it', async () => {
     await page.goto('/favorites')
     await expect(page.getByRole('heading', { name: 'My Favorites' })).toBeVisible()
-    await expect(page.getByText('1 properties saved')).toBeVisible()
+    await expect(page.getByText('1 property saved')).toBeVisible()
     await expect.soft(page.getByRole('link', { name: TASHKENT }), 'favorite card shows the property name').toBeVisible()
-    await expect.soft(page.getByText('$60'), 'favorite card shows the price').not.toHaveCount(0)
+    await expect.soft(page.getByText(/\$60/), 'favorite card shows the price').not.toHaveCount(0)
   })
 
   await step(audit, 'C3 remove', async () => {

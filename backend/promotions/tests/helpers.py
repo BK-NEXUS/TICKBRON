@@ -3,7 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from common.dates import business_today
-from geography.models import City, Country, Region
+from geography.models import City
 from permissions.models import Role
 from promotions.models import Promotion
 from properties.models import Property, PropertyTranslation, PropertyType

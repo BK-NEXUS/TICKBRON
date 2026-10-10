@@ -30,7 +30,19 @@ TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 LOGIN_FAILED_MESSAGE = 'Invalid credentials. If you have made several failed attempts, please try again later.'
 
 
-class LoginRateThrottle(AnonRateThrottle):
+class IPRateThrottle(AnonRateThrottle):
+    """
+    Throttle keyed by client IP for every caller.
+
+    DRF's AnonRateThrottle skips logged-in users, so a throwaway account would
+    lift the login and registration limits.
+    """
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
+
+
+class LoginRateThrottle(IPRateThrottle):
     """Rate throttle for login endpoint - 10 requests per minute per IP."""
     rate = '10/min'
     scope = 'login'
@@ -42,7 +54,7 @@ class LoginRateThrottle(AnonRateThrottle):
         return super().allow_request(request, view)
 
 
-class RegisterRateThrottle(AnonRateThrottle):
+class RegisterRateThrottle(IPRateThrottle):
     """Rate throttle for registration endpoint - 5 requests per minute per IP."""
     rate = '5/min'
     scope = 'register'
@@ -54,7 +66,7 @@ class RegisterRateThrottle(AnonRateThrottle):
         return super().allow_request(request, view)
 
 
-class PhoneNumberRateThrottle(AnonRateThrottle):
+class PhoneNumberRateThrottle(IPRateThrottle):
     """
     Base throttle keyed by the phone number in the request body.
 

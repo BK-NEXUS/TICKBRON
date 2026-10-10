@@ -224,3 +224,7 @@ Status: READY
 - No raw card data storage - tokens/references only
 - Comprehensive test coverage and security review completed
 - Ready for frontend integration when payment UI is implemented
+
+
+## Frontend rule (2026-10-10)
+- `POST /payments/transactions/` must carry exactly the booking's `charge_amount` and `charge_currency` (the UZS snapshot), never `total_price`/`currency` of the hotel. Bookings without charge fields (made before R6) are charged their own price in their own currency.

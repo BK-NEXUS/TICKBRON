@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Check, Copy, Mail, Smartphone } from 'lucide-react'
 import { PaymentTransaction, PaymentProvider } from '../adapters/paymentAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import type { NoShowRefundInfo } from '../adapters/noShowAdapter'
+import { NoShowRefundNote } from './NoShowRefundNote'
 
 interface PaymentConfirmationProps {
   payment: PaymentTransaction
@@ -11,6 +13,8 @@ interface PaymentConfirmationProps {
     check_out: string
     confirmation_code: string
   }
+  /** R12b: the no-show refund promise of the booking, repeated here */
+  noShowRefund?: NoShowRefundInfo
   onViewBookings: () => void
   onBackToProperty: () => void
 }
@@ -24,6 +28,7 @@ const STATUS_NAMES = ['pending', 'processing', 'completed', 'failed', 'refunded'
 export function PaymentConfirmation({ 
   payment, 
   bookingDetails, 
+  noShowRefund,
   onViewBookings, 
   onBackToProperty 
 }: PaymentConfirmationProps) {
@@ -47,7 +52,7 @@ export function PaymentConfirmation({
     ? t(`pay.statusName.${payment.status as (typeof STATUS_NAMES)[number]}`)
     : payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
 
-  const formatAmount = (amount: number, currency: string): string => {
+  const formatAmount = (amount: number | string, currency: string): string => {
     return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 
@@ -137,6 +142,7 @@ export function PaymentConfirmation({
               <span className="payment-confirmation-value">{formatDate(bookingDetails.check_out)}</span>
             </div>
           </div>
+          <NoShowRefundNote info={noShowRefund} />
         </div>
 
         <div className="payment-confirmation-info">

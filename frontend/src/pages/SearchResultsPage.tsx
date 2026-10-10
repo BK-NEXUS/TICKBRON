@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Map as MapIcon } from 'lucide-react'
+import { Map as MapIcon, SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
+import type { PromotedProperty } from '../adapters/promotionAdapter'
+import { PromoCarousel } from '../components/PromoCarousel'
 import { PropertyCard } from '../components/PropertyCard'
 import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
@@ -25,6 +27,10 @@ export function SearchResultsPage() {
   
   const [loadingState, setLoadingState] = useState<LoadingState>('idle')
   const [properties, setProperties] = useState<Property[]>([])
+  // null until the first response; the banner appears only when there is one, and stays while filters change
+  const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
+  // Phones only: the filters panel is collapsed behind a button
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
@@ -76,9 +82,11 @@ export function SearchResultsPage() {
         
         if (response.error) {
           setError(response.error)
+          setPromoted([])
           setLoadingState('error')
         } else if (response.data) {
           setProperties(response.data.results)
+          setPromoted(response.data.promoted ?? [])
           setTotalCount(response.data.count)
           setLoadingState('success')
         }
@@ -86,6 +94,7 @@ export function SearchResultsPage() {
         if (cancelled) return
         console.error('Failed to load search results:', err)
         setError(null)
+        setPromoted([])
         setLoadingState('error')
       }
     }
@@ -161,9 +170,16 @@ export function SearchResultsPage() {
       {/* Main Content */}
       <div className="search-results-main">
         <div className="container">
+          {/* Paid banners: above the filters and the list, only hotels that match this search */}
+          <div className="search-results-promo">
+            <PromoCarousel items={promoted ?? []} />
+          </div>
           <div className="search-results-layout">
             {/* Filters Sidebar */}
-            <aside className="search-results-sidebar">
+            <aside
+              id="search-results-filters"
+              className={`search-results-sidebar${filtersOpen ? ' search-results-sidebar--open' : ''}`}
+            >
               <SearchFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
@@ -178,6 +194,15 @@ export function SearchResultsPage() {
             <main className="search-results-content">
               {/* Toolbar */}
               <div className="search-results-toolbar">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm search-results-filters-toggle"
+                  aria-expanded={filtersOpen}
+                  aria-controls="search-results-filters"
+                  onClick={() => setFiltersOpen(open => !open)}
+                >
+                  <SlidersHorizontal size={16} aria-hidden="true" /> {filtersOpen ? t('search.hideFilters') : t('search.showFilters')}
+                </button>
                 <SearchSort sortBy={sortBy} onSortChange={handleSortChange} />
                 <ListViewMapView view={view} onViewChange={handleViewChange} />
               </div>

@@ -15,7 +15,8 @@ export interface PaymentTransaction {
   booking: number
   provider: PaymentProvider
   provider_transaction_id: string | null
-  amount: number
+  /** The backend sends money as a decimal string; the charge in UZS for bookings made since R6 */
+  amount: number | string
   currency: string
   status: PaymentStatus
   payment_method_token: string | null
@@ -32,7 +33,8 @@ export interface PaymentCreateRequest {
   idempotency_key: string
   booking: number
   provider: PaymentProvider
-  amount: number
+  /** Exactly the booking's charge_amount (a decimal string) */
+  amount: number | string
   currency: string
   payment_method_token?: string
   client_ip?: string

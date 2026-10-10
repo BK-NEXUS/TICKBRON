@@ -1144,3 +1144,22 @@ Commit format:
 - ✅ SMS_TEST_MODE correctly implemented for non-production builds only
 - ✅ Ready for production deployment
 
+
+## 2026-10-09 R10 promotions
+- Banner carousel on the search page (above filters and list) and on the home page; search list is two columns; admin "Advertising" screen. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 R12b "Kelmadi" screens
+- Owner: report button and dialog, My reports. Staff and super-admin: no-show queue with decisions. Guest: 50% sentence before paying, on the confirmation and in My bookings. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 Owner calendar
+- Month summary, close/open in one click, per-day prices with a bulk price for a range, data per visible month. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 Home page
+- Uzum-style home with real data: banner, property-type chips, top rated and best price lists. Fake sections removed. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 Payment amount fix
+- The payment now sends the booking's UZS charge; the so'm charge is shown with the hotel price, rate date and stale note. Details in `HANDOFF.md`.

@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from geography.models import City, Country, Region
@@ -59,16 +60,20 @@ class PromotionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.DictField())
     def get_property(self, obj):
         prop = obj.property
         return {'id': prop.pk, 'name': prop.display_name(), 'city': prop.city, 'status': prop.status}
 
+    @extend_schema_field(serializers.BooleanField())
     def get_paid(self, obj):
         return obj.paid_at is not None
 
+    @extend_schema_field(serializers.BooleanField())
     def get_is_shown_now(self, obj):
         return service.is_shown_now(obj)
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_blocked_reason(self, obj):
         return service.blocked_reason(obj)
 
@@ -78,8 +83,10 @@ class PromotionSerializer(serializers.ModelSerializer):
             value = sum(getattr(day, column) for day in obj.daily_stats.all())
         return value
 
+    @extend_schema_field(serializers.IntegerField())
     def get_total_impressions(self, obj):
         return self._total(obj, 'sum_impressions', 'impressions')
 
+    @extend_schema_field(serializers.IntegerField())
     def get_total_clicks(self, obj):
         return self._total(obj, 'sum_clicks', 'clicks')

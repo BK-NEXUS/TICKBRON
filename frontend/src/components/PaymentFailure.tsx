@@ -5,7 +5,7 @@ import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentFailureProps {
   provider: PaymentProvider
-  amount: number
+  amount: number | string
   currency: string
   error?: string
   onRetry: () => void
@@ -37,7 +37,7 @@ export function PaymentFailure({
 
   const { t, formatMoney } = useI18n()
 
-  const formatAmount = (amount: number, currency: string): string => {
+  const formatAmount = (amount: number | string, currency: string): string => {
     return formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
   }
 

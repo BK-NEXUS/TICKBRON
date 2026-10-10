@@ -62,6 +62,14 @@ class TestCreate:
     def test_one_year_is_allowed(self, admin, hotel):
         assert create(admin, hotel, days=365).pk
 
+    def test_start_years_ahead_is_rejected_as_a_typo(self, admin, hotel):
+        with pytest.raises(PromotionError) as err:
+            create(admin, hotel, start=731)
+        assert err.value.code == 'start_too_far'
+
+    def test_start_two_years_ahead_is_allowed(self, admin, hotel):
+        assert create(admin, hotel, start=730).pk
+
     @pytest.mark.parametrize('priority', [-1, 101])
     def test_priority_out_of_range_is_rejected(self, admin, hotel, priority):
         with pytest.raises(PromotionError) as err:

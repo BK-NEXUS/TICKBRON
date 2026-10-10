@@ -310,3 +310,9 @@ Before any real payment, each item below must be tested end to end in the provid
 - [ ] **Redis must be the cache in production** (`USE_REDIS_CACHE`): view and click counts are deduplicated there. With a failing cache nothing is counted (a warning `Promotion counter skipped` is logged).
 - [ ] A lawyer confirms the exact "Reklama" label wording and advertising-law requirements in Uzbekistan (the frontend label is an i18n key).
 - [ ] Prices, invoices and refunds for advertising are handled outside the platform; the super-admin records `mark-paid` and the agreed price.
+
+
+## "Kelmadi" screens (R12b frontend, 2026-10-10)
+
+- [ ] **A lawyer must review the guest-facing refund sentence** (`no_show_refund_statement` in uz, ru, en) and the owner and staff dialog texts (`noShow.*`, `noShowAdmin.*`) before launch.
+- [ ] Open client decisions that change this feature: who pays the provider fee, whether it applies to non-refundable rates, whether the hotel keeps the money or TICKBRON refunds from it.

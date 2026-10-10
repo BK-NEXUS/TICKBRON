@@ -358,7 +358,10 @@ class PaymeAdapter(BasePaymentAdapter):
         
         # Validate timestamp if present
         if 'timestamp' in payload:
-            timestamp = datetime.fromtimestamp(payload['timestamp'], tz=dt_timezone.utc)
+            try:
+                timestamp = datetime.fromtimestamp(payload['timestamp'], tz=dt_timezone.utc)
+            except (ValueError, TypeError, OverflowError, OSError):
+                raise SignatureValidationError("Invalid webhook timestamp")
             if not self.validate_timestamp(timestamp):
                 raise SignatureValidationError("Webhook timestamp too old")
         
@@ -479,7 +482,10 @@ class ClickAdapter(BasePaymentAdapter):
         
         # Validate timestamp if present
         if 'timestamp' in payload:
-            timestamp = datetime.fromtimestamp(payload['timestamp'], tz=dt_timezone.utc)
+            try:
+                timestamp = datetime.fromtimestamp(payload['timestamp'], tz=dt_timezone.utc)
+            except (ValueError, TypeError, OverflowError, OSError):
+                raise SignatureValidationError("Invalid webhook timestamp")
             if not self.validate_timestamp(timestamp):
                 raise SignatureValidationError("Webhook timestamp too old")
         

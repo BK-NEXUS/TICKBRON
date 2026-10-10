@@ -17,6 +17,14 @@ export interface BookingItem {
   currency: string
 }
 
+/** The CBU rate a booking was charged at (UZS per one unit of the hotel currency) */
+export interface ExchangeRateInfo {
+  rate: string
+  date: string | null
+  source: string
+  stale: boolean
+}
+
 export interface Booking {
   id: number
   guest: number
@@ -44,6 +52,15 @@ export interface Booking {
   booking_items: BookingItem[]
   created_at: string
   updated_at: string
+  /** What the guest is charged, in UZS for bookings made since R6; absent on older bookings (charge = price) */
+  charge_amount?: string
+  charge_currency?: string
+  exchange_rate?: ExchangeRateInfo | null
+  /** R12b: what the guest is told about the no-show refund */
+  no_show_refund_percent?: number
+  no_show_refund_amount?: string | null
+  no_show_refund_text_key?: string | null
+  no_show_refund_text_params?: { percent: number; amount: string | null } | null
 }
 
 export interface BookingCreateRequest {

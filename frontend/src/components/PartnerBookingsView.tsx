@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerBooking } from '../adapters/partnerAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { NoShowReportDialog } from './NoShowReportDialog'
 
 export function PartnerBookingsView() {
   const [bookings, setBookings] = useState<PartnerBooking[]>([])
@@ -8,12 +9,15 @@ export function PartnerBookingsView() {
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
+  const [reportableOnly, setReportableOnly] = useState(false)
+  const [reportTarget, setReportTarget] = useState<PartnerBooking | null>(null)
+  const [reportSent, setReportSent] = useState(false)
 
   useEffect(() => {
     loadBookings()
   // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, paymentStatusFilter])
+  }, [statusFilter, paymentStatusFilter, reportableOnly])
 
   const loadBookings = async () => {
     setLoading(true)
@@ -23,7 +27,7 @@ export function PartnerBookingsView() {
       const statusParam = statusFilter === 'all' ? undefined : statusFilter
       const paymentStatusParam = paymentStatusFilter === 'all' ? undefined : paymentStatusFilter
 
-      const response = await partnerAdapter.getPartnerBookings(statusParam, paymentStatusParam)
+      const response = await partnerAdapter.getPartnerBookings(statusParam, paymentStatusParam, reportableOnly)
       
       if (response.error) {
         setError(response.error)
@@ -126,7 +130,22 @@ export function PartnerBookingsView() {
             <option value="partially_refunded">{t('partner.partiallyRefunded')}</option>
           </select>
         </div>
+
+        <div className="filter-group">
+          <label className="filter-checkbox">
+            <input
+              type="checkbox"
+              checked={reportableOnly}
+              onChange={(e) => setReportableOnly(e.target.checked)}
+            />
+            {t('noShow.onlyReportable')}
+          </label>
+        </div>
       </div>
+
+      {reportSent && (
+        <p className="alert alert-success" role="status" aria-label={t('noShow.sent')}>{t('noShow.sentText')}</p>
+      )}
 
       {error && (
         <div className="alert alert-error" role="alert" aria-live="polite">
@@ -204,10 +223,32 @@ export function PartnerBookingsView() {
                     {t('partner.bookedOn', { date: formatDate(booking.created_at) })}
                   </small>
                 </div>
+                {booking.can_report_no_show && (
+                  <div className="booking-no-show">
+                    {booking.report_deadline && (
+                      <small>{t('noShow.reportUntil', { date: formatDate(booking.report_deadline) })}</small>
+                    )}
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setReportTarget(booking)}>
+                      {t('noShow.reportButton')}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {reportTarget && (
+        <NoShowReportDialog
+          booking={reportTarget}
+          onClose={() => setReportTarget(null)}
+          onReported={() => {
+            setReportTarget(null)
+            setReportSent(true)
+            void loadBookings()
+          }}
+        />
       )}
     </div>
   )

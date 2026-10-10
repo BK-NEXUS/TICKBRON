@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
-import { ReactNode, useState } from 'react'
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import { toLocalDate } from '../utils/dates'
 
 export interface CalendarDayInfo {
@@ -24,6 +24,8 @@ interface DateRangeCalendarProps {
   minDate?: string
   /** YYYY-MM shown first; defaults to the check-in month, then the current month */
   initialMonth?: string
+  /** Called with 'YYYY-MM' when the calendar first shows a month and every time the month changes */
+  onMonthChange?: (month: string) => void
   className?: string
   children?: ReactNode
 }
@@ -50,12 +52,21 @@ export function DateRangeCalendar({
   validateRange,
   minDate = toLocalDate(new Date()),
   initialMonth,
+  onMonthChange,
   className = '',
   children,
 }: DateRangeCalendarProps) {
   const { t, formatDate, formatDay } = useI18n()
   const [month, setMonth] = useState(() => monthStart(initialMonth ?? checkIn))
   const [error, setError] = useState<string | null>(null)
+
+  const year = month.getFullYear()
+  const monthIndex = month.getMonth()
+  const onMonthChangeRef = useRef(onMonthChange)
+  onMonthChangeRef.current = onMonthChange
+  useEffect(() => {
+    onMonthChangeRef.current?.(`${year}-${String(monthIndex + 1).padStart(2, '0')}`)
+  }, [year, monthIndex])
 
   const pickingCheckOut = Boolean(checkIn && !checkOut)
   const info = (date: string): CalendarDayInfo => {
@@ -79,8 +90,6 @@ export function DateRangeCalendar({
     onChange(checkIn, date)
   }
 
-  const year = month.getFullYear()
-  const monthIndex = month.getMonth()
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
   const cells: Array<string | null> = [
     ...Array(new Date(year, monthIndex, 1).getDay()).fill(null),

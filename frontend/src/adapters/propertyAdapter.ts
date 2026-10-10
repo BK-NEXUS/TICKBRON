@@ -181,6 +181,14 @@ export interface StayQuote {
   currency: string
   nights: Array<{ date: string; price: string }>
   total_price: string
+  /** The same stay in so'm at today's rate; null when no rate is stored yet */
+  uzs_total?: string | null
+  exchange_rate?: { rate: string; date: string | null; source: string; stale: boolean } | null
+  /** R12b: what the guest is told about the no-show refund */
+  no_show_refund_percent?: number
+  no_show_refund_amount?: string | null
+  no_show_refund_text_key?: string | null
+  no_show_refund_text_params?: { percent: number; amount: string | null } | null
 }
 
 export interface AvailabilityParams {
@@ -270,6 +278,8 @@ export interface SearchResponse {
   page: number
   page_size: number
   total_pages: number
+  /** Paid banners for the top of page 1 (R10); absent on older backends and on other pages */
+  promoted?: Array<Property & { promotion_id: number }>
 }
 
 export interface PropertyDetailResponse extends Property {

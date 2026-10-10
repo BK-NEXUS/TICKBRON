@@ -17,7 +17,9 @@ test('I breadcrumbs and back keep the search filters', async ({ page, audit }) =
 
   await step(audit, 'I2 search-with-a-filter', async () => {
     await page.goto('/search?destination=Tashkent')
-    await page.getByLabel('WiFi').check()
+    // The filter lives in the URL: the box is ticked a moment after the click, so wait for it instead of reading it at once
+    await page.getByLabel('WiFi').click()
+    await expect(page.getByLabel('WiFi')).toBeChecked()
     await page.getByLabel('Sort search results').selectOption('price_asc')
     await expect(page).toHaveURL(/features=wifi/)
     await expect(page).toHaveURL(/sort=price_asc/)

@@ -17,7 +17,8 @@ LAST_DAY = date(2026, 10, 9)
 
 
 def at(hour_utc, day=9):
-    return patch('common.dates.timezone.now', return_value=datetime(2026, 10, day, hour_utc, 30, tzinfo=dt_timezone.utc))
+    moment = datetime(2026, 10, day, hour_utc, 30, tzinfo=dt_timezone.utc)
+    return patch('common.dates.timezone.now', return_value=moment)
 
 
 def make(email, start, end, status, paid=True):

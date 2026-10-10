@@ -15,7 +15,8 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: FavoriteButtonProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { isAuthenticated, isFavorite, toggle } = useFavorites()
+  // While the session is being checked a logged-in guest still looks logged out: do not send them to the login page
+  const { isAuthenticated, sessionLoading, isFavorite, toggle } = useFavorites()
   const [saving, setSaving] = useState(false)
   const saved = isFavorite(propertyId)
 
@@ -38,7 +39,8 @@ export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: F
       className={`favorite-button favorite-button--${variant} ${saved ? 'favorite-button--saved' : ''}`}
       onClick={handleClick}
       onKeyDown={(event) => event.stopPropagation()}
-      disabled={saving}
+      disabled={saving || sessionLoading}
+      aria-busy={saving || sessionLoading}
       aria-pressed={saved}
       aria-label={saved ? t('fav.remove', { name: propertyName }) : t('fav.save', { name: propertyName })}
       title={saved ? t('fav.removeTitle') : t('fav.saveTitle')}

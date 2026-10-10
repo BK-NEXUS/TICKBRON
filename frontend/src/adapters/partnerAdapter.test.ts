@@ -650,6 +650,30 @@ describe('PartnerAdapter', () => {
     })
   })
 
+  describe('Reportable bookings (no-show)', () => {
+    it('asks only for bookings the owner can still report', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => [] } as Response)
+
+      await adapter.getPartnerBookings(undefined, undefined, true)
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/bookings/?reportable=true`,
+        expect.objectContaining({ credentials: 'include' })
+      )
+    })
+
+    it('does not send the flag when it is off', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => [] } as Response)
+
+      await adapter.getPartnerBookings('confirmed', undefined, false)
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/bookings/?status=confirmed`,
+        expect.objectContaining({ credentials: 'include' })
+      )
+    })
+  })
+
   describe('Error Handling', () => {
     it('should handle network errors', async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'))
@@ -717,6 +741,25 @@ describe('PartnerAdapter', () => {
         `${mockBaseUrl}/api/v1/partner/room-inventory/?room_type=7&date_from=2026-10-01&date_to=2026-10-31`,
         expect.anything(),
       )
+    })
+
+    it('should list the prices of one rate plan for a date range', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+
+      await adapter.getDateInventory({ rate_plan: 5, date_from: '2026-10-01', date_to: '2026-10-31' })
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${mockBaseUrl}/api/v1/partner/inventory/?rate_plan=5&date_from=2026-10-01&date_to=2026-10-31`,
+        expect.anything(),
+      )
+    })
+
+    it('should keep listing all date inventory without filters', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+
+      await adapter.getDateInventory()
+
+      expect(fetch).toHaveBeenCalledWith(`${mockBaseUrl}/api/v1/partner/inventory/`, expect.anything())
     })
 
     it('should update room inventory', async () => {

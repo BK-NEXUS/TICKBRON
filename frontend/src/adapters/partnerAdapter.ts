@@ -251,6 +251,13 @@ export interface UpdateRoomInventoryRequest {
   is_available?: boolean
 }
 
+/** Prices per day of one rate plan; both dates inclusive */
+export interface GetDateInventoryParams {
+  rate_plan?: number
+  date_from?: string
+  date_to?: string
+}
+
 export interface GetRoomInventoryParams {
   room_type?: number
   date_from?: string
@@ -338,6 +345,10 @@ export interface PartnerBooking {
   confirmation_code: string
   created_at: string
   updated_at: string
+  /** R12b: true while the owner may still report that the guest did not arrive */
+  can_report_no_show?: boolean
+  /** Last day (YYYY-MM-DD) the report can be filed; null when not reportable */
+  report_deadline?: string | null
 }
 
 // API Response types
@@ -541,8 +552,13 @@ class PartnerAdapter {
    * List hotel-owner's date inventory
    * Integrates with GET /api/v1/partner/inventory/ endpoint
    */
-  async getDateInventory(): Promise<ApiResponse<PartnerDateInventory[]>> {
-    return this.requestAll<PartnerDateInventory>('/api/v1/partner/inventory/')
+  async getDateInventory(params: GetDateInventoryParams = {}): Promise<ApiResponse<PartnerDateInventory[]>> {
+    const search = new URLSearchParams()
+    if (params.rate_plan !== undefined) search.append('rate_plan', String(params.rate_plan))
+    if (params.date_from) search.append('date_from', params.date_from)
+    if (params.date_to) search.append('date_to', params.date_to)
+    const query = search.toString()
+    return this.requestAll<PartnerDateInventory>(`/api/v1/partner/inventory/${query ? `?${query}` : ''}`)
   }
 
   /**
@@ -704,10 +720,11 @@ class PartnerAdapter {
    * List bookings for hotel-owner's properties
    * Integrates with GET /api/v1/partner/bookings/ endpoint
    */
-  async getPartnerBookings(status?: string, paymentStatus?: string): Promise<ApiResponse<PartnerBooking[]>> {
+  async getPartnerBookings(status?: string, paymentStatus?: string, reportableOnly = false): Promise<ApiResponse<PartnerBooking[]>> {
     const params = new URLSearchParams()
     if (status) params.append('status', status)
     if (paymentStatus) params.append('payment_status', paymentStatus)
+    if (reportableOnly) params.append('reportable', 'true')
 
     const endpoint = `/api/v1/partner/bookings/${params.toString() ? `?${params.toString()}` : ''}`
     return this.request<PartnerBooking[]>(endpoint)

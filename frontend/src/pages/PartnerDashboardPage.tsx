@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, House, Calendar, BedDouble, Banknote } from 'lucide-react'
+import { Lock, House, Calendar, BedDouble, Banknote, UserX } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
@@ -9,11 +9,12 @@ import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
 import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
+import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
-type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'status' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -109,6 +110,7 @@ export function PartnerDashboardPage() {
   if (currentView !== 'properties') trail[0] = { label: t('header.partnerDashboard'), onClick: handleBackToProperties }
   if (currentView === 'add-property') trail.push({ label: t('partner.addProperty') })
   if (currentView === 'bookings') trail.push({ label: t('partner.bookings') })
+  if (currentView === 'no-show-reports') trail.push({ label: t('noShow.myReports') })
   if (currentView === 'status') trail.push({ label: t('partner.status') })
   if (selectedProperty && ['rooms', 'rates', 'availability', 'calendar'].includes(currentView)) {
     trail.push(currentView === 'rooms'
@@ -157,6 +159,14 @@ export function PartnerDashboardPage() {
       >
         <span className="nav-icon"><Calendar size={18} /></span>
         <span className="nav-label">{t('partner.bookings')}</span>
+      </button>
+      <button
+        onClick={() => setCurrentView('no-show-reports')}
+        className={`nav-item ${currentView === 'no-show-reports' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'no-show-reports' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><UserX size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('noShow.myReports')}</span>
       </button>
       <button
         onClick={() => setCurrentView('status')}
@@ -352,6 +362,8 @@ export function PartnerDashboardPage() {
         ) : null
       case 'bookings':
         return <PartnerBookingsView />
+      case 'no-show-reports':
+        return <PartnerNoShowReports properties={properties.map(property => ({ id: property.id, name: propertyName(property) }))} />
       case 'status':
         return <PartnerStatusTab />
       default:
