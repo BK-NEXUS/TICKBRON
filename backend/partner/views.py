@@ -19,6 +19,7 @@ from bookings.models import Booking, BookingItem
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
+    MAX_PHOTOS_PER_PROPERTY,
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
     PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
@@ -354,6 +355,12 @@ def partner_property_photo_upload(request, property_id):
         is_deleted=False
     )
     
+    if PropertyPhoto.objects.filter(property=property, is_deleted=False).count() >= MAX_PHOTOS_PER_PROPERTY:
+        return Response(
+            {'photo': [f'A property can have at most {MAX_PHOTOS_PER_PROPERTY} photos.']},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     serializer = PartnerPropertyPhotoSerializer(
         data=request.data,
         context={'request': request}

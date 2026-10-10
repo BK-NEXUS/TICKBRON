@@ -544,3 +544,97 @@ class TestRefunds(PaymentSecurityTestBase):
         self.booking.refresh_from_db()
         assert self.tx.status == 'refunded'
         assert self.booking.payment_status == 'pending'
+
+
+class TestOneActivePaymentPerBooking(PaymentSecurityTestBase):
+    """N-5: a double click or a second provider must not create a second charge."""
+
+    def _pay(self, key):
+        return self.client.post(TRANSACTIONS_URL, self._payment_data(self.booking, key), format='json')
+
+    def test_second_payment_while_one_is_processing_is_refused(self):
+        self._create_transaction(self.booking, 'k-first', tx_status='processing')
+
+        response = self._pay('k-second')
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert PaymentTransaction.objects.filter(booking=self.booking).count() == 1
+
+    def test_second_payment_after_a_completed_one_is_refused(self):
+        self._create_transaction(self.booking, 'k-done', tx_status='completed')
+
+        assert self._pay('k-again').status_code == status.HTTP_409_CONFLICT
+
+    def test_fresh_pending_payment_blocks_a_double_click(self):
+        self._create_transaction(self.booking, 'k-click', tx_status='pending')
+
+        assert self._pay('k-click-2').status_code == status.HTTP_409_CONFLICT
+
+    def test_stale_pending_payment_does_not_block_a_retry(self):
+        old = self._create_transaction(self.booking, 'k-old', tx_status='pending')
+        PaymentTransaction.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(minutes=30))
+
+        assert self._pay('k-retry').status_code == status.HTTP_201_CREATED
+
+    def test_failed_payment_does_not_block_a_retry(self):
+        self._create_transaction(self.booking, 'k-bad', tx_status='failed')
+
+        assert self._pay('k-retry-2').status_code == status.HTTP_201_CREATED
+
+    def test_same_key_still_replays_the_original(self):
+        first = self._pay('k-same')
+        second = self._pay('k-same')
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_200_OK
+
+
+class TestGuestSeesNoInternalPaymentData(PaymentSecurityTestBase):
+    """N-11: provider internals, IP and user agent are for staff only."""
+
+    HIDDEN = ('provider_response', 'error_message', 'client_ip', 'user_agent')
+
+    def setUp(self):
+        super().setUp()
+        self.tx = self._create_transaction(self.booking, 'k-hidden', tx_status='failed')
+        PaymentTransaction.objects.filter(pk=self.tx.pk).update(
+            provider_response={'secret': 'raw'}, error_message='provider says no',
+            client_ip='10.1.1.1', user_agent='UA/1'
+        )
+
+    def test_guest_retrieve_and_list_hide_internal_fields(self):
+        detail = self.client.get(f'{TRANSACTIONS_URL}{self.tx.id}/')
+        listing = self.client.get(TRANSACTIONS_URL)
+
+        rows = [detail.data] + list(listing.data['results'] if 'results' in listing.data else listing.data)
+        for row in rows:
+            for field in self.HIDDEN:
+                assert field not in row
+
+    def test_staff_still_sees_internal_fields_on_retrieve(self):
+        from rest_framework.test import APIClient as _Client
+        staff_client = _Client()
+        staff_client.force_authenticate(user=self.staff)
+
+        # Staff see their own transactions only on this endpoint, so use the guest-owned booking of staff
+        assert self.staff.is_staff
+        tx = self._create_transaction(self._create_booking(self.staff, 'STF001'), 'k-staff')
+        PaymentTransaction.objects.filter(pk=tx.pk).update(client_ip='10.2.2.2')
+        row = staff_client.get(f'{TRANSACTIONS_URL}{tx.id}/').data
+
+        assert row['client_ip'] == '10.2.2.2'
+
+    def test_guest_audit_log_hides_details_and_ip(self):
+        from payments.models import PaymentAuditLog
+        PaymentAuditLog.log_action(
+            action='payment_initiated', payment_transaction=self.tx, actor=self.guest,
+            ip_address='10.3.3.3', details={'provider_response': {'secret': 'raw'}}
+        )
+
+        response = self.client.get('/api/v1/payments/audit-logs/')
+        data = response.data['results'] if 'results' in response.data else response.data
+
+        assert data
+        for row in data:
+            assert 'details' not in row
+            assert 'ip_address' not in row

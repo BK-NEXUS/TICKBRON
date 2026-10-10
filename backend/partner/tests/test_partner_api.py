@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
+from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, PropertyPhoto
 from permissions.models import Role
 from partner.tests.geography_helpers import uzbek_location
 from currency.testing import make_usd_rate
@@ -797,6 +797,47 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('photo', response.data)
+
+
+    def _png(self, width, height):
+        import io
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.new('L', (width, height)).save(buf, format='PNG')  # flat colour: tiny file, huge pixel count
+        return buf.getvalue()
+
+    def test_hotel_owner_cannot_upload_huge_pixel_dimensions(self):
+        """A small file can still decompress to gigabytes of pixels (decompression bomb)."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.hotel_owner)
+        bomb = SimpleUploadedFile('bomb.png', self._png(12000, 12000), content_type='image/png')
+
+        response = self.client.post(
+            self.upload_url, {'photo': bomb, 'photo_type': 'exterior'}, format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', response.data)
+
+    def test_hotel_owner_cannot_exceed_photo_limit_per_property(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from partner.serializers import MAX_PHOTOS_PER_PROPERTY
+
+        PropertyPhoto.objects.bulk_create([
+            PropertyPhoto(property=self.property, photo=f'properties/{self.property.id}/photos/p{i}.png')
+            for i in range(MAX_PHOTOS_PER_PROPERTY)
+        ])
+        self.client.force_authenticate(user=self.hotel_owner)
+        one_more = SimpleUploadedFile('more.png', self._png(10, 10), content_type='image/png')
+
+        response = self.client.post(
+            self.upload_url, {'photo': one_more, 'photo_type': 'exterior'}, format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(PropertyPhoto.objects.filter(property=self.property).count(), MAX_PHOTOS_PER_PROPERTY)
 
 
 class PartnerBookingListTests(TestCase):

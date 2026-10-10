@@ -2580,3 +2580,32 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 - Login/register/OTP throttles are keyed by IP for everyone, including logged-in sessions (`users/views.py` `IPRateThrottle`). A per-email login throttle was NOT added: it would let anyone block a victim's login (see `users/lockout.py`).
 - Tests added: `payments/tests/test_payment_security.py` (3), `users/tests/test_rate_limiting.py` (2). No assertion changed.
 - Found, not fixed: remaining security items are listed in `/root/.claude/plans` batch 2 (phone pre-hijack N-1, proxy/HSTS settings N-3/N-6, OTP hashing, login CSRF, etc.); need PLAN_SECURITY.md and owner approval.
+
+## Security hardening, batch 1 item N-7 (booking holds), 2026-10-10
+- `number_of_rooms` max 10; at most 3 pending bookings per guest (429 `too_many_pending_bookings`, a cancelled or paid booking frees a slot); booking creation throttled (`booking_create`, 30/hour per user, env `THROTTLE_BOOKING_CREATE_RATE`). Tests: `bookings/tests/test_n7_pending_caps.py`.
+- Changed assertion: `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` expected throttle-rate dict now includes `booking_create` (exact equality kept; anon/user unchanged), same pattern as R12b.
+
+## Security hardening, batch 1 item N-5 (one active payment per booking), 2026-10-10
+- `POST /payments/transactions/` returns 409 `payment_already_active` when the booking already has a `processing` or `completed` payment, or a `pending` one younger than 5 minutes (double click). Older pending and failed payments do not block a retry. The booking row is locked for the check. Same idempotency key still replays the original (200). Tests: `TestOneActivePaymentPerBooking` in `payments/tests/test_payment_security.py`. No assertion changed.
+- Found, not fixed: a paid-but-unconfirmable booking is only written to the audit log ("manual refund required"); it should also appear in the refunds needs-attention queue.
+
+## Security hardening, batch 1 item N-11 (guest payment data), 2026-10-10
+- `PaymentTransactionSerializer` returns `provider_response`, `error_message`, `client_ip`, `user_agent` only to staff requests (request in serializer context); `PaymentAuditLogSerializer` hides `details` and `ip_address` from non-staff. Without a request in the context the guest shape is used. Frontend `PaymentTransaction` type: those fields are now optional (no UI used them). Tests: `TestGuestSeesNoInternalPaymentData`. No assertion changed.
+
+## Security hardening, batch 1 items L-2 and photo limits, 2026-10-10
+- `/api/schema|docs|redoc/` need a staff session unless `DEBUG` (`common.permissions.StaffOrDebug`). Tests: `core/tests/test_api_docs_access.py`.
+- Changed assertion: `core/tests/test_r4_permission_matrix.py` docs rule `PUBLIC` -> `STAFF` (the requirement changed; the matrix now also checks that guests and anonymous are refused).
+- Photo upload: at most 40 megapixels per photo and 50 photos per property (`partner/serializers.py` constants, 400 on violation). Tests in `partner/tests/test_partner_api.py`.
+- Found, not fixed: uploaded photo file names are still the client's (predictable public path); `common/tests/test_models.py` asserts the exact path, so randomising it needs an owner decision on that test.
+
+## Security hardening, batch 1 items L-4 and L-5, 2026-10-10
+- L-4: `FavoriteSerializer.property` is read-only; PATCH/PUT can no longer repoint a favorite to a property that `FavoriteCreateSerializer` would refuse (inactive, deleted). Notes stay editable. Tests in `accounts/tests/test_views.py`.
+- L-5: checked, no change needed: OTP logs use `mask_phone`, request logs use the user id (`common/middleware.py`).
+
+## Security hardening, batch 1 frontend (N-22..N-25), 2026-10-10
+- N-22: the booking page no longer calls `api.ipify.org` (it leaked the guest's IP to a third party; the backend ignores `client_ip` and records it from the request). `paymentAdapter.getClientIp` removed.
+- N-25: `generateIdempotencyKey` uses `crypto.getRandomValues` (same `payment_<ms>_<hex>` shape).
+- N-23: generated hotel-owner password uses `utils/generatePassword.ts` (secure source, no modulo bias).
+- N-24: Telegram/WhatsApp links come from `utils/contactLinks.ts` and `components/ContactLink.tsx`; unsafe values show as plain text.
+- Changed assertions (reason: the removed function): `adapters/paymentAdapter.test.ts` tests of `getClientIp` replaced by "has no third-party IP lookup"; `pages/BookingPage.test.tsx` no longer mocks `getClientIp`. New tests: secure-random key, `generatePassword`, `contactLinks`.
+- Found, not fixed: `PaymentRequest.client_ip` in `paymentAdapter.ts` is now unused; `index.html` CSP is a meta tag with `unsafe-inline`/`unsafe-eval` (needs a real header at deploy).

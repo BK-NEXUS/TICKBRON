@@ -20,11 +20,12 @@ export interface PaymentTransaction {
   currency: string
   status: PaymentStatus
   payment_method_token: string | null
-  provider_response: Record<string, unknown> | null
+  /** Staff-only fields: the backend omits them for guests */
+  provider_response?: Record<string, unknown> | null
   error_code: string | null
-  error_message: string | null
-  client_ip: string | null
-  user_agent: string | null
+  error_message?: string | null
+  client_ip?: string | null
+  user_agent?: string | null
   created_at: string
   updated_at: string
 }
@@ -154,23 +155,9 @@ class PaymentAdapter {
    * @returns Unique idempotency key
    */
   generateIdempotencyKey(): string {
-    return `payment_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-  }
-
-  /**
-   * Get client IP address for audit trail
-   * Note: This is a simplified version - actual IP may need to come from backend
-   * 
-   * @returns Client IP address or null
-   */
-  async getClientIp(): Promise<string | null> {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json')
-      const data = await response.json()
-      return data.ip || null
-    } catch {
-      return null
-    }
+    // A guessable key would let a third party block this user's payment ("key already used")
+    const random = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('')
+    return `payment_${Date.now()}_${random}`
   }
 
   /**

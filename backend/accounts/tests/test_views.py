@@ -89,6 +89,33 @@ class FavoriteViewSetTest(TestCase):
         response = self.client.post('/api/v1/me/favorites/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_update_cannot_repoint_favorite_to_another_property(self):
+        """L-4: PATCH must not bypass the checks that create applies to the property."""
+        other = Property.objects.create(
+            owner=self.user, property_type=self.property_type, status='draft', is_active=False,
+            max_guests=2, bedrooms=1, bathrooms=1, address_line1='9 Hidden St',
+            city='Hidden City', country='Test Country', base_price=50.00, currency='USD'
+        )
+        self.client.post('/api/v1/me/favorites/', {'property': self.property.id}, format='json')
+        favorite_id = Favorite.objects.get(user=self.user, property=self.property).id
+
+        response = self.client.patch(
+            f'/api/v1/me/favorites/{favorite_id}/', {'property': other.id, 'notes': 'x'}, format='json'
+        )
+
+        self.assertEqual(Favorite.objects.get(pk=favorite_id).property_id, self.property.id)
+        self.assertIn(response.status_code, (status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST))
+
+    def test_update_can_still_change_notes(self):
+        self.client.post('/api/v1/me/favorites/', {'property': self.property.id}, format='json')
+        favorite = Favorite.objects.get(user=self.user, property=self.property)
+
+        response = self.client.patch(f'/api/v1/me/favorites/{favorite.id}/', {'notes': 'quiet room'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        favorite.refresh_from_db()
+        self.assertEqual(favorite.notes, 'quiet room')
+
     def test_can_re_favorite_after_removing(self):
         """Removing then re-adding the same property must not 500 (audit #27)."""
         data = {'property': self.property.id, 'notes': 'first time'}

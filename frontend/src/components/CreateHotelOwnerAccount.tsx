@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
+import { generatePassword as randomPassword } from '../utils/generatePassword'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
 interface CreateHotelOwnerAccountProps {
@@ -22,12 +23,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   const [createdCredentials, setCreatedCredentials] = useState<CreateHotelOwnerResponse | null>(null)
 
   const generatePassword = () => {
-    const length = 16
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
-    let password = ''
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length))
-    }
+    const password = randomPassword(16)
     setFormData({ ...formData, password, password_confirm: password })
   }
 

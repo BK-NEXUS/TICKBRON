@@ -28,7 +28,7 @@ SUPERADMIN = {'superadmin'}
 
 # First matching (regex on the URL path, methods or None for all) wins.
 ACCESS = [
-    (r'^/api/(schema|docs|redoc)/$', None, PUBLIC),
+    (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventory, staff only outside DEBUG
     (r'^/api/v1/auth/(register|login|logout|csrf|otp/request|otp/verify)/$', None, PUBLIC),
     (r'^/api/v1/auth/(me|refresh|me/update)/$', None, AUTHENTICATED),
     (r'^/api/v1/properties/', None, PUBLIC),

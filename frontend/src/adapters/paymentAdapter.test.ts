@@ -300,6 +300,16 @@ describe('PaymentAdapter', () => {
       expect(key1).toMatch(/^payment_\d+_[a-z0-9]+$/)
       expect(key2).toMatch(/^payment_\d+_[a-z0-9]+$/)
     })
+
+    it('draws its random part from the secure random source, so it cannot be guessed', () => {
+      const spy = vi.spyOn(crypto, 'getRandomValues')
+
+      const key = adapter.generateIdempotencyKey()
+
+      expect(spy).toHaveBeenCalled()
+      expect(key.split('_')[2].length).toBeGreaterThanOrEqual(32)
+      spy.mockRestore()
+    })
   })
 
   describe('getUserAgent', () => {
@@ -311,24 +321,9 @@ describe('PaymentAdapter', () => {
     })
   })
 
-  describe('getClientIp', () => {
-    it('should fetch client IP address successfully', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ ip: '192.168.1.1' }),
-      })
-
-      const ip = await adapter.getClientIp()
-
-      expect(ip).toBe('192.168.1.1')
-    })
-
-    it('should handle IP fetch failure gracefully', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
-
-      const ip = await adapter.getClientIp()
-
-      expect(ip).toBeNull()
+  describe('client IP', () => {
+    it('does not look the IP up at a third party (the backend records it from the request)', () => {
+      expect('getClientIp' in adapter).toBe(false)
     })
   })
 })

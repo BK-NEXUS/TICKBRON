@@ -3,6 +3,7 @@ Views for TICKBRON payment API endpoints.
 """
 import sys
 import os
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -16,6 +17,7 @@ from rest_framework.throttling import UserRateThrottle
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -42,6 +44,9 @@ logger = logging.getLogger(__name__)
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
+
+# A pending payment younger than this counts as a double click, not an abandoned attempt
+ACTIVE_PENDING_PAYMENT_WINDOW = timedelta(minutes=5)
 
 
 class PaymentRateThrottle(UserRateThrottle):
@@ -132,6 +137,14 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         # full_clean, so the clash can surface as either error type)
         try:
             with transaction.atomic():
+                # Lock the booking so two simultaneous requests cannot both pass the check
+                booking = Booking.objects.select_for_update().get(pk=transaction_data['booking'].pk)
+                if self._has_active_payment(booking):
+                    return Response(
+                        {'error': 'A payment for this booking is already in progress or completed.',
+                         'code': 'payment_already_active'},
+                        status=status.HTTP_409_CONFLICT
+                    )
                 payment_transaction = PaymentTransaction.objects.create(**transaction_data)
         except (IntegrityError, DjangoValidationError):
             existing_response = self._existing_transaction_response(transaction_data['idempotency_key'])
@@ -383,7 +396,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         if refund.status == 'failed':
             return Response({'error': 'Payment could not be refunded.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = PaymentTransactionSerializer(payment_transaction).data
+        data = PaymentTransactionSerializer(payment_transaction, context={'request': request}).data
         data['booking_status'] = booking.status
         data['refund'] = {
             'id': refund.id, 'amount': f'{refund.amount:.2f}', 'currency': refund.currency,
@@ -399,6 +412,18 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             {'error': 'Payment provider is not configured.'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
+
+    @staticmethod
+    def _has_active_payment(booking):
+        """
+        A completed or processing payment always blocks another; a pending one
+        only while fresh, so a guest who abandoned the payment page can retry.
+        """
+        fresh = timezone.now() - ACTIVE_PENDING_PAYMENT_WINDOW
+        return PaymentTransaction.objects.filter(booking=booking).filter(
+            Q(status__in=('processing', 'completed'))
+            | Q(status='pending', created_at__gte=fresh)
+        ).exists()
 
     def _existing_transaction_response(self, idempotency_key):
         """

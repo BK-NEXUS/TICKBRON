@@ -28,7 +28,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'property', 'property_translations', 'property_city',
                   'property_country', 'property_base_price', 'property_currency', 
                   'property_primary_photo', 'notes', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
+        # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
+        read_only_fields = ['id', 'user', 'property', 'created_at']
     
     def get_property_primary_photo(self, obj) -> str | None:
         """Get the primary photo for the property."""
@@ -192,7 +193,7 @@ class AccountHistorySerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'user_email', 'user_full_name', 'action', 'description',
                   'ip_address', 'user_agent', 'booking', 'booking_confirmation_code',
                   'property', 'property_city', 'metadata', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
+        read_only_fields = ['id', 'user', 'property', 'created_at']
 
 
 class AccountHistoryCreateSerializer(serializers.ModelSerializer):
