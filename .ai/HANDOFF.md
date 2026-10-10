@@ -2591,3 +2591,9 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 
 ## Security hardening, batch 1 item N-11 (guest payment data), 2026-10-10
 - `PaymentTransactionSerializer` returns `provider_response`, `error_message`, `client_ip`, `user_agent` only to staff requests (request in serializer context); `PaymentAuditLogSerializer` hides `details` and `ip_address` from non-staff. Without a request in the context the guest shape is used. Frontend `PaymentTransaction` type: those fields are now optional (no UI used them). Tests: `TestGuestSeesNoInternalPaymentData`. No assertion changed.
+
+## Security hardening, batch 1 items L-2 and photo limits, 2026-10-10
+- `/api/schema|docs|redoc/` need a staff session unless `DEBUG` (`common.permissions.StaffOrDebug`). Tests: `core/tests/test_api_docs_access.py`.
+- Changed assertion: `core/tests/test_r4_permission_matrix.py` docs rule `PUBLIC` -> `STAFF` (the requirement changed; the matrix now also checks that guests and anonymous are refused).
+- Photo upload: at most 40 megapixels per photo and 50 photos per property (`partner/serializers.py` constants, 400 on violation). Tests in `partner/tests/test_partner_api.py`.
+- Found, not fixed: uploaded photo file names are still the client's (predictable public path); `common/tests/test_models.py` asserts the exact path, so randomising it needs an owner decision on that test.

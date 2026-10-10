@@ -15,6 +15,11 @@ from properties.serializers import (
 )
 
 
+# Upload limits: 40 megapixels per photo, 50 photos per property
+MAX_PHOTO_PIXELS = 40_000_000
+MAX_PHOTOS_PER_PROPERTY = 50
+
+
 def _check_price_unit(currency, amount, field):
     """UZS prices are whole so'm (R6)."""
     if currency == 'UZS' and amount is not None and not is_whole_som(amount):
@@ -375,6 +380,10 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
         is_valid, error_message = validate_image_file(value)
         if not is_valid:
             raise serializers.ValidationError(error_message)
+        width, height = value.image.size
+        if width * height > MAX_PHOTO_PIXELS:
+            # A tiny file can expand to gigabytes of pixels when decoded
+            raise serializers.ValidationError('Image dimensions are too large.')
         return value
 
     def validate_property(self, value):
