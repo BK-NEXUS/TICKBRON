@@ -276,7 +276,11 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
     const favoriteButton = page.getByRole('button', { name: /favou?rite|save/i })
     await expect.soft(favoriteButton, 'property page should have an add-to-favorites button').not.toHaveCount(0)
     if (await favoriteButton.count()) {
-      await favoriteButton.first().click()
+      // Wait for the session check to finish (the button is disabled until then) and for the save itself
+      await expect(favoriteButton.first()).toBeEnabled()
+      // A run that stopped half way can leave the hotel saved: clicking it then would remove it
+      if ((await favoriteButton.first().getAttribute('aria-pressed')) !== 'true') await favoriteButton.first().click()
+      await expect(favoriteButton.first()).toHaveAttribute('aria-pressed', 'true')
     } else {
       // No UI control: add through the API so listing and removal can still be checked
       const response = await api(page, 'POST', '/api/v1/me/favorites/', { property: propertyId })
@@ -287,9 +291,9 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
   await step(audit, 'C2 favorites-page-lists-it', async () => {
     await page.goto('/favorites')
     await expect(page.getByRole('heading', { name: 'My Favorites' })).toBeVisible()
-    await expect(page.getByText('1 properties saved')).toBeVisible()
+    await expect(page.getByText('1 property saved')).toBeVisible()
     await expect.soft(page.getByRole('link', { name: TASHKENT }), 'favorite card shows the property name').toBeVisible()
-    await expect.soft(page.getByText('$60'), 'favorite card shows the price').not.toHaveCount(0)
+    await expect.soft(page.getByText(/\$60/), 'favorite card shows the price').not.toHaveCount(0)
   })
 
   await step(audit, 'C3 remove', async () => {

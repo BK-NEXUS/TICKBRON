@@ -12,7 +12,7 @@ const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]
 
 export function FavoritesPage() {
   const { t, tp, formatMoney } = useI18n()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: sessionLoading } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +51,7 @@ export function FavoritesPage() {
     }
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !sessionLoading) {
     return (
       <div className="favorites-page">
         <div className="container">
@@ -67,7 +67,7 @@ export function FavoritesPage() {
     )
   }
 
-  if (loading) {
+  if (loading || sessionLoading) {
     return (
       <div className="favorites-page">
         <div className="container">

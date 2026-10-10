@@ -90,6 +90,8 @@ export function useFavorites() {
 
   return {
     isAuthenticated: userId !== null,
+    /** True while the session is still being checked: the visitor may be logged in already */
+    sessionLoading: Boolean(auth?.isLoading),
     isFavorite: (propertyId: number) => favoriteIdByProperty.has(propertyId),
     toggle,
   }
