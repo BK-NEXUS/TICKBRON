@@ -363,8 +363,7 @@ export function BookingPage() {
       // Generate idempotency key for payment
       const idempotencyKey = paymentAdapter.generateIdempotencyKey()
       
-      // Get client IP and user agent for audit trail
-      const clientIp = await paymentAdapter.getClientIp()
+      // The backend records the client IP from the request itself
       const userAgent = paymentAdapter.getUserAgent()
 
       // Create payment transaction
@@ -375,7 +374,6 @@ export function BookingPage() {
         // The backend accepts only the booking's own charge (the UZS snapshot), not the hotel price
         amount: charge.amount,
         currency: charge.currency,
-        client_ip: clientIp || undefined,
         user_agent: userAgent,
       }
 

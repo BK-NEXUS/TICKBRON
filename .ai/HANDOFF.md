@@ -2601,3 +2601,11 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 ## Security hardening, batch 1 items L-4 and L-5, 2026-10-10
 - L-4: `FavoriteSerializer.property` is read-only; PATCH/PUT can no longer repoint a favorite to a property that `FavoriteCreateSerializer` would refuse (inactive, deleted). Notes stay editable. Tests in `accounts/tests/test_views.py`.
 - L-5: checked, no change needed: OTP logs use `mask_phone`, request logs use the user id (`common/middleware.py`).
+
+## Security hardening, batch 1 frontend (N-22..N-25), 2026-10-10
+- N-22: the booking page no longer calls `api.ipify.org` (it leaked the guest's IP to a third party; the backend ignores `client_ip` and records it from the request). `paymentAdapter.getClientIp` removed.
+- N-25: `generateIdempotencyKey` uses `crypto.getRandomValues` (same `payment_<ms>_<hex>` shape).
+- N-23: generated hotel-owner password uses `utils/generatePassword.ts` (secure source, no modulo bias).
+- N-24: Telegram/WhatsApp links come from `utils/contactLinks.ts` and `components/ContactLink.tsx`; unsafe values show as plain text.
+- Changed assertions (reason: the removed function): `adapters/paymentAdapter.test.ts` tests of `getClientIp` replaced by "has no third-party IP lookup"; `pages/BookingPage.test.tsx` no longer mocks `getClientIp`. New tests: secure-random key, `generatePassword`, `contactLinks`.
+- Found, not fixed: `PaymentRequest.client_ip` in `paymentAdapter.ts` is now unused; `index.html` CSP is a meta tag with `unsafe-inline`/`unsafe-eval` (needs a real header at deploy).

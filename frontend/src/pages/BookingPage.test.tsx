@@ -40,7 +40,6 @@ const mockPaymentAdapter = paymentAdapter as {
   createPayment: ReturnType<typeof vi.fn>
   confirmPayment: ReturnType<typeof vi.fn>
   generateIdempotencyKey: ReturnType<typeof vi.fn>
-  getClientIp: ReturnType<typeof vi.fn>
   getUserAgent: ReturnType<typeof vi.fn>
 }
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
@@ -189,7 +188,6 @@ describe('BookingPage', () => {
       error: null,
     })
     mockPaymentAdapter.generateIdempotencyKey.mockReturnValue('test_idempotency_key_123')
-    mockPaymentAdapter.getClientIp.mockResolvedValue('127.0.0.1')
     mockPaymentAdapter.getUserAgent.mockReturnValue('test-agent')
     mockPaymentAdapter.createPayment.mockResolvedValue({
       data: {

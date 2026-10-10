@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { adminAdapter } from '../adapters/adminAdapter'
 import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { ContactLink } from './ContactLink'
+import { telegramLink, whatsappLink } from '../utils/contactLinks'
 
 type TabType = 'bookings' | 'payments' | 'notes'
 type BookingFilterType = 'all' | 'upcoming' | 'completed' | 'cancelled'
@@ -159,17 +161,6 @@ export function AdminCustomerProfile() {
     return phone.replace(/[^0-9+]/g, '')
   }
 
-  const getWhatsAppLink = (phone: string) => {
-    const cleanedPhone = phone.replace(/[^0-9]/g, '')
-    return `https://wa.me/${cleanedPhone}`
-  }
-
-  const getTelegramLink = (telegram: string) => {
-    // Remove @ if present
-    const cleanedUsername = telegram.startsWith('@') ? telegram.slice(1) : telegram
-    return `https://t.me/${cleanedUsername}`
-  }
-
   const getBookingStatusClass = (status: string) => {
     const statusMap: Record<string, string> = {
       pending: 'status-badge--pending',
@@ -275,15 +266,13 @@ export function AdminCustomerProfile() {
             <div className="contact-item">
               <span className="contact-label">{t('admin.whatsapp')}</span>
               <span className="contact-value">{customer.whatsapp}</span>
-              <a
-                href={getWhatsAppLink(customer.whatsapp)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ContactLink
+                href={whatsappLink(customer.whatsapp)}
                 className="contact-link contact-link--whatsapp"
-                aria-label={t('admin.openWhatsApp', { value: customer.whatsapp })}
+                ariaLabel={t('admin.openWhatsApp', { value: customer.whatsapp })}
               >
                 {t('profile.whatsapp')}
-              </a>
+              </ContactLink>
             </div>
           )}
 
@@ -291,15 +280,13 @@ export function AdminCustomerProfile() {
             <div className="contact-item">
               <span className="contact-label">{t('admin.telegram')}</span>
               <span className="contact-value">{customer.telegram}</span>
-              <a
-                href={getTelegramLink(customer.telegram)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ContactLink
+                href={telegramLink(customer.telegram)}
                 className="contact-link contact-link--telegram"
-                aria-label={t('admin.openTelegram', { value: customer.telegram })}
+                ariaLabel={t('admin.openTelegram', { value: customer.telegram })}
               >
                 {t('profile.telegram')}
-              </a>
+              </ContactLink>
             </div>
           )}
 

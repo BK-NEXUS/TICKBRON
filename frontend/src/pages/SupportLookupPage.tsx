@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { adminAdapter, SupportLookupBooking } from '../adapters/adminAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useI18n } from '../i18n/I18nContext'
+import { ContactLink } from '../components/ContactLink'
+import { telegramLink, whatsappLink } from '../utils/contactLinks'
 
 export function SupportLookupPage() {
   const { user, isAuthenticated } = useAuth()
@@ -206,9 +208,9 @@ export function SupportLookupPage() {
                     <div className="detail-item">
                       <dt>{t('profile.whatsapp')}</dt>
                       <dd>
-                        <a href={`https://wa.me/${booking.customer.whatsapp}`} className="contact-link" target="_blank" rel="noopener noreferrer">
+                        <ContactLink href={whatsappLink(booking.customer.whatsapp)} className="contact-link" fallback={booking.customer.whatsapp}>
                           {booking.customer.whatsapp}
-                        </a>
+                        </ContactLink>
                       </dd>
                     </div>
                   )}
@@ -216,9 +218,9 @@ export function SupportLookupPage() {
                     <div className="detail-item">
                       <dt>{t('profile.telegram')}</dt>
                       <dd>
-                        <a href={`https://t.me/${booking.customer.telegram}`} className="contact-link" target="_blank" rel="noopener noreferrer">
+                        <ContactLink href={telegramLink(booking.customer.telegram)} className="contact-link" fallback={booking.customer.telegram}>
                           {booking.customer.telegram}
-                        </a>
+                        </ContactLink>
                       </dd>
                     </div>
                   )}
