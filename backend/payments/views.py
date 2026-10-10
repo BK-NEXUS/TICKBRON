@@ -396,7 +396,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         if refund.status == 'failed':
             return Response({'error': 'Payment could not be refunded.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = PaymentTransactionSerializer(payment_transaction).data
+        data = PaymentTransactionSerializer(payment_transaction, context={'request': request}).data
         data['booking_status'] = booking.status
         data['refund'] = {
             'id': refund.id, 'amount': f'{refund.amount:.2f}', 'currency': refund.currency,

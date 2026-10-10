@@ -6,13 +6,23 @@ from rest_framework import serializers
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 
 
+def _requested_by_staff(serializer):
+    """Internal fields are shown only when the request is known to come from staff."""
+    request = serializer.context.get('request')
+    return bool(request and request.user.is_authenticated and request.user.is_staff)
+
+
 class PaymentTransactionSerializer(serializers.ModelSerializer):
     """
     Serializer for PaymentTransaction model.
 
     Output-only: transactions change only through the payment flow, and the
-    payment method token is never returned.
+    payment method token is never returned. Provider internals, the client IP
+    and the user agent are returned to staff only; without a request in the
+    context the safe (guest) shape is used.
     """
+
+    STAFF_ONLY_FIELDS = ('provider_response', 'error_message', 'client_ip', 'user_agent')
 
     class Meta:
         model = PaymentTransaction
@@ -24,6 +34,13 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not _requested_by_staff(self):
+            for field in self.STAFF_ONLY_FIELDS:
+                data.pop(field, None)
+        return data
 
 
 class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
@@ -121,3 +138,11 @@ class PaymentAuditLogSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'created_at', 'updated_at'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not _requested_by_staff(self):
+            # details can hold the raw provider response
+            data.pop('details', None)
+            data.pop('ip_address', None)
+        return data

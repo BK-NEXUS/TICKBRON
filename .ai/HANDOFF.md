@@ -2588,3 +2588,6 @@ Cause (found by reading the code, then confirmed by the browser flow): `Favorite
 ## Security hardening, batch 1 item N-5 (one active payment per booking), 2026-10-10
 - `POST /payments/transactions/` returns 409 `payment_already_active` when the booking already has a `processing` or `completed` payment, or a `pending` one younger than 5 minutes (double click). Older pending and failed payments do not block a retry. The booking row is locked for the check. Same idempotency key still replays the original (200). Tests: `TestOneActivePaymentPerBooking` in `payments/tests/test_payment_security.py`. No assertion changed.
 - Found, not fixed: a paid-but-unconfirmable booking is only written to the audit log ("manual refund required"); it should also appear in the refunds needs-attention queue.
+
+## Security hardening, batch 1 item N-11 (guest payment data), 2026-10-10
+- `PaymentTransactionSerializer` returns `provider_response`, `error_message`, `client_ip`, `user_agent` only to staff requests (request in serializer context); `PaymentAuditLogSerializer` hides `details` and `ip_address` from non-staff. Without a request in the context the guest shape is used. Frontend `PaymentTransaction` type: those fields are now optional (no UI used them). Tests: `TestGuestSeesNoInternalPaymentData`. No assertion changed.

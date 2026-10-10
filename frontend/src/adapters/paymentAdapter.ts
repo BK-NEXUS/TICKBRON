@@ -20,11 +20,12 @@ export interface PaymentTransaction {
   currency: string
   status: PaymentStatus
   payment_method_token: string | null
-  provider_response: Record<string, unknown> | null
+  /** Staff-only fields: the backend omits them for guests */
+  provider_response?: Record<string, unknown> | null
   error_code: string | null
-  error_message: string | null
-  client_ip: string | null
-  user_agent: string | null
+  error_message?: string | null
+  client_ip?: string | null
+  user_agent?: string | null
   created_at: string
   updated_at: string
 }
