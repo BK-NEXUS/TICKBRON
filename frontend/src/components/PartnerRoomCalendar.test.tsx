@@ -11,6 +11,8 @@ vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     getRoomInventory: vi.fn(),
     getBlocks: vi.fn(),
+    getRatePlans: vi.fn(),
+    getDateInventory: vi.fn(),
     createRoomInventory: vi.fn(),
     updateRoomInventory: vi.fn(),
     bulkSetRoomInventory: vi.fn(),
@@ -27,6 +29,9 @@ const cell = (container: HTMLElement, date: string) =>
 
 describe('PartnerRoomCalendar', () => {
   beforeEach(() => {
+    // This file is about days and blocks: the room type has no rate plans here
+    vi.mocked(partnerAdapter.getRatePlans).mockResolvedValue({ data: [], error: null })
+    vi.mocked(partnerAdapter.getDateInventory).mockResolvedValue({ data: [], error: null })
     vi.mocked(partnerAdapter.getRoomInventory).mockResolvedValue({
       data: [
         { id: 1, room_type: 7, date: day(10), available_rooms: 5, booked_rooms: 2, remaining_rooms: 3, is_available: true },

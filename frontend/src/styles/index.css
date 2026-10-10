@@ -9993,3 +9993,50 @@ table .btn {
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
 }
+
+/* ===== Owner calendar (R10 follow-up): month summary, prices, quick actions ===== */
+.partner-calendar-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.partner-calendar-summary {
+  margin: 0 0 var(--spacing-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.partner-calendar-summary-closed {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-regular, 400);
+}
+
+.partner-calendar-day-price {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.partner-calendar-quick-actions {
+  margin-bottom: var(--spacing-md);
+}
+
+.partner-calendar-price-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.partner-calendar-block-dates,
+.partner-calendar-block-rooms {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 767px) {
+  .partner-calendar-day-price {
+    font-size: 10px;
+  }
+}

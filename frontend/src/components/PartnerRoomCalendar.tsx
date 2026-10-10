@@ -1,9 +1,9 @@
 import type { MessageKey } from '../i18n/messages/en'
 import { useI18n } from '../i18n/I18nContext'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import {
-  partnerAdapter, PartnerRoomInventory, PartnerBlock,
+  partnerAdapter, PartnerRoomInventory, PartnerBlock, PartnerRatePlan,
 } from '../adapters/partnerAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
 import { addDays, nightsBetween, toLocalDate } from '../utils/dates'
@@ -32,8 +32,32 @@ const STATUS_LABEL: Record<Status, MessageKey> = {
   closed: 'partner.statusClosed',
 }
 
-/** How far ahead room inventory and blocks are fetched in one shot. */
-const WINDOW_DAYS = 180
+/** First and last day (inclusive) of a 'YYYY-MM' month: the range one request asks for. */
+function monthRange(month: string): { first: string; last: string } {
+  const [year, monthNumber] = month.split('-').map(Number)
+  const lastDay = new Date(year, monthNumber, 0).getDate()
+  return { first: `${month}-01`, last: `${month}-${String(lastDay).padStart(2, '0')}` }
+}
+
+const currentMonth = () => toLocalDate(new Date()).slice(0, 7)
+
+/** Free room-nights, capacity and closed days of the days of `month` from `today` on (display only). */
+function summarize(month: string, rows: Map<string, PartnerRoomInventory>, totalRooms: number, today: string) {
+  const { first, last } = monthRange(month)
+  let free = 0
+  let capacity = 0
+  let closed = 0
+  for (const date of nightsBetween(first, addDays(last, 1))) {
+    if (date < today) continue
+    const row = rows.get(date)
+    capacity += row ? row.available_rooms : totalRooms
+    if (row && !row.is_available) closed += 1
+    else free += row ? row.remaining_rooms : totalRooms
+  }
+  return { free, capacity, closed }
+}
+
+const PRICE_PATTERN = /^\d+(\.\d+)?$/
 
 function statusOf(row: PartnerRoomInventory | undefined, totalRooms: number): Status {
   const isOpen = row?.is_available ?? true
@@ -53,10 +77,16 @@ function statusOf(row: PartnerRoomInventory | undefined, totalRooms: number): St
  * the room count that decides whether a room can still be sold (audit #31).
  */
 export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, initialMonth }: PartnerRoomCalendarProps) {
-  const { t, formatDay } = useI18n()
+  const { t, tp, formatDay, formatMoney } = useI18n()
   const [rows, setRows] = useState<PartnerRoomInventory[]>([])
   const [blocks, setBlocks] = useState<PartnerBlock[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [month, setMonth] = useState(initialMonth ?? currentMonth())
+  const [reloads, setReloads] = useState(0)
+  const [plans, setPlans] = useState<PartnerRatePlan[]>([])
+  const [planId, setPlanId] = useState<number | null>(null)
+  const [prices, setPrices] = useState<Map<string, number>>(new Map())
+  const [priceInput, setPriceInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -74,26 +104,58 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   const [blockSaving, setBlockSaving] = useState(false)
   const [blockError, setBlockError] = useState<string | null>(null)
 
+  // Saving something bumps `reloads`, which loads the shown month again without leaving it
+  const loadCalendarData = useCallback(async () => setReloads((count) => count + 1), [])
+  const latestLoad = useRef(0)
+
+  // The room counts and the blocks of the month on screen; a late answer for another month is dropped
   useEffect(() => {
-    loadCalendarData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const load = ++latestLoad.current
+    const { first, last } = monthRange(month)
+    setError(null)
+    Promise.all([
+      partnerAdapter.getRoomInventory({ room_type: roomTypeId, date_from: first, date_to: last }),
+      partnerAdapter.getBlocks({ room_type: roomTypeId }),
+    ]).then(([inventoryResponse, blocksResponse]) => {
+      if (load !== latestLoad.current) return
+      if (inventoryResponse.error) setError(inventoryResponse.error)
+      else if (inventoryResponse.data) setRows(inventoryResponse.data)
+      if (blocksResponse.error) setError((prev) => prev ?? blocksResponse.error)
+      else if (blocksResponse.data) setBlocks(blocksResponse.data)
+      setLoading(false)
+    })
+  }, [roomTypeId, month, reloads])
+
+  // The active rate plans of this room type, for the price shown in the cells
+  useEffect(() => {
+    let cancelled = false
+    partnerAdapter.getRatePlans().then((response) => {
+      if (cancelled || !response.data) return
+      const own = response.data.filter((plan) => plan.room_type === roomTypeId && plan.is_active)
+      setPlans(own)
+      setPlanId((current) => (own.some((plan) => plan.id === current) ? current : own[0]?.id ?? null))
+    })
+    return () => { cancelled = true }
   }, [roomTypeId])
 
-  const loadCalendarData = async () => {
-    setLoading(true)
-    setError(null)
-    const today = toLocalDate(new Date())
-    const future = addDays(today, WINDOW_DAYS)
-    const [inventoryResponse, blocksResponse] = await Promise.all([
-      partnerAdapter.getRoomInventory({ room_type: roomTypeId, date_from: today, date_to: future }),
-      partnerAdapter.getBlocks({ room_type: roomTypeId }),
-    ])
-    if (inventoryResponse.error) setError(inventoryResponse.error)
-    else if (inventoryResponse.data) setRows(inventoryResponse.data)
-    if (blocksResponse.error) setError((prev) => prev ?? blocksResponse.error)
-    else if (blocksResponse.data) setBlocks(blocksResponse.data)
-    setLoading(false)
-  }
+  // Prices of the chosen plan for the month on screen
+  useEffect(() => {
+    if (planId === null) {
+      setPrices(new Map())
+      return
+    }
+    let cancelled = false
+    const { first, last } = monthRange(month)
+    partnerAdapter.getDateInventory({ rate_plan: planId, date_from: first, date_to: last }).then((response) => {
+      if (cancelled) return
+      if (response.error) setError(response.error)
+      else setPrices(new Map((response.data ?? []).map((row) => [row.date, Number(row.price)])))
+    })
+    return () => { cancelled = true }
+  }, [planId, month, reloads])
+
+  const plan = plans.find((candidate) => candidate.id === planId) ?? null
+  const today = toLocalDate(new Date())
 
   const byDate = new Map(rows.map((row) => [row.date, row]))
   const blocksByDate = new Map<string, PartnerBlock[]>()
@@ -116,6 +178,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     const row = byDate.get(date)
     setEditAvailable(row ? row.available_rooms : totalRooms)
     setEditOpen(row ? row.is_available : true)
+    setPriceInput('')
     setSuccessMessage(null)
   }
 
@@ -167,6 +230,59 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     await loadCalendarData()
   }
 
+  // One click: close or open the selected day or range, leaving the room count as it is
+  const handleSetOpen = async (open: boolean) => {
+    if (!checkIn) return
+    setSaving(true)
+    setError(null)
+    const existing = byDate.get(checkIn)
+    let response
+    if (checkOut) {
+      response = await partnerAdapter.bulkSetRoomInventory({
+        room_type: roomTypeId, date_from: checkIn, date_to: checkOut, is_available: open,
+      })
+    } else if (existing) {
+      response = await partnerAdapter.updateRoomInventory(existing.id, { is_available: open })
+    } else {
+      response = await partnerAdapter.createRoomInventory({
+        room_type: roomTypeId, date: checkIn, available_rooms: totalRooms, is_available: open,
+      })
+    }
+    setSaving(false)
+    if (response.error) {
+      setError(response.error)
+      return
+    }
+    setSuccessMessage(checkOut
+      ? t('partner.savedRange', { from: formatDay(checkIn), to: formatDay(addDays(checkOut, -1)) })
+      : t('partner.savedDay', { day: formatDay(checkIn) }))
+    clearSelection()
+    await loadCalendarData()
+  }
+
+  const priceValid = PRICE_PATTERN.test(priceInput.trim())
+
+  // One price for every selected night of the chosen rate plan
+  const handleSetPrice = async () => {
+    if (!checkIn || !plan || !priceValid) return
+    const dateTo = checkOut ?? addDays(checkIn, 1)
+    setSaving(true)
+    setError(null)
+    const response = await partnerAdapter.bulkSetPrice({
+      rate_plan: plan.id, date_from: checkIn, date_to: dateTo, price: Number(priceInput.trim()),
+    })
+    setSaving(false)
+    if (response.error) {
+      setError(response.error)
+      return
+    }
+    setSuccessMessage(checkOut
+      ? t('partner.priceUpdatedRange', { from: formatDay(checkIn), to: formatDay(addDays(checkOut, -1)) })
+      : t('partner.priceUpdatedDay', { day: formatDay(checkIn) }))
+    clearSelection()
+    await loadCalendarData()
+  }
+
   const openBlockModal = () => {
     setBlockDateFrom(checkIn ?? toLocalDate(new Date()))
     setBlockDateTo(checkOut ?? addDays(checkIn ?? toLocalDate(new Date()), 1))
@@ -215,6 +331,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   }
 
   const isRange = Boolean(checkIn && checkOut)
+  const summary = summarize(month, byDate, totalRooms, today)
 
   return (
     <div className="partner-room-calendar">
@@ -241,11 +358,31 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
         <div className="loading-state" role="status" aria-live="polite">{t('partner.loadingCalendar')}</div>
       ) : (
         <div className="partner-calendar-body">
+          {plans.length > 0 && (
+            <div className="partner-calendar-plan">
+              <label htmlFor="calendar-rate-plan">{t('partner.pricesFor')}</label>
+              <select
+                id="calendar-rate-plan"
+                className="form-input"
+                value={planId ?? ''}
+                onChange={(e) => setPlanId(Number(e.target.value))}
+              >
+                {plans.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+              </select>
+            </div>
+          )}
+
+          <p className="partner-calendar-summary">
+            {t('partner.monthSummary', { free: summary.free, capacity: summary.capacity })}
+            {summary.closed > 0 && <> <span className="partner-calendar-summary-closed">{tp('partner.monthClosed', summary.closed)}</span></>}
+          </p>
+
           <DateRangeCalendar
             checkIn={checkIn}
             checkOut={checkOut}
             onChange={handleRangeChange}
             initialMonth={initialMonth}
+            onMonthChange={setMonth}
             describeDay={(date) => {
               const row = byDate.get(date)
               const status = statusOf(row, totalRooms)
@@ -258,6 +395,11 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                 content: (
                   <>
                     <div className="partner-calendar-day-count">{remaining} / {available}</div>
+                    {plan && (
+                      <div className="partner-calendar-day-price">
+                        {formatMoney(prices.get(date) ?? plan.base_price, plan.currency, { minDecimals: 0, maxDecimals: 0 })}
+                      </div>
+                    )}
                     {dayBlocks.length > 0 && (
                       <div className="partner-calendar-day-block" title={dayBlocks.map((b) => b.note).join(', ')}>
                         {dayBlocks[0].note}
@@ -314,6 +456,32 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                   <span>{t('partner.openForBooking')}</span>
                 </label>
               </div>
+
+              <div className="form-actions partner-calendar-quick-actions">
+                <button type="button" onClick={() => handleSetOpen(false)} disabled={saving} className="btn btn-secondary">
+                  {t('partner.closeDays')}
+                </button>
+                <button type="button" onClick={() => handleSetOpen(true)} disabled={saving} className="btn btn-secondary">
+                  {t('partner.openDays')}
+                </button>
+              </div>
+
+              {plan && (
+                <div className="form-group partner-calendar-price-form">
+                  <label htmlFor="calendar-price">{t('partner.priceForDays', { currency: plan.currency })}</label>
+                  <input
+                    id="calendar-price"
+                    type="text"
+                    inputMode="decimal"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    className="form-input"
+                  />
+                  <button type="button" onClick={handleSetPrice} disabled={saving || !priceValid} className="btn btn-secondary">
+                    {t('partner.setPrice')}
+                  </button>
+                </div>
+              )}
 
               <div className="form-actions">
                 <button
