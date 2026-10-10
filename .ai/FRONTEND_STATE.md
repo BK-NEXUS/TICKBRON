@@ -1159,3 +1159,7 @@ Commit format:
 
 ## 2026-10-10 Home page
 - Uzum-style home with real data: banner, property-type chips, top rated and best price lists. Fake sections removed. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 Payment amount fix
+- The payment now sends the booking's UZS charge; the so'm charge is shown with the hotel price, rate date and stale note. Details in `HANDOFF.md`.

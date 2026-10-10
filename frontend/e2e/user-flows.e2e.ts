@@ -219,15 +219,16 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(code).toBeVisible()
     shared.referenceCode = (await code.textContent())?.trim()
     expect(shared.referenceCode).toMatch(/^[A-Z2-9]{6}$/)
-    const paid = await amountNextTo(page, 'Amount Paid:')
-    // Hard check: what the guest saw is what was charged
-    expect(paid, `amount paid ($${paid}) should equal the total shown before payment ($${summaryTotal})`)
-      .toBe(summaryTotal)
-    // ...and what the backend stored for the booking and its payment
+    // Money is charged in so'm: what the guest was shown as paid is the booking's stored charge
+    const paidText = await page.getByText('Amount Paid:').first().locator('..').innerText()
+    const paid = Number(paidText.replace(/^Amount Paid:/, '').replace(/\D/g, ''))
     const bookings = await (await page.request.get(`${API}/api/v1/bookings/`)).json()
     const rows = Array.isArray(bookings) ? bookings : bookings.results
     const stored = rows.find((b: { confirmation_code: string }) => b.confirmation_code === shared.referenceCode)
-    expect(Number(stored.total_price), 'backend booking total = total shown').toBe(summaryTotal)
+    expect(Number(stored.total_price), 'backend booking total = hotel price shown before payment').toBe(summaryTotal)
+    expect(stored.charge_currency).toBe('UZS')
+    expect(paid, `amount paid (${paidText}) should equal the stored charge (${stored.charge_amount})`)
+      .toBe(Math.round(Number(stored.charge_amount)))
   })
 
   await step(audit, 'A8 my-bookings', async () => {
