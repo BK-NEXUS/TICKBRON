@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/I18nContext'
 
 interface PaymentProcessingProps {
   provider: PaymentProvider
-  amount: number
+  amount: number | string
   currency: string
   status: PaymentStatus
   message?: string

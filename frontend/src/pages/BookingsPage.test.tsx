@@ -230,6 +230,25 @@ describe('BookingsPage', () => {
       expect(screen.getByText('Test Property 3')).toBeInTheDocument()
     })
 
+    it('shows what was charged in so\'m on a booking priced in dollars, with the hotel price after a ≈', async () => {
+      mockAccountAdapter.getBookings.mockResolvedValue({
+        data: [{
+          ...mockBookings[0], total_price: 200, currency: 'USD', charge_amount: '2354590.00', charge_currency: 'UZS',
+          exchange_rate: { rate: '11772.950000', date: '2025-01-15', source: 'cbu.uz', stale: false },
+        }, mockBookings[1]],
+        error: null,
+      })
+      renderWithRouter(<BookingsPage />)
+
+      await screen.findByText('Test Property 1')
+      const card = screen.getByText('Test Property 1').closest('.booking-card') as HTMLElement
+      expect(card).toHaveTextContent('2 354 590')
+      expect(card.querySelector('.charge-notes')).toHaveTextContent('≈ $200')
+      const old = screen.getByText('Test Property 2').closest('.booking-card') as HTMLElement
+      expect(old.querySelector('.charge-notes')).toBeNull()
+      expect(old).toHaveTextContent('$500')
+    })
+
     it('shows the no-show refund sentence only on bookings that carry the promise', async () => {
       mockAccountAdapter.getBookings.mockResolvedValue({
         data: [

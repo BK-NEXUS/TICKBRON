@@ -1,3 +1,4 @@
+import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import { useI18n } from '../i18n/I18nContext'
 import { statusText } from '../utils/statusText'
@@ -14,7 +15,7 @@ interface BookingCardProps {
 }
 
 function BookingCard({ booking }: BookingCardProps) {
-  const { t, formatDate, formatMoney } = useI18n()
+  const { t, formatDate } = useI18n()
   const [copied, setCopied] = useState(false)
 
   const handleCopyCode = async () => {
@@ -78,8 +79,9 @@ function BookingCard({ booking }: BookingCardProps) {
         <div className="booking-card-detail">
           <span className="booking-card-detail-label">{t('bookings.total')}</span>
           <span className="booking-card-detail-value">
-            {formatMoney(booking.total_price, booking.currency, { minDecimals: 0, maxDecimals: 2 })}
+            <ChargeMain booking={booking} />
           </span>
+          <ChargeNotes booking={booking} />
         </div>
       </div>
       

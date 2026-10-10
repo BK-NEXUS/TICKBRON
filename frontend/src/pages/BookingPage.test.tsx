@@ -603,6 +603,22 @@ describe('BookingPage', () => {
         expect(screen.queryByTestId('no-show-refund-note')).toBeNull()
       })
 
+      it('adds the so\'m amount at today\'s rate beside the quoted hotel price when the backend has a rate', async () => {
+        mockPropertyAdapter.getQuote.mockResolvedValue({
+          data: { ...quote('515.00').data, uzs_total: '6062740.00', exchange_rate: { rate: '11772.95', date: '2025-01-15', source: 'cbu.uz', stale: false } },
+          error: null,
+        })
+        const { container } = renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(totalText(container)).toBe('$515'))
+        expect(await screen.findByText(/About .*6 062 740.* at today's rate/)).toBeInTheDocument()
+      })
+
+      it('adds nothing when the quote has no so\'m amount', async () => {
+        const { container } = renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(totalText(container)).toBe('$500'))
+        expect(screen.queryByText(/at today's rate/)).toBeNull()
+      })
+
       it('asks for a new quote when the number of rooms changes', async () => {
         mockPropertyAdapter.getQuote.mockImplementation(async (_id: number, params: { rooms: number }) =>
           quote(params.rooms === 2 ? '1030.00' : '515.00', params.rooms))
@@ -1078,6 +1094,67 @@ describe('BookingPage', () => {
         const request = mockPaymentAdapter.createPayment.mock.calls[0][0]
         expect(request.currency).not.toBe('USD')
         expect(String(request.amount)).not.toBe('500')
+      })
+
+      async function toPaymentStep() {
+        renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Continue to Payment'))
+        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+      }
+
+      it('shows the so\'m charge as the total on the payment step, with the hotel price after a ≈ and the rate date', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        await toPaymentStep()
+        const total = document.querySelector('.booking-summary-total-value') as HTMLElement
+        expect(total).toHaveTextContent('2 354 590')
+        expect(total).not.toHaveTextContent('$500')
+        const notes = document.querySelector('.booking-summary-card .charge-notes') as HTMLElement
+        expect(notes).toHaveTextContent('≈ $500')
+        expect(notes).toHaveTextContent('Rate of Jan 15, 2025 (CBU)')
+        expect(notes).not.toHaveTextContent('out of date')
+      })
+
+      it('warns on the payment step when the rate may be out of date', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({
+          data: { ...usdBooking, exchange_rate: { ...usdBooking.exchange_rate, stale: true } }, error: null,
+        })
+        await toPaymentStep()
+        expect(document.querySelector('.booking-summary-card .charge-notes')).toHaveTextContent('The rate may be out of date')
+      })
+
+      it('shows a so\'m booking as it is, with no ≈ line and no rate', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({
+          data: {
+            ...mockBooking, total_price: 500000, currency: 'UZS', charge_amount: '500000.00', charge_currency: 'UZS',
+            exchange_rate: { rate: '1.000000', date: null, source: 'identity', stale: false },
+          },
+          error: null,
+        })
+        await toPaymentStep()
+        expect(document.querySelector('.booking-summary-total-value')).toHaveTextContent('500 000')
+        expect(document.querySelector('.booking-summary-card .charge-notes')).toBeNull()
+      })
+
+      it('shows the so\'m charge on the processing and failure screens too', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        mockPaymentAdapter.createPayment.mockReturnValue(new Promise(() => {}))
+        await toPaymentStep()
+        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
+        fireEvent.click(screen.getByText(/Pay with Payme/))
+        await screen.findByText('Processing Payment')
+        expect(document.body).toHaveTextContent('2 354 590')
+      })
+
+      it('shows the so\'m charge on the failure screen', async () => {
+        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
+        mockPaymentAdapter.createPayment.mockResolvedValue({ data: null, error: 'Provider unavailable' })
+        await toPaymentStep()
+        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
+        fireEvent.click(screen.getByText(/Pay with Payme/))
+        await screen.findByText('Payment Failed', {}, { timeout: 5000 })
+        expect(document.body).toHaveTextContent('2 354 590')
+        expect(document.body).not.toHaveTextContent('$500')
       })
 
       it('retries with the same charge after a failed payment', async () => {

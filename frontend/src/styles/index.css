@@ -9804,3 +9804,23 @@ table .btn {
 .search-results-grid .property-card-footer {
   margin-top: auto;
 }
+
+/* What the guest is charged: the so'm amount is the main number, the hotel price and the rate go under it */
+.charge-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--spacing-xs) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.charge-approx {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.charge-stale {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
