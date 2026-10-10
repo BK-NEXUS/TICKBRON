@@ -395,11 +395,10 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
                 content: (
                   <>
                     <div className="partner-calendar-day-count">{remaining} / {available}</div>
-                    {plan && (
-                      <div className="partner-calendar-day-price">
-                        {formatMoney(prices.get(date) ?? plan.base_price, plan.currency, { minDecimals: 0, maxDecimals: 0 })}
-                      </div>
-                    )}
+                    {plan && (() => {
+                      const price = formatMoney(prices.get(date) ?? plan.base_price, plan.currency, { minDecimals: 0, maxDecimals: 0 })
+                      return <div className="partner-calendar-day-price" title={price}>{price}</div>
+                    })()}
                     {dayBlocks.length > 0 && (
                       <div className="partner-calendar-day-block" title={dayBlocks.map((b) => b.note).join(', ')}>
                         {dayBlocks[0].note}

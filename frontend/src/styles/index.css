@@ -10022,6 +10022,7 @@ table .btn {
 
 .partner-calendar-quick-actions {
   margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
 }
 
 .partner-calendar-price-form {
@@ -10035,8 +10036,24 @@ table .btn {
   color: var(--color-text-secondary);
 }
 
+/* Phones: the cell grows with its content (day, rooms, price) and long prices are cut with an ellipsis */
 @media (max-width: 767px) {
+  .partner-room-calendar .availability-calendar-day {
+    aspect-ratio: auto;
+    min-height: 72px;
+    padding: 2px;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .partner-room-calendar .availability-calendar-day-indicator {
+    display: none;
+  }
+
   .partner-calendar-day-price {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 10px;
   }
 }

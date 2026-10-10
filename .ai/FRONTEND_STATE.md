@@ -1151,3 +1151,7 @@ Commit format:
 
 ## 2026-10-10 R12b "Kelmadi" screens
 - Owner: report button and dialog, My reports. Staff and super-admin: no-show queue with decisions. Guest: 50% sentence before paying, on the confirmation and in My bookings. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 Owner calendar
+- Month summary, close/open in one click, per-day prices with a bulk price for a range, data per visible month. Details in `HANDOFF.md`.
