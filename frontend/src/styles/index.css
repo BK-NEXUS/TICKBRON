@@ -9974,3 +9974,10 @@ table .btn {
   gap: var(--spacing-sm);
   min-height: 44px;
 }
+
+.no-show-refund-preview,
+.no-show-refund-line {
+  margin: var(--spacing-xs) 0 0;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
