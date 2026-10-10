@@ -52,6 +52,7 @@ export function NoShowDecisionDialog({ report, decision, onDone, onClose }: NoSh
       {decision === 'approve' && (
         <>
           <p>{t('noShowAdmin.approveHint')}</p>
+          {preview && preview.percent === 0 && <p className="alert alert-warning">{t('noShowAdmin.noPromise')}</p>}
           {preview && (
             <p className="no-show-refund-preview">
               {t('noShowAdmin.ifApproved', {

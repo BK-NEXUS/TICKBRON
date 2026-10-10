@@ -439,6 +439,7 @@ export const ru: Catalog = {
   'noShowAdmin.sending': "Отправка...",
   'no_show_refund_statement': "Если вы не приедете и это будет подтверждено, вернём {percent}% платежа ({amount}).",
   'no_show_refund_statement_percent': "Если вы не приедете и это будет подтверждено, вернём {percent}% платежа.",
+  'noShowAdmin.noPromise': "Это бронирование сделано до введения правила возврата, поэтому подтверждение ничего не вернёт: ночи освободятся, но деньги не вернутся.",
   'gallery.label': "Галерея фотографий объекта",
   'gallery.previous': "Предыдущее фото",
   'gallery.next': "Следующее фото",

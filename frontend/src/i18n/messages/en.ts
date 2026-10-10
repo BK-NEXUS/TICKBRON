@@ -423,6 +423,7 @@ export const en = {
   'noShowAdmin.sending': "Sending...",
   'no_show_refund_statement': "If you do not arrive and this is confirmed, {percent}% of your payment ({amount}) is refunded.",
   'no_show_refund_statement_percent': "If you do not arrive and this is confirmed, {percent}% of your payment is refunded.",
+  'noShowAdmin.noPromise': "This booking was made before the refund rule, so approving it refunds nothing: the nights are released but no money goes back.",
   'gallery.label': "Property image gallery",
   'gallery.previous': "Previous image",
   'gallery.next': "Next image",

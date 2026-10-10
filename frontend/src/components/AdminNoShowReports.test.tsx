@@ -180,6 +180,23 @@ describe('AdminNoShowReports', () => {
       await waitFor(() => expect(adapter.listReports).toHaveBeenCalledTimes(2))
     })
 
+    it('warns that approving refunds nothing when the booking carries no refund promise (0%)', async () => {
+      adapter.listReports.mockResolvedValue(page([report(1, {
+        refund_preview: { amount: '0.00', currency: 'UZS', percent: 0, already_refunded: '0.00', paid: '900000.00' },
+      })]))
+      renderScreen()
+      fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Approve report' })
+      expect(within(dialog).getByText(/refunds nothing/)).toBeInTheDocument()
+    })
+
+    it('does not show that warning for a normal 50% booking', async () => {
+      renderScreen()
+      fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Approve report' })
+      expect(within(dialog).queryByText(/refunds nothing/)).toBeNull()
+    })
+
     it('rejecting sends the comment to reject', async () => {
       adapter.rejectReport.mockResolvedValue(done)
       renderScreen()

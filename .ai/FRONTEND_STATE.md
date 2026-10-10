@@ -1147,3 +1147,7 @@ Commit format:
 
 ## 2026-10-09 R10 promotions
 - Banner carousel on the search page (above filters and list) and on the home page; search list is two columns; admin "Advertising" screen. Details in `HANDOFF.md`.
+
+
+## 2026-10-10 R12b "Kelmadi" screens
+- Owner: report button and dialog, My reports. Staff and super-admin: no-show queue with decisions. Guest: 50% sentence before paying, on the confirmation and in My bookings. Details in `HANDOFF.md`.
