@@ -82,7 +82,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
     return (
       <div className="admin-status">
         <div className="admin-view-header">
-          <h1 className="admin-view-title">{t('partner.status')}</h1>
+          <h2 className="admin-view-title">{t('partner.status')}</h2>
           <p className="admin-view-subtitle">
             {t('status.bookingsGuestsAndRevenue')}
           </p>

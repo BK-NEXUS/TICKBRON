@@ -560,6 +560,24 @@ describe('BookingPage', () => {
       })
     })
 
+    it('never computes a deposit amount in the browser (money is computed on the backend only)', async () => {
+      const withDeposit = {
+        ...mockProperty,
+        room_types: [{
+          ...mockProperty.room_types[0],
+          rate_plans: [{ ...mockProperty.room_types[0].rate_plans[0], deposit_required: true, deposit_percentage: 20 }],
+        }],
+      }
+      mockPropertyAdapter.getPropertyById.mockResolvedValue({ data: withDeposit, error: null })
+      const { container } = renderWithRouter(<BookingPage />)
+
+      await waitFor(() => {
+        expect(container.querySelector('.booking-summary-total-value')?.textContent).toBe('$500')
+      })
+      expect(screen.queryByText('Deposit (20%)')).not.toBeInTheDocument()
+      expect(container.querySelector('.booking-summary-breakdown')?.textContent).not.toContain('$100')
+    })
+
     describe('total from the backend quote (E2E: shown $60, charged $69)', () => {
       // The quote endpoint prices each night with the code that charges for it;
       // nights 2025-01-20..24, one of them a weekend night at a higher price

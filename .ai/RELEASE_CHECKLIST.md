@@ -197,7 +197,13 @@ What the Django app sends on every API response (`common/middleware.py` Security
 | `Cross-Origin-Opener-Policy` | `same-origin` | Django default |
 | Cookies | session + csrftoken: `HttpOnly`, `SameSite=Lax`, `Secure` when DEBUG is off | settings |
 
-What the web server (nginx or similar, in front of both the SPA and `/api/`) must add, because the SPA's HTML/JS/CSS never pass through Django:
+What the web server (nginx or similar, in front of both the SPA and `/api/`) must add, because the SPA's HTML/JS/CSS never pass through Django. For `/api/` it must also forward the client address and scheme, and overwrite (never append to) what the client sent:
+
+```
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Host              $host;
+```
 
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response (add `preload` only after submitting the domain to hstspreload.org); redirect all `http://` to `https://` (or set `SECURE_SSL_REDIRECT=True` in Django and `SECURE_PROXY_SSL_HEADER` for the proxy).
 - `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; add the map tile host when R11 adds Leaflet, and payment provider hosts when Payme/Click are integrated):
@@ -214,8 +220,12 @@ What the web server (nginx or similar, in front of both the SPA and `/api/`) mus
 - [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
 - [ ] `ALLOWED_HOSTS`* real host names, no `*`
 - [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only
-- [ ] `SECURE_SSL_REDIRECT=True` (or redirect at the proxy); `NUM_PROXIES` = number of proxies that append to `X-Forwarded-For` (rate limits and lockout key on the client IP)
-- [ ] `DB_*` with `DB_SSLMODE=require` if the database is on another host
+- [ ] `SECURE_SSL_REDIRECT=True`* (refused otherwise)
+- [ ] `NUM_PROXIES`* must be set explicitly: 0 = no proxy, 1 = one nginx/load balancer that appends to `X-Forwarded-For`. Unset or wrong, every visitor shares one IP (login throttle, lockout and promotion counters collapse, anyone can lock any known email)
+- [ ] `USE_X_FORWARDED_PROTO=True`* whenever `NUM_PROXIES` > 0 (nginx must overwrite `X-Forwarded-Proto`); without it Django sees http, the https redirect loops and HSTS is never sent
+- [ ] `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`* stay True (default); `USE_REDIS_CACHE`* stays True (default)
+- [ ] `SECURE_HSTS_PRELOAD` stays False until the owner decides to submit the domain to hstspreload.org (hard to undo); `SESSION_COOKIE_AGE` defaults to 7 days
+- [ ] `DB_*` with `DB_SSLMODE`* = `require`, `verify-ca` or `verify-full` if the database is on another host (the app refuses `disable`, `allow`, `prefer`)
 - [ ] `REDIS_URL` / `CELERY_*` (cache must be shared Redis: throttles and login lockout live there)
 - [ ] `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` left at defaults unless measured
 

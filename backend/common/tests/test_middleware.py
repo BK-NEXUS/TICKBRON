@@ -92,3 +92,32 @@ class PerformanceMonitoringMiddlewareTest(TestCase):
         response = self.middleware(request)
         
         self.assertEqual(response.status_code, 200)
+
+
+class HstsHeaderTest(TestCase):
+    """N-6: HSTS belongs to HTTPS responses only; it must not depend on the redirect setting."""
+
+    def test_no_hsts_on_a_plain_http_request(self):
+        with self.settings(SECURE_SSL_REDIRECT=True, SECURE_HSTS_SECONDS=3600):
+            response = self.client.get('/api/v1/auth/csrf/')
+
+        self.assertNotIn('Strict-Transport-Security', response)
+
+    def test_hsts_on_a_secure_request_even_when_redirect_is_off(self):
+        with self.settings(SECURE_SSL_REDIRECT=False, SECURE_HSTS_SECONDS=3600,
+                           SECURE_HSTS_INCLUDE_SUBDOMAINS=True, SECURE_HSTS_PRELOAD=False):
+            response = self.client.get('/api/v1/auth/csrf/', secure=True)
+
+        self.assertEqual(response['Strict-Transport-Security'], 'max-age=3600; includeSubDomains')
+
+    def test_preload_is_added_only_when_enabled(self):
+        with self.settings(SECURE_HSTS_SECONDS=3600, SECURE_HSTS_INCLUDE_SUBDOMAINS=False, SECURE_HSTS_PRELOAD=True):
+            response = self.client.get('/api/v1/auth/csrf/', secure=True)
+
+        self.assertEqual(response['Strict-Transport-Security'], 'max-age=3600; preload')
+
+    def test_no_hsts_when_the_lifetime_is_zero(self):
+        with self.settings(SECURE_HSTS_SECONDS=0):
+            response = self.client.get('/api/v1/auth/csrf/', secure=True)
+
+        self.assertNotIn('Strict-Transport-Security', response)

@@ -1,6 +1,6 @@
 import { DateInventory } from '../adapters/propertyAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
-import { nightsBetween, toLocalDate } from '../utils/dates'
+import { businessToday, nightsBetween } from '../utils/dates'
 import { useI18n } from '../i18n/I18nContext'
 
 interface AvailabilityCalendarProps {
@@ -80,7 +80,7 @@ export function AvailabilityCalendar({
     )
   }
 
-  const today = toLocalDate(new Date())
+  const today = businessToday()
   const firstOpen = inventory
     .filter(row => row.date >= today && statusOf(row) !== 'unavailable' && statusOf(row) !== 'fully-booked')
     .map(row => row.date)

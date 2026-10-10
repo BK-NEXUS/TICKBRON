@@ -47,6 +47,7 @@ export function AdminDashboardPage() {
       <div className="admin-dashboard-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Lock size={40} />}
             title={t('partner.authenticationRequired')}
             message={t('admin.pleaseSignInTo')}
@@ -65,6 +66,7 @@ export function AdminDashboardPage() {
       <div className="admin-dashboard-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Ban size={40} />}
             title={t('denied.title')}
             message={t('admin.youDoNotHave')}

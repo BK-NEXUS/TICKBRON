@@ -139,7 +139,12 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             with transaction.atomic():
                 # Lock the booking so two simultaneous requests cannot both pass the check
                 booking = Booking.objects.select_for_update().get(pk=transaction_data['booking'].pk)
-                if self._has_active_payment(booking):
+                active = self._active_payment(booking)
+                if active is not None:
+                    if active.status != 'completed' and active.provider == transaction_data['provider']:
+                        # A retry or double click with the same provider resumes the one transaction:
+                        # no second charge, and the guest can continue after a failed confirmation
+                        return Response(PaymentTransactionSerializer(active).data, status=status.HTTP_200_OK)
                     return Response(
                         {'error': 'A payment for this booking is already in progress or completed.',
                          'code': 'payment_already_active'},
@@ -414,16 +419,19 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         )
 
     @staticmethod
-    def _has_active_payment(booking):
+    def _active_payment(booking):
         """
-        A completed or processing payment always blocks another; a pending one
-        only while fresh, so a guest who abandoned the payment page can retry.
+        The transaction that blocks a new one, or None. A completed or processing payment always
+        blocks; a pending one only while fresh, so a guest who abandoned the payment page can retry.
         """
+        transactions = PaymentTransaction.objects.filter(booking=booking)
+        completed = transactions.filter(status='completed').first()
+        if completed is not None:
+            return completed
         fresh = timezone.now() - ACTIVE_PENDING_PAYMENT_WINDOW
-        return PaymentTransaction.objects.filter(booking=booking).filter(
-            Q(status__in=('processing', 'completed'))
-            | Q(status='pending', created_at__gte=fresh)
-        ).exists()
+        return transactions.filter(
+            Q(status='processing') | Q(status='pending', created_at__gte=fresh)
+        ).order_by('-created_at').first()
 
     def _existing_transaction_response(self, idempotency_key):
         """

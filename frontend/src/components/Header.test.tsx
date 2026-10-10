@@ -49,6 +49,11 @@ describe('Header', () => {
     expect(screen.getByText('TICKBRON')).toBeInTheDocument()
   })
 
+  it('does not make the site name a heading, so every page keeps exactly one h1', async () => {
+    await renderWithAuthProvider(<Header />)
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+  })
+
   it('renders the client logo image next to the site name', async () => {
     const { container } = await renderWithAuthProvider(<Header />)
     const logo = container.querySelector('.header-logo img.brand-logo--header')

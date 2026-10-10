@@ -93,10 +93,10 @@ class BookingCreateSerializer(serializers.Serializer):
     check_in = serializers.DateField()
     check_out = serializers.DateField()
     guest_count = serializers.IntegerField(min_value=1)
-    special_requests = serializers.CharField(required=False, allow_blank=True)
+    special_requests = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     
     # Guest contact details (optional - will be pre-filled from user profile)
-    guest_full_name = serializers.CharField(required=False, allow_blank=True)
+    guest_full_name = serializers.CharField(required=False, allow_blank=True, max_length=300)  # the column's size
     guest_phone = serializers.CharField(required=False, allow_blank=True)
     guest_email = serializers.EmailField(required=False, allow_blank=True)
     
@@ -246,7 +246,7 @@ class BookingCreateSerializer(serializers.Serializer):
 class BookingCancelSerializer(serializers.Serializer):
     """Serializer for cancelling bookings."""
     
-    cancellation_reason = serializers.CharField(required=False, allow_blank=True)
+    cancellation_reason = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     
     def validate(self, data):
         """Validate cancellation parameters."""

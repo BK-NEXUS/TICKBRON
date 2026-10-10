@@ -30,6 +30,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
                   'property_primary_photo', 'notes', 'created_at']
         # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
         read_only_fields = ['id', 'user', 'property', 'created_at']
+        extra_kwargs = {'notes': {'max_length': 500}}
     
     def get_property_primary_photo(self, obj) -> str | None:
         """Get the primary photo for the property."""
@@ -49,6 +50,7 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['property', 'notes']
+        extra_kwargs = {'notes': {'max_length': 500}}
     
     def validate_property(self, value):
         """Validate that the property exists and is active."""
@@ -74,6 +76,7 @@ class ReviewSerializer(serializers.ModelSerializer):
                   'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating', 
                   'service_rating', 'title', 'comment', 'status', 'reviewed_at', 'created_at']
         read_only_fields = ['id', 'user', 'status', 'reviewed_at', 'created_at']
+        extra_kwargs = {'comment': {'max_length': 2000}}
     
     def validate_overall_rating(self, value):
         """Validate overall rating is between 1 and 5."""
@@ -116,6 +119,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         fields = ['property', 'booking', 'overall_rating', 'cleanliness_rating',
                   'location_rating', 'value_rating', 'amenities_rating', 'service_rating',
                   'title', 'comment']
+        extra_kwargs = {'comment': {'max_length': 2000}}
 
     def validate_booking(self, value):
         """Validate that the booking belongs to the user, is completed and is not reviewed yet."""

@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import { toLocalDate } from '../utils/dates'
+import { businessToday, toLocalDate } from '../utils/dates'
 
 export interface CalendarDayInfo {
   /** Can a stay start on this day? */
@@ -35,8 +35,8 @@ function monthStart(value?: string | null): Date {
     const [year, month] = value.split('-').map(Number)
     return new Date(year, month - 1, 1)
   }
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1)
+  const [year, month] = businessToday().split('-').map(Number)
+  return new Date(year, month - 1, 1)
 }
 
 /**
@@ -50,7 +50,7 @@ export function DateRangeCalendar({
   onChange,
   describeDay,
   validateRange,
-  minDate = toLocalDate(new Date()),
+  minDate = businessToday(),
   initialMonth,
   onMonthChange,
   className = '',

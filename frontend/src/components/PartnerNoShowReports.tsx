@@ -58,7 +58,7 @@ export function PartnerNoShowReports({ properties }: PartnerNoShowReportsProps) 
   return (
     <div className="partner-no-show-reports">
       <div className="bookings-view-header">
-        <h1 className="bookings-view-title">{t('noShow.myReports')}</h1>
+        <h2 className="bookings-view-title">{t('noShow.myReports')}</h2>
         <p className="bookings-view-subtitle">{t('noShow.myReportsSubtitle')}</p>
       </div>
 

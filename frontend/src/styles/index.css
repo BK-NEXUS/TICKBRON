@@ -180,7 +180,7 @@ body {
   margin: 0 auto var(--spacing-lg);
 }
 
-.header-logo h1 {
+.header-logo-text {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
@@ -2116,7 +2116,7 @@ table .btn {
 
 /* Extra small mobile (320px-374px) */
 @media (max-width: 374px) {
-  .header-logo h1 {
+  .header-logo-text {
     font-size: var(--font-size-lg);
   }
 
@@ -6670,7 +6670,14 @@ table .btn {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  overflow-wrap: anywhere; /* long Russian words ("администратора") must not push the page sideways */
   flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .dashboard-title {
+    font-size: var(--font-size-2xl);
+  }
 }
 
 .dashboard-subtitle {
@@ -7449,6 +7456,8 @@ table .btn {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  min-width: 0;
+  overflow-x: auto; /* many columns (Russian headers are the widest): scroll inside the card, never the page */
 }
 
 .customers-count {
@@ -8358,6 +8367,7 @@ table .btn {
 }
 
 .statistics-section {
+  min-width: 0; /* a wide chart must not stretch the page (grid/flex items default to min-content) */
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-top: 3px solid var(--color-gold);
@@ -8376,6 +8386,7 @@ table .btn {
 
 .chart-container {
   min-height: 300px;
+  overflow-x: auto; /* 12 monthly bars need ~480px: scroll inside the card on a phone */
 }
 
 .bar-chart {

@@ -13,6 +13,8 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 ISOLATED_ENV_VARS = (
     'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
+    'USE_X_FORWARDED_PROTO', 'SECURE_SSL_REDIRECT', 'SECURE_HSTS_PRELOAD', 'SESSION_COOKIE_AGE',
+    'DB_ENGINE', 'DB_HOST', 'DB_SSLMODE',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -49,6 +51,7 @@ def _cache_backend(**env_overrides):
 PRODUCTION_ENV = {
     'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
+    'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
 }
 
 
@@ -87,7 +90,8 @@ def test_debug_uses_local_memory_cache_by_default():
 
 def test_cache_backend_can_be_chosen_explicitly():
     assert _cache_backend(DEBUG='True', USE_REDIS_CACHE='True') == 'django_redis.cache.RedisCache'
-    assert _cache_backend(USE_REDIS_CACHE='False', **PRODUCTION_ENV) == \
+    # N-19: production refuses USE_REDIS_CACHE=False (see test_r4_production_config), so the switch is local-only
+    assert _cache_backend(DEBUG='True', USE_REDIS_CACHE='False') == \
         'django.core.cache.backends.locmem.LocMemCache'
 
 
@@ -109,7 +113,8 @@ def test_debug_cookies_are_not_secure_by_default():
 
 
 def test_cookie_security_can_be_set_explicitly():
-    assert _secure_cookies(SESSION_COOKIE_SECURE='False', CSRF_COOKIE_SECURE='False', **PRODUCTION_ENV) == \
+    # N-19: production refuses insecure cookies (see test_r4_production_config), so only DEBUG may turn them off
+    assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='False', CSRF_COOKIE_SECURE='False') == \
         'False False'
     assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='True', CSRF_COOKIE_SECURE='True') == \
         'True True'
@@ -171,3 +176,20 @@ def test_test_database_suffix_refuses_unsafe_characters():
     )
     assert result.returncode != 0
     assert 'TICKBRON_TEST_DB_SUFFIX' in result.stderr
+
+
+def test_hsts_preload_is_off_by_default():
+    # Preload is hard to undo, so the owner opts in explicitly (N-6)
+    assert _load_settings('settings.SECURE_HSTS_PRELOAD') == 'False'
+    assert _load_settings('settings.SECURE_HSTS_PRELOAD', SECURE_HSTS_PRELOAD='True') == 'True'
+
+
+def test_proxy_ssl_header_is_only_trusted_when_asked():
+    assert _load_settings('settings.SECURE_PROXY_SSL_HEADER') == 'None'
+    assert _load_settings('settings.SECURE_PROXY_SSL_HEADER', USE_X_FORWARDED_PROTO='True') == \
+        "('HTTP_X_FORWARDED_PROTO', 'https')"
+
+
+def test_sessions_last_a_week_by_default():
+    assert _load_settings('settings.SESSION_COOKIE_AGE') == str(7 * 24 * 3600)
+    assert _load_settings('settings.SESSION_COOKIE_AGE', SESSION_COOKIE_AGE='3600') == '3600'

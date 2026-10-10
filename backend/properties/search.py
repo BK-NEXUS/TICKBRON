@@ -442,7 +442,7 @@ class PropertySearchService:
             return queryset
         
         # Search across relevant fields using case-insensitive contains
-        # Split query into words for more flexible search
+        # Split query into words; each word is matched on its own
         words = query.split()
         q_objects = []
         
@@ -458,11 +458,11 @@ class PropertySearchService:
                 )
         
         if q_objects:
-            # Combine all word searches with OR
-            combined_q = q_objects[0]
-            for q_obj in q_objects[1:]:
-                combined_q |= q_obj
-            return queryset.filter(combined_q).distinct()
+            # Every word must match somewhere (a word may match a different field than another).
+            # With OR, "Pricey Street" matched every property on any "Street".
+            for q_obj in q_objects:
+                queryset = queryset.filter(q_obj)
+            return queryset.distinct()
         
         return queryset
     

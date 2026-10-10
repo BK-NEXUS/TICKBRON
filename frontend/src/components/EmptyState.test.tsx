@@ -85,4 +85,16 @@ describe('EmptyState', () => {
     const cta = screen.getByText('Search Properties')
     expect(cta).toHaveClass('btn', 'btn-primary', 'empty-state-cta')
   })
+
+  it('renders its title as an h2 by default and as the page h1 when it is the whole screen', () => {
+    const { rerender } = render(
+      <MemoryRouter><EmptyState icon="i" title="Nothing yet" message="m" ctaText="Go" onClick={() => {}} /></MemoryRouter>,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Nothing yet' })).toBeInTheDocument()
+
+    rerender(
+      <MemoryRouter><EmptyState icon="i" title="Sign in required" message="m" ctaText="Go" onClick={() => {}} headingLevel={1} /></MemoryRouter>,
+    )
+    expect(screen.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeInTheDocument()
+  })
 })

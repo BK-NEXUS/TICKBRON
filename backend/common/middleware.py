@@ -29,19 +29,8 @@ class SecurityHeadersMiddleware:
         response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
         
-        # HSTS headers (only in production with HTTPS)
-        if getattr(settings, 'SECURE_SSL_REDIRECT', False):
-            hsts_seconds = getattr(settings, 'SECURE_HSTS_SECONDS', 31536000)
-            hsts_include_subdomains = getattr(settings, 'SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
-            hsts_preload = getattr(settings, 'SECURE_HSTS_PRELOAD', True)
-            
-            hsts_value = f'max-age={hsts_seconds}'
-            if hsts_include_subdomains:
-                hsts_value += '; includeSubDomains'
-            if hsts_preload:
-                hsts_value += '; preload'
-            
-            response['Strict-Transport-Security'] = hsts_value
+        # Strict-Transport-Security comes from Django's SecurityMiddleware (SECURE_HSTS_* settings):
+        # it sends it on HTTPS requests only, which a second copy here got wrong behind a proxy
         
         return response
 

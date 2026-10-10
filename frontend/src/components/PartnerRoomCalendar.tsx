@@ -6,7 +6,7 @@ import {
   partnerAdapter, PartnerRoomInventory, PartnerBlock, PartnerRatePlan,
 } from '../adapters/partnerAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
-import { addDays, nightsBetween, toLocalDate } from '../utils/dates'
+import { addDays, businessToday, nightsBetween } from '../utils/dates'
 
 interface PartnerRoomCalendarProps {
   roomTypeId: number
@@ -39,7 +39,7 @@ function monthRange(month: string): { first: string; last: string } {
   return { first: `${month}-01`, last: `${month}-${String(lastDay).padStart(2, '0')}` }
 }
 
-const currentMonth = () => toLocalDate(new Date()).slice(0, 7)
+const currentMonth = () => businessToday().slice(0, 7)
 
 /** Free room-nights, capacity and closed days of the days of `month` from `today` on (display only). */
 function summarize(month: string, rows: Map<string, PartnerRoomInventory>, totalRooms: number, today: string) {
@@ -155,7 +155,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   }, [planId, month, reloads])
 
   const plan = plans.find((candidate) => candidate.id === planId) ?? null
-  const today = toLocalDate(new Date())
+  const today = businessToday()
 
   const byDate = new Map(rows.map((row) => [row.date, row]))
   const blocksByDate = new Map<string, PartnerBlock[]>()
@@ -284,8 +284,8 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   }
 
   const openBlockModal = () => {
-    setBlockDateFrom(checkIn ?? toLocalDate(new Date()))
-    setBlockDateTo(checkOut ?? addDays(checkIn ?? toLocalDate(new Date()), 1))
+    setBlockDateFrom(checkIn ?? businessToday())
+    setBlockDateTo(checkOut ?? addDays(checkIn ?? businessToday(), 1))
     setBlockRooms(1)
     setBlockNote('')
     setBlockError(null)

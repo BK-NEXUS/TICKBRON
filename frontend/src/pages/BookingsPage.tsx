@@ -163,6 +163,7 @@ export function BookingsPage() {
       <div className="bookings-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Lock size={40} />}
             title={t('common.signInRequired')}
             message={t('bookings.signInText')}

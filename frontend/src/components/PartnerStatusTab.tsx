@@ -59,7 +59,7 @@ export function PartnerStatusTab() {
 
   const header = (
     <div className="admin-view-header">
-      <h1 className="admin-view-title">{TEXT.title}</h1>
+      <h2 className="admin-view-title">{TEXT.title}</h2>
       <p className="admin-view-subtitle">{TEXT.subtitle}</p>
     </div>
   )

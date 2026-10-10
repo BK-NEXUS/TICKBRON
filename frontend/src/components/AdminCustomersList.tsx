@@ -126,7 +126,7 @@ export function AdminCustomersList() {
   return (
     <div className="admin-customers-list">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">{t('admin.customersDirectory')}</h1>
+        <h2 className="admin-view-title">{t('admin.customersDirectory')}</h2>
         <p className="admin-view-subtitle">{t('admin.viewAndSearchCustomer')}</p>
       </div>
 

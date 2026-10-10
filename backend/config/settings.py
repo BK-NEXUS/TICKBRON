@@ -212,6 +212,13 @@ AUTH_USER_MODEL = 'users.User'
 # Security Settings
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+# Behind a TLS-terminating proxy (nginx) Django only sees http. With this on it trusts the
+# proxy's X-Forwarded-Proto, so request.is_secure(), the https redirect and HSTS work and the
+# redirect does not loop. Turn it on only when the proxy always overwrites that header.
+SECURE_PROXY_SSL_HEADER = (
+    ('HTTP_X_FORWARDED_PROTO', 'https')
+    if os.getenv('USE_X_FORWARDED_PROTO', 'False').lower() == 'true' else None
+)
 # Cookies are https-only unless DEBUG is on (local http); override with the env vars
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
@@ -219,13 +226,16 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+# A stolen session cookie stops working after a week (Django's default is two)
+SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', str(7 * 24 * 3600)))
 
 # Additional Security Headers
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() == 'true'
-SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'True').lower() == 'true'
+# Preload is hard to undo (browsers ship the list), so it is an explicit owner decision
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
+SILENCED_SYSTEM_CHECKS = ['security.W021']  # W021 asks for preload: documented choice above
 SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
-SECURE_BROWSER_XSS_FILTER = os.getenv('SECURE_BROWSER_XSS_FILTER', 'True').lower() == 'true'
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # CORS Settings
@@ -258,7 +268,18 @@ RATELIMIT_USE_CACHE = 'default'
 # Number of trusted reverse proxies in front of the app that append to
 # X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
 # set it to match the deployment (e.g. 1 behind a single nginx/load balancer).
-NUM_PROXIES = int(os.getenv('NUM_PROXIES', '0'))
+def _read_num_proxies():
+    raw = os.getenv('NUM_PROXIES')
+    if raw is None:
+        return 0, None
+    try:
+        count = int(raw)
+    except ValueError:
+        return 0, f'NUM_PROXIES must be a whole number, got {raw!r}'
+    return (count, None) if count >= 0 else (0, 'NUM_PROXIES must not be negative')
+
+
+NUM_PROXIES, _NUM_PROXIES_ERROR = _read_num_proxies()
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {
@@ -433,6 +454,28 @@ def _production_config_errors():
         errors.append('SECRET_KEY must be a random value of at least 50 characters, not a placeholder')
     if '*' in ALLOWED_HOSTS:
         errors.append("ALLOWED_HOSTS must list the real host names, not '*'")
+    # N-3: unset means "no proxy", and behind nginx every visitor then shares one IP, so the login
+    # throttle, the account lockout and the promotion counters collapse into one bucket
+    if _NUM_PROXIES_ERROR:
+        errors.append(_NUM_PROXIES_ERROR)
+    elif os.getenv('NUM_PROXIES') is None:
+        errors.append('NUM_PROXIES must be set (0 = no reverse proxy, 1 = one nginx/load balancer in front)')
+    # N-6: https must be enforced, and a TLS-terminating proxy needs its header trusted
+    if not SECURE_SSL_REDIRECT:
+        errors.append('SECURE_SSL_REDIRECT must be True when DEBUG is False')
+    if NUM_PROXIES > 0 and SECURE_PROXY_SSL_HEADER is None:
+        errors.append('USE_X_FORWARDED_PROTO must be True behind a reverse proxy (otherwise the https redirect loops)')
+    # N-19
+    if not SESSION_COOKIE_SECURE:
+        errors.append('SESSION_COOKIE_SECURE must be True when DEBUG is False')
+    if not CSRF_COOKIE_SECURE:
+        errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
+    if not USE_REDIS_CACHE:
+        errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
+    if (os.getenv('DB_ENGINE') == 'django.db.backends.postgresql'
+            and os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
+            and os.getenv('DB_SSLMODE', 'prefer') in ('disable', 'allow', 'prefer')):
+        errors.append('DB_SSLMODE must be require, verify-ca or verify-full for a remote database')
     for name in ('CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS'):
         raw = os.getenv(name, '').strip()
         if not raw:

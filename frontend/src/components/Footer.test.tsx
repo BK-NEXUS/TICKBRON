@@ -41,6 +41,6 @@ describe('Footer', () => {
         <Footer />
       </BrowserRouter>
     )
-    expect(screen.getByText(/2024 TICKBRON/)).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`${new Date().getFullYear()} TICKBRON`))).toBeInTheDocument()
   })
 })

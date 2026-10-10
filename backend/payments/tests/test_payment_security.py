@@ -547,17 +547,34 @@ class TestRefunds(PaymentSecurityTestBase):
 
 
 class TestOneActivePaymentPerBooking(PaymentSecurityTestBase):
-    """N-5: a double click or a second provider must not create a second charge."""
+    """
+    N-5: a double click or a second provider must not create a second charge.
 
-    def _pay(self, key):
-        return self.client.post(TRANSACTIONS_URL, self._payment_data(self.booking, key), format='json')
+    QA: a retry after a failed confirmation must still work, so a retry with the same provider
+    resumes the one active transaction (200) instead of being refused.
+    """
 
-    def test_second_payment_while_one_is_processing_is_refused(self):
-        self._create_transaction(self.booking, 'k-first', tx_status='processing')
+    def _pay(self, key, provider='payme'):
+        data = self._payment_data(self.booking, key)
+        data['provider'] = provider
+        return self.client.post(TRANSACTIONS_URL, data, format='json')
+
+    def test_retry_with_the_same_provider_resumes_the_processing_transaction(self):
+        first = self._create_transaction(self.booking, 'k-first', tx_status='processing')
 
         response = self._pay('k-second')
 
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['id'] == first.id
+        assert PaymentTransaction.objects.filter(booking=self.booking).count() == 1
+
+    def test_another_provider_while_one_is_processing_is_refused(self):
+        self._create_transaction(self.booking, 'k-first', tx_status='processing')
+
+        response = self._pay('k-second', provider='click')
+
         assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.data['code'] == 'payment_already_active'
         assert PaymentTransaction.objects.filter(booking=self.booking).count() == 1
 
     def test_second_payment_after_a_completed_one_is_refused(self):
@@ -565,10 +582,21 @@ class TestOneActivePaymentPerBooking(PaymentSecurityTestBase):
 
         assert self._pay('k-again').status_code == status.HTTP_409_CONFLICT
 
-    def test_fresh_pending_payment_blocks_a_double_click(self):
-        self._create_transaction(self.booking, 'k-click', tx_status='pending')
+    def test_a_completed_payment_wins_over_a_newer_processing_one(self):
+        done = self._create_transaction(self.booking, 'k-done', tx_status='completed')
+        self._create_transaction(self.booking, 'k-newer', tx_status='processing')
+        PaymentTransaction.objects.filter(pk=done.pk).update(created_at=timezone.now() - timedelta(minutes=30))
 
-        assert self._pay('k-click-2').status_code == status.HTTP_409_CONFLICT
+        assert self._pay('k-again').status_code == status.HTTP_409_CONFLICT
+
+    def test_fresh_pending_payment_is_resumed_on_a_double_click(self):
+        first = self._create_transaction(self.booking, 'k-click', tx_status='pending')
+
+        response = self._pay('k-click-2')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['id'] == first.id
+        assert PaymentTransaction.objects.filter(booking=self.booking).count() == 1
 
     def test_stale_pending_payment_does_not_block_a_retry(self):
         old = self._create_transaction(self.booking, 'k-old', tx_status='pending')

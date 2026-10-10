@@ -70,3 +70,37 @@ class TestForgedForwardedForDoesNotBypassThrottling(TestCase):
         assert response.status_code == 200
         user.refresh_from_db()
         assert user.last_login_ip == '10.0.0.9'
+
+
+@mock.patch('users.views.TESTING', False)
+class TestBehindOneProxy(TestCase):
+    """N-3: with NUM_PROXIES=1 every visitor keeps their own throttle bucket."""
+
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.client = APIClient()
+
+    def _login(self, visitor_ip):
+        return self.client.post(
+            '/api/v1/auth/login/', {'email': 'nobody@example.com', 'password': 'x'}, format='json',
+            REMOTE_ADDR='10.0.0.2', HTTP_X_FORWARDED_FOR=visitor_ip,
+        )
+
+    def test_one_noisy_visitor_does_not_throttle_the_others(self):
+        from django.conf import settings
+
+        rest = {**settings.REST_FRAMEWORK, 'NUM_PROXIES': 1}
+        with override_settings(NUM_PROXIES=1, REST_FRAMEWORK=rest):
+            noisy = [self._login('203.0.113.7').status_code for _ in range(11)]
+            other = self._login('203.0.113.8').status_code
+
+        assert noisy[-1] == 429
+        assert other == 401
+
+    def test_without_the_setting_every_visitor_shares_the_proxy_bucket(self):
+        # Documents why production must set NUM_PROXIES: all visitors collapse into one bucket
+        with override_settings(NUM_PROXIES=0):
+            statuses = [self._login(f'203.0.113.{i}').status_code for i in range(11)]
+
+        assert statuses[-1] == 429
