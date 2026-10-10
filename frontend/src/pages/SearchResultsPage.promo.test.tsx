@@ -100,12 +100,13 @@ describe('SearchResultsPage promoted banner and layout', () => {
     expect(document.querySelector('.promo-carousel')).toBeNull()
   })
 
-  it('reserves the banner space with a skeleton while the first results load', async () => {
+  it('does not hold space for a banner while the first results load (a filter clicked meanwhile must not move)', async () => {
     vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue(response({ promoted: [] }) as never)
     renderPage()
-    expect(screen.getByRole('status', { name: 'Loading featured hotels' })).toBeInTheDocument()
-    await settle()
     expect(screen.queryByRole('status', { name: 'Loading featured hotels' })).toBeNull()
+    expect(document.querySelector('.promo-carousel')).toBeNull()
+    await settle()
+    expect(document.querySelector('.promo-carousel')).toBeNull()
   })
 
   it('hides the banner when the search fails', async () => {

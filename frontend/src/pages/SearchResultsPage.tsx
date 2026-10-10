@@ -27,7 +27,7 @@ export function SearchResultsPage() {
   
   const [loadingState, setLoadingState] = useState<LoadingState>('idle')
   const [properties, setProperties] = useState<Property[]>([])
-  // null until the first response, so the banner space is reserved once and kept while filters change
+  // null until the first response; the banner appears only when there is one, and stays while filters change
   const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
   // Phones only: the filters panel is collapsed behind a button
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -172,7 +172,7 @@ export function SearchResultsPage() {
         <div className="container">
           {/* Paid banners: above the filters and the list, only hotels that match this search */}
           <div className="search-results-promo">
-            <PromoCarousel items={promoted ?? []} loading={promoted === null} />
+            <PromoCarousel items={promoted ?? []} />
           </div>
           <div className="search-results-layout">
             {/* Filters Sidebar */}

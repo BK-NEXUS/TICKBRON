@@ -9798,3 +9798,9 @@ table .btn {
   padding-top: var(--spacing-lg);
   padding-bottom: var(--spacing-3xl);
 }
+
+/* Cards of one row end at the same height; the price row sits at the bottom of every card */
+.home-hotel-grid .property-card-footer,
+.search-results-grid .property-card-footer {
+  margin-top: auto;
+}

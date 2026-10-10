@@ -158,7 +158,8 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
       await page.getByRole('button', { name: 'Search', exact: true }).click()
     }
     await expect(page).toHaveURL(/\/search/)
-    const hotel = page.getByRole('heading', { name: TASHKENT })
+    // The home page also lists this hotel (twice): look only inside the search results
+    const hotel = page.locator('.search-results-grid').getByRole('heading', { name: TASHKENT })
     await expect.soft(hotel, 'search with dates should list the Tashkent hotel').toBeVisible()
     if (!(await hotel.isVisible())) {
       // Continue with a date-less search so the later steps can still be checked
@@ -171,7 +172,7 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
   })
 
   await step(audit, 'A3 open-property', async () => {
-    await page.getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
+    await page.locator('.search-results-grid').getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
     await expect(page).toHaveURL(/\/property\/\d+/)
     await expect(page.getByRole('heading', { level: 1, name: TASHKENT })).toBeVisible()
   })
@@ -239,7 +240,7 @@ test('B payment failure shows the failure screen and retry works', async ({ page
   await step(audit, 'B0 login-and-open-property', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
     await page.goto('/search?destination=Tashkent')
-    await page.getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
+    await page.locator('.search-results-grid').getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
     await pickStay(page, 'Standard Double', 'Standard Rate', { nights: 1, skip: 1 })
     await page.getByRole('button', { name: 'Proceed to booking' }).click()
   })
