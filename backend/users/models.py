@@ -10,6 +10,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
 from common.models import BaseModel
+from users.otp import hash_otp
 
 
 class UserManager(BaseUserManager):
@@ -83,7 +84,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     
     # Phone OTP authentication fields
     phone_verified = models.BooleanField(default=False)
-    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    # HMAC of the 6-digit code (users.otp.hash_otp), never the code itself
+    otp_code = models.CharField(max_length=64, blank=True, null=True)
     otp_expires_at = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.IntegerField(default=0)
     
@@ -202,11 +204,12 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         from datetime import timedelta
         
         # CSPRNG: the code is a login credential
-        self.otp_code = f'{secrets.randbelow(10**6):06d}'
+        code = f'{secrets.randbelow(10**6):06d}'
+        self.otp_code = hash_otp(code)
         self.otp_expires_at = timezone.now() + timedelta(minutes=5)
         self.otp_attempts = 0
         self.save()
-        return self.otp_code
+        return code
     
     def verify_otp(self, code):
         """
@@ -226,7 +229,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.otp_attempts += 1
         self.save()
         
-        if hmac.compare_digest(self.otp_code.encode(), str(code).encode()):
+        if hmac.compare_digest(self.otp_code.encode(), hash_otp(code).encode()):
             self.otp_code = None
             self.otp_expires_at = None
             self.otp_attempts = 0

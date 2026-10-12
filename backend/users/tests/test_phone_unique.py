@@ -93,7 +93,10 @@ class TestPhoneUniqueMigration(TransactionTestCase):
 
     before = [('users', '0005_user_preferred_contact_method_user_telegram_and_more')]
     after = [('users', '0006_user_phone_number_unique')]
-    latest = [('users', '0007_phone_number_unique_when_verified')]
+    def _latest(self):
+        executor = MigrationExecutor(connection)
+        executor.loader.build_graph()
+        return executor.loader.graph.leaf_nodes('users')
 
     def _migrate(self, targets):
         executor = MigrationExecutor(connection)
@@ -103,7 +106,7 @@ class TestPhoneUniqueMigration(TransactionTestCase):
 
     def tearDown(self):
         # Leave the schema at the latest migration for the following tests
-        self._migrate(self.latest)
+        self._migrate(self._latest())
 
     def test_migration_stops_on_duplicate_phone_numbers(self):
         old_apps = self._migrate(self.before)

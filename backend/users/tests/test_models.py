@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.db import IntegrityError
 from django.contrib.auth import get_user_model
 from users.models import User, UserManager
+from users.otp import hash_otp
 
 User = get_user_model()
 
@@ -155,7 +156,7 @@ class TestUserModel(TestCase):
         assert otp_code is not None
         assert len(otp_code) == 6
         assert otp_code.isdigit()
-        assert user.otp_code == otp_code
+        assert user.otp_code == hash_otp(otp_code)  # stored as a keyed hash (L-1)
         assert user.otp_expires_at is not None
         assert user.otp_attempts == 0
     

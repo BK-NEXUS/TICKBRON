@@ -33,7 +33,11 @@ def _token(client):
 
 
 def _login(client, user):
-    response = client.post('/api/v1/auth/login/', {'email': user.email, 'password': PASSWORD}, format='json')
+    # N-8: login itself needs a token now, like every other call the SPA makes
+    response = client.post(
+        '/api/v1/auth/login/', {'email': user.email, 'password': PASSWORD}, format='json',
+        HTTP_X_CSRFTOKEN=_token(client),
+    )
     assert response.status_code == 200
     return response
 

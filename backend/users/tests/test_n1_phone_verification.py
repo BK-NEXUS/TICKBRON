@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 
 from users import lockout
 from users.models import User
+from users.otp import hash_otp
 
 PHONE = '+998901112233'
 REQUEST_URL = '/api/v1/auth/otp/request/'
@@ -88,7 +89,7 @@ class PhoneVerificationEndpointsTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(response.data['otp_code'], self.user.otp_code)
+        self.assertEqual(hash_otp(response.data['otp_code']), self.user.otp_code)  # stored as a keyed hash (L-1)
 
     def test_request_ignores_a_phone_number_sent_by_the_client(self):
         other = User.objects.create_user(email='other@example.com', password='x-pass-123', phone_number='+998905556677')

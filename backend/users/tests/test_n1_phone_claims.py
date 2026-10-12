@@ -137,8 +137,14 @@ class PartialUniqueMigrationTests(TransactionTestCase):
         executor.migrate(targets)
         return executor.loader.project_state(targets).apps
 
+    def _latest(self):
+        executor = MigrationExecutor(connection)
+        executor.loader.build_graph()
+        return executor.loader.graph.leaf_nodes('users')
+
     def tearDown(self):
-        self._migrate(self.after)
+        # Back to the newest users migration, whatever it is, so later tests see the full schema
+        self._migrate(self._latest())
 
     def test_forward_keeps_existing_numbers_and_allows_unverified_duplicates(self):
         old_apps = self._migrate(self.before)

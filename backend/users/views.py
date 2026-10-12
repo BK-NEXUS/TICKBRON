@@ -20,6 +20,7 @@ from users.serializers import UserSerializer, UserRegistrationSerializer, UserLo
 from users import lockout
 from users.validators import parse_phone_number
 from users.services import OTPService
+from common.csrf import enforce_csrf
 from common.request import get_client_ip
 
 # Check if running in test mode
@@ -114,6 +115,7 @@ def register(request):
     Creates a new user account with email and password.
     Uses session-based authentication with secure cookies.
     """
+    enforce_csrf(request)
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -140,6 +142,7 @@ def login_view(request):
     Unknown email, wrong password, inactive and locked accounts all get the
     same 401 response, so the endpoint does not reveal which emails exist.
     """
+    enforce_csrf(request)
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
@@ -276,6 +279,7 @@ def request_otp(request):
     Rate-limited to 3 requests per minute per phone number.
     Registered, unknown and locked numbers get the same 200 response.
     """
+    enforce_csrf(request)
     serializer = RequestOTPSerializer(data=request.data)
     if serializer.is_valid():
         phone_number = serializer.validated_data['phone_number']
@@ -304,6 +308,7 @@ def verify_otp(request):
     Rate-limited to 5 attempts per minute per phone number; locked accounts
     get the same 400 as a wrong code, without the code being checked.
     """
+    enforce_csrf(request)
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():
         phone_number = serializer.validated_data['phone_number']
