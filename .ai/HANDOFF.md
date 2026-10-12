@@ -2646,3 +2646,10 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - 2c OTP hashed: tests `users/tests/test_otp_hashed.py` (6). Changed assertions (same intent, now compare with `hash_otp`): `users/tests/test_models.py` ("the generated code is stored"), `users/tests/test_otp_security.py` (the helper that picks a wrong code, and "the code was not consumed"), `users/tests/test_n1_phone_verification.py::test_request_sends_a_code_to_the_users_own_number`. The two migration tests' `tearDown` now return to the newest users migration instead of a fixed one (`users/tests/test_phone_unique.py`, `test_n1_phone_claims.py`). Migration `users/0008`.
 - 2d webhook: tests `payments/tests/test_webhook_abuse.py` (8). `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` lists the new `webhook` rate (exact equality kept).
 - Client decisions needed before step 4: `.ai/CLIENT_DECISIONS.md` (Word file sent to the owner).
+
+## Work order 2026-10-12, step 3: performance (R14)
+- Report with before/after: `.ai/PERFORMANCE_REPORT.md`. No migration, no contract change, no assertion changed.
+- Code: `bookings/views.py` (Prefetch of items), `partner/views.py` (owner bookings list, one query set instead of one per booking), `properties/search.py` + `properties/serializers.py` (filters inside prefetch), `accounts/{views,serializers}.py` (favorites). New tests: `bookings/tests/test_perf_queries.py` (4), `properties/tests/test_perf_queries.py` (4).
+- Fixed on the way: favorites `property_primary_photo` was always null (nonexistent `photo_url` attribute hidden by a bare `except`); now the photo URL.
+- Cosmetic: `seed_demo_bulk` prints the hotel count correctly.
+- Found, not fixed: guest bookings list is unpaginated (owner decision, see the report).

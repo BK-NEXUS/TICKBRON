@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
@@ -388,18 +388,10 @@ def partner_bookings(request):
     Returns:
         List of bookings for the hotel-owner's properties
     """
-    # Get bookings for properties owned by the hotel-owner
-    booking_items = BookingItem.objects.filter(
-        room_type__property__owner=request.user
-    ).select_related('booking', 'room_type__property')
-    
-    booking_ids = booking_items.values_list('booking_id', flat=True).distinct()
-    
     bookings = Booking.objects.filter(
-        id__in=booking_ids,
-        is_deleted=False
-    )
-    
+        property__owner=request.user, is_deleted=False,
+    ).select_related('property').prefetch_related('property__translations')
+
     # Apply filters
     status_filter = request.query_params.get('status')
     if status_filter:
@@ -418,10 +410,8 @@ def partner_bookings(request):
     # Serialize bookings
     bookings_data = []
     for booking in bookings:
-        # Get property name from booking items
-        booking_item = booking_items.filter(booking=booking).first()
-        property_name = booking_item.room_type.property.display_name() if booking_item else "Unknown"
-        
+        property_name = booking.property.display_name()
+
         booking_data = {
             'id': booking.id,
             'guest_name': booking.guest_full_name,

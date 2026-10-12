@@ -40,7 +40,11 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             Prefetch(
                 'property__translations',
                 queryset=PropertyTranslation.objects.filter(is_deleted=False),
-            )
+            ),
+            Prefetch(
+                'property__photos', to_attr='primary_photos',
+                queryset=PropertyPhoto.objects.filter(is_primary=True, is_deleted=False),
+            ),
         )
     
     def get_serializer_class(self):

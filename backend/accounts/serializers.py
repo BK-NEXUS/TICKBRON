@@ -33,14 +33,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         extra_kwargs = {'notes': {'max_length': 500}}
     
     def get_property_primary_photo(self, obj) -> str | None:
-        """Get the primary photo for the property."""
-        try:
-            primary_photo = obj.property.photos.filter(is_primary=True, is_deleted=False).first()
-            if primary_photo:
-                return primary_photo.photo_url
-        except:
-            pass
-        return None
+        """URL of the primary photo; the list view loads it for every favorite in one query."""
+        photos = obj.property.primary_photos if hasattr(obj.property, 'primary_photos') else obj.property.photos.filter(
+            is_primary=True, is_deleted=False)
+        photo = next(iter(photos), None)
+        return photo.photo.url if photo and photo.photo else None
 
 
 class FavoriteCreateSerializer(serializers.ModelSerializer):

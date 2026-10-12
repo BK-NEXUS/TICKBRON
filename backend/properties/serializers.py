@@ -4,11 +4,12 @@ Serializers for TICKBRON property models and search results.
 from common.dates import business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from django.db.models import Prefetch
 from rest_framework import serializers
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyPolicy,
     Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
-    RoomType, RatePlan, DateInventory
+    RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
 from currency.rates import uzs_amount
 
@@ -140,28 +141,19 @@ class PropertySearchResultSerializer(ApproxUzsPriceMixin, serializers.ModelSeria
         read_only_fields = ['id']
     
     def get_primary_photo(self, obj):
-        """Get the primary photo for the property."""
-        # Handle both model instances and serialized data
-        if hasattr(obj, 'photos'):
-            primary_photo = obj.photos.filter(is_primary=True, is_active=True, is_deleted=False).first()
-            if primary_photo:
-                return PropertyPhotoSerializer(primary_photo).data
-            # Fallback to first photo if no primary
-            first_photo = obj.photos.filter(is_active=True, is_deleted=False).first()
-            if first_photo:
-                return PropertyPhotoSerializer(first_photo).data
-        return None
-    
+        """The primary photo, else the first one; read from the rows the search already loaded."""
+        photos = list(obj.active_photos if hasattr(obj, 'active_photos') else obj.photos.filter(
+            is_active=True, is_deleted=False))
+        primary = next((photo for photo in photos if photo.is_primary), None) or (photos[0] if photos else None)
+        return PropertyPhotoSerializer(primary).data if primary else None
+
     def get_amenities(self, obj):
-        """Get available amenities for the property."""
-        property_amenities = obj.property_amenities.filter(
-            is_available=True,
-            amenity__is_searchable=True,
-            is_deleted=False
+        """Available, searchable amenities; read from the rows the search already loaded."""
+        links = obj.searchable_amenities if hasattr(obj, 'searchable_amenities') else obj.property_amenities.filter(
+            is_available=True, amenity__is_searchable=True, is_deleted=False,
         ).select_related('amenity__category')
-        
-        return PropertyAmenitySerializer(property_amenities, many=True).data
-    
+        return PropertyAmenitySerializer(links, many=True).data
+
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
@@ -246,23 +238,18 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
     
     def get_room_types(self, obj):
         """Get room types with rate plans for the property."""
-        from properties.models import RoomType, RatePlan
-        
-        room_types = obj.room_types.filter(
-            is_deleted=False
-        ).prefetch_related(
-            'rate_plans__date_inventory',
-            'photos',
-            'room_amenities__amenity__category'
+        # Filtered in SQL inside the prefetch, so there are four queries however many room types exist
+        room_types = obj.room_types.filter(is_deleted=False).prefetch_related(
+            Prefetch('rate_plans', queryset=RatePlan.objects.filter(is_active=True, is_deleted=False)),
+            Prefetch('photos', queryset=RoomPhoto.objects.filter(is_active=True, is_deleted=False)),
+            Prefetch('room_amenities', queryset=RoomAmenity.objects.filter(
+                is_deleted=False).select_related('amenity__category')),
         )
         
         room_types_data = []
         for room_type in room_types:
             # Get active rate plans
-            active_rate_plans = room_type.rate_plans.filter(
-                is_active=True,
-                is_deleted=False
-            )
+            active_rate_plans = room_type.rate_plans.all()
             
             rate_plans_data = []
             for rate_plan in active_rate_plans:
@@ -284,10 +271,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 rate_plans_data.append(rate_plan_data)
             
             # Get room photos
-            room_photos = room_type.photos.filter(
-                is_active=True,
-                is_deleted=False
-            ).order_by('display_order', 'created_at')
+            room_photos = room_type.photos.all()
             
             room_photos_data = []
             for photo in room_photos:
@@ -303,9 +287,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 room_photos_data.append(photo_data)
             
             # Get room amenities
-            room_amenities = room_type.room_amenities.filter(
-                is_deleted=False
-            ).select_related('amenity__category')
+            room_amenities = room_type.room_amenities.all()
             
             room_amenities_data = []
             for room_amenity in room_amenities:

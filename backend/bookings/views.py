@@ -10,11 +10,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from currency.rates import ExchangeRateUnavailable
-from .models import Booking
+from .models import Booking, BookingItem
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
 logger = logging.getLogger('tickbron')
@@ -55,7 +56,11 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Booking.objects.filter(
             guest=self.request.user,
             is_deleted=False
-        ).select_related('guest', 'property').prefetch_related('booking_items', 'property__translations')
+        ).select_related('guest', 'property').prefetch_related(
+            # The item serializer names each room type and rate plan: fetch them with the items
+            Prefetch('booking_items', queryset=BookingItem.objects.select_related('room_type', 'rate_plan')),
+            'property__translations',
+        )
     
     def get_throttles(self):
         if self.action == 'create':

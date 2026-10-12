@@ -66,7 +66,7 @@ class Command(BaseCommand):
             guests = self._guests(options['guests'])
             self._bookings(rng, hotels, guests, options['bookings'])
         self.stdout.write(self.style.SUCCESS(
-            f"Created {len(hotels)} hotels, {len(guests)} guests, {options['bookings']} bookings."))
+            f"Created {options['hotels']} hotels, {len(guests)} guests, {options['bookings']} bookings."))
 
     def _users(self, prefix, count, phone_prefix, role=None):
         password = make_password(PASSWORD)

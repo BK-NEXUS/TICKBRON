@@ -85,7 +85,7 @@ class PropertySearchService:
     
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
-        from properties.models import PropertyTranslation
+        from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation
         
         return with_review_scores(searchable_properties()).select_related(
             'owner',
@@ -93,8 +93,11 @@ class PropertySearchService:
         ).prefetch_related(
             # One query for every result's translations (serialized as `translations`)
             Prefetch('translations', queryset=PropertyTranslation.objects.filter(is_deleted=False)),
-            'property_amenities__amenity',
-            'photos'
+            # Filtered here, not in the serializer, so a result page costs the same queries for any size
+            Prefetch('property_amenities', to_attr='searchable_amenities', queryset=PropertyAmenity.objects.filter(
+                is_available=True, amenity__is_searchable=True, is_deleted=False).select_related('amenity__category')),
+            Prefetch('photos', to_attr='active_photos', queryset=PropertyPhoto.objects.filter(
+                is_active=True, is_deleted=False)),
         )
     
     def _validate_search_params(self, search_params):
