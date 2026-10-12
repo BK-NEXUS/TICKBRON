@@ -23,6 +23,7 @@ from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
 from bookings.models import Booking, BookingItem
+from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog, InternalNote
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
@@ -134,6 +135,10 @@ def admin_property_approve(request, property_id):
             property.approved_at = timezone.now()
         
         property.save()
+        AdminAccessLog.record(
+            request.user, 'property_reject' if rejection_reason else 'property_approve',
+            details={'property_id': property.id},
+        )
         
         return Response(
             AdminPropertySerializer(property).data,
@@ -173,6 +178,7 @@ def admin_property_region(request, property_id):
     else:
         property.state = data['state']
         property.save(update_fields=['state', 'updated_at'])
+    AdminAccessLog.record(request.user, 'property_region_update', details={'property_id': property.id})
     return Response(AdminPropertySerializer(property).data, status=status.HTTP_200_OK)
 
 
@@ -193,6 +199,7 @@ def admin_property_suspend(request, property_id):
     
     property.status = 'suspended'
     property.save()
+    AdminAccessLog.record(request.user, 'property_suspend', details={'property_id': property.id})
     
     return Response(
         AdminPropertySerializer(property).data,
@@ -247,6 +254,7 @@ def admin_create_hotel_owner(request):
     
     if serializer.is_valid():
         user = serializer.save()
+        AdminAccessLog.record(request.user, 'hotel_owner_create', target_user_id=user.id)
         return Response(
             AdminUserSerializer(user).data,
             status=status.HTTP_201_CREATED
@@ -255,7 +263,7 @@ def admin_create_hotel_owner(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AdminAmenityCategoryViewSet(viewsets.ModelViewSet):
+class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for amenity category management by admins.
     
@@ -263,13 +271,14 @@ class AdminAmenityCategoryViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenityCategorySerializer
+    audit_name = 'amenity_category'
     
     def get_queryset(self):
         """Return all amenity categories."""
         return AmenityCategory.objects.filter(is_deleted=False)
 
 
-class AdminAmenityViewSet(viewsets.ModelViewSet):
+class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for amenity management by admins.
     
@@ -277,6 +286,7 @@ class AdminAmenityViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenitySerializer
+    audit_name = 'amenity'
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
@@ -749,6 +759,8 @@ def admin_internal_note_create(request, customer_id):
     
     if serializer.is_valid():
         note = serializer.save(customer=customer)
+        AdminAccessLog.record(request.user, 'internal_note_create', target_user_id=customer.id,
+                              details={'object_id': note.id})
         return Response(
             AdminInternalNoteSerializer(note).data,
             status=status.HTTP_201_CREATED
@@ -786,11 +798,15 @@ def admin_internal_note_detail(request, customer_id, note_id):
         serializer = AdminInternalNoteSerializer(note, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            AdminAccessLog.record(request.user, 'internal_note_update', target_user_id=customer.id,
+                                  details={'object_id': note.id})
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
         note.soft_delete()
+        AdminAccessLog.record(request.user, 'internal_note_delete', target_user_id=customer.id,
+                              details={'object_id': note.id})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -254,20 +254,19 @@ class WebhookProcessor:
         It is stored under a synthetic ID so it never occupies the real
         provider event ID.
         """
+        # Anyone can send this request, so the row is a fingerprint, not a copy of the body
+        # (N-13): a flood must not fill the database or store attacker-chosen content.
+        fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
         webhook_event = WebhookEvent.objects.create(
             provider=self.provider,
             provider_event_id=f"invalid_{uuid.uuid4().hex}",
-            payload=payload,
-            signature=signature,
+            payload={'redacted': True, 'sha256': fingerprint},
+            signature='redacted',
             signature_valid=False,
             status='invalid_signature',
-            error_message=f"Invalid webhook signature (claimed event id: {claimed_event_id[:100]})"
+            error_message=f"Invalid webhook signature (claimed event id: {claimed_event_id[:40]})"
         )
-        PaymentAuditLog.log_action(
-            action='webhook_received',
-            webhook_event=webhook_event,
-            details={'error': 'Invalid webhook signature'}
-        )
+        logger.warning(f"Invalid webhook signature for {self.provider}, body sha256 {fingerprint[:16]}")
         return webhook_event
     
     def _apply_payment_status(self, payment_transaction: PaymentTransaction,
@@ -379,6 +378,10 @@ class WebhookProcessor:
             return data
 
 
+# Larger than any Payme, Click or Visa message
+MAX_WEBHOOK_BODY_BYTES = 64 * 1024
+
+
 def validate_webhook_request(request) -> Tuple[Dict[str, any], str]:
     """
     Validate and extract webhook data from HTTP request.
@@ -392,6 +395,10 @@ def validate_webhook_request(request) -> Tuple[Dict[str, any], str]:
     Raises:
         ValueError: If request is invalid
     """
+    # No real provider message is this large; refuse before parsing it
+    if len(request.body) > MAX_WEBHOOK_BODY_BYTES:
+        raise ValueError("Webhook body too large")
+
     # Check content type
     content_type = request.content_type
     if 'application/json' not in content_type:

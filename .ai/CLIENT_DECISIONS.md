@@ -1,6 +1,15 @@
 # CLIENT DECISIONS needed (sent to the client as a Word file, 2026-10-12)
 
-Status: OPEN. Nothing below is built until the client answers. Recommendations are mine.
+Status: ANSWERED in part (2026-10-12, by the owner). Recommendations are mine.
+
+## Answers received
+1. Cancelling a paid booking: option A (by rate plan); the refund is 50%. Open points: does 50% apply at any time before check-in, and is there a free-cancellation window? Default until told otherwise: 50% at any time, a rate plan may override percent and window.
+2. Who refunds: not decided by the owner, asked for advice. My advice: super-admin only, reason mandatory (cancellation and no-show refunds become automatic rules, so manual refunds are exceptions).
+3. No-show: option A (keep 50%, 7 days, staff decide).
+4. VIP: option B (a flag on the room type, set by the hotel owner, approved by an admin). No separate search filter was chosen.
+5. NEW and undecided: how hotels are paid. The owner has no plan yet: either each hotel registers its own card/merchant (like Uzum Market sellers) and money goes to it, or all money goes to the platform account and the admin pays the hotels monthly. My advice: platform account first, monthly payouts (one provider contract, simple refunds); needs commission, a per-hotel balance ledger, monthly statement, "paid" records and CSV, owner balance screen. Needs an accountant/lawyer opinion on holding third-party funds. Needs its own approved plan before any code.
+
+## Original questions
 
 | # | Decision | Today | Options | Recommendation | Answer |
 |---|---|---|---|---|---|

@@ -128,7 +128,8 @@ def test_anonymous_browsing_limit_allows_normal_use():
     # R12b: the no_show_report scope joined the throttle rates; anon and user are unchanged
     # N-7: the booking_create scope joined the rates; anon and user are still unchanged
     assert _throttle_rates() == (
-        "{'anon': '2000/hour', 'user': '1000/hour', 'booking_create': '30/hour', 'no_show_report': '20/hour'}"
+        "{'anon': '2000/hour', 'user': '1000/hour', 'webhook': '600/min', 'booking_create': '30/hour', "
+        "'no_show_report': '20/hour'}"
     )
 
 

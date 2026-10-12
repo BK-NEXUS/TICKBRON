@@ -18,3 +18,9 @@ Registration and profile update accept any unclaimed phone number with no proof 
 
 ## Out of scope
 Card data: nothing here touches cards; payment tokens come from the provider and no PAN/CVV is stored.
+
+## Step 2 of the 2026-10-12 work order: small batch (done)
+- 2a N-17: admin writes are in `AdminAccessLog`: property approve/reject/suspend/region, hotel-owner creation, amenity and category CRUD, geography CRUD and reorder, internal notes, refund creation (`admin_panel/audit.py` mixin, `DETAIL_KEYS` + `object_id`, `level`; migration `admin_panel/0010_audit_admin_actions`, choices only, reversible, `pg_dump` taken).
+- 2b N-8/L-3: `common/csrf.enforce_csrf` on login, register, OTP request and OTP verify.
+- 2c L-1/N-10: `users.otp_code` stores HMAC-SHA256 (`users/otp.py`); migration `users/0008_otp_code_hashed` widens the column to 64, reverse clears pending codes first; `pg_dump` taken.
+- 2d N-13: a forged webhook stores only `{redacted, sha256}`, no audit row, a log line; webhook endpoint throttled per IP (`THROTTLE_WEBHOOK_RATE`, default 600/min); bodies over 64 KB are refused.

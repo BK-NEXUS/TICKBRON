@@ -2639,3 +2639,10 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - `frontend/e2e/status.e2e.ts` was stale (QA-10): `Revenue (USD)` -> `Revenue (UZS)` chart name, `Bookings` card -> `Counted` (+ `Stayed bookings`) with `totals.counted/stayed`, the ambiguous `Users` button scoped to `.status-tiles`. Same checks, current labels.
 - New e2e: `frontend/e2e/mobile-layout.e2e.ts` (5), `frontend/e2e/headings.e2e.ts` (3).
 - Found, not fixed: see the end of `.ai/QA_REPORT.md`.
+
+## Work order 2026-10-12, step 2: small security batch (N-17, N-8, L-1, N-13)
+- 2a audit log: see `.ai/PLAN_SECURITY.md`. New tests: `admin_panel/tests/test_audit_admin_actions.py` (11), two in `payments/tests/test_r12_refunds.py`. Migration `admin_panel/0010`.
+- 2b login CSRF: tests `users/tests/test_login_csrf.py` (8). Changed setup (not assertions): `users/tests/test_csrf.py::_login` now fetches and sends the token because login itself needs it.
+- 2c OTP hashed: tests `users/tests/test_otp_hashed.py` (6). Changed assertions (same intent, now compare with `hash_otp`): `users/tests/test_models.py` ("the generated code is stored"), `users/tests/test_otp_security.py` (the helper that picks a wrong code, and "the code was not consumed"), `users/tests/test_n1_phone_verification.py::test_request_sends_a_code_to_the_users_own_number`. The two migration tests' `tearDown` now return to the newest users migration instead of a fixed one (`users/tests/test_phone_unique.py`, `test_n1_phone_claims.py`). Migration `users/0008`.
+- 2d webhook: tests `payments/tests/test_webhook_abuse.py` (8). `core/tests/test_settings_defaults.py::test_anonymous_browsing_limit_allows_normal_use` lists the new `webhook` rate (exact equality kept).
+- Client decisions needed before step 4: `.ai/CLIENT_DECISIONS.md` (Word file sent to the owner).

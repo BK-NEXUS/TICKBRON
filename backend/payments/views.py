@@ -13,7 +13,7 @@ from rest_framework.decorators import (
 )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
@@ -21,6 +21,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from admin_panel.models import AdminAccessLog
 from bookings.models import Booking
 from bookings.state_machine import BookingState, BookingStateMachine
 from common.request import get_client_ip
@@ -56,6 +57,16 @@ class PaymentRateThrottle(UserRateThrottle):
 
     def allow_request(self, request, view):
         # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
+
+class WebhookRateThrottle(AnonRateThrottle):
+    """Webhook calls per client IP (settings: THROTTLE_WEBHOOK_RATE); generous, providers send from few IPs."""
+    scope = 'webhook'
+
+    def allow_request(self, request, view):
         if TESTING:
             return True
         return super().allow_request(request, view)
@@ -389,6 +400,11 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 # rolls back the refund row too, and the provider is never asked.
                 booking.cancel_booking(cancellation_reason)
 
+        AdminAccessLog.record(
+            request.user, 'refund_create', target_booking_id=booking.id,
+            details={'refund_id': refund.id, 'amount': f'{refund.amount:.2f}', 'currency': refund.currency},
+        )
+
         # Provider call only after the refund row is committed, outside any transaction.
         # A failed provider call leaves the refund `failed` (staff retry it from the
         # needs-attention list); a cancellation made above stands.
@@ -492,6 +508,7 @@ class PaymentAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([WebhookRateThrottle])
 def webhook_endpoint(request, provider):
     """
     Public webhook endpoint for receiving payment provider webhooks.

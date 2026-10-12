@@ -89,6 +89,25 @@ class AdminAccessLog(models.Model):
         ('promotion_resume', 'Resumed a hotel promotion'),
         ('promotion_cancel', 'Cancelled a hotel promotion'),
         ('promotion_mark_paid', 'Recorded the payment of a hotel promotion'),
+        ('property_approve', 'Approved a property'),
+        ('property_reject', 'Rejected a property'),
+        ('property_suspend', 'Suspended a property'),
+        ('property_region_update', 'Changed the location of a property'),
+        ('hotel_owner_create', 'Created a hotel-owner account'),
+        ('amenity_create', 'Created an amenity'),
+        ('amenity_update', 'Changed an amenity'),
+        ('amenity_delete', 'Deleted an amenity'),
+        ('amenity_category_create', 'Created an amenity category'),
+        ('amenity_category_update', 'Changed an amenity category'),
+        ('amenity_category_delete', 'Deleted an amenity category'),
+        ('geography_create', 'Created a country, region or city'),
+        ('geography_update', 'Changed a country, region or city'),
+        ('geography_delete', 'Deleted a country, region or city'),
+        ('geography_reorder', 'Reordered countries, regions or cities'),
+        ('internal_note_create', 'Added an internal note to a customer'),
+        ('internal_note_update', 'Changed an internal note'),
+        ('internal_note_delete', 'Deleted an internal note'),
+        ('refund_create', 'Issued a refund'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
@@ -111,7 +130,8 @@ class AdminAccessLog(models.Model):
     # The only keys `details` may hold: non-personal facts, flat scalar values
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
                              'refund_id', 'export', 'rows', 'report_id',
-                             'promotion_id', 'property_id', 'start_date', 'end_date', 'amount'})
+                             'promotion_id', 'property_id', 'start_date', 'end_date', 'amount',
+                             'object_id', 'level'})
 
     @classmethod
     def _check_details(cls, details):
