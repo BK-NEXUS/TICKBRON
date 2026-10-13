@@ -35,7 +35,8 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             return self.get_serializer_class().Meta.model.objects.none()
         return Favorite.objects.filter(
             user=self.request.user,
-            is_deleted=False
+            is_deleted=False,
+            property__status='active',
         ).select_related('property').prefetch_related(
             Prefetch(
                 'property__translations',

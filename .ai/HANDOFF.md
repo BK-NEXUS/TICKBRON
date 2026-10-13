@@ -2660,3 +2660,19 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - A06-3 `bookings/views.py`: the pending-bookings cap is checked again under `select_for_update` on the guest row (8 parallel requests used to create 8 pending bookings). Test: `bookings/tests/test_concurrency.py::PendingCapRaceTests`.
 - A05-2/A05-3/A10-8: unknown webhook provider -> 404 (was 400 after the log line), `common/middleware.printable` escapes control characters in logged paths, webhook body that is not a JSON object -> 400, `SuspiciousOperation`/`BadRequest` -> 400 (`common/exception_handlers.py`). Tests: `payments/tests/test_log_forging_and_bad_bodies.py`.
 - No existing assertion changed. No migration.
+
+## OWASP hardening, batch 4 (2026-10-13): access control details
+- `accounts/serializers.py`, `accounts/views.py`: favorites need `status='active'` and the list hides hotels that are no longer published.
+- `properties/serializers.py`: `PropertyDetailSerializer` drops `owner`, `approved_by`, `approved_at`, `rejection_reason` (no guest screen reads them); `DateInventorySerializer` drops `notes`; the availability rows are limited to 366 days from `check_in` (default: today). Contract note in `.ai/API_CONTRACT.md`.
+- `bookings/fields.py` (`OwnBookingField`): used by review create and payment create. Message for a foreign booking is now "Booking not found." (was "You can only review your own bookings." for reviews). No test asserted the old text.
+- `core/tests/test_r4_permission_matrix.py`: the `/admin-panel/` catch-all rule is replaced by the explicit list of families; new test `test_new_admin_routes_are_not_silently_staff_level`. Same roles per route as before.
+- New tests: `accounts/tests/test_owasp_batch4_access.py` (6). No migration.
+- Found, not fixed: public availability still shows `booked_rooms`/`remaining_rooms` (used by the calendar); staff can edit guest reviews (M-6).
+
+## OWASP hardening, batch 5 (2026-10-13): configuration and supply chain
+- Production now refuses to start with `DB_ENGINE` other than PostgreSQL; with `DEBUG=True` it refuses a public domain in `ALLOWED_HOSTS` (localhost, `*.local` and IP addresses stay allowed). The `.env.example` ships `DEBUG=False`: developers set `DEBUG=True` in their own `.env` (documented in `backend/CLAUDE.md`).
+- Changed fixtures (not assertions): `core/tests/test_r4_production_config.py::GOOD_PRODUCTION_ENV` and `core/tests/test_settings_defaults.py::PRODUCTION_ENV` gained `DB_ENGINE=django.db.backends.postgresql` (production now refuses SQLite). `promotions/tests/test_security.py::test_oversized_json_body_is_handled` is unchanged: its 2 MB body stays below the 4 MB Django limit and still gets the serializer's 400.
+- New: `common/middleware.RequestBodyLimitMiddleware` (413), `X-XSS-Protection: 0`, `CONN_HEALTH_CHECKS`, Redis socket timeouts, JSON-only renderer outside DEBUG, `deploy/nginx.conf.example`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `requirements-dev.txt`. `config/*security_check*.py` moved to `scripts/checkpoint_checks/` (run from `backend/`).
+- Install note: production installs `requirements.txt` only; tests and linters come from `requirements-dev.txt`.
+- Tests: `core/tests/test_owasp_batch5_config.py` (16).
+- Found, not fixed: see the "Batch 5 not done" line in `.ai/PLAN_SECURITY.md`; GitHub Actions are referenced by major version tag, not by commit SHA (pin when the workflow is first run on GitHub).

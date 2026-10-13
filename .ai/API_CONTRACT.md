@@ -986,3 +986,12 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 - Nightly task 00:10 Asia/Tashkent: expired promotions become `ended`, paid ones that started become `active` (serving never waits for it).
 
 - `start_too_far` (start date more than 730 days ahead) is also a 400 code of `POST/PATCH promotions/`; `?country=` accepts ASCII digits only.
+
+## 2026-10-13 OWASP batch 1 and 4: contract changes
+- `GET /properties/{id}/`: the fields `owner`, `approved_by`, `approved_at`, `rejection_reason` are no longer returned (internal moderation data).
+- `GET /properties/{id}/availability/`: `date_inventory[].notes` is no longer returned; rows are limited to 366 days starting at `check_in` (default: today).
+- `GET /properties/search/?q=`: at most the first 8 distinct words of 2+ characters are matched.
+- `POST /me/favorites/`: 400 for a hotel that is not published; `GET /me/favorites/` lists only published hotels.
+- `POST /me/reviews/` and `POST /payments/transactions/`: a booking id that is not the caller's gets the same 400 ("Booking not found.") as a missing id.
+- `POST /payments/webhook/{provider}/`: unknown provider -> 404; JSON body that is not an object -> 400.
+- SMS limits: `POST /auth/otp/request/` has an extra IP budget (60/hour) and every number a daily budget (10/day, shared with `POST /auth/phone/verify/request/`); the logged-in phone verification endpoints are limited per account (3/min request, 5/min confirm, 20/day requests). All answer 429.

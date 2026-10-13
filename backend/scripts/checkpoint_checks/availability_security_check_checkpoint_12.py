@@ -13,13 +13,13 @@ import sys
 from pathlib import Path
 
 # Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def check_availability_endpoint_exists():
     """Check if availability endpoint exists."""
     print("[*] Checking availability endpoint...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
     checks = {
@@ -44,7 +44,7 @@ def check_availability_serializer_completeness():
     """Check if availability serializer includes all required sections."""
     print("[*] Checking availability serializer completeness...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -71,7 +71,7 @@ def check_availability_date_range_validation():
     """Check if date range parameters are properly validated."""
     print("[*] Checking date range validation...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -96,7 +96,7 @@ def check_availability_deterministic_behavior():
     """Check if availability behavior is deterministic."""
     print("[*] Checking deterministic availability behavior...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -121,7 +121,7 @@ def check_availability_security():
     """Check if availability endpoint has proper security."""
     print("[*] Checking availability security...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
     checks = {
@@ -151,7 +151,7 @@ def sensitive_data_exposure_check(views_content):
     
     # In the availability view, we should not be exposing owner's sensitive data
     # The PropertyAvailabilitySerializer should not include owner's email/phone
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     # Check that owner field is read-only and limited
@@ -165,7 +165,7 @@ def check_availability_url_configuration():
     """Check if availability URL is properly configured."""
     print("[*] Checking URL configuration...")
     
-    urls_file = Path(__file__).parent.parent / 'properties' / 'urls.py'
+    urls_file = Path(__file__).parent.parent.parent / 'properties' / 'urls.py'
     urls_content = urls_file.read_text()
     
     checks = {
@@ -189,7 +189,7 @@ def check_availability_test_coverage():
     """Check if availability has comprehensive test coverage."""
     print("[*] Checking test coverage...")
     
-    test_file = Path(__file__).parent.parent / 'properties' / 'tests' / 'test_availability.py'
+    test_file = Path(__file__).parent.parent.parent / 'properties' / 'tests' / 'test_availability.py'
     
     if not test_file.exists():
         print("  [FAIL] Availability test file does not exist")
@@ -222,7 +222,7 @@ def check_availability_pricing_preview():
     """Check if pricing preview is properly implemented."""
     print("[*] Checking pricing preview implementation...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {

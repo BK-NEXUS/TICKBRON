@@ -135,11 +135,8 @@
 - `SMS_PROVIDER_SENDER_ID` - SMS provider sender ID (when checkpoint 21 is implemented)
 
 ### Rate Limiting
-- `RATELIMIT_ENABLE` - Set to `True` for production rate limiting
 
 ### Monitoring
-- `DATABASE_HEALTH_CHECK_ENABLED` - Set to `True` for database health checks
-- `DATABASE_HEALTH_CHECK_INTERVAL` - Health check interval in seconds (default: `60`)
 
 ## Current PAYMENT_TEST_MODE Value
 **Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True` or `SMS_TEST_MODE=True`.
@@ -211,12 +208,14 @@ proxy_set_header Host              $host;
 - Clickjacking: `frame-ancestors 'none'` in the CSP above, plus `X-Frame-Options: DENY` for older browsers (SPA responses).
 - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on SPA and `/media/` responses.
 - `/media/` (uploaded photos): serve with `Content-Disposition: inline`, the image MIME type from the file extension only (jpg/png/gif/webp), `nosniff`, no script execution, and no directory listing.
-- Remove `Server` / `X-Powered-By` version banners; limit request body size (e.g. `client_max_body_size 11m` for 10 MB photos).
+- Remove `Server` / `X-Powered-By` version banners; limit request body size. A complete reference file is `deploy/nginx.conf.example` (1 MB for JSON, 12 MB only for photo upload). Django also refuses a JSON body over 4 MB and an upload over 12 MB (413) from the Content-Length header.
+- Install runtime dependencies from `backend/requirements.txt`; `requirements-dev.txt` (tests, linters) is for development and CI only. CI is `.github/workflows/ci.yml` (tests, lint, build, `pip-audit`, `npm audit --omit=dev`).
 
 ## Production checklist (R4, 2026-10-03)
 
 ### Environment variables (the app refuses to start without the starred ones being safe)
-- [ ] `DEBUG=False`
+- [ ] `DEBUG=False` (the app also refuses `DEBUG=True` when `ALLOWED_HOSTS` lists a public domain)
+- [ ] `DB_ENGINE=django.db.backends.postgresql`* (refused otherwise: SQLite has no row locks, so double-booking protection would stop)
 - [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
 - [ ] `ALLOWED_HOSTS`* real host names, no `*`
 - [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only
@@ -232,7 +231,7 @@ proxy_set_header Host              $host;
 ### Test modes off
 - [ ] `SMS_TEST_MODE=False`* (True returns OTP codes in responses)
 - [ ] `PAYMENT_TEST_MODE=False`* (True fakes provider calls; `/confirm/` additionally needs DEBUG)
-- [ ] `config/*_security_check*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
+- [ ] `scripts/checkpoint_checks/*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
 
 ### Demo data
 - [ ] Never run `seed_demo` / `seed_demo_stats` in production (they refuse when DEBUG is off)

@@ -125,8 +125,8 @@ def check_database_security():
 
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     
-    os.chdir(Path(__file__).parent.parent)
+    os.chdir(Path(__file__).parent.parent.parent)
     success = check_database_security()
     sys.exit(0 if success else 1)

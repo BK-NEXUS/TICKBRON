@@ -4,6 +4,7 @@ TICKBRON Backend Settings
 Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
 
+import ipaddress
 import os
 import re
 import sys
@@ -39,7 +40,14 @@ if not DEBUG and SECRET_KEY == 'django-insecure-change-this-in-production' and n
 _allowed_hosts = os.getenv('ALLOWED_HOSTS', '')
 if not DEBUG and not _allowed_hosts and not TESTING:
     raise ValueError('ALLOWED_HOSTS environment variable must be set in production')
-ALLOWED_HOSTS = _allowed_hosts.split(',') if _allowed_hosts else ['localhost', '127.0.0.1']
+
+
+def _env_list(raw):
+    """Comma-separated env value -> list, whitespace and empty entries dropped ("a.com, b.com" is two hosts)."""
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
+ALLOWED_HOSTS = _env_list(_allowed_hosts) or ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -75,6 +83,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'common.middleware.RequestBodyLimitMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -124,6 +133,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', ''),
         'CONN_MAX_AGE': 60,  # Persistent connections for 60 seconds
+        'CONN_HEALTH_CHECKS': True,  # a connection the database closed (restart) is replaced, not served as a 500
         'OPTIONS': {},
     }
 }
@@ -210,7 +220,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 # Security Settings
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = _env_list(os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000'))
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
 # Behind a TLS-terminating proxy (nginx) Django only sees http. With this on it trusts the
 # proxy's X-Forwarded-Proto, so request.is_secure(), the https redirect and HSTS work and the
@@ -239,7 +249,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').l
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+CORS_ALLOWED_ORIGINS = _env_list(os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000'))
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -260,10 +270,6 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-
-# Rate Limiting Settings
-RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
-RATELIMIT_USE_CACHE = 'default'
 
 # Number of trusted reverse proxies in front of the app that append to
 # X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
@@ -291,6 +297,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # The browsable API (HTML forms for every endpoint) is a development tool only
+    'DEFAULT_RENDERER_CLASSES': (
+        ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG
+        else ['rest_framework.renderers.JSONRenderer']
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
@@ -344,7 +355,12 @@ if USE_REDIS_CACHE:
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': REDIS_URL,
-            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                # A dead Redis must fail fast; without timeouts every worker hangs on the OS TCP timeout
+                'SOCKET_CONNECT_TIMEOUT': 2,
+                'SOCKET_TIMEOUT': 2,
+            },
         }
     }
 else:
@@ -415,8 +431,6 @@ NO_SHOW_FLAG_FACTOR = Decimal(os.getenv('NO_SHOW_FLAG_FACTOR', '3'))
 NO_SHOW_FLAG_MIN_RATE = Decimal(os.getenv('NO_SHOW_FLAG_MIN_RATE', '0.10'))
 
 # Database connection health check
-DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
-DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
 
 # Payment Configuration
 # Defaults to False: test mode confirms payments without a real provider.
@@ -473,6 +487,9 @@ def _production_config_errors():
         errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
     if not USE_REDIS_CACHE:
         errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
+    # Without DB_* the default is SQLite: no row locks, so the double-booking protection silently stops
+    if os.getenv('DB_ENGINE') != 'django.db.backends.postgresql':
+        errors.append('DB_ENGINE must be django.db.backends.postgresql when DEBUG is False')
     if (os.getenv('DB_ENGINE') == 'django.db.backends.postgresql'
             and os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
             and os.getenv('DB_SSLMODE', 'prefer') in ('disable', 'allow', 'prefer')):
@@ -485,6 +502,20 @@ def _production_config_errors():
             errors.append(f'{name} may only contain https:// origins')
     return errors
 
+
+def _is_local_host(host):
+    """localhost, a *.localhost / *.local name or an IP address: places a developer's own machine can be."""
+    host = host.strip('[]')
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return host == 'localhost' or host.endswith(('.localhost', '.local'))
+
+
+if DEBUG and not TESTING and not all(_is_local_host(host) for host in ALLOWED_HOSTS):
+    # DEBUG shows stack traces, opens the API docs and skips every check below: never on a public domain
+    raise ValueError('DEBUG must be False when ALLOWED_HOSTS lists a public host name')
 
 if not DEBUG and not TESTING:
     _errors = _production_config_errors()

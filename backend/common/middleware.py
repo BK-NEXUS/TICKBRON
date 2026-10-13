@@ -7,6 +7,7 @@ import re
 import time
 import logging
 from django.conf import settings
+from django.http import JsonResponse
 from common.request import get_client_ip
 
 logger = logging.getLogger('tickbron')
@@ -17,6 +18,35 @@ _CONTROL_CHARACTERS = re.compile(r'[\x00-\x1f\x7f-\x9f\u2028\u2029]')
 def printable(value):
     """A caller-chosen value made safe for one log line: a newline in it would start a forged line."""
     return _CONTROL_CHARACTERS.sub(lambda match: match.group().encode('unicode_escape').decode(), str(value))
+
+
+MAX_JSON_BODY_BYTES = 4 * 1024 * 1024  # real API bodies are under 100 KB; nginx stops at 1 MB first
+MAX_UPLOAD_BODY_BYTES = 12 * 1024 * 1024  # photo upload: 10 MB image plus form overhead
+
+
+class RequestBodyLimitMiddleware:
+    """
+    Refuse an oversized body from its Content-Length header, before any view reads it.
+
+    DRF's JSON parser reads the stream directly, so Django's DATA_UPLOAD_MAX_MEMORY_SIZE does not
+    stop one huge JSON request from being buffered by a worker. nginx should enforce the same limits.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            length = int(request.META.get('CONTENT_LENGTH') or 0)
+        except ValueError:
+            length = 0
+        upload = request.content_type.startswith('multipart/')
+        if length > (MAX_UPLOAD_BODY_BYTES if upload else MAX_JSON_BODY_BYTES):
+            return JsonResponse(
+                {'error': {'code': 'payload_too_large', 'message': 'The request body is too large.', 'details': None}},
+                status=413,
+            )
+        return self.get_response(request)
 
 
 class SecurityHeadersMiddleware:
@@ -33,7 +63,7 @@ class SecurityHeadersMiddleware:
         # Add security headers
         response['X-Content-Type-Options'] = 'nosniff'
         response['X-Frame-Options'] = getattr(settings, 'X_FRAME_OPTIONS', 'DENY')
-        response['X-XSS-Protection'] = '1; mode=block'
+        response['X-XSS-Protection'] = '0'  # the legacy auditor can be abused to leak data; CSP is the defence
         response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
         

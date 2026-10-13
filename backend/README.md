@@ -19,7 +19,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 2. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # development; production installs requirements.txt only
 ```
 
 3. Configure environment variables:

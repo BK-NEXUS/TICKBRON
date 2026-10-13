@@ -1,6 +1,8 @@
 """
 Serializers for TICKBRON property models and search results.
 """
+from datetime import timedelta
+
 from common.dates import business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -12,6 +14,9 @@ from properties.models import (
     RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
 from currency.rates import uzs_amount
+from django.utils.dateparse import parse_date
+
+MAX_AVAILABILITY_DAYS = 366
 
 
 class ApproxUzsPriceMixin(serializers.Serializer):
@@ -184,17 +189,16 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
     class Meta:
         model = Property
         fields = [
-            'id', 'owner', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
+            'id', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate',
             'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
-            'approved_at', 'approved_by', 'rejection_reason',
             'translations', 'policies', 'photos', 'amenities', 'full_address',
             'gallery', 'room_types',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'owner', 'approved_at', 'approved_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_amenities(self, obj):
         """Get all amenities for the property."""
@@ -516,7 +520,7 @@ class DateInventorySerializer(serializers.ModelSerializer):
         model = DateInventory
         fields = [
             'id', 'date', 'available_rooms', 'booked_rooms', 'remaining_rooms',
-            'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay', 'notes'
+            'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay'
         ]
         read_only_fields = ['id']
 
@@ -555,13 +559,12 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
         check_in = request.query_params.get('check_in') if request else None
         check_out = request.query_params.get('check_out') if request else None
 
-        # Filter date inventory by date range
+        # An open-ended request would return every row ever stored: bound it to a year from the start
+        start = parse_date(check_in) if check_in else business_today()
         queryset = obj.date_inventory.filter(
-            is_deleted=False
+            is_deleted=False, date__gte=start, date__lte=start + timedelta(days=MAX_AVAILABILITY_DAYS),
         ).order_by('date')
 
-        if check_in:
-            queryset = queryset.filter(date__gte=check_in)
         if check_out:
             queryset = queryset.filter(date__lte=check_out)
 

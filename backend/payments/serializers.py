@@ -2,6 +2,7 @@
 Serializers for TICKBRON payment models.
 """
 from django.utils import timezone
+from bookings.fields import OwnBookingField
 from rest_framework import serializers
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 
@@ -51,6 +52,8 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
     the body. Idempotency-key reuse is handled by the view, so the automatic
     unique validator is disabled here.
     """
+    # Only the booking's guest may pay for it; anyone else gets the same answer as for a missing id
+    booking = OwnBookingField()
 
     class Meta:
         model = PaymentTransaction
@@ -62,13 +65,6 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
             'idempotency_key': {'validators': []},
             'payment_method_token': {'write_only': True},
         }
-
-    def validate_booking(self, value):
-        """Only the booking's guest may pay for it; others see it as not found."""
-        request = self.context.get('request')
-        if request is None or value.guest_id != request.user.id:
-            raise serializers.ValidationError('Booking not found.')
-        return value
 
     def validate(self, attrs):
         """Validate payment transaction creation."""

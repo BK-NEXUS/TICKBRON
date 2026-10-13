@@ -7,16 +7,12 @@ django-cors-headers==4.9.0
 psycopg2-binary==2.9.10
 
 # Image handling
-Pillow
+Pillow==12.3.0
 
 # Redis & Celery
 redis==5.0.1
 celery==5.3.4
 django-redis==6.0.0
-
-# Security
-django-ratelimit==4.1.0
-cryptography==50.0.2
 
 # Phone number validation (E.164)
 phonenumbers==9.0.40
@@ -29,16 +25,3 @@ python-dotenv==1.2.4
 
 # API Documentation
 drf-spectacular==0.30.0
-
-# Testing
-pytest==9.1.1
-pytest-django==4.14.0
-pytest-cov==4.1.0
-
-# Code Quality
-black==26.5.1
-flake8==6.1.0
-isort==5.12.0
-
-# Development
-django-debug-toolbar==6.0.0

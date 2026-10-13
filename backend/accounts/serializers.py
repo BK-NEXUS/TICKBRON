@@ -5,6 +5,7 @@ This module contains serializers for favorites, reviews, notifications, and acco
 """
 from rest_framework import serializers
 from bookings.models import Booking
+from bookings.fields import OwnBookingField
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
 
@@ -50,8 +51,8 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'notes': {'max_length': 500}}
     
     def validate_property(self, value):
-        """Validate that the property exists and is active."""
-        if not value.is_active or value.is_deleted:
+        """Validate that the property is published."""
+        if not value.is_active or value.is_deleted or value.status != 'active':
             raise serializers.ValidationError("Property is not available for favorites.")
         return value
 
@@ -107,9 +108,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
     Serializer for creating a review.
     """
     # A review is always tied to one of the reviewer's completed stays
-    booking = serializers.PrimaryKeyRelatedField(
-        queryset=Booking.objects.all(), required=True, allow_null=False
-    )
+    booking = OwnBookingField(required=True, allow_null=False)
 
     class Meta:
         model = Review
@@ -119,10 +118,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'comment': {'max_length': 2000}}
 
     def validate_booking(self, value):
-        """Validate that the booking belongs to the user, is completed and is not reviewed yet."""
-        if value.guest != self.context['request'].user:
-            raise serializers.ValidationError("You can only review your own bookings.")
-
+        """Validate that the booking is completed and is not reviewed yet (OwnBookingField checks the owner)."""
         if value.status != 'completed':
             raise serializers.ValidationError("You can only review completed bookings.")
 

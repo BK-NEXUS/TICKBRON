@@ -52,6 +52,7 @@ PRODUCTION_ENV = {
     'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
+    'DB_ENGINE': 'django.db.backends.postgresql',  # OWASP A02: production must not fall back to SQLite
 }
 
 

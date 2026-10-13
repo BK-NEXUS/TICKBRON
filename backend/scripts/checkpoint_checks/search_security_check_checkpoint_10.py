@@ -13,13 +13,13 @@ import sys
 from pathlib import Path
 
 # Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def check_search_parameter_validation():
     """Check if search parameters are properly validated."""
     print("[*] Checking search parameter validation...")
     
-    search_file = Path(__file__).parent.parent / 'properties' / 'search.py'
+    search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
     search_content = search_file.read_text()
     
     checks = {
@@ -48,7 +48,7 @@ def check_input_sanitization():
     """Check if user input is properly sanitized."""
     print("[*] Checking input sanitization...")
     
-    search_file = Path(__file__).parent.parent / 'properties' / 'search.py'
+    search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
     search_content = search_file.read_text()
     
     checks = {
@@ -72,10 +72,10 @@ def check_error_handling():
     """Check if error handling is comprehensive."""
     print("[*] Checking error handling...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
-    search_file = Path(__file__).parent.parent / 'properties' / 'search.py'
+    search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
     search_content = search_file.read_text()
     
     checks = {
@@ -100,7 +100,7 @@ def check_pagination_security():
     """Check if pagination is secure."""
     print("[*] Checking pagination security...")
     
-    search_file = Path(__file__).parent.parent / 'properties' / 'search.py'
+    search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
     search_content = search_file.read_text()
     
     checks = {
@@ -124,7 +124,7 @@ def check_sql_injection_prevention():
     """Check if SQL injection is prevented."""
     print("[*] Checking SQL injection prevention...")
     
-    search_file = Path(__file__).parent.parent / 'properties' / 'search.py'
+    search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
     search_content = search_file.read_text()
     
     checks = {
@@ -147,7 +147,7 @@ def check_serializer_validation():
     """Check if serializer validation is comprehensive."""
     print("[*] Checking serializer validation...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -172,7 +172,7 @@ def check_rate_limiting_considerations():
     """Check if rate limiting considerations are addressed."""
     print("[*] Checking rate limiting considerations...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
     checks = {
