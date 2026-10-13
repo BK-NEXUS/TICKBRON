@@ -409,6 +409,8 @@ def validate_webhook_request(request) -> Tuple[Dict[str, any], str]:
         payload = json.loads(request.body.decode('utf-8'))
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON payload: {e}")
+    if not isinstance(payload, dict):
+        raise ValueError("Webhook payload must be a JSON object")
     
     # Extract signature from headers
     signature = request.headers.get('X-Signature') or request.headers.get('X-Webhook-Signature')

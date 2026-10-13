@@ -38,3 +38,28 @@ class MultiWordSearchTests(TestCase):
 
     def test_a_word_nothing_contains_finds_nothing(self):
         assert self._ids('Street Samarkand') == set()
+
+
+class ManyWordSearchCostTests(MultiWordSearchTests):
+    """A05-1: one anonymous request with hundreds of words must not build one join per word."""
+
+    def _joins(self, query):
+        queryset = self.service._apply_text_search(self.service.base_queryset, query)
+        return str(queryset.query).upper().count(' JOIN ')
+
+    def test_the_number_of_joins_does_not_grow_with_the_number_of_words(self):
+        few = self._joins('Street Quiet')
+        many = self._joins(' '.join(f'word{n}' for n in range(150)))
+
+        assert many == few, f'{few} joins for 2 words, {many} for 150'
+
+    def test_words_beyond_the_eighth_are_ignored(self):
+        eight_matching_words = 'Quiet Street Khiva Uzbekistan Qui Str Khi Uzb'
+
+        assert self._ids(f'{eight_matching_words} Nowhere') == {self.quiet.id}
+
+    def test_a_word_inside_the_first_eight_still_has_to_match(self):
+        assert self._ids('Quiet Street Khiva Uzbekistan Qui Str Khi Nowhere') == set()
+
+    def test_a_repeated_word_counts_once(self):
+        assert self._ids('Quiet ' * 20 + 'Street Khiva Uzbekistan Qui Str Khi Uzb') == {self.quiet.id}

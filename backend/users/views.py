@@ -42,6 +42,12 @@ class IPRateThrottle(AnonRateThrottle):
     def get_cache_key(self, request, view):
         return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
 
+    def allow_request(self, request, view):
+        # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
 
 class LoginRateThrottle(IPRateThrottle):
     """Rate throttle for login endpoint - 10 requests per minute per IP."""
@@ -102,6 +108,52 @@ class OTPVerifyRateThrottle(PhoneNumberRateThrottle):
     """Rate throttle for OTP verify endpoint - 5 attempts per minute per phone number."""
     rate = '5/min'
     scope = 'otp_verify'
+
+
+class OTPRequestIPThrottle(IPRateThrottle):
+    """
+    SMS budget per IP for the login code request, on top of the per-number limit.
+
+    The per-number limit alone is bypassed by asking for a code for a new number every time.
+    """
+    rate = '60/hour'
+    scope = 'otp_request_ip'
+
+
+class OTPDailyNumberThrottle(PhoneNumberRateThrottle):
+    """Codes sent to one number per day, whoever asks (login code and phone verification share it)."""
+    rate = '10/day'
+    scope = 'otp_request_day'
+
+
+class OwnNumberDailyThrottle(OTPDailyNumberThrottle):
+    """Same budget for the logged-in verification endpoints, which ignore the body: the account's own number."""
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {'scope': self.scope, 'ident': request.user.phone_number or f'user-{request.user.pk}'}
+
+
+class AccountRateThrottle(IPRateThrottle):
+    """Keyed by the logged-in account, not by anything the client puts in the request."""
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {'scope': self.scope, 'ident': f'user-{request.user.pk}'}
+
+
+class PhoneVerifyRequestThrottle(AccountRateThrottle):
+    rate = '3/min'
+    scope = 'phone_verify_request'
+
+
+class PhoneVerifyDailyThrottle(AccountRateThrottle):
+    """An account can change its number and ask again, so the number's own budget is not enough."""
+    rate = '20/day'
+    scope = 'phone_verify_day'
+
+
+class PhoneVerifyConfirmThrottle(AccountRateThrottle):
+    rate = '5/min'
+    scope = 'phone_verify_confirm'
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -269,7 +321,7 @@ def refresh_session(request):
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@throttle_classes([OTPRequestRateThrottle])
+@throttle_classes([OTPRequestRateThrottle, OTPRequestIPThrottle, OTPDailyNumberThrottle])
 def request_otp(request):
     """
     Request OTP code for phone-based authentication.
@@ -351,7 +403,7 @@ def verify_otp(request):
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@throttle_classes([OTPRequestRateThrottle])
+@throttle_classes([PhoneVerifyRequestThrottle, PhoneVerifyDailyThrottle, OwnNumberDailyThrottle])
 def request_phone_verification(request):
     """
     Send a code to the logged-in user's own phone number.
@@ -372,7 +424,7 @@ def request_phone_verification(request):
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@throttle_classes([OTPVerifyRateThrottle])
+@throttle_classes([PhoneVerifyConfirmThrottle])
 def confirm_phone_verification(request):
     """Check the code sent to the user's number; success marks the number verified."""
     serializer = ConfirmPhoneSerializer(data=request.data)

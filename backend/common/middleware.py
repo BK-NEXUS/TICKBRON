@@ -3,12 +3,20 @@ Custom middleware for TICKBRON Backend.
 
 Provides security headers, request logging, and performance monitoring.
 """
+import re
 import time
 import logging
 from django.conf import settings
 from common.request import get_client_ip
 
 logger = logging.getLogger('tickbron')
+
+_CONTROL_CHARACTERS = re.compile(r'[\x00-\x1f\x7f-\x9f\u2028\u2029]')
+
+
+def printable(value):
+    """A caller-chosen value made safe for one log line: a newline in it would start a forged line."""
+    return _CONTROL_CHARACTERS.sub(lambda match: match.group().encode('unicode_escape').decode(), str(value))
 
 
 class SecurityHeadersMiddleware:
@@ -53,7 +61,7 @@ class RequestLoggingMiddleware:
             user_info = f'user:{request.user.id}'
         
         logger.info(
-            f"Request: {request.method} {request.path} - "
+            f"Request: {request.method} {printable(request.path)} - "
             f"IP: {self.get_client_ip(request)} - "
             f"User: {user_info}"
         )
@@ -67,7 +75,7 @@ class RequestLoggingMiddleware:
         logger.info(
             f"Response: {response.status_code} - "
             f"Duration: {duration:.3f}s - "
-            f"Path: {request.path}"
+            f"Path: {printable(request.path)}"
         )
         
         # Add response time header for monitoring
@@ -103,7 +111,7 @@ class PerformanceMonitoringMiddleware:
         # Log slow requests
         if duration > self.slow_request_threshold:
             logger.warning(
-                f"Slow request detected: {request.method} {request.path} - "
+                f"Slow request detected: {request.method} {printable(request.path)} - "
                 f"Duration: {duration:.3f}s - "
                 f"IP: {self.get_client_ip(request)}"
             )

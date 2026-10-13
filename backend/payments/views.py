@@ -34,7 +34,7 @@ from .serializers import (
     WebhookEventSerializer,
     PaymentAuditLogSerializer
 )
-from .adapters import get_payment_adapter, PaymentAdapterError
+from .adapters import PAYMENT_ADAPTERS, get_payment_adapter, PaymentAdapterError
 from .webhooks import (
     validate_webhook_request, get_webhook_processor, SignatureValidationError,
     WebhookNotConfiguredError, WebhookNotSupportedError
@@ -523,6 +523,10 @@ def webhook_endpoint(request, provider):
     Returns:
         Response: HTTP response with status
     """
+    # Anything but a known provider is a plain 404; the raw path value is never written to a log
+    if provider.lower() not in PAYMENT_ADAPTERS:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
     try:
         # Validate and extract webhook data
         payload, signature = validate_webhook_request(request)

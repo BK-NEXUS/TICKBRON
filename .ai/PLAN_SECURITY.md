@@ -24,3 +24,7 @@ Card data: nothing here touches cards; payment tokens come from the provider and
 - 2b N-8/L-3: `common/csrf.enforce_csrf` on login, register, OTP request and OTP verify.
 - 2c L-1/N-10: `users.otp_code` stores HMAC-SHA256 (`users/otp.py`); migration `users/0008_otp_code_hashed` widens the column to 64, reverse clears pending codes first; `pg_dump` taken.
 - 2d N-13: a forged webhook stores only `{redacted, sha256}`, no audit row, a log line; webhook endpoint throttled per IP (`THROTTLE_WEBHOOK_RATE`, default 600/min); bodies over 64 KB are refused.
+
+## OWASP Top 10:2025 hardening (2026-10-13): plan approved by the owner
+Three read-only audits (A01..A10) found no SQL injection, XSS sink, unsafe deserialization, open redirect, SSRF or card-data storage. The gaps and the six batches are in the approved plan; status per item is kept in `.ai/SECURITY_OWASP.md` when the last batch is done.
+- Batch 1 (done, no migration): A05-1 search word cap + EXISTS (no join per word); A06-1/A06-2 SMS budgets (account-keyed throttles on the logged-in verification endpoints, IP budget and daily per-number budget on the login code request); A06-3 pending-booking cap rechecked under a lock on the guest row; A05-2/A05-3 unknown webhook provider is a 404 and caller-chosen values are escaped in log lines; A10-8 non-object webhook JSON is a 400 and Django `SuspiciousOperation`/`BadRequest` map to 400.

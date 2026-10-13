@@ -215,3 +215,53 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
         room_inventory = RoomInventory.objects.get(room_type=self.room_type, date=self.day)
         assert room_inventory.booked_rooms == 1
         assert Booking.objects.filter(status='pending').count() == 1
+
+
+class PendingCapRaceTests(TransactionTestCase):
+    """A06-3: parallel requests of one account cannot all pass the pending-bookings check."""
+
+    def setUp(self):
+        if connection.vendor != 'postgresql':
+            self.skipTest('Row-level locking races need PostgreSQL')
+        make_usd_rate()
+        self.user = User.objects.create_user(email='holder@example.com', password='testpass123')
+        property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
+        self.property = Property.objects.create(
+            owner=self.user, property_type=property_type, status='active',
+            max_guests=4, bedrooms=1, bathrooms=1, city='Tashkent', country='Uzbekistan',
+            base_price=Decimal('100.00'), currency='USD'
+        )
+        self.room_type = RoomType.objects.create(
+            property=self.property, name='Standard', slug='standard', base_occupancy=2,
+            max_occupancy=4, base_price=Decimal('100.00'), currency='USD', total_rooms=50
+        )
+        self.rate_plan = RatePlan.objects.create(
+            room_type=self.room_type, name='Standard Rate', slug='standard-rate', rate_type='standard',
+            base_price=Decimal('100.00'), currency='USD', min_nights=1, max_nights=30, is_active=True
+        )
+        self.check_in = timezone.localdate() + timedelta(days=5)
+        for offset in range(3):
+            day = self.check_in + timedelta(days=offset)
+            DateInventory.objects.create(rate_plan=self.rate_plan, date=day, available_rooms=50, booked_rooms=0,
+                                         price=Decimal('100.00'), currency='USD', is_available=True)
+            RoomInventory.objects.create(room_type=self.room_type, date=day, available_rooms=50, booked_rooms=0,
+                                         is_available=True)
+
+    def test_parallel_creates_never_exceed_the_cap(self):
+        from rest_framework.test import APIClient
+        from bookings.views import MAX_PENDING_BOOKINGS_PER_GUEST
+
+        def book():
+            client = APIClient()
+            client.force_authenticate(self.user)
+            return client.post('/api/v1/bookings/', {
+                'property_id': self.property.id, 'room_type_id': self.room_type.id,
+                'rate_plan_id': self.rate_plan.id, 'check_in': self.check_in.isoformat(),
+                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1,
+            }, format='json').status_code
+
+        results = run_concurrently(*[book] * 8)
+
+        assert [r for r in results if r[0] == 'error'] == []
+        pending = Booking.objects.filter(guest=self.user, status='pending').count()
+        assert pending == MAX_PENDING_BOOKINGS_PER_GUEST, [r[1] for r in results]

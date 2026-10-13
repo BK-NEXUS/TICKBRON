@@ -2653,3 +2653,10 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Fixed on the way: favorites `property_primary_photo` was always null (nonexistent `photo_url` attribute hidden by a bare `except`); now the photo URL.
 - Cosmetic: `seed_demo_bulk` prints the hotel count correctly.
 - Found, not fixed: guest bookings list is unpaginated (owner decision, see the report).
+
+## OWASP hardening, batch 1 (2026-10-13): one-request outages and abuse
+- A05-1 `properties/search.py`: text search takes at most 8 distinct words (2+ characters, case-insensitive) and matches translations with `EXISTS`, so the SQL no longer grows with the query. Behaviour change: words after the eighth are ignored. Tests: `properties/tests/test_qa_text_search.py::ManyWordSearchCostTests`.
+- A06-1/A06-2 `users/views.py`: logged-in phone verification is throttled per account (3/min request, 5/min confirm, 20/day), the login code request has a per-IP budget (60/hour) and every number a daily budget (10/day, shared by login and verification codes). Rates are class attributes. Tests: `users/tests/test_sms_abuse_throttles.py` (8).
+- A06-3 `bookings/views.py`: the pending-bookings cap is checked again under `select_for_update` on the guest row (8 parallel requests used to create 8 pending bookings). Test: `bookings/tests/test_concurrency.py::PendingCapRaceTests`.
+- A05-2/A05-3/A10-8: unknown webhook provider -> 404 (was 400 after the log line), `common/middleware.printable` escapes control characters in logged paths, webhook body that is not a JSON object -> 400, `SuspiciousOperation`/`BadRequest` -> 400 (`common/exception_handlers.py`). Tests: `payments/tests/test_log_forging_and_bad_bodies.py`.
+- No existing assertion changed. No migration.
