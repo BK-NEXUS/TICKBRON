@@ -68,6 +68,12 @@ describe('LoginPage', () => {
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
     })
 
+    it('links to the password reset from the password form', async () => {
+      await renderWithRouter(<LoginPage />)
+
+      expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute('href', '/forgot-password')
+    })
+
     it('renders title and subtitle', async () => {
       await renderWithRouter(<LoginPage />)
 

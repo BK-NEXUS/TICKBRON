@@ -133,6 +133,33 @@ class UserLoginSerializer(serializers.Serializer):
         return value
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """The address a reset link is requested for."""
+    email = serializers.EmailField()
+
+
+class NewPasswordSerializer(serializers.Serializer):
+    """A new password typed twice. Its strength is checked by validate_new_password, which needs the user."""
+    password = serializers.CharField(max_length=128)
+    password_confirm = serializers.CharField(max_length=128)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({'password': "Password fields didn't match."})
+        return attrs
+
+
+class PasswordResetConfirmSerializer(NewPasswordSerializer):
+    """The link's uid and token, and the new password."""
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+
+
+class PasswordChangeSerializer(NewPasswordSerializer):
+    """The current password proves the person at the keyboard knows it."""
+    current_password = serializers.CharField(max_length=128)
+
+
 class RequestOTPSerializer(serializers.Serializer):
     """
     Serializer for requesting OTP code.

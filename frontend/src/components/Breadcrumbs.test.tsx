@@ -64,6 +64,19 @@ describe('Breadcrumbs', () => {
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
   })
 
+  it.each([
+    ['/forgot-password', 'Reset your password'],
+    ['/reset-password', 'Choose a new password'],
+  ])('%s is named, not shown as "Page not found"', (path, title) => {
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <Breadcrumbs />
+      </MemoryRouter>
+    )
+    expect(trail().getByText(title)).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByText('Page not found')).not.toBeInTheDocument()
+  })
+
   it('names nested admin pages', () => {
     renderAt(['/admin/support'])
     expect(trail().getByRole('link', { name: 'Admin Dashboard' })).toHaveAttribute('href', '/admin')

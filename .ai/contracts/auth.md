@@ -46,6 +46,18 @@ A phone number on an account is only a claim until its owner proves it by SMS. B
   - Changing the phone number on the profile resets `phone_verified` to false
   - Uniqueness (N-1 stage 2, 2026-10-10): only a VERIFIED number is unique (DB constraint `users_phone_unique_when_verified`). Register, profile update and create-hotel-owner accept a number that others merely claim without proof, and refuse one a verified account already holds (400 `phone_number`). When an account proves a number, other accounts that only claimed it lose it (their `phone_number` becomes null). If another account proves the number first, `confirm` answers 400 `otp_invalid`
 
+### Password reset and change (OWASP A07-1, 2026-10-14)
+- POST /api/v1/auth/password-reset/request/ - body `{email}`. Anonymous, CSRF token required, 5/hour per IP and 5 mails/day per address.
+  - Always 200 `{"detail": "If this address is registered, we have sent a link to reset the password."}` (registered or not, active or not); the mail is sent by a Celery task. Invalid address format: 400.
+  - The mail holds `FRONTEND_URL/reset-password?uid=<id>&token=<token>` (text in uz, ru and en). The token is single use and valid for `PASSWORD_RESET_TIMEOUT` (1 hour); it stops working after the password changes or the user signs in.
+- POST /api/v1/auth/password-reset/confirm/ - body `{uid, token, password, password_confirm}`. Anonymous, CSRF token required, 10/hour per IP.
+  - 200 `{"detail": "Your password was changed."}`; the user is NOT signed in, every session of the account ends, lockout counters are cleared.
+  - 400 `{"error": "...", "code": "invalid_reset_link"}` for a broken, expired or used link (one answer for all cases); 400 `{"password": [...]}` when a password rule is broken (same rules as registration), the link then stays valid.
+- POST /api/v1/auth/password/change/ - body `{current_password, password, password_confirm}`. Signed-in users only, 5/min per account.
+  - 200 `{"detail": "Your password was changed."}`; this session stays signed in, the other sessions end.
+  - 400 `{"current_password": [...]}` for a wrong current password (it counts as a failed login attempt), 400 `{"password": [...]}` for a weak password or one equal to the current one.
+- Events (`tickbron.security`): `password_reset_requested` (`outcome=sent|ignored`), `password_reset_completed`, `password_reset_failed`, `password_changed`, `password_change_failed`. History row `password_change`. No address, password or token is logged.
+
 ## CSRF
 - GET `/api/v1/auth/csrf/` - Get a CSRF token (public, no auth)
   - Response 200 `{"csrf_token": "<token>", "authenticated": <bool>}`; also sets the `csrftoken` cookie if missing
@@ -69,6 +81,7 @@ A phone number on an account is only a claim until its owner proves it by SMS. B
   - Partial updates supported
 
 ## Configuration
+- Password reset needs `FRONTEND_URL`, `EMAIL_*`, `DEFAULT_FROM_EMAIL` and a running Celery worker (or `CELERY_TASK_ALWAYS_EAGER=True` in local development). Production refuses to start without an https `FRONTEND_URL` and an `EMAIL_HOST`.
 - `SMS_TEST_MODE` (default: False; `backend/.env.example` also sets False) - Controls OTP test mode behavior. Set it to True only for local development
 - OTP logs never contain the full phone number; `users/services.py` logs it masked with `common.privacy.mask_phone` (`+998901234567` -> `+998*******67`)
 - In test mode, OTP codes returned in API response for testing

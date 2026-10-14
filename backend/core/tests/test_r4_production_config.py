@@ -26,6 +26,7 @@ GOOD_PRODUCTION_ENV = {
     'USE_X_FORWARDED_PROTO': 'True',
     'SECURE_SSL_REDIRECT': 'True',
     'DB_ENGINE': 'django.db.backends.postgresql',  # OWASP A02: production must not fall back to SQLite
+    'FRONTEND_URL': 'https://tickbron.uz', 'EMAIL_HOST': 'smtp.tickbron.uz',  # password reset links and mail
 }
 EXTRA_ISOLATED = ('SECRET_KEY', 'ALLOWED_HOSTS', 'CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS')
 

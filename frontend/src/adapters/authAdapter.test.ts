@@ -502,3 +502,66 @@ describe('authAdapter singleton', () => {
     expect(authAdapter).toBeInstanceOf(AuthAdapter)
   })
 })
+
+describe('AuthAdapter password calls', () => {
+  let adapter: AuthAdapter
+  let mockFetch: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    adapter = new AuthAdapter('http://test-api')
+    mockFetch = vi.fn()
+    global.fetch = mockFetch
+  })
+
+  const sentBody = () => JSON.parse(mockFetch.mock.calls[0][1].body)
+
+  it('requests a reset link for an address', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ detail: 'If this address is registered...' }) })
+
+    const response = await adapter.requestPasswordReset('guest@example.com')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://test-api/api/v1/auth/password-reset/request/',
+      expect.objectContaining({ method: 'POST', credentials: 'include' })
+    )
+    expect(sentBody()).toEqual({ email: 'guest@example.com' })
+    expect(response).toEqual({ success: true, error: undefined, code: undefined })
+  })
+
+  it('confirms a reset with the link values', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ detail: 'ok' }) })
+    const data = { uid: 'MQ', token: 'abc', password: 'Fresh9Grape#Tower42', password_confirm: 'Fresh9Grape#Tower42' }
+
+    const response = await adapter.confirmPasswordReset(data)
+
+    expect(mockFetch.mock.calls[0][0]).toBe('http://test-api/api/v1/auth/password-reset/confirm/')
+    expect(sentBody()).toEqual(data)
+    expect(response.success).toBe(true)
+  })
+
+  it('hands the machine-readable code of a rejected link to the caller', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'This link is invalid or has expired.', code: 'invalid_reset_link' }),
+    })
+
+    const response = await adapter.confirmPasswordReset({ uid: 'x', token: 'y', password: 'a', password_confirm: 'a' })
+
+    expect(response).toEqual({ success: false, error: 'This link is invalid or has expired.', code: 'invalid_reset_link' })
+  })
+
+  it('changes the password and returns the server message when it is refused', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ current_password: ['The current password is incorrect.'] }),
+    })
+
+    const response = await adapter.changePassword({ current_password: 'x', password: 'y', password_confirm: 'y' })
+
+    expect(mockFetch.mock.calls[0][0]).toBe('http://test-api/api/v1/auth/password/change/')
+    expect(response.success).toBe(false)
+    expect(response.error).toContain('The current password is incorrect.')
+  })
+})

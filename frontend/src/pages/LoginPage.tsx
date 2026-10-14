@@ -167,6 +167,9 @@ export function LoginPage() {
                   disabled={isLoading}
                   autoComplete="current-password"
                 />
+                <Link to="/forgot-password" className="auth-link auth-forgot-link">
+                  {t('auth.forgotPassword')}
+                </Link>
               </div>
 
               <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>

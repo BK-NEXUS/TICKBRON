@@ -64,6 +64,35 @@ class TestDebugGuard:
         assert 'DEBUG=True' not in lines
 
 
+class TestPasswordResetMailSettings:
+    """Password reset links point to the frontend and are sent by e-mail: production must be set up for both."""
+
+    def test_production_needs_an_https_frontend_address(self):
+        for url in (None, 'http://tickbron.uz'):
+            result = _run('1', FRONTEND_URL=url)
+
+            assert result.returncode != 0, url
+            assert 'FRONTEND_URL' in result.stderr
+
+    def test_production_needs_a_mail_server(self):
+        result = _run('1', EMAIL_HOST=None)
+
+        assert result.returncode != 0
+        assert 'EMAIL_HOST' in result.stderr
+
+    def test_a_chosen_non_smtp_mail_backend_needs_no_host(self):
+        result = _run('1', EMAIL_HOST=None, EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend')
+
+        assert result.returncode == 0, result.stderr
+
+    def test_tasks_run_in_the_request_only_when_asked_for(self):
+        assert _value('settings.CELERY_TASK_ALWAYS_EAGER') == 'False'
+        assert _value('settings.CELERY_TASK_ALWAYS_EAGER', CELERY_TASK_ALWAYS_EAGER='True') == 'True'
+
+    def test_the_reset_link_lives_for_an_hour(self):
+        assert _value('settings.PASSWORD_RESET_TIMEOUT') == '3600'
+
+
 class TestSettingsValues:
     def test_only_json_is_rendered_in_production(self):
         renderers = _value("settings.REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES']")

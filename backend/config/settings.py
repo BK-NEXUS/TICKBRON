@@ -374,12 +374,34 @@ else:
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# Local development without a worker: run tasks (password reset e-mails, alerts) inside the request
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False').lower() == 'true'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 # R12: beat schedules are written in business time (Asia/Tashkent) whatever TIME_ZONE is.
 # Production must run Celery beat, a worker and Redis (RELEASE_CHECKLIST).
 CELERY_TIMEZONE = BUSINESS_TIME_ZONE
+
+# E-mail (password reset links). Local development prints the mail to the console; production sends it
+# through SMTP and must say where the site lives, because the link points to the frontend.
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'TICKBRON <no-reply@tickbron.uz>')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+PASSWORD_RESET_TIMEOUT = 60 * 60  # a reset link works for one hour
+
+# Alerts to a Telegram chat (common/alerts.py). Both empty = alerts off. Create the bot with
+# @BotFather, add it to the chat and take the chat id from the getUpdates call.
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_ALERT_CHAT_ID = os.getenv('TELEGRAM_ALERT_CHAT_ID', '')
 
 # Periodic tasks (run with: celery -A config beat -l info)
 EXPIRED_BOOKINGS_INTERVAL_SECONDS = int(os.getenv('EXPIRED_BOOKINGS_INTERVAL_SECONDS', '60'))
@@ -480,6 +502,11 @@ def _production_config_errors():
         errors.append('SECURE_SSL_REDIRECT must be True when DEBUG is False')
     if NUM_PROXIES > 0 and SECURE_PROXY_SSL_HEADER is None:
         errors.append('USE_X_FORWARDED_PROTO must be True behind a reverse proxy (otherwise the https redirect loops)')
+    # Password reset: the e-mailed link points to the frontend and needs a mail server to be sent
+    if not FRONTEND_URL.startswith('https://'):
+        errors.append('FRONTEND_URL must be the https:// address of the site (password reset links point to it)')
+    if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST:
+        errors.append('EMAIL_HOST must be set (password reset e-mails cannot be sent without a mail server)')
     # N-19
     if not SESSION_COOKIE_SECURE:
         errors.append('SESSION_COOKIE_SECURE must be True when DEBUG is False')

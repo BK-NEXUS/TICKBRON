@@ -20,6 +20,8 @@ interface TrailEntry {
 const ROUTE_TRAILS: Array<[RegExp, TrailEntry[]]> = [
   [/^\/login$/, [{ labelKey: 'auth.signIn' }]],
   [/^\/register$/, [{ labelKey: 'auth.createAccount' }]],
+  [/^\/forgot-password$/, [{ labelKey: 'auth.forgotTitle' }]],
+  [/^\/reset-password$/, [{ labelKey: 'auth.resetTitle' }]],
   [/^\/bookings$/, [{ labelKey: 'header.myBookings' }]],
   [/^\/booking$/, [{ labelKey: 'crumb.booking' }]],
   [/^\/favorites$/, [{ labelKey: 'crumb.myFavorites' }]],

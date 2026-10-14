@@ -50,7 +50,7 @@ async function startPages(page: Page, role: Role): Promise<string[]> {
   const search = await (await page.request.get(`${API}/api/v1/properties/search/?destination=Tashkent`)).json()
   const propertyId = search.results?.[0]?.id
   const common = ['/', '/search?destination=Tashkent', propertyId ? `/property/${propertyId}` : '/']
-  if (role === 'guest') return [...common, '/login', '/register']
+  if (role === 'guest') return [...common, '/login', '/register', '/forgot-password', '/reset-password?uid=MQ&token=expired']
   if (role === 'owner') return [...common, '/bookings', '/favorites', '/profile', '/partner']
   return [...common, '/bookings', '/favorites', '/profile', '/admin', '/admin/support', '/partner']
 }
