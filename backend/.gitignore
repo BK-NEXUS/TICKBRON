@@ -59,3 +59,6 @@ htmlcov/
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Local Redis snapshot
+dump.rdb
