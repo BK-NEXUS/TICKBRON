@@ -47,7 +47,6 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
@@ -58,7 +57,7 @@ class TestUserRegistrationSerializer(TestCase):
         user = serializer.save()
         assert user.email == 'newuser@example.com'
         assert user.full_name == 'New User'
-        assert user.phone_number == '+998901234567'
+        assert user.phone_number is None
         assert user.check_password('SecureP@ssw0rd123')
     
     def test_password_mismatch(self):
@@ -66,7 +65,6 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+998901234567',
             'password': 'securepass123',
             'password_confirm': 'differentpass123'
         }
@@ -80,7 +78,6 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+998901234567',
             'password': 'short',
             'password_confirm': 'short'
         }
@@ -90,7 +87,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'password' in serializer.errors
     
     def test_missing_required_fields(self):
-        """Test registration with missing required fields (full_name and phone_number)."""
+        """Test registration with missing required fields (full_name)."""
         data = {
             'email': 'newuser@example.com',
             'password': 'SecureP@ssw0rd123',
@@ -100,27 +97,27 @@ class TestUserRegistrationSerializer(TestCase):
         serializer = UserRegistrationSerializer(data=data)
         assert not serializer.is_valid()
         assert 'full_name' in serializer.errors
-        assert 'phone_number' in serializer.errors
     
-    def test_missing_phone_number(self):
-        """Test registration with missing phone_number."""
+    def test_phone_number_is_not_part_of_registration(self):
+        """A phone number sent anyway is ignored: accounts are created by e-mail only."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
+            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
-        
+
         serializer = UserRegistrationSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'phone_number' in serializer.errors
-    
+        assert serializer.is_valid(), serializer.errors
+        assert 'phone_number' not in serializer.fields
+        assert serializer.save().phone_number is None
+
     def test_optional_first_name_last_name(self):
         """Test that first_name and last_name are optional."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+998901234567',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }
@@ -138,7 +135,6 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
-            'phone_number': '+998901234567',
             'whatsapp': '+998901234567',
             'telegram': '@telegramuser',
             'preferred_contact_method': 'whatsapp',

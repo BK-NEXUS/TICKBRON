@@ -37,18 +37,17 @@ class TestPhoneNumberUniqueness(TestCase):
         assert first.phone_number is None
         assert second.phone_number is None
 
-    def test_register_with_taken_phone_is_rejected(self):
+    def test_register_cannot_take_a_phone_number_that_belongs_to_someone(self):
         response = self.client.post('/api/v1/auth/register/', {
             'email': 'new@example.com',
             'full_name': 'New User',
-            'phone_number': ' +998901230001 ',
+            'phone_number': '+998901230001',
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         }, format='json')
 
-        assert response.status_code == 400
-        assert 'phone_number' in response.data
-        assert not User.objects.filter(email='new@example.com').exists()
+        assert response.status_code == 201, response.data
+        assert User.objects.get(email='new@example.com').phone_number is None
 
     def test_profile_update_to_taken_phone_is_rejected(self):
         attacker = User.objects.create_user(

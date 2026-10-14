@@ -172,16 +172,11 @@ class TestOTPViews(TestCase):
     
     def test_request_otp_endpoint(self):
         """Test request OTP endpoint."""
-        # Register user first
-        self.client.post('/api/v1/auth/register/', {
-            'email': 'test@example.com',
-            'full_name': 'Test User',
-            'phone_number': self.phone_number,
-            'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
-        })
         # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
-        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
+        User.objects.create_user(
+            email='test@example.com', password='SecureP@ssw0rd123',
+            phone_number=self.phone_number, phone_verified=True,
+        )
         
         response = self.client.post('/api/v1/auth/otp/request/', {
             'phone_number': self.phone_number
@@ -200,16 +195,11 @@ class TestOTPViews(TestCase):
     
     def test_verify_otp_endpoint(self):
         """Test verify OTP endpoint."""
-        # Register user first
-        self.client.post('/api/v1/auth/register/', {
-            'email': 'test@example.com',
-            'full_name': 'Test User',
-            'phone_number': self.phone_number,
-            'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
-        })
         # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
-        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
+        User.objects.create_user(
+            email='test@example.com', password='SecureP@ssw0rd123',
+            phone_number=self.phone_number, phone_verified=True,
+        )
         
         # Request OTP
         request_response = self.client.post('/api/v1/auth/otp/request/', {
@@ -257,16 +247,11 @@ class TestOTPViews(TestCase):
     
     def test_otp_login_establishes_session(self):
         """Test that OTP login establishes a session."""
-        # Register user first
-        self.client.post('/api/v1/auth/register/', {
-            'email': 'test@example.com',
-            'full_name': 'Test User',
-            'phone_number': self.phone_number,
-            'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
-        })
         # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
-        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
+        User.objects.create_user(
+            email='test@example.com', password='SecureP@ssw0rd123',
+            phone_number=self.phone_number, phone_verified=True,
+        )
         
         # Request OTP
         request_response = self.client.post('/api/v1/auth/otp/request/', {

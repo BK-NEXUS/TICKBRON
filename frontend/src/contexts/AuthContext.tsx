@@ -11,7 +11,6 @@ interface AuthContextType {
   register: (data: {
     email: string
     full_name: string
-    phone_number: string
     password: string
     password_confirm: string
     first_name?: string
@@ -78,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: {
     email: string
     full_name: string
-    phone_number: string
     password: string
     password_confirm: string
     first_name?: string

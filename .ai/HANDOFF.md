@@ -28,7 +28,7 @@ If a dependency is missing, the agent stops at the boundary. It does not invent 
 Status: READY
 
 ### POST `/api/v1/auth/register/`
-- Request: `{ email, full_name, phone_number, password, password_confirm, first_name (optional), last_name (optional) }`
+- Request: `{ email, full_name, password, password_confirm, first_name (optional), last_name (optional) }` (no phone since 2026-10-14)
 - Response: `{ id, email, first_name, last_name, full_name, phone_number, is_active, date_joined, last_login, email_verified, two_factor_enabled }`
 - Auth: None (public endpoint)
 - Error: 400 for validation errors, 409 for duplicate email, 429 for rate limit exceeded
@@ -2699,3 +2699,9 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Verified in a real browser: forgot password -> link from the console mail -> new password -> link refused the second time -> sign in -> change password in the profile -> still signed in.
 - Found, not fixed: accounts created without a password (phone-only, seed scripts) cannot use the reset or the change form; `eslint` reports 3 pre-existing "fast refresh" warnings (`Breadcrumbs.tsx`, `Button.tsx`, `AuthContext.tsx`) so `npm run lint` (max-warnings 0) already fails on them; Playwright `getByLabel('Confirm Password')` also matches the show/hide button (use the element id).
 - Found, not fixed: `e2e/crawl.e2e.ts` as guest ends with two "console 429" findings on `/` because the crawl exceeds the search throttle (`SearchRateThrottle`, 100/min per IP, not raised by `THROTTLE_ANON_RATE`); the owner crawl has 0 findings and the new password pages produced none. The throttle and these endpoints were not touched in this step.
+
+## E-mail only registration (2026-10-14)
+- The owner asked that sign-up uses only the e-mail address. `POST /auth/register/` no longer takes `phone_number` (a value sent anyway is ignored, the account starts with `phone_number: null`); the register page has no phone field and keeps the show/hide eye button on both password fields (inline SVG from lucide, no emoji). Phone login, the profile phone field and phone verification are unchanged. Contract: `.ai/contracts/auth.md`.
+- Tests: `users/tests/test_serializers.py`, `test_views.py`, `test_phone_validation.py::TestRegister`, `test_phone_unique.py`, `test_n1_phone_claims.py`, `test_otp.py` (backend); `RegisterPage.test.tsx`, `AuthPages.test.tsx` (frontend).
+- Changed assertions (not weakened): the tests that expected a 400 for a bad, duplicate or verified-held phone on registration now expect that registration ignores the number (201, `phone_number` null); the invalid-number cases are still covered on the profile update. The SMS-login tests in `test_otp.py` create their user directly instead of through the register endpoint.
+- Found, not fixed: `Breadcrumbs.tsx:82` has an unused `eslint-disable` directive, so `npm run lint` reports 1 error (and the 3 known warnings); `scripts/smoke_test.py` and some other tests still send a `phone_number` to register (ignored, harmless).

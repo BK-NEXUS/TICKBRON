@@ -6,7 +6,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 
 ### Password-Based Authentication
 - POST `/api/v1/auth/register/` - User registration
-  - Required fields: `email`, `full_name`, `phone_number`, `password`, `password_confirm`
+  - Required fields: `email`, `full_name`, `password`, `password_confirm`. E-mail only (2026-10-14): there is no phone field; a `phone_number` in the body is ignored and the account starts with `phone_number: null`. A number is added later with `PATCH /auth/me/update/` and proven with `/auth/phone/verify/`
   - Optional fields: `first_name`, `last_name` (nullable), `whatsapp`, `telegram`, `preferred_contact_method`
   - Auto-logs in user after successful registration
   - Rate limited: 5 requests/minute per IP

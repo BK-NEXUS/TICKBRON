@@ -80,29 +80,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
-    # Declared so the phone validation gives the only error (not the column's max_length)
-    phone_number = serializers.CharField()
 
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
+        fields = ['email', 'full_name', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {
-            'full_name': {'required': True},
-            'phone_number': {'required': True},
-        }
+        extra_kwargs = {'full_name': {'required': True}}
     
     def validate_email(self, value):
         """Validate email format."""
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
-    
-    def validate_phone_number(self, value):
-        """Validate phone number format and uniqueness."""
-        if not value or not value.strip():
-            raise serializers.ValidationError("Phone number is required.")
-        return validate_unique_phone_number(validate_phone_number_format(value))
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:

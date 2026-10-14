@@ -51,7 +51,7 @@ class UnverifiedClaimsDoNotBlockTests(TestCase):
 
         self.assertEqual(response.status_code, 201, response.data)
 
-    def test_registering_with_a_verified_number_is_refused(self):
+    def test_registering_with_a_verified_number_does_not_claim_it(self):
         make_user('real@example.com', verified=True)
 
         response = self.client.post('/api/v1/auth/register/', {
@@ -59,8 +59,8 @@ class UnverifiedClaimsDoNotBlockTests(TestCase):
             'password': 'Str0ng#Pass-2026!', 'password_confirm': 'Str0ng#Pass-2026!',
         }, format='json')
 
-        self.assertEqual(response.status_code, 400)
-        self.assertIn('phone_number', response.data)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertIsNone(User.objects.get(email='other@example.com').phone_number)
 
     def test_profile_update_to_an_unverified_claim_is_allowed(self):
         make_user('squatter@example.com')

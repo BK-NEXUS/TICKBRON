@@ -44,26 +44,18 @@ def user(db):
 @pytest.mark.django_db
 class TestRegister:
 
-    @pytest.mark.parametrize('phone', INVALID_NUMBERS)
-    def test_invalid_number_is_rejected_with_a_clear_message(self, phone):
-        response = APIClient().post('/api/v1/auth/register/', register_payload(phone), format='json')
-        assert response.status_code == 400
-        assert error_text(response) == PHONE_ERROR
-        assert not User.objects.filter(email='newcomer@example.com').exists()
-
-    def test_formatted_number_is_stored_as_e164(self):
+    def test_phone_number_sent_with_the_form_is_not_stored(self):
         response = APIClient().post(
             '/api/v1/auth/register/', register_payload('+998 90 123 45 67'), format='json'
         )
         assert response.status_code == 201, response.data
-        assert User.objects.get(email='newcomer@example.com').phone_number == '+998901234567'
+        assert User.objects.get(email='newcomer@example.com').phone_number is None
 
-    def test_formatted_duplicate_is_caught(self, user):
-        response = APIClient().post(
-            '/api/v1/auth/register/', register_payload('+998 90 111 22 33'), format='json'
-        )
-        assert response.status_code == 400
-        assert 'already exists' in error_text(response)
+    def test_registration_needs_no_phone_number(self):
+        payload = register_payload('')
+        del payload['phone_number']
+        response = APIClient().post('/api/v1/auth/register/', payload, format='json')
+        assert response.status_code == 201, response.data
 
 
 @pytest.mark.django_db
