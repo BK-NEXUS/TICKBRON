@@ -147,6 +147,7 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
             'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size'
         ]
         read_only_fields = ['id']
+        extra_kwargs = {'description': {'max_length': 2000}}
 
     def property_of(self, attrs):
         return attrs.get('property') or getattr(self.instance, 'property', None)
@@ -176,6 +177,7 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
             'deposit_required', 'deposit_percentage', 'advance_booking_days'
         ]
         read_only_fields = ['id']
+        extra_kwargs = {'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000}}
 
     def property_of(self, attrs):
         room_type = attrs.get('room_type') or getattr(self.instance, 'room_type', None)
@@ -207,6 +209,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
             'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay', 'notes'
         ]
         read_only_fields = ['id', 'booked_rooms', 'remaining_rooms']
+        extra_kwargs = {'notes': {'max_length': 500}}
 
     price_field = 'price'
 

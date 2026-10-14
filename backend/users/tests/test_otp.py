@@ -25,6 +25,7 @@ class TestOTPService(TestCase):
         User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -49,6 +50,7 @@ class TestOTPService(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -67,6 +69,7 @@ class TestOTPService(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -84,6 +87,7 @@ class TestOTPService(TestCase):
         User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -102,6 +106,7 @@ class TestOTPService(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -120,6 +125,7 @@ class TestOTPService(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -141,6 +147,7 @@ class TestOTPService(TestCase):
         user = User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -173,6 +180,8 @@ class TestOTPViews(TestCase):
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         })
+        # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
+        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
         
         response = self.client.post('/api/v1/auth/otp/request/', {
             'phone_number': self.phone_number
@@ -199,6 +208,8 @@ class TestOTPViews(TestCase):
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         })
+        # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
+        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
         
         # Request OTP
         request_response = self.client.post('/api/v1/auth/otp/request/', {
@@ -222,6 +233,7 @@ class TestOTPViews(TestCase):
         User.objects.create_user(
             email='test@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             full_name='Test User',
             password='testpass123'
         )
@@ -253,6 +265,8 @@ class TestOTPViews(TestCase):
             'password': 'SecureP@ssw0rd123',
             'password_confirm': 'SecureP@ssw0rd123'
         })
+        # N-1: SMS login needs a verified number; the profile flow proves it (tested separately)
+        User.objects.filter(phone_number=self.phone_number).update(phone_verified=True)
         
         # Request OTP
         request_response = self.client.post('/api/v1/auth/otp/request/', {
@@ -282,6 +296,7 @@ class TestOTPWithoutSMSTestMode(TestCase):
         User.objects.create_user(
             email='prod@example.com',
             phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
             password='testpass123'
         )
 

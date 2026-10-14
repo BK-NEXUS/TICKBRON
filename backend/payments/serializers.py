@@ -1,7 +1,11 @@
 """
 Serializers for TICKBRON payment models.
 """
+import re
+
 from django.utils import timezone
+
+from bookings.fields import OwnBookingField
 from rest_framework import serializers
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 
@@ -43,6 +47,17 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
         return data
 
 
+def _passes_luhn(digits):
+    """Luhn checksum of a card number: true for a number a real card could have."""
+    total = 0
+    for index, char in enumerate(reversed(digits)):
+        digit = int(char)
+        if index % 2:
+            digit = digit * 2 - 9 if digit > 4 else digit * 2
+        total += digit
+    return total % 10 == 0
+
+
 class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating payment transactions.
@@ -51,6 +66,8 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
     the body. Idempotency-key reuse is handled by the view, so the automatic
     unique validator is disabled here.
     """
+    # Only the booking's guest may pay for it; anyone else gets the same answer as for a missing id
+    booking = OwnBookingField()
 
     class Meta:
         model = PaymentTransaction
@@ -63,11 +80,12 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
             'payment_method_token': {'write_only': True},
         }
 
-    def validate_booking(self, value):
-        """Only the booking's guest may pay for it; others see it as not found."""
-        request = self.context.get('request')
-        if request is None or value.guest_id != request.user.id:
-            raise serializers.ValidationError('Booking not found.')
+    def validate_payment_method_token(self, value):
+        """The field is for a provider token. A card number here would land in the database and backups."""
+        compact = re.sub(r'[ \-]', '', value or '')
+        if re.fullmatch(r'\d{13,19}', compact) or any(
+                _passes_luhn(run) for run in re.findall(r'\d{13,19}', compact)):
+            raise serializers.ValidationError('Send the token from the payment provider, never a card number.')
         return value
 
     def validate(self, attrs):

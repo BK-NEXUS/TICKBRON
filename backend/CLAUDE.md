@@ -17,7 +17,7 @@ TICKBRON is a hotel/property booking platform. The git root (`TICKBRON/`) holds 
 
 ## Commands
 
-Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config. It keeps `SMS_TEST_MODE` and `PAYMENT_TEST_MODE` off; set them to `True` in your local `.env` to get OTP codes in responses and the mock payment flow.
+Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config and set `DEBUG=True` there (the example ships `DEBUG=False`, so a copied file never runs a server in debug by accident). Install `requirements-dev.txt` for development. It keeps `SMS_TEST_MODE` and `PAYMENT_TEST_MODE` off; set them to `True` in your local `.env` to get OTP codes in responses and the mock payment flow.
 
 ```bash
 python manage.py runserver
@@ -44,7 +44,7 @@ python scripts/smoke_test.py             # register→login→book→favorites c
 
 - Tests require PostgreSQL (the `DB_*` settings in `backend/.env`); `conftest.py` stops the run otherwise. pytest-django creates a separate `test_<DB_NAME>` database. SQLite is opt-in only (`ALLOW_SQLITE_TESTS=1`): it ignores varchar lengths and has no row locks, so `bookings/tests/test_concurrency.py` skips there.
 - API docs: `/api/docs/` (Swagger), `/api/redoc/`, `/api/schema/`.
-- `config/*security_check*.py` and `config/contract_check.py` are standalone per-checkpoint verification scripts (`python config/<name>.py`). They are not pytest tests.
+- `scripts/checkpoint_checks/*.py` are standalone per-checkpoint verification scripts (run from `backend/`: `python scripts/checkpoint_checks/<name>.py`). They are not pytest tests.
 
 ## Architecture
 

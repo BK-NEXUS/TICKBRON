@@ -25,7 +25,8 @@ class TestOTPLogsHaveNoPhoneNumber(TestCase):
     def setUp(self):
         self.service = OTPService()
         self.user = User.objects.create_user(
-            email='log@example.com', phone_number=PHONE, password='testpass123'
+            email='log@example.com', phone_number=PHONE, password='testpass123',
+            phone_verified=True,  # N-1: only a verified number can use SMS login
         )
 
     def assert_masked(self, logs):

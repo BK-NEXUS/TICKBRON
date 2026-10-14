@@ -62,7 +62,7 @@ export function AdminUserManagement() {
   return (
     <div className="admin-user-management">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">{t('admin.userManagement')}</h1>
+        <h2 className="admin-view-title">{t('admin.userManagement')}</h2>
         <p className="admin-view-subtitle">{t('admin.viewAndManageUser')}</p>
       </div>
 

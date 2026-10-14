@@ -64,7 +64,7 @@ export function Header() {
           {/* Logo */}
           <div className="header-logo">
             <BrandLogo variant="header" decorative />
-            <h1>TICKBRON</h1>
+            <span className="header-logo-text">TICKBRON</span>
           </div>
 
           {/* Desktop Navigation */}

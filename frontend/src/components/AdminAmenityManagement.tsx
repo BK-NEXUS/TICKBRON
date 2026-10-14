@@ -297,7 +297,7 @@ export function AdminAmenityManagement() {
   return (
     <div className="admin-amenity-management">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">{t('admin.amenityManagement')}</h1>
+        <h2 className="admin-view-title">{t('admin.amenityManagement')}</h2>
         <p className="admin-view-subtitle">{t('admin.manageAmenityCategoriesAnd')}</p>
       </div>
 

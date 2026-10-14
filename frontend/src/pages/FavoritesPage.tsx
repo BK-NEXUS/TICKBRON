@@ -56,6 +56,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Lock size={40} />}
             title={t('common.signInRequired')}
             message={t('favorites.signInText')}

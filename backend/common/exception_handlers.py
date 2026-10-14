@@ -5,6 +5,7 @@ Provides consistent error responses and logging for API exceptions.
 """
 import logging
 from django.conf import settings
+from django.core.exceptions import BadRequest, SuspiciousOperation
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
@@ -22,6 +23,14 @@ def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first
     response = exception_handler(exc, context)
     
+    # Django's own "the request is bad" errors are the caller's mistake, not a server failure
+    if response is None and isinstance(exc, (SuspiciousOperation, BadRequest)):
+        logger.warning(f"Bad request: {exc.__class__.__name__}")
+        return Response(
+            {'error': {'code': 'bad_request', 'message': 'The request could not be processed.', 'details': None}},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # If response is None, it's a non-API exception
     if response is None:
         # Log unexpected exceptions

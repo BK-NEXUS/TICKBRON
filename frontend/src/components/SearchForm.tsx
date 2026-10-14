@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { DateRangeCalendar } from './DateRangeCalendar'
 import { keepFilterParams } from '../utils/searchFilters'
+import { businessToday } from '../utils/dates'
 
 // Search form state interface
 export interface SearchFormData {
@@ -110,11 +111,7 @@ export function SearchForm() {
     if (!data.checkIn && data.checkOut) {
       newErrors.checkIn = t('searchForm.error.checkInRequired')
     } else if (data.checkIn) {
-      const checkInDate = new Date(data.checkIn)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      if (checkInDate < today) {
+      if (data.checkIn < businessToday()) {
         newErrors.checkIn = t('searchForm.error.checkInPast')
       }
     }

@@ -1,0 +1,12 @@
+# Development and test tools. Production installs requirements.txt only.
+-r requirements.txt
+
+# Testing
+pytest==9.1.1
+pytest-django==4.14.0
+pytest-cov==4.1.0
+
+# Code Quality
+black==26.5.1
+flake8==6.1.0
+isort==5.12.0

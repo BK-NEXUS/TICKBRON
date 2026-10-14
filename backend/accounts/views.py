@@ -35,12 +35,17 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             return self.get_serializer_class().Meta.model.objects.none()
         return Favorite.objects.filter(
             user=self.request.user,
-            is_deleted=False
+            is_deleted=False,
+            property__status='active',
         ).select_related('property').prefetch_related(
             Prefetch(
                 'property__translations',
                 queryset=PropertyTranslation.objects.filter(is_deleted=False),
-            )
+            ),
+            Prefetch(
+                'property__photos', to_attr='primary_photos',
+                queryset=PropertyPhoto.objects.filter(is_primary=True, is_deleted=False),
+            ),
         )
     
     def get_serializer_class(self):

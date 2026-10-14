@@ -28,6 +28,15 @@ class WebhookProcessorTests(TestCase):
         self.booking = None
         self.payment_transaction = None
     
+    def _linked_transaction(self, provider_transaction_id):
+        """The transaction a paid webhook refers to; without one the event is retried (OWASP A10-2)."""
+        from payments.tests.test_r12_refunds import _paid_booking
+        from users.models import User
+        people = {'guest': User.objects.create_user(email='g-wh@example.com', password='x'),
+                  'owner': User.objects.create_user(email='o-wh@example.com', password='x')}
+        _, tx = _paid_booking(people, key='wh')
+        PaymentTransaction.objects.filter(pk=tx.pk).update(provider_transaction_id=provider_transaction_id)
+
     def test_webhook_processor_initialization(self):
         """Test webhook processor initialization."""
         processor = WebhookProcessor('payme')
@@ -36,6 +45,7 @@ class WebhookProcessorTests(TestCase):
     
     def test_process_webhook_success(self):
         """Test successful webhook processing."""
+        self._linked_transaction('txn_456')
         processor = WebhookProcessor('payme')
         payload = {
             'id': 'event_123',
@@ -59,6 +69,7 @@ class WebhookProcessorTests(TestCase):
     
     def test_process_webhook_replay_attack(self):
         """A replayed (validly signed) event is acknowledged but not processed again."""
+        self._linked_transaction('txn_456')
         payload = {
             'id': 'event_123',
             'transaction_id': 'txn_456',

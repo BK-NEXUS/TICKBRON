@@ -5,7 +5,7 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
-from django.db import transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from common.exceptions import ExternalServiceException
 from common.privacy import mask_phone
 from users import lockout
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # OTP endpoints do not reveal which phone numbers have accounts
 OTP_REQUESTED_MESSAGE = 'If this phone number is registered, a verification code has been sent.'
 OTP_INVALID_MESSAGE = 'Invalid or expired OTP code'
+PHONE_CODE_SENT_MESSAGE = 'A verification code has been sent to your phone number.'
 
 
 class OTPService:
@@ -68,7 +69,8 @@ class OTPService:
         code, so callers cannot tell them apart from registered numbers.
         """
         try:
-            user = User.objects.filter(phone_number=phone_number).first()
+            # Only a number proven by SMS may log in; an unproven claim could belong to an attacker
+            user = User.objects.filter(phone_number=phone_number, phone_verified=True).first()
 
             # A locked account gets no new code, so re-requesting cannot restart guessing
             if user is None or lockout.is_locked(user, client_ip):
@@ -84,6 +86,8 @@ class OTPService:
                 'message': OTP_REQUESTED_MESSAGE,
                 'otp_code': otp_code  # Only returned in test mode
             }
+        except DatabaseError:
+            raise  # an outage is a server error, not a failed code request
         except Exception as e:
             logger.error(f"Error generating OTP: {e}")
             return {
@@ -105,7 +109,7 @@ class OTPService:
         try:
             # Row lock serializes concurrent guesses so attempt counters cannot be raced
             with transaction.atomic():
-                user = User.objects.select_for_update().get(phone_number=phone_number)
+                user = User.objects.select_for_update().get(phone_number=phone_number, phone_verified=True)
                 
                 # Check the lock before looking at the code, so a locked account
                 # never reveals whether a guess was correct
@@ -128,9 +132,42 @@ class OTPService:
         except User.DoesNotExist:
             logger.warning(f"OTP verification for unknown phone number: {mask_phone(phone_number)}")
             return {'success': False, 'message': OTP_INVALID_MESSAGE}
+        except DatabaseError:
+            raise
         except Exception as e:
             logger.error(f"Error verifying OTP: {e}")
             return {
                 'success': False,
                 'message': 'An error occurred while verifying the OTP code.'
             }
+
+    def send_phone_verification(self, user: User, client_ip: str = None) -> dict:
+        """
+        Send a code to the logged-in user's own number to prove they own it.
+
+        The number always comes from the account, never from the client.
+        """
+        if not self._is_test_mode():
+            raise ExternalServiceException('SMS provider is not configured.', service_name='SMS')
+        self._log_test_mode_call('send_phone_verification', phone_number=mask_phone(user.phone_number))
+        if lockout.is_locked(user, client_ip):
+            return {'success': True, 'message': PHONE_CODE_SENT_MESSAGE}
+        return {'success': True, 'message': PHONE_CODE_SENT_MESSAGE, 'otp_code': user.generate_otp()}
+
+    def confirm_phone_verification(self, user: User, otp_code: str, client_ip: str = None) -> dict:
+        """Check the code sent by send_phone_verification; success marks the number verified."""
+        with transaction.atomic():
+            locked_user = User.objects.select_for_update().get(pk=user.pk)
+            if lockout.is_locked(locked_user, client_ip):
+                return {'success': False, 'message': OTP_INVALID_MESSAGE}
+            try:
+                verified = locked_user.verify_otp(otp_code)
+            except IntegrityError:
+                # Another account proved this number first; the unique-among-verified rule refused ours
+                logger.warning(f"Phone verification refused, number already verified elsewhere: {mask_phone(locked_user.phone_number)}")
+                return {'success': False, 'message': OTP_INVALID_MESSAGE}
+            if verified:
+                lockout.record_success(locked_user, client_ip)
+                return {'success': True, 'message': 'Phone number verified', 'user': locked_user}
+            lockout.record_failure(locked_user, client_ip)
+            return {'success': False, 'message': OTP_INVALID_MESSAGE}

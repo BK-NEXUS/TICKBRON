@@ -123,8 +123,8 @@ def check_security_foundations():
 
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     
-    os.chdir(Path(__file__).parent.parent)
+    os.chdir(Path(__file__).parent.parent.parent)
     success = check_security_foundations()
     sys.exit(0 if success else 1)

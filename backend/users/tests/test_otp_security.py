@@ -8,6 +8,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from users.models import User
+from users.otp import hash_otp
 
 REQUEST_URL = '/api/v1/auth/otp/request/'
 VERIFY_URL = '/api/v1/auth/otp/verify/'
@@ -18,7 +19,8 @@ class OTPTestBase(TestCase):
         self.client = APIClient()
         self.phone_number = '+998901240001'
         self.user = User.objects.create_user(
-            email='otp@example.com', password='testpass123', phone_number=self.phone_number
+            email='otp@example.com', password='testpass123', phone_number=self.phone_number,
+            phone_verified=True,  # N-1: only a verified number can use SMS login
         )
 
     def request_code(self, phone_number=None):
@@ -31,7 +33,7 @@ class OTPTestBase(TestCase):
 
     def wrong_code(self):
         self.user.refresh_from_db()
-        return '000000' if self.user.otp_code != '000000' else '111111'
+        return '000000' if self.user.otp_code != hash_otp('000000') else '111111'
 
 
 class TestOTPGeneration(OTPTestBase):
@@ -76,9 +78,10 @@ class TestOTPLockout(OTPTestBase):
         assert response.status_code == 400
         assert response.data['message'] == 'Invalid or expired OTP code'
         self.user.refresh_from_db()
-        assert self.user.otp_code == code
+        assert self.user.otp_code == hash_otp(code)  # stored as a keyed hash (L-1): the code was not consumed
         assert self.user.otp_attempts == 0
-        assert self.user.phone_verified is False
+        # N-1: the fixture user is verified from the start; a refused request must leave that unchanged
+        assert self.user.phone_verified is True
         assert '_auth_user_id' not in self.client.session
 
     def test_locked_account_gets_no_new_code(self):

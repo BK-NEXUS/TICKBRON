@@ -208,7 +208,8 @@ class TestRoleCannotBeSelfAssigned:
 
     def test_otp_login_ignores_role_fields(self, regular_user, owner_role):
         regular_user.phone_number = '+998901234567'
-        regular_user.save(update_fields=['phone_number'])
+        regular_user.phone_verified = True  # N-1: only a verified number can use SMS login
+        regular_user.save(update_fields=['phone_number', 'phone_verified'])
         client = APIClient()
         otp = client.post('/api/v1/auth/otp/request/', {
             'phone_number': regular_user.phone_number, 'role': owner_role.id,

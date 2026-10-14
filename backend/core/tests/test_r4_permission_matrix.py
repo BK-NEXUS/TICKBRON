@@ -30,7 +30,7 @@ SUPERADMIN = {'superadmin'}
 ACCESS = [
     (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventory, staff only outside DEBUG
     (r'^/api/v1/auth/(register|login|logout|csrf|otp/request|otp/verify)/$', None, PUBLIC),
-    (r'^/api/v1/auth/(me|refresh|me/update)/$', None, AUTHENTICATED),
+    (r'^/api/v1/auth/(me|refresh|me/update|phone/verify/request|phone/verify/confirm)/$', None, AUTHENTICATED),  # N-1: phone proof needs a session
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
     (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
@@ -49,7 +49,9 @@ ACCESS = [
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/refunds/\d+/(mark-done|retry)/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
-    (r'^/api/v1/admin-panel/', None, STAFF),
+    (r'^/api/v1/admin-panel/$', None, STAFF),
+    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|customers|exchange-rates|no-show-reports|payments'
+     r'|promotion-hotels|promotions|properties|refunds|statistics|status|users)/', None, STAFF),
 ]
 
 # Allowed roles that still get 403 by design, not because of a permission check
@@ -107,6 +109,13 @@ def _allowed(method, path):
         if re.search(pattern, path) and (methods is None or method in methods):
             return roles
     return None
+
+
+def test_new_admin_routes_are_not_silently_staff_level():
+    # A06/A01: a catch-all rule made every new /admin-panel/ route pass at staff level unnoticed,
+    # even one that moves money. A new family must be added to ACCESS with an explicit tier.
+    catch_all = [pattern for pattern, methods, _ in ACCESS if pattern == r'^/api/v1/admin-panel/' and methods is None]
+    assert not catch_all
 
 
 def test_every_endpoint_is_classified():

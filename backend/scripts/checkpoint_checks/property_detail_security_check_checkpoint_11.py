@@ -13,13 +13,13 @@ import sys
 from pathlib import Path
 
 # Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def check_property_detail_endpoint_exists():
     """Check if property detail endpoint exists."""
     print("[*] Checking property detail endpoint...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
     checks = {
@@ -43,7 +43,7 @@ def check_property_detail_serializer_completeness():
     """Check if property detail serializer includes all required sections."""
     print("[*] Checking property detail serializer completeness...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -71,7 +71,7 @@ def check_property_detail_gallery_implementation():
     """Check if gallery is properly implemented."""
     print("[*] Checking gallery implementation...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -95,7 +95,7 @@ def check_property_detail_room_types_implementation():
     """Check if room types with rate plans are properly implemented."""
     print("[*] Checking room types implementation...")
     
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     checks = {
@@ -121,7 +121,7 @@ def check_property_detail_security():
     """Check if property detail endpoint has proper security."""
     print("[*] Checking property detail security...")
     
-    views_file = Path(__file__).parent.parent / 'properties' / 'views.py'
+    views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
     
     checks = {
@@ -150,7 +150,7 @@ def sensitive_data_exposure_check(views_content):
     
     # In the property detail view, we should not be exposing owner's sensitive data
     # The PropertyDetailSerializer should not include owner's email/phone
-    serializers_file = Path(__file__).parent.parent / 'properties' / 'serializers.py'
+    serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
     
     # Check that owner field is read-only and limited
@@ -164,7 +164,7 @@ def check_property_detail_url_configuration():
     """Check if property detail URL is properly configured."""
     print("[*] Checking URL configuration...")
     
-    urls_file = Path(__file__).parent.parent / 'properties' / 'urls.py'
+    urls_file = Path(__file__).parent.parent.parent / 'properties' / 'urls.py'
     urls_content = urls_file.read_text()
     
     checks = {
@@ -187,7 +187,7 @@ def check_property_detail_test_coverage():
     """Check if property detail has comprehensive test coverage."""
     print("[*] Checking test coverage...")
     
-    test_file = Path(__file__).parent.parent / 'properties' / 'tests' / 'test_property_detail.py'
+    test_file = Path(__file__).parent.parent.parent / 'properties' / 'tests' / 'test_property_detail.py'
     
     if not test_file.exists():
         print("  [FAIL] Property detail test file does not exist")

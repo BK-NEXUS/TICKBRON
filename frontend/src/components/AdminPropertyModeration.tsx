@@ -144,7 +144,7 @@ export function AdminPropertyModeration() {
   return (
     <div className="admin-property-moderation">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">{t('admin.propertyModeration')}</h1>
+        <h2 className="admin-view-title">{t('admin.propertyModeration')}</h2>
         <p className="admin-view-subtitle">{t('admin.reviewAndModerateProperty')}</p>
       </div>
 

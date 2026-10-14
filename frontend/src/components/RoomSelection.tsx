@@ -12,13 +12,10 @@ import { RoomCard } from './RoomCard'
 import { RatePlanCard } from './RatePlanCard'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
 import { useI18n } from '../i18n/I18nContext'
+import { addDays, businessToday } from '../utils/dates'
 
 /** How far ahead the availability calendar loads, in days */
 const AVAILABILITY_DAYS = 90
-
-/** YYYY-MM-DD in local time (the calendar builds its dates the same way) */
-const toLocalDate = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
 /** Map a backend inventory row to the calendar's shape. A null price means the rate plan's base price applies. */
 const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan): DateInventory => {
@@ -112,12 +109,10 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     setAvailabilityError(null)
     setDateInventory([])
 
-    const today = new Date()
-    const lastDay = new Date(today)
-    lastDay.setDate(today.getDate() + AVAILABILITY_DAYS)
+    const today = businessToday()
     const response = await propertyAdapter.getAvailability(propertyId, {
-      check_in: toLocalDate(today),
-      check_out: toLocalDate(lastDay),
+      check_in: today,
+      check_out: addDays(today, AVAILABILITY_DAYS),
     })
     if (requestId !== availabilityRequestId.current) return
 

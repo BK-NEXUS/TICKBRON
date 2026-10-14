@@ -109,33 +109,6 @@ def cache_query_result(cache_key, timeout=300):
     return decorator
 
 
-def bulk_update_with_optimization(queryset, fields, batch_size=100):
-    """
-    Perform bulk update with optimization for large datasets.
-    
-    Args:
-        queryset: Django queryset
-        fields: List of fields to update
-        batch_size: Number of objects to update per batch
-    
-    Returns:
-        Number of objects updated
-    """
-    total_updated = 0
-    objects = list(queryset)
-    
-    for i in range(0, len(objects), batch_size):
-        batch = objects[i:i + batch_size]
-        updated = queryset.filter(
-            id__in=[obj.id for obj in batch]
-        ).update(**{field: getattr(obj, field) for field in fields})
-        total_updated += updated
-        
-        logger.info(f"Bulk update batch {i//batch_size + 1}: {updated} objects")
-    
-    return total_updated
-
-
 class QueryPerformanceMonitor:
     """
     Context manager to monitor query performance.

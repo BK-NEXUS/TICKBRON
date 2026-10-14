@@ -9,7 +9,8 @@ Core endpoints:
 - POST `/api/v1/auth/login/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
-- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26)
+- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26, `phone_verified` added 2026-10-10)
+- POST `/api/v1/auth/phone/verify/request/` and `/confirm/` ✅ IMPLEMENTED (N-1, 2026-10-10; see contracts/auth.md): prove the logged-in user's own phone number by SMS; only a verified number can log in by SMS
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24; `features`, `min_rating`, `sort=reviews`, real date availability, `average_rating`/`review_count` added 2026-09-28)
 - GET `/api/v1/properties/filter-options/` ✅ IMPLEMENTED (2026-09-28)
@@ -985,3 +986,19 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 - Nightly task 00:10 Asia/Tashkent: expired promotions become `ended`, paid ones that started become `active` (serving never waits for it).
 
 - `start_too_far` (start date more than 730 days ahead) is also a 400 code of `POST/PATCH promotions/`; `?country=` accepts ASCII digits only.
+
+## 2026-10-13 OWASP batch 1 and 4: contract changes
+- `GET /properties/{id}/`: the fields `owner`, `approved_by`, `approved_at`, `rejection_reason` are no longer returned (internal moderation data).
+- `GET /properties/{id}/availability/`: `date_inventory[].notes` is no longer returned; rows are limited to 366 days starting at `check_in` (default: today).
+- `GET /properties/search/?q=`: at most the first 8 distinct words of 2+ characters are matched.
+- `POST /me/favorites/`: 400 for a hotel that is not published; `GET /me/favorites/` lists only published hotels.
+- `POST /me/reviews/` and `POST /payments/transactions/`: a booking id that is not the caller's gets the same 400 ("Booking not found.") as a missing id.
+- `POST /payments/webhook/{provider}/`: unknown provider -> 404; JSON body that is not an object -> 400.
+- SMS limits: `POST /auth/otp/request/` has an extra IP budget (60/hour) and every number a daily budget (10/day, shared with `POST /auth/phone/verify/request/`); the logged-in phone verification endpoints are limited per account (3/min request, 5/min confirm, 20/day requests). All answer 429.
+
+## 2026-10-14 OWASP batch 2: payments and cancellation
+- `POST /payments/webhook/{provider}/`: a paid/failed message with no matching transaction, or with a different amount, answers 409 `{"error": "The payment could not be applied yet"}` (was 200); the event is stored as failed and a retry is processed.
+- `POST /payments/transactions/`: an unexpected provider failure answers 502 `{"error": "The payment provider could not be reached. Please try again."}` and the transaction is `failed` (`error_code` `PROVIDER_ERROR`); `payment_method_token` containing a card number is a 400.
+- `POST /bookings/{id}/cancel/`: 400 for a confirmed booking whose check-in is today or earlier.
+- `POST /bookings/`, `POST /bookings/{id}/cancel/`, `POST /auth/otp/request|verify/`: a database error is a 500 (was a 400 "try again").
+- `POST /admin-panel/refunds/{id}/retry/` also accepts a refund pending for over an hour.

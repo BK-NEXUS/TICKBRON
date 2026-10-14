@@ -4,6 +4,7 @@ TICKBRON Backend Settings
 Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
 
+import ipaddress
 import os
 import re
 import sys
@@ -39,7 +40,14 @@ if not DEBUG and SECRET_KEY == 'django-insecure-change-this-in-production' and n
 _allowed_hosts = os.getenv('ALLOWED_HOSTS', '')
 if not DEBUG and not _allowed_hosts and not TESTING:
     raise ValueError('ALLOWED_HOSTS environment variable must be set in production')
-ALLOWED_HOSTS = _allowed_hosts.split(',') if _allowed_hosts else ['localhost', '127.0.0.1']
+
+
+def _env_list(raw):
+    """Comma-separated env value -> list, whitespace and empty entries dropped ("a.com, b.com" is two hosts)."""
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
+ALLOWED_HOSTS = _env_list(_allowed_hosts) or ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -75,6 +83,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'common.middleware.RequestBodyLimitMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -124,6 +133,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', ''),
         'CONN_MAX_AGE': 60,  # Persistent connections for 60 seconds
+        'CONN_HEALTH_CHECKS': True,  # a connection the database closed (restart) is replaced, not served as a 500
         'OPTIONS': {},
     }
 }
@@ -210,8 +220,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 # Security Settings
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = _env_list(os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000'))
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+# Behind a TLS-terminating proxy (nginx) Django only sees http. With this on it trusts the
+# proxy's X-Forwarded-Proto, so request.is_secure(), the https redirect and HSTS work and the
+# redirect does not loop. Turn it on only when the proxy always overwrites that header.
+SECURE_PROXY_SSL_HEADER = (
+    ('HTTP_X_FORWARDED_PROTO', 'https')
+    if os.getenv('USE_X_FORWARDED_PROTO', 'False').lower() == 'true' else None
+)
 # Cookies are https-only unless DEBUG is on (local http); override with the env vars
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
@@ -219,17 +236,20 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+# A stolen session cookie stops working after a week (Django's default is two)
+SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', str(7 * 24 * 3600)))
 
 # Additional Security Headers
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() == 'true'
-SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'True').lower() == 'true'
+# Preload is hard to undo (browsers ship the list), so it is an explicit owner decision
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
+SILENCED_SYSTEM_CHECKS = ['security.W021']  # W021 asks for preload: documented choice above
 SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
-SECURE_BROWSER_XSS_FILTER = os.getenv('SECURE_BROWSER_XSS_FILTER', 'True').lower() == 'true'
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+CORS_ALLOWED_ORIGINS = _env_list(os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000'))
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -251,14 +271,21 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# Rate Limiting Settings
-RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'True').lower() == 'true'
-RATELIMIT_USE_CACHE = 'default'
-
 # Number of trusted reverse proxies in front of the app that append to
 # X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
 # set it to match the deployment (e.g. 1 behind a single nginx/load balancer).
-NUM_PROXIES = int(os.getenv('NUM_PROXIES', '0'))
+def _read_num_proxies():
+    raw = os.getenv('NUM_PROXIES')
+    if raw is None:
+        return 0, None
+    try:
+        count = int(raw)
+    except ValueError:
+        return 0, f'NUM_PROXIES must be a whole number, got {raw!r}'
+    return (count, None) if count >= 0 else (0, 'NUM_PROXIES must not be negative')
+
+
+NUM_PROXIES, _NUM_PROXIES_ERROR = _read_num_proxies()
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {
@@ -270,6 +297,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # The browsable API (HTML forms for every endpoint) is a development tool only
+    'DEFAULT_RENDERER_CLASSES': (
+        ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG
+        else ['rest_framework.renderers.JSONRenderer']
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
@@ -285,6 +317,7 @@ REST_FRAMEWORK = {
         # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
         'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
         # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
+        'webhook': os.getenv('THROTTLE_WEBHOOK_RATE', '600/min'),
         'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
     },
@@ -322,7 +355,12 @@ if USE_REDIS_CACHE:
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': REDIS_URL,
-            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                # A dead Redis must fail fast; without timeouts every worker hangs on the OS TCP timeout
+                'SOCKET_CONNECT_TIMEOUT': 2,
+                'SOCKET_TIMEOUT': 2,
+            },
         }
     }
 else:
@@ -393,8 +431,6 @@ NO_SHOW_FLAG_FACTOR = Decimal(os.getenv('NO_SHOW_FLAG_FACTOR', '3'))
 NO_SHOW_FLAG_MIN_RATE = Decimal(os.getenv('NO_SHOW_FLAG_MIN_RATE', '0.10'))
 
 # Database connection health check
-DATABASE_HEALTH_CHECK_ENABLED = os.getenv('DATABASE_HEALTH_CHECK_ENABLED', 'True').lower() == 'true'
-DATABASE_HEALTH_CHECK_INTERVAL = int(os.getenv('DATABASE_HEALTH_CHECK_INTERVAL', '60'))
 
 # Payment Configuration
 # Defaults to False: test mode confirms payments without a real provider.
@@ -433,6 +469,31 @@ def _production_config_errors():
         errors.append('SECRET_KEY must be a random value of at least 50 characters, not a placeholder')
     if '*' in ALLOWED_HOSTS:
         errors.append("ALLOWED_HOSTS must list the real host names, not '*'")
+    # N-3: unset means "no proxy", and behind nginx every visitor then shares one IP, so the login
+    # throttle, the account lockout and the promotion counters collapse into one bucket
+    if _NUM_PROXIES_ERROR:
+        errors.append(_NUM_PROXIES_ERROR)
+    elif os.getenv('NUM_PROXIES') is None:
+        errors.append('NUM_PROXIES must be set (0 = no reverse proxy, 1 = one nginx/load balancer in front)')
+    # N-6: https must be enforced, and a TLS-terminating proxy needs its header trusted
+    if not SECURE_SSL_REDIRECT:
+        errors.append('SECURE_SSL_REDIRECT must be True when DEBUG is False')
+    if NUM_PROXIES > 0 and SECURE_PROXY_SSL_HEADER is None:
+        errors.append('USE_X_FORWARDED_PROTO must be True behind a reverse proxy (otherwise the https redirect loops)')
+    # N-19
+    if not SESSION_COOKIE_SECURE:
+        errors.append('SESSION_COOKIE_SECURE must be True when DEBUG is False')
+    if not CSRF_COOKIE_SECURE:
+        errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
+    if not USE_REDIS_CACHE:
+        errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
+    # Without DB_* the default is SQLite: no row locks, so the double-booking protection silently stops
+    if os.getenv('DB_ENGINE') != 'django.db.backends.postgresql':
+        errors.append('DB_ENGINE must be django.db.backends.postgresql when DEBUG is False')
+    if (os.getenv('DB_ENGINE') == 'django.db.backends.postgresql'
+            and os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
+            and os.getenv('DB_SSLMODE', 'prefer') in ('disable', 'allow', 'prefer')):
+        errors.append('DB_SSLMODE must be require, verify-ca or verify-full for a remote database')
     for name in ('CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS'):
         raw = os.getenv(name, '').strip()
         if not raw:
@@ -441,6 +502,20 @@ def _production_config_errors():
             errors.append(f'{name} may only contain https:// origins')
     return errors
 
+
+def _is_local_host(host):
+    """localhost, a *.localhost / *.local name or an IP address: places a developer's own machine can be."""
+    host = host.strip('[]')
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return host == 'localhost' or host.endswith(('.localhost', '.local'))
+
+
+if DEBUG and not TESTING and not all(_is_local_host(host) for host in ALLOWED_HOSTS):
+    # DEBUG shows stack traces, opens the API docs and skips every check below: never on a public domain
+    raise ValueError('DEBUG must be False when ALLOWED_HOSTS lists a public host name')
 
 if not DEBUG and not TESTING:
     _errors = _production_config_errors()

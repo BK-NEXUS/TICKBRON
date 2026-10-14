@@ -13,7 +13,7 @@ from rest_framework.decorators import (
 )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
@@ -21,6 +21,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from admin_panel.models import AdminAccessLog
 from bookings.models import Booking
 from bookings.state_machine import BookingState, BookingStateMachine
 from common.request import get_client_ip
@@ -33,10 +34,10 @@ from .serializers import (
     WebhookEventSerializer,
     PaymentAuditLogSerializer
 )
-from .adapters import get_payment_adapter, PaymentAdapterError
+from .adapters import PAYMENT_ADAPTERS, get_payment_adapter, PaymentAdapterError
 from .webhooks import (
     validate_webhook_request, get_webhook_processor, SignatureValidationError,
-    WebhookNotConfiguredError, WebhookNotSupportedError
+    WebhookNotApplicableError, WebhookNotConfiguredError, WebhookNotSupportedError
 )
 import logging
 
@@ -56,6 +57,16 @@ class PaymentRateThrottle(UserRateThrottle):
 
     def allow_request(self, request, view):
         # Disable throttling during tests
+        if TESTING:
+            return True
+        return super().allow_request(request, view)
+
+
+class WebhookRateThrottle(AnonRateThrottle):
+    """Webhook calls per client IP (settings: THROTTLE_WEBHOOK_RATE); generous, providers send from few IPs."""
+    scope = 'webhook'
+
+    def allow_request(self, request, view):
         if TESTING:
             return True
         return super().allow_request(request, view)
@@ -139,7 +150,12 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             with transaction.atomic():
                 # Lock the booking so two simultaneous requests cannot both pass the check
                 booking = Booking.objects.select_for_update().get(pk=transaction_data['booking'].pk)
-                if self._has_active_payment(booking):
+                active = self._active_payment(booking)
+                if active is not None:
+                    if active.status != 'completed' and active.provider == transaction_data['provider']:
+                        # A retry or double click with the same provider resumes the one transaction:
+                        # no second charge, and the guest can continue after a failed confirmation
+                        return Response(PaymentTransactionSerializer(active).data, status=status.HTTP_200_OK)
                     return Response(
                         {'error': 'A payment for this booking is already in progress or completed.',
                          'code': 'payment_already_active'},
@@ -164,7 +180,8 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             details={'user_agent': request.META.get('HTTP_USER_AGENT', '')}
         )
 
-        # Initiate payment with provider
+        # Initiate payment with provider. Only this call is guarded: a failure after the provider
+        # answered must not mark a live payment as failed
         try:
             adapter = get_payment_adapter(payment_transaction.provider)
             provider_response = adapter.initiate_payment(
@@ -172,29 +189,6 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 amount=payment_transaction.amount,
                 currency=payment_transaction.currency,
                 payment_method_token=payment_transaction.payment_method_token
-            )
-
-            # Update transaction with provider response
-            payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
-            payment_transaction.provider_response = provider_response
-            payment_transaction.status = 'processing'
-            payment_transaction.save()
-
-            # Log audit entry
-            PaymentAuditLog.log_action(
-                action='payment_initiated',
-                payment_transaction=payment_transaction,
-                booking=payment_transaction.booking,
-                old_status='pending',
-                new_status='processing',
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details={'provider_response': provider_response}
-            )
-
-            return Response(
-                PaymentTransactionSerializer(payment_transaction).data,
-                status=status.HTTP_201_CREATED
             )
 
         except NotImplementedError:
@@ -209,27 +203,61 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             # Handle payment adapter error. error_message/audit details are
             # internal records (staff-only), but the client response must not
             # echo str(e) -- it may carry adapter/provider internals.
-            payment_transaction.status = 'failed'
-            payment_transaction.error_code = 'ADAPTER_ERROR'
-            payment_transaction.error_message = str(e)
-            payment_transaction.save()
-
-            # Log audit entry
-            PaymentAuditLog.log_action(
-                action='payment_failed',
-                payment_transaction=payment_transaction,
-                booking=payment_transaction.booking,
-                old_status='pending',
-                new_status='failed',
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details={'error': str(e)}
-            )
-
+            self._fail_initiation(request, payment_transaction, 'ADAPTER_ERROR', str(e))
             return Response(
                 {'error': 'Payment could not be processed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        except Exception:
+            # Timeout, network or programming error: the transaction must not stay pending (a retry
+            # would "resume" a payment the provider never saw) and the client gets no internals
+            logger.exception('Payment %s: unexpected error calling the provider', payment_transaction.pk)
+            self._fail_initiation(request, payment_transaction, 'PROVIDER_ERROR', 'Unexpected provider error')
+            return Response(
+                {'error': 'The payment provider could not be reached. Please try again.'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        # Update transaction with provider response
+        payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
+        payment_transaction.provider_response = provider_response
+        payment_transaction.status = 'processing'
+        payment_transaction.save()
+
+        # Log audit entry
+        PaymentAuditLog.log_action(
+            action='payment_initiated',
+            payment_transaction=payment_transaction,
+            booking=payment_transaction.booking,
+            old_status='pending',
+            new_status='processing',
+            actor=request.user,
+            ip_address=self._get_client_ip(request),
+            details={'provider_response': provider_response}
+        )
+
+        return Response(
+            PaymentTransactionSerializer(payment_transaction).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def _fail_initiation(self, request, payment_transaction, error_code, message):
+        """Record a payment that could not be started: transaction failed, audit entry written."""
+        payment_transaction.status = 'failed'
+        payment_transaction.error_code = error_code
+        payment_transaction.error_message = message
+        payment_transaction.save()
+        PaymentAuditLog.log_action(
+            action='payment_failed',
+            payment_transaction=payment_transaction,
+            booking=payment_transaction.booking,
+            old_status='pending',
+            new_status='failed',
+            actor=request.user,
+            ip_address=self._get_client_ip(request),
+            details={'error': message}
+        )
 
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
@@ -384,6 +412,11 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 # rolls back the refund row too, and the provider is never asked.
                 booking.cancel_booking(cancellation_reason)
 
+        AdminAccessLog.record(
+            request.user, 'refund_create', target_booking_id=booking.id,
+            details={'refund_id': refund.id, 'amount': f'{refund.amount:.2f}', 'currency': refund.currency},
+        )
+
         # Provider call only after the refund row is committed, outside any transaction.
         # A failed provider call leaves the refund `failed` (staff retry it from the
         # needs-attention list); a cancellation made above stands.
@@ -414,16 +447,19 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         )
 
     @staticmethod
-    def _has_active_payment(booking):
+    def _active_payment(booking):
         """
-        A completed or processing payment always blocks another; a pending one
-        only while fresh, so a guest who abandoned the payment page can retry.
+        The transaction that blocks a new one, or None. A completed or processing payment always
+        blocks; a pending one only while fresh, so a guest who abandoned the payment page can retry.
         """
+        transactions = PaymentTransaction.objects.filter(booking=booking)
+        completed = transactions.filter(status='completed').first()
+        if completed is not None:
+            return completed
         fresh = timezone.now() - ACTIVE_PENDING_PAYMENT_WINDOW
-        return PaymentTransaction.objects.filter(booking=booking).filter(
-            Q(status__in=('processing', 'completed'))
-            | Q(status='pending', created_at__gte=fresh)
-        ).exists()
+        return transactions.filter(
+            Q(status='processing') | Q(status='pending', created_at__gte=fresh)
+        ).order_by('-created_at').first()
 
     def _existing_transaction_response(self, idempotency_key):
         """
@@ -484,6 +520,7 @@ class PaymentAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([WebhookRateThrottle])
 def webhook_endpoint(request, provider):
     """
     Public webhook endpoint for receiving payment provider webhooks.
@@ -498,6 +535,10 @@ def webhook_endpoint(request, provider):
     Returns:
         Response: HTTP response with status
     """
+    # Anything but a known provider is a plain 404; the raw path value is never written to a log
+    if provider.lower() not in PAYMENT_ADAPTERS:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
     try:
         # Validate and extract webhook data
         payload, signature = validate_webhook_request(request)
@@ -525,6 +566,13 @@ def webhook_endpoint(request, provider):
         return Response(
             {'error': 'Webhook verification is not configured'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    except WebhookNotApplicableError as e:
+        # Stored as failed; a non-2xx answer makes the provider send it again
+        logger.warning(f"Webhook could not be applied: {e}")
+        return Response(
+            {'error': 'The payment could not be applied yet'},
+            status=status.HTTP_409_CONFLICT
         )
     except WebhookNotSupportedError as e:
         logger.error(f"Webhook rejected: {e}")

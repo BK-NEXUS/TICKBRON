@@ -10,11 +10,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from currency.rates import ExchangeRateUnavailable
-from .models import Booking
+from .models import Booking, BookingItem
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
 logger = logging.getLogger('tickbron')
@@ -55,8 +58,24 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Booking.objects.filter(
             guest=self.request.user,
             is_deleted=False
-        ).select_related('guest', 'property').prefetch_related('booking_items', 'property__translations')
+        ).select_related('guest', 'property').prefetch_related(
+            # The item serializer names each room type and rate plan: fetch them with the items
+            Prefetch('booking_items', queryset=BookingItem.objects.select_related('room_type', 'rate_plan')),
+            'property__translations',
+        )
     
+    @staticmethod
+    def _pending_cap_reached(user):
+        pending = Booking.objects.filter(guest=user, status='pending', is_deleted=False).count()
+        return pending >= MAX_PENDING_BOOKINGS_PER_GUEST
+
+    @staticmethod
+    def _pending_cap_response():
+        return Response(
+            {'error': 'Too many unpaid bookings. Pay or cancel one first.', 'code': 'too_many_pending_bookings'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
     def get_throttles(self):
         if self.action == 'create':
             return [BookingCreateThrottle()]
@@ -78,15 +97,8 @@ class BookingViewSet(mixins.CreateModelMixin,
         Returns:
             Created booking with confirmation code
         """
-        pending = Booking.objects.filter(
-            guest=request.user, status='pending', is_deleted=False
-        ).count()
-        if pending >= MAX_PENDING_BOOKINGS_PER_GUEST:
-            return Response(
-                {'error': 'Too many unpaid bookings. Pay or cancel one first.',
-                 'code': 'too_many_pending_bookings'},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
+        if self._pending_cap_reached(request.user):
+            return self._pending_cap_response()
 
         serializer = BookingCreateSerializer(
             data=request.data,
@@ -100,7 +112,13 @@ class BookingViewSet(mixins.CreateModelMixin,
             )
         
         try:
-            booking = serializer.save()
+            with transaction.atomic():
+                # Check the cap again under a lock on the guest's row: without it, parallel
+                # requests all read the same count and every one of them passes the check above
+                get_user_model().objects.select_for_update().get(pk=request.user.pk)
+                if self._pending_cap_reached(request.user):
+                    return self._pending_cap_response()
+                booking = serializer.save()
             response_serializer = BookingSerializer(booking)
             return Response(
                 response_serializer.data,

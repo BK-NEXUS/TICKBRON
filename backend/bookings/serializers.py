@@ -6,6 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
+from django.db import DatabaseError
 from common.dates import business_today
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
@@ -93,10 +94,10 @@ class BookingCreateSerializer(serializers.Serializer):
     check_in = serializers.DateField()
     check_out = serializers.DateField()
     guest_count = serializers.IntegerField(min_value=1)
-    special_requests = serializers.CharField(required=False, allow_blank=True)
+    special_requests = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     
     # Guest contact details (optional - will be pre-filled from user profile)
-    guest_full_name = serializers.CharField(required=False, allow_blank=True)
+    guest_full_name = serializers.CharField(required=False, allow_blank=True, max_length=300)  # the column's size
     guest_phone = serializers.CharField(required=False, allow_blank=True)
     guest_email = serializers.EmailField(required=False, allow_blank=True)
     
@@ -234,9 +235,11 @@ class BookingCreateSerializer(serializers.Serializer):
                 raise serializers.ValidationError(e.message_dict)
             else:
                 raise serializers.ValidationError({'non_field_errors': str(e)})
+        except DatabaseError:
+            # An outage is a server error (5xx), not something the guest can fix by retrying the form
+            raise
         except Exception as e:
-            # Unexpected/internal error (e.g. a raw DB error): never echo str(e) to
-            # the client, only log it server-side.
+            # Unexpected/internal error: never echo str(e) to the client, only log it server-side.
             logger.exception('Unexpected error creating booking')
             raise serializers.ValidationError({
                 'non_field_errors': 'Failed to create booking. Please try again.'
@@ -246,7 +249,7 @@ class BookingCreateSerializer(serializers.Serializer):
 class BookingCancelSerializer(serializers.Serializer):
     """Serializer for cancelling bookings."""
     
-    cancellation_reason = serializers.CharField(required=False, allow_blank=True)
+    cancellation_reason = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     
     def validate(self, data):
         """Validate cancellation parameters."""
@@ -256,7 +259,14 @@ class BookingCancelSerializer(serializers.Serializer):
             raise ValidationError({
                 'status': 'Booking cannot be cancelled in current status'
             })
-        
+
+        # Once the stay has started, cancelling would free rooms the guest used and leave the money
+        # captured; the hotel and support handle that case by hand
+        if booking.status == 'confirmed' and booking.check_in <= business_today():
+            raise ValidationError({
+                'status': 'A stay that has started cannot be cancelled online. Please contact the hotel.'
+            })
+
         return data
     
     def update(self, instance, validated_data):
@@ -268,6 +278,8 @@ class BookingCancelSerializer(serializers.Serializer):
             return instance
         except ValidationError as e:
             raise serializers.ValidationError(e.message_dict)
+        except DatabaseError:
+            raise
         except Exception as e:
             logger.exception('Unexpected error cancelling booking')
             raise serializers.ValidationError({

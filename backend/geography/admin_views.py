@@ -12,6 +12,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from admin_panel.audit import AuditedModelViewSetMixin
+from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdmin
 from geography.admin_serializers import (
     AdminCitySerializer, AdminCountrySerializer, AdminRegionSerializer, search_filter,
@@ -27,9 +29,10 @@ class GeographyPagination(PageNumberPagination):
     max_page_size = 200
 
 
-class BaseGeographyViewSet(viewsets.ModelViewSet):
+class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsSuperAdmin]
     pagination_class = GeographyPagination
+    audit_name = 'geography'
     model = None
     search_extra = ()
     parent_param = None  # query parameter that filters by the parent id
@@ -50,6 +53,7 @@ class BaseGeographyViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        object_id = instance.pk
         try:
             with transaction.atomic():
                 instance.delete()
@@ -58,6 +62,7 @@ class BaseGeographyViewSet(viewsets.ModelViewSet):
                 {'error': 'This row is in use (it has regions, cities or properties). Hide it instead.'},
                 status=status.HTTP_409_CONFLICT,
             )
+        self.audit('delete', object_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['post'], url_path='reorder')
@@ -77,11 +82,13 @@ class BaseGeographyViewSet(viewsets.ModelViewSet):
                 if rows[pk].sort_order != position:
                     rows[pk].sort_order = position
                     rows[pk].save(update_fields=['sort_order', 'updated_at'])
+        AdminAccessLog.record(request.user, 'geography_reorder', details={'level': self.audit_level, 'rows': len(ids)})
         return Response({'ids': ids})
 
 
 class AdminCountryViewSet(BaseGeographyViewSet):
     serializer_class = AdminCountrySerializer
+    audit_level = 'country'
     model = Country
     search_extra = ('code',)
 
@@ -94,6 +101,7 @@ class AdminCountryViewSet(BaseGeographyViewSet):
 
 class AdminRegionViewSet(BaseGeographyViewSet):
     serializer_class = AdminRegionSerializer
+    audit_level = 'region'
     model = Region
     parent_param = 'country'
 
@@ -106,6 +114,7 @@ class AdminRegionViewSet(BaseGeographyViewSet):
 
 class AdminCityViewSet(BaseGeographyViewSet):
     serializer_class = AdminCitySerializer
+    audit_level = 'city'
     model = City
     parent_param = 'region'
 

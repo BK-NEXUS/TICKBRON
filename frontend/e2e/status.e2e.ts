@@ -56,7 +56,7 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
     await expect(page.getByRole('heading', { name: OWN_HOTEL })).toBeVisible()
     await expect(page.locator(TRAIL))
       .toContainText(`Status›Countries›Uzbekistan›Tashkent›${OWN_HOTEL}`)
-    await expect(page.getByRole('img', { name: /Revenue \(USD\) per month in \d{4}/ })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Revenue \(UZS\) per month in \d{4}/ })).toBeVisible()
     await expect(page.getByRole('img', { name: /Guests per month in \d{4}/ })).toBeVisible()
     await expect(page.getByText('Akmal Karimov')).toBeVisible()
 
@@ -65,9 +65,10 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
       `${API}/api/v1/admin-panel/status/countries/Uzbekistan/regions/Tashkent/hotels/?search=Silk`)).json()
     const detail = await (await page.request.get(
       `${API}/api/v1/admin-panel/status/hotels/${hotels.results[0].id}/`)).json()
-    expect(detail.totals.bookings).toBeGreaterThan(0)
-    const bookingsCard = cardValue(page, 'Bookings')
-    await expect(bookingsCard).toHaveText(count(detail.totals.bookings))
+    // R12a renamed the summary cards: "Counted" = confirmed and completed bookings, "Stayed bookings" = completed
+    expect(detail.totals.counted).toBeGreaterThan(0)
+    await expect(cardValue(page, 'Counted')).toHaveText(count(detail.totals.counted))
+    await expect(cardValue(page, 'Stayed bookings')).toHaveText(count(detail.totals.stayed))
   })
 
   await step(audit, 'S5 back-steps-up', async () => {
@@ -79,7 +80,7 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
 
   await step(audit, 'S6 admin-status-users-search', async () => {
     await page.locator(TRAIL).getByRole('button', { name: 'Status', exact: true }).click()
-    await page.getByRole('button', { name: /^Users/ }).click()
+    await page.locator('.status-tiles').getByRole('button', { name: /^Users/ }).click()
     await expect(page.getByRole('table')).toBeVisible()
     await page.getByLabel('Search users').fill('stats-guest-01@')
     const row = page.getByRole('row').filter({ hasText: STATS_GUEST_EMAIL })
@@ -105,8 +106,7 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
 
     const own = await (await page.request.get(`${API}/api/v1/partner/status/`)).json()
     expect(own.properties.map((p: { name: string }) => p.name)).toEqual([OWN_HOTEL])
-    const bookingsCard = cardValue(page, 'Bookings')
-    await expect(bookingsCard).toHaveText(count(own.totals.bookings))
+    await expect(cardValue(page, 'Counted')).toHaveText(count(own.totals.counted))
 
     // The admin Status API is closed to hotel owners
     const adminApi = await page.request.get(`${API}/api/v1/admin-panel/status/countries/`)

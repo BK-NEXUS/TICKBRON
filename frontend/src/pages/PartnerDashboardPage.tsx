@@ -131,6 +131,7 @@ export function PartnerDashboardPage() {
       <div className="partner-dashboard-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Lock size={40} />}
             title={t('partner.authenticationRequired')}
             message={t('partner.pleaseSignInTo')}
@@ -232,7 +233,7 @@ export function PartnerDashboardPage() {
   const renderPropertiesView = () => (
     <div className="partner-properties-view">
       <div className="properties-view-header">
-        <h1 className="properties-view-title">{t('partner.myProperties')}</h1>
+        <h2 className="properties-view-title">{t('partner.myProperties')}</h2>
         <button
           onClick={() => setCurrentView('add-property')}
           className="btn btn-primary"

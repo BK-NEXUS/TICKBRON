@@ -536,6 +536,13 @@ class VisaAdapter(BasePaymentAdapter):
         raise NotImplementedError("Visa adapter not yet implemented")
 
 
+PAYMENT_ADAPTERS = {
+    'payme': PaymeAdapter,
+    'click': ClickAdapter,
+    'visa': VisaAdapter,
+}
+
+
 def get_payment_adapter(provider: str) -> BasePaymentAdapter:
     """
     Factory function to get the appropriate payment adapter.
@@ -549,14 +556,8 @@ def get_payment_adapter(provider: str) -> BasePaymentAdapter:
     Raises:
         ValueError: If provider is not supported
     """
-    adapters = {
-        'payme': PaymeAdapter,
-        'click': ClickAdapter,
-        'visa': VisaAdapter,
-    }
-    
-    adapter_class = adapters.get(provider.lower())
+    adapter_class = PAYMENT_ADAPTERS.get(provider.lower())
     if not adapter_class:
-        raise ValueError(f"Unsupported payment provider: {provider}")
+        raise ValueError(f"Unsupported payment provider: {provider!r}")
     
     return adapter_class()

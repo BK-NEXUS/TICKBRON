@@ -3,6 +3,8 @@ Tests for booking business rules from the audit (#7, #13, #17, #19, #29).
 """
 from datetime import timedelta
 from decimal import Decimal
+
+from common.dates import business_today
 from io import StringIO
 from unittest import mock
 
@@ -184,7 +186,8 @@ class TestBookingInputValidation(BookingLogicTestBase):
         assert not Booking.objects.exists()
 
     def test_check_in_today_is_allowed(self):
-        today = timezone.localdate()
+        # "Today" is the business date (Tashkent); it differs from the UTC date for 5 hours a day
+        today = business_today()
         DateInventory.objects.create(
             rate_plan=self.rate_plan, date=today, available_rooms=5, booked_rooms=0,
             price=Decimal('100.00'), currency='USD', is_available=True

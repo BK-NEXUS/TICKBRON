@@ -5,7 +5,7 @@ This module provides text search, geographic search, and comprehensive filtering
 using database features that work with both SQLite (development) and PostgreSQL (production).
 """
 from django.db import models
-from django.db.models import Q, F, Value, FloatField, Prefetch, Avg, Count, OuterRef, Subquery, IntegerField
+from django.db.models import Q, F, Value, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
 from django.db.models.functions import Coalesce
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -41,6 +41,7 @@ def searchable_properties():
 
 GEOGRAPHY_LEVELS = ('city_ref', 'region_ref', 'country_ref')
 GEOGRAPHY_LANGUAGES = ('uz', 'ru', 'en')
+MAX_SEARCH_WORDS = 8
 
 
 def geography_name_filter(term):
@@ -85,7 +86,7 @@ class PropertySearchService:
     
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
-        from properties.models import PropertyTranslation
+        from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation
         
         return with_review_scores(searchable_properties()).select_related(
             'owner',
@@ -93,8 +94,11 @@ class PropertySearchService:
         ).prefetch_related(
             # One query for every result's translations (serialized as `translations`)
             Prefetch('translations', queryset=PropertyTranslation.objects.filter(is_deleted=False)),
-            'property_amenities__amenity',
-            'photos'
+            # Filtered here, not in the serializer, so a result page costs the same queries for any size
+            Prefetch('property_amenities', to_attr='searchable_amenities', queryset=PropertyAmenity.objects.filter(
+                is_available=True, amenity__is_searchable=True, is_deleted=False).select_related('amenity__category')),
+            Prefetch('photos', to_attr='active_photos', queryset=PropertyPhoto.objects.filter(
+                is_active=True, is_deleted=False)),
         )
     
     def _validate_search_params(self, search_params):
@@ -441,31 +445,32 @@ class PropertySearchService:
         if not query or len(query) < 2:
             return queryset
         
-        # Search across relevant fields using case-insensitive contains
-        # Split query into words for more flexible search
-        words = query.split()
-        q_objects = []
-        
-        for word in words:
-            if len(word) >= 2:  # Only search words with 2+ characters
-                q_objects.append(
-                    Q(address_line1__icontains=word) |
-                    Q(city__icontains=word) |
-                    Q(country__icontains=word) |
-                    geography_name_filter(word) |
-                    Q(translations__name__icontains=word) |
-                    Q(translations__description__icontains=word)
-                )
-        
-        if q_objects:
-            # Combine all word searches with OR
-            combined_q = q_objects[0]
-            for q_obj in q_objects[1:]:
-                combined_q |= q_obj
-            return queryset.filter(combined_q).distinct()
-        
+        from properties.models import PropertyTranslation
+
+        # Each word is matched on its own, and every word must match somewhere (a word may match a
+        # different field than another). With OR, "Pricey Street" matched every property on any "Street".
+        # The word count is capped and translations are matched with EXISTS, so the SQL does not grow
+        # with a long query (one join per word let a single anonymous request pin the database).
+        for word in self._search_words(query):
+            queryset = queryset.filter(
+                Q(address_line1__icontains=word) |
+                Q(city__icontains=word) |
+                Q(country__icontains=word) |
+                geography_name_filter(word) |
+                Exists(PropertyTranslation.objects.filter(property=OuterRef('pk')).filter(
+                    Q(name__icontains=word) | Q(description__icontains=word)))
+            )
         return queryset
-    
+
+    @staticmethod
+    def _search_words(query):
+        """The first MAX_SEARCH_WORDS distinct words of 2+ characters (case-insensitive)."""
+        words = []
+        for word in query.split():
+            if len(word) >= 2 and word.lower() not in (seen.lower() for seen in words):
+                words.append(word)
+        return words[:MAX_SEARCH_WORDS]
+
     def _apply_location_search(self, queryset, location):
         """
         Apply location-based search: names in all three languages through the Geography refs,

@@ -55,7 +55,7 @@ export function AdminStatisticsDashboard() {
   return (
     <div className="admin-statistics-dashboard">
       <div className="admin-view-header">
-        <h1 className="admin-view-title">{t('admin.statisticsDashboard')}</h1>
+        <h2 className="admin-view-title">{t('admin.statisticsDashboard')}</h2>
         <p className="admin-view-subtitle">{t('admin.registrationTrendsAndCustomer')}</p>
       </div>
 

@@ -5,6 +5,7 @@ This module contains serializers for favorites, reviews, notifications, and acco
 """
 from rest_framework import serializers
 from bookings.models import Booking
+from bookings.fields import OwnBookingField
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
 
@@ -30,16 +31,14 @@ class FavoriteSerializer(serializers.ModelSerializer):
                   'property_primary_photo', 'notes', 'created_at']
         # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
         read_only_fields = ['id', 'user', 'property', 'created_at']
+        extra_kwargs = {'notes': {'max_length': 500}}
     
     def get_property_primary_photo(self, obj) -> str | None:
-        """Get the primary photo for the property."""
-        try:
-            primary_photo = obj.property.photos.filter(is_primary=True, is_deleted=False).first()
-            if primary_photo:
-                return primary_photo.photo_url
-        except:
-            pass
-        return None
+        """URL of the primary photo; the list view loads it for every favorite in one query."""
+        photos = obj.property.primary_photos if hasattr(obj.property, 'primary_photos') else obj.property.photos.filter(
+            is_primary=True, is_deleted=False)
+        photo = next(iter(photos), None)
+        return photo.photo.url if photo and photo.photo else None
 
 
 class FavoriteCreateSerializer(serializers.ModelSerializer):
@@ -49,10 +48,11 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['property', 'notes']
+        extra_kwargs = {'notes': {'max_length': 500}}
     
     def validate_property(self, value):
-        """Validate that the property exists and is active."""
-        if not value.is_active or value.is_deleted:
+        """Validate that the property is published."""
+        if not value.is_active or value.is_deleted or value.status != 'active':
             raise serializers.ValidationError("Property is not available for favorites.")
         return value
 
@@ -74,6 +74,7 @@ class ReviewSerializer(serializers.ModelSerializer):
                   'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating', 
                   'service_rating', 'title', 'comment', 'status', 'reviewed_at', 'created_at']
         read_only_fields = ['id', 'user', 'status', 'reviewed_at', 'created_at']
+        extra_kwargs = {'comment': {'max_length': 2000}}
     
     def validate_overall_rating(self, value):
         """Validate overall rating is between 1 and 5."""
@@ -107,21 +108,17 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
     Serializer for creating a review.
     """
     # A review is always tied to one of the reviewer's completed stays
-    booking = serializers.PrimaryKeyRelatedField(
-        queryset=Booking.objects.all(), required=True, allow_null=False
-    )
+    booking = OwnBookingField(required=True, allow_null=False)
 
     class Meta:
         model = Review
         fields = ['property', 'booking', 'overall_rating', 'cleanliness_rating',
                   'location_rating', 'value_rating', 'amenities_rating', 'service_rating',
                   'title', 'comment']
+        extra_kwargs = {'comment': {'max_length': 2000}}
 
     def validate_booking(self, value):
-        """Validate that the booking belongs to the user, is completed and is not reviewed yet."""
-        if value.guest != self.context['request'].user:
-            raise serializers.ValidationError("You can only review your own bookings.")
-
+        """Validate that the booking is completed and is not reviewed yet (OwnBookingField checks the owner)."""
         if value.status != 'completed':
             raise serializers.ValidationError("You can only review completed bookings.")
 

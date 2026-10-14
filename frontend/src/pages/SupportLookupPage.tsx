@@ -79,6 +79,7 @@ export function SupportLookupPage() {
       <div className="support-lookup-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Lock size={40} />}
             title={t('partner.authenticationRequired')}
             message={t('admin.pleaseSignInTo2')}
@@ -95,6 +96,7 @@ export function SupportLookupPage() {
       <div className="support-lookup-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Ban size={40} />}
             title={t('denied.title')}
             message={t('admin.youDoNotHave2')}

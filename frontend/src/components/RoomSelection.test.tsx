@@ -2,17 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { RoomSelection } from './RoomSelection'
+import { addDays, businessToday } from '../utils/dates'
 import { RoomType, RatePlan, propertyAdapter } from '../adapters/propertyAdapter'
 
 vi.mock('../adapters/propertyAdapter', () => ({
   propertyAdapter: { getAvailability: vi.fn(), getQuote: vi.fn() },
 }))
 
-const localDate = (offsetDays = 0) => {
-  const d = new Date()
-  d.setDate(d.getDate() + offsetDays)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+// "Today" is the backend's business date (Tashkent), which differs from the machine's date for 5 hours a day
+const localDate = (offsetDays = 0) => addDays(businessToday(), offsetDays)
 
 // Backend shape of GET /properties/{id}/availability/ (prices are decimal strings or null)
 const inventoryRow = (date: string, overrides: Record<string, unknown> = {}) => ({

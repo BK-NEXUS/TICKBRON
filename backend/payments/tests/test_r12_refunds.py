@@ -243,6 +243,21 @@ class TestRefundEndpointUsesTheModel:
         assert response.data['refund'] == {'id': refund.id, 'amount': '1000000.00', 'currency': 'UZS',
                                            'reason': 'staff', 'status': 'succeeded'}
 
+    def test_staff_refund_is_in_the_admin_audit_log(self, paid, people):
+        # N-17: a refund is money leaving; the staff member, the booking and the refund are recorded
+        self._refund(paid, people['staff'], {})
+
+        refund = Refund.objects.get()
+        row = AdminAccessLog.objects.get(action='refund_create')
+        assert (row.actor_id, row.target_booking_id) == (people['staff'].id, paid['booking'].id)
+        assert row.details == {'refund_id': refund.id, 'amount': '1000000.00', 'currency': 'UZS'}
+
+    def test_a_refused_refund_is_not_in_the_audit_log(self, paid, people):
+        response = self._refund(paid, people['guest'], {})
+
+        assert response.status_code == 403
+        assert not AdminAccessLog.objects.filter(action='refund_create').exists()
+
     def test_refund_with_cancel_has_reason_cancel(self, paid, people):
         response = self._refund(paid, people['staff'], {'cancel_booking': True})
         assert response.status_code == 200

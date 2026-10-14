@@ -90,7 +90,7 @@ export function PartnerBookingsView() {
   return (
     <div className="partner-bookings-view">
       <div className="bookings-view-header">
-        <h1 className="bookings-view-title">{t('partner.partnerBookings')}</h1>
+        <h2 className="bookings-view-title">{t('partner.partnerBookings')}</h2>
         <p className="bookings-view-subtitle">{t('partner.viewAndManageBookings')}</p>
       </div>
 

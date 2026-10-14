@@ -6,9 +6,11 @@ This module contains the custom User model and related user management models.
 import hmac
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Q
 from django.utils import timezone
 from common.models import BaseModel
+from users.otp import hash_otp
 
 
 class UserManager(BaseUserManager):
@@ -56,8 +58,9 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     full_name = models.CharField(max_length=300, blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
-    # Unique: phone OTP login looks users up by this number. Blank is stored as NULL.
-    phone_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    # Phone OTP login looks users up by this number. Blank is stored as NULL. Only a VERIFIED
+    # number is unique (constraint below): an unproven claim must not block the real owner.
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -81,7 +84,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     
     # Phone OTP authentication fields
     phone_verified = models.BooleanField(default=False)
-    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    # HMAC of the 6-digit code (users.otp.hash_otp), never the code itself
+    otp_code = models.CharField(max_length=64, blank=True, null=True)
     otp_expires_at = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.IntegerField(default=0)
     
@@ -115,6 +119,13 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['phone_number'],
+                condition=Q(phone_verified=True),
+                name='users_phone_unique_when_verified',
+            ),
+        ]
     
     def __str__(self):
         return self.email
@@ -193,11 +204,12 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         from datetime import timedelta
         
         # CSPRNG: the code is a login credential
-        self.otp_code = f'{secrets.randbelow(10**6):06d}'
+        code = f'{secrets.randbelow(10**6):06d}'
+        self.otp_code = hash_otp(code)
         self.otp_expires_at = timezone.now() + timedelta(minutes=5)
         self.otp_attempts = 0
         self.save()
-        return self.otp_code
+        return code
     
     def verify_otp(self, code):
         """
@@ -217,12 +229,19 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.otp_attempts += 1
         self.save()
         
-        if hmac.compare_digest(self.otp_code.encode(), str(code).encode()):
+        if hmac.compare_digest(self.otp_code.encode(), hash_otp(code).encode()):
             self.otp_code = None
             self.otp_expires_at = None
             self.otp_attempts = 0
+            newly_verified = not self.phone_verified
             self.phone_verified = True
-            self.save()
+            with transaction.atomic():
+                self.save()
+                if newly_verified and self.phone_number:
+                    # Proof beats claims: other accounts that only claimed this number lose it
+                    User.objects.filter(
+                        phone_number=self.phone_number, phone_verified=False
+                    ).exclude(pk=self.pk).update(phone_number=None)
             return True
         
         return False

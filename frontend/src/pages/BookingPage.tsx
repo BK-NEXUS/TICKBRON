@@ -1004,15 +1004,6 @@ export function BookingPage() {
                         <span className="booking-summary-label">{priceBreakdownLabel()}</span>
                         <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
                       </div>
-
-                      {ratePlan.deposit_required && ratePlan.deposit_percentage && (
-                        <div className="booking-summary-item">
-                          <span className="booking-summary-label">{t('booking.deposit', { percent: ratePlan.deposit_percentage })}</span>
-                          <span className="booking-summary-value">
-                            {formatMoney(totalPrice * (ratePlan.deposit_percentage / 100))}
-                          </span>
-                        </div>
-                      )}
                     </div>
 
                     <div className="booking-summary-total">

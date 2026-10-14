@@ -36,7 +36,7 @@ export function Footer() {
         </div>
       </div>
       <div className="container footer-bottom">
-        <p>{t('footer.rights')}</p>
+        <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
       </div>
     </footer>
   )
