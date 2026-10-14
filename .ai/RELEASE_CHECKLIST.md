@@ -215,6 +215,8 @@ proxy_set_header Host              $host;
 
 ### Environment variables (the app refuses to start without the starred ones being safe)
 - [ ] `DEBUG=False` (the app also refuses `DEBUG=True` when `ALLOWED_HOSTS` lists a public domain)
+- [ ] `FRONTEND_URL`* the https:// address of the site (reset links point to it) and `EMAIL_HOST`* (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`): password reset e-mails are sent through it. A Celery worker must run, the mail is sent by a task
+- [ ] `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID`: alerts for locked accounts, forged or unappliable payment webhooks and server errors (empty = no alerts; add the bot to the chat first)
 - [ ] `DB_ENGINE=django.db.backends.postgresql`* (refused otherwise: SQLite has no row locks, so double-booking protection would stop)
 - [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
 - [ ] `ALLOWED_HOSTS`* real host names, no `*`

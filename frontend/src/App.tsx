@@ -16,6 +16,8 @@ const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
 const BookingPage = lazy(() => import('./pages/BookingPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const BookingsPage = lazy(() => import('./pages/BookingsPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
@@ -66,6 +68,8 @@ function App() {
                   </Route>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                 </Routes>
               </Suspense>
             </Router>

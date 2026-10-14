@@ -14,7 +14,7 @@ async function expectOneH1(page: Page, where: string) {
 }
 
 test('HEADINGS public pages and sign-in-required screens have one h1', async ({ page }) => {
-  for (const route of ['/', '/search', '/destinations', '/about', '/help', '/login', '/register', '/profile', '/bookings', '/favorites', '/admin', '/partner', '/no-such-page']) {
+  for (const route of ['/', '/search', '/destinations', '/about', '/help', '/login', '/register', '/forgot-password', '/reset-password', '/profile', '/bookings', '/favorites', '/admin', '/partner', '/no-such-page']) {
     await page.goto(route)
     await expectOneH1(page, `anonymous ${route}`)
   }

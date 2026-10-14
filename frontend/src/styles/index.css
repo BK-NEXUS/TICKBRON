@@ -5379,6 +5379,15 @@ table .btn {
   border: 1px solid var(--color-error);
 }
 
+.auth-notice {
+  background-color: rgba(56, 109, 77, 0.1);
+  color: var(--color-success);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-success);
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -5445,6 +5454,11 @@ table .btn {
   position: absolute;
   right: var(--spacing-xs);
   color: var(--color-text-secondary);
+}
+
+.auth-forgot-link {
+  align-self: flex-end;
+  font-size: var(--font-size-sm);
 }
 
 .auth-hint {

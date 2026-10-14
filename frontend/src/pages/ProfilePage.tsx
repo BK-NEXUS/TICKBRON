@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { canUsePartnerPanel } from '../utils/roles'
 import { PhoneInput } from '../components/PhoneInput'
 import { isValidPhone, phoneExample } from '../utils/phone'
+import { ChangePasswordForm } from '../components/ChangePasswordForm'
 import { PhoneVerifyDialog } from '../components/PhoneVerifyDialog'
 
 export function ProfilePage() {
@@ -315,6 +316,8 @@ export function ProfilePage() {
                 </p>
               </div>
             </div>
+
+            <ChangePasswordForm />
 
             <div className="profile-section">
               <h2 className="profile-section-title">{t('profile.quickLinks')}</h2>

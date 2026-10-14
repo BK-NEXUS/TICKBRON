@@ -1006,3 +1006,7 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 ## 2026-10-14 OWASP batch 3: probes and account history
 - `GET /healthz/` -> 200 `{"status": "ok"}`; `GET /readyz/` -> 200 `{"status": "ok"}` or 503 `{"status": "unavailable"}` (database and cache). Public, outside `/api/`.
 - `GET /me/history/` now also lists `login`, `logout` and `account_created` entries (with `ip_address`).
+
+## 2026-10-14 password reset and change
+- New: `POST /auth/password-reset/request/`, `POST /auth/password-reset/confirm/`, `POST /auth/password/change/`. Full contract in `.ai/contracts/auth.md` ("Password reset and change").
+- Frontend routes: `/forgot-password` (e-mail form), `/reset-password?uid=&token=` (new password form), change-password section on `/profile`.

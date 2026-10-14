@@ -43,6 +43,11 @@ def get_logging_config():
                 'formatter': 'verbose',
                 'level': log_level,
             },
+            # Telegram message for a security event worth acting on or any ERROR (see common/alerts.py)
+            'alerts': {
+                'class': 'common.alerts.AlertHandler',
+                'level': 'WARNING',
+            },
             # Security events (logins, lockouts, refused requests) are kept at INFO whatever LOG_LEVEL is
             'security_console': {
                 'class': 'logging.StreamHandler',
@@ -73,7 +78,7 @@ def get_logging_config():
                 'propagate': False,
             },
             'django.request': {
-                'handlers': ['console', 'error_file'],
+                'handlers': ['console', 'error_file', 'alerts'],
                 'level': 'ERROR',
                 'propagate': False,
             },
@@ -83,19 +88,19 @@ def get_logging_config():
                 'propagate': False,
             },
             'tickbron': {
-                'handlers': ['console', 'file'],
+                'handlers': ['console', 'file', 'alerts'],
                 'level': log_level,
                 'propagate': False,
             },
             'tickbron.security': {
-                'handlers': ['security_console', 'security_file'],
+                'handlers': ['security_console', 'security_file', 'alerts'],
                 'level': 'INFO',
                 'propagate': False,
             },
         },
         'root': {
             # Module loggers (getLogger(__name__): payments, bookings, users...) end up here
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'alerts'],
             'level': log_level,
         }
     }

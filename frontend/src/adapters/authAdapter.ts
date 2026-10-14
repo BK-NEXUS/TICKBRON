@@ -84,6 +84,27 @@ export interface AuthResponse {
   detail?: string
 }
 
+export interface ResetPasswordRequest {
+  uid: string
+  token: string
+  password: string
+  password_confirm: string
+}
+
+export interface ChangePasswordRequest {
+  current_password: string
+  password: string
+  password_confirm: string
+}
+
+/** The answer of a password call: only whether it worked, never the account. */
+export interface PasswordActionResponse {
+  success: boolean
+  error?: string
+  /** Machine-readable reason from the backend, e.g. 'invalid_reset_link' */
+  code?: string
+}
+
 class AuthAdapter {
   private baseUrl: string
 
@@ -135,6 +156,25 @@ class AuthAdapter {
     const response = await this.request(endpoint, options)
     clearCsrfToken()
     return response
+  }
+
+  private async passwordAction(endpoint: string, body: object): Promise<PasswordActionResponse> {
+    const { success, error, code } = await this.request(endpoint, { method: 'POST', body: JSON.stringify(body) })
+    return { success, error, code }
+  }
+
+  /** Ask for a reset link. The backend answers the same for every address, so success means "asked". */
+  async requestPasswordReset(email: string): Promise<PasswordActionResponse> {
+    return this.passwordAction('/api/v1/auth/password-reset/request/', { email })
+  }
+
+  async confirmPasswordReset(data: ResetPasswordRequest): Promise<PasswordActionResponse> {
+    return this.passwordAction('/api/v1/auth/password-reset/confirm/', data)
+  }
+
+  /** The current session stays signed in; the account's other sessions end. */
+  async changePassword(data: ChangePasswordRequest): Promise<PasswordActionResponse> {
+    return this.passwordAction('/api/v1/auth/password/change/', data)
   }
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
