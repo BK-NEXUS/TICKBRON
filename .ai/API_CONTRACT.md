@@ -1002,3 +1002,7 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 - `POST /bookings/{id}/cancel/`: 400 for a confirmed booking whose check-in is today or earlier.
 - `POST /bookings/`, `POST /bookings/{id}/cancel/`, `POST /auth/otp/request|verify/`: a database error is a 500 (was a 400 "try again").
 - `POST /admin-panel/refunds/{id}/retry/` also accepts a refund pending for over an hour.
+
+## 2026-10-14 OWASP batch 3: probes and account history
+- `GET /healthz/` -> 200 `{"status": "ok"}`; `GET /readyz/` -> 200 `{"status": "ok"}` or 503 `{"status": "unavailable"}` (database and cache). Public, outside `/api/`.
+- `GET /me/history/` now also lists `login`, `logout` and `account_created` entries (with `ip_address`).

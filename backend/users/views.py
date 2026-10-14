@@ -3,6 +3,7 @@ Views for user authentication and management.
 
 This module contains views for user registration, login, and session management.
 """
+import logging
 import sys
 import os
 from drf_spectacular.types import OpenApiTypes
@@ -22,6 +23,8 @@ from users.validators import parse_phone_number
 from users.services import OTPService
 from common.csrf import enforce_csrf
 from common.request import get_client_ip
+from common.security_log import log_security_event
+from accounts.history import record_history
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
@@ -173,6 +176,8 @@ def register(request):
         user = serializer.save()
         # Auto-login after registration
         login(request, user)
+        log_security_event('account_created', request, user=user, level=logging.INFO)
+        record_history(user, 'account_created', request)
         return Response(
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED
@@ -205,11 +210,14 @@ def login_view(request):
         if user is None or lockout.is_locked(user, client_ip):
             # Hash anyway so the response time does not reveal which case this is
             make_password(password)
+            # The client sees one answer; the log says which case it was
+            log_security_event('login_failed', request, user=user, reason='unknown_account' if user is None else 'locked')
             return _login_failed_response()
         
         authenticated_user = authenticate(request, username=email, password=password)
         if authenticated_user is None or not authenticated_user.is_active:
             lockout.record_failure(user, client_ip)
+            log_security_event('login_failed', request, user=user, reason='bad_credentials')
             return _login_failed_response()
         
         lockout.record_success(authenticated_user, client_ip)
@@ -217,6 +225,8 @@ def login_view(request):
         authenticated_user.save(update_fields=['last_login_ip'])
         
         login(request, authenticated_user)
+        log_security_event('login_success', request, user=authenticated_user, level=logging.INFO, method_used='password')
+        record_history(authenticated_user, 'login', request)
         return Response(
             UserSerializer(authenticated_user).data,
             status=status.HTTP_200_OK
@@ -238,6 +248,10 @@ def logout_view(request):
     
     Clears the session cookie and logs out the user.
     """
+    account = request.user if request.user.is_authenticated else None
+    if account is not None:
+        log_security_event('logout', request, user=account, level=logging.INFO)
+        record_history(account, 'logout', request)
     logout(request)
     return Response(
         {'detail': 'Successfully logged out.'},
@@ -383,7 +397,9 @@ def verify_otp(request):
                 
                 # Establish session using the same mechanism as password login
                 login(request, user)
-                
+                log_security_event('login_success', request, user=user, level=logging.INFO, method_used='otp')
+                record_history(user, 'login', request)
+
                 return Response(
                     UserSerializer(user).data,
                     status=status.HTTP_200_OK
@@ -395,6 +411,7 @@ def verify_otp(request):
                 )
         # Lock checks and failure counting happen inside OTPService.verify_otp;
         # unknown numbers, wrong codes and locked accounts look the same here
+        log_security_event('otp_login_failed', request)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

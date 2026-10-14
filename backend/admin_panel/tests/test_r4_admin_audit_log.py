@@ -99,7 +99,9 @@ class TestLogHoldsIdsOnly:
 
     def test_fields_are_ids_action_and_time(self):
         names = {f.name for f in AdminAccessLog._meta.get_fields()}
-        assert names == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'created_at'}
+        # ip_address (A09-7) is the staff member's own source address, not customer data
+        assert names == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'ip_address',
+                         'created_at'}
 
     @pytest.mark.parametrize('details', [
         {'phone': '+998901112233'},

@@ -21,10 +21,12 @@ from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from admin_panel.audit import StaffReadAuditMixin
 from admin_panel.models import AdminAccessLog
 from bookings.models import Booking
 from bookings.state_machine import BookingState, BookingStateMachine
 from common.request import get_client_ip
+from common.security_log import log_security_event
 from common.money import CHARGE_CURRENCY, is_whole_som
 from .models import PaymentTransaction, WebhookEvent, PaymentAuditLog
 from .refunds import RefundError, create_refund, send_refund
@@ -486,7 +488,7 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
         return get_client_ip(request)
 
 
-class WebhookEventViewSet(viewsets.ReadOnlyModelViewSet):
+class WebhookEventViewSet(StaffReadAuditMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for WebhookEvent model (read-only, staff only).
     
@@ -496,15 +498,17 @@ class WebhookEventViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WebhookEvent.objects.all()
     serializer_class = WebhookEventSerializer
     permission_classes = [IsAdminUser]
+    read_audit_name = 'webhook'
 
 
-class PaymentAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+class PaymentAuditLogViewSet(StaffReadAuditMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for PaymentAuditLog model (read-only for audit purposes).
     """
     queryset = PaymentAuditLog.objects.all()
     serializer_class = PaymentAuditLogSerializer
     permission_classes = [IsAuthenticated]
+    read_audit_name = 'payment_audit'
     
     def get_queryset(self):
         """Filter queryset based on user permissions."""
@@ -569,6 +573,7 @@ def webhook_endpoint(request, provider):
         )
     except WebhookNotApplicableError as e:
         # Stored as failed; a non-2xx answer makes the provider send it again
+        log_security_event('webhook_not_applied', request, provider=provider.lower(), reason=str(e)[:60])
         logger.warning(f"Webhook could not be applied: {e}")
         return Response(
             {'error': 'The payment could not be applied yet'},
@@ -581,6 +586,7 @@ def webhook_endpoint(request, provider):
             status=status.HTTP_400_BAD_REQUEST
         )
     except SignatureValidationError as e:
+        log_security_event('webhook_rejected', request, provider=provider.lower(), reason='invalid_signature')
         logger.error(f"Webhook signature validation failed: {e}")
         return Response(
             {'error': 'Invalid signature'},
