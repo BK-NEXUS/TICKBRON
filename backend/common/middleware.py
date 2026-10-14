@@ -8,7 +8,7 @@ import time
 import logging
 from django.conf import settings
 from django.http import JsonResponse
-from common.request import get_client_ip
+from common.request import get_client_ip, reset_current_ip, set_current_ip
 
 logger = logging.getLogger('tickbron')
 
@@ -96,7 +96,11 @@ class RequestLoggingMiddleware:
             f"User: {user_info}"
         )
         
-        response = self.get_response(request)
+        token = set_current_ip(self.get_client_ip(request))
+        try:
+            response = self.get_response(request)
+        finally:
+            reset_current_ip(token)
         
         # Calculate duration
         duration = time.time() - start_time

@@ -43,6 +43,20 @@ def get_logging_config():
                 'formatter': 'verbose',
                 'level': log_level,
             },
+            # Security events (logins, lockouts, refused requests) are kept at INFO whatever LOG_LEVEL is
+            'security_console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+                'level': 'INFO',
+            },
+            'security_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(settings.BASE_DIR, 'logs', 'security.log'),
+                'maxBytes': 10 * 1024 * 1024,  # 10 MB
+                'backupCount': 10,
+                'formatter': 'verbose',
+                'level': 'INFO',
+            },
             'error_file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'filename': os.path.join(settings.BASE_DIR, 'logs', 'error.log'),
@@ -73,9 +87,15 @@ def get_logging_config():
                 'level': log_level,
                 'propagate': False,
             },
+            'tickbron.security': {
+                'handlers': ['security_console', 'security_file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
         },
         'root': {
-            'handlers': ['console'],
+            # Module loggers (getLogger(__name__): payments, bookings, users...) end up here
+            'handlers': ['console', 'file'],
             'level': log_level,
         }
     }

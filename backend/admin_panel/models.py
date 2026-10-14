@@ -6,6 +6,8 @@ Currently uses existing models from other apps with admin-specific
 endpoints for moderation and management.
 """
 from django.db import models
+
+from common.request import current_ip
 from django.core.validators import MinLengthValidator
 from common.models import TimeStampedModel, SoftDeleteModel
 
@@ -108,6 +110,10 @@ class AdminAccessLog(models.Model):
         ('internal_note_update', 'Changed an internal note'),
         ('internal_note_delete', 'Deleted an internal note'),
         ('refund_create', 'Issued a refund'),
+        ('webhook_list', 'Opened the payment webhook events'),
+        ('webhook_view', 'Opened one payment webhook event'),
+        ('payment_audit_list', 'Opened the payment audit trail'),
+        ('payment_audit_view', 'Opened one payment audit entry'),
     ]
 
     actor_id = models.BigIntegerField(db_index=True, help_text='Staff user who opened the data')
@@ -116,6 +122,8 @@ class AdminAccessLog(models.Model):
     target_booking_id = models.BigIntegerField(null=True, blank=True)
     # Non-personal facts about the action (R6: currency, old and new rate of an accepted rate)
     details = models.JSONField(null=True, blank=True)
+    # Where the action came from (RequestLoggingMiddleware); empty outside a request
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     objects = AppendOnlyQuerySet.as_manager()
@@ -152,6 +160,7 @@ class AdminAccessLog(models.Model):
         return cls.objects.create(
             actor_id=actor.pk, action=action,
             target_user_id=target_user_id, target_booking_id=target_booking_id, details=details,
+            ip_address=current_ip(),
         )
 
     def save(self, *args, **kwargs):

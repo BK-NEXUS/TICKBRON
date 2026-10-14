@@ -10,8 +10,15 @@ from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 from .exceptions import TickBronException
+from .security_log import log_security_event
 
 logger = logging.getLogger('tickbron')
+
+
+def _log_refusal(exc, context, event):
+    """Security event for a refused request; the exception text is not logged (it can echo input)."""
+    view = context.get('view')
+    log_security_event(event, context.get('request'), view=view.__class__.__name__ if view is not None else 'unknown')
 
 
 def custom_exception_handler(exc, context):
@@ -85,12 +92,15 @@ def custom_exception_handler(exc, context):
             extra={'context': context}
         )
     
-    # Log permission errors
+    # Log permission errors, and every refused request as a security event (who, from where, which URL)
     if response.status_code == status.HTTP_403_FORBIDDEN:
         logger.warning(
             f"Permission denied: {str(exc)}",
             extra={'context': context}
         )
+        _log_refusal(exc, context, 'csrf_failed' if str(exc).startswith('CSRF Failed') else 'permission_denied')
+    if response.status_code == status.HTTP_401_UNAUTHORIZED:
+        _log_refusal(exc, context, 'unauthenticated')
     
     # Log not found errors
     if response.status_code == status.HTTP_404_NOT_FOUND:
@@ -105,6 +115,7 @@ def custom_exception_handler(exc, context):
             f"Rate limit exceeded: {str(exc)}",
             extra={'context': context}
         )
+        _log_refusal(exc, context, 'throttled')
     
     # Log server errors
     if response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:

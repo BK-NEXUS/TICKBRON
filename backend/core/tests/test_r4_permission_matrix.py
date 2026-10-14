@@ -29,6 +29,7 @@ SUPERADMIN = {'superadmin'}
 # First matching (regex on the URL path, methods or None for all) wins.
 ACCESS = [
     (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventory, staff only outside DEBUG
+    (r'^/(healthz|readyz)/$', None, PUBLIC),  # A09: probes for the load balancer, no data
     (r'^/api/v1/auth/(register|login|logout|csrf|otp/request|otp/verify)/$', None, PUBLIC),
     (r'^/api/v1/auth/(me|refresh|me/update|phone/verify/request|phone/verify/confirm)/$', None, AUTHENTICATED),  # N-1: phone proof needs a session
     (r'^/api/v1/properties/', None, PUBLIC),

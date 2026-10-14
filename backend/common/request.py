@@ -2,6 +2,7 @@
 Request helpers shared across apps.
 """
 import ipaddress
+from contextvars import ContextVar
 
 from django.conf import settings
 
@@ -35,3 +36,22 @@ def get_client_ip(request):
     except ValueError:
         return remote_addr
     return candidate
+
+
+# The address of the request being handled, set by RequestLoggingMiddleware, so code far from the
+# view (audit rows) can record where an action came from without every caller passing the request.
+_current_ip = ContextVar('current_client_ip', default=None)
+
+
+def set_current_ip(ip):
+    """Remember the client address for this request; returns the token for reset_current_ip."""
+    return _current_ip.set(ip)
+
+
+def reset_current_ip(token):
+    _current_ip.reset(token)
+
+
+def current_ip():
+    """The client address of the request being handled, or None outside a request (Celery, shell)."""
+    return _current_ip.get()
