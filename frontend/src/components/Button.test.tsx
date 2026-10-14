@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { Button, ButtonLink, buttonClassName } from './Button'
+import { Button, ButtonLink } from './Button'
+import { buttonClassName } from './buttonStyle'
 
 describe('Button', () => {
   it.each(['primary', 'secondary', 'tonal', 'ghost', 'danger', 'link'] as const)('renders the %s variant', (variant) => {

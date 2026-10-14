@@ -1,15 +1,9 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { ReactNode, useContext, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { BreadcrumbContext, type Crumb } from './pageTrail'
 
-export interface Crumb {
-  label: string
-  /** Where the crumb leads; the last crumb (the current page) has none */
-  to?: string
-  /** An in-page level (e.g. a partner dashboard view): a button instead of a link */
-  onClick?: () => void
-}
 
 interface TrailEntry {
   labelKey: MessageKey
@@ -51,12 +45,6 @@ function defaultTrail(pathname: string, search: string, t: (key: MessageKey) => 
   return entries.map(({ labelKey, to }) => ({ label: t(labelKey), ...(to ? { to } : {}) }))
 }
 
-interface BreadcrumbContextValue {
-  trail: Crumb[] | null
-  setTrail: (trail: Crumb[] | null) => void
-}
-
-const BreadcrumbContext = createContext<BreadcrumbContextValue>({ trail: null, setTrail: () => {} })
 
 export function BreadcrumbProvider({ children }: { children: ReactNode }) {
   const [trail, setTrail] = useState<Crumb[] | null>(null)
@@ -64,25 +52,6 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
   return <BreadcrumbContext.Provider value={value}>{children}</BreadcrumbContext.Provider>
 }
 
-/**
- * Give the current page its own trail after Home, e.g. [{ label: 'Tashkent', to }, { label: 'Hotel' }].
- * Pass null while the data is loading (the route's default trail shows meanwhile).
- */
-export function usePageTrail(trail: Crumb[] | null) {
-  const { setTrail } = useContext(BreadcrumbContext)
-  // Labels and links decide when the trail changed (onClick handlers are new functions every render)
-  const key = JSON.stringify(trail?.map(crumb => [crumb.label, crumb.to ?? null, !!crumb.onClick]) ?? null)
-  const latest = useRef(trail)
-  latest.current = trail
-  useEffect(() => {
-    // Clicks call the handler from the latest render, not the one from when the labels last changed
-    setTrail(latest.current?.map((crumb, index) =>
-      crumb.onClick ? { ...crumb, onClick: () => latest.current?.[index]?.onClick?.() } : crumb
-    ) ?? null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, setTrail])
-  useEffect(() => () => setTrail(null), [setTrail])
-}
 
 /** Back button and "Home › ... › Current page" on every page except home */
 export function Breadcrumbs() {

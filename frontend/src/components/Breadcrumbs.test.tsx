@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { BreadcrumbProvider, Breadcrumbs, usePageTrail } from './Breadcrumbs'
+import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
+import { usePageTrail } from './pageTrail'
 import { rememberSearch, searchUrlForCity } from '../utils/searchFilters'
 
 function Where() {

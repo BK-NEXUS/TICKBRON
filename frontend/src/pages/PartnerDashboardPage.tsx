@@ -12,7 +12,7 @@ import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
-import { Crumb, usePageTrail } from '../components/Breadcrumbs'
+import { Crumb, usePageTrail } from '../components/pageTrail'
 
 type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
 

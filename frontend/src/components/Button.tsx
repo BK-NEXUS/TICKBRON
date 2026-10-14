@@ -1,35 +1,22 @@
 import { forwardRef } from 'react'
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
 import { Link, type LinkProps } from 'react-router-dom'
+import { buttonClassName, type ButtonSize, type ButtonStyleProps, type ButtonVariant } from './buttonStyle'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger' | 'link'
-export type ButtonSize = 'sm' | 'md' | 'lg'
-
-interface StyleProps {
-  variant?: ButtonVariant
-  size?: ButtonSize
-  fullWidth?: boolean
-  className?: string
-}
+export type { ButtonSize, ButtonVariant }
 
 /** A button shows a label, or only an icon, which then needs an accessible name. */
 type Content =
   | { iconOnly?: false; icon?: ReactNode; children: ReactNode }
   | { iconOnly: true; icon: ReactNode; 'aria-label': string; children?: never }
 
-export type ButtonProps = StyleProps & Content & {
+export type ButtonProps = ButtonStyleProps & Content & {
   loading?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className'>
 
-export type ButtonLinkProps = StyleProps & Content & Omit<LinkProps, 'children' | 'className'>
+export type ButtonLinkProps = ButtonStyleProps & Content & Omit<LinkProps, 'children' | 'className'>
   & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'className'>
 
-/** The shared class string, also usable on elements that cannot be a Button (for example plain anchors). */
-export function buttonClassName({ variant = 'primary', size = 'md', fullWidth, iconOnly, className }: StyleProps & { iconOnly?: boolean }): string {
-  return ['btn', `btn-${variant}`, size !== 'md' && `btn-${size}`, iconOnly && 'btn-icon', fullWidth && 'btn-full', className]
-    .filter(Boolean)
-    .join(' ')
-}
 
 function Spinner() {
   return <span className="btn-spinner" aria-hidden="true" />
