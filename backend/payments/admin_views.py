@@ -8,8 +8,6 @@ Staff follow-up of refunds (R12), under /api/v1/admin-panel/refunds/.
                           provider_reference (bank / provider cabinet id). Audit-logged
 - POST {id}/retry/        super-admin: send a failed refund to the provider again. Audit-logged
 """
-from datetime import timedelta
-
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -23,9 +21,7 @@ from rest_framework.response import Response
 from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdmin, IsSuperAdminOrStaff
 from payments.models import Refund
-from payments.refunds import RefundError, mark_manual_done, retry_refund
-
-PENDING_TOO_LONG = timedelta(hours=1)
+from payments.refunds import PENDING_TOO_LONG, RefundError, mark_manual_done, retry_refund
 
 
 class RefundRowSerializer(serializers.ModelSerializer):

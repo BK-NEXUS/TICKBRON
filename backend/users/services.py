@@ -5,7 +5,7 @@ This module provides OTP generation and verification with test mode support.
 """
 import logging
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from common.exceptions import ExternalServiceException
 from common.privacy import mask_phone
 from users import lockout
@@ -86,6 +86,8 @@ class OTPService:
                 'message': OTP_REQUESTED_MESSAGE,
                 'otp_code': otp_code  # Only returned in test mode
             }
+        except DatabaseError:
+            raise  # an outage is a server error, not a failed code request
         except Exception as e:
             logger.error(f"Error generating OTP: {e}")
             return {
@@ -130,6 +132,8 @@ class OTPService:
         except User.DoesNotExist:
             logger.warning(f"OTP verification for unknown phone number: {mask_phone(phone_number)}")
             return {'success': False, 'message': OTP_INVALID_MESSAGE}
+        except DatabaseError:
+            raise
         except Exception as e:
             logger.error(f"Error verifying OTP: {e}")
             return {

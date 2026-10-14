@@ -2676,3 +2676,10 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Install note: production installs `requirements.txt` only; tests and linters come from `requirements-dev.txt`.
 - Tests: `core/tests/test_owasp_batch5_config.py` (16).
 - Found, not fixed: see the "Batch 5 not done" line in `.ai/PLAN_SECURITY.md`; GitHub Actions are referenced by major version tag, not by commit SHA (pin when the workflow is first run on GitHub).
+
+## OWASP hardening, batch 2 (2026-10-14): money paths
+- Details and reasons: `.ai/PLAN_SECURITY.md`, section "OWASP batch 2". New tests: `payments/tests/test_owasp_batch2_money.py` (31). No migration.
+- Behaviour changes for the frontend/providers: webhook answers 409 (retryable) for a paid message it cannot apply; payment create answers 502 for an unexpected provider failure; confirmed bookings cannot be cancelled from check-in day (400, message "A stay that has started cannot be cancelled online. Please contact the hotel."); `payment_method_token` with a card number is a 400.
+- Changed test setup (assertions untouched): `payments/tests/test_webhooks.py::test_process_webhook_success` and `::test_process_webhook_replay_attack` now create the transaction their paid webhook refers to (`_linked_transaction`), because a paid message for an unknown transaction is no longer acknowledged as processed.
+- Found, not fixed: a late provider success for a transaction already marked `failed` is ignored (needs the reconciliation job); failed webhook events are visible in `/payments/webhooks/` and the audit log but not in a staff queue; refunds by rate plan (Q1) still not built.
+- Changed tests found by the full run (batch 2): `payments/tests/test_payment_security.py::TestWebhookSignatureFirst` (two tests) now get a matching transaction in `setUp` (setup only). `::TestWebhookAppliesPayment::test_amount_mismatch_does_not_confirm`: the status-code assertion changed from 200 to 409 (reason: a paid message with the wrong amount must not be acknowledged, the provider has to retry and the event is stored as failed); its other assertions (transaction stays `processing`, booking stays `pending`) are unchanged.

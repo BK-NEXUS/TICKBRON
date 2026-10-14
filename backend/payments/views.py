@@ -37,7 +37,7 @@ from .serializers import (
 from .adapters import PAYMENT_ADAPTERS, get_payment_adapter, PaymentAdapterError
 from .webhooks import (
     validate_webhook_request, get_webhook_processor, SignatureValidationError,
-    WebhookNotConfiguredError, WebhookNotSupportedError
+    WebhookNotApplicableError, WebhookNotConfiguredError, WebhookNotSupportedError
 )
 import logging
 
@@ -180,7 +180,8 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             details={'user_agent': request.META.get('HTTP_USER_AGENT', '')}
         )
 
-        # Initiate payment with provider
+        # Initiate payment with provider. Only this call is guarded: a failure after the provider
+        # answered must not mark a live payment as failed
         try:
             adapter = get_payment_adapter(payment_transaction.provider)
             provider_response = adapter.initiate_payment(
@@ -188,29 +189,6 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
                 amount=payment_transaction.amount,
                 currency=payment_transaction.currency,
                 payment_method_token=payment_transaction.payment_method_token
-            )
-
-            # Update transaction with provider response
-            payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
-            payment_transaction.provider_response = provider_response
-            payment_transaction.status = 'processing'
-            payment_transaction.save()
-
-            # Log audit entry
-            PaymentAuditLog.log_action(
-                action='payment_initiated',
-                payment_transaction=payment_transaction,
-                booking=payment_transaction.booking,
-                old_status='pending',
-                new_status='processing',
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details={'provider_response': provider_response}
-            )
-
-            return Response(
-                PaymentTransactionSerializer(payment_transaction).data,
-                status=status.HTTP_201_CREATED
             )
 
         except NotImplementedError:
@@ -225,27 +203,61 @@ class PaymentTransactionViewSet(mixins.CreateModelMixin,
             # Handle payment adapter error. error_message/audit details are
             # internal records (staff-only), but the client response must not
             # echo str(e) -- it may carry adapter/provider internals.
-            payment_transaction.status = 'failed'
-            payment_transaction.error_code = 'ADAPTER_ERROR'
-            payment_transaction.error_message = str(e)
-            payment_transaction.save()
-
-            # Log audit entry
-            PaymentAuditLog.log_action(
-                action='payment_failed',
-                payment_transaction=payment_transaction,
-                booking=payment_transaction.booking,
-                old_status='pending',
-                new_status='failed',
-                actor=request.user,
-                ip_address=self._get_client_ip(request),
-                details={'error': str(e)}
-            )
-
+            self._fail_initiation(request, payment_transaction, 'ADAPTER_ERROR', str(e))
             return Response(
                 {'error': 'Payment could not be processed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        except Exception:
+            # Timeout, network or programming error: the transaction must not stay pending (a retry
+            # would "resume" a payment the provider never saw) and the client gets no internals
+            logger.exception('Payment %s: unexpected error calling the provider', payment_transaction.pk)
+            self._fail_initiation(request, payment_transaction, 'PROVIDER_ERROR', 'Unexpected provider error')
+            return Response(
+                {'error': 'The payment provider could not be reached. Please try again.'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        # Update transaction with provider response
+        payment_transaction.provider_transaction_id = provider_response.get('provider_transaction_id')
+        payment_transaction.provider_response = provider_response
+        payment_transaction.status = 'processing'
+        payment_transaction.save()
+
+        # Log audit entry
+        PaymentAuditLog.log_action(
+            action='payment_initiated',
+            payment_transaction=payment_transaction,
+            booking=payment_transaction.booking,
+            old_status='pending',
+            new_status='processing',
+            actor=request.user,
+            ip_address=self._get_client_ip(request),
+            details={'provider_response': provider_response}
+        )
+
+        return Response(
+            PaymentTransactionSerializer(payment_transaction).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def _fail_initiation(self, request, payment_transaction, error_code, message):
+        """Record a payment that could not be started: transaction failed, audit entry written."""
+        payment_transaction.status = 'failed'
+        payment_transaction.error_code = error_code
+        payment_transaction.error_message = message
+        payment_transaction.save()
+        PaymentAuditLog.log_action(
+            action='payment_failed',
+            payment_transaction=payment_transaction,
+            booking=payment_transaction.booking,
+            old_status='pending',
+            new_status='failed',
+            actor=request.user,
+            ip_address=self._get_client_ip(request),
+            details={'error': message}
+        )
 
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
@@ -554,6 +566,13 @@ def webhook_endpoint(request, provider):
         return Response(
             {'error': 'Webhook verification is not configured'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    except WebhookNotApplicableError as e:
+        # Stored as failed; a non-2xx answer makes the provider send it again
+        logger.warning(f"Webhook could not be applied: {e}")
+        return Response(
+            {'error': 'The payment could not be applied yet'},
+            status=status.HTTP_409_CONFLICT
         )
     except WebhookNotSupportedError as e:
         logger.error(f"Webhook rejected: {e}")

@@ -995,3 +995,10 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 - `POST /me/reviews/` and `POST /payments/transactions/`: a booking id that is not the caller's gets the same 400 ("Booking not found.") as a missing id.
 - `POST /payments/webhook/{provider}/`: unknown provider -> 404; JSON body that is not an object -> 400.
 - SMS limits: `POST /auth/otp/request/` has an extra IP budget (60/hour) and every number a daily budget (10/day, shared with `POST /auth/phone/verify/request/`); the logged-in phone verification endpoints are limited per account (3/min request, 5/min confirm, 20/day requests). All answer 429.
+
+## 2026-10-14 OWASP batch 2: payments and cancellation
+- `POST /payments/webhook/{provider}/`: a paid/failed message with no matching transaction, or with a different amount, answers 409 `{"error": "The payment could not be applied yet"}` (was 200); the event is stored as failed and a retry is processed.
+- `POST /payments/transactions/`: an unexpected provider failure answers 502 `{"error": "The payment provider could not be reached. Please try again."}` and the transaction is `failed` (`error_code` `PROVIDER_ERROR`); `payment_method_token` containing a card number is a 400.
+- `POST /bookings/{id}/cancel/`: 400 for a confirmed booking whose check-in is today or earlier.
+- `POST /bookings/`, `POST /bookings/{id}/cancel/`, `POST /auth/otp/request|verify/`: a database error is a 500 (was a 400 "try again").
+- `POST /admin-panel/refunds/{id}/retry/` also accepts a refund pending for over an hour.

@@ -18,6 +18,7 @@ from typing import Dict, Optional, Tuple
 from .adapters import get_payment_adapter, SignatureValidationError
 from bookings.models import Booking
 from .models import WebhookEvent, PaymentTransaction, PaymentAuditLog
+from .refunds import flag_unconfirmable_payment
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,14 @@ logger = logging.getLogger(__name__)
 # Payme/Click vocabularies must be mapped here when production integration lands.
 PROVIDER_SUCCESS_STATUSES = {'completed', 'success', 'paid'}
 PROVIDER_FAILURE_STATUSES = {'failed', 'cancelled', 'canceled', 'error'}
+
+
+class WebhookNotApplicableError(Exception):
+    """
+    A validly signed payment result that could not be applied (no matching transaction yet, or a
+    different amount). The event is stored as failed and the provider gets a non-2xx answer, so
+    its retry is processed again instead of the paid booking expiring unnoticed.
+    """
 
 
 class WebhookNotConfiguredError(Exception):
@@ -159,6 +168,9 @@ class WebhookProcessor:
         if payment_transaction:
             webhook_event.payment_transaction = payment_transaction
             self._apply_payment_status(payment_transaction, processed_data, webhook_event)
+        elif self._is_payment_outcome(processed_data):
+            # Usually the provider is faster than the save of its transaction id: its retry will match
+            raise WebhookNotApplicableError('No payment transaction matches this provider transaction')
 
         webhook_event.save()
 
@@ -279,7 +291,7 @@ class WebhookProcessor:
         that does not match the transaction is ignored and logged.
         """
         provider_status = str(processed_data.get('status') or '').lower()
-        if provider_status not in PROVIDER_SUCCESS_STATUSES | PROVIDER_FAILURE_STATUSES:
+        if not self._is_payment_outcome(processed_data):
             return
 
         with transaction.atomic():
@@ -305,8 +317,7 @@ class WebhookProcessor:
                     f"Webhook amount {processed_data.get('amount')!r} does not match "
                     f"transaction {tx.pk} amount {tx.amount}; not confirming"
                 )
-                webhook_event.error_message = 'Amount mismatch; payment not applied'
-                return
+                raise WebhookNotApplicableError('Amount mismatch; payment not applied')
 
             # The provider captured the money, so the transaction is completed
             # even if the booking can no longer be confirmed (e.g. it was
@@ -321,11 +332,18 @@ class WebhookProcessor:
             except DjangoValidationError as e:
                 logger.error(f"Paid transaction {tx.pk} but booking {booking.pk} could not be confirmed: {e}")
                 details['error'] = 'Booking could not be confirmed; manual refund required'
+                flag_unconfirmable_payment(tx)
             PaymentAuditLog.log_action(
                 action='payment_completed', payment_transaction=tx, booking=booking,
                 webhook_event=webhook_event, old_status=old_status, new_status='completed',
                 details=details
             )
+
+    @staticmethod
+    def _is_payment_outcome(processed_data: Dict[str, any]) -> bool:
+        """True for a reported success or failure; other events (created, pending, ping) are informational."""
+        provider_status = str(processed_data.get('status') or '').lower()
+        return provider_status in PROVIDER_SUCCESS_STATUSES | PROVIDER_FAILURE_STATUSES
 
     @staticmethod
     def _amount_matches(reported_amount, expected: Decimal) -> bool:

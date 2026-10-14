@@ -236,6 +236,13 @@ class TestWebhookSignatureFirst(TestCase):
         self.processor = WebhookProcessor('payme')
         self.payload = {'id': 'evt-real-1', 'transaction_id': 'txn-1', 'status': 'completed',
                         'timestamp': int(timezone.now().timestamp())}
+        # The transaction the paid message refers to; without one the event is retried (OWASP A10-2)
+        from payments.tests.test_r12_refunds import _paid_booking
+        from users.models import User
+        people = {'guest': User.objects.create_user(email='g-sig@example.com', password='x'),
+                  'owner': User.objects.create_user(email='o-sig@example.com', password='x')}
+        _, tx = _paid_booking(people, key='sig')
+        PaymentTransaction.objects.filter(pk=tx.pk).update(provider_transaction_id='txn-1')
 
     def _sign(self, payload, secret='test_secret'):
         return self.processor.adapter.generate_signature(payload, secret)
@@ -337,7 +344,8 @@ class TestWebhookAppliesPayment(PaymentSecurityTestBase):
     def test_amount_mismatch_does_not_confirm(self):
         response = self._post_webhook('evt-cheap', amount='1')
 
-        assert response.status_code == status.HTTP_200_OK
+        # 409, not 200: the provider must send it again instead of treating it as delivered (OWASP A10-2)
+        assert response.status_code == status.HTTP_409_CONFLICT
         self.tx.refresh_from_db()
         self.booking.refresh_from_db()
         assert self.tx.status == 'processing'

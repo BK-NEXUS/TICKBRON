@@ -12,11 +12,13 @@ mark_manual_done(), retry_refund()  staff follow-up from the needs-attention lis
 """
 import logging
 import uuid
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
+from django.utils import timezone
 
 from common.money import CHARGE_CURRENCY, is_whole_som
 from payments.adapters import PaymentAdapterError, get_payment_adapter
@@ -25,6 +27,8 @@ from payments.models import PaymentAuditLog, PaymentTransaction, Refund
 logger = logging.getLogger(__name__)
 
 REFUNDABLE_PAYMENT_STATUSES = ('completed', 'partially_refunded')
+# A refund still pending after this long lost its worker or its provider answer: staff may send it again
+PENDING_TOO_LONG = timedelta(hours=1)
 
 
 class RefundError(ValueError):
@@ -108,10 +112,10 @@ def _settle_payment(payment, actor=None):
     try:
         with transaction.atomic():
             booking.update_payment_status(new_status)
-    except DjangoValidationError:
+    except DjangoValidationError as error:
         # A booking never marked paid (payment captured after it was cancelled) keeps its
         # payment status; the refund itself still stands
-        pass
+        logger.warning('Booking %s payment status not changed to %s: %s', booking.pk, new_status, error)
 
 
 def send_refund(refund, actor=None, ip_address=None, extra_details=None):
@@ -137,6 +141,10 @@ def send_refund(refund, actor=None, ip_address=None, extra_details=None):
         error_code = 'PROVIDER_NOT_INTEGRATED'
     except PaymentAdapterError:
         logger.warning('Refund %s failed at the provider', refund.pk)
+        error_code = 'REFUND_ERROR'
+    except Exception:
+        # A timeout or crash must not leave the row pending for ever (staff could not act on it)
+        logger.exception('Refund %s: unexpected error calling the provider', refund.pk)
         error_code = 'REFUND_ERROR'
 
     with transaction.atomic():
@@ -192,15 +200,42 @@ def mark_manual_done(refund, provider_reference, actor):
 
 
 def retry_refund(refund, actor):
-    """Send a failed refund again (same row, same idempotency key, provider asked once more)."""
+    """
+    Send a failed refund again (same row, same idempotency key, provider asked once more).
+    A refund pending for over an hour counts as failed: its first attempt never got an answer.
+    """
     with transaction.atomic():
         refund = Refund.objects.select_for_update().get(pk=refund.pk)
-        if refund.status != 'failed':
+        stale_pending = refund.status == 'pending' and refund.created_at < timezone.now() - PENDING_TOO_LONG
+        if refund.status != 'failed' and not stale_pending:
             raise RefundError('not_failed', 'Only failed refunds can be retried')
         payment = PaymentTransaction.objects.select_for_update().get(pk=refund.payment_id)
-        if refund.amount > remaining_amount(payment):
+        # A pending refund already counts against the limit; do not count it twice
+        available = remaining_amount(payment) + (refund.amount if refund.status in Refund.COUNTED_STATUSES else 0)
+        if refund.amount > available:
             raise RefundError('limit_exceeded', 'Refund amount cannot exceed the payment amount')
         refund.status = 'pending'
         refund.error_code = None
         refund.save()
     return send_refund(refund, actor=actor)
+
+
+def flag_unconfirmable_payment(payment):
+    """
+    The provider captured the money but the booking can no longer be confirmed (cancelled or
+    expired meanwhile). Store a `needs_manual` refund of what is left, once, so the guest's money
+    shows in the staff needs-attention list instead of only in an audit line. Idempotent.
+    """
+    with transaction.atomic():
+        payment = PaymentTransaction.objects.select_for_update().get(pk=payment.pk)
+        key = f'unconfirmable:{payment.pk}'
+        existing = Refund.objects.filter(idempotency_key=key).first()
+        if existing is not None:
+            return existing
+        amount = remaining_amount(payment)
+        if amount <= 0:
+            return None
+        return Refund.objects.create(
+            payment=payment, booking_id=payment.booking_id, amount=amount, currency=payment.currency,
+            reason='cancel', status='needs_manual', error_code='BOOKING_NOT_CONFIRMABLE', idempotency_key=key,
+        )
