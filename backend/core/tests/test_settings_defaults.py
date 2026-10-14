@@ -14,7 +14,7 @@ ISOLATED_ENV_VARS = (
     'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
     'USE_X_FORWARDED_PROTO', 'SECURE_SSL_REDIRECT', 'SECURE_HSTS_PRELOAD', 'SESSION_COOKIE_AGE',
-    'DB_ENGINE', 'DB_HOST', 'DB_SSLMODE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
+    'DB_HOST', 'DB_SSLMODE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -52,7 +52,6 @@ PRODUCTION_ENV = {
     'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
-    'DB_ENGINE': 'django.db.backends.postgresql',  # OWASP A02: production must not fall back to SQLite
     'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # password reset links and mail
 }
 
@@ -158,7 +157,7 @@ def test_sensitive_endpoints_keep_their_strict_limits():
 
 
 def _test_db_name(**env_overrides):
-    env = {'DB_ENGINE': 'django.db.backends.postgresql', 'DB_NAME': 'tickbron', **env_overrides}
+    env = {'DB_NAME': 'tickbron', **env_overrides}
     return _load_settings("settings.DATABASES['default'].get('TEST', {}).get('NAME')", **env)
 
 

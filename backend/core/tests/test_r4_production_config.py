@@ -25,7 +25,6 @@ GOOD_PRODUCTION_ENV = {
     'NUM_PROXIES': '1',
     'USE_X_FORWARDED_PROTO': 'True',
     'SECURE_SSL_REDIRECT': 'True',
-    'DB_ENGINE': 'django.db.backends.postgresql',  # OWASP A02: production must not fall back to SQLite
     'FRONTEND_URL': 'https://tickbron.uz', 'EMAIL_HOST': 'smtp.tickbron.uz',  # password reset links and mail
 }
 EXTRA_ISOLATED = ('SECRET_KEY', 'ALLOWED_HOSTS', 'CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS')
@@ -70,7 +69,7 @@ def test_good_production_settings_start():
     ({'SESSION_COOKIE_SECURE': 'False'}, 'SESSION_COOKIE_SECURE'),
     ({'CSRF_COOKIE_SECURE': 'False'}, 'CSRF_COOKIE_SECURE'),
     ({'USE_REDIS_CACHE': 'False'}, 'USE_REDIS_CACHE'),
-    ({'DB_ENGINE': 'django.db.backends.postgresql', 'DB_HOST': 'db.example.com', 'DB_SSLMODE': 'prefer'}, 'DB_SSLMODE'),
+    ({'DB_HOST': 'db.example.com', 'DB_SSLMODE': 'prefer'}, 'DB_SSLMODE'),
 ])
 def test_insecure_production_settings_refuse_to_start(overrides, message):
     result = _start(**overrides)
@@ -85,7 +84,7 @@ def test_no_proxy_deployment_may_skip_the_forwarded_proto_header():
 
 
 def test_remote_database_with_required_tls_starts():
-    result = _start(DB_ENGINE='django.db.backends.postgresql', DB_HOST='db.example.com', DB_SSLMODE='require')
+    result = _start(DB_HOST='db.example.com', DB_SSLMODE='require')
     assert result.returncode == 0, result.stderr
 
 

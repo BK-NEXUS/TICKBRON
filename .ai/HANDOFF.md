@@ -2705,3 +2705,9 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Tests: `users/tests/test_serializers.py`, `test_views.py`, `test_phone_validation.py::TestRegister`, `test_phone_unique.py`, `test_n1_phone_claims.py`, `test_otp.py` (backend); `RegisterPage.test.tsx`, `AuthPages.test.tsx` (frontend).
 - Changed assertions (not weakened): the tests that expected a 400 for a bad, duplicate or verified-held phone on registration now expect that registration ignores the number (201, `phone_number` null); the invalid-number cases are still covered on the profile update. The SMS-login tests in `test_otp.py` create their user directly instead of through the register endpoint.
 - Found, not fixed: `Breadcrumbs.tsx:82` has an unused `eslint-disable` directive, so `npm run lint` reports 1 error (and the 3 known warnings); `scripts/smoke_test.py` and some other tests still send a `phone_number` to register (ignored, harmless).
+
+## PostgreSQL only (2026-10-14)
+- The owner asked that the whole project runs on PostgreSQL and never on SQLite. `DATABASES` in `config/settings.py` is fixed to `django.db.backends.postgresql` (`DB_ENGINE` is gone, also from `.env.example` and CI); `conftest.py` no longer has the `ALLOW_SQLITE_TESTS` escape. Test `core/tests/test_owasp_batch5_config.py::test_database_is_always_postgresql` replaces `test_production_needs_postgresql` (same purpose: SQLite can never be selected).
+- Full suite on PostgreSQL 16: 3114 passed, 1 failed. Found, not fixed: `payments/tests/test_log_forging_and_bad_bodies.py::TestRequestLog::test_a_newline_in_the_path_does_not_start_a_new_log_line` fails the same way on the commit before this change (the request is not logged).
+- Found, not fixed: the `connection.vendor != 'postgresql'` skips in 9 test files are now dead conditions (cleanup step in `PLAN_BACKEND_CLEANUP.md`).
+

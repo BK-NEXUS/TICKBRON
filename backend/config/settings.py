@@ -123,27 +123,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database configuration - supports both SQLite (development) and PostgreSQL (production)
+# PostgreSQL only: SQLite has no row locks, so the double-booking protection would silently stop
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'tickbron'),
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
         'CONN_MAX_AGE': 60,  # Persistent connections for 60 seconds
         'CONN_HEALTH_CHECKS': True,  # a connection the database closed (restart) is replaced, not served as a 500
-        'OPTIONS': {},
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
+        },
     }
 }
-
-# PostgreSQL-specific settings when using PostgreSQL
-if os.getenv('DB_ENGINE') == 'django.db.backends.postgresql':
-    DATABASES['default']['OPTIONS'] = {
-        'connect_timeout': 10,
-        'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
-    }
 
 
 # Each developer session (or Claude session) sets its own TICKBRON_TEST_DB_SUFFIX so two pytest
@@ -514,11 +510,7 @@ def _production_config_errors():
         errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
     if not USE_REDIS_CACHE:
         errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
-    # Without DB_* the default is SQLite: no row locks, so the double-booking protection silently stops
-    if os.getenv('DB_ENGINE') != 'django.db.backends.postgresql':
-        errors.append('DB_ENGINE must be django.db.backends.postgresql when DEBUG is False')
-    if (os.getenv('DB_ENGINE') == 'django.db.backends.postgresql'
-            and os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
+    if (os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
             and os.getenv('DB_SSLMODE', 'prefer') in ('disable', 'allow', 'prefer')):
         errors.append('DB_SSLMODE must be require, verify-ca or verify-full for a remote database')
     for name in ('CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS'):

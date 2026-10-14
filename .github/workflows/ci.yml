@@ -26,7 +26,6 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U tickbron_user" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DB_ENGINE: django.db.backends.postgresql
       DB_NAME: tickbron
       DB_USER: tickbron_user
       DB_PASSWORD: ci-only-password
