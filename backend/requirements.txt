@@ -1,5 +1,5 @@
 # Core Django (5.2 LTS: 4.2 reached end of life; upgraded in the R4 security review)
-Django==5.2.17
+Django==6.1.2
 djangorestframework==3.18.1
 django-cors-headers==4.9.0
 
