@@ -547,4 +547,7 @@ if DEBUG and not TESTING and not all(_is_local_host(host) for host in ALLOWED_HO
 if not DEBUG and not TESTING:
     _errors = _production_config_errors()
     if _errors:
-        raise ValueError('Insecure production settings:\n- ' + '\n- '.join(_errors))
+        raise ValueError(
+            'Insecure production settings (DEBUG is False). On your own computer set DEBUG=True in backend/.env.\n- '
+            + '\n- '.join(_errors)
+        )
