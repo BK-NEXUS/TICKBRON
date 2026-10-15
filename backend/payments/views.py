@@ -20,7 +20,6 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from admin_panel.audit import StaffReadAuditMixin
 from admin_panel.models import AdminAccessLog
 from bookings.models import Booking

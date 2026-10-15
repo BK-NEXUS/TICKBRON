@@ -24,7 +24,7 @@ from partner.serializers import (
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
     PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
     PartnerRoomInventoryBulkSerializer, PartnerDateInventoryBulkPriceSerializer,
-    PartnerBlockSerializer, PartnerPropertyPhotoSerializer, PartnerBookingSerializer
+    PartnerBlockSerializer, PartnerPropertyPhotoSerializer
 )
 
 
@@ -43,7 +43,6 @@ class IsHotelOwner(IsAuthenticated):
             return True
         
         # Check if user has hotel-owner role
-        from permissions.models import Role
         if request.user.role and request.user.role.name == 'hotel-owner':
             return True
         

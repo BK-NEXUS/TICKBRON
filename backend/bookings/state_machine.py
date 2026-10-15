@@ -4,8 +4,6 @@ State machine for booking and payment state transitions.
 This module implements deterministic state transitions for bookings and payments
 with validation and audit logging.
 """
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 from enum import Enum
 from typing import Dict, Set, Optional, Tuple
 

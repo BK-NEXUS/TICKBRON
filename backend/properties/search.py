@@ -4,13 +4,10 @@ Search service for TICKBRON property search using database capabilities.
 This module provides text search, geographic search, and comprehensive filtering
 using database features that work with both SQLite (development) and PostgreSQL (production).
 """
-from django.db import models
-from django.db.models import Q, F, Value, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
+from django.db.models import Q, F, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
 from django.db.models.functions import Coalesce
-from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.utils import timezone
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import math
 import re
 
@@ -415,7 +412,7 @@ class PropertySearchService:
         try:
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
-        except (EmptyPage, PageNotAnInteger) as e:
+        except (EmptyPage, PageNotAnInteger):
             # Handle pagination errors gracefully
             page = 1
             paginator = Paginator(queryset, page_size)
@@ -554,7 +551,6 @@ class PropertySearchService:
         Returns:
             filtered queryset
         """
-        from properties.models import PropertyAmenity
         
         # Filter properties that have all specified amenities
         for amenity_id in amenity_ids:

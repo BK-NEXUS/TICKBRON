@@ -4,8 +4,6 @@ Logging configuration for TICKBRON Backend.
 Provides structured logging with different handlers for development and production.
 """
 import os
-import logging
-from logging.handlers import RotatingFileHandler
 from django.conf import settings
 
 def get_logging_config():

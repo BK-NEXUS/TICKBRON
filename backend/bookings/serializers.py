@@ -238,7 +238,7 @@ class BookingCreateSerializer(serializers.Serializer):
         except DatabaseError:
             # An outage is a server error (5xx), not something the guest can fix by retrying the form
             raise
-        except Exception as e:
+        except Exception:
             # Unexpected/internal error: never echo str(e) to the client, only log it server-side.
             logger.exception('Unexpected error creating booking')
             raise serializers.ValidationError({
@@ -280,7 +280,7 @@ class BookingCancelSerializer(serializers.Serializer):
             raise serializers.ValidationError(e.message_dict)
         except DatabaseError:
             raise
-        except Exception as e:
+        except Exception:
             logger.exception('Unexpected error cancelling booking')
             raise serializers.ValidationError({
                 'non_field_errors': 'Failed to cancel booking. Please try again.'

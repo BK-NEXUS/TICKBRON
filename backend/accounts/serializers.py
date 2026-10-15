@@ -4,7 +4,6 @@ Serializers for the accounts app.
 This module contains serializers for favorites, reviews, notifications, and account history.
 """
 from rest_framework import serializers
-from bookings.models import Booking
 from bookings.fields import OwnBookingField
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
