@@ -44,7 +44,8 @@ class TestWebhookInput:
 @pytest.mark.django_db
 class TestRequestLog:
     def test_a_newline_in_the_path_does_not_start_a_new_log_line(self, client, caplog):
-        caplog.set_level(logging.INFO)
+        # LOG_LEVEL defaults to WARNING without DEBUG, so the app logger is set explicitly
+        caplog.set_level(logging.INFO, logger='tickbron')
 
         client.get('/api/v1/nothing%0A2026-10-13%20ERROR%20Refund%20approved/')
 
