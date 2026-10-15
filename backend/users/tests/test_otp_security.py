@@ -123,7 +123,7 @@ class TestOTPLockout(OTPTestBase):
         assert self.user.failed_login_attempts == 0
 
 
-@mock.patch('users.views.TESTING', False)
+@mock.patch('users.throttles.TESTING', False)
 class TestOTPThrottling(OTPTestBase):
     def setUp(self):
         super().setUp()

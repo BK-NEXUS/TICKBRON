@@ -2711,3 +2711,7 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Full suite on PostgreSQL 16: 3114 passed, 1 failed. Found, not fixed: `payments/tests/test_log_forging_and_bad_bodies.py::TestRequestLog::test_a_newline_in_the_path_does_not_start_a_new_log_line` fails the same way on the commit before this change (the request is not logged).
 - Found, not fixed: the `connection.vendor != 'postgresql'` skips in 9 test files are now dead conditions (cleanup step in `PLAN_BACKEND_CLEANUP.md`).
 
+## Cleanup step 1: `users/views.py` split (2026-10-14)
+- `users/views.py` is now the package `users/views/` (`auth.py`, `profile.py`, `otp.py`, `password.py`; `__init__.py` re-exports the views, `users/urls.py` is unchanged). All throttle classes moved to `users/throttles.py` (the `TESTING` flag lives there; the three copies of the test-mode `allow_request` override are gone, `IPRateThrottle` has the only one). The shared "start a session" sequence of password and SMS login is `users/sessions.py::start_session`. No endpoint, response or limit changed.
+- Changed test targets (not assertions): `mock.patch('users.views.TESTING')` is now `users.throttles.TESTING`, `users.views.make_password` is `users.views.auth.make_password`, and the tests that read throttle classes import them from `users.throttles`.
+

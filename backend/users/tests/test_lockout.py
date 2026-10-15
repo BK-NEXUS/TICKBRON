@@ -107,7 +107,7 @@ class TestNoAccountEnumeration(LockoutTestBase):
         assert unknown.data == wrong.data == locked.data
 
     def test_unknown_email_still_hashes_the_password(self):
-        with mock.patch('users.views.make_password') as make_password:
+        with mock.patch('users.views.auth.make_password') as make_password:
             self.login(PASSWORD, '198.51.100.10', email='nobody@example.com')
 
         make_password.assert_called_once_with(PASSWORD)

@@ -152,7 +152,7 @@ class TestRefusedRequestsNameWhoAndWhere:
         assert 'ip=127.0.0.1' in line and 'user=none' in line
 
     def test_a_throttled_request_is_recorded(self, user, security):
-        with mock.patch('users.views.TESTING', False):
+        with mock.patch('users.throttles.TESTING', False):
             for _ in range(12):
                 _login(password='wrong-password-123')
 

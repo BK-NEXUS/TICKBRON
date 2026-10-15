@@ -42,7 +42,7 @@ class TestGetClientIp(TestCase):
         assert get_client_ip(self.request(forwarded_for='not-an-ip')) == '10.0.0.1'
 
 
-@mock.patch('users.views.TESTING', False)
+@mock.patch('users.throttles.TESTING', False)
 class TestForgedForwardedForDoesNotBypassThrottling(TestCase):
     def setUp(self):
         cache.clear()
@@ -72,7 +72,7 @@ class TestForgedForwardedForDoesNotBypassThrottling(TestCase):
         assert user.last_login_ip == '10.0.0.9'
 
 
-@mock.patch('users.views.TESTING', False)
+@mock.patch('users.throttles.TESTING', False)
 class TestBehindOneProxy(TestCase):
     """N-3: with NUM_PROXIES=1 every visitor keeps their own throttle bucket."""
 

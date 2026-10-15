@@ -11,10 +11,10 @@ from django.core.cache import cache
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from users import views
+from users import throttles
 from users.models import User
 
-PATCH_TESTING = patch('users.views.TESTING', False)
+PATCH_TESTING = patch('users.throttles.TESTING', False)
 
 
 class _Base(TestCase):
@@ -61,13 +61,13 @@ class PhoneVerificationRequestThrottleTests(_Base):
         assert codes[5:] == [429, 429]
 
     def test_one_number_gets_a_daily_budget_of_codes(self):
-        with patch.object(views.OTPDailyNumberThrottle, 'rate', '2/day'):
+        with patch.object(throttles.OTPDailyNumberThrottle, 'rate', '2/day'):
             codes = [self._request().status_code for _ in range(3)]
 
         assert codes == [200, 200, 429]
 
     def test_one_account_gets_a_daily_budget_of_verification_requests(self):
-        with patch.object(views.PhoneVerifyDailyThrottle, 'rate', '2/day'):
+        with patch.object(throttles.PhoneVerifyDailyThrottle, 'rate', '2/day'):
             codes = [self._request().status_code for _ in range(3)]
 
         assert codes == [200, 200, 429]
@@ -78,13 +78,13 @@ class LoginOtpRequestBudgetTests(_Base):
         return APIClient().post('/api/v1/auth/otp/request/', {'phone_number': phone}, format='json')
 
     def test_a_new_number_each_time_is_stopped_by_the_ip_budget(self):
-        with patch.object(views.OTPRequestIPThrottle, 'rate', '3/hour'):
+        with patch.object(throttles.OTPRequestIPThrottle, 'rate', '3/hour'):
             codes = [self._request(f'+99890111{n:04d}').status_code for n in range(5)]
 
         assert codes == [200, 200, 200, 429, 429]
 
     def test_one_number_gets_a_daily_budget_of_codes(self):
-        with patch.object(views.OTPDailyNumberThrottle, 'rate', '2/day'):
+        with patch.object(throttles.OTPDailyNumberThrottle, 'rate', '2/day'):
             codes = [self._request('+998901112233').status_code for _ in range(3)]
 
         assert codes == [200, 200, 429]
@@ -97,7 +97,7 @@ class SharedBudgetTests(_Base):
         client.force_authenticate(user)
         victim = '+998907778899'
 
-        with patch.object(views.OTPDailyNumberThrottle, 'rate', '2/day'):
+        with patch.object(throttles.OTPDailyNumberThrottle, 'rate', '2/day'):
             codes = [client.post('/api/v1/auth/otp/request/', {'phone_number': victim}, format='json').status_code
                      for _ in range(3)]
 

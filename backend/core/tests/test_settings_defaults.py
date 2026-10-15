@@ -145,7 +145,7 @@ def test_user_limit_can_be_set_from_the_environment():
 
 def test_sensitive_endpoints_keep_their_strict_limits():
     from payments.views import PaymentRateThrottle
-    from users.views import (
+    from users.throttles import (
         LoginRateThrottle, OTPRequestRateThrottle, OTPVerifyRateThrottle, RegisterRateThrottle,
     )
 

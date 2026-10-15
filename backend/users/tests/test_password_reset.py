@@ -126,9 +126,9 @@ class TestRequestingAReset:
         assert mailoutbox == []
 
     def test_the_ip_is_limited(self, user):
-        from users import views
-        with mock.patch('users.views.TESTING', False), \
-                mock.patch.object(views.PasswordResetRequestThrottle, 'rate', '2/hour'):
+        from users import throttles
+        with mock.patch('users.throttles.TESTING', False), \
+                mock.patch.object(throttles.PasswordResetRequestThrottle, 'rate', '2/hour'):
             codes = [request_reset(f'user{n}@example.com').status_code for n in range(3)]
 
         assert codes == [200, 200, 429]
@@ -306,9 +306,9 @@ class TestChangingThePassword:
         assert NEW_PASSWORD not in text and OLD_PASSWORD not in text
 
     def test_the_account_is_limited_to_five_attempts_a_minute(self, session):
-        from users import views
-        with mock.patch('users.views.TESTING', False):
+        from users import throttles
+        with mock.patch('users.throttles.TESTING', False):
             codes = [self.change(session, current='not-my-password-123').status_code for _ in range(6)]
 
         assert codes[-1] == 429
-        assert views.PasswordChangeThrottle.rate == '5/min'
+        assert throttles.PasswordChangeThrottle.rate == '5/min'

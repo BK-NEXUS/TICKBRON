@@ -8,7 +8,7 @@ import pytest
 from rest_framework.test import APIClient, APIRequestFactory
 
 from users.models import User
-from users.views import OTPRequestRateThrottle
+from users.throttles import OTPRequestRateThrottle
 
 INVALID_NUMBERS = [
     '+99890123456',     # one digit short
