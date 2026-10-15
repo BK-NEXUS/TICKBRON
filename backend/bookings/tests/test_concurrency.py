@@ -52,8 +52,6 @@ class BookingConcurrencyTests(TransactionTestCase):
     """Two requests act on the same booking at the same time."""
 
     def setUp(self):
-        if connection.vendor != 'postgresql':
-            self.skipTest('Row-level locking races need PostgreSQL')
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
         self.user = User.objects.create_user(email='race@example.com', password='testpass123')
@@ -165,8 +163,6 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
     """
 
     def setUp(self):
-        if connection.vendor != 'postgresql':
-            self.skipTest('Row-level locking races need PostgreSQL')
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
         self.user = User.objects.create_user(email='race-two-rate-plans@example.com', password='testpass123')
@@ -221,8 +217,6 @@ class PendingCapRaceTests(TransactionTestCase):
     """A06-3: parallel requests of one account cannot all pass the pending-bookings check."""
 
     def setUp(self):
-        if connection.vendor != 'postgresql':
-            self.skipTest('Row-level locking races need PostgreSQL')
         make_usd_rate()
         self.user = User.objects.create_user(email='holder@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')

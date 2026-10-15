@@ -39,8 +39,6 @@ class MigrateBookingSnapshot(TransactionTestCase):
 
     def setUp(self):
         super().setUp()
-        if connection.vendor != 'postgresql':
-            self.skipTest('Migration executor tests need PostgreSQL')
         executor = MigrationExecutor(connection)
         # Every other app stays on its latest migration that does not need a bookings migration
         # after 0005 (R12: payments/0003 depends on bookings/0009), so the historical models match

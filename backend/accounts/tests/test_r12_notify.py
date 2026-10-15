@@ -171,11 +171,6 @@ class TestApi:
 
 class NotificationMigrationIsReversible(TransactionTestCase):
 
-    def setUp(self):
-        super().setUp()
-        if connection.vendor != 'postgresql':
-            self.skipTest('Migration executor tests need PostgreSQL')
-
     def tearDown(self):
         executor = MigrationExecutor(connection)
         executor.loader.build_graph()
