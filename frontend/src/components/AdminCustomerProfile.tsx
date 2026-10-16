@@ -312,12 +312,6 @@ export function AdminCustomerProfile() {
               {customer.email_verified ? t('profile.verified') : t('admin.unverified')}
             </span>
           </div>
-          <div className="status-item">
-            <span className="status-label">{t('admin.phoneVerified')}</span>
-            <span className={`status-badge ${customer.phone_verified ? 'status-badge--verified' : 'status-badge--unverified'}`}>
-              {customer.phone_verified ? t('profile.verified') : t('admin.unverified')}
-            </span>
-          </div>
         </div>
       </div>
 

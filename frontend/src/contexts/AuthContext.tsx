@@ -6,12 +6,9 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  loginWithPhoneOTP: (phone_number: string, otp_code: string) => Promise<{ success: boolean; error?: string }>
-  requestOTP: (phone_number: string) => Promise<{ success: boolean; otp_code?: string; error?: string }>
   register: (data: {
     email: string
     full_name: string
-    phone_number: string
     password: string
     password_confirm: string
     first_name?: string
@@ -63,22 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return response
   }
 
-  const loginWithPhoneOTP = async (phone_number: string, otp_code: string) => {
-    const response = await authAdapter.verifyOTP({ phone_number, otp_code })
-    if (response.success && response.user) {
-      setUser(response.user)
-    }
-    return response
-  }
-
-  const requestOTP = async (phone_number: string) => {
-    return await authAdapter.requestOTP({ phone_number })
-  }
-
   const register = async (data: {
     email: string
     full_name: string
-    phone_number: string
     password: string
     password_confirm: string
     first_name?: string
@@ -129,8 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     login,
-    loginWithPhoneOTP,
-    requestOTP,
     register,
     logout,
     refreshUser,

@@ -45,7 +45,6 @@ describe('AdminCustomerProfile', () => {
       last_login: '2024-09-15T10:30:00Z',
       is_active: true,
       email_verified: true,
-      phone_verified: true,
     },
     bookings: [
       {
@@ -194,8 +193,7 @@ describe('AdminCustomerProfile', () => {
     expect(screen.getByText('Active')).toBeInTheDocument()
     const emailStatus = screen.getByText('Email Verified:').closest('.status-item') as HTMLElement
     expect(within(emailStatus).getByText('Verified')).toBeInTheDocument()
-    const phoneStatus = screen.getByText('Phone Verified:').closest('.status-item') as HTMLElement
-    expect(within(phoneStatus).getByText('Verified')).toBeInTheDocument()
+    expect(screen.queryByText('Phone Verified:')).not.toBeInTheDocument()
   })
 
   it('should render tabs with correct counts', async () => {

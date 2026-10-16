@@ -192,8 +192,7 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(page.getByRole('heading', { name: 'Complete Your Booking' })).toBeVisible()
     // Guest data comes from the logged-in profile (checkpoint 22)
     await expect.soft(page.getByLabel(/email/i).first()).toHaveValue(DEMO.guest.email)
-    // PhoneInput shows the E.164 number grouped: +998900000003 -> +998 90 000 00 03
-    await expect.soft(page.getByLabel(/phone/i).first()).toHaveValue('+998 90 000 00 03')
+    await expect.soft(page.getByLabel(/phone/i)).toHaveCount(0)
     // The profile has full_name "Demo Guest"; first/last name should be filled from it
     const firstName = page.getByLabel(/first name/i)
     const lastName = page.getByLabel(/last name/i)
@@ -305,22 +304,13 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
   })
 })
 
-test('D phone and OTP login', async ({ page, audit }) => {
-  await step(audit, 'D1 request-code', async () => {
+test('D login is by e-mail only', async ({ page, audit }) => {
+  await step(audit, 'D1 no-phone-or-sms-option', async () => {
     await page.goto('/login')
-    await page.getByRole('button', { name: 'Phone & SMS Code' }).click()
-    await page.getByLabel('Phone Number').fill(DEMO.guest.phone)
-    await page.getByRole('button', { name: 'Send Code', exact: true }).click()
-    await expect(page.locator('.auth-test-mode')).toBeVisible()
-  })
-
-  await step(audit, 'D2 enter-code-and-log-in', async () => {
-    const code = (await page.locator('.auth-test-mode').innerText()).match(/\d{6}/)?.[0]
-    expect(code, 'test mode shows the 6-digit code').toBeTruthy()
-    await page.locator('#otp_code').fill(code ?? '')
-    await page.locator('.auth-submit').click()
-    await page.waitForURL((url) => !url.pathname.startsWith('/login'))
-    await expect(page.getByRole('link', { name: 'Login' })).toHaveCount(0)
+    await expect(page.getByLabel('Email')).toBeVisible()
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Phone & SMS Code' })).toHaveCount(0)
+    await expect(page.getByLabel('Phone Number')).toHaveCount(0)
   })
 })
 

@@ -113,7 +113,7 @@ class Command(BaseCommand):
             defaults={
                 'full_name': full_name, 'first_name': first_name, 'last_name': last_name,
                 'phone_number': phone_number, 'is_active': True, 'is_staff': False,
-                'is_superuser': False, 'email_verified': True, 'phone_verified': True,
+                'is_superuser': False, 'email_verified': True,
                 'role': role, 'date_joined': joined, 'password': self.password_hash,
             },
         )

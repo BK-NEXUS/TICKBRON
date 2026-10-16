@@ -11,9 +11,9 @@ export const MOBILE = { width: 390, height: 844 }
 
 // Accounts created by `python manage.py seed_demo`
 export const DEMO = {
-  admin: { email: 'admin@tickbron.demo', password: 'DemoAdmin#2026', phone: '+998900000001' },
-  owner: { email: 'owner@tickbron.demo', password: 'DemoOwner#2026', phone: '+998900000002' },
-  guest: { email: 'guest@tickbron.demo', password: 'DemoGuest#2026', phone: '+998900000003' },
+  admin: { email: 'admin@tickbron.demo', password: 'DemoAdmin#2026' },
+  owner: { email: 'owner@tickbron.demo', password: 'DemoOwner#2026' },
+  guest: { email: 'guest@tickbron.demo', password: 'DemoGuest#2026' },
 }
 
 export interface Issue {

@@ -11,10 +11,10 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 # Variables that must come from each test, not from the developer's shell or
 # from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
 ISOLATED_ENV_VARS = (
-    'SMS_TEST_MODE', 'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
+    'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
     'USE_X_FORWARDED_PROTO', 'SECURE_SSL_REDIRECT', 'SECURE_HSTS_PRELOAD', 'SESSION_COOKIE_AGE',
-    'DB_ENGINE', 'DB_HOST', 'DB_SSLMODE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
+    'DB_HOST', 'DB_SSLMODE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -40,7 +40,7 @@ def _load_settings(expression, **env_overrides):
 
 
 def _load_test_mode_settings(**env_overrides):
-    return _load_settings('settings.SMS_TEST_MODE, settings.PAYMENT_TEST_MODE', **env_overrides)
+    return _load_settings('settings.PAYMENT_TEST_MODE', **env_overrides)
 
 
 def _cache_backend(**env_overrides):
@@ -52,13 +52,12 @@ PRODUCTION_ENV = {
     'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
-    'DB_ENGINE': 'django.db.backends.postgresql',  # OWASP A02: production must not fall back to SQLite
     'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # password reset links and mail
 }
 
 
-def test_provider_test_modes_default_to_false():
-    assert _load_test_mode_settings() == 'False False'
+def test_payment_test_mode_defaults_to_false():
+    assert _load_test_mode_settings() == 'False'
 
 
 def _env_example_values():
@@ -71,15 +70,14 @@ def _env_example_values():
     return values
 
 
-def test_env_example_keeps_provider_test_modes_off():
-    # Copying .env.example must not turn on OTP codes in responses or client-side payment confirmation
+def test_env_example_keeps_the_payment_test_mode_off():
+    # Copying .env.example must not turn on client-side payment confirmation
     values = _env_example_values()
-    assert values.get('SMS_TEST_MODE', 'False').lower() == 'false'
     assert values.get('PAYMENT_TEST_MODE', 'False').lower() == 'false'
 
 
-def test_provider_test_modes_can_be_enabled_explicitly():
-    assert _load_test_mode_settings(SMS_TEST_MODE='True', PAYMENT_TEST_MODE='True') == 'True True'
+def test_payment_test_mode_can_be_enabled_explicitly():
+    assert _load_test_mode_settings(PAYMENT_TEST_MODE='True') == 'True'
 
 
 def test_production_uses_redis_cache_by_default():
@@ -121,6 +119,7 @@ def test_cookie_security_can_be_set_explicitly():
     assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='True', CSRF_COOKIE_SECURE='True') == \
         'True True'
 
+
 def _throttle_rates(**env_overrides):
     return _load_settings("settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']", **env_overrides)
 
@@ -146,19 +145,17 @@ def test_user_limit_can_be_set_from_the_environment():
 
 def test_sensitive_endpoints_keep_their_strict_limits():
     from payments.views import PaymentRateThrottle
-    from users.views import (
-        LoginRateThrottle, OTPRequestRateThrottle, OTPVerifyRateThrottle, RegisterRateThrottle,
+    from users.throttles import (
+        LoginRateThrottle, RegisterRateThrottle,
     )
 
     assert LoginRateThrottle.rate == '10/min'
     assert RegisterRateThrottle.rate == '5/min'
-    assert OTPRequestRateThrottle.rate == '3/min'
-    assert OTPVerifyRateThrottle.rate == '5/min'
     assert PaymentRateThrottle.rate == '20/min'
 
 
 def _test_db_name(**env_overrides):
-    env = {'DB_ENGINE': 'django.db.backends.postgresql', 'DB_NAME': 'tickbron', **env_overrides}
+    env = {'DB_NAME': 'tickbron', **env_overrides}
     return _load_settings("settings.DATABASES['default'].get('TEST', {}).get('NAME')", **env)
 
 

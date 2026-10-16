@@ -20,8 +20,6 @@ export interface User {
   date_joined: string
   last_login?: string
   email_verified: boolean
-  // True once the number was proven by an SMS code; only then can it be used to log in
-  phone_verified?: boolean
   two_factor_enabled: boolean
   is_staff?: boolean
   is_superuser?: boolean
@@ -32,7 +30,6 @@ export interface User {
 export interface RegisterRequest {
   email: string
   full_name: string
-  phone_number: string
   password: string
   password_confirm: string
   first_name?: string
@@ -55,24 +52,6 @@ export interface UpdateProfileRequest {
 export interface LoginRequest {
   email: string
   password: string
-}
-
-export interface RequestOTPRequest {
-  phone_number: string
-}
-
-export interface VerifyOTPRequest {
-  phone_number: string
-  otp_code: string
-}
-
-export interface OTPResponse {
-  success: boolean
-  otp_code?: string
-  error?: string
-  /** Machine-readable reason from the backend, e.g. 'phone_already_verified' */
-  code?: string
-  detail?: string
 }
 
 export interface AuthResponse {
@@ -228,72 +207,6 @@ class AuthAdapter {
     return this.request('/api/v1/auth/me/update/', {
       method: 'PATCH',
       body: JSON.stringify(data),
-    })
-  }
-
-  async requestOTP(data: RequestOTPRequest): Promise<OTPResponse> {
-    const url = `${this.baseUrl}/api/v1/auth/otp/request/`
-    
-    try {
-      const response = await apiFetch(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      
-      if (!response.ok) {
-        const apiError = await readApiError(response)
-        return {
-          success: false,
-          error: apiError.message,
-        }
-      }
-
-      const responseData = await response.json()
-      return {
-        success: true,
-        otp_code: responseData.otp_code,
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Network error occurred',
-      }
-    }
-  }
-
-  async verifyOTP(data: VerifyOTPRequest): Promise<AuthResponse> {
-    return this.changeSession('/api/v1/auth/otp/verify/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  /** Send a code to the logged-in user's own number; the backend takes the number from the account. */
-  async requestPhoneVerification(): Promise<OTPResponse> {
-    const response = await apiFetch(`${this.baseUrl}/api/v1/auth/phone/verify/request/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
-    }).catch(() => null)
-    if (!response) return { success: false, error: 'Network error occurred' }
-    if (!response.ok) {
-      const apiError = await readApiError(response)
-      return { success: false, error: apiError.message, code: apiError.code }
-    }
-    const data = await response.json()
-    return { success: true, otp_code: data.otp_code }
-  }
-
-  /** Prove the number with the SMS code; success returns the user with phone_verified true. */
-  async confirmPhoneVerification(otpCode: string): Promise<AuthResponse> {
-    return this.request('/api/v1/auth/phone/verify/confirm/', {
-      method: 'POST',
-      body: JSON.stringify({ otp_code: otpCode }),
     })
   }
 }

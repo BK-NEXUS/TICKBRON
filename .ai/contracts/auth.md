@@ -6,7 +6,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 
 ### Password-Based Authentication
 - POST `/api/v1/auth/register/` - User registration
-  - Required fields: `email`, `full_name`, `phone_number`, `password`, `password_confirm`
+  - Required fields: `email`, `full_name`, `password`, `password_confirm`. E-mail only (2026-10-14): there is no phone field; a `phone_number` in the body is ignored and the account starts with `phone_number: null`. A number is added later with `PATCH /auth/me/update/` and proven with `/auth/phone/verify/`
   - Optional fields: `first_name`, `last_name` (nullable), `whatsapp`, `telegram`, `preferred_contact_method`
   - Auto-logs in user after successful registration
   - Rate limited: 5 requests/minute per IP
@@ -18,33 +18,8 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Lockout: 5 failures from one client IP lock that IP out of the account for 30 min; 20 failures across all IPs within 30 min lock the account for 15 min (`users/lockout.py`)
   - Every failure (unknown email, wrong password, inactive or locked account) returns the same 401 `{"detail": "Invalid credentials. If you have made several failed attempts, please try again later."}`
 
-### Phone-Based OTP Authentication
-- POST `/api/v1/auth/otp/request/` - Request OTP code
-  - Required fields: `phone_number`
-  - Rate limited: 3 requests/minute per phone number
-  - Returns OTP code in response when `SMS_TEST_MODE=True`
-  - `SMS_TEST_MODE` defaults to `False`; with it off and no SMS provider configured, returns 503
-  - Always 200 `{"success": true, "message": "If this phone number is registered, a verification code has been sent."}` for registered, unknown and locked numbers (no account enumeration); only a number that its account has VERIFIED (`phone_verified` true) and that is not locked gets a code; an unverified number gets the same response and no code (N-1, 2026-10-10). Does not create users
-
-- POST `/api/v1/auth/otp/verify/` - Verify OTP and login
-  - Required fields: `phone_number`, `otp_code` (6 digits)
-  - Establishes session using same mechanism as password login
-  - OTP expires after 5 minutes
-  - Maximum 3 verification attempts per OTP
-  - Rate limited: 5 requests/minute per phone number (429 when exceeded)
-  - Same lockout as password login (per IP and account-wide), counted across all issued codes; while locked the code is not checked
-  - Unknown number, unverified number, wrong/expired code and locked account all return the same 400 `{"success": false, "message": "Invalid or expired OTP code"}` (N-1: an unverified number cannot log in, so registering with someone else's number gives no access when they sign in by SMS)
-
-### Phone verification (N-1, 2026-10-10)
-A phone number on an account is only a claim until its owner proves it by SMS. Both endpoints need a session; the number always comes from the account, anything the client sends is ignored. Throttled like OTP (3/min request, 5/min confirm), same per-IP lockout, same code storage (5 minutes, 3 attempts).
-- POST `/api/v1/auth/phone/verify/request/` - send a 6-digit code to the logged-in user's own number
-  - 200 `{"success": true, "message": ..., "otp_code": "..."}` (`otp_code` only when `SMS_TEST_MODE=True`; with it off and no SMS provider: 503)
-  - 400 `{"error": ..., "code": "phone_missing"}` when the account has no number; 400 `{"error": ..., "code": "phone_already_verified"}` when it is already verified
-- POST `/api/v1/auth/phone/verify/confirm/` - body `{"otp_code": "123456"}`
-  - 200 returns the user object with `phone_verified: true`
-  - 400 `{"error": "Invalid or expired OTP code", "code": "otp_invalid"}` for a wrong or expired code or a locked account (a locked account does not check the code)
-  - Changing the phone number on the profile resets `phone_verified` to false
-  - Uniqueness (N-1 stage 2, 2026-10-10): only a VERIFIED number is unique (DB constraint `users_phone_unique_when_verified`). Register, profile update and create-hotel-owner accept a number that others merely claim without proof, and refuse one a verified account already holds (400 `phone_number`). When an account proves a number, other accounts that only claimed it lose it (their `phone_number` becomes null). If another account proves the number first, `confirm` answers 400 `otp_invalid`
+### Removed: SMS login and phone verification (2026-10-16)
+`POST /auth/otp/request/`, `POST /auth/otp/verify/`, `POST /auth/phone/verify/request/` and `POST /auth/phone/verify/confirm/` no longer exist (404). Accounts are e-mail only. No endpoint takes a phone number for an account: register, `PATCH /auth/me/update/` and `POST /admin-panel/users/create-hotel-owner/` ignore a `phone_number` in the body. An old number stays on the account as read-only data (`phone_number` in the user object, no longer unique). Stage 2 (migration `users/0009_drop_sms_login_columns`, 2026-10-16) dropped `phone_verified`, `otp_code`, `otp_expires_at`, `otp_attempts` and the constraint `users_phone_unique_when_verified`.
 
 ### Password reset and change (OWASP A07-1, 2026-10-14)
 - POST /api/v1/auth/password-reset/request/ - body `{email}`. Anonymous, CSRF token required, 5/hour per IP and 5 mails/day per address.
@@ -64,25 +39,21 @@ A phone number on an account is only a claim until its owner proves it by SMS. B
   - `authenticated` (added 2026-09-28): whether this session is logged in. The SPA asks it on page load and only calls `/auth/me/` when it is true, so anonymous visits make no 401 request (browser console error)
   - The `csrftoken` cookie is HttpOnly, so the SPA cannot read it; it takes the token from this endpoint instead
   - Every POST/PUT/PATCH/DELETE from a logged-in session must send it as the `X-CSRFToken` header, otherwise 403 `{"error": {"code": "error", "message": "CSRF Failed: CSRF token missing.", ...}}`
-  - Django rotates the token on login (password, OTP verify, register auto-login); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write
+  - Django rotates the token on login (password login, register auto-login); fetch a new one after any login. Logout ends the session, so fetch again before the next login-protected write
 
 ## Session Management
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
   - Includes read-only `is_staff` and `is_superuser` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; only super-admins can use `POST /admin-panel/users/create-hotel-owner/`. The flags only drive the UI: the backend still checks permissions on every request, and `PATCH /auth/me/update/` cannot change them
-  - Includes read-only `phone_verified` (bool, added 2026-10-10): true after the number was proven by `POST /auth/phone/verify/confirm/`. Only then can the number be used for SMS login
+  - `phone_number` is legacy read-only data (null for accounts created after 2026-10-14); `phone_verified` was removed from the user object on 2026-10-16
   - Includes read-only `role` (string or null, added 2026-09-26): `"hotel-owner"` for owner accounts, null for regular users. Only a super-admin assigns it (`POST /admin-panel/users/create-hotel-owner/`); register, OTP and `PATCH /auth/me/update/` ignore any `role` in the body. The UI shows partner entry points only for `role == "hotel-owner"` or staff
-  - The same user object (with both flags and `role`) is returned by register, login, OTP verify, refresh and `PATCH /auth/me/update/`
+  - The same user object (with both flags and `role`) is returned by register, login, refresh and `PATCH /auth/me/update/`
 - POST `/api/v1/auth/refresh/` - Refresh session
 - PATCH `/api/v1/auth/me/update/` - Update user profile
   - Required authentication
-  - Optional fields: `full_name`, `first_name`, `last_name`, `phone_number`, `whatsapp`, `telegram`, `preferred_contact_method`
-  - `phone_number` (here, on register, OTP request/verify and create-hotel-owner; added 2026-09-26): a valid international number, separators allowed, stored and returned as E.164 (`+998901234567`). Otherwise 400 with `phone_number: ["Enter a valid phone number in international format, e.g. +998 90 123 45 67."]`
+  - Optional fields: `full_name`, `first_name`, `last_name`, `whatsapp`, `telegram`, `preferred_contact_method` (a `phone_number` is ignored)
+  - `guest_phone` on `POST /bookings/` is still an optional, validated international number (stored as E.164); it is the only place an API takes a phone number
   - Partial updates supported
 
 ## Configuration
 - Password reset needs `FRONTEND_URL`, `EMAIL_*`, `DEFAULT_FROM_EMAIL` and a running Celery worker (or `CELERY_TASK_ALWAYS_EAGER=True` in local development). Production refuses to start without an https `FRONTEND_URL` and an `EMAIL_HOST`.
-- `SMS_TEST_MODE` (default: False; `backend/.env.example` also sets False) - Controls OTP test mode behavior. Set it to True only for local development
-- OTP logs never contain the full phone number; `users/services.py` logs it masked with `common.privacy.mask_phone` (`+998901234567` -> `+998*******67`)
-- In test mode, OTP codes returned in API response for testing
-- In production, integrate with real SMS provider

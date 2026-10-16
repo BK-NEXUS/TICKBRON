@@ -79,7 +79,6 @@ export function usePageTrail(trail: Crumb[] | null) {
     setTrail(latest.current?.map((crumb, index) =>
       crumb.onClick ? { ...crumb, onClick: () => latest.current?.[index]?.onClick?.() } : crumb
     ) ?? null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, setTrail])
   useEffect(() => () => setTrail(null), [setTrail])
 }

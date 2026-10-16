@@ -1,5 +1,5 @@
 """
-Login lockout policy shared by password and phone-OTP login.
+Login lockout policy for password login.
 
 Failures are counted per (account, client IP) and per account:
 
@@ -31,7 +31,7 @@ def is_locked(user, client_ip):
 
 
 def record_failure(user, client_ip):
-    """Count a failed password/OTP attempt for this account and IP."""
+    """Count a failed password attempt for this account and IP."""
     key = _ip_key(user, client_ip)
     cache.add(key, 0, IP_LOCK_SECONDS)
     try:

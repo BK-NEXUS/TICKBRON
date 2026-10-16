@@ -26,8 +26,6 @@ class RefundBackfillMigration(TransactionTestCase):
 
     def setUp(self):
         super().setUp()
-        if connection.vendor != 'postgresql':
-            self.skipTest('Migration executor tests need PostgreSQL')
         staff = User.objects.create_user(email='s@example.com', password='x', is_staff=True)
         guest = User.objects.create_user(email='g@example.com', password='x')
         hotel = Property.objects.create(

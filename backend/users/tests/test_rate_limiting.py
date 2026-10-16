@@ -35,7 +35,7 @@ class LoginRateLimitingTest(TestCase):
         # Should return 200 for valid credentials
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
 
-    @patch('users.views.TESTING', False)
+    @patch('users.throttles.TESTING', False)
     def test_login_rate_limit_triggers(self):
         """Test that login rate limit triggers after 10 requests."""
         # Make 11 login attempts (limit is 10/min)
@@ -63,7 +63,7 @@ class LoggedInSessionRateLimitingTest(TestCase):
         )
         self.client.force_login(self.user)
 
-    @patch('users.views.TESTING', False)
+    @patch('users.throttles.TESTING', False)
     def test_login_limit_applies_to_logged_in_session(self):
         statuses = [
             self.client.post('/api/v1/auth/login/', {'email': 'victim@example.com', 'password': 'x'}).status_code
@@ -71,7 +71,7 @@ class LoggedInSessionRateLimitingTest(TestCase):
         ]
         self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, statuses)
 
-    @patch('users.views.TESTING', False)
+    @patch('users.throttles.TESTING', False)
     def test_register_limit_applies_to_logged_in_session(self):
         statuses = [
             self.client.post('/api/v1/auth/register/', {'email': f'n{i}@example.com'}).status_code
@@ -109,11 +109,11 @@ class RegisterRateLimitingTest(TestCase):
         # Check that the view has throttle_classes decorator
         # Since register is a function, we verify by checking the actual throttling behavior
         # The RegisterRateThrottle class should exist and be an AnonRateThrottle
-        from users.views import RegisterRateThrottle
+        from users.throttles import RegisterRateThrottle
         self.assertTrue(issubclass(RegisterRateThrottle, AnonRateThrottle))
         self.assertEqual(RegisterRateThrottle.rate, '5/min')
 
-    @patch('users.views.TESTING', False)
+    @patch('users.throttles.TESTING', False)
     def test_register_rate_limit_triggers(self):
         """Test that registration rate limit triggers after 5 requests."""
         # Make 6 registration attempts (limit is 5/min)

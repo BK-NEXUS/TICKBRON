@@ -10,9 +10,6 @@ from common.money import SUPPORTED_BASE_CURRENCIES, is_whole_som
 from common.storage import validate_image_file
 from geography.serializers import GeographyRefsMixin
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
-from properties.serializers import (
-    PropertyPhotoSerializer, AmenitySerializer, PropertyAmenitySerializer
-)
 
 
 # Upload limits: 40 megapixels per photo, 50 photos per property

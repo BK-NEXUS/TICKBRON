@@ -87,10 +87,11 @@ describe('auth pages', () => {
     expect(screen.getByRole('button', { name: /signing in/i })).toHaveAttribute('aria-busy', 'true')
   })
 
-  it('keeps the register fields as they are: name, email, phone and both passwords are required', async () => {
+  it('keeps the register fields as they are: name, email and both passwords are required, with no phone field', async () => {
     await renderAt('/register')
-    for (const label of ['Full Name', 'Email', 'Phone Number', 'Password', 'Confirm Password']) {
+    for (const label of ['Full Name', 'Email', 'Password', 'Confirm Password']) {
       expect(screen.getByLabelText(label)).toBeRequired()
     }
+    expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
   })
 })

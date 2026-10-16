@@ -34,23 +34,6 @@ def validate_phone_number_format(value):
     return normalized
 
 
-def validate_unique_phone_number(value, instance=None):
-    """
-    Check phone number uniqueness after normalization.
-
-    Only a number already VERIFIED by another account is taken; an unproven
-    claim does not block (N-1: it would let anyone squat a number). Checking
-    after normalization matters because a number with extra whitespace would
-    otherwise slip past and fail at the database instead.
-    """
-    users = User.objects.filter(phone_number=value, phone_verified=True)
-    if instance is not None:
-        users = users.exclude(pk=instance.pk)
-    if users.exists():
-        raise serializers.ValidationError("A user with this phone number already exists.")
-    return value
-
-
 class UserSerializer(serializers.ModelSerializer):
     """
     Base serializer for User model.
@@ -64,8 +47,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
-                  'email_verified', 'phone_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
-        read_only_fields = ['id', 'date_joined', 'last_login', 'is_staff', 'is_superuser', 'phone_verified']
+                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
+        # phone_number is legacy data: shown, never written
+        read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_full_name(self, obj):
         return obj.get_full_name()
@@ -80,29 +64,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
-    # Declared so the phone validation gives the only error (not the column's max_length)
-    phone_number = serializers.CharField()
 
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
+        fields = ['email', 'full_name', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {
-            'full_name': {'required': True},
-            'phone_number': {'required': True},
-        }
+        extra_kwargs = {'full_name': {'required': True}}
     
     def validate_email(self, value):
         """Validate email format."""
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
-    
-    def validate_phone_number(self, value):
-        """Validate phone number format and uniqueness."""
-        if not value or not value.strip():
-            raise serializers.ValidationError("Phone number is required.")
-        return validate_unique_phone_number(validate_phone_number_format(value))
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -160,75 +133,13 @@ class PasswordChangeSerializer(NewPasswordSerializer):
     current_password = serializers.CharField(max_length=128)
 
 
-class RequestOTPSerializer(serializers.Serializer):
-    """
-    Serializer for requesting OTP code.
-    """
-    phone_number = serializers.CharField()
-
-    def validate_phone_number(self, value):
-        """Validate phone number format."""
-        if not value or not value.strip():
-            raise serializers.ValidationError("Phone number is required.")
-        return validate_phone_number_format(value)
-
-
-class VerifyOTPSerializer(serializers.Serializer):
-    """
-    Serializer for verifying OTP code.
-    """
-    phone_number = serializers.CharField()
-    otp_code = serializers.CharField(max_length=6)
-    
-    def validate_phone_number(self, value):
-        """Validate phone number format."""
-        if not value or not value.strip():
-            raise serializers.ValidationError("Phone number is required.")
-        return validate_phone_number_format(value)
-
-    def validate_otp_code(self, value):
-        """Validate OTP code format."""
-        if not value or not value.strip():
-            raise serializers.ValidationError("OTP code is required.")
-        if not value.isdigit() or len(value) != 6:
-            raise serializers.ValidationError("OTP code must be 6 digits.")
-        return value.strip()
-
-
-class ConfirmPhoneSerializer(serializers.Serializer):
-    """The code that proves the logged-in user owns their phone number."""
-    otp_code = serializers.CharField(max_length=6)
-
-    def validate_otp_code(self, value):
-        if not value.isdigit() or len(value) != 6:
-            raise serializers.ValidationError("OTP code must be 6 digits.")
-        return value.strip()
-
-
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating user profile.
+    Serializer for updating user profile. The phone number is not editable: accounts are e-mail only.
     """
-    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['full_name', 'first_name', 'last_name', 'phone_number', 
-                  'whatsapp', 'telegram', 'preferred_contact_method']
-        extra_kwargs = {
-            'full_name': {'required': False},
-            'phone_number': {'required': False},
-        }
-    
-    def validate_phone_number(self, value):
-        """Normalize and check uniqueness; blank clears the number."""
-        value = (value or '').strip() or None
-        if value is None:
-            return None
-        return validate_unique_phone_number(validate_phone_number_format(value), instance=self.instance)
-    
-    def update(self, instance, validated_data):
-        # A changed number has not been verified by OTP yet
-        if 'phone_number' in validated_data and validated_data['phone_number'] != instance.phone_number:
-            instance.phone_verified = False
-        return super().update(instance, validated_data)
+        fields = ['full_name', 'first_name', 'last_name', 'whatsapp', 'telegram', 'preferred_contact_method']
+        extra_kwargs = {'full_name': {'required': False}}
+

@@ -17,12 +17,12 @@ from django.db.models import (
     Count, Sum, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField, DecimalField
 )
 from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat, Lower, NullIf, Trim
-from datetime import timedelta, date
+from datetime import timedelta
 from decimal import Decimal
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from payments.models import PaymentTransaction
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog, InternalNote
 from admin_panel.serializers import (
@@ -30,7 +30,6 @@ from admin_panel.serializers import (
     AdminUserSerializer, AdminUserCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
-    AdminPaymentTransactionSerializer,
     AdminCustomerSerializer,
     AdminCustomerDetailSerializer,
     AdminBookingSummarySerializer,
@@ -503,7 +502,6 @@ def admin_customers_directory(request):
     # Get query parameters
     search = request.query_params.get('search', '').strip()
     page = request.query_params.get('page', 1)
-    page_size = request.query_params.get('page_size', 20)
     sort_by = request.query_params.get('sort_by', 'registration_date')
     sort_order = request.query_params.get('sort_order', 'desc')
     

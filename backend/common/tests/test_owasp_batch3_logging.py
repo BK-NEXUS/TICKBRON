@@ -43,7 +43,7 @@ def _events(caplog, name=None):
 
 @pytest.fixture
 def user(db):
-    return User.objects.create_user(email=EMAIL, password=PASSWORD, phone_number=PHONE, phone_verified=True)
+    return User.objects.create_user(email=EMAIL, password=PASSWORD, phone_number=PHONE)
 
 
 def _login(password=PASSWORD, email=EMAIL):
@@ -119,19 +119,6 @@ class TestAccountEvents:
         assert len(_events(security, 'account_created')) == 1
         assert AccountHistory.objects.filter(user=new_user, action='account_created').exists()
 
-    def test_otp_login_success_and_failure_are_recorded_without_the_code_or_phone(self, user, security):
-        code = user.generate_otp()
-        client = APIClient()
-
-        bad = client.post('/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': '000000'}, format='json')
-        good = client.post('/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': code}, format='json')
-
-        assert (bad.status_code, good.status_code) == (400, 200)
-        assert len(_events(security, 'otp_login_failed')) == 1
-        assert len(_events(security, 'login_success')) == 1
-        everything = ' '.join(_events(security))
-        assert code not in everything and PHONE not in everything and '000000' not in everything
-
 
 @pytest.mark.django_db
 class TestRefusedRequestsNameWhoAndWhere:
@@ -152,7 +139,7 @@ class TestRefusedRequestsNameWhoAndWhere:
         assert 'ip=127.0.0.1' in line and 'user=none' in line
 
     def test_a_throttled_request_is_recorded(self, user, security):
-        with mock.patch('users.views.TESTING', False):
+        with mock.patch('users.throttles.TESTING', False):
             for _ in range(12):
                 _login(password='wrong-password-123')
 

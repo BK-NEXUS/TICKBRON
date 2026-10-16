@@ -5,8 +5,7 @@ import pytest
 from django.test import TestCase
 from django.db import IntegrityError
 from django.contrib.auth import get_user_model
-from users.models import User, UserManager
-from users.otp import hash_otp
+from users.models import User
 
 User = get_user_model()
 
@@ -142,91 +141,6 @@ class TestUserModel(TestCase):
         assert hasattr(user, 'is_active')
         assert user.is_deleted is False
         assert user.is_active is True
-    
-    def test_generate_otp(self):
-        """Test OTP generation."""
-        user = User.objects.create_user(
-            email='test@example.com',
-            password='testpass123',
-            phone_number='+1234567890'
-        )
-        
-        otp_code = user.generate_otp()
-        
-        assert otp_code is not None
-        assert len(otp_code) == 6
-        assert otp_code.isdigit()
-        assert user.otp_code == hash_otp(otp_code)  # stored as a keyed hash (L-1)
-        assert user.otp_expires_at is not None
-        assert user.otp_attempts == 0
-    
-    def test_verify_otp_success(self):
-        """Test successful OTP verification."""
-        user = User.objects.create_user(
-            email='test@example.com',
-            password='testpass123',
-            phone_number='+1234567890'
-        )
-        otp_code = user.generate_otp()
-        
-        result = user.verify_otp(otp_code)
-        
-        assert result is True
-        user.refresh_from_db()
-        assert user.phone_verified is True
-        assert user.otp_code is None
-        assert user.otp_expires_at is None
-    
-    def test_verify_otp_invalid(self):
-        """Test OTP verification with invalid code."""
-        user = User.objects.create_user(
-            email='test@example.com',
-            password='testpass123',
-            phone_number='+1234567890'
-        )
-        user.generate_otp()
-        
-        result = user.verify_otp('000000')
-        
-        assert result is False
-        user.refresh_from_db()
-        assert user.otp_attempts == 1
-    
-    def test_verify_otp_expired(self):
-        """Test OTP verification with expired code."""
-        user = User.objects.create_user(
-            email='test@example.com',
-            password='testpass123',
-            phone_number='+1234567890'
-        )
-        otp_code = user.generate_otp()
-        
-        # Manually expire the OTP
-        from django.utils import timezone
-        from datetime import timedelta
-        user.otp_expires_at = timezone.now() - timedelta(minutes=10)
-        user.save()
-        
-        result = user.verify_otp(otp_code)
-        
-        assert result is False
-    
-    def test_verify_otp_max_attempts(self):
-        """Test OTP verification with max attempts exceeded."""
-        user = User.objects.create_user(
-            email='test@example.com',
-            password='testpass123',
-            phone_number='+1234567890'
-        )
-        otp_code = user.generate_otp()
-        
-        # Use all attempts
-        for _ in range(3):
-            user.verify_otp('000000')
-        
-        result = user.verify_otp(otp_code)
-        
-        assert result is False
     
     def test_user_whatsapp_field(self):
         """Test whatsapp field can be set and retrieved."""

@@ -5,20 +5,15 @@ import { useAuth } from '../contexts/AuthContext'
 import { EmptyState } from '../components/EmptyState'
 import { Link } from 'react-router-dom'
 import { canUsePartnerPanel } from '../utils/roles'
-import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneExample } from '../utils/phone'
 import { ChangePasswordForm } from '../components/ChangePasswordForm'
-import { PhoneVerifyDialog } from '../components/PhoneVerifyDialog'
 
 export function ProfilePage() {
   const { t, formatDate } = useI18n()
-  const { user, isAuthenticated, updateProfile, refreshUser } = useAuth()
-  const [verifyingPhone, setVerifyingPhone] = useState(false)
+  const { user, isAuthenticated, updateProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
-    phone_number: user?.phone_number || '',
     whatsapp: user?.whatsapp || '',
     telegram: user?.telegram || '',
     preferred_contact_method: user?.preferred_contact_method || 'email',
@@ -31,8 +26,7 @@ export function ProfilePage() {
     setEditForm({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
-      phone_number: user?.phone_number || '',
-      whatsapp: user?.whatsapp || '',
+        whatsapp: user?.whatsapp || '',
       telegram: user?.telegram || '',
       preferred_contact_method: user?.preferred_contact_method || 'email',
     })
@@ -56,13 +50,6 @@ export function ProfilePage() {
     e.preventDefault()
     setError(null)
     setSuccess(false)
-
-    // Checked only when changed: a number saved before validation existed is sent back as it is
-    const phoneChanged = editForm.phone_number !== (user?.phone_number || '')
-    if (phoneChanged && editForm.phone_number && !isValidPhone(editForm.phone_number)) {
-      setError(t('phone.invalid', { example: phoneExample() }))
-      return
-    }
 
     setSaving(true)
     try {
@@ -153,25 +140,6 @@ export function ProfilePage() {
                 <p className="profile-field-value">{user.email}</p>
               </div>
               <div className="profile-field">
-                <label className="profile-field-label">{t('profile.phone')}</label>
-                <p className="profile-field-value">{user.phone_number || t('profile.notProvided')}</p>
-                {user.phone_number && (
-                  <p className="profile-phone-status">
-                    <span className={`profile-phone-badge ${user.phone_verified ? 'profile-phone-badge--ok' : 'profile-phone-badge--warn'}`}>
-                      {user.phone_verified ? t('profile.phoneVerified') : t('profile.phoneNotVerified')}
-                    </span>
-                    {!user.phone_verified && (
-                      <>
-                        <button type="button" className="btn btn-secondary btn-small" onClick={() => setVerifyingPhone(true)}>
-                          {t('profile.verifyPhone')}
-                        </button>
-                        <small className="form-hint">{t('profile.verifyPhoneHint')}</small>
-                      </>
-                    )}
-                  </p>
-                )}
-              </div>
-              <div className="profile-field">
                 <label className="profile-field-label">{t('profile.whatsapp')}</label>
                 <p className="profile-field-value">{user.whatsapp || t('profile.notProvided')}</p>
               </div>
@@ -224,16 +192,6 @@ export function ProfilePage() {
                         className="profile-form-input"
                       />
                     </div>
-                  </div>
-                  <div className="profile-form-field">
-                    <label htmlFor="phone_number" className="profile-form-label">{t('profile.phone')}</label>
-                    <PhoneInput
-                      id="phone_number"
-                      name="phone_number"
-                      value={editForm.phone_number}
-                      onChange={(phone_number) => setEditForm(prev => ({ ...prev, phone_number }))}
-                      className="profile-form-input"
-                    />
                   </div>
                   <div className="profile-form-field">
                     <label htmlFor="whatsapp" className="profile-form-label">{t('profile.whatsapp')}</label>
@@ -341,16 +299,6 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
-      {verifyingPhone && user.phone_number && (
-        <PhoneVerifyDialog
-          phone={user.phone_number}
-          onClose={() => setVerifyingPhone(false)}
-          onVerified={async () => {
-            await refreshUser()
-            setVerifyingPhone(false)
-          }}
-        />
-      )}
     </div>
   )
 }

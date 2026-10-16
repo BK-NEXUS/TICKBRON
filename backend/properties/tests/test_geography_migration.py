@@ -30,8 +30,6 @@ class Migrate0012To0013(TransactionTestCase):
 
     def setUp(self):
         super().setUp()
-        if connection.vendor != 'postgresql':
-            self.skipTest('Migration executor tests need PostgreSQL')
         executor = MigrationExecutor(connection)
         executor.migrate(self.migrate_from)
         executor.loader.build_graph()

@@ -4,7 +4,6 @@ OWASP 2025 batch 2 (A10 exceptional conditions, A04, A06): money paths that fail
 Each test names the situation as a guest or staff member would meet it.
 """
 from datetime import timedelta
-from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -295,19 +294,6 @@ class TestDatabaseOutageIsNotAClientError:
             response = client.post(f"/api/v1/bookings/{booked['booking'].id}/cancel/", {}, format='json')
 
         assert response.status_code == 500
-
-    def test_otp_verify(self, people):  # noqa: F811
-        client = APIClient()
-        client.raise_request_exception = False
-
-        with mock.patch('users.services.lockout.is_locked', side_effect=self._fail()):
-            from users.models import User
-            User.objects.filter(pk=people['guest'].pk).update(phone_number='+998901234567', phone_verified=True)
-            response = client.post('/api/v1/auth/otp/verify/', {'phone_number': '+998901234567', 'otp_code': '123456'},
-                                   format='json')
-
-        assert response.status_code == 500
-
 
 @pytest.mark.django_db
 class TestPaidStayCannotBeCancelledOnceItHasStarted:

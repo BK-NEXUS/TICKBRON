@@ -8,8 +8,6 @@ import { AuthProvider } from '../contexts/AuthContext'
 vi.mock('../adapters/authAdapter', () => ({
   authAdapter: {
     login: vi.fn(),
-    requestOTP: vi.fn(),
-    verifyOTP: vi.fn(),
     getCurrentUser: vi.fn().mockResolvedValue({ success: false }),
   },
 }))
@@ -36,33 +34,18 @@ describe('LoginPage', () => {
   })
 
   describe('rendering', () => {
-    it('tells the user SMS sign-in needs a number verified in the profile (N-1)', async () => {
+    it('offers only e-mail sign-in: no phone or SMS option', async () => {
       await renderWithRouter(<LoginPage />)
-      const hint = 'SMS sign-in works only for a phone number you have verified in your profile.'
 
-      expect(screen.queryByText(hint)).not.toBeInTheDocument()
-      fireEvent.click(screen.getByRole('button', { name: 'Phone & SMS Code' }))
-
-      expect(screen.getByText(hint)).toBeInTheDocument()
+      expect(screen.queryByText('Phone & SMS Code')).not.toBeInTheDocument()
+      expect(screen.queryByText('Email & Password')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Enter 6-digit Code')).not.toBeInTheDocument()
     })
 
-    it('marks the selected login method (the other one is a real choice)', async () => {
+    it('renders the e-mail login form', async () => {
       await renderWithRouter(<LoginPage />)
 
-      expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'true')
-      expect(screen.getByRole('button', { name: 'Phone & SMS Code' })).toHaveAttribute('aria-pressed', 'false')
-
-      fireEvent.click(screen.getByRole('button', { name: 'Phone & SMS Code' }))
-
-      expect(screen.getByRole('button', { name: 'Phone & SMS Code' })).toHaveAttribute('aria-pressed', 'true')
-      expect(screen.getByRole('button', { name: 'Email & Password' })).toHaveAttribute('aria-pressed', 'false')
-    })
-
-    it('renders login form with tabs', async () => {
-      await renderWithRouter(<LoginPage />)
-
-      expect(screen.getByText('Email & Password')).toBeInTheDocument()
-      expect(screen.getByText('Phone & SMS Code')).toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
@@ -103,33 +86,6 @@ describe('LoginPage', () => {
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
       expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
       expect(screen.queryByLabelText('Enter 6-digit Code')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('login method switching', () => {
-    it('switches to phone login when clicking phone tab', async () => {
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
-      expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
-      expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
-    })
-
-    it('switches back to password login when clicking email tab', async () => {
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const emailTab = screen.getByText('Email & Password')
-      fireEvent.click(emailTab)
-
-      expect(screen.getByLabelText('Email')).toBeInTheDocument()
-      expect(screen.getByLabelText('Password')).toBeInTheDocument()
-      expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
     })
   })
 
@@ -217,273 +173,6 @@ describe('LoginPage', () => {
     })
   })
 
-  describe('phone number field', () => {
-    it('formats the number and stops at a complete +998 number', async () => {
-      await renderWithRouter(<LoginPage />)
-      fireEvent.click(screen.getByText('Phone & SMS Code'))
-      const phoneInput = screen.getByLabelText('Phone Number')
-      fireEvent.change(phoneInput, { target: { value: '998901234567123' } })
-      expect(phoneInput).toHaveValue('+998 90 123 45 67')
-    })
-
-    it('does not request a code for an incomplete number', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      await renderWithRouter(<LoginPage />)
-      fireEvent.click(screen.getByText('Phone & SMS Code'))
-      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '90 123' } })
-      fireEvent.click(screen.getByRole('button', { name: /send code/i }))
-
-      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
-      expect(authAdapter.requestOTP).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('phone/SMS-code login flow', () => {
-    it('requests OTP code when phone number submitted', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(authAdapter.requestOTP).toHaveBeenCalledWith({
-          phone_number: '+998901234567',
-        })
-      })
-
-      expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-    })
-
-    it('shows OTP input after code is requested', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-      })
-
-      expect(screen.getByRole('button', { name: /verify & sign in/i })).toBeInTheDocument()
-      expect(screen.getByText('Resend Code')).toBeInTheDocument()
-    })
-
-    it('displays test code when OTP response includes it and not in production', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByText(/test mode code:/i)).toBeInTheDocument()
-        expect(screen.getByText('123456')).toBeInTheDocument()
-      })
-    })
-
-    it('verifies OTP and logs in user', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-      vi.mocked(authAdapter.verifyOTP).mockResolvedValue({
-        success: true,
-        user: {
-          id: 1,
-          email: 'test@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
-          full_name: 'John Doe',
-          is_active: true,
-          date_joined: '2024-01-01T00:00:00Z',
-          email_verified: true,
-          two_factor_enabled: false,
-        },
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-      })
-
-      const otpInput = screen.getByLabelText('Enter 6-digit Code')
-      const verifyButton = screen.getByRole('button', { name: /verify & sign in/i })
-
-      fireEvent.change(otpInput, { target: { value: '123456' } })
-      fireEvent.click(verifyButton)
-
-      await waitFor(() => {
-        expect(authAdapter.verifyOTP).toHaveBeenCalledWith({
-          phone_number: '+998901234567',
-          otp_code: '123456',
-        })
-      })
-    })
-
-    it('displays error on OTP request failure', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: false,
-        error: 'Invalid phone number',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid phone number')).toBeInTheDocument()
-      })
-    })
-
-    it('displays error on OTP verification failure', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-      vi.mocked(authAdapter.verifyOTP).mockResolvedValue({
-        success: false,
-        error: 'Invalid code',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-      })
-
-      const otpInput = screen.getByLabelText('Enter 6-digit Code')
-      const verifyButton = screen.getByRole('button', { name: /verify & sign in/i })
-
-      fireEvent.change(otpInput, { target: { value: '000000' } })
-      fireEvent.click(verifyButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Invalid code')).toBeInTheDocument()
-      })
-    })
-
-    it('allows resending OTP code', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-      })
-
-      const resendButton = screen.getByText('Resend Code')
-      fireEvent.click(resendButton)
-
-      await waitFor(() => {
-        expect(authAdapter.requestOTP).toHaveBeenCalledWith({
-          phone_number: '+998901234567',
-        })
-      })
-    })
-
-    it('disables phone input after OTP requested', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: true,
-        otp_code: '123456',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Enter 6-digit Code')).toBeInTheDocument()
-      })
-
-      expect(phoneInput).toBeDisabled()
-    })
-  })
-
   describe('form validation', () => {
     it('requires email field', async () => {
       await renderWithRouter(<LoginPage />)
@@ -518,15 +207,6 @@ describe('LoginPage', () => {
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
     })
 
-    it('has proper form labels for phone login', async () => {
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
-    })
-
     it('displays error with role="alert" for password login', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
       vi.mocked(authAdapter.login).mockResolvedValue({
@@ -546,30 +226,6 @@ describe('LoginPage', () => {
 
       await waitFor(() => {
         const errorElement = screen.getByText('Invalid credentials')
-        expect(errorElement).toHaveAttribute('role', 'alert')
-      })
-    })
-
-    it('displays error with role="alert" for phone login', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.requestOTP).mockResolvedValue({
-        success: false,
-        error: 'Invalid phone number',
-      })
-
-      await renderWithRouter(<LoginPage />)
-
-      const phoneTab = screen.getByText('Phone & SMS Code')
-      fireEvent.click(phoneTab)
-
-      const phoneInput = screen.getByLabelText('Phone Number')
-      const sendButton = screen.getByRole('button', { name: /send code/i })
-
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
-      fireEvent.click(sendButton)
-
-      await waitFor(() => {
-        const errorElement = screen.getByText('Invalid phone number')
         expect(errorElement).toHaveAttribute('role', 'alert')
       })
     })

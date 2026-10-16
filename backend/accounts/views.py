@@ -10,15 +10,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Count, Avg, Prefetch
+from django.db.models import Count, Avg, Prefetch
 from .models import Favorite, Review, Notification, AccountHistory
 from .serializers import (
     FavoriteSerializer, FavoriteCreateSerializer,
     ReviewSerializer, ReviewCreateSerializer, ReviewUpdateSerializer,
     NotificationSerializer, NotificationUpdateSerializer,
-    AccountHistorySerializer, AccountHistoryCreateSerializer
+    AccountHistorySerializer
 )
-from properties.models import Property, PropertyPhoto, PropertyTranslation
+from properties.models import PropertyPhoto, PropertyTranslation
 from bookings.models import Booking
 from common.request import get_client_ip
 

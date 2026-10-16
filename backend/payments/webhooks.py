@@ -13,7 +13,6 @@ from decimal import Decimal, InvalidOperation
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from django.conf import settings
 from typing import Dict, Optional, Tuple
 from .adapters import get_payment_adapter, SignatureValidationError
 from bookings.models import Booking

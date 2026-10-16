@@ -50,7 +50,7 @@ describe('App routing', () => {
   })
 
   it.each([
-    ['/login', /phone/i],
+    ['/login', /welcome back|sign in/i],
     ['/register', /register|sign up|create/i],
     ['/no-such-page', /404|not found/i],
   ])('renders %s without falling into the error boundary', async (path, expected) => {

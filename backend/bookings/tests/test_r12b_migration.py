@@ -17,8 +17,6 @@ class NoShowMigration(TransactionTestCase):
 
     def setUp(self):
         super().setUp()
-        if connection.vendor != 'postgresql':
-            self.skipTest('Migration executor tests need PostgreSQL')
         self.executor = MigrationExecutor(connection)
         self._migrate(BEFORE)
 

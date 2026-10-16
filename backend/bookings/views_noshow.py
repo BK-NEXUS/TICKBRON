@@ -17,7 +17,6 @@ import os
 from datetime import datetime, time, timedelta
 
 from django.db.models import Case, DateTimeField, F, Value, When
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes

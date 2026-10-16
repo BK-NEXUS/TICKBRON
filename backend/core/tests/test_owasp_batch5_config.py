@@ -51,11 +51,14 @@ class TestDebugGuard:
 
         assert result.returncode == 0, result.stderr
 
-    def test_production_needs_postgresql(self):
-        result = _run('1', DB_ENGINE='django.db.backends.sqlite3')
+    @pytest.mark.parametrize('debug', ['True', 'False'])
+    def test_database_is_always_postgresql(self, debug):
+        """No setting can switch the project to SQLite (no row locks: double bookings)."""
+        overrides = {'DEBUG': 'True', 'ALLOWED_HOSTS': 'localhost', 'SECRET_KEY': None} if debug == 'True' else {}
 
-        assert result.returncode != 0
-        assert 'DB_ENGINE' in result.stderr
+        engine = _value("settings.DATABASES['default']['ENGINE']", DB_ENGINE='django.db.backends.sqlite3', **overrides)
+
+        assert engine == 'django.db.backends.postgresql'
 
     def test_example_env_does_not_ship_debug_on(self):
         lines = (Path(BACKEND_DIR) / '.env.example').read_text().splitlines()

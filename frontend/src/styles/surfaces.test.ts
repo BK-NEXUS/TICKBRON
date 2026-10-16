@@ -31,6 +31,13 @@ describe('shared surfaces', () => {
     expect(surfaces).toMatch(/\.mobile-bottom-navigation \{[^}]*env\(safe-area-inset-bottom\)/)
   })
 
+  it('styles the price fields themselves, not the wrapper that holds label and field', () => {
+    const controlRule = surfaces.slice(0, surfaces.indexOf('min-height: 44px;'))
+
+    expect(controlRule).toContain('.search-filter-input-field')
+    expect(controlRule).not.toMatch(/\.search-filter-price-input[,{]/)
+  })
+
   it('keeps control borders at the accessible token and focus visible', () => {
     expect(surfaces).toContain('border: 1px solid var(--color-border-control)')
     expect(surfaces).toContain('outline: 2px solid var(--color-focus)')

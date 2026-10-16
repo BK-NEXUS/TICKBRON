@@ -24,7 +24,7 @@ def browser():
 def user(db):
     return User.objects.create_user(
         email='csrf-login@example.com', password=PASSWORD, full_name='Csrf Login',
-        phone_number=PHONE, phone_verified=True,
+        phone_number=PHONE,
     )
 
 
@@ -80,30 +80,3 @@ class TestOtherPublicPostsNeedAToken:
 
         assert response.status_code == 403
         assert not User.objects.filter(email='new@example.com').exists()
-
-    def test_otp_request_without_a_token_is_refused(self, browser, user):
-        response = browser.post('/api/v1/auth/otp/request/', {'phone_number': PHONE}, format='json')
-
-        assert response.status_code == 403
-        user.refresh_from_db()
-        assert user.otp_code is None
-
-    def test_otp_verify_without_a_token_is_refused(self, browser, user):
-        code = user.generate_otp()
-
-        response = browser.post('/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': code}, format='json')
-
-        assert response.status_code == 403
-        assert '_auth_user_id' not in browser.session
-
-    def test_otp_flow_with_the_token_works(self, browser, user):
-        token = token_of(browser)
-        requested = browser.post('/api/v1/auth/otp/request/', {'phone_number': PHONE}, format='json', HTTP_X_CSRFTOKEN=token)
-        assert requested.status_code == 200
-
-        verified = browser.post(
-            '/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': requested.data['otp_code']},
-            format='json', HTTP_X_CSRFTOKEN=token,
-        )
-
-        assert verified.status_code == 200

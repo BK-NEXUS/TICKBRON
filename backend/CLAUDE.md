@@ -17,7 +17,7 @@ TICKBRON is a hotel/property booking platform. The git root (`TICKBRON/`) holds 
 
 ## Commands
 
-Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config and set `DEBUG=True` there (the example ships `DEBUG=False`, so a copied file never runs a server in debug by accident). Install `requirements-dev.txt` for development. It keeps `SMS_TEST_MODE` and `PAYMENT_TEST_MODE` off; set them to `True` in your local `.env` to get OTP codes in responses and the mock payment flow.
+Run these from `backend/`. The virtualenv is `venv/` (Windows: `venv\Scripts\python.exe`). Copy `.env.example` to `.env` for local config and set `DEBUG=True` there (the example ships `DEBUG=False`, so a copied file never runs a server in debug by accident). Install `requirements-dev.txt` for development. It keeps `PAYMENT_TEST_MODE` off; set it to `True` in your local `.env` to get the mock payment flow.
 
 ```bash
 python manage.py runserver
@@ -32,7 +32,6 @@ pytest bookings/tests/test_views.py      # single file
 pytest bookings/tests/test_views.py::TestClass::test_name
 pytest -m "not slow"                     # markers: slow, integration, unit (--strict-markers is on)
 pytest --cov=. --cov-report=html
-ALLOW_SQLITE_TESTS=1 DB_ENGINE=django.db.backends.sqlite3 DB_NAME=:memory: pytest   # opt-in SQLite run
 
 black . && isort . && flake8
 
@@ -42,14 +41,14 @@ celery -A config beat -l info
 python scripts/smoke_test.py             # register→login→book→favorites chain against a local DB
 ```
 
-- Tests require PostgreSQL (the `DB_*` settings in `backend/.env`); `conftest.py` stops the run otherwise. pytest-django creates a separate `test_<DB_NAME>` database. SQLite is opt-in only (`ALLOW_SQLITE_TESTS=1`): it ignores varchar lengths and has no row locks, so `bookings/tests/test_concurrency.py` skips there.
+- The project runs on PostgreSQL only (the `DB_*` settings in `backend/.env`); SQLite is not supported because it ignores varchar lengths and has no row locks. pytest-django creates a separate `test_<DB_NAME>` database.
 - API docs: `/api/docs/` (Swagger), `/api/redoc/`, `/api/schema/`.
 - `scripts/checkpoint_checks/*.py` are standalone per-checkpoint verification scripts (run from `backend/`: `python scripts/checkpoint_checks/<name>.py`). They are not pytest tests.
 
 ## Architecture
 
-- **Settings** (`config/settings.py`) are one env-driven module with no split settings files. SQLite is the default. PostgreSQL is enabled with `DB_ENGINE=django.db.backends.postgresql`. Without `DEBUG=true`, `SECRET_KEY` and `ALLOWED_HOSTS` must be set or startup fails. A `TESTING` flag (set when pytest is loaded) turns off DRF throttling, so rate-limit tests have to enable throttling themselves. `PAYMENT_TEST_MODE` and `SMS_TEST_MODE` default to `False` (an autouse fixture in `conftest.py` turns both on for tests).
-- **Auth** uses DRF `SessionAuthentication` (session cookies plus CSRF, no tokens). `IsAuthenticated` is the default permission, so public endpoints must opt out explicitly. `users.User` is the custom user model. Login is by phone/SMS OTP (checkpoint 21). Roles come from `permissions.Role` / `Permission` / `RolePermission` through the `User.role` FK. Partner and admin endpoints use their own `has_permission` classes in `partner/views.py` and `admin_panel/views.py`.
+- **Settings** (`config/settings.py`) are one env-driven module with no split settings files. The database engine is fixed to PostgreSQL. Without `DEBUG=true`, `SECRET_KEY` and `ALLOWED_HOSTS` must be set or startup fails. A `TESTING` flag (set when pytest is loaded) turns off DRF throttling, so rate-limit tests have to enable throttling themselves. `PAYMENT_TEST_MODE` defaults to `False` (an autouse fixture in `conftest.py` turns it on for tests).
+- **Auth** uses DRF `SessionAuthentication` (session cookies plus CSRF, no tokens). `IsAuthenticated` is the default permission, so public endpoints must opt out explicitly. `users.User` is the custom user model. Accounts are e-mail only: sign-up and login use e-mail and password, and a password reset link is sent by e-mail (there is no SMS login). Roles come from `permissions.Role` / `Permission` / `RolePermission` through the `User.role` FK. Partner and admin endpoints use their own `has_permission` classes in `partner/views.py` and `admin_panel/views.py`.
 - **URL layout** (`config/urls.py`), all under `/api/v1/`: `auth/` → users, root → properties and bookings, `payments/`, `me/` → accounts (customer profile), `partner/`, `admin-panel/` (CRM: customers, internal notes, statistics).
 - **Base models**: most models inherit `common.models.BaseModel`, which combines timestamps, soft delete (`is_deleted`, via `soft_delete()`/`restore()`), and an active flag, with `BaseQuerySet` / `SoftDeleteManager`. Expect soft-deleted rows to be filtered out by default.
 - **Errors**: raise the `TickBronException` subclasses in `common/exceptions.py`. `common.exception_handlers.custom_exception_handler` turns them into the uniform error envelope the frontend expects. Custom middleware in `common/middleware.py` adds security headers, request logging, and performance timing.

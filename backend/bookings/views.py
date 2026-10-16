@@ -144,7 +144,7 @@ class BookingViewSet(mixins.CreateModelMixin,
                 {'error': 'Booking validation failed', 'details': e.detail},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception as e:
+        except Exception:
             # Truly unexpected error: never echo str(e) to the client.
             logger.exception('Unexpected error creating booking')
             return Response(
@@ -239,7 +239,7 @@ def booking_cancel(request, booking_id):
             {'error': 'Failed to cancel booking', 'details': e.detail},
             status=status.HTTP_400_BAD_REQUEST
         )
-    except Exception as e:
+    except Exception:
         logger.exception('Unexpected error cancelling booking')
         return Response(
             {'error': 'Failed to cancel booking'},

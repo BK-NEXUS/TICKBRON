@@ -4,11 +4,6 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProfilePage } from './ProfilePage'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
-import { authAdapter } from '../adapters/authAdapter'
-
-vi.mock('../adapters/authAdapter', () => ({
-  authAdapter: { requestPhoneVerification: vi.fn(), confirmPhoneVerification: vi.fn() },
-}))
 
 // Mock AuthContext
 vi.mock('../contexts/AuthContext', () => ({
@@ -230,29 +225,12 @@ describe('ProfilePage', () => {
       expect(emailValue?.textContent).toBe('john@example.com')
     })
 
-    it('should display phone number', () => {
+    it('shows no phone number anywhere on the profile', () => {
       renderWithRouter(<ProfilePage />)
 
-      expect(screen.getByText('Phone Number')).toBeInTheDocument()
-      expect(screen.getByText('+1234567890')).toBeInTheDocument()
-    })
-
-    it('should display "Not provided" when phone number is missing', () => {
-      mockUseAuth.mockReturnValue({
-        user: { ...mockUser, phone_number: null },
-        isAuthenticated: true,
-        isLoading: false,
-        login: vi.fn(),
-        register: vi.fn(),
-        logout: vi.fn(),
-        refreshUser: vi.fn(),
-        updateProfile: vi.fn(),
-      })
-
-      renderWithRouter(<ProfilePage />)
-
-      expect(screen.getByText('Phone Number')).toBeInTheDocument()
-      expect(screen.getByText('Not provided')).toBeInTheDocument()
+      expect(screen.queryByText('Phone Number')).not.toBeInTheDocument()
+      expect(screen.queryByText('+1234567890')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
     })
 
     it('should display WhatsApp', () => {
@@ -496,7 +474,7 @@ describe('ProfilePage', () => {
       expect(screen.getByText('Edit Profile')).toBeInTheDocument()
       expect(screen.getByLabelText('First Name')).toBeInTheDocument()
       expect(screen.getByLabelText('Last Name')).toBeInTheDocument()
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
+      expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
       expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
       expect(screen.getByLabelText('Telegram')).toBeInTheDocument()
       expect(screen.getByLabelText('Preferred Contact Method')).toBeInTheDocument()
@@ -510,54 +488,8 @@ describe('ProfilePage', () => {
 
       expect(screen.getByLabelText('First Name')).toHaveValue('John')
       expect(screen.getByLabelText('Last Name')).toHaveValue('Doe')
-      // The saved number's country (+1) is picked from its dial code and the number is grouped
-      expect(screen.getByLabelText('Phone Number')).toHaveValue('+1 234 567 890')
       expect(screen.getByLabelText('WhatsApp')).toHaveValue('+9876543210')
       expect(screen.getByLabelText('Telegram')).toHaveValue('@johndoe')
-    })
-
-    it('formats a new phone number and stops at a complete +998 number', () => {
-      renderWithRouter(<ProfilePage />)
-      fireEvent.click(screen.getByText('Edit Profile'))
-      const phoneInput = screen.getByLabelText('Phone Number')
-
-      // The saved test number belongs to +1, so pick Uzbekistan in the country selector first
-      fireEvent.click(screen.getByRole('button', { name: /Country: / }))
-      fireEvent.click(screen.getByRole('option', { name: /Uzbekistan/ }))
-      fireEvent.change(phoneInput, { target: { value: '9012345678901' } })
-
-      expect(phoneInput).toHaveValue('+998 90 123 45 67')
-    })
-
-    it('does not save an incomplete new phone number', async () => {
-      const mockUpdateProfile = vi.fn()
-      mockUseAuth.mockReturnValue({
-        user: mockUser, isAuthenticated: true, isLoading: false, updateProfile: mockUpdateProfile,
-      })
-      renderWithRouter(<ProfilePage />)
-      fireEvent.click(screen.getByText('Edit Profile'))
-
-      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '90 123' } })
-      fireEvent.click(screen.getByText('Save Changes'))
-
-      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
-      expect(mockUpdateProfile).not.toHaveBeenCalled()
-    })
-
-    it('saves a new phone number in E.164', async () => {
-      const mockUpdateProfile = vi.fn().mockResolvedValue({ success: true, user: mockUser })
-      mockUseAuth.mockReturnValue({
-        user: mockUser, isAuthenticated: true, isLoading: false, updateProfile: mockUpdateProfile,
-      })
-      renderWithRouter(<ProfilePage />)
-      fireEvent.click(screen.getByText('Edit Profile'))
-
-      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: '+998 91 555 44 33' } })
-      fireEvent.click(screen.getByText('Save Changes'))
-
-      await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith(
-        expect.objectContaining({ phone_number: '+998915554433' }),
-      ))
     })
 
     it('should close edit form when cancel button is clicked', () => {
@@ -600,7 +532,6 @@ describe('ProfilePage', () => {
         expect(mockUpdateProfile).toHaveBeenCalledWith({
           first_name: 'Jane',
           last_name: 'Doe',
-          phone_number: '+1234567890',
           whatsapp: '+9876543210',
           telegram: '@johndoe',
           preferred_contact_method: 'whatsapp',
@@ -660,51 +591,5 @@ describe('ProfilePage', () => {
         expect(screen.getByText('Update failed')).toBeInTheDocument()
       })
     })
-  })
-})
-
-describe('ProfilePage phone verification (N-1)', () => {
-  const renderPhone = (user: Record<string, unknown>, refreshUser = vi.fn().mockResolvedValue(undefined)) => {
-    mockUseAuth.mockReturnValue({ user, isAuthenticated: true, isLoading: false, updateProfile: vi.fn(), refreshUser })
-    renderWithRouter(<ProfilePage />)
-    return { refreshUser }
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.mocked(authAdapter.requestPhoneVerification).mockResolvedValue({ success: true, otp_code: '123456' })
-  })
-
-  it('marks an unverified number and offers to verify it', () => {
-    renderPhone({ ...mockUser, phone_verified: false })
-
-    expect(screen.getByText('Not verified', { selector: '.profile-phone-badge' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Verify phone' })).toBeInTheDocument()
-  })
-
-  it('marks a verified number and offers nothing', () => {
-    renderPhone({ ...mockUser, phone_verified: true })
-
-    expect(screen.getByText('Verified', { selector: '.profile-phone-badge' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
-  })
-
-  it('shows no badge when there is no phone number', () => {
-    renderPhone({ ...mockUser, phone_number: '', phone_verified: false })
-
-    expect(document.querySelector('.profile-phone-badge')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
-  })
-
-  it('opens the code dialog, and after a correct code refreshes the profile and closes it', async () => {
-    vi.mocked(authAdapter.confirmPhoneVerification).mockResolvedValue({ success: true, user: { id: 1, phone_verified: true } as never })
-    const { refreshUser } = renderPhone({ ...mockUser, phone_verified: false })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Verify phone' }))
-    fireEvent.change(await screen.findByLabelText('SMS code'), { target: { value: '123456' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }))
-
-    await waitFor(() => expect(refreshUser).toHaveBeenCalledTimes(1))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })

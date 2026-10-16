@@ -159,7 +159,6 @@ describe('CreateHotelOwnerAccount', () => {
         email: 'owner@example.com',
         first_name: 'John',
         last_name: 'Doe',
-        phone_number: '',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
       })

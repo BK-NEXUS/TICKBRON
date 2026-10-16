@@ -6,20 +6,19 @@ import os
 import logging
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
-from django.utils import timezone
 from currency.rates import uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
 from promotions.search import promoted_for_search, serialize_banners
 from promotions.stats import IMPRESSION, record as record_stat
 from properties.serializers import (
     PropertySearchResultSerializer, SearchParamsSerializer,
-    PaginatedSearchResponseSerializer, PropertyDetailSerializer,
-    PropertyAvailabilitySerializer, AvailabilityParamsSerializer, QuoteParamsSerializer
+    PropertyDetailSerializer, PropertyAvailabilitySerializer,
+    AvailabilityParamsSerializer, QuoteParamsSerializer
 )
 
 # Check if running in test mode
@@ -114,7 +113,7 @@ def property_search(request):
             {'error': 'Invalid search parameters', 'details': 'One or more search parameters are invalid.'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    except Exception as e:
+    except Exception:
         # Handle unexpected errors
         logger.exception('Unexpected error during property search')
         return Response(
@@ -226,7 +225,7 @@ def property_search_suggestions(request):
     
     try:
         suggestions = search_service.get_search_suggestions(query, limit)
-    except Exception as e:
+    except Exception:
         logger.exception('Unexpected error getting search suggestions')
         return Response(
             {'error': 'Failed to get suggestions'},

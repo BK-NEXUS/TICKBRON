@@ -206,25 +206,6 @@ class TestRoleCannotBeSelfAssigned:
         assert regular_user.is_staff is False
         assert client.post('/api/v1/partner/properties/', {}, format='json').status_code == 403
 
-    def test_otp_login_ignores_role_fields(self, regular_user, owner_role):
-        regular_user.phone_number = '+998901234567'
-        regular_user.phone_verified = True  # N-1: only a verified number can use SMS login
-        regular_user.save(update_fields=['phone_number', 'phone_verified'])
-        client = APIClient()
-        otp = client.post('/api/v1/auth/otp/request/', {
-            'phone_number': regular_user.phone_number, 'role': owner_role.id,
-        }, format='json')
-        assert otp.status_code == 200
-        verify = client.post('/api/v1/auth/otp/verify/', {
-            'phone_number': regular_user.phone_number, 'otp_code': otp.data['otp_code'],
-            'role': owner_role.id,
-        }, format='json')
-        assert verify.status_code == 200
-
-        regular_user.refresh_from_db()
-        assert regular_user.role is None
-        assert verify.data['role'] is None
-
 
 @pytest.mark.django_db
 class TestMeExposesRole:

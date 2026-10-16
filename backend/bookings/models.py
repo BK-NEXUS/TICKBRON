@@ -18,7 +18,7 @@ from common.dates import business_today
 from common.models import BaseModel
 from common.money import CHARGE_CURRENCY, quantize, to_uzs
 from currency.rates import ExchangeRateUnavailable, current_rate
-from .state_machine import BookingStateMachine, PaymentStateMachine, BookingPaymentStateMachine, BookingState, PaymentState
+from .state_machine import BookingStateMachine, PaymentStateMachine, BookingState, PaymentState
 
 logger = logging.getLogger(__name__)
 

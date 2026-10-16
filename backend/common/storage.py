@@ -234,7 +234,6 @@ def validate_image_file(file):
     Returns:
         tuple (is_valid, error_message)
     """
-    from django.core.exceptions import ValidationError
     
     # Check file size (max 10MB)
     max_size = 10 * 1024 * 1024  # 10MB

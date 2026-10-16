@@ -39,7 +39,6 @@ describe('RegisterPage', () => {
 
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
       expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
@@ -74,42 +73,39 @@ describe('RegisterPage', () => {
     })
   })
 
-  describe('phone number field', () => {
-    const fillAllBut = (phone: string) => {
-      fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } })
-      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
-      fireEvent.change(screen.getByLabelText('Phone Number'), { target: { value: phone } })
-      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'SecurePassword123!' } })
-      fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'SecurePassword123!' } })
-    }
-
-    it('formats the number and stops at a complete +998 number', async () => {
+  describe('e-mail only registration', () => {
+    it('does not ask for a phone number', async () => {
       await renderWithRouter(<RegisterPage />)
-      const phoneInput = screen.getByLabelText('Phone Number')
-      fireEvent.change(phoneInput, { target: { value: '+998 90 123 45 6789' } })
-      expect(phoneInput).toHaveValue('+998 90 123 45 67')
+
+      expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
     })
 
-    it('does not submit an incomplete number', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      await renderWithRouter(<RegisterPage />)
-      fillAllBut('90 123 45')
-      fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-
-      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
-      expect(authAdapter.register).not.toHaveBeenCalled()
-    })
-
-    it('sends the number in E.164', async () => {
+    it('sends no phone number', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')
       vi.mocked(authAdapter.register).mockResolvedValue({ success: false, error: 'stop here' })
       await renderWithRouter(<RegisterPage />)
-      fillAllBut('90 123 45 67')
+      fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } })
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'SecurePassword123!' } })
+      fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'SecurePassword123!' } })
       fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
-      await waitFor(() => expect(authAdapter.register).toHaveBeenCalledWith(
-        expect.objectContaining({ phone_number: '+998901234567' }),
-      ))
+      await waitFor(() => expect(authAdapter.register).toHaveBeenCalled())
+      expect(vi.mocked(authAdapter.register).mock.calls[0][0]).not.toHaveProperty('phone_number')
+    })
+  })
+
+  describe('password visibility', () => {
+    it('shows and hides the password with the eye button', async () => {
+      await renderWithRouter(<RegisterPage />)
+      const password = screen.getByLabelText('Password')
+      expect(password).toHaveAttribute('type', 'password')
+
+      fireEvent.click(screen.getByRole('button', { name: /show password/i }))
+      expect(password).toHaveAttribute('type', 'text')
+
+      fireEvent.click(screen.getByRole('button', { name: /hide password/i }))
+      expect(password).toHaveAttribute('type', 'password')
     })
   })
 
@@ -135,14 +131,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -151,7 +145,6 @@ describe('RegisterPage', () => {
         expect(authAdapter.register).toHaveBeenCalledWith({
           email: 'test@example.com',
           full_name: 'John Doe',
-          phone_number: '+998901234567',
           password: 'SecurePassword123!',
           password_confirm: 'SecurePassword123!',
         })
@@ -163,14 +156,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)
@@ -185,14 +176,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Short1!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'Short1!' } })
       fireEvent.click(submitButton)
@@ -213,14 +202,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -242,14 +229,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -268,7 +253,6 @@ describe('RegisterPage', () => {
 
       expect(screen.getByLabelText('Full Name')).toHaveAttribute('required')
       expect(screen.getByLabelText('Email')).toHaveAttribute('required')
-      expect(screen.getByLabelText('Phone Number')).toHaveAttribute('required')
       expect(screen.getByLabelText('Password')).toHaveAttribute('required')
       expect(screen.getByLabelText('Confirm Password')).toHaveAttribute('required')
     })
@@ -278,13 +262,11 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
 
       expect(fullNameInput).toHaveAttribute('autocomplete', 'name')
       expect(emailInput).toHaveAttribute('autocomplete', 'email')
-      expect(phoneInput).toHaveAttribute('autocomplete', 'tel')
       expect(passwordInput).toHaveAttribute('autocomplete', 'new-password')
       expect(confirmPasswordInput).toHaveAttribute('autocomplete', 'new-password')
     })
@@ -296,7 +278,6 @@ describe('RegisterPage', () => {
 
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toBeInTheDocument()
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
       expect(screen.getByLabelText('Password')).toBeInTheDocument()
       expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument()
     })
@@ -306,14 +287,12 @@ describe('RegisterPage', () => {
 
       const fullNameInput = screen.getByLabelText('Full Name')
       const emailInput = screen.getByLabelText('Email')
-      const phoneInput = screen.getByLabelText('Phone Number')
       const passwordInput = screen.getByLabelText('Password')
       const confirmPasswordInput = screen.getByLabelText('Confirm Password')
       const submitButton = screen.getByRole('button', { name: /create account/i })
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
-      fireEvent.change(phoneInput, { target: { value: '+998901234567' } })
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)

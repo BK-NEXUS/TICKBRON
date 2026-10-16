@@ -131,7 +131,6 @@ class Command(BaseCommand):
                     'phone_number': spec['phone_number'],
                     'is_active': True,
                     'email_verified': True,
-                    'phone_verified': True,
                     **flags,
                 },
             )

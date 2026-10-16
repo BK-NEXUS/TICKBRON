@@ -92,7 +92,6 @@
 - `ALLOWED_HOSTS` - Comma-separated list of allowed hostnames (e.g., `api.tickbron.uz,www.tickbron.uz`)
 
 ### Database Configuration
-- `DB_ENGINE` - Database engine (default: `django.db.backends.sqlite3`, production: `django.db.backends.postgresql`)
 - `DB_NAME` - Database name
 - `DB_USER` - Database user
 - `DB_PASSWORD` - Database password
@@ -130,16 +129,12 @@
 - `CELERY_BROKER_URL` - Celery broker URL (default: `redis://localhost:6379/0`)
 - `CELERY_RESULT_BACKEND` - Celery result backend (default: `redis://localhost:6379/0`)
 
-### SMS Provider (Checkpoint 21 - Not Yet Implemented)
-- `SMS_PROVIDER_API_KEY` - SMS provider API key (when checkpoint 21 is implemented)
-- `SMS_PROVIDER_SENDER_ID` - SMS provider sender ID (when checkpoint 21 is implemented)
-
 ### Rate Limiting
 
 ### Monitoring
 
 ## Current PAYMENT_TEST_MODE Value
-**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True` or `SMS_TEST_MODE=True`.
+**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True`. SMS login was removed (2026-10), so there is no SMS setting.
 
 ## Deployment Readiness
 - ✅ All migrations apply cleanly from scratch
@@ -217,7 +212,6 @@ proxy_set_header Host              $host;
 - [ ] `DEBUG=False` (the app also refuses `DEBUG=True` when `ALLOWED_HOSTS` lists a public domain)
 - [ ] `FRONTEND_URL`* the https:// address of the site (reset links point to it) and `EMAIL_HOST`* (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`): password reset e-mails are sent through it. A Celery worker must run, the mail is sent by a task
 - [ ] `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID`: alerts for locked accounts, forged or unappliable payment webhooks and server errors (empty = no alerts; add the bot to the chat first)
-- [ ] `DB_ENGINE=django.db.backends.postgresql`* (refused otherwise: SQLite has no row locks, so double-booking protection would stop)
 - [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
 - [ ] `ALLOWED_HOSTS`* real host names, no `*`
 - [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only

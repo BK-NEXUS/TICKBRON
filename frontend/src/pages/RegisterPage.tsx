@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
-import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneExample } from '../utils/phone'
 import { redirectPathFrom } from '../utils/redirect'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
@@ -16,7 +14,6 @@ export function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    phone_number: '',
     password: '',
     password_confirm: '',
   })
@@ -44,11 +41,6 @@ export function RegisterPage() {
     setError('')
 
     // Basic validation
-    if (!isValidPhone(formData.phone_number)) {
-      setError(t('phone.invalid', { example: phoneExample() }))
-      return
-    }
-
     if (formData.password !== formData.password_confirm) {
       setError(t('auth.errorPasswordMismatch'))
       return
@@ -124,21 +116,6 @@ export function RegisterPage() {
                 required
                 disabled={isLoading}
                 autoComplete="email"
-              />
-            </div>
-
-            <div className="auth-field">
-              <label htmlFor="phone_number" className="auth-label">
-                {t('auth.phone')}
-              </label>
-              <PhoneInput
-                id="phone_number"
-                name="phone_number"
-                className="auth-input"
-                value={formData.phone_number}
-                onChange={(phone_number) => setFormData(prev => ({ ...prev, phone_number }))}
-                required
-                disabled={isLoading}
               />
             </div>
 

@@ -4,13 +4,10 @@ Search service for TICKBRON property search using database capabilities.
 This module provides text search, geographic search, and comprehensive filtering
 using database features that work with both SQLite (development) and PostgreSQL (production).
 """
-from django.db import models
-from django.db.models import Q, F, Value, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
+from django.db.models import Q, F, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
 from django.db.models.functions import Coalesce
-from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.utils import timezone
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import math
 import re
 
@@ -104,182 +101,183 @@ class PropertySearchService:
     def _validate_search_params(self, search_params):
         """
         Validate and sanitize search parameters.
-        
-        Args:
-            search_params: dict of search parameters
-        
-        Returns:
-            dict with validated and sanitized parameters
-        
-        Raises:
-            ValueError: if parameters are invalid
+
+        Returns a dict of the cleaned parameters (defaults filled in for sort and paging).
+        Raises ValueError with a message for the first parameter that is invalid.
         """
         validated_params = {}
-        
-        # Validate text search query
-        if 'q' in search_params:
-            q = str(search_params['q']).strip()
-            if len(q) > 500:
-                raise ValueError("Search query too long (max 500 characters)")
-            # Remove potentially dangerous characters
-            q = re.sub(r'[<>"\']', '', q)
-            validated_params['q'] = q if q else None
-        
-        # Validate location
-        if 'location' in search_params:
-            location = str(search_params['location']).strip()
-            if len(location) > 200:
-                raise ValueError("Location too long (max 200 characters)")
-            validated_params['location'] = location if location else None
-        
-        # Validate geographic coordinates
-        if 'lat' in search_params or 'lng' in search_params:
-            try:
-                lat = float(search_params['lat']) if 'lat' in search_params else None
-                lng = float(search_params['lng']) if 'lng' in search_params else None
-                
-                if lat is not None and not -90 <= lat <= 90:
-                    raise ValueError("Invalid latitude (must be between -90 and 90)")
-                if lng is not None and not -180 <= lng <= 180:
-                    raise ValueError("Invalid longitude (must be between -180 and 180)")
-                
-                validated_params['lat'] = lat
-                validated_params['lng'] = lng
-            except (ValueError, TypeError) as e:
-                raise ValueError(f"Invalid geographic coordinates: {str(e)}")
-        
-        # Validate radius
-        if 'radius' in search_params:
-            try:
-                radius = float(search_params['radius'])
-                if not 1 <= radius <= 100:
-                    raise ValueError("Radius must be between 1 and 100 km")
-                validated_params['radius'] = radius
-            except (ValueError, TypeError):
-                raise ValueError("Invalid radius value")
-        
-        # Validate price range
-        if 'min_price' in search_params or 'max_price' in search_params:
-            try:
-                min_price = float(search_params['min_price']) if 'min_price' in search_params else None
-                max_price = float(search_params['max_price']) if 'max_price' in search_params else None
-                
-                if min_price is not None and min_price < 0:
-                    raise ValueError("Minimum price cannot be negative")
-                if max_price is not None and max_price < 0:
-                    raise ValueError("Maximum price cannot be negative")
-                if min_price is not None and max_price is not None and min_price > max_price:
-                    raise ValueError("Minimum price cannot be greater than maximum price")
-                
-                validated_params['min_price'] = min_price
-                validated_params['max_price'] = max_price
-            except (ValueError, TypeError) as e:
-                raise ValueError(f"Invalid price values: {str(e)}")
-        
-        # Validate guest capacity
-        if 'min_guests' in search_params or 'max_guests' in search_params:
-            try:
-                min_guests = int(search_params['min_guests']) if 'min_guests' in search_params else None
-                max_guests = int(search_params['max_guests']) if 'max_guests' in search_params else None
-                
-                if min_guests is not None and min_guests < 1:
-                    raise ValueError("Minimum guests must be at least 1")
-                if max_guests is not None and max_guests < 1:
-                    raise ValueError("Maximum guests must be at least 1")
-                if min_guests is not None and max_guests is not None and min_guests > max_guests:
-                    raise ValueError("Minimum guests cannot be greater than maximum guests")
-                
-                validated_params['min_guests'] = min_guests
-                validated_params['max_guests'] = max_guests
-            except (ValueError, TypeError) as e:
-                raise ValueError(f"Invalid guest values: {str(e)}")
-        
-        # Validate amenities
-        if 'amenities' in search_params:
-            amenities = search_params['amenities']
-            if not isinstance(amenities, list):
-                raise ValueError("Amenities must be a list")
-            if len(amenities) > 20:
-                raise ValueError("Too many amenities (max 20)")
-            validated_params['amenities'] = amenities
-        
-        # Validate property type
-        if 'property_type' in search_params:
-            try:
-                property_type = int(search_params['property_type'])
-                if property_type < 1:
-                    raise ValueError("Invalid property type ID")
-                validated_params['property_type'] = property_type
-            except (ValueError, TypeError):
-                raise ValueError("Invalid property type value")
-        
-        # Validate date range
-        if 'check_in' in search_params or 'check_out' in search_params:
-            try:
-                check_in = self._parse_date(search_params.get('check_in')) if 'check_in' in search_params else None
-                check_out = self._parse_date(search_params.get('check_out')) if 'check_out' in search_params else None
-                
-                if check_in and check_out and check_out <= check_in:
-                    raise ValueError("Check-out date must be after check-in date")
-                
-                validated_params['check_in'] = check_in
-                validated_params['check_out'] = check_out
-            except ValueError as e:
-                raise ValueError(f"Invalid date values: {str(e)}")
-        
-        # Validate features (has_wifi, ...)
-        if search_params.get('features'):
-            features = list(search_params['features'])
-            unknown = [f for f in features if f not in FEATURES]
-            if unknown:
-                raise ValueError(f"Unknown features: {', '.join(unknown)}")
-            validated_params['features'] = features
-        
-        # Validate minimum rating
-        if search_params.get('min_rating') is not None:
-            try:
-                min_rating = float(search_params['min_rating'])
-            except (ValueError, TypeError):
-                raise ValueError("Invalid minimum rating")
-            if not 1 <= min_rating <= 5:
-                raise ValueError("Minimum rating must be between 1 and 5")
-            validated_params['min_rating'] = min_rating
-        
-        # Validate sorting
-        valid_sort_methods = [sort_id for sort_id, _ in SORT_OPTIONS] + ['distance']
-        if 'sort' in search_params:
-            sort = search_params['sort']
-            if sort not in valid_sort_methods:
-                raise ValueError(f"Invalid sort method. Must be one of: {', '.join(valid_sort_methods)}")
-            validated_params['sort'] = sort
-        else:
-            validated_params['sort'] = 'relevance'
-        
-        # Validate pagination
-        if 'page' in search_params:
-            try:
-                page = int(search_params['page'])
-                if page < 1:
-                    raise ValueError("Page number must be at least 1")
-                validated_params['page'] = page
-            except (ValueError, TypeError):
-                raise ValueError("Invalid page number")
-        else:
-            validated_params['page'] = 1
-        
-        if 'page_size' in search_params:
-            try:
-                page_size = int(search_params['page_size'])
-                if page_size < 1 or page_size > 100:
-                    raise ValueError("Page size must be between 1 and 100")
-                validated_params['page_size'] = page_size
-            except (ValueError, TypeError):
-                raise ValueError("Invalid page size")
-        else:
-            validated_params['page_size'] = 20
-        
+        for check in (
+            self._check_text, self._check_location, self._check_coordinates, self._check_radius,
+            self._check_price_range, self._check_guest_range, self._check_amenities, self._check_property_type,
+            self._check_dates, self._check_features, self._check_min_rating, self._check_sort, self._check_paging,
+        ):
+            check(search_params, validated_params)
         return validated_params
-    
+
+    @staticmethod
+    def _check_text(params, out):
+        if 'q' not in params:
+            return
+        q = str(params['q']).strip()
+        if len(q) > 500:
+            raise ValueError("Search query too long (max 500 characters)")
+        # Remove potentially dangerous characters
+        q = re.sub(r'[<>"\']', '', q)
+        out['q'] = q if q else None
+
+    @staticmethod
+    def _check_location(params, out):
+        if 'location' not in params:
+            return
+        location = str(params['location']).strip()
+        if len(location) > 200:
+            raise ValueError("Location too long (max 200 characters)")
+        out['location'] = location if location else None
+
+    @staticmethod
+    def _optional_pair(params, low_key, high_key, convert):
+        """The two ends of a range as numbers; an end that was not sent is None."""
+        low = convert(params[low_key]) if low_key in params else None
+        high = convert(params[high_key]) if high_key in params else None
+        return low, high
+
+    def _check_coordinates(self, params, out):
+        if 'lat' not in params and 'lng' not in params:
+            return
+        try:
+            lat, lng = self._optional_pair(params, 'lat', 'lng', float)
+            if lat is not None and not -90 <= lat <= 90:
+                raise ValueError("Invalid latitude (must be between -90 and 90)")
+            if lng is not None and not -180 <= lng <= 180:
+                raise ValueError("Invalid longitude (must be between -180 and 180)")
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid geographic coordinates: {str(e)}")
+        out['lat'], out['lng'] = lat, lng
+
+    @staticmethod
+    def _check_radius(params, out):
+        if 'radius' not in params:
+            return
+        try:
+            radius = float(params['radius'])
+            if not 1 <= radius <= 100:
+                raise ValueError("Radius must be between 1 and 100 km")
+        except (ValueError, TypeError):
+            raise ValueError("Invalid radius value")
+        out['radius'] = radius
+
+    def _check_price_range(self, params, out):
+        if 'min_price' not in params and 'max_price' not in params:
+            return
+        try:
+            min_price, max_price = self._optional_pair(params, 'min_price', 'max_price', float)
+            if min_price is not None and min_price < 0:
+                raise ValueError("Minimum price cannot be negative")
+            if max_price is not None and max_price < 0:
+                raise ValueError("Maximum price cannot be negative")
+            if min_price is not None and max_price is not None and min_price > max_price:
+                raise ValueError("Minimum price cannot be greater than maximum price")
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid price values: {str(e)}")
+        out['min_price'], out['max_price'] = min_price, max_price
+
+    def _check_guest_range(self, params, out):
+        if 'min_guests' not in params and 'max_guests' not in params:
+            return
+        try:
+            min_guests, max_guests = self._optional_pair(params, 'min_guests', 'max_guests', int)
+            if min_guests is not None and min_guests < 1:
+                raise ValueError("Minimum guests must be at least 1")
+            if max_guests is not None and max_guests < 1:
+                raise ValueError("Maximum guests must be at least 1")
+            if min_guests is not None and max_guests is not None and min_guests > max_guests:
+                raise ValueError("Minimum guests cannot be greater than maximum guests")
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid guest values: {str(e)}")
+        out['min_guests'], out['max_guests'] = min_guests, max_guests
+
+    @staticmethod
+    def _check_amenities(params, out):
+        if 'amenities' not in params:
+            return
+        amenities = params['amenities']
+        if not isinstance(amenities, list):
+            raise ValueError("Amenities must be a list")
+        if len(amenities) > 20:
+            raise ValueError("Too many amenities (max 20)")
+        out['amenities'] = amenities
+
+    @staticmethod
+    def _check_property_type(params, out):
+        if 'property_type' not in params:
+            return
+        try:
+            property_type = int(params['property_type'])
+            if property_type < 1:
+                raise ValueError("Invalid property type ID")
+        except (ValueError, TypeError):
+            raise ValueError("Invalid property type value")
+        out['property_type'] = property_type
+
+    def _check_dates(self, params, out):
+        if 'check_in' not in params and 'check_out' not in params:
+            return
+        try:
+            check_in = self._parse_date(params.get('check_in')) if 'check_in' in params else None
+            check_out = self._parse_date(params.get('check_out')) if 'check_out' in params else None
+            if check_in and check_out and check_out <= check_in:
+                raise ValueError("Check-out date must be after check-in date")
+        except ValueError as e:
+            raise ValueError(f"Invalid date values: {str(e)}")
+        out['check_in'], out['check_out'] = check_in, check_out
+
+    @staticmethod
+    def _check_features(params, out):
+        if not params.get('features'):
+            return
+        features = list(params['features'])
+        unknown = [f for f in features if f not in FEATURES]
+        if unknown:
+            raise ValueError(f"Unknown features: {', '.join(unknown)}")
+        out['features'] = features
+
+    @staticmethod
+    def _check_min_rating(params, out):
+        if params.get('min_rating') is None:
+            return
+        try:
+            min_rating = float(params['min_rating'])
+        except (ValueError, TypeError):
+            raise ValueError("Invalid minimum rating")
+        if not 1 <= min_rating <= 5:
+            raise ValueError("Minimum rating must be between 1 and 5")
+        out['min_rating'] = min_rating
+
+    @staticmethod
+    def _check_sort(params, out):
+        valid_sort_methods = [sort_id for sort_id, _ in SORT_OPTIONS] + ['distance']
+        sort = params.get('sort', 'relevance')
+        if sort not in valid_sort_methods:
+            raise ValueError(f"Invalid sort method. Must be one of: {', '.join(valid_sort_methods)}")
+        out['sort'] = sort
+
+    @staticmethod
+    def _positive_int(params, key, default, message, maximum=None):
+        """An integer parameter of at least 1 (and at most `maximum`), or the default when it is not sent."""
+        if key not in params:
+            return default
+        try:
+            value = int(params[key])
+            if value < 1 or (maximum is not None and value > maximum):
+                raise ValueError(message)
+        except (ValueError, TypeError):
+            raise ValueError(message)
+        return value
+
+    def _check_paging(self, params, out):
+        out['page'] = self._positive_int(params, 'page', 1, "Invalid page number")
+        out['page_size'] = self._positive_int(params, 'page_size', 20, "Invalid page size", maximum=100)
+
     def _parse_date(self, date_str):
         """
         Parse date string in various formats.
@@ -415,7 +413,7 @@ class PropertySearchService:
         try:
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
-        except (EmptyPage, PageNotAnInteger) as e:
+        except (EmptyPage, PageNotAnInteger):
             # Handle pagination errors gracefully
             page = 1
             paginator = Paginator(queryset, page_size)
@@ -554,7 +552,6 @@ class PropertySearchService:
         Returns:
             filtered queryset
         """
-        from properties.models import PropertyAmenity
         
         # Filter properties that have all specified amenities
         for amenity_id in amenity_ids:
