@@ -2740,3 +2740,6 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - New tests: `users/tests/test_legacy_phone_columns_dropped.py` (model has no SMS fields, no phone constraint, two accounts may share an old number, the API has no `phone_verified`, migration forward/back keeps `phone_number`). Written first (6 failed). Removed tests: the "unique among verified" cases (`UnverifiedClaimsDoNotBlockTests`, `test_database_rejects_duplicate_phone`), because that rule no longer exists; the historical migration tests of 0006/0007 stay. Seed commands no longer set `phone_verified`.
 - Production steps: run `pg_dump` first, then `python manage.py migrate users`. Rolling back the code needs `python manage.py migrate users 0008` first.
 
+## Cleanup step 3: frontend lint is clean (2026-10-16)
+- Removed the unused `country-flag-icons` package (`package.json`, lock file; no import was left). `npm run lint` now passes with `--max-warnings 0`: the three "fast refresh" warnings were `useAuth`, `usePageTrail` and `buttonClassName`, hooks/helpers that live next to their component on purpose; they are listed in `allowExportNames` of `react-refresh/only-export-components` (`.eslintrc.cjs`) instead of being moved to new files (that would have broken the `vi.mock('../contexts/AuthContext')` calls of many tests). Frontend: 1704 tests passed, `npm run build` ok.
+

@@ -12,7 +12,11 @@ module.exports = {
   rules: {
     'react-refresh/only-export-components': [
       'warn',
-      { allowConstantExport: true },
+      {
+        allowConstantExport: true,
+        // A hook or helper that belongs to the component next to it (context + useAuth, trail + usePageTrail)
+        allowExportNames: ['useAuth', 'usePageTrail', 'buttonClassName'],
+      },
     ],
   },
 }
