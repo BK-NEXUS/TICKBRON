@@ -180,6 +180,18 @@ describe('FavoritesPage', () => {
       expect(screen.getByText('Save your favorite properties to view them here.')).toBeInTheDocument()
       expect(screen.getByText('Explore Properties')).toBeInTheDocument()
     })
+
+    it('has exactly one h1 when there are no favorites', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { id: 1, email: 'test@example.com' }, isAuthenticated: true, isLoading: false,
+      })
+      mockAccountAdapter.getFavorites.mockResolvedValue({ data: [], error: null })
+
+      renderWithRouter(<FavoritesPage />)
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'No favorites yet' })).toBeInTheDocument()
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    })
   })
 
   describe('Favorites list', () => {

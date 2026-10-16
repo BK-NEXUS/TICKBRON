@@ -355,46 +355,48 @@ export function AdminCustomerProfile() {
                 <p>{t('admin.noBookingsFoundFor')}</p>
               </div>
             ) : (
-              <table className="bookings-table" role="table" aria-label={t('admin.customerBookings')}>
-                <thead>
-                  <tr>
-                    <th scope="col">{t('status.reference')}</th>
-                    <th scope="col">{t('crumb.property')}</th>
-                    <th scope="col">{t('admin.city')}</th>
-                    <th scope="col">{t('searchForm.checkIn')}</th>
-                    <th scope="col">{t('searchForm.checkOut')}</th>
-                    <th scope="col">{t('status.nights')}</th>
-                    <th scope="col">{t('booking.total')}</th>
-                    <th scope="col">{t('partner.status')}</th>
-                    <th scope="col">{t('admin.payment')}</th>
-                    <th scope="col">{t('status.created')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profile.bookings.map(booking => (
-                    <tr key={booking.id}>
-                      <td className="booking-reference">{booking.reference_code}</td>
-                      <td className="booking-property">{booking.property_name}</td>
-                      <td className="booking-city">{booking.property_city}</td>
-                      <td className="booking-check-in">{formatDate(booking.check_in)}</td>
-                      <td className="booking-check-out">{formatDate(booking.check_out)}</td>
-                      <td className="booking-nights">{booking.number_of_nights}</td>
-                      <td className="booking-total">{formatCurrency(booking.total_price, booking.currency)}</td>
-                      <td className="booking-status">
-                        <span className={`status-badge ${getBookingStatusClass(booking.status)}`}>
-                          {booking.status}
-                        </span>
-                      </td>
-                      <td className="booking-payment-status">
-                        <span className={`status-badge ${getPaymentStatusClass(booking.payment_status)}`}>
-                          {booking.payment_status}
-                        </span>
-                      </td>
-                      <td className="booking-created">{formatDate(booking.created_at)}</td>
+              <div className="table-scroll">
+                <table className="bookings-table" role="table" aria-label={t('admin.customerBookings')}>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('status.reference')}</th>
+                      <th scope="col">{t('crumb.property')}</th>
+                      <th scope="col">{t('admin.city')}</th>
+                      <th scope="col">{t('searchForm.checkIn')}</th>
+                      <th scope="col">{t('searchForm.checkOut')}</th>
+                      <th scope="col">{t('status.nights')}</th>
+                      <th scope="col">{t('booking.total')}</th>
+                      <th scope="col">{t('partner.status')}</th>
+                      <th scope="col">{t('admin.payment')}</th>
+                      <th scope="col">{t('status.created')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {profile.bookings.map(booking => (
+                      <tr key={booking.id}>
+                        <td className="booking-reference">{booking.reference_code}</td>
+                        <td className="booking-property">{booking.property_name}</td>
+                        <td className="booking-city">{booking.property_city}</td>
+                        <td className="booking-check-in">{formatDate(booking.check_in)}</td>
+                        <td className="booking-check-out">{formatDate(booking.check_out)}</td>
+                        <td className="booking-nights">{booking.number_of_nights}</td>
+                        <td className="booking-total">{formatCurrency(booking.total_price, booking.currency)}</td>
+                        <td className="booking-status">
+                          <span className={`status-badge ${getBookingStatusClass(booking.status)}`}>
+                            {booking.status}
+                          </span>
+                        </td>
+                        <td className="booking-payment-status">
+                          <span className={`status-badge ${getPaymentStatusClass(booking.payment_status)}`}>
+                            {booking.payment_status}
+                          </span>
+                        </td>
+                        <td className="booking-created">{formatDate(booking.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -406,34 +408,36 @@ export function AdminCustomerProfile() {
                 <p>{t('admin.noPaymentsFoundFor')}</p>
               </div>
             ) : (
-              <table className="payments-table" role="table" aria-label={t('admin.customerPayments')}>
-                <thead>
-                  <tr>
-                    <th scope="col">{t('admin.id')}</th>
-                    <th scope="col">{t('admin.bookingId')}</th>
-                    <th scope="col">{t('admin.provider')}</th>
-                    <th scope="col">{t('admin.amount')}</th>
-                    <th scope="col">{t('partner.status')}</th>
-                    <th scope="col">{t('status.created')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profile.payments.map(payment => (
-                    <tr key={payment.id}>
-                      <td className="payment-id">{payment.id}</td>
-                      <td className="payment-booking-id">{payment.booking_id}</td>
-                      <td className="payment-provider">{payment.provider}</td>
-                      <td className="payment-amount">{formatCurrency(payment.amount, payment.currency)}</td>
-                      <td className="payment-status">
-                        <span className={`status-badge ${getPaymentStatusClass(payment.status)}`}>
-                          {payment.status}
-                        </span>
-                      </td>
-                      <td className="payment-created">{formatDate(payment.created_at)}</td>
+              <div className="table-scroll">
+                <table className="payments-table" role="table" aria-label={t('admin.customerPayments')}>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('admin.id')}</th>
+                      <th scope="col">{t('admin.bookingId')}</th>
+                      <th scope="col">{t('admin.provider')}</th>
+                      <th scope="col">{t('admin.amount')}</th>
+                      <th scope="col">{t('partner.status')}</th>
+                      <th scope="col">{t('status.created')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {profile.payments.map(payment => (
+                      <tr key={payment.id}>
+                        <td className="payment-id">{payment.id}</td>
+                        <td className="payment-booking-id">{payment.booking_id}</td>
+                        <td className="payment-provider">{payment.provider}</td>
+                        <td className="payment-amount">{formatCurrency(payment.amount, payment.currency)}</td>
+                        <td className="payment-status">
+                          <span className={`status-badge ${getPaymentStatusClass(payment.status)}`}>
+                            {payment.status}
+                          </span>
+                        </td>
+                        <td className="payment-created">{formatDate(payment.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}

@@ -38,6 +38,15 @@ describe('shared surfaces', () => {
     expect(controlRule).not.toMatch(/\.search-filter-price-input[,{]/)
   })
 
+  it('gives touch screens 44px targets for the booking filters, copy button, breadcrumb and footer links', () => {
+    const coarse = surfaces.match(/@media \(pointer: coarse\) \{([\s\S]*?)\n\}/)?.[1] ?? ''
+
+    for (const selector of ['.bookings-filter', '.booking-card-copy-btn', '.page-breadcrumbs-item a', '.footer-section a']) {
+      expect(coarse, selector).toContain(selector)
+    }
+    expect(coarse).toContain('min-height: 44px')
+  })
+
   it('keeps control borders at the accessible token and focus visible', () => {
     expect(surfaces).toContain('border: 1px solid var(--color-border-control)')
     expect(surfaces).toContain('outline: 2px solid var(--color-focus)')

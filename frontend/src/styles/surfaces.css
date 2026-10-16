@@ -228,3 +228,19 @@ textarea.form-input {
   flex-shrink: 0;
   vertical-align: -2px;
 }
+
+/* Touch screens: filters, copy button and plain links get a 44px target (they are 20-34px with a mouse) */
+@media (pointer: coarse) {
+  .bookings-filter,
+  .booking-card-copy-btn {
+    min-height: 44px;
+  }
+
+  .page-breadcrumbs-item a,
+  .page-breadcrumbs-link,
+  .footer-section a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
