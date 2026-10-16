@@ -5,10 +5,9 @@ accepts only a valid international number and stores it as E.164.
 from datetime import date, timedelta
 
 import pytest
-from rest_framework.test import APIClient, APIRequestFactory
+from rest_framework.test import APIClient
 
 from users.models import User
-from users.throttles import OTPRequestRateThrottle
 
 INVALID_NUMBERS = [
     '+99890123456',     # one digit short
@@ -56,111 +55,6 @@ class TestRegister:
         del payload['phone_number']
         response = APIClient().post('/api/v1/auth/register/', payload, format='json')
         assert response.status_code == 201, response.data
-
-
-@pytest.mark.django_db
-class TestProfileUpdate:
-
-    @pytest.mark.parametrize('phone', INVALID_NUMBERS)
-    def test_invalid_number_is_rejected(self, user, phone):
-        client = APIClient()
-        client.force_authenticate(user=user)
-        response = client.patch('/api/v1/auth/me/update/', {'phone_number': phone}, format='json')
-        assert response.status_code == 400
-        assert error_text(response) == PHONE_ERROR
-        user.refresh_from_db()
-        assert user.phone_number == '+998901112233'
-
-    def test_formatted_number_is_normalized(self, user):
-        client = APIClient()
-        client.force_authenticate(user=user)
-        response = client.patch('/api/v1/auth/me/update/', {'phone_number': '+998 33 123 45 67'},
-                                format='json')
-        assert response.status_code == 200
-        assert response.data['phone_number'] == '+998331234567'
-
-    def test_blank_still_clears_the_number(self, user):
-        client = APIClient()
-        client.force_authenticate(user=user)
-        response = client.patch('/api/v1/auth/me/update/', {'phone_number': ''}, format='json')
-        assert response.status_code == 200
-        user.refresh_from_db()
-        assert user.phone_number is None
-
-
-@pytest.mark.django_db
-class TestOTP:
-
-    @pytest.mark.parametrize('phone', INVALID_NUMBERS)
-    def test_request_rejects_invalid_number(self, phone):
-        response = APIClient().post('/api/v1/auth/otp/request/', {'phone_number': phone}, format='json')
-        assert response.status_code == 400
-        assert error_text(response) == PHONE_ERROR
-
-    @pytest.mark.parametrize('phone', INVALID_NUMBERS)
-    def test_verify_rejects_invalid_number(self, phone):
-        response = APIClient().post('/api/v1/auth/otp/verify/', {
-            'phone_number': phone, 'otp_code': '123456',
-        }, format='json')
-        assert response.status_code == 400
-        assert error_text(response) == PHONE_ERROR
-
-    def test_formatted_number_logs_in(self, user):
-        client = APIClient()
-        request = client.post('/api/v1/auth/otp/request/', {'phone_number': '+998 90 111 22 33'},
-                              format='json')
-        assert request.status_code == 200
-        verify = client.post('/api/v1/auth/otp/verify/', {
-            'phone_number': '+998 90 111 22 33', 'otp_code': request.data['otp_code'],
-        }, format='json')
-        assert verify.status_code == 200
-        assert verify.data['id'] == user.id
-
-    def test_throttle_uses_one_bucket_for_every_spelling_of_a_number(self):
-        factory = APIRequestFactory()
-        throttle = OTPRequestRateThrottle()
-
-        def key(phone):
-            request = factory.post('/api/v1/auth/otp/request/', {'phone_number': phone}, format='json')
-            request.data = {'phone_number': phone}
-            return throttle.get_cache_key(request, None)
-
-        assert key('+998 90 111 22 33') == key('+998901112233') == key(' +998-90-111-22-33 ')
-
-
-@pytest.mark.django_db
-class TestAdminCreateHotelOwner:
-
-    def payload(self, phone):
-        return {
-            'email': 'owner@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
-            'phone_number': phone, 'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
-        }
-
-    @pytest.fixture
-    def admin_client(self, db):
-        admin = User.objects.create_superuser(email='admin@example.com', password='AdminPassword#123')
-        client = APIClient()
-        client.force_authenticate(user=admin)
-        return client
-
-    @pytest.mark.parametrize('phone', INVALID_NUMBERS)
-    def test_invalid_number_is_rejected(self, admin_client, phone):
-        response = admin_client.post('/api/v1/admin-panel/users/create-hotel-owner/',
-                                     self.payload(phone), format='json')
-        assert response.status_code == 400
-        assert error_text(response) == PHONE_ERROR
-
-    def test_number_is_optional_and_normalized(self, admin_client):
-        blank = admin_client.post('/api/v1/admin-panel/users/create-hotel-owner/',
-                                  self.payload(''), format='json')
-        assert blank.status_code == 201, blank.data
-
-        payload = {**self.payload('+998 91 555 44 33'), 'email': 'owner2@example.com'}
-        formatted = admin_client.post('/api/v1/admin-panel/users/create-hotel-owner/', payload,
-                                      format='json')
-        assert formatted.status_code == 201, formatted.data
-        assert User.objects.get(email='owner2@example.com').phone_number == '+998915554433'
 
 
 @pytest.mark.django_db

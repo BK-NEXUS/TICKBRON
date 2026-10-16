@@ -129,16 +129,12 @@
 - `CELERY_BROKER_URL` - Celery broker URL (default: `redis://localhost:6379/0`)
 - `CELERY_RESULT_BACKEND` - Celery result backend (default: `redis://localhost:6379/0`)
 
-### SMS Provider (Checkpoint 21 - Not Yet Implemented)
-- `SMS_PROVIDER_API_KEY` - SMS provider API key (when checkpoint 21 is implemented)
-- `SMS_PROVIDER_SENDER_ID` - SMS provider sender ID (when checkpoint 21 is implemented)
-
 ### Rate Limiting
 
 ### Monitoring
 
 ## Current PAYMENT_TEST_MODE Value
-**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True` or `SMS_TEST_MODE=True`.
+**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True`. SMS login was removed (2026-10), so there is no SMS setting.
 
 ## Deployment Readiness
 - ✅ All migrations apply cleanly from scratch

@@ -1,10 +1,9 @@
 """
 R4 security review: with DEBUG off the app refuses to start on insecure settings.
 
-Before, only an unset SECRET_KEY / ALLOWED_HOSTS stopped startup. SMS_TEST_MODE=True
-with DEBUG=False returned every OTP code in the /auth/otp/request/ response (anyone
-could log in as any phone number), the .env.example placeholder key was accepted,
-and CORS / CSRF origins silently fell back to http://localhost:3000.
+Before, only an unset SECRET_KEY / ALLOWED_HOSTS stopped startup. The .env.example
+placeholder key was accepted, and CORS / CSRF origins silently fell back to
+http://localhost:3000.
 """
 import os
 import subprocess
@@ -48,7 +47,6 @@ def test_good_production_settings_start():
 
 
 @pytest.mark.parametrize('overrides, message', [
-    ({'SMS_TEST_MODE': 'True'}, 'SMS_TEST_MODE'),
     ({'PAYMENT_TEST_MODE': 'True'}, 'PAYMENT_TEST_MODE'),
     ({'SECRET_KEY': 'your-secret-key-here-change-in-production'}, 'SECRET_KEY'),
     ({'SECRET_KEY': 'django-insecure-' + 'x' * 50}, 'SECRET_KEY'),
@@ -91,7 +89,7 @@ def test_remote_database_with_required_tls_starts():
 def test_debug_still_allows_local_development_values():
     result = _start(
         DEBUG='True', SECRET_KEY=None, ALLOWED_HOSTS=None, CORS_ALLOWED_ORIGINS=None,
-        CSRF_TRUSTED_ORIGINS=None, SMS_TEST_MODE='True', PAYMENT_TEST_MODE='True',
+        CSRF_TRUSTED_ORIGINS=None, PAYMENT_TEST_MODE='True',
     )
     assert result.returncode == 0, result.stderr
 

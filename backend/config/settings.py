@@ -463,10 +463,6 @@ CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
 VISA_API_KEY = os.getenv('VISA_API_KEY', '')
 VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
 
-# SMS Configuration
-# Defaults to False: test mode returns the OTP code in the API response.
-SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'False').lower() == 'true'
-
 
 # Production refuses to start on insecure settings (R4 security review).
 # Local development (DEBUG=True) and the test run keep their defaults.
@@ -478,8 +474,6 @@ _PLACEHOLDER_SECRET_KEYS = {
 
 def _production_config_errors():
     errors = []
-    if SMS_TEST_MODE:
-        errors.append('SMS_TEST_MODE must be False when DEBUG is False (it returns OTP codes in API responses)')
     if PAYMENT_TEST_MODE:
         errors.append('PAYMENT_TEST_MODE must be False when DEBUG is False (payments would not reach a provider)')
     if (SECRET_KEY in _PLACEHOLDER_SECRET_KEYS or SECRET_KEY.startswith('django-insecure-')

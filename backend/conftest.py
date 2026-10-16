@@ -28,12 +28,11 @@ pytest_plugins = ['admin_panel.tests.status_fixtures']
 @pytest.fixture(autouse=True)
 def provider_test_modes(settings):
     """
-    Run SMS and payment providers in test mode during tests.
+    Run the payment providers in test mode during tests.
 
-    Both settings default to False outside tests; tests that need the
-    production behaviour override them back to False.
+    The setting defaults to False outside tests; tests that need the
+    production behaviour override it back to False.
     """
-    settings.SMS_TEST_MODE = True
     settings.PAYMENT_TEST_MODE = True
 
 

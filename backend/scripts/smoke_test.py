@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Test mode settings
-os.environ.setdefault('SMS_TEST_MODE', 'True')
 os.environ.setdefault('PAYMENT_TEST_MODE', 'True')
 
 django.setup()

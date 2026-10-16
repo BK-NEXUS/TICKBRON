@@ -10,9 +10,7 @@ from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
-from users.serializers import (
-    validate_new_password, validate_phone_number_format, validate_unique_phone_number
-)
+from users.serializers import validate_new_password
 from admin_panel.models import InternalNote
 
 
@@ -123,20 +121,10 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = [
-            'email', 'first_name', 'last_name', 'phone_number',
-            'password', 'password_confirm'
-        ]
-
-    def validate_phone_number(self, value):
-        """Optional; when given it must be a valid, unused number (stored as E.164)."""
-        if not value.strip():
-            return ''
-        return validate_unique_phone_number(validate_phone_number_format(value))
+        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm']
 
     def validate(self, data):
         """Validate password confirmation."""
@@ -169,7 +157,6 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            phone_number=validated_data.get('phone_number', ''),
             role=hotel_owner_role
         )
         

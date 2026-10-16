@@ -10,11 +10,8 @@ from rest_framework.test import APIClient
 
 from users import lockout
 from users.models import User
-from users.services import OTP_INVALID_MESSAGE, OTP_REQUESTED_MESSAGE
 
 LOGIN_URL = '/api/v1/auth/login/'
-OTP_REQUEST_URL = '/api/v1/auth/otp/request/'
-OTP_VERIFY_URL = '/api/v1/auth/otp/verify/'
 PASSWORD = 'correct-password-123'
 
 
@@ -22,8 +19,7 @@ class LockoutTestBase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
-            email='owner@example.com', password=PASSWORD, phone_number='+998901250001',
-            phone_verified=True,  # N-1: only a verified number can use SMS login
+            email='owner@example.com', password=PASSWORD,
         )
 
     def login(self, password, ip, email='owner@example.com'):
@@ -46,19 +42,6 @@ class TestPerIpLockout(LockoutTestBase):
 
         assert attacker.status_code == 401
         assert owner.status_code == 200
-
-    def test_otp_failures_from_one_ip_do_not_block_the_owner(self):
-        for _ in range(lockout.IP_FAILURE_LIMIT):
-            self.client.post(OTP_VERIFY_URL, {'phone_number': '+998901250001', 'otp_code': '000000'},
-                             format='json', REMOTE_ADDR='203.0.113.66')
-        code = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998901250001'},
-                                format='json', REMOTE_ADDR='198.51.100.10').data['otp_code']
-
-        owner = self.client.post(OTP_VERIFY_URL, {'phone_number': '+998901250001', 'otp_code': code},
-                                 format='json', REMOTE_ADDR='198.51.100.10')
-
-        assert owner.status_code == 200
-
 
 class TestAccountWideLockout(LockoutTestBase):
     """Distributed guessing from many IPs still locks the account, but later and briefly."""
@@ -111,40 +94,3 @@ class TestNoAccountEnumeration(LockoutTestBase):
             self.login(PASSWORD, '198.51.100.10', email='nobody@example.com')
 
         make_password.assert_called_once_with(PASSWORD)
-
-    def test_otp_request_looks_the_same_for_unknown_and_locked_numbers(self):
-        unknown = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998909999999'}, format='json')
-        self.user.refresh_from_db()
-        for _ in range(lockout.IP_FAILURE_LIMIT):
-            lockout.record_failure(self.user, '127.0.0.1')
-        locked = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998901250001'}, format='json')
-        known = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998901250001'},
-                                 format='json', REMOTE_ADDR='198.51.100.10')
-
-        assert unknown.status_code == locked.status_code == known.status_code == 200
-        assert unknown.data == locked.data == {'success': True, 'message': OTP_REQUESTED_MESSAGE}
-        # Registered numbers get the same message; only test mode adds the code
-        assert known.data['message'] == OTP_REQUESTED_MESSAGE
-
-    def test_otp_request_without_sms_provider_is_the_same_for_everyone(self):
-        with self.settings(SMS_TEST_MODE=False):
-            unknown = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998909999999'}, format='json')
-            known = self.client.post(OTP_REQUEST_URL, {'phone_number': '+998901250001'}, format='json')
-
-        assert unknown.status_code == known.status_code == 503
-        assert unknown.data == known.data
-
-    def test_otp_verify_failures_look_identical(self):
-        self.client.post(OTP_REQUEST_URL, {'phone_number': '+998901250001'}, format='json')
-        unknown = self.client.post(OTP_VERIFY_URL, {'phone_number': '+998909999999', 'otp_code': '123456'},
-                                   format='json')
-        wrong = self.client.post(OTP_VERIFY_URL, {'phone_number': '+998901250001', 'otp_code': '000000'},
-                                 format='json')
-        self.user.refresh_from_db()
-        for _ in range(lockout.IP_FAILURE_LIMIT):
-            lockout.record_failure(self.user, '127.0.0.1')
-        locked = self.client.post(OTP_VERIFY_URL, {'phone_number': '+998901250001', 'otp_code': '000000'},
-                                  format='json')
-
-        assert unknown.status_code == wrong.status_code == locked.status_code == 400
-        assert unknown.data == wrong.data == locked.data == {'success': False, 'message': OTP_INVALID_MESSAGE}

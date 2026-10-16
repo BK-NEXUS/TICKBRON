@@ -119,19 +119,6 @@ class TestAccountEvents:
         assert len(_events(security, 'account_created')) == 1
         assert AccountHistory.objects.filter(user=new_user, action='account_created').exists()
 
-    def test_otp_login_success_and_failure_are_recorded_without_the_code_or_phone(self, user, security):
-        code = user.generate_otp()
-        client = APIClient()
-
-        bad = client.post('/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': '000000'}, format='json')
-        good = client.post('/api/v1/auth/otp/verify/', {'phone_number': PHONE, 'otp_code': code}, format='json')
-
-        assert (bad.status_code, good.status_code) == (400, 200)
-        assert len(_events(security, 'otp_login_failed')) == 1
-        assert len(_events(security, 'login_success')) == 1
-        everything = ' '.join(_events(security))
-        assert code not in everything and PHONE not in everything and '000000' not in everything
-
 
 @pytest.mark.django_db
 class TestRefusedRequestsNameWhoAndWhere:
