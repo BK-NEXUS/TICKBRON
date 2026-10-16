@@ -14,7 +14,6 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     email: '',
     first_name: '',
     last_name: '',
-    phone_number: '',
     password: '',
     password_confirm: '',
   })
@@ -81,8 +80,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
       email: '',
       first_name: '',
       last_name: '',
-      phone_number: '',
-      password: '',
+        password: '',
       password_confirm: '',
     })
     setError(null)
@@ -200,20 +198,6 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               required
               autoComplete="family-name"
               placeholder={t('admin.doe')}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="phone_number">{t('admin.phoneNumberOptional')}</label>
-            <input
-              id="phone_number"
-              name="phone_number"
-              type="tel"
-              value={formData.phone_number}
-              onChange={handleChange}
-              className="form-control"
-              autoComplete="tel"
-              placeholder="+998 90 123 4567"
             />
           </div>
 

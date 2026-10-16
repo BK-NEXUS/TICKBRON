@@ -15,8 +15,6 @@ import { isCardTestMode } from '../utils/paymentTestMode'
 import { PaymentProcessing } from '../components/PaymentProcessing'
 import { PaymentConfirmation } from '../components/PaymentConfirmation'
 import { PaymentFailure } from '../components/PaymentFailure'
-import { PhoneInput } from '../components/PhoneInput'
-import { isValidPhone, phoneExample } from '../utils/phone'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
@@ -37,7 +35,6 @@ interface GuestDetails {
   first_name: string
   last_name: string
   email: string
-  phone_number?: string
   number_of_rooms: number
   children: number[]
   special_requests?: string
@@ -65,7 +62,6 @@ export function BookingPage() {
     first_name: '',
     last_name: '',
     email: '',
-    phone_number: '',
     number_of_rooms: 1,
     children: [],
     special_requests: '',
@@ -123,7 +119,6 @@ export function BookingPage() {
         first_name: user.first_name || nameFromFull,
         last_name: user.last_name || restOfName.join(' '),
         email: user.email || '',
-        phone_number: user.phone_number || '',
       }))
     }
   }, [location.state, user])
@@ -282,10 +277,6 @@ export function BookingPage() {
       errors.email = t('booking.emailInvalid')
     }
 
-    if (guestDetails.phone_number && !isValidPhone(guestDetails.phone_number)) {
-      errors.phone_number = t('phone.invalid', { example: phoneExample() })
-    }
-
     if (guestDetails.number_of_rooms < 1) {
       errors.number_of_rooms = t('booking.roomsMin')
     }
@@ -322,7 +313,6 @@ export function BookingPage() {
         check_out: bookingState.checkOut,
         guest_count: bookingState.guestCount,
         guest_full_name: `${guestDetails.first_name} ${guestDetails.last_name}`,
-        guest_phone: guestDetails.phone_number || undefined,
         guest_email: guestDetails.email,
         number_of_rooms: guestDetails.number_of_rooms,
         children: guestDetails.children.length > 0 ? guestDetails.children : undefined,
@@ -777,26 +767,6 @@ export function BookingPage() {
                   {validationErrors.email && (
                     <span id="email-error" className="booking-form-error" role="alert">
                       {validationErrors.email}
-                    </span>
-                  )}
-                </div>
-
-                <div className="booking-form-field">
-                  <label htmlFor="phone_number" className="booking-form-label">
-                    {t('booking.phone')}
-                  </label>
-                  <PhoneInput
-                    id="phone_number"
-                    name="phone_number"
-                    value={guestDetails.phone_number ?? ''}
-                    onChange={(value) => setField('phone_number', value)}
-                    className={`booking-form-input ${validationErrors.phone_number ? 'booking-form-input--error' : ''}`}
-                    aria-invalid={!!validationErrors.phone_number}
-                    aria-describedby={validationErrors.phone_number ? 'phone_number-error' : undefined}
-                  />
-                  {validationErrors.phone_number && (
-                    <span id="phone_number-error" className="booking-form-error" role="alert">
-                      {validationErrors.phone_number}
                     </span>
                   )}
                 </div>

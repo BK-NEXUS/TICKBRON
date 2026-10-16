@@ -150,10 +150,9 @@ describe('CSRF token and session changes', () => {
 
   it.each([
     ['login', (a: AuthAdapter) => a.login({ email: 'a@b.c', password: 'x' })],
-    ['verifyOTP', (a: AuthAdapter) => a.verifyOTP({ phone_number: '+998901234567', otp_code: '123456' })],
     ['logout', (a: AuthAdapter) => a.logout()],
     ['register', (a: AuthAdapter) =>
-      a.register({ email: 'a@b.c', full_name: 'A B', phone_number: '+998901234567', password: 'x', password_confirm: 'x' })],
+      a.register({ email: 'a@b.c', full_name: 'A B', password: 'x', password_confirm: 'x' })],
   ])('drops the cached token after %s, since Django rotates it', async (_name, call) => {
     setCsrfToken('before')
     mockFetch.mockResolvedValue(jsonResponse({ id: 1 }))

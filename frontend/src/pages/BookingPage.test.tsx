@@ -309,8 +309,6 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toHaveValue('John')
         expect(screen.getByLabelText(/last name/i)).toHaveValue('Doe')
         expect(screen.getByLabelText(/email/i)).toHaveValue('john@example.com')
-        // Shown grouped; the value sent to the backend is E.164
-        expect(screen.getByLabelText(/phone number/i)).toHaveValue('+998 90 123 45 67')
       })
     })
 
@@ -382,7 +380,7 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-        expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument()
+        expect(screen.queryByLabelText(/phone number/i)).not.toBeInTheDocument()
         expect(screen.getByLabelText(/number of rooms/i)).toBeInTheDocument()
         expect(screen.getByText(/children/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/special requests/i)).toBeInTheDocument()
@@ -448,26 +446,6 @@ describe('BookingPage', () => {
       fireEvent.click(submitButton)
 
       // Check that the adapter was not called (logic/safety validation)
-      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
-    })
-
-    it('formats the phone number and stops at a complete +998 number', async () => {
-      renderWithRouter(<BookingPage />)
-      const phoneInput = await screen.findByLabelText(/phone number/i)
-
-      fireEvent.change(phoneInput, { target: { value: '+998 90 123 45 67 000' } })
-
-      expect(phoneInput).toHaveValue('+998 90 123 45 67')
-    })
-
-    it('rejects an incomplete phone number before creating the booking', async () => {
-      renderWithRouter(<BookingPage />)
-      const phoneInput = await screen.findByLabelText(/phone number/i)
-
-      fireEvent.change(phoneInput, { target: { value: '+998 90 12' } })
-      fireEvent.click(screen.getByText('Continue to Payment'))
-
-      expect(await screen.findByText(/valid phone number/i)).toBeInTheDocument()
       expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
     })
 
