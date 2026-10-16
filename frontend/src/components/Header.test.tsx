@@ -57,7 +57,7 @@ describe('Header', () => {
   it('renders the client logo image next to the site name', async () => {
     const { container } = await renderWithAuthProvider(<Header />)
     const logo = container.querySelector('.header-logo img.brand-logo--header')
-    expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+    expect(logo).toHaveAttribute('src', '/brand/tickbron-mark.webp')
     // Decorative: the visible "TICKBRON" heading already names the site
     expect(logo).toHaveAttribute('alt', '')
   })

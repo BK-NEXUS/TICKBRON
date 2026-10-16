@@ -20,7 +20,7 @@ describe('Footer', () => {
       </BrowserRouter>
     )
     const logo = container.querySelector('.footer img.brand-logo--footer')
-    expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+    expect(logo).toHaveAttribute('src', '/brand/tickbron-mark.webp')
     expect(logo).toHaveAttribute('alt', '')
   })
 

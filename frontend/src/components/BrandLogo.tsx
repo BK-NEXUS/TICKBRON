@@ -1,12 +1,22 @@
 /**
- * Client logo. The file is the only place the image is referenced: to switch to a
- * transparent, SVG or horizontal version, replace the file (or change BRAND_LOGO_SRC).
- * The current JPG has a cream paper background, so place it on a cream
- * (--color-background-alt) area so its edges do not show as a box.
+ * Client logo, drawn as a pencil sketch with a transparent background (made from the client's
+ * drawing by tools/make_logo.py, so it sits on any page color). Two sizes of artwork:
+ * the full lockup with the name for the sign-in pages, and the symbol alone for the header and
+ * footer, where the name is written next to it. Each has a light-ink twin for the dark theme;
+ * CSS shows the one that matches the theme.
  */
-export const BRAND_LOGO_SRC = '/brand/tickbron-logo.jpg'
+const LOGO_FILES = {
+  lockup: { light: '/brand/tickbron-logo.webp', dark: '/brand/tickbron-logo-dark.webp' },
+  mark: { light: '/brand/tickbron-mark.webp', dark: '/brand/tickbron-mark-dark.webp' },
+} as const
 
 type BrandLogoVariant = 'header' | 'footer' | 'auth'
+
+const ARTWORK: Record<BrandLogoVariant, keyof typeof LOGO_FILES> = {
+  header: 'mark',
+  footer: 'mark',
+  auth: 'lockup',
+}
 
 interface BrandLogoProps {
   variant: BrandLogoVariant
@@ -15,12 +25,17 @@ interface BrandLogoProps {
 }
 
 export function BrandLogo({ variant, decorative = false }: BrandLogoProps) {
+  const files = LOGO_FILES[ARTWORK[variant]]
+  const className = `brand-logo brand-logo--${variant}`
   return (
-    <img
-      src={BRAND_LOGO_SRC}
-      alt={decorative ? '' : 'TICKBRON — Online Booking'}
-      className={`brand-logo brand-logo--${variant}`}
-      decoding="async"
-    />
+    <>
+      <img
+        src={files.light}
+        alt={decorative ? '' : 'TICKBRON — Online Booking'}
+        className={className}
+        decoding="async"
+      />
+      <img src={files.dark} alt="" aria-hidden="true" className={`${className} brand-logo--dark`} decoding="async" />
+    </>
   )
 }

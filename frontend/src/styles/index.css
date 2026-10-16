@@ -156,27 +156,50 @@ body {
   gap: var(--spacing-sm);
 }
 
-/* Brand logo (components/BrandLogo.tsx). The JPG has a cream background, so every
-   place it appears sits on --color-background-alt (cream). */
+/* Brand logo (components/BrandLogo.tsx): transparent artwork, so it sits on any page color.
+   Every logo is rendered twice, with dark ink and with light ink; only the one for the theme shows. */
 .brand-logo {
   display: block;
   height: auto;
   object-fit: contain;
 }
 
+.brand-logo--dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brand-logo:not(.brand-logo--dark) {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .brand-logo--dark {
+    display: block;
+  }
+}
+
+:root[data-theme='dark'] .brand-logo:not(.brand-logo--dark) {
+  display: none;
+}
+
+:root[data-theme='dark'] .brand-logo--dark {
+  display: block;
+}
+
+/* The symbol is wider than tall: size it by height */
 .brand-logo--header {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
+  height: 36px;
+  width: auto;
 }
 
 .brand-logo--footer {
-  width: 112px;
+  width: 128px;
   margin-bottom: var(--spacing-md);
 }
 
 .brand-logo--auth {
-  width: 168px;
+  width: 240px;
+  max-width: 80%;
   margin: 0 auto var(--spacing-lg);
 }
 
@@ -2020,8 +2043,7 @@ table .btn {
   }
 
   .brand-logo--header {
-    width: 36px;
-    height: 36px;
+    height: 30px;
   }
   
   .hero-title {
