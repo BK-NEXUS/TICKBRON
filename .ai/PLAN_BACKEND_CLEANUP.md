@@ -28,3 +28,12 @@ Not in scope: renaming public endpoints, changing responses, models or migration
 - Icons: inline SVG only (lucide-react), never emoji or sticker images.
 - Reuse the existing design tokens and components; each screen checked at 390px and 1440px; loading, empty and error states; keyboard and contrast.
 - Plain, human copy (short sentences, no marketing filler), texts through i18n keys.
+
+## Design research notes (2026-10-16)
+Status of section 4: started, not finished. Booking.com and the other booking sites could not be opened from the build environment (no network access to them), so nothing below describes their pages. What was found (general sign-in guidance, vendor and design blogs, not standards):
+- A show/hide password toggle is recommended; it can replace the second password field on sign-up. It needs an accessible name (we have `aria-label` and `aria-pressed`). Screen-reader users and shoulder-surfing are the trade-off; an auto-hide after a short time is a partial mitigation.
+- A caps-lock warning under the password field on desktop.
+- "Forgot password?" and "Sign up" stay visually weaker than the fields and the main button.
+Sources: https://uxplanet.org/12-best-practies-for-sign-up-and-login-page-design-69d6cd045cf, https://blog.logrocket.com/ux-design/login-screen-design-examples/, https://www.uxpin.com/studio/blog/login-page-design
+
+Needed from the owner to continue the visual part: screenshots (or Figma/Canva links) of the sites to follow, or permission to use the live site screenshots the owner takes. Candidate small items for our own pages, each to be approved before building: caps-lock hint on the password fields; auto-hide of a shown password after 30 seconds; checking the sign-in, sign-up and booking pages at 390px and 1440px.
