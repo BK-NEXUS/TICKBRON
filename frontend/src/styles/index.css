@@ -5323,9 +5323,12 @@ table .btn {
   padding-right: 52px;
 }
 
-.auth-password-toggle {
+/* 40px: easier to hit with a thumb than the small button size */
+.auth-password-field .auth-password-toggle {
   position: absolute;
   right: var(--spacing-xs);
+  width: 40px;
+  height: 40px;
   color: var(--color-text-secondary);
 }
 
@@ -5338,13 +5341,6 @@ table .btn {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   margin: 0;
-}
-
-/* Stays reachable above the on-screen keyboard on small screens */
-.auth-submit {
-  position: sticky;
-  bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
-  z-index: 1;
 }
 
 .auth-footer {
@@ -9745,4 +9741,10 @@ table .btn {
 .charge-stale {
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
+}
+
+/* Caps Lock hint under a password field (the warning color is dark enough for text in both themes) */
+.auth-caps-hint {
+  color: var(--color-warning);
+  font-weight: 500;
 }

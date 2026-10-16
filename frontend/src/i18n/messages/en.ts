@@ -41,6 +41,7 @@ export const en = {
   'auth.account': "Account",
   'auth.showPassword': "Show password",
   'auth.hidePassword': "Hide password",
+  'auth.capsLockOn': "Caps Lock is on",
   'auth.showConfirmPassword': "Show confirm password",
   'auth.hideConfirmPassword': "Hide confirm password",
   'auth.welcomeBack': "Welcome Back",

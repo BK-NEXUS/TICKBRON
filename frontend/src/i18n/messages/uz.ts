@@ -43,6 +43,7 @@ export const uz: Catalog = {
   'auth.account': "Hisob",
   'auth.showPassword': "Parolni ko'rsatish",
   'auth.hidePassword': "Parolni yashirish",
+  'auth.capsLockOn': "Caps Lock yoqilgan",
   'auth.showConfirmPassword': "Parol tasdig'ini ko'rsatish",
   'auth.hideConfirmPassword': "Parol tasdig'ini yashirish",
   'auth.welcomeBack': "Xush kelibsiz",

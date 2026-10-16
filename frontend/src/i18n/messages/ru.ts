@@ -43,6 +43,7 @@ export const ru: Catalog = {
   'auth.account': "Аккаунт",
   'auth.showPassword': "Показать пароль",
   'auth.hidePassword': "Скрыть пароль",
+  'auth.capsLockOn': "Включён Caps Lock",
   'auth.showConfirmPassword': "Показать подтверждение пароля",
   'auth.hideConfirmPassword': "Скрыть подтверждение пароля",
   'auth.welcomeBack': "С возвращением",
