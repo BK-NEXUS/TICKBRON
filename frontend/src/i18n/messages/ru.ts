@@ -1197,7 +1197,6 @@ export const ru: Catalog = {
   'admin.accountStatus': "Статус аккаунта:",
   'admin.emailVerified': "Email подтверждён:",
   'admin.unverified': "Не подтверждён",
-  'admin.phoneVerified': "Телефон подтверждён:",
   'admin.customerSections': "Разделы клиента",
   'admin.filterBookings': "Фильтр бронирований:",
   'admin.filterBookingsByStatus': "Фильтр бронирований по статусу",

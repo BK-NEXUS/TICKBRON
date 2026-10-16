@@ -24,7 +24,7 @@ def browser():
 def user(db):
     return User.objects.create_user(
         email='csrf-login@example.com', password=PASSWORD, full_name='Csrf Login',
-        phone_number=PHONE, phone_verified=True,
+        phone_number=PHONE,
     )
 
 

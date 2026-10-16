@@ -207,7 +207,6 @@ export interface AdminCustomerProfile {
     last_login?: string
     is_active: boolean
     email_verified: boolean
-    phone_verified: boolean
   }
   bookings: Array<{
     id: number

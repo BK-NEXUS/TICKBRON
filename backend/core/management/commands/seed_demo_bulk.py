@@ -72,7 +72,7 @@ class Command(BaseCommand):
         password = make_password(PASSWORD)
         rows = [User(
             email=f'{prefix}-{n:04d}@tickbron.demo', full_name=f'Bulk {prefix} {n}', password=password,
-            phone_number=f'{phone_prefix}{n:05d}', phone_verified=True, role=role, is_active=True,
+            phone_number=f'{phone_prefix}{n:05d}', role=role, is_active=True,
         ) for n in range(1, count + 1)]
         User.objects.bulk_create(rows, batch_size=500)
         return list(User.objects.filter(email__startswith=f'{prefix}-').order_by('id'))

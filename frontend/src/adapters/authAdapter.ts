@@ -20,8 +20,6 @@ export interface User {
   date_joined: string
   last_login?: string
   email_verified: boolean
-  // True once the number was proven by an SMS code; only then can it be used to log in
-  phone_verified?: boolean
   two_factor_enabled: boolean
   is_staff?: boolean
   is_superuser?: boolean

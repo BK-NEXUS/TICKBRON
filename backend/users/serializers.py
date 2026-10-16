@@ -47,9 +47,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
-                  'email_verified', 'phone_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
+                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
         # phone_number is legacy data: shown, never written
-        read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser', 'phone_verified']
+        read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_full_name(self, obj):
         return obj.get_full_name()

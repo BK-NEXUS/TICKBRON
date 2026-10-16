@@ -851,7 +851,6 @@ describe('AdminAdapter', () => {
           last_login: '2024-09-15T10:30:00Z',
           is_active: true,
           email_verified: true,
-          phone_verified: true,
         },
         bookings: [
           {
@@ -929,7 +928,6 @@ describe('AdminAdapter', () => {
           last_login: '2024-09-15T10:30:00Z',
           is_active: true,
           email_verified: true,
-          phone_verified: true,
         },
         bookings: [],
         payments: [],

@@ -19,7 +19,7 @@ OLD_NUMBER = '+998901112233'
 @pytest.fixture
 def user(db):
     return User.objects.create_user(
-        email='guest@example.com', password='GuestPassword#123', phone_number=OLD_NUMBER, phone_verified=True,
+        email='guest@example.com', password='GuestPassword#123', phone_number=OLD_NUMBER,
     )
 
 
@@ -59,7 +59,6 @@ class TestPhoneIsNotAccepted:
         assert response.status_code == 200, response.data
         user.refresh_from_db()
         assert user.phone_number == OLD_NUMBER
-        assert user.phone_verified is True
         assert user.telegram == '@guest'
 
     def test_old_number_is_still_returned_read_only(self, user):

@@ -254,7 +254,7 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name', 'phone_number',
             'whatsapp', 'telegram', 'preferred_contact_method', 'date_joined',
-            'last_login', 'is_active', 'email_verified', 'phone_verified'
+            'last_login', 'is_active', 'email_verified'
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
     

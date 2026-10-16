@@ -9,7 +9,7 @@ Core endpoints:
 - POST `/api/v1/auth/login/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/logout/` ✅ IMPLEMENTED (Checkpoint 03)
 - POST `/api/v1/auth/refresh/` ✅ IMPLEMENTED (Checkpoint 03)
-- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26, `phone_verified` added 2026-10-10)
+- GET `/api/v1/auth/me/` ✅ IMPLEMENTED (Checkpoint 03; `is_staff` added 2026-09-24, `is_superuser` added 2026-09-25, `role` added 2026-09-26, `phone_verified` added 2026-10-10, removed 2026-10-16)
 - `/api/v1/auth/otp/*` and `/api/v1/auth/phone/verify/*` ❌ REMOVED (2026-10-16): accounts are e-mail only; see contracts/auth.md
 - GET `/api/v1/auth/csrf/` ✅ IMPLEMENTED (2026-09-24, frontend audit F2; see contracts/auth.md)
 - GET `/api/v1/properties/search/` ✅ IMPLEMENTED (Checkpoint 10; `translations` added 2026-09-24; `features`, `min_rating`, `sort=reviews`, real date availability, `average_rating`/`review_count` added 2026-09-28)
@@ -565,7 +565,7 @@ Status: READY
   - Path Parameters: customer_id
   - Query Parameters: booking_filter (all, upcoming, completed, cancelled - default: all)
   - Response: Complete customer profile including:
-    - Customer: Full contact information (id, email, first_name, last_name, full_name, phone_number, whatsapp, telegram, preferred_contact_method, date_joined, last_login, is_active, email_verified, phone_verified)
+    - Customer: Full contact information (id, email, first_name, last_name, full_name, phone_number, whatsapp, telegram, preferred_contact_method, date_joined, last_login, is_active, email_verified)
     - Bookings: All bookings filterable by status (id, reference_code, status, payment_status, check_in, check_out, number_of_nights, total_price, currency, property_name, property_city, created_at)
     - Payments: All payments (id, booking_id, provider, amount, currency, status, created_at)
     - Internal notes: Staff-only notes (id, customer, author, author_name, author_email, note, created_at, updated_at)

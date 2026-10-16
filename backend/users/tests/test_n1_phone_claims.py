@@ -1,45 +1,11 @@
 """
-N-1 stage 2: an unverified phone number is only a claim. It must not block the
-real owner, and verifying a number takes it away from every unproven claim.
+History of migration 0007 (unique only for verified numbers). The constraint itself was dropped
+by migration 0009; these tests run the old migrations forward and back.
 """
-import pytest
-from django.core.cache import cache
-from django.db import IntegrityError, connection, transaction
+from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase
-from rest_framework.test import APIClient
+from django.test import TransactionTestCase
 
-from users.models import User
-
-PHONE = '+998901230777'
-
-
-def make_user(email, phone=PHONE, verified=False):
-    return User.objects.create_user(email=email, password='x-pass-123', phone_number=phone, phone_verified=verified)
-
-
-class UnverifiedClaimsDoNotBlockTests(TestCase):
-    def setUp(self):
-        cache.clear()
-        self.client = APIClient()
-
-    def test_two_unverified_claims_can_share_a_number(self):
-        make_user('a@example.com')
-        make_user('b@example.com')
-
-        self.assertEqual(User.objects.filter(phone_number=PHONE).count(), 2)
-
-    def test_an_unverified_claim_can_sit_next_to_a_verified_owner(self):
-        make_user('real@example.com', verified=True)
-        make_user('claim@example.com')
-
-        self.assertEqual(User.objects.filter(phone_number=PHONE).count(), 2)
-
-    def test_database_rejects_two_verified_holders(self):
-        make_user('a@example.com', verified=True)
-
-        with pytest.raises(IntegrityError), transaction.atomic():
-            make_user('b@example.com', verified=True)
 
 class PartialUniqueMigrationTests(TransactionTestCase):
     """Migration 0007 replaces the global unique with 'unique among verified'."""

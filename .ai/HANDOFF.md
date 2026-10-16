@@ -2734,3 +2734,9 @@ Full list with evidence: `.ai/QA_REPORT.md` (QA-1 .. QA-9). Code changes: bookin
 - Before going live check for accounts that can only sign in by SMS: `SELECT count(*) FROM users WHERE password = '' OR password LIKE '!%';` (they would need "Forgot password").
 - Found, not fixed: the seed commands still set `phone_verified=True` and demo phone numbers (harmless, cleaned up in stage 2).
 
+## Stage 2: SMS login columns dropped (2026-10-16)
+- New migration `users/0009_drop_sms_login_columns`: removes the constraint `users_phone_unique_when_verified` and the columns `phone_verified`, `otp_code`, `otp_expires_at`, `otp_attempts`. `phone_number` stays as nullable, non-unique legacy data. Reversible: the reverse migration adds the columns back (`phone_verified` false, `otp_attempts` 0, codes empty), which is tested. `makemigrations --check` reports no changes. `pg_dump` of the dev database was taken before the migration (it was empty: the dev database had no migrated tables in this environment).
+- API: `phone_verified` is gone from the user object (`/auth/me/`, login, register, refresh, profile update) and from the admin customer profile. Frontend: the "Phone Verified" badge of the admin customer profile and the `phone_verified` types were removed.
+- New tests: `users/tests/test_legacy_phone_columns_dropped.py` (model has no SMS fields, no phone constraint, two accounts may share an old number, the API has no `phone_verified`, migration forward/back keeps `phone_number`). Written first (6 failed). Removed tests: the "unique among verified" cases (`UnverifiedClaimsDoNotBlockTests`, `test_database_rejects_duplicate_phone`), because that rule no longer exists; the historical migration tests of 0006/0007 stay. Seed commands no longer set `phone_verified`.
+- Production steps: run `pg_dump` first, then `python manage.py migrate users`. Rolling back the code needs `python manage.py migrate users 0008` first.
+

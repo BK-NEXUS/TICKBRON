@@ -1165,7 +1165,6 @@ export const en = {
   'admin.accountStatus': "Account Status:",
   'admin.emailVerified': "Email Verified:",
   'admin.unverified': "Unverified",
-  'admin.phoneVerified': "Phone Verified:",
   'admin.customerSections': "Customer sections",
   'admin.filterBookings': "Filter bookings:",
   'admin.filterBookingsByStatus': "Filter bookings by status",

@@ -1167,7 +1167,6 @@ export const uz: Catalog = {
   'admin.accountStatus': "Hisob holati:",
   'admin.emailVerified': "Email tasdiqlangan:",
   'admin.unverified': "Tasdiqlanmagan",
-  'admin.phoneVerified': "Telefon tasdiqlangan:",
   'admin.customerSections': "Mijoz bo'limlari",
   'admin.filterBookings': "Bronlarni filtrlash:",
   'admin.filterBookingsByStatus': "Bronlarni holat bo'yicha filtrlash",

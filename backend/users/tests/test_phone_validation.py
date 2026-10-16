@@ -36,7 +36,6 @@ def register_payload(phone):
 def user(db):
     return User.objects.create_user(
         email='guest@example.com', password='GuestPassword#123', phone_number='+998901112233',
-        phone_verified=True,  # N-1: only a verified number can use SMS login
     )
 
 

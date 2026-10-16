@@ -6,7 +6,6 @@ This module contains the custom User model and related user management models.
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from django.db.models import Q
 from django.utils import timezone
 from common.models import BaseModel
 
@@ -57,7 +56,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
     # Legacy, read-only: nothing in the app collects or verifies a number any more (accounts are
-    # e-mail only). Blank is stored as NULL; a VERIFIED number stays unique (constraint below).
+    # e-mail only). Blank is stored as NULL; not unique, old accounts may share a number.
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     
     is_staff = models.BooleanField(default=False)
@@ -79,12 +78,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
     two_factor_backup_codes = models.TextField(blank=True, null=True)
-    
-    # Legacy SMS-login fields, unused since SMS login was removed; dropped in a later migration
-    phone_verified = models.BooleanField(default=False)
-    otp_code = models.CharField(max_length=64, blank=True, null=True)
-    otp_expires_at = models.DateTimeField(null=True, blank=True)
-    otp_attempts = models.IntegerField(default=0)
     
     # Contact method preferences
     whatsapp = models.CharField(max_length=20, blank=True, null=True)
@@ -116,13 +109,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['phone_number'],
-                condition=Q(phone_verified=True),
-                name='users_phone_unique_when_verified',
-            ),
-        ]
     
     def __str__(self):
         return self.email
@@ -181,7 +167,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         if self.failed_login_attempts >= self.ACCOUNT_FAILURE_LIMIT:
             self.account_locked_until = now + timedelta(minutes=self.ACCOUNT_LOCK_MINUTES)
         
-        # Only these fields: a stale in-memory user must not overwrite others (e.g. otp_code)
+        # Only these fields: a stale in-memory user must not overwrite others (e.g. a password changed meanwhile)
         self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
     
     def reset_failed_login(self):

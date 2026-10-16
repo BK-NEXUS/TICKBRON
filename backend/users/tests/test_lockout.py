@@ -43,6 +43,7 @@ class TestPerIpLockout(LockoutTestBase):
         assert attacker.status_code == 401
         assert owner.status_code == 200
 
+
 class TestAccountWideLockout(LockoutTestBase):
     """Distributed guessing from many IPs still locks the account, but later and briefly."""
 

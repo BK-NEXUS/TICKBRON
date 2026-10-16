@@ -19,7 +19,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
   - Every failure (unknown email, wrong password, inactive or locked account) returns the same 401 `{"detail": "Invalid credentials. If you have made several failed attempts, please try again later."}`
 
 ### Removed: SMS login and phone verification (2026-10-16)
-`POST /auth/otp/request/`, `POST /auth/otp/verify/`, `POST /auth/phone/verify/request/` and `POST /auth/phone/verify/confirm/` no longer exist (404). Accounts are e-mail only. No endpoint takes a phone number for an account: register, `PATCH /auth/me/update/` and `POST /admin-panel/users/create-hotel-owner/` ignore a `phone_number` in the body. An old number stays on the account as read-only data (`phone_number`, `phone_verified` in the user object; the DB columns and the constraint `users_phone_unique_when_verified` are dropped in a later, separately approved migration).
+`POST /auth/otp/request/`, `POST /auth/otp/verify/`, `POST /auth/phone/verify/request/` and `POST /auth/phone/verify/confirm/` no longer exist (404). Accounts are e-mail only. No endpoint takes a phone number for an account: register, `PATCH /auth/me/update/` and `POST /admin-panel/users/create-hotel-owner/` ignore a `phone_number` in the body. An old number stays on the account as read-only data (`phone_number` in the user object, no longer unique). Stage 2 (migration `users/0009_drop_sms_login_columns`, 2026-10-16) dropped `phone_verified`, `otp_code`, `otp_expires_at`, `otp_attempts` and the constraint `users_phone_unique_when_verified`.
 
 ### Password reset and change (OWASP A07-1, 2026-10-14)
 - POST /api/v1/auth/password-reset/request/ - body `{email}`. Anonymous, CSRF token required, 5/hour per IP and 5 mails/day per address.
@@ -45,7 +45,7 @@ Browser auth is session-based with secure HttpOnly/Secure/SameSite cookies. Stat
 - POST `/api/v1/auth/logout/` - Destroy session
 - GET `/api/v1/auth/me/` - Get current user info
   - Includes read-only `is_staff` and `is_superuser` (bool). Staff can use the `/admin-panel/` and support lookup endpoints; only super-admins can use `POST /admin-panel/users/create-hotel-owner/`. The flags only drive the UI: the backend still checks permissions on every request, and `PATCH /auth/me/update/` cannot change them
-  - Includes read-only `phone_verified` (bool, legacy, read-only): true for numbers proven before SMS verification was removed. Only then can the number be used for SMS login
+  - `phone_number` is legacy read-only data (null for accounts created after 2026-10-14); `phone_verified` was removed from the user object on 2026-10-16
   - Includes read-only `role` (string or null, added 2026-09-26): `"hotel-owner"` for owner accounts, null for regular users. Only a super-admin assigns it (`POST /admin-panel/users/create-hotel-owner/`); register, OTP and `PATCH /auth/me/update/` ignore any `role` in the body. The UI shows partner entry points only for `role == "hotel-owner"` or staff
   - The same user object (with both flags and `role`) is returned by register, login, refresh and `PATCH /auth/me/update/`
 - POST `/api/v1/auth/refresh/` - Refresh session

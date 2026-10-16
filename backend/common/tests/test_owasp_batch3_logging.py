@@ -43,7 +43,7 @@ def _events(caplog, name=None):
 
 @pytest.fixture
 def user(db):
-    return User.objects.create_user(email=EMAIL, password=PASSWORD, phone_number=PHONE, phone_verified=True)
+    return User.objects.create_user(email=EMAIL, password=PASSWORD, phone_number=PHONE)
 
 
 def _login(password=PASSWORD, email=EMAIL):
