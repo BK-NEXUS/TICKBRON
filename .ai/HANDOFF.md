@@ -2190,7 +2190,7 @@ Master `976ea80` (+ `95aa9b3`, dev setup only). No frontend commits since the ba
 ### Frontend ISSUES
 - LINT FAILS on master: `npm run lint` reports 274 problems (263 errors, 11 warnings): no-explicit-any 166, no-extra-semi 90, react-hooks/exhaustive-deps 9, no-unused-vars 6, react-refresh/only-export-components 2. 248 of them are in test files, 25 in src. Already present at the 976ea80 baseline (no frontend commits since). The `--max-warnings 0` script cannot pass until these are fixed.
 - E2E flow H (language switch uz/ru/en) fails: no Uzbek/Russian option, text stays English. Expected until R5 (i18n) is done; R5 requires it to pass.
-- R8 card form does not exist on master yet (no card number/CVV/expiry fields in `frontend/src`). The current payment request (`src/adapters/paymentAdapter.ts:31` `PaymentCreateRequest`) has no card fields. When R8 is built: card data must stay in component state only, never in the request body, localStorage/sessionStorage, the URL or console output.
+- (Outdated, R8 was built 2026-10-09, see "Card form, test mode only" below.) R8 card form did not exist on master yet. The current payment request (`src/adapters/paymentAdapter.ts:31` `PaymentCreateRequest`) has no card fields. When R8 is built: card data must stay in component state only, never in the request body, localStorage/sessionStorage, the URL or console output.
 - `.ai/ROADMAP.md` R3 still lists 3.6–3.7 as frontend work, but this file records 3.6 and 3.7 frontend halves as DONE (`PartnerRoomCalendar.tsx`, `PartnerAvailabilityManagement.tsx` bulk-price view). Remaining R3 work is 3.8 E2E only.
 
 ## R4 security review (2026-10-03, Kolya's agent, branch feat/r4-security)
