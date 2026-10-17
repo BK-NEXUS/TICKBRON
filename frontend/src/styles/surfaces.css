@@ -302,3 +302,19 @@ textarea.form-input {
   color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
+
+.fx-rate-card {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.fx-rate-card-rate {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
