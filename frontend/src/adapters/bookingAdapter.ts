@@ -25,6 +25,27 @@ export interface ExchangeRateInfo {
   stale: boolean
 }
 
+/** R11: what the booking's rate plan promised about cancelling, copied when it was made; null on older bookings */
+export interface CancellationTerms {
+  free_until: string | null
+  refund_percent_after: number
+}
+
+/** `GET /bookings/{id}/cancel-preview/`: what cancelling right now would give back (percent null = no promise) */
+export interface CancelPreview {
+  refund_amount: string
+  refund_currency: string
+  refund_percent: number | null
+  free_until: string | null
+}
+
+/** What a cancellation refunded (`amount` "0.00" when nothing) */
+export interface CancelRefund {
+  amount: string
+  currency: string
+  percent: number | null
+}
+
 export interface Booking {
   id: number
   guest: number
@@ -61,6 +82,7 @@ export interface Booking {
   no_show_refund_amount?: string | null
   no_show_refund_text_key?: string | null
   no_show_refund_text_params?: { percent: number; amount: string | null } | null
+  cancellation_terms?: CancellationTerms | null
 }
 
 export interface BookingCreateRequest {
@@ -178,11 +200,21 @@ class BookingAdapter {
    * Cancel a booking
    * Integrates with POST /api/v1/bookings/{id}/cancel/ endpoint
    */
-  async cancelBooking(id: number, request?: BookingCancelRequest): Promise<{ data: Booking | null; error: string | null }> {
-    return this.request<Booking>(`/api/v1/bookings/${id}/cancel/`, {
+  async cancelBooking(
+    id: number, request?: BookingCancelRequest,
+  ): Promise<{ data: (Booking & { refund: CancelRefund }) | null; error: string | null }> {
+    return this.request<Booking & { refund: CancelRefund }>(`/api/v1/bookings/${id}/cancel/`, {
       method: 'POST',
       body: JSON.stringify(request || {}),
     })
+  }
+
+  /**
+   * What cancelling this booking right now would give back; nothing is changed
+   * Integrates with GET /api/v1/bookings/{id}/cancel-preview/ endpoint
+   */
+  async getCancelPreview(id: number): Promise<{ data: CancelPreview | null; error: string | null }> {
+    return this.request<CancelPreview>(`/api/v1/bookings/${id}/cancel-preview/`)
   }
 }
 
