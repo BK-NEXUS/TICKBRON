@@ -2808,3 +2808,14 @@ Branch `claude/tickbron-email-registration-gh4p45`. Frontend plus demo data; no 
 - Only the create wizard sets the location; there is no edit screen for an existing property yet (and the property page has no small map of its own).
 - The search page map shows the current page of results only (20), not every hotel in the area, and does not search "in this map area".
 - One full test run (of three) had a single failing test that I did not catch (the two next full runs, 1815 and later, were clean); it looks like a timing flake under load.
+
+## Map view like Booking.com: list beside the map, "Search this area" (frontend, 2026-10-17)
+Owner's wish: the map must open, use a ready-made map (it is: Leaflet + OpenStreetMap, nothing drawn by us), and make finding a hotel easy.
+- `PropertiesMapView`: on screens of 1024px and wider the list of cards is on the left and the map stays in view on the right (sticky); on a phone or tablet the map is above the list. Pointing at (or focusing) a card marks its pin; choosing a pin marks the card and scrolls the list to it (on a narrow screen the card shows under the map instead, because the list is far below). Hotels without a location stay in the list with a note.
+- `PropertiesMap`: "Search this area" appears after the guest moves or zooms the map (never for our own re-centring on new results) and searches the visible area. The area goes into the URL as `lat`, `lng`, `radius` (whole km, 1-100; `utils/searchArea.ts`), replaces the destination text, keeps dates, guests and filters, and the title reads "Properties in the map area". The backend already took `lat`/`lng`/`radius` (bounding box), so there is no API change. A bad value in the URL is ignored.
+- The map view asks for up to 100 results (the list view stays at 20), so the map shows a whole area.
+- New `hooks/useMatchMedia.ts` (a reactive media query; the old `useMediaQuery` in `utils/breakpoints.ts` does not update and is unused). 6 new keys in uz/ru/en.
+- Checked in Chromium (1440px and 390px) on the real stack: 10 cards beside the map, hover marks the pin, a pin marks its card, zooming offers "Search this area", pressing it gave `?lat=41.317077&lng=69.279742&radius=1` and 4 hotels; at 390px the card shows under the map; no sideways overflow. A long price ("1 295 000 UZS") overflowed the narrow list card: the footer now wraps.
+### Found, not fixed
+- The visible area is searched as a circle (centre + radius), so on a wide map the corners are outside the search; a bounding-box search would be exact (backend change).
+- The map cannot show more than the 100 results of one request; zoomed far out over a big area some hotels are not on it.

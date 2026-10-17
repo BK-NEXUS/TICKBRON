@@ -1550,6 +1550,17 @@ table .btn {
   scroll-margin: var(--spacing-sm);
 }
 
+.properties-map-list .property-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* A long price ("1 295 000 UZS") and the button wrap instead of overflowing the narrow card */
+.properties-map-list .property-card-footer {
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
 .properties-map-list-item--active {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
