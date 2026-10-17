@@ -2819,3 +2819,19 @@ Owner's wish: the map must open, use a ready-made map (it is: Leaflet + OpenStre
 ### Found, not fixed
 - The visible area is searched as a circle (centre + radius), so on a wide map the corners are outside the search; a bounding-box search would be exact (backend change).
 - The map cannot show more than the 100 results of one request; zoomed far out over a big area some hotels are not on it.
+
+## R6 frontend: so'm next to dollar prices, exchange rates screen (frontend, 2026-10-17)
+Branch `claude/tickbron-email-registration-gh4p45`. No backend change; contract "Currency: UZS charge, CBU rate, booking snapshot (R6)" in `API_CONTRACT.md`. The payment side (charge in so'm, `ChargeAmount`) was done on 2026-10-10.
+- `PriceApprox`: "≈ 1 177 295 UZS" (so'm / сум by language) from `base_price_uzs_approx`, omitted when null or absent (hotels priced in so'm, or no rate yet). On the search/home cards (compact) and on the property page price box, where it also shows "Rate of {date} (CBU)" and the out-of-date warning from `uzs_rate`. `Property` types carry the two fields.
+- Booking: a 503 `exchange_rate_unavailable` (dollar hotel, no rate ever fetched; nothing reserved) shows "Booking is temporarily unavailable, please try again later." `bookingAdapter.createBooking` now returns the backend `code`.
+- Admin "Exchange rates" (`AdminExchangeRates`, `exchangeRateAdapter`): everyone in the admin panel sees the rate history (paged, newest first). The super-admin also sees the current rate per currency with date and source, a warning when a rate is out of date or when no rate has been fetched (with the last fetch error), the rejected rates (change over the limit) and an "Accept" button with a confirmation (the backend writes the audit log; 400/404/409 reasons are shown in the dialog). Staff are told that status and accepting are for the super-admin.
+- 40 new keys in uz/ru/en (`fxAdmin.*`, `booking.rateUnavailable`).
+- `ROADMAP.md`: DONE marks brought up to date for R2 (G5–G7), R5, R6, R7.
+### Changed test assertions
+- None changed. A flaky test of mine (`PropertyLocationField.test.tsx`, one failure in a full run) now waits until all three lists have loaded before asserting (they load independently).
+### Checked in Chromium on the real stack (demo rate 12 000)
+- Istanbul card "≈ 1 056 000 UZS", property page "$88 per night ≈ 1 056 000 UZS · Rate of Oct 16, 2026 (CBU)", admin screen at 1440px and 390px without sideways overflow. The stale, rejected and accept states were covered by tests only, not seen with real data.
+### Open question for the owner
+- **What should the currency selector (UZS / USD) do?** The contract shows the hotel's own price plus "≈ so'm". It gives no dollar equivalent for a hotel priced in so'm (`uzs_rate` is null for those), and the frontend must not convert money itself. So the selector still changes nothing visible. Options: (a) backend adds `base_price_usd_approx` for so'm hotels and the selector picks which currency leads on cards; (b) remove the selector and keep "own price ≈ so'm". Not built until the owner decides.
+### Found, not fixed
+- The promo banner (`PromoCarousel`) shows the hotel price without "≈ so'm". Room prices on the property page have no so'm equivalent (the API sends one only for `base_price`). The rejected-rates table has no header row.
