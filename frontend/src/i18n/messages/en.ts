@@ -1600,6 +1600,8 @@ export const en = {
   'map.pickHint': "Click the map or drag the pin to set the exact location. You can also type the coordinates below.",
   'map.pickMarker': "Property location",
   'map.clear': "Remove location",
+  'map.propertyLabel': "Map: where {name} is",
+  'map.openLarger': "Open a larger map",
   'map.listLabel': "Properties on the map",
   'map.noPin': "No location on the map",
   'map.searchArea': "Search this area",

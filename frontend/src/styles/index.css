@@ -10070,3 +10070,25 @@ button.property-gallery-image {
     right: var(--spacing-xs);
   }
 }
+
+.property-location-map {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+}
+
+.property-location-map-canvas {
+  height: 280px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  z-index: 0;
+}
+
+.property-location-map-link {
+  justify-self: start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-strong);
+}

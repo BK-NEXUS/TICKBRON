@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, within, waitFor, fireEvent } from '@testing-library/react'
 import { PropertyDetailPage } from './PropertyDetailPage'
 import { propertyAdapter } from '../adapters/propertyAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
@@ -208,6 +208,27 @@ describe('PropertyDetailPage', () => {
     })
 
     expect(screen.getByText('Test Property')).toBeInTheDocument()
+  })
+
+  describe('map of the property (R11)', () => {
+    const load = async (extra: Record<string, unknown>) => {
+      vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: { ...mockProperty, ...extra }, error: null })
+      renderWithProviders(<PropertyDetailPage />)
+      await screen.findByText('Test Property')
+    }
+
+    it('shows a map under the address when the owner has set the location', async () => {
+      await load({ latitude: '41.311081', longitude: '69.279737' })
+      const section = screen.getByRole('heading', { name: 'Location' }).closest('section') as HTMLElement
+      expect(within(section).getByRole('region', { name: 'Map: where Test Property is' })).toBeInTheDocument()
+      expect(within(section).getByText('123 Test Street')).toBeInTheDocument()
+    })
+
+    it('shows only the address when there is no location on the map', async () => {
+      await load({ latitude: null, longitude: null })
+      expect(screen.queryByRole('region', { name: /Map: where/ })).toBeNull()
+      expect(screen.getByText('123 Test Street')).toBeInTheDocument()
+    })
   })
 
   describe('so\'m equivalent of a price in dollars (R6)', () => {
