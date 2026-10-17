@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, UserX, MapPin } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, UserX, MapPin, Coins } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -12,10 +12,11 @@ import { AdminStatusSection } from '../components/AdminStatusSection'
 import { AdminPromotions } from '../components/AdminPromotions'
 import { AdminNoShowReports } from '../components/AdminNoShowReports'
 import { AdminGeography } from '../components/AdminGeography'
+import { AdminExchangeRates } from '../components/AdminExchangeRates'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'no-show' | 'geography' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'no-show' | 'geography' | 'rates' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
@@ -151,6 +152,14 @@ export function AdminDashboardPage() {
         <span className="nav-icon"><UserX size={18} aria-hidden="true" /></span>
         <span className="nav-label">{t('noShowAdmin.nav')}</span>
       </button>
+      <button
+        onClick={() => setCurrentView('rates')}
+        className={`nav-item ${currentView === 'rates' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'rates' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Coins size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('fxAdmin.nav')}</span>
+      </button>
       {user.is_superuser && (
         <button
           onClick={() => setCurrentView('geography')}
@@ -210,6 +219,8 @@ export function AdminDashboardPage() {
         return <AdminNoShowReports />
       case 'geography':
         return user.is_superuser ? <AdminGeography /> : <AdminPropertyModeration />
+      case 'rates':
+        return <AdminExchangeRates isSuperAdmin={Boolean(user.is_superuser)} />
       case 'promotions':
         return <AdminPromotions isSuperAdmin={Boolean(user.is_superuser)} />
       default:

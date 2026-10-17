@@ -935,6 +935,17 @@ describe('BookingPage', () => {
       expect(note).toHaveTextContent('50% of your payment')
     })
 
+    it('says the booking is temporarily unavailable when no exchange rate exists yet (503)', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: null, error: 'Server error. Please try again later.', code: 'exchange_rate_unavailable',
+      })
+      renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+      fireEvent.click(screen.getByText('Continue to Payment'))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Booking is temporarily unavailable, please try again later')
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
+    })
+
     describe('card form (test mode)', () => {
       afterEach(() => vi.unstubAllEnvs())
 

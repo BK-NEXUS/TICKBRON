@@ -8,6 +8,14 @@ import { promotionAdapter } from '../adapters/promotionAdapter'
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext')
+vi.mock('../adapters/exchangeRateAdapter', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../adapters/exchangeRateAdapter')>()),
+  exchangeRateAdapter: {
+    list: vi.fn().mockResolvedValue({ data: { count: 0, next: null, previous: null, results: [] }, error: null }),
+    status: vi.fn().mockResolvedValue({ data: { currencies: [] }, error: null }),
+    accept: vi.fn(),
+  },
+}))
 vi.mock('../adapters/adminGeographyAdapter', () => ({
   adminGeographyAdapter: { list: vi.fn().mockResolvedValue({ data: { count: 0, next: null, previous: null, results: [] }, error: null }) },
 }))
@@ -227,6 +235,25 @@ describe('AdminDashboardPage', () => {
     it('staff do not see Geography (the backend answers 403 to them)', () => {
       renderDashboard({ ...mockUser, is_staff: true, is_superuser: false })
       expect(screen.queryByRole('button', { name: 'Geography' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Exchange rates', () => {
+    const renderDashboard = (user: typeof mockUser) => {
+      (useAuth as never).mockReturnValue({ user, isAuthenticated: true })
+      render(<MemoryRouter><AdminDashboardPage /></MemoryRouter>)
+    }
+
+    it('staff can open the exchange rates (history only)', async () => {
+      renderDashboard({ ...mockUser, is_staff: true, is_superuser: false })
+      fireEvent.click(screen.getByRole('button', { name: 'Exchange rates' }))
+      expect(await screen.findByText('Only a super-admin can see the fetch status and accept a rate.')).toBeInTheDocument()
+    })
+
+    it('a super-admin sees the current rates section as well', async () => {
+      renderDashboard(mockUser)
+      fireEvent.click(screen.getByRole('button', { name: 'Exchange rates' }))
+      expect(await screen.findByText('Current rates')).toBeInTheDocument()
     })
   })
 })

@@ -3,6 +3,7 @@ import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-
 import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
 import { StarIcon } from './StarIcon'
+import { PriceApprox } from './PriceApprox'
 import { useI18n } from '../i18n/I18nContext'
 
 interface PropertyCardProps {
@@ -126,6 +127,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
               {formatPrice(property.base_price, property.currency)}
             </span>
             <span className="property-card-price-period">{t('card.perNight')}</span>
+            <PriceApprox approx={property.base_price_uzs_approx} />
           </div>
           <button className="btn btn-secondary btn-small property-card-cta">
             {t('card.viewDetails')}

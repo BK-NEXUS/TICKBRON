@@ -27,6 +27,12 @@ vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
 const setLocation = vi.mocked(statusAdapter.setPropertyLocation)
 const none = { country_ref: null, region_ref: null, city_ref: null }
 const tashkent = { country_ref: 1, region_ref: 10, city_ref: 100 }
+// The three lists load independently: wait until the saved location shows in all three
+const tashkentLoaded = () => waitFor(() => {
+  expect(screen.getByLabelText('Country')).toHaveValue('1')
+  expect(screen.getByLabelText('Region')).toHaveValue('10')
+  expect(screen.getByLabelText('City')).toHaveValue('100')
+})
 const saveButton = () => screen.getByRole('button', { name: 'Save location' })
 
 describe('PropertyLocationField', () => {
@@ -34,9 +40,7 @@ describe('PropertyLocationField', () => {
 
   it('shows the current location', async () => {
     render(<PropertyLocationField propertyId={1} location={tashkent} />)
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
-    expect(screen.getByLabelText('Country')).toHaveValue('1')
-    expect(screen.getByLabelText('Region')).toHaveValue('10')
+    await tashkentLoaded()
   })
 
   it('shows nothing chosen for a property without a location', async () => {
@@ -47,7 +51,7 @@ describe('PropertyLocationField', () => {
 
   it('Save is disabled until the location changes', async () => {
     render(<PropertyLocationField propertyId={1} location={tashkent} />)
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await tashkentLoaded()
     expect(saveButton()).toBeDisabled()
   })
 
@@ -55,7 +59,7 @@ describe('PropertyLocationField', () => {
     setLocation.mockResolvedValue({ data: { id: 1, ...tashkent, region_ref: 11, city_ref: 110 }, error: null })
     const onSaved = vi.fn()
     render(<PropertyLocationField propertyId={1} location={tashkent} onSaved={onSaved} />)
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await tashkentLoaded()
 
     fireEvent.change(screen.getByLabelText('Region'), { target: { value: '11' } })
     expect(saveButton()).toBeDisabled() // the city is cleared, a half location cannot be saved
@@ -72,7 +76,7 @@ describe('PropertyLocationField', () => {
     setLocation.mockResolvedValue({ data: { id: 1, ...none }, error: null })
     const onSaved = vi.fn()
     render(<PropertyLocationField propertyId={1} location={tashkent} onSaved={onSaved} />)
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await tashkentLoaded()
 
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: '' } })
     fireEvent.click(saveButton())
