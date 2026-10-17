@@ -2789,3 +2789,5 @@ Branch `claude/tickbron-email-registration-gh4p45`. Frontend only, no API change
 - Partner property edit (`updateProperty`) has no UI yet, so only the create wizard and the admin field use the refs.
 - Status screens still show the English region in the hotel list "location" column and the hotel detail.
 - Native-speaker review of the uz/ru texts is still open.
+- Checked in Chromium on the real stack (migrated PostgreSQL, `seed_demo`, `seed_demo_stats`, `runserver`, `vite`): Destinations in ru (1440px) and uz (390px), the Geography screen (3 countries, 14 regions of Uzbekistan) and the moderation cards: no sideways overflow at either width. The partner wizard picker and the add-region dialog were covered by unit tests only, not looked at in the browser.
+- Found, not fixed: at 390px the Geography table scrolls sideways inside its container, so the Status and Actions columns are off-screen until scrolled. Every moderation card mounts its own picker and loads the countries again (15 cards = 15 requests); a shared cache would fix it.
