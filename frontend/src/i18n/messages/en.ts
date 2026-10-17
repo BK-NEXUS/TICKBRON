@@ -978,6 +978,7 @@ export const en = {
   'partner.addressLine1Is': "Address line 1 is required",
   'partner.cityIsRequired': "City is required",
   'partner.countryIsRequired': "Country is required",
+  'partner.regionIsRequired': "Region is required",
   'partner.failedToCreateProperty': "Failed to create property. Please try again.",
   'partner.creatingProperty': "Creating Property...",
   'partner.createProperty': "Create Property",
@@ -1486,6 +1487,13 @@ export const en = {
   'region.saveRegion': "Save region",
   'card.placeholderExpiry': "MM/YY",
   'card.placeholderHolder': "NAME SURNAME",
+  'geo.country': "Country",
+  'geo.region': "Region",
+  'geo.city': "City",
+  'geo.choose': "Select…",
+  'geo.loadFailed': "Could not load the list. Try again.",
+  'geo.retry': "Try again",
+  'geo.noCities': "No cities available for this region yet.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

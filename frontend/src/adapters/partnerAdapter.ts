@@ -47,10 +47,11 @@ export interface CreatePropertyRequest {
   bathrooms: number
   address_line1: string
   address_line2?: string
-  city: string
-  state?: string
+  /** Geography ids (the old text fields country/state/city are read-only copies) */
+  country_ref: number
+  region_ref: number
+  city_ref: number
   postal_code?: string
-  country: string
   latitude?: number
   longitude?: number
   base_price: number
@@ -71,10 +72,10 @@ export interface UpdatePropertyRequest {
   bathrooms?: number
   address_line1?: string
   address_line2?: string
-  city?: string
-  state?: string
+  country_ref?: number
+  region_ref?: number
+  city_ref?: number
   postal_code?: string
-  country?: string
   latitude?: number
   longitude?: number
   base_price?: number

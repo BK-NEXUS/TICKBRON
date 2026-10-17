@@ -244,3 +244,15 @@ textarea.form-input {
     min-height: 44px;
   }
 }
+
+.geography-picker-hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.geography-picker-error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
