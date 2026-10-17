@@ -2883,3 +2883,6 @@ Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
 
 ### R12 additions, slice 2 backend: anonymous rank (2026-10-17)
 `metrics.region_rank()` + field `rank` on the owner hotel detail; 5 tests in `partner/tests/test_r12_partner_status.py` (hidden below 5 hotels, position, ties, no other hotel data, no region). Rank is on the hotel detail only, not on the owner summary.
+
+### R12 additions, slice 3 backend: Excel export (2026-10-17)
+`common/csv_export.py`: `export_response` / `wants_export` replace `csv_response` / `wants_csv` (5 call sites); library **XlsxWriter 3.2.9** (write-only, no dependencies; chosen over openpyxl, which is for reading files). 8 tests in `admin_panel/tests/test_xlsx_export.py`. No migration (`makemigrations --check` clean).

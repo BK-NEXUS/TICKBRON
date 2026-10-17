@@ -25,3 +25,4 @@ python-dotenv==1.2.4
 
 # API Documentation
 drf-spectacular==0.30.0
+XlsxWriter==3.2.9

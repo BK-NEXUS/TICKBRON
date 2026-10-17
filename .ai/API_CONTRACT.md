@@ -1051,3 +1051,6 @@ Added field `insights` (read only, same definitions as above, one module `bookin
 
 ### R12 additions, slice 2: owner's anonymous rank
 `GET /api/v1/partner/status/hotels/{id}/` gains `rank`: `{ position, of }` or `null`. Position among the **active** hotels of the hotel's region by number of counted bookings in the period (same `period` parameters; equal numbers share a position). Only the hotel's own position and the number of hotels are returned, never other hotels. `null` when the hotel has no region, is not active, or its region has fewer than 5 active hotels.
+
+### R12 additions, slice 3: Excel export
+Every endpoint with `?export=csv` also accepts `?export=xlsx` (admin hotels list, admin guests list, guest history, owner reconciliation): same permissions, same filters, same columns, same row limit (`CSV_EXPORT_MAX_ROWS`, then a final row `truncated`). Response: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename="<name>.xlsx"`. Numbers are Excel numbers, everything else is written as text, so a cell like `=HYPERLINK(...)` never runs as a formula. Audit log: same action `export_csv`, `details` gains `format: "xlsx"` (key added to `AdminAccessLog.DETAIL_KEYS`). Any other `export` value returns the normal JSON.

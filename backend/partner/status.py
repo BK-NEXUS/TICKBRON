@@ -26,7 +26,7 @@ from rest_framework.response import Response
 from bookings import metrics
 from bookings.metrics import InvalidPeriod, period_from_request, range_json
 from bookings.models import Booking, BookingItem
-from common.csv_export import csv_response, wants_csv
+from common.csv_export import export_response, wants_export
 from common.dates import business_today
 from partner.views import IsHotelOwner
 from properties.models import Property
@@ -101,7 +101,7 @@ def _reconciliation_csv(request, own):
             for window, row in blocks.get(hotel_id, empty).items():
                 yield [hotel_id, names[hotel_id], window, row['from'], row['to'], row['counted']['bookings'],
                        row['counted']['guests'], row['stayed']['bookings'], row['stayed']['guests']]
-    return csv_response(request, 'partner_reconciliation', RECONCILIATION_CSV_HEADER, lines())
+    return export_response(request, 'partner_reconciliation', RECONCILIATION_CSV_HEADER, lines())
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -114,7 +114,7 @@ def partner_status(request):
     period, date_range, year, granularity = parsed
 
     own = own_properties(request.user)
-    if wants_csv(request):
+    if wants_export(request):
         return _reconciliation_csv(request, own)
     scope = metrics.all_bookings().filter(property__in=own)
     numbers = _numbers(scope, period, date_range, year, granularity, own)
