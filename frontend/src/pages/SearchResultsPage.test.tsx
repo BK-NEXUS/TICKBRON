@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, act, within } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { SearchResultsPage } from './SearchResultsPage'
 import * as propertyAdapter from '../adapters/propertyAdapter'
@@ -315,6 +315,43 @@ describe('SearchResultsPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Map View')).toBeInTheDocument()
+    })
+  })
+
+  describe('map', () => {
+    const located = [{ ...mockProperties[0], latitude: '48.856614', longitude: '2.352222' }]
+
+    const renderSearch = async () => {
+      vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
+        data: { count: 1, next: null, previous: null, results: located, page: 1, page_size: 20, total_pages: 1 },
+        error: null,
+      })
+      const router = createMemoryRouter([{ path: '/search', element: <SearchResultsPage /> }], { initialEntries: ['/search?destination=Paris'] })
+      render(<RouterProvider router={router} />)
+      await screen.findByLabelText('List view')
+    }
+
+    it('the map view puts the results on the map as price pins', async () => {
+      await renderSearch()
+      fireEvent.click(screen.getByLabelText('Map view'))
+      expect(await screen.findByRole('region', { name: 'Map of properties' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Charming Paris Apartment, €150/ })).toBeInTheDocument()
+    })
+
+    it('a card above the filters opens the map view', async () => {
+      await renderSearch()
+      const filters = document.getElementById('search-results-filters') as HTMLElement
+      fireEvent.click(within(filters).getByRole('button', { name: 'Show on map' }))
+      expect(await screen.findByRole('region', { name: 'Map of properties' })).toBeInTheDocument()
+    })
+
+    it('back to the list view brings the cards back', async () => {
+      await renderSearch()
+      fireEvent.click(screen.getByLabelText('Map view'))
+      await screen.findByRole('region', { name: 'Map of properties' })
+      fireEvent.click(screen.getByLabelText('List view'))
+      expect(await screen.findByText('Charming Paris Apartment')).toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: 'Map of properties' })).toBeNull()
     })
   })
 

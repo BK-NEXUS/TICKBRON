@@ -36,6 +36,22 @@ class TestSeedDemoStats:
     def debug_on(self, settings):
         settings.DEBUG = True
 
+    def test_every_hotel_is_on_the_map_near_its_city_and_no_two_pins_overlap(self):
+        run_seed()
+
+        hotels = list(demo_hotels())
+        assert all(h.latitude is not None and h.longitude is not None for h in hotels)
+        assert all(-90 <= h.latitude <= 90 and -180 <= h.longitude <= 180 for h in hotels)
+        assert len({(h.latitude, h.longitude) for h in hotels}) == len(hotels)
+        tashkent = [h for h in hotels if h.city == 'Tashkent']
+        assert all(abs(float(h.latitude) - 41.31) < 0.2 and abs(float(h.longitude) - 69.28) < 0.2 for h in tashkent)
+
+    def test_running_twice_keeps_the_same_coordinates(self):
+        run_seed()
+        first = {h.pk: (h.latitude, h.longitude) for h in demo_hotels()}
+        run_seed()
+        assert {h.pk: (h.latitude, h.longitude) for h in demo_hotels()} == first
+
     def test_refuses_to_run_without_debug(self, settings):
         settings.DEBUG = False
         with pytest.raises(CommandError):

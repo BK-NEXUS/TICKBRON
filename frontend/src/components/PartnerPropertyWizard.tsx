@@ -1,6 +1,8 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
+import { LocationPicker } from './LocationPicker'
+import { toCoordinates } from '../utils/coordinates'
 import { GeographyPicker, type GeographyLabels, type GeographyValue } from './GeographyPicker'
 
 interface PartnerPropertyWizardProps {
@@ -47,6 +49,24 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     setError(null)
   }
 
+  /** Both coordinates or neither; the backend repeats the range check. */
+  const validateCoordinates = (): boolean => {
+    const { latitude, longitude } = formData
+    if ((latitude === undefined) !== (longitude === undefined)) {
+      setError(t('partner.coordinatesTogether'))
+      return false
+    }
+    if (latitude !== undefined && Math.abs(latitude) > 90) {
+      setError(t('partner.latitudeRange'))
+      return false
+    }
+    if (longitude !== undefined && Math.abs(longitude) > 180) {
+      setError(t('partner.longitudeRange'))
+      return false
+    }
+    return true
+  }
+
   const validateStep = (step: WizardStep): boolean => {
     switch (step) {
       case 'basic':
@@ -80,6 +100,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           setError(t('partner.cityIsRequired'))
           return false
         }
+        return validateCoordinates()
         return true
       case 'amenities':
         return true // No required fields
@@ -253,13 +274,20 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   className="form-input"
                 />
               </div>
+              <LocationPicker
+                value={toCoordinates(formData.latitude, formData.longitude)}
+                onChange={point => {
+                  setFormData(prev => ({ ...prev, latitude: point?.lat, longitude: point?.lng }))
+                  setError(null)
+                }}
+              />
               <div className="form-group">
                 <label htmlFor="latitude">{t('partner.latitude')}</label>
                 <input
                   id="latitude"
                   type="number"
                   step="any"
-                  value={formData.latitude || ''}
+                  value={formData.latitude ?? ''}
                   onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="form-input"
                 />
@@ -270,7 +298,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   id="longitude"
                   type="number"
                   step="any"
-                  value={formData.longitude || ''}
+                  value={formData.longitude ?? ''}
                   onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="form-input"
                 />
@@ -395,7 +423,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 <p><strong>{t('partner.state')}</strong> {locationLabels.region}</p>
                 {formData.postal_code && <p><strong>{t('partner.postalCode2')}</strong> {formData.postal_code}</p>}
                 <p><strong>{t('partner.country2')}</strong> {locationLabels.country}</p>
-                {formData.latitude && formData.longitude && (
+                {formData.latitude !== undefined && formData.longitude !== undefined && (
                   <p><strong>{t('partner.coordinates')}</strong> {formData.latitude}, {formData.longitude}</p>
                 )}
               </div>

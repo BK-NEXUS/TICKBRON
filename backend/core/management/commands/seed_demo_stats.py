@@ -40,6 +40,23 @@ BOOKING_COUNT = 250
 GUEST_COUNT = 60
 SEED = 2026
 
+# City centres (latitude, longitude) for the map; each hotel gets a small fixed offset so pins do not overlap
+CITY_CENTERS = {
+    'Tashkent': (Decimal('41.311081'), Decimal('69.279737')),
+    'Samarkand': (Decimal('39.654823'), Decimal('66.975670')),
+    'Bukhara': (Decimal('39.767966'), Decimal('64.421728')),
+    'Almaty': (Decimal('43.238949'), Decimal('76.889709')),
+    'Istanbul': (Decimal('41.008238'), Decimal('28.978359')),
+    'Cappadocia': (Decimal('38.643146'), Decimal('34.828866')),
+}
+
+
+def _map_point(city, number):
+    """The city centre moved by a fixed step that differs for every hotel number (1-12)."""
+    lat, lng = CITY_CENTERS[city]
+    return lat + Decimal(number % 4) * Decimal('0.004'), lng + Decimal((number // 4) % 3) * Decimal('0.005')
+
+
 # (country, region or None, city, hotel name, address, nightly price, currency)
 # R6: hotels in Uzbekistan are priced in whole so'm, the others in USD (the only supported currencies)
 DEMO_HOTELS = [
@@ -132,6 +149,7 @@ class Command(BaseCommand):
                 registered - timedelta(days=number), role=owner_role,
             )
             price = Decimal(price)
+            latitude, longitude = _map_point(city, number)
             prop, _ = Property.objects.update_or_create(
                 owner=owner,
                 address_line1=address,
@@ -139,6 +157,7 @@ class Command(BaseCommand):
                     'property_type': hotel_type, 'status': 'active', 'is_active': True,
                     'max_guests': 3, 'bedrooms': 1, 'bathrooms': 1,
                     'city': city, 'state': region, 'country': country,
+                    'latitude': latitude, 'longitude': longitude,
                     'base_price': price, 'currency': currency, 'has_wifi': True,
                     'approved_at': registered,
                 },

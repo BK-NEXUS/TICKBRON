@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PartnerPropertyWizard } from './PartnerPropertyWizard'
 import { settle } from '../test/utils'
@@ -18,6 +18,11 @@ vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
     getCities: vi.fn().mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null }),
   },
 }))
+
+const goToLocationStep = async () => {
+  fireEvent.click(screen.getByText('Next'))
+  await screen.findByText('Location Details')
+}
 
 /** Pick Uzbekistan > Tashkent > Chilanzar in the location step. */
 async function pickLocation() {
@@ -159,6 +164,87 @@ describe('PartnerPropertyWizard', () => {
     fireEvent.click(screen.getByText('Next'))
     expect(await screen.findByRole('alert')).toHaveTextContent('Country is required')
     expect(screen.getByText('Location Details')).toBeInTheDocument()
+  })
+
+  describe('property location on the map', () => {
+    beforeEach(() => {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 400 })
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 300 })
+    })
+
+    afterEach(() => {
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientWidth
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight
+    })
+
+    it('clicking the map fills the latitude and longitude fields', async () => {
+      const { container } = render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, { clientX: 200, clientY: 150 })
+      expect(Number((screen.getByLabelText('Latitude') as HTMLInputElement).value)).toBeCloseTo(41.3, 0)
+      expect(Number((screen.getByLabelText('Longitude') as HTMLInputElement).value)).toBeCloseTo(64.6, 0)
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1)
+    })
+
+    it('typing the coordinates puts the pin on the map', async () => {
+      const { container } = render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '39.654823' } })
+      fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '66.97567' } })
+      expect(container.querySelector('.leaflet-marker-icon')).toHaveAttribute('title', 'Property location: 39.654823, 66.97567')
+    })
+
+    it('Remove location clears both fields', async () => {
+      const { container } = render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, { clientX: 200, clientY: 150 })
+      fireEvent.click(screen.getByRole('button', { name: 'Remove location' }))
+      expect(screen.getByLabelText('Latitude')).toHaveValue(null)
+      expect(screen.getByLabelText('Longitude')).toHaveValue(null)
+    })
+
+    it('sends the chosen coordinates with the new property', async () => {
+      const { partnerAdapter } = await import('../adapters/partnerAdapter')
+      vi.mocked(partnerAdapter.createProperty).mockResolvedValueOnce({ data: { id: 9 } as never, error: null })
+      render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
+      await pickLocation()
+      fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '39.654823' } })
+      fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '66.97567' } })
+      fireEvent.click(screen.getByText('Next'))
+      await screen.findByText('Amenities & Features')
+      fireEvent.click(screen.getByText('Next'))
+      await screen.findByText('Pricing')
+      fireEvent.click(screen.getByText('Next'))
+      await screen.findByText('Confirm Property Details')
+      expect(screen.getByText('39.654823, 66.97567')).toBeInTheDocument()
+      fireEvent.click(screen.getByText('Create Property'))
+      await waitFor(() => expect(partnerAdapter.createProperty).toHaveBeenLastCalledWith(
+        expect.objectContaining({ latitude: 39.654823, longitude: 66.97567, city_ref: 100 })))
+    })
+
+    it('asks for both coordinates or neither', async () => {
+      render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
+      await pickLocation()
+      fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '41.3' } })
+      fireEvent.click(screen.getByText('Next'))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Enter both latitude and longitude, or neither.')
+      expect(screen.getByText('Location Details')).toBeInTheDocument()
+    })
+
+    it('refuses coordinates outside the world', async () => {
+      render(<PartnerPropertyWizard />)
+      await goToLocationStep()
+      fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
+      await pickLocation()
+      fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '95' } })
+      fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '10' } })
+      fireEvent.click(screen.getByText('Next'))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Latitude must be between -90 and 90')
+    })
   })
 
   it('should call onCancel when cancel button is clicked', () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Map as MapIcon, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
 import type { PromotedProperty } from '../adapters/promotionAdapter'
@@ -8,6 +8,8 @@ import { PropertyCard } from '../components/PropertyCard'
 import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
+import { PropertiesMap } from '../components/PropertiesMap'
+import { ShowOnMapCard } from '../components/ShowOnMapCard'
 import { SearchForm } from '../components/SearchForm'
 import { useI18n } from '../i18n/I18nContext'
 import {
@@ -180,6 +182,7 @@ export function SearchResultsPage() {
               id="search-results-filters"
               className={`search-results-sidebar${filtersOpen ? ' search-results-sidebar--open' : ''}`}
             >
+              <ShowOnMapCard onShow={() => handleViewChange('map')} />
               <SearchFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
@@ -266,14 +269,9 @@ export function SearchResultsPage() {
                     </div>
                   ) : (
                     <div className="search-results-map">
-                      <div className="search-results-map-placeholder">
-                        <div className="search-results-map-placeholder-content">
-                          <span className="search-results-map-placeholder-icon"><MapIcon size={48} /></span>
-                          <h2>{t('search.mapTitle')}</h2>
-                          <p>{t('search.mapSoon')}</p>
-                          <p>{tp('search.mapCount', properties.length)}</p>
-                        </div>
-                      </div>
+                      <h2 className="search-results-map-title">{t('search.mapTitle')}</h2>
+                      <p>{tp('search.mapCount', properties.length)}</p>
+                      <PropertiesMap properties={properties} />
                     </div>
                   )}
                 </>
