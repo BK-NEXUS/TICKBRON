@@ -141,7 +141,7 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
         model = RoomType
         fields = [
             'id', 'property', 'name', 'slug', 'description', 'base_occupancy', 'max_occupancy',
-            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size'
+            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'is_vip'
         ]
         read_only_fields = ['id']
         extra_kwargs = {'description': {'max_length': 2000}}

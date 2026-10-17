@@ -1032,3 +1032,9 @@ Plan: `.ai/PLAN_R11_CANCELLATION.md` (approved by the owner 2026-10-17). The rul
 - `POST/PATCH /partner/rates/` accept `free_cancel_hours` and `cancel_refund_percent` (400 outside the ranges or for text; `null` clears). Changing a plan never changes a booking already made.
 
 **Setting.** `CANCEL_REFUND_PERCENT` (env, 0-100, default 50; startup fails otherwise), documented in `backend/.env.example`.
+
+## 2026-10-17 VIP rooms (R9)
+Plan: `.ai/PLAN_R9_VIP.md` v2 (the owner decided: the hotel owner marks a room type as VIP or not, whenever they want; no admin approval; no search filter).
+- `RoomType.is_vip` (boolean, default `false`). Migration `properties/0015_r9_room_type_vip` (additive, reversible).
+- Hotel owner: `is_vip` is a normal writable field of `POST/PATCH /partner/rooms/` and is returned by `GET /partner/rooms/`. Only the owner of the hotel can change its room types (another owner, a guest and an anonymous visitor are refused as before); a value that is not a boolean is 400.
+- Public: `GET /properties/{id}/` `room_types[].is_vip` and `GET /properties/{id}/availability/` `room_types[].is_vip`. **VIP room types come first in both lists**, the rest keep the usual order (by name); several VIP rooms are in name order too. Prices are unchanged: a VIP room type has its own rate plans and nightly prices.

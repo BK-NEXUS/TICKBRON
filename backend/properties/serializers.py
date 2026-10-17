@@ -330,13 +330,15 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 'total_rooms': room_type.total_rooms,
                 'bed_configuration': room_type.bed_configuration,
                 'room_size': room_type.room_size,
+                'is_vip': room_type.is_vip,
                 'rate_plans': rate_plans_data,
                 'photos': room_photos_data,
                 'amenities': room_amenities_data,
             }
             room_types_data.append(room_type_data)
-        
-        return room_types_data
+
+        # VIP rooms first; sorted() is stable, so every group keeps the usual order
+        return sorted(room_types_data, key=lambda room: not room['is_vip'])
 
 
 class SearchParamsSerializer(serializers.Serializer):
@@ -602,7 +604,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
         model = RoomType
         fields = [
             'id', 'name', 'slug', 'description', 'base_occupancy', 'max_occupancy',
-            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'rate_plans'
+            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'is_vip', 'rate_plans'
         ]
         read_only_fields = ['id']
     
@@ -641,9 +643,10 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
     def get_room_types(self, obj):
         """Get room types with availability data for this property."""
         request = self.context.get('request')
+        # VIP rooms first, then by name
         room_types = obj.room_types.filter(
             is_deleted=False
-        ).order_by('name')
+        ).order_by('-is_vip', 'name')
         
         return RoomTypeAvailabilitySerializer(
             room_types,

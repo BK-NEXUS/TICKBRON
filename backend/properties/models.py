@@ -629,6 +629,12 @@ class RoomType(BaseModel):
         help_text=_('Room size in square meters')
     )
     
+    # R9: set by the hotel owner at will, no approval (.ai/PLAN_R9_VIP.md v2); VIP rooms are listed first
+    is_vip = models.BooleanField(
+        default=False,
+        help_text=_('A VIP room: shown first and with a badge')
+    )
+
     class Meta:
         db_table = 'room_types'
         verbose_name = 'Room Type'
