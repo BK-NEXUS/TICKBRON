@@ -32,12 +32,23 @@ interface RankedRow {
   revenue: Money[]
 }
 
-export interface StatusCountry extends RankedRow {
+/** Names of a place in the three languages; the "Unspecified" group carries the English word in all three. */
+interface PlaceNames {
+  name_uz: string
+  name_ru: string
+  name_en: string
+}
+
+export interface StatusCountry extends RankedRow, PlaceNames {
+  /** ISO code, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  code: string | null
   country: string
   hotels: number
 }
 
-export interface StatusRegion extends RankedRow {
+export interface StatusRegion extends RankedRow, PlaceNames {
+  /** Region id, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  id: number | null
   region: string
   hotels: number
 }

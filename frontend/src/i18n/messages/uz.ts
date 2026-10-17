@@ -1494,4 +1494,5 @@ export const uz: Catalog = {
   'geo.noCities': "Bu viloyat uchun hozircha shaharlar yoʻq.",
   'location.saved': "Joylashuv saqlandi",
   'location.save': "Joylashuvni saqlash",
+  'status.unspecified': "Koʻrsatilmagan",
 }

@@ -1492,6 +1492,7 @@ export const en = {
   'geo.noCities': "No cities available for this region yet.",
   'location.saved': "Location saved",
   'location.save': "Save location",
+  'status.unspecified': "Unspecified",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

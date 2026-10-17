@@ -1526,4 +1526,5 @@ export const ru: Catalog = {
   'geo.noCities': "Для этого региона пока нет городов.",
   'location.saved': "Местоположение сохранено",
   'location.save': "Сохранить местоположение",
+  'status.unspecified': "Не указано",
 }
