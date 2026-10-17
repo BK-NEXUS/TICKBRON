@@ -2869,3 +2869,10 @@ Plan `.ai/PLAN_R11_CANCELLATION.md` (approved by the owner), contract `API_CONTR
 - The rate plan note on the property page was not seen in the browser (the property page shows no rate plan cards without choosing dates); it is covered by tests only. The quote note on the booking page and the payment-step note were covered by tests only too.
 - The guest's cancel button is hidden on the check-in day and after (the backend refuses those online); the hotel and support handle them by hand.
 - No notification to the guest/owner about a cancellation refund yet; provider-side partial refunds (Payme/Click) are unverified in their sandboxes (RELEASE_CHECKLIST).
+
+## R9 VIP rooms: frontend (2026-10-17)
+Contract: `API_CONTRACT.md` "VIP rooms (R9)". The backend already lists VIP room types first; the frontend keeps that order.
+- `components/VipBadge.tsx` (crown + "VIP", keys `vip.*` in uz/ru/en) shows on `RoomCard`, in both price summaries of `BookingPage`, and on the owner's room cards.
+- Owner form (`PartnerRoomsManagement`): checkbox "This is a VIP room" with help text; `is_vip` is sent on create and update and loaded on edit. No admin step, no search filter (owner decision).
+- Tests: `VipBadge.test.tsx`, `PartnerRoomsManagement.vip.test.tsx` (3), RoomCard and BookingPage VIP cases.
+- Not done: real-stack Chromium check at 1440/390px for the badge.

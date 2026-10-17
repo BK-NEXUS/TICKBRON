@@ -83,6 +83,8 @@ export interface RoomType {
   total_rooms: number
   bed_configuration: string
   room_size?: number
+  /** R9: set by the hotel owner; VIP rooms come first */
+  is_vip?: boolean
 }
 
 export interface RatePlan {

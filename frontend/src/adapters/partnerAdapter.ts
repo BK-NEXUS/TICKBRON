@@ -103,6 +103,7 @@ export interface PartnerRoomType {
   total_rooms: number
   bed_configuration: string
   room_size?: number
+  is_vip: boolean
   created_at: string
   updated_at: string
 }
@@ -119,6 +120,7 @@ export interface CreateRoomTypeRequest {
   total_rooms: number
   bed_configuration: string
   room_size?: number
+  is_vip: boolean
 }
 
 export interface UpdateRoomTypeRequest {
@@ -132,6 +134,7 @@ export interface UpdateRoomTypeRequest {
   total_rooms?: number
   bed_configuration?: string
   room_size?: number
+  is_vip?: boolean
 }
 
 // Rate Plan types from backend contract

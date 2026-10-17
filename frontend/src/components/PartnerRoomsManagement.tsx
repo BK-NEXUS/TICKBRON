@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
+import { VipBadge } from './VipBadge'
 import { partnerAdapter, PartnerRoomType, CreateRoomTypeRequest, UpdateRoomTypeRequest } from '../adapters/partnerAdapter'
 
 interface PartnerRoomsManagementProps {
@@ -34,6 +35,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
     total_rooms: 1,
     bed_configuration: '',
     room_size: undefined,
+    is_vip: false,
   })
 
   useEffect(() => {
@@ -108,6 +110,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         total_rooms: formData.total_rooms,
         bed_configuration: formData.bed_configuration,
         room_size: formData.room_size,
+        is_vip: formData.is_vip,
       }
 
       const response = await partnerAdapter.updateRoomType(selectedRoomType.id, updateData)
@@ -170,6 +173,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
       total_rooms: roomType.total_rooms,
       bed_configuration: roomType.bed_configuration,
       room_size: roomType.room_size,
+      is_vip: roomType.is_vip,
     })
     setViewMode('edit')
   }
@@ -215,6 +219,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
       total_rooms: 1,
       bed_configuration: '',
       room_size: undefined,
+      is_vip: false,
     })
   }
 
@@ -265,7 +270,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           {roomTypes.map(roomType => (
             <div key={roomType.id} className="room-type-card">
               <div className="room-type-card-header">
-                <h3 className="room-type-name">{roomType.name}</h3>
+                <h3 className="room-type-name">{roomType.name} {roomType.is_vip && <VipBadge />}</h3>
                 <span className="room-type-slug">{roomType.slug}</span>
               </div>
               <div className="room-type-card-body">
@@ -506,6 +511,19 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             required
             aria-required="true"
           />
+        </div>
+
+        <div className="form-group checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              checked={formData.is_vip}
+              onChange={(e) => handleInputChange('is_vip', e.target.checked)}
+              aria-describedby="is_vip_help"
+            />
+            <span>{t('vip.switch')}</span>
+          </label>
+          <small id="is_vip_help">{t('vip.help')}</small>
         </div>
 
         <div className="form-actions">
