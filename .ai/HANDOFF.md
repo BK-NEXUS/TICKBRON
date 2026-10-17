@@ -2880,3 +2880,6 @@ Contract: `API_CONTRACT.md` "VIP rooms (R9)". The backend already lists VIP room
 ## R12 additions, slice 1 backend: insights (2026-10-17)
 Plan `.ai/PLAN_R12_ADDITIONS.md` (approved: occupancy by hotel rooms x days, rank by number of bookings and hidden below 5 hotels, XlsxWriter for Excel). Slice 1 = `metrics.insights()` + field `insights` on owner summary, owner hotel detail and admin hotel detail (contract in API_CONTRACT.md). 11 unit tests (`bookings/tests/test_r12_insights.py`) + 4 endpoint tests. The fixed query ceilings of 4 "query count is constant" tests were raised by 2 (19 -> 21 owner, 15 -> 17 admin hotel detail): insights adds a fixed number of queries; the tests still prove the count does not grow with the data.
 Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
+
+### R12 additions, slice 2 backend: anonymous rank (2026-10-17)
+`metrics.region_rank()` + field `rank` on the owner hotel detail; 5 tests in `partner/tests/test_r12_partner_status.py` (hidden below 5 hotels, position, ties, no other hotel data, no region). Rank is on the hotel detail only, not on the owner summary.

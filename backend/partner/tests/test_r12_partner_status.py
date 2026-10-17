@@ -166,3 +166,50 @@ class TestInsights:
     def test_all_time_has_no_comparison(self, status_world):
         data = get_as(status_world['owners'][0], f'{P}/').data['insights']
         assert data['previous_period'] is None and data['change_pct'] is None
+
+
+@pytest.mark.django_db
+class TestRegionRank:
+    """Owner's anonymous rank among the active hotels of the region, by counted bookings."""
+
+    def _more_hotels(self, status_world, count):
+        from properties.models import Property
+        alpha = status_world['hotels']['alpha']
+        for n in range(count):
+            Property.objects.create(
+                owner=status_world['owners'][1], property_type=alpha.property_type, status='active', max_guests=2,
+                address_line1=f'{n} Rank Street', country_ref=alpha.country_ref, region_ref=alpha.region_ref,
+                city_ref=alpha.city_ref, city='Tashkent', base_price=1, currency='USD')
+
+    def rank(self, status_world, hotel, **params):
+        owner = status_world['owners'][0]
+        return get_as(owner, f'{P}/hotels/{hotel.id}/', **params).data['rank']
+
+    def test_hidden_when_the_region_has_fewer_than_five_hotels(self, status_world):
+        self._more_hotels(status_world, 2)   # alpha, beta + 2 = 4
+        assert self.rank(status_world, status_world['hotels']['alpha'], period='2026') is None
+
+    def test_position_and_count_from_five_hotels(self, status_world):
+        self._more_hotels(status_world, 3)   # 5 hotels
+        alpha, beta = status_world['hotels']['alpha'], status_world['hotels']['beta']
+        # 2026: alpha has 3 counted bookings, beta 1, the three new ones 0
+        assert self.rank(status_world, alpha, period='2026') == {'position': 1, 'of': 5}
+        assert self.rank(status_world, beta, period='2026') == {'position': 2, 'of': 5}
+
+    def test_ties_share_the_position(self, status_world):
+        self._more_hotels(status_world, 3)
+        # 2025: only beta has a counted booking; alpha and the new hotels tie at 0 and share position 2
+        assert self.rank(status_world, status_world['hotels']['beta'], period='2025') == {'position': 1, 'of': 5}
+        assert self.rank(status_world, status_world['hotels']['alpha'], period='2025') == {'position': 2, 'of': 5}
+
+    def test_nothing_about_other_hotels_is_returned(self, status_world):
+        self._more_hotels(status_world, 3)
+        owner = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        data = get_as(owner, f'{P}/hotels/{beta.id}/', period='2026').data
+        assert set(data['rank']) == {'position', 'of'}
+
+    def test_hotel_without_a_region_has_no_rank(self, status_world):
+        owner2 = status_world['owners'][1]
+        gamma = status_world['hotels']['gamma']
+        assert get_as(owner2, f'{P}/hotels/{gamma.id}/', period='2026').data['rank'] is None

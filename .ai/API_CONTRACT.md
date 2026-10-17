@@ -1048,3 +1048,6 @@ Added field `insights` (read only, same definitions as above, one module `bookin
 - `occupancy_rate`: string `"11.43"` = room nights (by check-in date) / (rooms of the hotel(s) x days of the period), capped at 100; `null` for `period=all` or when the hotels have no rooms. Rooms = SUM of `total_rooms` of the not-deleted room types
 - `average_booking_value`: `[{currency, amount}]` per currency (booking value / bookings), `[]` without bookings
 - `average_stay_nights`: string `"2.33"` = nights / bookings, `null` without bookings
+
+### R12 additions, slice 2: owner's anonymous rank
+`GET /api/v1/partner/status/hotels/{id}/` gains `rank`: `{ position, of }` or `null`. Position among the **active** hotels of the hotel's region by number of counted bookings in the period (same `period` parameters; equal numbers share a position). Only the hotel's own position and the number of hotels are returned, never other hotels. `null` when the hotel has no region, is not active, or its region has fewer than 5 active hotels.

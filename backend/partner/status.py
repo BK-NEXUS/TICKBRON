@@ -167,6 +167,7 @@ def partner_status_hotel(request, property_id):
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
             'city': prop.city, 'region': prop.region, 'country': prop.country,
         },
+        'rank': metrics.region_rank(prop, date_range),
         **numbers,
     })
 

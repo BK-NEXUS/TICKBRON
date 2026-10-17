@@ -534,6 +534,30 @@ def rooms_offered(properties):
         total=Coalesce(Sum('total_rooms'), 0))['total']
 
 
+RANK_MIN_HOTELS = 5   # below this a rank would let owners guess who is who
+
+
+def region_rank(prop, date_range):
+    """
+    {'position', 'of'}: the hotel's place among the active hotels of its region by counted
+    bookings in the period (equal numbers share a place). Only the hotel's own place and the
+    number of hotels leave this function. None without a region, when the hotel is not active
+    or when the region has fewer than RANK_MIN_HOTELS active hotels.
+    """
+    from properties.models import Property
+    if not prop.region_ref_id:
+        return None
+    peers = Property.objects.filter(region_ref_id=prop.region_ref_id, status='active', is_deleted=False)
+    peer_ids = list(peers.values_list('id', flat=True))
+    if len(peer_ids) < RANK_MIN_HOTELS or prop.id not in peer_ids:
+        return None
+    scope = all_bookings().filter(property_id__in=peer_ids)
+    counts = dict(scope.filter(counted_q('', date_range, fully_refunded_ids(scope)))
+                  .values_list('property_id').annotate(total=Count('id')).order_by())
+    own = counts.get(prop.id, 0)
+    return {'position': 1 + sum(1 for total in counts.values() if total > own), 'of': len(peer_ids)}
+
+
 def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=None):
     """
     Derived numbers of the Status pages for the bookings in `scope`, from their `totals`
