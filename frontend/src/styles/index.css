@@ -156,27 +156,50 @@ body {
   gap: var(--spacing-sm);
 }
 
-/* Brand logo (components/BrandLogo.tsx). The JPG has a cream background, so every
-   place it appears sits on --color-background-alt (cream). */
+/* Brand logo (components/BrandLogo.tsx): transparent artwork, so it sits on any page color.
+   Every logo is rendered twice, with dark ink and with light ink; only the one for the theme shows. */
 .brand-logo {
   display: block;
   height: auto;
   object-fit: contain;
 }
 
+.brand-logo--dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brand-logo:not(.brand-logo--dark) {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .brand-logo--dark {
+    display: block;
+  }
+}
+
+:root[data-theme='dark'] .brand-logo:not(.brand-logo--dark) {
+  display: none;
+}
+
+:root[data-theme='dark'] .brand-logo--dark {
+  display: block;
+}
+
+/* The symbol is wider than tall: size it by height */
 .brand-logo--header {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
+  height: 36px;
+  width: auto;
 }
 
 .brand-logo--footer {
-  width: 112px;
+  width: 128px;
   margin-bottom: var(--spacing-md);
 }
 
 .brand-logo--auth {
-  width: 168px;
+  width: 240px;
+  max-width: 80%;
   margin: 0 auto var(--spacing-lg);
 }
 
@@ -234,6 +257,8 @@ body {
 
 .header-mobile-toggle {
   display: none;
+  min-width: 44px;
+  min-height: 44px;
   background: none;
   border: none;
   padding: var(--spacing-sm);
@@ -2018,8 +2043,7 @@ table .btn {
   }
 
   .brand-logo--header {
-    width: 36px;
-    height: 36px;
+    height: 30px;
   }
   
   .hero-title {
@@ -2265,7 +2289,7 @@ table .btn {
 /* Property Detail Content */
 .property-detail-content {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: var(--spacing-2xl);
   padding: var(--spacing-2xl) 0 var(--spacing-3xl);
 }
@@ -2274,6 +2298,7 @@ table .btn {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
+  min-width: 0;
 }
 
 .property-detail-section {
@@ -2471,7 +2496,7 @@ table .btn {
   }
 
   .property-detail-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .property-detail-sidebar {
@@ -2497,7 +2522,7 @@ table .btn {
   }
 
   .property-detail-content {
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: minmax(0, 1fr) 280px;
   }
 
   .property-detail-info {
@@ -2511,7 +2536,7 @@ table .btn {
 
 @media (min-width: 1024px) and (max-width: 1439px) {
   .property-detail-content {
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: minmax(0, 1fr) 300px;
   }
 
   .property-detail-info {
@@ -2918,7 +2943,7 @@ table .btn {
   }
 
   .property-detail-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .property-detail-sidebar {
@@ -2949,7 +2974,7 @@ table .btn {
   }
 
   .property-detail-content {
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: minmax(0, 1fr) 280px;
   }
 
   .property-detail-info {
@@ -2968,7 +2993,7 @@ table .btn {
 
 @media (min-width: 1024px) and (max-width: 1439px) {
   .property-detail-content {
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: minmax(0, 1fr) 300px;
   }
 
   .property-detail-info {
@@ -3826,7 +3851,7 @@ table .btn {
 
 .availability-calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-sm);
 }
@@ -3841,7 +3866,7 @@ table .btn {
 
 .availability-calendar-days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-lg);
 }
@@ -4246,6 +4271,7 @@ table .btn {
 
   .availability-calendar-day {
     min-height: 50px;
+    aspect-ratio: auto;
   }
 
   .availability-calendar-day-price {
@@ -5323,13 +5349,24 @@ table .btn {
   padding-right: 52px;
 }
 
-/* 40px: easier to hit with a thumb than the small button size */
+/* 40px with a mouse, 44px on touch screens (see the coarse-pointer rule below) */
 .auth-password-field .auth-password-toggle {
   position: absolute;
   right: var(--spacing-xs);
   width: 40px;
   height: 40px;
   color: var(--color-text-secondary);
+}
+
+@media (pointer: coarse) {
+  .auth-password-field .auth-password-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .auth-password-field .auth-input {
+    padding-right: 56px;
+  }
 }
 
 .auth-forgot-link {
@@ -5791,6 +5828,9 @@ table .btn {
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
   text-align: right;
+  /* The transaction id is one long word with no break points */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .payment-confirmation-value--amount {
@@ -8519,7 +8559,7 @@ table .btn {
 
 .booking-details-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-lg);
 }
 
@@ -8584,13 +8624,13 @@ table .btn {
 
 @media (min-width: 768px) {
   .booking-details-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
   .booking-details-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   
   .booking-detail-section:nth-child(1),

@@ -21,6 +21,11 @@ describe('button styles', () => {
     expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.btn:not\(\.btn-link\) \{\s*--btn-height: 44px;/)
   })
 
+  it('give the menu button and the show-password button a 44px touch target', () => {
+    expect(rule('.header-mobile-toggle')).toMatch(/min-width: 44px;[\s\S]*min-height: 44px/)
+    expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.auth-password-field \.auth-password-toggle \{\s*width: 44px;\s*height: 44px;/)
+  })
+
   it('stop moving with prefers-reduced-motion', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.btn \{\s*transition: none;/)
   })

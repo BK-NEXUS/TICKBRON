@@ -106,6 +106,7 @@ export function FavoritesPage() {
       <div className="favorites-page">
         <div className="container">
           <EmptyState
+            headingLevel={1}
             icon={<Heart size={40} />}
             title={t('favorites.emptyTitle')}
             message={t('favorites.emptyText')}

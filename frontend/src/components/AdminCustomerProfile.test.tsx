@@ -259,6 +259,18 @@ describe('AdminCustomerProfile', () => {
     expect(screen.getByText('$200.00')).toBeInTheDocument()
   })
 
+  it.each([
+    ['Bookings (1)', 'Customer bookings'],
+    ['Payments (1)', 'Customer payments'],
+  ])('keeps the %s table inside a scrolling box so a phone page never widens', async (tabLabel, tableName) => {
+    (adminAdapter.getCustomerProfile as never).mockResolvedValueOnce({ data: mockCustomerProfile, error: null })
+    renderWithRouter(<AdminCustomerProfile />)
+
+    fireEvent.click(await screen.findByText(tabLabel))
+
+    expect(screen.getByRole('table', { name: tableName }).parentElement).toHaveClass('table-scroll')
+  })
+
   it('should render internal notes tab with note list', async () => {
     (adminAdapter.getCustomerProfile as never).mockResolvedValueOnce({
       data: mockCustomerProfile,

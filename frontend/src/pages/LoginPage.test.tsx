@@ -68,7 +68,7 @@ describe('LoginPage', () => {
       await renderWithRouter(<LoginPage />)
 
       const logo = screen.getByRole('img', { name: 'TICKBRON — Online Booking' })
-      expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.jpg')
+      expect(logo).toHaveAttribute('src', '/brand/tickbron-logo.webp')
       expect(logo).toHaveClass('brand-logo--auth')
     })
 

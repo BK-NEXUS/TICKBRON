@@ -77,6 +77,20 @@ export class Audit {
     await this.page.waitForTimeout(400)
     const mobile = path.join(this.dir, `${base}-mobile.png`)
     await this.page.screenshot({ path: mobile, fullPage: true })
+    // A wider page than the screen means something (often a long unbroken value) is cut off or scrolls sideways
+    const { sideways, offenders } = await this.page.evaluate(() => {
+      const width = document.documentElement.clientWidth
+      const wide = [...document.querySelectorAll('body *')]
+        .filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > width + 1)
+      return {
+        sideways: document.documentElement.scrollWidth - width,
+        // the outermost wide elements: their parents fit
+        offenders: wide.filter((el) => !wide.includes(el.parentElement as Element)).slice(0, 3)
+          .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).trim().split(/\s+/)[0]}`),
+      }
+    })
+    expect.soft(sideways, `${base}: the page is ${sideways}px wider than a 390px screen (${offenders.join(', ')})`)
+      .toBeLessThanOrEqual(0)
     await this.page.setViewportSize(DESKTOP)
     await this.page.waitForTimeout(200)
     this.screenshots.push(desktop, mobile)
