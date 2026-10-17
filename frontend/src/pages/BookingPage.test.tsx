@@ -591,6 +591,35 @@ describe('BookingPage', () => {
         expect(note).toHaveTextContent('50% of your payment')
       })
 
+      it('tells the guest about cancelling these dates before they pay (R11)', async () => {
+        mockPropertyAdapter.getQuote.mockResolvedValue({
+          data: {
+            ...quote('515.00').data,
+            cancellation_terms: { free_cancellation: true, free_until: '2099-01-01T00:00:00+05:00', refund_percent_after: 50 },
+          },
+          error: null,
+        })
+        renderWithRouter(<BookingPage />)
+        const note = await screen.findByTestId('cancellation-note')
+        expect(note).toHaveTextContent('Free cancellation until')
+        expect(note).toHaveTextContent('After that, 50% of your payment is refunded.')
+      })
+
+      it('says "non-refundable" when the quote promises no refund', async () => {
+        mockPropertyAdapter.getQuote.mockResolvedValue({
+          data: { ...quote('515.00').data, cancellation_terms: { free_cancellation: false, free_until: null, refund_percent_after: 0 } },
+          error: null,
+        })
+        renderWithRouter(<BookingPage />)
+        expect(await screen.findByTestId('cancellation-note')).toHaveTextContent('Non-refundable')
+      })
+
+      it('shows nothing about cancelling when the quote has no terms', async () => {
+        renderWithRouter(<BookingPage />)
+        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
+        expect(screen.queryByTestId('cancellation-note')).toBeNull()
+      })
+
       it('shows no refund sentence when the quote has none', async () => {
         renderWithRouter(<BookingPage />)
         await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
@@ -944,6 +973,22 @@ describe('BookingPage', () => {
       fireEvent.click(screen.getByText('Continue to Payment'))
       expect(await screen.findByRole('alert')).toHaveTextContent('Booking is temporarily unavailable, please try again later')
       expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
+    })
+
+    it('repeats the cancellation terms of the created booking above the payment methods (R11)', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: { ...mockBooking, cancellation_terms: { free_until: null, refund_percent_after: 50 } },
+        error: null,
+      })
+      renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+      fireEvent.click(screen.getByText('Continue to Payment'))
+      await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
+
+      const note = screen.getByTestId('cancellation-note')
+      const methods = screen.getByText('Select Payment Method')
+      expect(note.compareDocumentPosition(methods) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(note).toHaveTextContent('If you cancel, 50% of your payment is refunded.')
     })
 
     describe('card form (test mode)', () => {

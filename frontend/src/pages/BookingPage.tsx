@@ -1,6 +1,7 @@
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { chargeOf } from '../utils/charge'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
+import { CancellationNote } from '../components/CancellationNote'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
@@ -543,6 +544,12 @@ export function BookingPage() {
               <h1>{t('booking.paymentMethod')}</h1>
             </div>
 
+            {booking.cancellation_terms && (
+              <CancellationNote
+                freeUntil={booking.cancellation_terms.free_until}
+                percentAfter={booking.cancellation_terms.refund_percent_after}
+              />
+            )}
             <NoShowRefundNote info={booking} />
 
             <PaymentMethodSelector
@@ -989,6 +996,12 @@ export function BookingPage() {
                           {t('charge.inSom', { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
                         </span>
                       </p>
+                    )}
+                    {quote?.cancellation_terms && (
+                      <CancellationNote
+                        freeUntil={quote.cancellation_terms.free_until}
+                        percentAfter={quote.cancellation_terms.refund_percent_after}
+                      />
                     )}
                     <NoShowRefundNote info={quote} />
                   </>

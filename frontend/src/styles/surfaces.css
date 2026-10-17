@@ -318,3 +318,23 @@ textarea.form-input {
   font-size: 1.25rem;
   font-weight: 600;
 }
+
+.cancellation-note {
+  display: grid;
+  gap: 2px;
+  margin: var(--spacing-xs) 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.cancellation-note p {
+  margin: 0;
+}
+
+.cancellation-note-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}

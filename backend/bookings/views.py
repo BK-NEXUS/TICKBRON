@@ -249,6 +249,7 @@ def booking_cancel(request, booking_id):
         )
 
 
+@extend_schema(responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def booking_cancel_preview(request, booking_id):

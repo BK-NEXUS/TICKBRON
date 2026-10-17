@@ -73,6 +73,8 @@ export interface Booking {
   no_show_refund_amount?: string | null
   no_show_refund_text_key?: string | null
   no_show_refund_text_params?: { percent: number; amount: string | null } | null
+  /** R11: what the rate plan promised about cancelling, copied when the booking was made; null on older bookings */
+  cancellation_terms?: { free_until: string | null; refund_percent_after: number } | null
 }
 
 // Review types from backend contract
