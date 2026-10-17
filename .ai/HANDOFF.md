@@ -2835,3 +2835,18 @@ Branch `claude/tickbron-email-registration-gh4p45`. No backend change; contract 
 - **What should the currency selector (UZS / USD) do?** The contract shows the hotel's own price plus "≈ so'm". It gives no dollar equivalent for a hotel priced in so'm (`uzs_rate` is null for those), and the frontend must not convert money itself. So the selector still changes nothing visible. Options: (a) backend adds `base_price_usd_approx` for so'm hotels and the selector picks which currency leads on cards; (b) remove the selector and keep "own price ≈ so'm". Not built until the owner decides.
 ### Found, not fixed
 - The promo banner (`PromoCarousel`) shows the hotel price without "≈ so'm". Room prices on the property page have no so'm equivalent (the API sends one only for `base_price`). The rejected-rates table has no header row.
+
+## R11 property page: photos, full-screen view, map; free-cancellation plan (frontend + docs, 2026-10-17)
+Branch `claude/tickbron-email-registration-gh4p45`. Frontend only; no API change.
+- **Gallery bug found and fixed:** `PropertyGallery` never drew the photos: it printed the file name inside a grey box (main image and thumbnails). It now shows real `<img>` (alt text from the photo, else a generated one), real thumbnails (lazy), and a "View all N photos" button.
+- **Full-screen view** (`PhotoLightbox`): a modal dialog (focus kept inside, Escape closes, focus returns), arrows and arrow keys with wrap-around, counter "2 of 12", caption, a click beside the photo closes it; a single photo has no arrows. Opens from the main photo or from "View all".
+- **Property map** (`PropertyLocationMap`) under the address on the property page: one pin, zoom buttons, no wheel-zoom (so the page still scrolls), OpenStreetMap attribution, "Open a larger map" link (OpenStreetMap, new tab, `noopener`). Nothing is drawn without a valid location.
+- **Already existed (my earlier audit was wrong about the scores):** reviews with the five category scores (`property_scores`, `RatingBreakdown`, `ReviewCard`), grouped amenities, policies, nearby places, rooms, and the total price for the nights (quote).
+- **Free cancellation badge: NOT built, waits for the owner.** The backend has no rule for it (free-text `cancellation_policy`; a guest cancelling gets no refund). `.ai/PLAN_R11_CANCELLATION.md` is the plan (per-rate-plan free window + refund percent, snapshot on the booking, refund through `create_refund`, preview before cancelling) with 5 questions and defaults. No code until the owner says "ha".
+- Tests: 27 new (lightbox 7, gallery 6, property map 4, property page 5, plus keys); no existing assertion changed.
+- Checked in Chromium on the real stack (1440px and 390px) with three demo photos added to hotel 3 in the dev database: images load, thumbnails, the full-screen view opens, moves, shows the caption and closes with Escape, the map shows one pin and the link; no sideways overflow.
+### Found, not fixed
+- **Photos are not served in development:** the uploaded files live at `/media/...` (relative URL) but Django has no media route and the Vite dev server does not proxy `/media`; production needs nginx for `/media/` (RELEASE_CHECKLIST). For the browser check I answered `/media/` from disk inside Playwright. Adding a DEBUG-only media route and a Vite proxy would show photos in development.
+- The photo API sends `photo` as a relative path, so a frontend on another domain than the backend would not find it; same-origin (nginx) is assumed.
+- The gallery arrows are the characters ‹ ›, not icons; room photos (`RoomType.photos`) are not shown in `RoomSelection`.
+- Hotel owners cannot upload photos yet in the frontend (no screen), so real hotels will have none until that exists.

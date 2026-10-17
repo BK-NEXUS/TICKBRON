@@ -2,6 +2,8 @@ import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { House } from 'lucide-react'
 import { Property } from '../adapters/propertyAdapter'
+import { propertyDisplayName } from '../utils/propertyName'
+import { PhotoLightbox } from './PhotoLightbox'
 
 interface PropertyGalleryProps {
   property: Property
@@ -12,14 +14,18 @@ interface PropertyGalleryProps {
  * Supports thumbnail navigation and responsive layout
  */
 export function PropertyGallery({ property }: PropertyGalleryProps) {
-  const { t } = useI18n()
+ const { t } = useI18n()
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const name = propertyDisplayName(property)
   
   // Get gallery images from property.gallery organized by photo type
   const galleryImages = property.gallery ? 
     Object.values(property.gallery).flat().sort((a, b) => a.display_order - b.display_order) :
     (property.primary_photo ? [property.primary_photo] : [])
   
+  const hasPhotos = galleryImages.length > 0
+
   // Fallback to placeholder if no images
   const displayImages = galleryImages.length > 0 ? 
     galleryImages : 
@@ -62,11 +68,27 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
           ‹
         </button>
         
-        <div className="property-gallery-image">
-          <div className="property-gallery-image-placeholder">
-            {displayImages[currentIndex].photo || <House size={64} aria-hidden="true" />}
+        {hasPhotos ? (
+          <button
+            type="button"
+            className="property-gallery-image"
+            aria-label={t('gallery.openFullScreen')}
+            onClick={() => setLightboxOpen(true)}
+          >
+            <img
+              data-testid="gallery-main-image"
+              className="property-gallery-photo"
+              src={displayImages[currentIndex].photo}
+              alt={displayImages[currentIndex].alt_text || t('gallery.alt', { name, number: currentIndex + 1 })}
+            />
+          </button>
+        ) : (
+          <div className="property-gallery-image">
+            <div className="property-gallery-image-placeholder">
+              <House size={64} aria-hidden="true" />
+            </div>
           </div>
-        </div>
+        )}
 
         <button
           className="property-gallery-nav property-gallery-nav--next"
@@ -90,12 +112,19 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
               aria-label={t('gallery.view', { number: index + 1 })}
               aria-pressed={index === currentIndex}
             >
-              <div className="property-gallery-thumbnail-placeholder">
-                {image.photo}
-              </div>
+              <img className="property-gallery-thumbnail-image" src={image.photo} alt="" loading="lazy" />
             </button>
           ))}
         </div>
+      )}
+      {hasPhotos && displayImages.length > 1 && (
+        <button type="button" className="btn btn-secondary btn-sm property-gallery-view-all" onClick={() => setLightboxOpen(true)}>
+          {t('gallery.viewAll', { count: displayImages.length })}
+        </button>
+      )}
+
+      {lightboxOpen && (
+        <PhotoLightbox photos={displayImages} startIndex={currentIndex} name={name} onClose={() => setLightboxOpen(false)} />
       )}
     </div>
   )

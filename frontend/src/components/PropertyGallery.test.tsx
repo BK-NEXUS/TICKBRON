@@ -140,4 +140,53 @@ describe('PropertyGallery', () => {
     const thumbnails = screen.getAllByLabelText(/View image/)
     expect(thumbnails[0]).toHaveAttribute('aria-pressed', 'true')
   })
+
+  describe('real photos and the full-screen view', () => {
+    const mainImage = () => screen.getByTestId('gallery-main-image') as HTMLImageElement
+
+    it('shows the current photo as an image, with an alt text', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      expect(mainImage()).toHaveAttribute('src', 'house.jpg')
+      expect(mainImage()).toHaveAttribute('alt', 'Test Property, photo 1')
+    })
+
+    it('thumbnails are small images of the photos', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      const thumbnails = screen.getAllByLabelText(/View image/)
+      expect(thumbnails.map(button => button.querySelector('img')?.getAttribute('src'))).toEqual(['house.jpg', 'castle.jpg', 'city.jpg'])
+    })
+
+    it('the arrows and the arrow keys change the photo', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      fireEvent.click(screen.getByLabelText('Next image'))
+      expect(mainImage()).toHaveAttribute('src', 'castle.jpg')
+      fireEvent.keyDown(screen.getByRole('region', { name: 'Property image gallery' }), { key: 'ArrowLeft' })
+      expect(mainImage()).toHaveAttribute('src', 'house.jpg')
+    })
+
+    it('a click on the photo opens the full-screen view on that photo', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      fireEvent.click(screen.getAllByLabelText(/View image/)[1])
+      fireEvent.click(screen.getByRole('button', { name: 'View photos full screen' }))
+      const dialog = screen.getByRole('dialog', { name: 'Photos of Test Property' })
+      expect(dialog.querySelector('img')).toHaveAttribute('src', 'castle.jpg')
+      expect(screen.getByText('2 of 3')).toBeInTheDocument()
+    })
+
+    it('"View all photos" opens it too, and closing it returns to the gallery', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      fireEvent.click(screen.getByRole('button', { name: 'View all 3 photos' }))
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Close photos' }))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(mainImage()).toBeInTheDocument()
+    })
+
+    it('a property without photos shows the placeholder and offers no full-screen view', () => {
+      render(<PropertyGallery property={{ ...mockProperty, gallery: undefined, primary_photo: undefined }} />)
+      expect(screen.queryByTestId('gallery-main-image')).toBeNull()
+      expect(screen.queryByRole('button', { name: 'View photos full screen' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /View all/ })).toBeNull()
+    })
+  })
 })

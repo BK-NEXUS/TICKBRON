@@ -16,6 +16,7 @@ import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
 import { StarIcon } from '../components/StarIcon'
 import { PriceApprox } from '../components/PriceApprox'
+import { PropertyLocationMap } from '../components/PropertyLocationMap'
 import { useI18n } from '../i18n/I18nContext'
 
 /**
@@ -176,6 +177,7 @@ export function PropertyDetailPage() {
                   .join(', ')}
               </p>
             </address>
+            <PropertyLocationMap latitude={property.latitude} longitude={property.longitude} name={propertyDisplayName(property)} />
           </section>
 
           <section className="property-detail-section">
