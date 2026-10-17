@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { RoomType } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { VipBadge } from './VipBadge'
 
 interface RoomCardProps {
   room: RoomType
@@ -33,7 +34,7 @@ export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) 
       }}
     >
       <div className="room-card-header">
-        <h3 className="room-card-name">{room.name}</h3>
+        <h3 className="room-card-name">{room.name} {room.is_vip && <VipBadge />}</h3>
         <div className="room-card-price">
           <span className="room-card-price-value">
             {formatPrice(room.base_price, room.currency)}

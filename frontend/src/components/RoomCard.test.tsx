@@ -112,4 +112,14 @@ describe('RoomCard', () => {
     
     expect(screen.getByText('$150')).toBeInTheDocument()
   })
+
+  it('shows a VIP badge on a VIP room and none on an ordinary one (R9)', () => {
+    const { rerender } = render(<RoomCard room={{ ...mockRoom, is_vip: true }} />)
+    expect(screen.getByLabelText('VIP room')).toBeInTheDocument()
+
+    rerender(<RoomCard room={{ ...mockRoom, is_vip: false }} />)
+    expect(screen.queryByLabelText('VIP room')).toBeNull()
+    rerender(<RoomCard room={mockRoom} />)
+    expect(screen.queryByLabelText('VIP room')).toBeNull()
+  })
 })

@@ -538,6 +538,13 @@ describe('BookingPage', () => {
       })
     })
 
+    it('shows the VIP badge in the price summary of a VIP room type (R9)', async () => {
+      const vip = { ...mockProperty, room_types: [{ ...mockProperty.room_types[0], is_vip: true }] }
+      mockPropertyAdapter.getPropertyById.mockResolvedValue({ data: vip, error: null })
+      renderWithRouter(<BookingPage />)
+      expect((await screen.findAllByLabelText('VIP room')).length).toBeGreaterThan(0)
+    })
+
     it('never computes a deposit amount in the browser (money is computed on the backend only)', async () => {
       const withDeposit = {
         ...mockProperty,

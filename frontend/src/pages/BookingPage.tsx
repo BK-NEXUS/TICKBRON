@@ -20,6 +20,7 @@ import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
 import { useI18n } from '../i18n/I18nContext'
+import { VipBadge } from '../components/VipBadge'
 
 interface BookingState {
   propertyId: number
@@ -595,7 +596,7 @@ export function BookingPage() {
               {roomType && ratePlan && (
                 <>
                   <div className="booking-summary-room">
-                    <div className="booking-summary-room-name">{roomType.name}</div>
+                    <div className="booking-summary-room-name">{roomType.name} {roomType.is_vip && <VipBadge />}</div>
                     <div className="booking-summary-rate-plan">{ratePlan.name}</div>
                   </div>
 
@@ -967,7 +968,7 @@ export function BookingPage() {
             {roomType && ratePlan && (
               <>
                 <div className="booking-summary-room">
-                  <div className="booking-summary-room-name">{roomType.name}</div>
+                  <div className="booking-summary-room-name">{roomType.name} {roomType.is_vip && <VipBadge />}</div>
                   <div className="booking-summary-rate-plan">{ratePlan.name}</div>
                 </div>
 

@@ -263,7 +263,7 @@ class RoomTypeAdmin(admin.ModelAdmin):
             'fields': ('base_price', 'currency')
         }),
         ('Room Details', {
-            'fields': ('bed_configuration', 'room_size')
+            'fields': ('bed_configuration', 'room_size', 'is_vip')
         }),
         ('Status', {
             'fields': ('is_active', 'is_deleted', 'deleted_at')
