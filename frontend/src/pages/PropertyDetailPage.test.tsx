@@ -210,6 +210,33 @@ describe('PropertyDetailPage', () => {
     expect(screen.getByText('Test Property')).toBeInTheDocument()
   })
 
+  describe('so\'m equivalent of a price in dollars (R6)', () => {
+    const rate = { rate: '11772.950000', date: '2026-10-03', source: 'cbu.uz', stale: false }
+    const load = async (extra: Record<string, unknown>) => {
+      vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: { ...mockProperty, ...extra }, error: null })
+      renderWithProviders(<PropertyDetailPage />)
+      await screen.findByText('Test Property')
+    }
+
+    it('shows "≈ so\'m" under the dollar price, with the date of the CBU rate', async () => {
+      await load({ base_price_uzs_approx: '1177295.00', uzs_rate: rate })
+      const card = document.querySelector('.property-detail-booking-card') as HTMLElement
+      expect(card).toHaveTextContent('≈ 1 177 295 UZS')
+      expect(card).toHaveTextContent('Rate of Oct 3, 2026 (CBU)')
+      expect(card).not.toHaveTextContent('may be out of date')
+    })
+
+    it('warns when the rate may be out of date', async () => {
+      await load({ base_price_uzs_approx: '1177295.00', uzs_rate: { ...rate, stale: true } })
+      expect(document.querySelector('.property-detail-booking-card')).toHaveTextContent('The rate may be out of date')
+    })
+
+    it('shows nothing extra while no rate exists yet', async () => {
+      await load({ base_price_uzs_approx: null, uzs_rate: null })
+      expect(document.querySelector('.property-detail-booking-card')).not.toHaveTextContent('≈')
+    })
+  })
+
   it('renders error state when property not found', async () => {
     vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
       data: null,

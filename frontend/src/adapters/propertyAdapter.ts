@@ -3,6 +3,7 @@
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch } from '../utils/api'
+import type { ExchangeRateInfo } from './bookingAdapter'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -214,6 +215,9 @@ export interface Property {
   longitude?: number
   base_price: number
   currency: string
+  /** Informational so'm equivalent of `base_price` at the latest CBU rate; null while no rate exists, absent for hotels priced in so'm */
+  base_price_uzs_approx?: string | null
+  uzs_rate?: ExchangeRateInfo | null
   total_area?: number
   floor_number?: number
   has_elevator: boolean

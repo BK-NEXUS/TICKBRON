@@ -66,6 +66,17 @@ describe('PropertyCard', () => {
     expect(screen.getByText('per night')).toBeInTheDocument()
   })
 
+  it('shows the so\'m equivalent after a ≈ for a price in dollars, and nothing when there is none', () => {
+    const { rerender, container } = render(<PropertyCard property={{ ...mockProperty, base_price_uzs_approx: '1177295.00' } as Property} />)
+    expect(container.querySelector('.property-card-footer')).toHaveTextContent('≈ 1 177 295 UZS')
+    expect(container.querySelector('.property-card-footer')).not.toHaveTextContent('Rate of')
+
+    rerender(<PropertyCard property={{ ...mockProperty, base_price_uzs_approx: null } as Property} />)
+    expect(container.querySelector('.property-card-footer')).not.toHaveTextContent('≈')
+    rerender(<PropertyCard property={mockProperty} />)
+    expect(container.querySelector('.property-card-footer')).not.toHaveTextContent('≈')
+  })
+
   it('has a save-to-favorites button that does not open the property (E2E BUG 4)', () => {
     render(<PropertyCard property={mockProperty} />)
 

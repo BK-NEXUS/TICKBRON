@@ -105,6 +105,22 @@ describe('BookingAdapter', () => {
       expect(result.error).toBeNull()
     })
 
+    it('passes the backend failure code on (a hotel in dollars and no exchange rate yet answers 503)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: 'Exchange rate unavailable', code: 'exchange_rate_unavailable', details: 'No rate' }),
+        clone() { return this },
+      })
+
+      const result = await adapter.createBooking({
+        property_id: 1, room_type_id: 1, rate_plan_id: 1, check_in: '2025-01-20', check_out: '2025-01-25', guest_count: 2,
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.code).toBe('exchange_rate_unavailable')
+    })
+
     it('should handle booking creation errors', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,

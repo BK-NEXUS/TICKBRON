@@ -109,7 +109,7 @@ class BookingAdapter {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<{ data: T | null; error: string | null }> {
+  ): Promise<{ data: T | null; error: string | null; code?: string }> {
     const url = `${this.baseUrl}${endpoint}`
     
     const defaultOptions: RequestInit = {
@@ -125,7 +125,7 @@ class BookingAdapter {
       
       if (!response.ok) {
         const apiError = await readApiError(response)
-        return { data: null, error: apiError.message }
+        return { data: null, error: apiError.message, code: apiError.code }
       }
 
       const data = await response.json()
@@ -142,7 +142,8 @@ class BookingAdapter {
    * Create a new booking
    * Integrates with POST /api/v1/bookings/ endpoint
    */
-  async createBooking(request: BookingCreateRequest): Promise<{ data: Booking | null; error: string | null }> {
+  /** `code` is the backend's machine code of a failure (for example `exchange_rate_unavailable`) */
+  async createBooking(request: BookingCreateRequest): Promise<{ data: Booking | null; error: string | null; code?: string }> {
     return this.request<Booking>('/api/v1/bookings/', {
       method: 'POST',
       body: JSON.stringify(request),

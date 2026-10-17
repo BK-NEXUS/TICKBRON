@@ -651,6 +651,7 @@ export const ru: Catalog = {
   'booking.errorLoad': "Не удалось загрузить данные бронирования",
   'booking.errorInfo': "Не хватает данных бронирования",
   'booking.errorCreate': "Не удалось создать бронирование",
+  'booking.rateUnavailable': "Бронирование временно недоступно, попробуйте позже.",
   'booking.errorCreateRetry': "Не удалось создать бронирование. Попробуйте ещё раз.",
   'booking.errorMethod': "Не выбрано бронирование или способ оплаты",
   'booking.errorPayInit': "Не удалось начать платёж",

@@ -625,6 +625,7 @@ export const uz: Catalog = {
   'booking.errorLoad': "Bron ma'lumotlarini yuklab bo'lmadi",
   'booking.errorInfo': "Bron ma'lumotlari yetishmayapti",
   'booking.errorCreate': "Bronni yaratib bo'lmadi",
+  'booking.rateUnavailable': "Bron qilish vaqtincha mavjud emas, keyinroq qayta urinib koʻring.",
   'booking.errorCreateRetry': "Bronni yaratib bo'lmadi. Qayta urinib ko'ring.",
   'booking.errorMethod': "Bron yoki to'lov usuli tanlanmagan",
   'booking.errorPayInit': "To'lovni boshlab bo'lmadi",

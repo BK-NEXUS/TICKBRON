@@ -322,7 +322,10 @@ export function BookingPage() {
       const response = await bookingAdapter.createBooking(bookingRequest)
       
       if (response.error || !response.data) {
-        setError(failure(response.error, 'booking.errorCreate'))
+        // 503: a hotel priced in dollars and no exchange rate has ever been fetched; nothing was reserved
+        setError(response.code === 'exchange_rate_unavailable'
+          ? { key: 'booking.rateUnavailable' }
+          : failure(response.error, 'booking.errorCreate'))
         setSubmitting(false)
         return
       }

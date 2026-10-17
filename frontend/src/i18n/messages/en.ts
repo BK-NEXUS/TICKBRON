@@ -623,6 +623,7 @@ export const en = {
   'booking.errorLoad': "Failed to load booking information",
   'booking.errorInfo': "Missing booking information",
   'booking.errorCreate': "Failed to create booking",
+  'booking.rateUnavailable': "Booking is temporarily unavailable, please try again later.",
   'booking.errorCreateRetry': "Failed to create booking. Please try again.",
   'booking.errorMethod': "Missing booking or payment method",
   'booking.errorPayInit': "Failed to initiate payment",

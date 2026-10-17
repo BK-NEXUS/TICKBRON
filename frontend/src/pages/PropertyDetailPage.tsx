@@ -15,6 +15,7 @@ import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
 import { StarIcon } from '../components/StarIcon'
+import { PriceApprox } from '../components/PriceApprox'
 import { useI18n } from '../i18n/I18nContext'
 
 /**
@@ -211,6 +212,7 @@ export function PropertyDetailPage() {
                 {formatMoney(property.base_price, property.currency, { minDecimals: 0, maxDecimals: 0 })}
               </span>
               <span className="property-detail-price-period">{t('card.perNight')}</span>
+              <PriceApprox approx={property.base_price_uzs_approx} rate={property.uzs_rate} showRate />
             </div>
             
             {property.rating && (
