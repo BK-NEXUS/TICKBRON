@@ -130,7 +130,7 @@ describe('StatusUserDetail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
 
     await waitFor(() => expect(saveBlob).toHaveBeenCalled())
-    expect(exportHistory).toHaveBeenCalledWith(42, { period: 'all' })
+    expect(exportHistory).toHaveBeenCalledWith(42, { period: 'all' }, 'csv')
   })
 
   it('says so when there is no history or no hotel', async () => {

@@ -42,4 +42,27 @@ describe('StatusCsvButton', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Admin or staff role required')
     expect(saveBlob).not.toHaveBeenCalled()
   })
+
+  it('asks for the file type of the button that was clicked', async () => {
+    const onExport = vi.fn().mockResolvedValue({ data: file, error: null })
+    render(<StatusCsvButton onExport={onExport} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    await waitFor(() => expect(onExport).toHaveBeenLastCalledWith('csv'))
+    fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }))
+    await waitFor(() => expect(onExport).toHaveBeenLastCalledWith('xlsx'))
+    expect(saveBlob).toHaveBeenCalledTimes(2)
+  })
+
+  it('disables both buttons while one export runs', async () => {
+    let finish: (value: unknown) => void = () => {}
+    render(<StatusCsvButton onExport={(() => new Promise(resolve => { finish = resolve })) as never} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }))
+
+    expect(await screen.findByRole('button', { name: 'Export CSV' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Exporting...' })).toBeDisabled()
+    finish({ data: file, error: null })
+    expect(await screen.findByRole('button', { name: 'Export Excel' })).toBeEnabled()
+  })
 })

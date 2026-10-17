@@ -76,9 +76,9 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
         reloadKey={ordering}
         renderActions={({ search }) => (
           <StatusCsvButton
-            onExport={() => statusAdapter.exportAdminHotels({
+            onExport={format => statusAdapter.exportAdminHotels({
               period, ...(period === 'custom' && range ? range : {}), search, ordering,
-            })}
+            }, format)}
           />
         )}
         load={params => statusAdapter.getAdminHotels({ ...params, ordering })}

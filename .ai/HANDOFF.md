@@ -2886,3 +2886,9 @@ Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
 
 ### R12 additions, slice 3 backend: Excel export (2026-10-17)
 `common/csv_export.py`: `export_response` / `wants_export` replace `csv_response` / `wants_csv` (5 call sites); library **XlsxWriter 3.2.9** (write-only, no dependencies; chosen over openpyxl, which is for reading files). 8 tests in `admin_panel/tests/test_xlsx_export.py`. No migration (`makemigrations --check` clean).
+
+### R12 additions, slice 4 frontend (2026-10-17)
+- `StatusInsights` (new, `components/StatusInsights.tsx`) inside `StatusReport`: cards for cancellation rate, occupancy, average booking value, average stay, and the owner's rank card (owner hotel screen only, hidden when the API sends `rank: null`), plus a row of +/- % chips "Compared with <previous period>" (up / down / no change / nothing to compare with, readable by screen readers). Hidden for "All time".
+- `StatusCsvButton` now has an "Export Excel" button next to "Export CSV"; the four adapter exports take a `format` (`'csv'` default, `'xlsx'`). Three existing assertions got the extra `'csv'` argument; nothing was weakened.
+- uz/ru/en keys `status.insights.*`, `status.exportExcel`. Tests: `StatusInsights.test.tsx` (5), `StatusCsvButton.test.tsx` (+2), adapter (+1), owner tab (+1). Full run: 170 files, 1954 tests, lint and build clean.
+- Not done: real-browser check at 390px / 1440px of the new cards and the two export buttons.

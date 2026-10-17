@@ -188,6 +188,18 @@ describe('statusAdapter R12a', () => {
       expect(calledUrl(1).searchParams.get('export')).toBe('csv')
     })
 
+    it('asks for an Excel file with export=xlsx and a .xlsx fallback name, on all four exports', async () => {
+      fetchMock.mockResolvedValue(csvResponse(null))
+
+      const hotels = await statusAdapter.exportAdminHotels({ period: 'all' }, 'xlsx')
+      await statusAdapter.exportUsers({ period: 'all' }, 'xlsx')
+      await statusAdapter.exportUserHistory(5, { period: 'all' }, 'xlsx')
+      await statusAdapter.exportPartnerReconciliation({ period: 'all' }, 'xlsx')
+
+      for (let call = 0; call < 4; call += 1) expect(calledUrl(call).searchParams.get('export')).toBe('xlsx')
+      expect(hotels.data?.filename).toBe('status_hotels.xlsx')
+    })
+
     it('reports a failed export with the server message', async () => {
       fetchMock.mockResolvedValue(errorResponse(403, {}))
       const result = await statusAdapter.exportAdminHotels({ period: 'all' })
