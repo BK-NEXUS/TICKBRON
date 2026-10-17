@@ -8,6 +8,10 @@ import { toCoordinates } from '../utils/coordinates'
 import { PropertyCard } from './PropertyCard'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_ATTRIBUTION, TILE_URL } from './mapTiles'
 
+// Pins close together overlap; the hovered or focused pin comes to the front, the chosen one stays there
+const ACTIVE_Z_OFFSET = 10_000
+const RAISED_Z_OFFSET = 20_000
+
 interface PropertiesMapProps {
   properties: Property[]
 }
@@ -25,6 +29,8 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
   const mapRef = useRef<L.Map | null>(null)
   const markersRef = useRef<Map<number, L.Marker>>(new Map())
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const selectedIdRef = useRef<number | null>(null)
+  selectedIdRef.current = selectedId
 
   const pins = useMemo<Pin[]>(() => properties.flatMap(property => {
     const point = toCoordinates(property.latitude, property.longitude)
@@ -70,7 +76,14 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
       pin.setAttribute('aria-label', t('map.pinLabel', { name, price }))
       pin.addEventListener('click', () => setSelectedId(property.id))
       const icon = L.divIcon({ html: pin, className: 'map-pin-icon', iconSize: undefined })
-      markers.set(property.id, L.marker([lat, lng], { icon, keyboard: false }).addTo(map))
+      const marker = L.marker([lat, lng], { icon, keyboard: false }).addTo(map)
+      const raise = () => marker.setZIndexOffset(RAISED_Z_OFFSET)
+      const lower = () => marker.setZIndexOffset(selectedIdRef.current === property.id ? ACTIVE_Z_OFFSET : 0)
+      pin.addEventListener('mouseenter', raise)
+      pin.addEventListener('focus', raise)
+      pin.addEventListener('mouseleave', lower)
+      pin.addEventListener('blur', lower)
+      markers.set(property.id, marker)
     }
     const points = pins.map(pin => L.latLng(pin.lat, pin.lng))
     if (points.length === 1) map.setView(points[0], 13)
@@ -79,7 +92,10 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
 
   // The chosen pin is marked; a new search that drops it clears the card
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => marker.getElement()?.classList.toggle('map-pin--active', id === selectedId))
+    markersRef.current.forEach((marker, id) => {
+      marker.getElement()?.classList.toggle('map-pin--active', id === selectedId)
+      marker.setZIndexOffset(id === selectedId ? ACTIVE_Z_OFFSET : 0)
+    })
   }, [selectedId, pins])
   useEffect(() => {
     if (selectedId !== null && !selected) setSelectedId(null)

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { PropertiesMap } from './PropertiesMap'
@@ -33,7 +33,17 @@ function renderMap(properties: Property[]) {
 }
 
 describe('PropertiesMap', () => {
-  beforeEach(() => localStorage.clear())
+  // jsdom has no layout: give the map a size, so the pins are placed as in a browser
+  beforeEach(() => {
+    localStorage.clear()
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 800 })
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 500 })
+  })
+
+  afterEach(() => {
+    delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientWidth
+    delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight
+  })
 
   it('puts a price pin on the map for every property that has a location', () => {
     const { container } = renderMap([alpha, beta, gamma])
@@ -93,6 +103,29 @@ describe('PropertiesMap', () => {
       </I18nProvider>,
     )
     expect(screen.queryByTestId('map-selected-card')).toBeNull()
+  })
+
+  it('a pin under another pin comes to the front when it is hovered or focused, so it can be tapped', () => {
+    renderMap([alpha, beta])
+    const icon = (name: string) => screen.getByRole('button', { name }).closest('.leaflet-marker-icon') as HTMLElement
+    const zIndex = (name: string) => Number(icon(name).style.zIndex)
+    const base = zIndex('Alpha Hotel, $60')
+
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+    expect(zIndex('Alpha Hotel, $60')).toBeGreaterThan(zIndex('Beta Hotel, $55'))
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+    expect(zIndex('Alpha Hotel, $60')).toBe(base)
+
+    fireEvent.focus(screen.getByRole('button', { name: 'Beta Hotel, $55' }))
+    expect(zIndex('Beta Hotel, $55')).toBeGreaterThan(zIndex('Alpha Hotel, $60'))
+  })
+
+  it('the chosen pin stays in front', () => {
+    renderMap([alpha, beta])
+    fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+    const icon = (name: string) => screen.getByRole('button', { name }).closest('.leaflet-marker-icon') as HTMLElement
+    expect(Number(icon('Alpha Hotel, $60').style.zIndex)).toBeGreaterThan(Number(icon('Beta Hotel, $55').style.zIndex))
   })
 
   it('draws the OpenStreetMap attribution the tile licence requires', () => {
