@@ -13,6 +13,7 @@ from properties.models import (
     Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
     RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
+from bookings.cancellation import plan_terms
 from currency.rates import uzs_amount
 from django.utils.dateparse import parse_date
 
@@ -271,6 +272,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'deposit_required': rate_plan.deposit_required,
                     'deposit_percentage': rate_plan.deposit_percentage,
                     'advance_booking_days': rate_plan.advance_booking_days,
+                    **plan_terms(rate_plan),
                 }
                 rate_plans_data.append(rate_plan_data)
             
@@ -538,7 +540,8 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'rate_type', 'description', 'base_price', 'currency',
             'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
-            'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory'
+            'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory',
+            'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
     

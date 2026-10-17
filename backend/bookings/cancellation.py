@@ -97,3 +97,27 @@ def cancel_with_refund(booking, reason=None, actor=None, now=None):
             refunds.append(create_refund(payment, amount, 'cancel', created_by=actor, idempotency_key=key))
         send_after_commit(refunds, actor)
     return _result(sum((refund.amount for refund in refunds), Decimal('0')), percent)
+
+
+def plan_terms(rate_plan):
+    """What a rate plan says about cancelling, for the property page: the badge, the hours and the percent after."""
+    percent = rate_plan.cancel_refund_percent
+    return {
+        'free_cancellation': rate_plan.free_cancel_hours is not None,
+        'free_cancel_hours': rate_plan.free_cancel_hours,
+        'cancel_refund_percent': settings.CANCEL_REFUND_PERCENT if percent is None else percent,
+    }
+
+
+def quote_terms(rate_plan, check_in, now=None):
+    """
+    What cancelling would mean for a stay starting on `check_in`, for the quote: free cancellation is true only
+    while the free window of THESE dates is still ahead.
+    """
+    until, percent_after = terms_for_plan(rate_plan, check_in)
+    free = until is not None and until > (now or timezone.now())
+    return {
+        'free_cancellation': free,
+        'free_until': until.isoformat() if free else None,
+        'refund_percent_after': percent_after,
+    }
