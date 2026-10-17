@@ -356,6 +356,57 @@ describe('SearchResultsPage', () => {
       expect(await screen.findByRole('region', { name: 'Map of properties' })).toBeInTheDocument()
     })
 
+    it('a search around a point sends the centre and radius, and not the destination text', async () => {
+      vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({
+        data: { count: 1, next: null, previous: null, results: located, page: 1, page_size: 20, total_pages: 1 },
+        error: null,
+      })
+      const router = createMemoryRouter([{ path: '/search', element: <SearchResultsPage /> }], {
+        initialEntries: ['/search?lat=41.3&lng=69.2&radius=12'],
+      })
+      render(<RouterProvider router={router} />)
+      await screen.findByText('Properties in the map area')
+      const request = vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls.at(-1)![0]
+      expect(request).toMatchObject({ lat: 41.3, lng: 69.2, radius: 12 })
+      expect(request.location).toBeUndefined()
+      expect(request.q).toBeUndefined()
+    })
+
+    it('ignores a point in the URL that is not a number or is out of range', async () => {
+      const router = createMemoryRouter([{ path: '/search', element: <SearchResultsPage /> }], {
+        initialEntries: ['/search?destination=Paris&lat=abc&lng=500&radius=0'],
+      })
+      render(<RouterProvider router={router} />)
+      await screen.findByLabelText('List view')
+      const request = vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls.at(-1)![0]
+      expect(request.lat).toBeUndefined()
+      expect(request.lng).toBeUndefined()
+      expect(request.radius).toBeUndefined()
+      expect(request.location).toBe('Paris')
+    })
+
+    it('asks for more results on the map (up to 100) than in the list (20)', async () => {
+      await renderSearch()
+      const lastPageSize = () => vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls.at(-1)![0].page_size
+      expect(lastPageSize()).toBe(20)
+      fireEvent.click(screen.getByLabelText('Map view'))
+      await waitFor(() => expect(lastPageSize()).toBe(100))
+    })
+
+    it('Search this area searches the visible part of the map instead of the destination', async () => {
+      await renderSearch()
+      fireEvent.click(screen.getByLabelText('Map view'))
+      await screen.findByRole('region', { name: 'Map of properties' })
+      fireEvent.click(document.querySelector('.leaflet-control-zoom-in') as HTMLElement)
+      fireEvent.click(await screen.findByRole('button', { name: 'Search this area' }))
+      await screen.findByText('Properties in the map area')
+      const request = vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls.at(-1)![0]
+      expect(request.lat).toBeCloseTo(48.86, 0)
+      expect(request.lng).toBeCloseTo(2.35, 0)
+      expect(request.radius).toBeGreaterThanOrEqual(1)
+      expect(request.location).toBeUndefined()
+    })
+
     it('back to the list view brings the cards back', async () => {
       await renderSearch()
       fireEvent.click(screen.getByLabelText('Map view'))

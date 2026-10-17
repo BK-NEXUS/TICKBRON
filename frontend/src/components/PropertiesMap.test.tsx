@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { PropertiesMap } from './PropertiesMap'
@@ -18,13 +18,13 @@ const alpha = property(1, 'Alpha Hotel', { latitude: '41.311081', longitude: '69
 const beta = property(2, 'Beta Hotel', { latitude: 39.654823, longitude: 66.97567 }, 55)
 const gamma = property(3, 'Gamma Hotel', { latitude: null, longitude: null })
 
-function renderMap(properties: Property[]) {
+function renderMap(properties: Property[], extra: Partial<React.ComponentProps<typeof PropertiesMap>> = {}) {
   localStorage.setItem('tickbron.language', 'en')
   return render(
     <I18nProvider>
       <MemoryRouter initialEntries={['/search']}>
         <Routes>
-          <Route path="/search" element={<PropertiesMap properties={properties} />} />
+          <Route path="/search" element={<PropertiesMap properties={properties} {...extra} />} />
           <Route path="/property/:id" element={<p>Property page {window.location.pathname}</p>} />
         </Routes>
       </MemoryRouter>
@@ -143,6 +143,86 @@ describe('PropertiesMap', () => {
     it('a lone pin is not grouped', () => {
       const { container } = renderMap([alpha, beta])
       expect(container.querySelector('.map-cluster')).toBeNull()
+    })
+  })
+
+  describe('working with a list next to the map', () => {
+    it('a pin the list is pointing at is marked and in front', () => {
+      renderMap([alpha, beta], { highlightedId: 2 })
+      const pin = screen.getByRole('button', { name: 'Beta Hotel, $55' })
+      expect(pin).toHaveClass('map-pin--hover')
+      const icon = (name: string) => screen.getByRole('button', { name }).closest('.leaflet-marker-icon') as HTMLElement
+      expect(Number(icon('Beta Hotel, $55').style.zIndex)).toBeGreaterThan(Number(icon('Alpha Hotel, $60').style.zIndex))
+    })
+
+    it('the mark moves when the list points at another property', () => {
+      const { rerender } = renderMap([alpha, beta], { highlightedId: 2 })
+      rerender(
+        <I18nProvider>
+          <MemoryRouter><PropertiesMap properties={[alpha, beta]} highlightedId={1} /></MemoryRouter>
+        </I18nProvider>,
+      )
+      expect(screen.getByRole('button', { name: 'Alpha Hotel, $60' })).toHaveClass('map-pin--hover')
+      expect(screen.getByRole('button', { name: 'Beta Hotel, $55' })).not.toHaveClass('map-pin--hover')
+    })
+
+    it('tells the page which pin was chosen, and when the card is closed', () => {
+      const onSelectedChange = vi.fn()
+      renderMap([alpha, beta], { onSelectedChange })
+      fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+      expect(onSelectedChange).toHaveBeenLastCalledWith(1)
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+      expect(onSelectedChange).toHaveBeenLastCalledWith(null)
+    })
+
+    it('can leave the property card to the list', () => {
+      renderMap([alpha, beta], { showSelectedCard: false })
+      fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
+      expect(screen.queryByTestId('map-selected-card')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Alpha Hotel, $60' })).toHaveClass('map-pin--active')
+    })
+  })
+
+  describe('search this area', () => {
+    const zoomIn = (container: HTMLElement) => fireEvent.click(container.querySelector('.leaflet-control-zoom-in') as HTMLElement)
+
+    it('is offered only after the guest moves the map, and only when the page can use it', () => {
+      const first = renderMap([alpha, beta], { onSearchArea: vi.fn() })
+      expect(screen.queryByRole('button', { name: 'Search this area' })).toBeNull()
+      zoomIn(first.container)
+      expect(screen.getByRole('button', { name: 'Search this area' })).toBeInTheDocument()
+    })
+
+    it('is not offered without a handler', () => {
+      const { container } = renderMap([alpha, beta])
+      zoomIn(container)
+      expect(screen.queryByRole('button', { name: 'Search this area' })).toBeNull()
+    })
+
+    it('hands over the visible area as a centre and a radius in kilometres, then goes away', () => {
+      const onSearchArea = vi.fn()
+      const { container } = renderMap([alpha, beta], { onSearchArea })
+      zoomIn(container)
+      fireEvent.click(screen.getByRole('button', { name: 'Search this area' }))
+      expect(onSearchArea).toHaveBeenCalledTimes(1)
+      const area = onSearchArea.mock.calls[0][0]
+      expect(area.lat).toBeGreaterThan(38)
+      expect(area.lat).toBeLessThan(43)
+      expect(area.radius).toBeGreaterThanOrEqual(1)
+      expect(area.radius).toBeLessThanOrEqual(100)
+      expect(Number.isInteger(area.radius)).toBe(true)
+      expect(screen.queryByRole('button', { name: 'Search this area' })).toBeNull()
+    })
+
+    it('new results do not count as the guest moving the map', () => {
+      const { container, rerender } = renderMap([alpha], { onSearchArea: vi.fn() })
+      rerender(
+        <I18nProvider>
+          <MemoryRouter><PropertiesMap properties={[alpha, beta]} onSearchArea={vi.fn()} /></MemoryRouter>
+        </I18nProvider>,
+      )
+      expect(container.querySelector('.leaflet-container')).not.toBeNull()
+      expect(screen.queryByRole('button', { name: 'Search this area' })).toBeNull()
     })
   })
 

@@ -1530,6 +1530,70 @@ table .btn {
   min-width: 0;
 }
 
+.properties-map-view {
+  display: grid;
+  gap: var(--spacing-lg);
+  min-width: 0;
+}
+
+.properties-map-list {
+  display: grid;
+  gap: var(--spacing-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.properties-map-list-item {
+  border-radius: var(--radius-lg);
+  scroll-margin: var(--spacing-sm);
+}
+
+.properties-map-list-item--active {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  /* List on the left, the map stays in view on the right while the list scrolls */
+  .properties-map-view {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .properties-map-view > .properties-map {
+    order: 2;
+    position: sticky;
+    top: var(--spacing-md);
+  }
+
+  .properties-map-list {
+    order: 1;
+    max-height: calc(100vh - var(--spacing-2xl));
+    overflow-y: auto;
+    padding-right: var(--spacing-xs);
+  }
+
+  .properties-map-canvas {
+    height: calc(100vh - 160px);
+    min-height: 420px;
+  }
+}
+
+.properties-map-frame {
+  position: relative;
+}
+
+.properties-map-search-area {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  box-shadow: var(--shadow-sm);
+}
+
 .properties-map-canvas {
   height: clamp(320px, 60vh, 640px);
   border: 1px solid var(--color-border-control);
@@ -1593,6 +1657,7 @@ table .btn {
   outline-offset: 2px;
 }
 
+.map-pin.map-pin--hover,
 .map-pin.map-pin--active {
   background: var(--color-text-primary);
   color: var(--color-surface);

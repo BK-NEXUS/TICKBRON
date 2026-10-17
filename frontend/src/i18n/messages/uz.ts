@@ -94,6 +94,7 @@ export const uz: Catalog = {
   'home.properties.other': "{count} ta obyekt",
   'search.allDestinations': "Barcha yo'nalishlar",
   'search.title': "{destination} dagi obyektlar",
+  'search.mapAreaTitle': "Xarita hududidagi obyektlar",
   'search.found.one': "{count} ta obyekt topildi",
   'search.found.other': "{count} ta obyekt topildi",
   'search.loading': "Obyektlar yuklanmoqda...",
@@ -1560,6 +1561,9 @@ export const uz: Catalog = {
   'map.pickHint': "Aniq joyni belgilash uchun xaritani bosing yoki belgini suring. Koordinatalarni pastga yozish ham mumkin.",
   'map.pickMarker': "Obyekt joylashuvi",
   'map.clear': "Joylashuvni olib tashlash",
+  'map.listLabel': "Xaritadagi obyektlar",
+  'map.noPin': "Xaritada joylashuvi yoʻq",
+  'map.searchArea': "Shu hududda qidirish",
   'map.clusterLabel.one': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
   'map.clusterLabel.other': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
 }

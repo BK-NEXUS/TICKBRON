@@ -14,8 +14,39 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_ATTRIBUTION, TILE_URL } from './mapT
 const ACTIVE_Z_OFFSET = 10_000
 const RAISED_Z_OFFSET = 20_000
 
+/** The visible part of the map as the backend's search takes it: a centre and a radius in whole kilometres (1-100). */
+export interface MapArea {
+  lat: number
+  lng: number
+  radius: number
+}
+
 interface PropertiesMapProps {
   properties: Property[]
+  /** The property a list next to the map is pointing at */
+  highlightedId?: number | null
+  /** Told which pin the guest chose (null when the choice is cleared) */
+  onSelectedChange?: (id: number | null) => void
+  /** False when a list next to the map shows the chosen property instead */
+  showSelectedCard?: boolean
+  /** Offers "Search this area" once the guest has moved the map */
+  onSearchArea?: (area: MapArea) => void
+}
+
+const MIN_RADIUS_KM = 1
+const MAX_RADIUS_KM = 100
+
+function visibleArea(map: L.Map): MapArea {
+  const bounds = map.getBounds()
+  const center = bounds.getCenter()
+  const halfWidth = map.distance(center, L.latLng(center.lat, bounds.getEast()))
+  const halfHeight = map.distance(center, L.latLng(bounds.getNorth(), center.lng))
+  const radius = Math.ceil(Math.max(halfWidth, halfHeight) / 1000)
+  return {
+    lat: Math.round(center.lat * 1e6) / 1e6,
+    lng: Math.round(center.lng * 1e6) / 1e6,
+    radius: Math.min(MAX_RADIUS_KM, Math.max(MIN_RADIUS_KM, radius)),
+  }
 }
 
 interface Pin {
@@ -25,7 +56,9 @@ interface Pin {
 }
 
 /** Search results as price pins; choosing a pin shows the property card, which opens the property page (rooms, booking). */
-export function PropertiesMap({ properties }: PropertiesMapProps) {
+export function PropertiesMap({
+  properties, highlightedId = null, onSelectedChange, showSelectedCard = true, onSearchArea,
+}: PropertiesMapProps) {
   const { t, tp, formatMoney } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -35,6 +68,18 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const selectedIdRef = useRef<number | null>(null)
   selectedIdRef.current = selectedId
+  const highlightedIdRef = useRef<number | null>(null)
+  highlightedIdRef.current = highlightedId
+  const [moved, setMoved] = useState(false)
+  // True while the page itself moves the map (new results), so that is not taken for the guest moving it
+  const programmaticRef = useRef(false)
+  // The pin buttons are built once per set of results: they must reach the latest callback
+  const onSelectedChangeRef = useRef(onSelectedChange)
+  onSelectedChangeRef.current = onSelectedChange
+  const select = (id: number | null) => {
+    setSelectedId(id)
+    onSelectedChangeRef.current?.(id)
+  }
 
   const pins = useMemo<Pin[]>(() => properties.flatMap(property => {
     const point = toCoordinates(property.latitude, property.longitude)
@@ -66,6 +111,9 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
         return L.divIcon({ html: badge, className: 'map-pin-icon', iconSize: undefined })
       },
     }).addTo(map)
+    const onUserMove = () => { if (!programmaticRef.current) setMoved(true) }
+    map.on('dragend', onUserMove)
+    map.on('zoomend', onUserMove)
     mapRef.current = map
     groupRef.current = group
     const markers = markersRef.current
@@ -98,13 +146,14 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
       pin.className = 'map-pin'
       pin.textContent = price
       pin.setAttribute('aria-label', t('map.pinLabel', { name, price }))
-      pin.addEventListener('click', () => setSelectedId(property.id))
+      pin.addEventListener('click', () => select(property.id))
       const icon = L.divIcon({ html: pin, className: 'map-pin-icon', iconSize: undefined })
       const marker = L.marker([lat, lng], { icon, keyboard: false })
       group.addLayer(marker)
       pinsRef.current.set(property.id, pin)
       const raise = () => marker.setZIndexOffset(RAISED_Z_OFFSET)
-      const lower = () => marker.setZIndexOffset(selectedIdRef.current === property.id ? ACTIVE_Z_OFFSET : 0)
+      const lower = () => marker.setZIndexOffset(
+        highlightedIdRef.current === property.id ? RAISED_Z_OFFSET : selectedIdRef.current === property.id ? ACTIVE_Z_OFFSET : 0)
       pin.addEventListener('mouseenter', raise)
       pin.addEventListener('focus', raise)
       pin.addEventListener('mouseleave', lower)
@@ -112,18 +161,27 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
       markers.set(property.id, marker)
     }
     const points = pins.map(pin => L.latLng(pin.lat, pin.lng))
-    if (points.length === 1) map.setView(points[0], 13)
-    else if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 14 })
+    programmaticRef.current = true
+    if (points.length === 1) map.setView(points[0], 13, { animate: false })
+    else if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 14, animate: false })
+    programmaticRef.current = false
+    setMoved(false)
   }, [pins, t, tp, formatMoney, hasPins])
 
   // The chosen pin is marked; a new search that drops it clears the card
   useEffect(() => {
     // The class sits on the pin button itself: it stays right while a group hides and shows the marker
-    pinsRef.current.forEach((pin, id) => pin.classList.toggle('map-pin--active', id === selectedId))
-    markersRef.current.forEach((marker, id) => marker.setZIndexOffset(id === selectedId ? ACTIVE_Z_OFFSET : 0))
-  }, [selectedId, pins])
+    pinsRef.current.forEach((pin, id) => {
+      pin.classList.toggle('map-pin--active', id === selectedId)
+      pin.classList.toggle('map-pin--hover', id === highlightedId)
+    })
+    markersRef.current.forEach((marker, id) => marker.setZIndexOffset(
+      id === highlightedId ? RAISED_Z_OFFSET : id === selectedId ? ACTIVE_Z_OFFSET : 0))
+  }, [selectedId, highlightedId, pins])
   useEffect(() => {
-    if (selectedId !== null && !selected) setSelectedId(null)
+    if (selectedId !== null && !selected) select(null)
+    // `select` only sets state and calls the callback; it is not a dependency on purpose
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, selected])
 
   if (!hasPins) {
@@ -132,11 +190,22 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
 
   return (
     <div className="properties-map">
-      <div ref={containerRef} className="properties-map-canvas" role="region" aria-label={t('map.label')} />
+      <div className="properties-map-frame">
+        <div ref={containerRef} className="properties-map-canvas" role="region" aria-label={t('map.label')} />
+        {onSearchArea && moved && mapRef.current && (
+          <button type="button" className="properties-map-search-area btn btn-primary btn-sm"
+            onClick={() => {
+              onSearchArea(visibleArea(mapRef.current as L.Map))
+              setMoved(false)
+            }}>
+            {t('map.searchArea')}
+          </button>
+        )}
+      </div>
       {missing > 0 && <p className="geography-picker-hint">{tp('map.someMissing', missing)}</p>}
-      {selected ? (
+      {!showSelectedCard ? null : selected ? (
         <div className="properties-map-card" data-testid="map-selected-card">
-          <button type="button" className="properties-map-card-close btn btn-secondary btn-sm" onClick={() => setSelectedId(null)}>
+          <button type="button" className="properties-map-card-close btn btn-secondary btn-sm" onClick={() => select(null)}>
             <X size={16} aria-hidden="true" /> {t('map.closeCard')}
           </button>
           <PropertyCard property={selected} />
