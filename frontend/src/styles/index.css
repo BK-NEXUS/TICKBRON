@@ -2365,6 +2365,30 @@ table .btn {
   justify-content: center;
 }
 
+button.property-gallery-image {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.property-gallery-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.property-gallery-thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.property-gallery-view-all {
+  margin-top: var(--spacing-sm);
+}
+
 .property-gallery-image-placeholder {
   font-size: 120px;
   display: flex;
@@ -9949,4 +9973,100 @@ table .btn {
 .auth-caps-hint {
   color: var(--color-warning);
   font-weight: 500;
+}
+
+/* Full-screen photos */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-backdrop);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-lg) 72px;
+  outline: none;
+}
+
+.lightbox-figure {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  justify-items: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+}
+
+.lightbox-caption {
+  display: flex;
+  gap: var(--spacing-md);
+  color: #fff;
+  font-size: 0.9375rem;
+}
+
+.lightbox-counter {
+  opacity: 0.8;
+}
+
+.lightbox-close,
+.lightbox-nav {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lightbox-close:hover,
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-close {
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+}
+
+.lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lightbox-nav--prev {
+  left: var(--spacing-md);
+}
+
+.lightbox-nav--next {
+  right: var(--spacing-md);
+}
+
+@media (max-width: 767px) {
+  .lightbox-inner {
+    padding: 64px var(--spacing-sm) var(--spacing-md);
+  }
+
+  .lightbox-nav--prev {
+    left: var(--spacing-xs);
+  }
+
+  .lightbox-nav--next {
+    right: var(--spacing-xs);
+  }
 }
