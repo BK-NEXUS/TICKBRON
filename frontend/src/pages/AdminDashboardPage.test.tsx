@@ -8,6 +8,9 @@ import { promotionAdapter } from '../adapters/promotionAdapter'
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext')
+vi.mock('../adapters/adminGeographyAdapter', () => ({
+  adminGeographyAdapter: { list: vi.fn().mockResolvedValue({ data: { count: 0, next: null, previous: null, results: [] }, error: null }) },
+}))
 // Only the Advertising screen uses this adapter
 vi.mock('../adapters/promotionAdapter', () => ({
   promotionAdapter: { listPromotions: vi.fn(), searchHotels: vi.fn() },
@@ -206,6 +209,24 @@ describe('AdminDashboardPage', () => {
       await waitFor(() => expect(screen.getByText('No promotions yet.')).toBeInTheDocument())
       expect(screen.queryByLabelText('Find a hotel by name')).toBeNull()
       expect(screen.getByText(/Only a super-admin can change them/)).toBeInTheDocument()
+    })
+  })
+
+  describe('Geography', () => {
+    const renderDashboard = (user: typeof mockUser) => {
+      (useAuth as never).mockReturnValue({ user, isAuthenticated: true })
+      render(<MemoryRouter><AdminDashboardPage /></MemoryRouter>)
+    }
+
+    it('a super-admin opens the Geography screen from the navigation', async () => {
+      renderDashboard(mockUser)
+      fireEvent.click(screen.getByRole('button', { name: 'Geography' }))
+      expect(await screen.findByText('Nothing here yet.')).toBeInTheDocument()
+    })
+
+    it('staff do not see Geography (the backend answers 403 to them)', () => {
+      renderDashboard({ ...mockUser, is_staff: true, is_superuser: false })
+      expect(screen.queryByRole('button', { name: 'Geography' })).not.toBeInTheDocument()
     })
   })
 })
