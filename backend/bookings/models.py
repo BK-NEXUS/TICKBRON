@@ -18,6 +18,7 @@ from common.dates import business_today
 from common.models import BaseModel
 from common.money import CHARGE_CURRENCY, quantize, to_uzs
 from currency.rates import ExchangeRateUnavailable, current_rate
+from .cancellation import terms_for_plan
 from .state_machine import BookingStateMachine, PaymentStateMachine, BookingState, PaymentState
 
 logger = logging.getLogger(__name__)
@@ -136,6 +137,16 @@ class Booking(BaseModel):
         default=0, validators=[MaxValueValidator(100)],
         help_text=_('Percent of the amount paid refunded if the guest does not arrive (snapshot)'))
 
+    # What the guest was promised if they cancel a paid booking (R11, .ai/PLAN_R11_CANCELLATION.md): the
+    # rate plan's terms of the moment the booking was created, never changed (see SNAPSHOT_FIELDS).
+    # cancel_refund_percent_after NULL = no promise: bookings made before this existed get no automatic refund.
+    cancel_free_until = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_('Cancelling up to this moment refunds everything paid (snapshot); empty = no free window'))
+    cancel_refund_percent_after = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(100)],
+        help_text=_('Percent of the amount paid refunded when cancelling after the free window (snapshot)'))
+
     # Additional information
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
@@ -205,6 +216,7 @@ class Booking(BaseModel):
     SNAPSHOT_FIELDS = (
         'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
         'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale', 'no_show_refund_percent',
+        'cancel_free_until', 'cancel_refund_percent_after',
     )
 
     @classmethod
@@ -365,6 +377,9 @@ class Booking(BaseModel):
             if rate is None:
                 raise ExchangeRateUnavailable()
 
+            # The cancellation terms the guest is promised, copied from the rate plan now
+            cancel_free_until, cancel_refund_percent_after = terms_for_plan(rate_plan, check_in)
+
             # Create the booking
             booking = cls.objects.create(
                 guest=guest,
@@ -384,6 +399,8 @@ class Booking(BaseModel):
                 exchange_rate_source=rate.source,
                 exchange_rate_stale=rate.stale,
                 no_show_refund_percent=settings.NO_SHOW_REFUND_PERCENT,
+                cancel_free_until=cancel_free_until,
+                cancel_refund_percent_after=cancel_refund_percent_after,
                 special_requests=special_requests,
                 guest_full_name=guest_full_name or guest.get_full_name(),
                 guest_phone=guest_phone or guest.phone_number,

@@ -47,7 +47,7 @@ def make_hotel(owner, name='Alpha', currency='UZS', rooms=3):
 
 
 def make_stay(prop, guest, check_in, nights=2, status='confirmed', percent=50, price=UZS_PRICE, rooms=1,
-              room=None, rate=None, paid=True, currency='UZS'):
+              room=None, rate=None, paid=True, currency='UZS', **fields):
     """
     A booking row as the engine leaves it, with the no-show refund snapshot `percent`, its
     booking item (when room and rate are given) and, when `paid`, one completed payment of
@@ -59,7 +59,7 @@ def make_stay(prop, guest, check_in, nights=2, status='confirmed', percent=50, p
         check_in=check_in, check_out=check_in + timedelta(days=nights), number_of_nights=nights,
         number_of_rooms=rooms, guest_count=1, total_price=price * nights * rooms, currency=currency,
         guest_full_name='Test Guest', guest_email=guest.email, expires_at=None,
-        no_show_refund_percent=percent,
+        no_show_refund_percent=percent, **fields,
     )
     if room is not None and rate is not None:
         BookingItem.objects.create(

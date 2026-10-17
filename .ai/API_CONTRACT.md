@@ -1013,3 +1013,22 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 
 ## 2026-10-17 map: property coordinates (no API change)
 The search results, property detail and partner property endpoints already carry `latitude` / `longitude` (decimal, 6 places, range -90..90 / -180..180, both nullable). **They are sent as decimal strings** (`"41.311081"`), `null` when the owner has not set a location; the frontend parses them with `utils/coordinates.ts`. Partner `POST` / `PATCH` accept them as numbers. The search page map shows only the hotels that have both values; the partner wizard sets them from a map pin.
+
+## 2026-10-17 Free cancellation and the cancellation refund (R11)
+Plan: `.ai/PLAN_R11_CANCELLATION.md` (approved by the owner 2026-10-17). The rule lives in one module, `bookings/cancellation.py`; amounts are computed only on the backend, in whole so'm (UZS), ROUND_HALF_UP, from what was actually paid (completed payments), never above it and never counting what was already refunded.
+
+**Terms.** A rate plan has `free_cancel_hours` (whole hours before the START of the check-in day in `BUSINESS_TIME_ZONE`; `null` = no free window; 0..8760) and `cancel_refund_percent` (0..100; `null` = the platform percent `CANCEL_REFUND_PERCENT`, default 50; 0 = non-refundable). A guest cancelling a PAID booking gets 100% back up to the end of the free window, otherwise `cancel_refund_percent`. Unpaid bookings have nothing to refund. The terms are copied onto the booking when it is created (`cancel_free_until`, `cancel_refund_percent_after`) and never change afterwards, whatever the owner or the setting does later. Bookings made before this change have no terms (`cancellation_terms: null`): they are cancelled as before, with no automatic refund (staff can still refund by hand).
+
+**Public, no login**
+- `GET /properties/{id}/` rate plans (`room_types[].rate_plans[]`): + `free_cancellation` (bool: the plan has a free window), `free_cancel_hours` (int or null), `cancel_refund_percent` (the plan's own or the platform percent, always a number).
+- `GET /properties/{id}/quote/` + `cancellation_terms: { free_cancellation, free_until, refund_percent_after }` for THESE dates. `free_cancellation` is true only while the free window of these dates is still ahead; then `free_until` is an ISO datetime (the badge "Free cancellation until ..."), else `null`.
+
+**Guest (login, own bookings only; another user's booking is 404)**
+- Booking responses (list, detail, create, cancel) + `cancellation_terms: { free_until, refund_percent_after } | null` (the snapshot).
+- `GET /bookings/{id}/cancel-preview/` -> `{ refund_amount: "2354590.00", refund_currency: "UZS", refund_percent: 100 | 50 | 0 | null, free_until: ISO | null }`: what cancelling right now would give back; nothing changes. `refund_percent: null` = the booking has no terms. 400 `{error, details}` when the booking cannot be cancelled in its state (cancelled, completed, no-show, or a stay that has started).
+- `POST /bookings/{id}/cancel/` (unchanged request) -> the booking + `refund: { amount, currency: "UZS", percent }` (`amount: "0.00"` when nothing is refunded, `percent: null` for a booking without terms). Cancel and refund happen in ONE transaction: if the refund cannot be created the booking stays as it was. The refund rows are `Refund(reason="cancel")` with idempotency key `"<booking id>:cancel"` (`"<booking id>:cancel:<payment id>"` for each further payment), so a repeated or parallel cancel cannot refund twice; the provider is asked after commit (`pending` -> sent; a failed send leaves the row for staff).
+
+**Hotel owner**
+- `POST/PATCH /partner/rates/` accept `free_cancel_hours` and `cancel_refund_percent` (400 outside the ranges or for text; `null` clears). Changing a plan never changes a booking already made.
+
+**Setting.** `CANCEL_REFUND_PERCENT` (env, 0-100, default 50; startup fails otherwise), documented in `backend/.env.example`.

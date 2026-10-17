@@ -171,7 +171,8 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
         fields = [
             'id', 'room_type', 'name', 'slug', 'rate_type', 'description', 'base_price',
             'currency', 'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
-            'deposit_required', 'deposit_percentage', 'advance_booking_days'
+            'deposit_required', 'deposit_percentage', 'advance_booking_days',
+            'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
         extra_kwargs = {'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000}}

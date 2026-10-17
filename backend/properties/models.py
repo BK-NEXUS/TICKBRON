@@ -859,6 +859,19 @@ class RatePlan(BaseModel):
         null=True,
         help_text=_('Cancellation policy for this rate plan')
     )
+    # R11 free cancellation (.ai/PLAN_R11_CANCELLATION.md); copied onto a booking when it is created
+    free_cancel_hours = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(8760)],
+        help_text=_('Guests cancelling at least this many hours before the check-in day get everything back (empty = no free window)')
+    )
+    cancel_refund_percent = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(100)],
+        help_text=_('Percent refunded when cancelling after the free window, 0 = non-refundable (empty = the platform percent)')
+    )
     deposit_required = models.BooleanField(
         default=False,
         help_text=_('Whether a deposit is required for this rate plan')

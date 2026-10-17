@@ -10,6 +10,7 @@ from django.db import DatabaseError
 from common.dates import business_today
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
+from .cancellation import cancel_with_refund, cancellation_terms
 from .models import Booking, BookingItem
 from .noshow import refund_disclosure
 
@@ -41,6 +42,7 @@ class BookingSerializer(serializers.ModelSerializer):
     no_show_refund_amount = serializers.SerializerMethodField()
     no_show_refund_text_key = serializers.SerializerMethodField()
     no_show_refund_text_params = serializers.SerializerMethodField()
+    cancellation_terms = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -53,11 +55,15 @@ class BookingSerializer(serializers.ModelSerializer):
             'guest_full_name', 'guest_phone', 'guest_email', 'number_of_rooms', 'children',
             'charge_amount', 'charge_currency', 'exchange_rate',
             'no_show_refund_percent', 'no_show_refund_amount', 'no_show_refund_text_key',
-            'no_show_refund_text_params',
+            'no_show_refund_text_params', 'cancellation_terms',
         ]
         # Output-only serializer: bookings are created via BookingCreateSerializer
         # and changed only through model methods, never written from request data.
         read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_cancellation_terms(self, obj):
+        return cancellation_terms(obj)
 
     def _disclosure(self, obj):
         return refund_disclosure(obj.no_show_refund_percent, obj.charge_amount, obj.charge_currency)
@@ -272,9 +278,8 @@ class BookingCancelSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         """Cancel booking and restore inventory."""
         try:
-            instance.cancel_booking(
-                cancellation_reason=validated_data.get('cancellation_reason')
-            )
+            self.refund = cancel_with_refund(
+                instance, validated_data.get('cancellation_reason'), actor=instance.guest)
             return instance
         except ValidationError as e:
             raise serializers.ValidationError(e.message_dict)

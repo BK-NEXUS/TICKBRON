@@ -84,10 +84,21 @@ def _target(paid, percent):
     return quantize(Decimal(paid) * Decimal(percent) / Decimal(100), CHARGE_CURRENCY)
 
 
-def _refund_now(paid, already, percent):
+def refund_now(paid, already, percent):
     """target = percent of what was paid; pay what is still missing, never below 0, never above paid."""
     target = min(_target(paid, percent), paid)
     return max(Decimal('0'), target - already)
+
+
+def paid_and_refunded(booking_ids):
+    """({booking id: paid}, {booking id: already refunded}) in UZS: two queries however many bookings."""
+    paid = dict(PaymentTransaction.objects.filter(
+        booking_id__in=booking_ids, currency=CHARGE_CURRENCY, status__in=PAID_PAYMENT_STATUSES,
+    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
+    already = dict(Refund.objects.filter(
+        booking_id__in=booking_ids, currency=CHARGE_CURRENCY, status__in=Refund.COUNTED_STATUSES,
+    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
+    return paid, already
 
 
 def refund_previews(bookings):
@@ -95,20 +106,14 @@ def refund_previews(bookings):
     {booking id: {amount, currency, percent, already_refunded, paid}} for a list of bookings in
     two queries however many there are (the staff queue). Same arithmetic as approval.
     """
-    ids = [booking.pk for booking in bookings]
-    paid = dict(PaymentTransaction.objects.filter(
-        booking_id__in=ids, currency=CHARGE_CURRENCY, status__in=PAID_PAYMENT_STATUSES,
-    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
-    already = dict(Refund.objects.filter(
-        booking_id__in=ids, currency=CHARGE_CURRENCY, status__in=Refund.COUNTED_STATUSES,
-    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
+    paid, already = paid_and_refunded([booking.pk for booking in bookings])
     previews = {}
     for booking in bookings:
         booking_paid = paid.get(booking.pk) or Decimal('0')
         booking_already = already.get(booking.pk) or Decimal('0')
         percent = booking.no_show_refund_percent
         previews[booking.pk] = {
-            'amount': f'{_refund_now(booking_paid, booking_already, percent):.2f}',
+            'amount': f'{refund_now(booking_paid, booking_already, percent):.2f}',
             'currency': CHARGE_CURRENCY,
             'percent': percent,
             'already_refunded': f'{booking_already:.2f}',
@@ -117,10 +122,10 @@ def refund_previews(bookings):
     return previews
 
 
-def _refund_allocations(booking):
+def refund_allocations(booking, percent):
     """
     Locks the booking's payments and returns [(payment, amount)]: the refund split across the
-    payments, newest first, never more than each payment still has. Total = _refund_now().
+    payments, newest first, never more than each payment still has. Total = refund_now() at `percent`.
     """
     payments = list(PaymentTransaction.objects.select_for_update().filter(
         booking=booking, currency=CHARGE_CURRENCY, status__in=PAID_PAYMENT_STATUSES,
@@ -129,7 +134,7 @@ def _refund_allocations(booking):
     already = Refund.objects.filter(
         booking=booking, currency=CHARGE_CURRENCY, status__in=Refund.COUNTED_STATUSES,
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    left = _refund_now(paid, already, booking.no_show_refund_percent)
+    left = refund_now(paid, already, percent)
     allocations = []
     for payment in payments:
         if left <= 0:
@@ -281,7 +286,7 @@ def _apply_approval(report, actor):
         raise NoShowError('booking_not_reportable', 'The booking can no longer be marked as a no-show')
     release_future_nights(booking, business_today())
     refunds = []
-    for index, (payment, amount) in enumerate(_refund_allocations(booking)):
+    for index, (payment, amount) in enumerate(refund_allocations(booking, booking.no_show_refund_percent)):
         key = f'{booking.pk}:no_show' if index == 0 else f'{booking.pk}:no_show:{payment.pk}'
         try:
             refunds.append(create_refund(payment, amount, 'no_show', created_by=actor, idempotency_key=key))
@@ -290,19 +295,19 @@ def _apply_approval(report, actor):
     return booking, refunds
 
 
-def _send_after_commit(refunds, actor):
+def send_after_commit(refunds, actor):
     ids = [refund.pk for refund in refunds if refund.status == 'pending']
     if ids:
-        transaction.on_commit(partial(send_pending_no_show_refunds, ids, actor))
+        transaction.on_commit(partial(send_pending_refunds, ids, actor))
 
 
-def send_pending_no_show_refunds(refund_ids, actor):
-    """After commit, outside any transaction: ask the provider once for each pending refund."""
+def send_pending_refunds(refund_ids, actor):
+    """After commit, outside any transaction: ask the provider once for each pending refund (no-show and cancel)."""
     for refund in Refund.objects.filter(pk__in=refund_ids):
         try:
             send_refund(refund, actor=actor)
         except Exception:                               # the decision is committed; staff see the refund
-            logger.exception('No-show refund %s could not be sent', refund.pk)
+            logger.exception('Refund %s could not be sent', refund.pk)
 
 
 def approve_report(report_id, actor, decision_comment):
@@ -321,7 +326,7 @@ def _approve_locked(report, actor, decision_comment, audit=True):
         _audit(actor, 'no_show_report_approve', report)
     _notify_owner(report, 'no_show_report_approved')
     _notify_guest(booking, sum((refund.amount for refund in refunds), Decimal('0')))
-    _send_after_commit(refunds, actor)
+    send_after_commit(refunds, actor)
     return report, refunds
 
 
