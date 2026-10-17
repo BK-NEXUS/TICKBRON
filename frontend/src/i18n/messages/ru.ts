@@ -1515,10 +1515,6 @@ export const ru: Catalog = {
   'info.cookies.h3': "Настройки",
   'info.cookies.b3': "Некоторые настройки, например закрытые подсказки, хранятся в памяти браузера.",
   'info.browse': "Смотреть объекты",
-  'region.regionSaved': "Регион сохранён",
-  'region.region': "Регион",
-  'region.unspecified': "Не указан",
-  'region.saveRegion': "Сохранить регион",
   'card.placeholderExpiry': "ММ/ГГ",
   'card.placeholderHolder': "ИМЯ ФАМИЛИЯ",
   'geo.country': "Страна",
@@ -1528,4 +1524,6 @@ export const ru: Catalog = {
   'geo.loadFailed': "Не удалось загрузить список. Попробуйте ещё раз.",
   'geo.retry': "Повторить",
   'geo.noCities': "Для этого региона пока нет городов.",
+  'location.saved': "Местоположение сохранено",
+  'location.save': "Сохранить местоположение",
 }

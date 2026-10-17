@@ -1483,10 +1483,6 @@ export const uz: Catalog = {
   'info.cookies.h3': "Sozlamalar",
   'info.cookies.b3': "Ba'zi sozlamalar, masalan yopilgan maslahatlar, brauzer xotirasida saqlanadi.",
   'info.browse': "Obyektlarni ko'rish",
-  'region.regionSaved': "Viloyat saqlandi",
-  'region.region': "Viloyat",
-  'region.unspecified': "Ko'rsatilmagan",
-  'region.saveRegion': "Viloyatni saqlash",
   'card.placeholderExpiry': "OO/YY",
   'card.placeholderHolder': "ISM FAMILIYA",
   'geo.country': "Mamlakat",
@@ -1496,4 +1492,6 @@ export const uz: Catalog = {
   'geo.loadFailed': "Roʻyxatni yuklab boʻlmadi. Qayta urinib koʻring.",
   'geo.retry': "Qayta urinish",
   'geo.noCities': "Bu viloyat uchun hozircha shaharlar yoʻq.",
+  'location.saved': "Joylashuv saqlandi",
+  'location.save': "Joylashuvni saqlash",
 }

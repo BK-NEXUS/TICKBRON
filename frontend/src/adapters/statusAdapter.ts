@@ -492,11 +492,11 @@ export const statusAdapter = {
       `${PARTNER_URL}/arrivals/${query({ day, property, page })}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
-  /** Admin sets a property's region (blank clears it: "Unspecified"). Contract: S1 */
-  setPropertyRegion(propertyId: number, state: string) {
-    return request<{ id: number; state: string | null }>(
+  /** Admin sets a property's country, region and city by id (all three null clears it: "Unspecified"). */
+  setPropertyLocation(propertyId: number, location: { country_ref: number | null; region_ref: number | null; city_ref: number | null }) {
+    return request<{ id: number; country_ref: number | null; region_ref: number | null; city_ref: number | null }>(
       `${API_BASE_URL}/api/v1/admin-panel/properties/${propertyId}/region/`,
-      { method: 'PATCH', body: JSON.stringify({ state }) },
+      { method: 'PATCH', body: JSON.stringify(location) },
     )
   },
 }

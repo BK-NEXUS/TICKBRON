@@ -77,15 +77,15 @@ describe('statusAdapter', () => {
     expect(result).toEqual({ data: null, error: 'offline' })
   })
 
-  it('sets a property region with PATCH and the CSRF header', async () => {
-    fetchMock.mockResolvedValue(okJson({ id: 3, state: 'Tashkent' }))
+  it('sets a property location (ids) with PATCH and the CSRF header', async () => {
+    fetchMock.mockResolvedValue(okJson({ id: 3, country_ref: 1, region_ref: 10, city_ref: 100 }))
 
-    const result = await statusAdapter.setPropertyRegion(3, 'Tashkent')
+    const result = await statusAdapter.setPropertyLocation(3, { country_ref: 1, region_ref: 10, city_ref: 100 })
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toContain('/api/v1/admin-panel/properties/3/region/')
     expect(init.method).toBe('PATCH')
-    expect(JSON.parse(init.body)).toEqual({ state: 'Tashkent' })
+    expect(JSON.parse(init.body)).toEqual({ country_ref: 1, region_ref: 10, city_ref: 100 })
     expect(init.headers['X-CSRFToken']).toBe('test-token')
     expect(result.error).toBeNull()
   })
