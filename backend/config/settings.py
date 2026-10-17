@@ -440,6 +440,10 @@ NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
 # no-show report. A whole number 0-100 (startup fails otherwise). Every booking stores the value at
 # creation (Booking.no_show_refund_percent); changing this never changes existing bookings.
 NO_SHOW_REFUND_PERCENT = parse_percent('NO_SHOW_REFUND_PERCENT', os.getenv('NO_SHOW_REFUND_PERCENT'), default=50)
+# R11: percent of the amount paid that comes back when a guest cancels a paid booking outside any free window
+# (the owner's answer to decision 1). A whole number 0-100 (startup fails otherwise). A rate plan may set its
+# own percent; every booking stores the terms at creation, so changing this never changes existing bookings.
+CANCEL_REFUND_PERCENT = parse_percent('CANCEL_REFUND_PERCENT', os.getenv('CANCEL_REFUND_PERCENT'), default=50)
 # R12 phase 3: a hotel is flagged in the staff queue when, over the last NO_SHOW_FLAG_DAYS days, it has at
 # least NO_SHOW_FLAG_MIN_REPORTS reports AND its report rate is at least NO_SHOW_FLAG_FACTOR times the
 # platform rate AND at least NO_SHOW_FLAG_MIN_RATE (so a near-zero average does not flag everyone)

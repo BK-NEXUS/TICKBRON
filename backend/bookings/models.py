@@ -136,6 +136,16 @@ class Booking(BaseModel):
         default=0, validators=[MaxValueValidator(100)],
         help_text=_('Percent of the amount paid refunded if the guest does not arrive (snapshot)'))
 
+    # What the guest was promised if they cancel a paid booking (R11, .ai/PLAN_R11_CANCELLATION.md): the
+    # rate plan's terms of the moment the booking was created, never changed (see SNAPSHOT_FIELDS).
+    # cancel_refund_percent_after NULL = no promise: bookings made before this existed get no automatic refund.
+    cancel_free_until = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_('Cancelling up to this moment refunds everything paid (snapshot); empty = no free window'))
+    cancel_refund_percent_after = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(100)],
+        help_text=_('Percent of the amount paid refunded when cancelling after the free window (snapshot)'))
+
     # Additional information
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
@@ -205,6 +215,7 @@ class Booking(BaseModel):
     SNAPSHOT_FIELDS = (
         'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
         'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale', 'no_show_refund_percent',
+        'cancel_free_until', 'cancel_refund_percent_after',
     )
 
     @classmethod
