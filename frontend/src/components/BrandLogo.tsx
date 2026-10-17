@@ -1,9 +1,9 @@
 /**
- * Client logo, drawn as a pencil sketch with a transparent background (made from the client's
- * drawing by tools/make_logo.py, so it sits on any page color). Two sizes of artwork:
- * the full lockup with the name for the sign-in pages, and the symbol alone for the header and
- * footer, where the name is written next to it. Each has a light-ink twin for the dark theme;
- * CSS shows the one that matches the theme.
+ * Client logo (gold, with a soft shadow) on a transparent background: made from the logo sheet by
+ * tools/make_logo.py, so it sits on any page color. Two kinds of artwork: the full lockup with the
+ * name for the sign-in pages, and the symbol alone for the header and footer, where the name is
+ * written next to it. Each has a dark-theme version (drawn for a dark background); CSS shows the
+ * one that matches the theme.
  */
 const LOGO_FILES = {
   lockup: { light: '/brand/tickbron-logo.webp', dark: '/brand/tickbron-logo-dark.webp' },
