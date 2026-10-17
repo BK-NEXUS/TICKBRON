@@ -181,7 +181,6 @@ export function PropertiesMap({
   useEffect(() => {
     if (selectedId !== null && !selected) select(null)
     // `select` only sets state and calls the callback; it is not a dependency on purpose
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, selected])
 
   if (!hasPins) {
