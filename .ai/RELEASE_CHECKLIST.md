@@ -198,8 +198,9 @@ proxy_set_header Host              $host;
 ```
 
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response (add `preload` only after submitting the domain to hstspreload.org); redirect all `http://` to `https://` (or set `SECURE_SSL_REDIRECT=True` in Django and `SECURE_PROXY_SSL_HEADER` for the proxy).
-- `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; add the map tile host when R11 adds Leaflet, and payment provider hosts when Payme/Click are integrated):
-  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
+- `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; the map tile host `tile.openstreetmap.org` is listed below since the search map and the location picker, and add payment provider hosts when Payme/Click are integrated):
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
+- Map privacy: the browser loads map tiles straight from OpenStreetMap, so OSM sees the visitor's IP address and the area viewed; the privacy policy (legal texts) must say so. The OSM tile policy needs the visible attribution (set in `components/mapTiles.ts`) and is meant for light use; plan a tile provider or own tile server before heavy traffic.
 - Clickjacking: `frame-ancestors 'none'` in the CSP above, plus `X-Frame-Options: DENY` for older browsers (SPA responses).
 - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on SPA and `/media/` responses.
 - `/media/` (uploaded photos): serve with `Content-Disposition: inline`, the image MIME type from the file extension only (jpg/png/gif/webp), `nosniff`, no script execution, and no directory listing.

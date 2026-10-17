@@ -32,12 +32,23 @@ interface RankedRow {
   revenue: Money[]
 }
 
-export interface StatusCountry extends RankedRow {
+/** Names of a place in the three languages; the "Unspecified" group carries the English word in all three. */
+interface PlaceNames {
+  name_uz: string
+  name_ru: string
+  name_en: string
+}
+
+export interface StatusCountry extends RankedRow, PlaceNames {
+  /** ISO code, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  code: string | null
   country: string
   hotels: number
 }
 
-export interface StatusRegion extends RankedRow {
+export interface StatusRegion extends RankedRow, PlaceNames {
+  /** Region id, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  id: number | null
   region: string
   hotels: number
 }
@@ -492,11 +503,11 @@ export const statusAdapter = {
       `${PARTNER_URL}/arrivals/${query({ day, property, page })}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
-  /** Admin sets a property's region (blank clears it: "Unspecified"). Contract: S1 */
-  setPropertyRegion(propertyId: number, state: string) {
-    return request<{ id: number; state: string | null }>(
+  /** Admin sets a property's country, region and city by id (all three null clears it: "Unspecified"). */
+  setPropertyLocation(propertyId: number, location: { country_ref: number | null; region_ref: number | null; city_ref: number | null }) {
+    return request<{ id: number; country_ref: number | null; region_ref: number | null; city_ref: number | null }>(
       `${API_BASE_URL}/api/v1/admin-panel/properties/${propertyId}/region/`,
-      { method: 'PATCH', body: JSON.stringify({ state }) },
+      { method: 'PATCH', body: JSON.stringify(location) },
     )
   },
 }

@@ -22,6 +22,9 @@ export interface AdminProperty {
   state?: string
   postal_code?: string
   country: string
+  country_ref?: number | null
+  region_ref?: number | null
+  city_ref?: number | null
   latitude?: number
   longitude?: number
   base_price: number

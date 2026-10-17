@@ -1507,43 +1507,205 @@ table .btn {
 }
 
 .search-results-map {
-  min-height: 500px;
-  background-color: var(--color-background-alt);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  min-width: 0;
 }
 
-.search-results-map-placeholder {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.search-results-map-placeholder-content {
-  text-align: center;
-  padding: var(--spacing-2xl);
-}
-
-.search-results-map-placeholder-icon {
-  font-size: 64px;
-  display: block;
-  margin-bottom: var(--spacing-md);
-  color: var(--color-text-strong);
-}
-
-.search-results-map-placeholder h2 {
+.search-results-map-title {
+  margin: 0 0 var(--spacing-xs) 0;
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
   font-family: var(--font-family-heading);
 }
 
-.search-results-map-placeholder p {
-  font-size: var(--font-size-sm);
+.search-results-map-empty {
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-background-alt);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-xs) 0;
+  text-align: center;
+}
+
+.properties-map {
+  display: grid;
+  gap: var(--spacing-md);
+  min-width: 0;
+}
+
+.properties-map-view {
+  display: grid;
+  gap: var(--spacing-lg);
+  min-width: 0;
+}
+
+.properties-map-list {
+  display: grid;
+  gap: var(--spacing-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.properties-map-list-item {
+  border-radius: var(--radius-lg);
+  scroll-margin: var(--spacing-sm);
+}
+
+.properties-map-list .property-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* A long price ("1 295 000 UZS") and the button wrap instead of overflowing the narrow card */
+.properties-map-list .property-card-footer {
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.properties-map-list-item--active {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  /* List on the left, the map stays in view on the right while the list scrolls */
+  .properties-map-view {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .properties-map-view > .properties-map {
+    order: 2;
+    position: sticky;
+    top: var(--spacing-md);
+  }
+
+  .properties-map-list {
+    order: 1;
+    max-height: calc(100vh - var(--spacing-2xl));
+    overflow-y: auto;
+    padding-right: var(--spacing-xs);
+  }
+
+  .properties-map-canvas {
+    height: calc(100vh - 160px);
+    min-height: 420px;
+  }
+}
+
+.properties-map-frame {
+  position: relative;
+}
+
+.properties-map-search-area {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.properties-map-canvas {
+  height: clamp(320px, 60vh, 640px);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  z-index: 0;
+}
+
+.properties-map-card {
+  display: grid;
+  gap: var(--spacing-sm);
+  max-width: 420px;
+}
+
+.properties-map-card-close {
+  justify-self: end;
+}
+
+.map-pin-icon {
+  background: none;
+  border: 0;
+  width: auto !important;
+  height: auto !important;
+}
+
+.map-pin {
+  display: inline-block;
+  transform: translate(-50%, -100%);
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.map-cluster {
+  display: inline-grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.map-cluster:focus-visible,
+.map-pin:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.map-pin.map-pin--hover,
+.map-pin.map-pin--active {
+  background: var(--color-text-primary);
+  color: var(--color-surface);
+}
+
+.show-on-map-card {
+  display: grid;
+  justify-items: start;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.show-on-map-card-icon {
+  color: var(--color-text-strong);
+}
+
+.show-on-map-card-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.location-picker {
+  display: grid;
+  gap: var(--spacing-xs);
+  grid-column: 1 / -1;
+}
+
+.location-picker-canvas {
+  height: 280px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  z-index: 0;
 }
 
 /* Loading State */

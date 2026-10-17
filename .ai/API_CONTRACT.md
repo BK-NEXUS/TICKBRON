@@ -1010,3 +1010,6 @@ Only the super-admin promotes a hotel (the owner asks the super-admin outside th
 ## 2026-10-14 password reset and change
 - New: `POST /auth/password-reset/request/`, `POST /auth/password-reset/confirm/`, `POST /auth/password/change/`. Full contract in `.ai/contracts/auth.md` ("Password reset and change").
 - Frontend routes: `/forgot-password` (e-mail form), `/reset-password?uid=&token=` (new password form), change-password section on `/profile`.
+
+## 2026-10-17 map: property coordinates (no API change)
+The search results, property detail and partner property endpoints already carry `latitude` / `longitude` (decimal, 6 places, range -90..90 / -180..180, both nullable). **They are sent as decimal strings** (`"41.311081"`), `null` when the owner has not set a location; the frontend parses them with `utils/coordinates.ts`. Partner `POST` / `PATCH` accept them as numbers. The search page map shows only the hotels that have both values; the partner wizard sets them from a map pin.

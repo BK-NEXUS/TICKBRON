@@ -6,6 +6,14 @@ import { settle } from '../test/utils'
 
 // Mock adminAdapter
 vi.mock('../adapters/adminAdapter')
+vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
+  geographyAdapter: {
+    getCountries: vi.fn().mockResolvedValue({ data: [{ id: 1, code: 'UZ', currency: 'UZS', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotel_count: 1 }], error: null }),
+    getRegions: vi.fn().mockResolvedValue({ data: [{ id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1 }], error: null }),
+    getCities: vi.fn().mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null }),
+  },
+}))
 
 describe('AdminPropertyModeration', () => {
   const mockProperties = [
@@ -71,9 +79,9 @@ describe('AdminPropertyModeration', () => {
     expect(screen.getByText('Review and moderate property submissions')).toBeInTheDocument()
   })
 
-  it('each property card has a Region field for the Status section', async () => {
+  it('each property card has a location field for the Status section', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: [{ ...mockProperties[0], state: 'Tashkent' }, mockProperties[1]],
+      data: [{ ...mockProperties[0], country_ref: 1, region_ref: 10, city_ref: 100 }, mockProperties[1]],
       error: null,
     })
 
@@ -81,7 +89,7 @@ describe('AdminPropertyModeration', () => {
 
     await waitFor(() => expect(screen.getAllByLabelText('Region')).toHaveLength(2))
     const [first, second] = screen.getAllByLabelText('Region')
-    expect(first).toHaveValue('Tashkent')
+    await waitFor(() => expect(first).toHaveValue('10'))
     expect(second).toHaveValue('')
   })
 

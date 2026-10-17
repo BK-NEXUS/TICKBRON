@@ -60,6 +60,10 @@ vi.mock('../adapters/propertyAdapter', () => ({
     getPropertyById: vi.fn().mockResolvedValue({ error: 'Property not found' }),
   },
 }))
+vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
+  geographyAdapter: { getCountries: vi.fn().mockResolvedValue({ data: [], error: null }) },
+}))
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     getBookings: vi.fn().mockResolvedValue({ data: [] }),

@@ -10,13 +10,14 @@ import { AdminStatusHotels } from './AdminStatusHotels'
 import { StatusUserDetail } from './StatusUserDetail'
 import { useStatusPeriod } from '../hooks/useStatusPeriod'
 import { formatCount, formatDate, formatMoneyList } from '../utils/statusFormat'
+import { countryPlace, placeLabel, regionPlace, type StatusPlace } from '../utils/statusPlaces'
 
 type Level =
   | { kind: 'home' }
   | { kind: 'countries' }
-  | { kind: 'regions'; country: string }
-  | { kind: 'hotels'; country: string; region: string }
-  | { kind: 'hotel'; country: string; region: string; hotelId: number; hotelName: string }
+  | { kind: 'regions'; country: StatusPlace }
+  | { kind: 'hotels'; country: StatusPlace; region: StatusPlace }
+  | { kind: 'hotel'; country: StatusPlace; region: StatusPlace; hotelId: number; hotelName: string }
   | { kind: 'users' }
   | { kind: 'allHotels' }
   | { kind: 'allHotel'; hotelId: number; hotelName: string }
@@ -43,7 +44,8 @@ function metricColumns<T extends Metrics>(t: (key: MessageKey) => string): Statu
  */
 export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const i18n = useI18n()
-  const { t } = i18n
+  const { t, language } = i18n
+  const label = (place: StatusPlace) => placeLabel(place, language, t('status.unspecified'))
   const [level, setLevel] = useState<Level>({ kind: 'home' })
   const { period, range, setPeriod, setRange } = useStatusPeriod()
   const navigate = useNavigate()
@@ -52,8 +54,8 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
 
   const goHome = () => setLevel({ kind: 'home' })
   const goCountries = () => setLevel({ kind: 'countries' })
-  const goRegions = (country: string) => setLevel({ kind: 'regions', country })
-  const goHotels = (country: string, region: string) => setLevel({ kind: 'hotels', country, region })
+  const goRegions = (country: StatusPlace) => setLevel({ kind: 'regions', country })
+  const goHotels = (country: StatusPlace, region: StatusPlace) => setLevel({ kind: 'hotels', country, region })
 
   // Home › Admin Dashboard › Status › Countries › Uzbekistan › Tashkent › Hotel (each level clickable, Back steps up)
   const trail: Crumb[] = [{ label: t('header.adminDashboard'), onClick: onExit }]
@@ -69,11 +71,11 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   }
   if (level.kind === 'regions' || level.kind === 'hotels' || level.kind === 'hotel') {
     const { country } = level
-    trail.push(level.kind === 'regions' ? { label: country } : { label: country, onClick: () => goRegions(country) })
+    trail.push(level.kind === 'regions' ? { label: label(country) } : { label: label(country), onClick: () => goRegions(country) })
   }
   if (level.kind === 'hotels' || level.kind === 'hotel') {
     const { country, region } = level
-    trail.push(level.kind === 'hotels' ? { label: region } : { label: region, onClick: () => goHotels(country, region) })
+    trail.push(level.kind === 'hotels' ? { label: label(region) } : { label: label(region), onClick: () => goHotels(country, region) })
   }
   if (level.kind === 'hotel') trail.push({ label: level.hotelName })
   usePageTrail(trail)
@@ -151,11 +153,11 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         noun="status.nounCountries"
         {...periodProps}
         load={params => statusAdapter.getCountries(params)}
-        rowKey={row => row.country}
-        rowLabel={row => row.country}
-        onOpen={row => goRegions(row.country)}
+        rowKey={row => countryPlace(row).key}
+        rowLabel={row => label(countryPlace(row))}
+        onOpen={row => goRegions(countryPlace(row))}
         columns={[
-          { header: t('status.country'), render: row => row.country },
+          { header: t('status.country'), render: row => label(countryPlace(row)) },
           { header: t('status.title'), numeric: true, render: row => formatCount(row.hotels) },
           ...metricColumns<StatusCountry>(t),
         ]}
@@ -167,17 +169,17 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
     const { country } = level
     return (
       <StatusRankedTable<StatusRegion>
-        key={`regions:${country}`}
-        title={country}
+        key={`regions:${country.key}`}
+        title={label(country)}
         subtitle={t('status.subtitleRegions')}
         noun="status.nounRegions"
         {...periodProps}
-        load={params => statusAdapter.getRegions(country, params)}
-        rowKey={row => row.region}
-        rowLabel={row => row.region}
-        onOpen={row => goHotels(country, row.region)}
+        load={params => statusAdapter.getRegions(country.key, params)}
+        rowKey={row => regionPlace(row).key}
+        rowLabel={row => label(regionPlace(row))}
+        onOpen={row => goHotels(country, regionPlace(row))}
         columns={[
-          { header: t('status.region'), render: row => row.region },
+          { header: t('status.region'), render: row => label(regionPlace(row)) },
           { header: t('status.title'), numeric: true, render: row => formatCount(row.hotels) },
           ...metricColumns<StatusRegion>(t),
         ]}
@@ -189,12 +191,12 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
     const { country, region } = level
     return (
       <StatusRankedTable<StatusHotel>
-        key={`hotels:${country}:${region}`}
-        title={`${region}, ${country}`}
+        key={`hotels:${country.key}:${region.key}`}
+        title={`${label(region)}, ${label(country)}`}
         subtitle={t('status.subtitleHotels')}
         noun="status.nounHotels"
         {...periodProps}
-        load={params => statusAdapter.getHotels(country, region, params)}
+        load={params => statusAdapter.getHotels(country.key, region.key, params)}
         rowKey={row => row.id}
         rowLabel={row => row.name}
         onOpen={row => setLevel({ kind: 'hotel', country, region, hotelId: row.id, hotelName: row.name })}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Map as MapIcon, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
 import type { PromotedProperty } from '../adapters/promotionAdapter'
@@ -8,6 +8,10 @@ import { PropertyCard } from '../components/PropertyCard'
 import { SearchFilters } from '../components/SearchFilters'
 import { SearchSort } from '../components/SearchSort'
 import { ListViewMapView } from '../components/ListViewMapView'
+import { PropertiesMapView } from '../components/PropertiesMapView'
+import type { MapArea } from '../components/PropertiesMap'
+import { areaFromUrl, areaToUrl } from '../utils/searchArea'
+import { ShowOnMapCard } from '../components/ShowOnMapCard'
 import { SearchForm } from '../components/SearchForm'
 import { useI18n } from '../i18n/I18nContext'
 import {
@@ -61,15 +65,19 @@ export function SearchResultsPage() {
     let cancelled = false
     const params = new URLSearchParams(queryString)
     const guests = params.get('guests') ? parseInt(params.get('guests')!, 10) : undefined
+    const area = areaFromUrl(params)
     const searchRequest: SearchParams = {
-      q: params.get('destination') || undefined,
-      location: params.get('destination') || undefined,
+      // A search around the map area replaces the destination text
+      q: area ? undefined : params.get('destination') || undefined,
+      location: area ? undefined : params.get('destination') || undefined,
+      ...(area ? { lat: area.lat, lng: area.lng, radius: area.radius } : {}),
       check_in: params.get('check_in') || undefined,
       check_out: params.get('check_out') || undefined,
       min_guests: guests && !isNaN(guests) ? guests : undefined,
       ...filtersToSearchParams(filters, sortBy),
       page: 1,
-      page_size: 20,
+      // The map shows every hotel it can; the list stays at one page
+      page_size: view === 'map' ? 100 : 20,
     }
 
     const loadSearchResults = async () => {
@@ -101,7 +109,7 @@ export function SearchResultsPage() {
 
     loadSearchResults()
     return () => { cancelled = true }
-  }, [queryString, filters, sortBy])
+  }, [queryString, filters, sortBy, view])
 
   const updateUrl = (newFilters: FilterState, newSort: string, replace = false) => {
     setSearchParams(writeFiltersToUrl(new URLSearchParams(queryString), newFilters, newSort), { replace })
@@ -129,7 +137,12 @@ export function SearchResultsPage() {
     setView(newView)
   }
 
+  const handleSearchArea = (area: MapArea) => {
+    setSearchParams(areaToUrl(new URLSearchParams(queryString), area))
+  }
+
   // Get search context for display
+  const inMapArea = areaFromUrl(searchParams) !== null
   const destination = searchParams.get('destination') || t('search.allDestinations')
   const checkIn = searchParams.get('check_in')
   const checkOut = searchParams.get('check_out')
@@ -146,7 +159,7 @@ export function SearchResultsPage() {
           
           <div className="search-results-context">
             <h1 className="search-results-title">
-              {t('search.title', { destination })}
+              {inMapArea ? t('search.mapAreaTitle') : t('search.title', { destination })}
             </h1>
             <div className="search-results-meta">
               {(checkIn || checkOut || guests) && (
@@ -180,6 +193,7 @@ export function SearchResultsPage() {
               id="search-results-filters"
               className={`search-results-sidebar${filtersOpen ? ' search-results-sidebar--open' : ''}`}
             >
+              <ShowOnMapCard onShow={() => handleViewChange('map')} />
               <SearchFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
@@ -266,14 +280,9 @@ export function SearchResultsPage() {
                     </div>
                   ) : (
                     <div className="search-results-map">
-                      <div className="search-results-map-placeholder">
-                        <div className="search-results-map-placeholder-content">
-                          <span className="search-results-map-placeholder-icon"><MapIcon size={48} /></span>
-                          <h2>{t('search.mapTitle')}</h2>
-                          <p>{t('search.mapSoon')}</p>
-                          <p>{tp('search.mapCount', properties.length)}</p>
-                        </div>
-                      </div>
+                      <h2 className="search-results-map-title">{t('search.mapTitle')}</h2>
+                      <p>{tp('search.mapCount', properties.length)}</p>
+                      <PropertiesMapView properties={properties} onSearchArea={handleSearchArea} />
                     </div>
                   )}
                 </>

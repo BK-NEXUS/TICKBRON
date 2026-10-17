@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, UserX } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, UserX, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -11,10 +11,11 @@ import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard
 import { AdminStatusSection } from '../components/AdminStatusSection'
 import { AdminPromotions } from '../components/AdminPromotions'
 import { AdminNoShowReports } from '../components/AdminNoShowReports'
+import { AdminGeography } from '../components/AdminGeography'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'no-show' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'no-show' | 'geography' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
@@ -150,6 +151,16 @@ export function AdminDashboardPage() {
         <span className="nav-icon"><UserX size={18} aria-hidden="true" /></span>
         <span className="nav-label">{t('noShowAdmin.nav')}</span>
       </button>
+      {user.is_superuser && (
+        <button
+          onClick={() => setCurrentView('geography')}
+          className={`nav-item ${currentView === 'geography' ? 'nav-item--active' : ''}`}
+          aria-current={currentView === 'geography' ? 'page' : undefined}
+        >
+          <span className="nav-icon"><MapPin size={18} aria-hidden="true" /></span>
+          <span className="nav-label">{t('geoAdmin.nav')}</span>
+        </button>
+      )}
       <button
         onClick={() => navigate('/admin/support')}
         className="nav-item"
@@ -197,6 +208,8 @@ export function AdminDashboardPage() {
         return <AdminStatusSection onExit={() => setCurrentView('properties')} />
       case 'no-show':
         return <AdminNoShowReports />
+      case 'geography':
+        return user.is_superuser ? <AdminGeography /> : <AdminPropertyModeration />
       case 'promotions':
         return <AdminPromotions isSuperAdmin={Boolean(user.is_superuser)} />
       default:

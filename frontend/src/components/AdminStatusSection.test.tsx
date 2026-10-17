@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
+import { I18nProvider } from '../i18n/I18nContext'
 import { statusAdapter } from '../adapters/statusAdapter'
 import { HOTEL_DETAIL, TOTALS } from '../test/statusFixtures'
 
@@ -28,13 +29,13 @@ const pageOf = <T,>(results: T[], extra: Record<string, unknown> = {}) => ({
 })
 
 const COUNTRIES = [
-  { rank: 1, country: 'Uzbekistan', hotels: 7, bookings: 1234, guests: 56,
+  { rank: 1, code: 'UZ', country: 'Uzbekistan', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotels: 7, bookings: 1234, guests: 56,
     revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '98765.40' }] },
-  { rank: 2, country: 'Kazakhstan', hotels: 2, bookings: 3, guests: 3, revenue: [{ currency: 'KZT', amount: '50000.00' }] },
+  { rank: 2, code: 'KZ', country: 'Kazakhstan', name_uz: 'Qozogʻiston', name_ru: 'Казахстан', name_en: 'Kazakhstan', hotels: 2, bookings: 3, guests: 3, revenue: [{ currency: 'KZT', amount: '50000.00' }] },
 ]
 const REGIONS = [
-  { rank: 1, region: 'Tashkent', hotels: 3, bookings: 900, guests: 40, revenue: [{ currency: 'USD', amount: '70000.00' }] },
-  { rank: 2, region: 'Unspecified', hotels: 1, bookings: 0, guests: 0, revenue: [] },
+  { rank: 1, id: 10, region: 'Tashkent', name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotels: 3, bookings: 900, guests: 40, revenue: [{ currency: 'USD', amount: '70000.00' }] },
+  { rank: 2, id: null, region: 'Unspecified', name_uz: 'Unspecified', name_ru: 'Unspecified', name_en: 'Unspecified', hotels: 1, bookings: 0, guests: 0, revenue: [] },
 ]
 const HOTELS = [
   { rank: 1, id: 11, name: 'Alpha Hotel', city: 'Tashkent', status: 'active', bookings: 500, guests: 30,
@@ -117,12 +118,12 @@ describe('AdminStatusSection', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Uzbekistan' }))
     await screen.findByRole('button', { name: 'Tashkent' })
-    expect(mocked.getRegions).toHaveBeenCalledWith('Uzbekistan', { period: 'all', search: '', page: 1 })
+    expect(mocked.getRegions).toHaveBeenCalledWith('UZ', { period: 'all', search: '', page: 1 })
     expect(trailText()).toContain('Status›Countries›Uzbekistan')
 
     fireEvent.click(screen.getByRole('button', { name: 'Tashkent' }))
     await screen.findByRole('button', { name: 'Alpha Hotel' })
-    expect(mocked.getHotels).toHaveBeenCalledWith('Uzbekistan', 'Tashkent', { period: 'all', search: '', page: 1 })
+    expect(mocked.getHotels).toHaveBeenCalledWith('UZ', '10', { period: 'all', search: '', page: 1 })
 
     fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel' }))
     await screen.findByRole('heading', { name: 'Alpha Hotel' })
@@ -160,7 +161,7 @@ describe('AdminStatusSection', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Uzbekistan' }))
     await waitFor(() => expect(mocked.getRegions).toHaveBeenCalledWith(
-      'Uzbekistan', expect.objectContaining({ period: String(new Date().getFullYear()) })))
+      'UZ', expect.objectContaining({ period: String(new Date().getFullYear()) })))
   })
 
   it('searches only inside the current list, and a new level starts without a search', async () => {
@@ -173,7 +174,7 @@ describe('AdminStatusSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Uzbekistan' }))
     await screen.findByRole('button', { name: 'Tashkent' })
     expect(screen.getByLabelText('Search regions')).toHaveValue('')
-    expect(mocked.getRegions).toHaveBeenLastCalledWith('Uzbekistan', { period: 'all', search: '', page: 1 })
+    expect(mocked.getRegions).toHaveBeenLastCalledWith('UZ', { period: 'all', search: '', page: 1 })
   })
 
   it('paginates', async () => {
@@ -359,5 +360,44 @@ describe('AdminStatusSection', () => {
       await waitFor(() => expect(mocked.getHotelDetail).toHaveBeenCalledWith(
         11, { period: 'custom', from: '2026-01-01', to: '2026-03-01' }))
     })
+  })
+})
+
+describe('AdminStatusSection places', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    mocked.getCountries.mockResolvedValue(pageOf(COUNTRIES))
+    mocked.getRegions.mockResolvedValue(pageOf(REGIONS, { country: 'UZ' }))
+    mocked.getHotels.mockResolvedValue(pageOf(HOTELS, { country: 'UZ', region: '10' }))
+  })
+
+  it('shows country and region names in the page language, in the lists and the breadcrumbs', async () => {
+    localStorage.setItem('tickbron.language', 'ru')
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/admin']}>
+          <BreadcrumbProvider>
+            <Breadcrumbs />
+            <AdminStatusSection onExit={vi.fn()} />
+          </BreadcrumbProvider>
+        </MemoryRouter>
+      </I18nProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Стран/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Узбекистан' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ташкент' }))
+    await screen.findByRole('button', { name: 'Alpha Hotel' })
+
+    expect(mocked.getRegions).toHaveBeenCalledWith('UZ', expect.anything())
+    expect(mocked.getHotels).toHaveBeenCalledWith('UZ', '10', expect.anything())
+    expect(screen.getAllByRole('navigation').map(nav => nav.textContent).join('|')).toContain('Узбекистан›Ташкент')
+  })
+
+  it('the hotels without a region are opened with the "unspecified" key', async () => {
+    renderSection()
+    await openCountries()
+    fireEvent.click(screen.getByRole('button', { name: 'Uzbekistan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Unspecified' }))
+    await waitFor(() => expect(mocked.getHotels).toHaveBeenCalledWith('UZ', 'unspecified', expect.anything()))
   })
 })

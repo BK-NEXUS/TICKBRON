@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
-import { PropertyRegionField } from './PropertyRegionField'
+import { PropertyLocationField } from './PropertyLocationField'
 import { useI18n } from '../i18n/I18nContext'
 
 export function AdminPropertyModeration() {
@@ -213,10 +213,10 @@ export function AdminPropertyModeration() {
                   )}
                 </div>
 
-                <PropertyRegionField
+                <PropertyLocationField
                   propertyId={property.id}
-                  region={property.state}
-                  onSaved={state => setProperties(prev => prev.map(p => p.id === property.id ? { ...p, state: state ?? undefined } : p))}
+                  location={{ country_ref: property.country_ref ?? null, region_ref: property.region_ref ?? null, city_ref: property.city_ref ?? null }}
+                  onSaved={location => setProperties(prev => prev.map(p => p.id === property.id ? { ...p, ...location } : p))}
                 />
 
                 {property.rejection_reason && (

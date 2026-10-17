@@ -1,11 +1,16 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
+import { LocationPicker } from './LocationPicker'
+import { toCoordinates } from '../utils/coordinates'
+import { GeographyPicker, type GeographyLabels, type GeographyValue } from './GeographyPicker'
 
 interface PartnerPropertyWizardProps {
   onSuccess?: (property: PartnerProperty) => void
   onCancel?: () => void
 }
+
+type PropertyForm = Omit<CreatePropertyRequest, 'country_ref' | 'region_ref' | 'city_ref'>
 
 type WizardStep = 'basic' | 'location' | 'amenities' | 'pricing' | 'confirm'
 
@@ -15,17 +20,17 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState<CreatePropertyRequest>({
+  const [location, setLocation] = useState<GeographyValue>({ country_ref: null, region_ref: null, city_ref: null })
+  const [locationLabels, setLocationLabels] = useState<GeographyLabels>({ country: '', region: '', city: '' })
+
+  const [formData, setFormData] = useState<PropertyForm>({
     property_type: 1, // Default property type (should be selected from a list)
     max_guests: 2,
     bedrooms: 1,
     bathrooms: 1,
     address_line1: '',
     address_line2: '',
-    city: '',
-    state: '',
     postal_code: '',
-    country: 'Uzbekistan',
     latitude: undefined,
     longitude: undefined,
     base_price: 100,
@@ -39,9 +44,27 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     has_heating: false,
   })
 
-  const handleInputChange = <K extends keyof CreatePropertyRequest>(field: K, value: CreatePropertyRequest[K]) => {
+  const handleInputChange = <K extends keyof PropertyForm>(field: K, value: PropertyForm[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
+  }
+
+  /** Both coordinates or neither; the backend repeats the range check. */
+  const validateCoordinates = (): boolean => {
+    const { latitude, longitude } = formData
+    if ((latitude === undefined) !== (longitude === undefined)) {
+      setError(t('partner.coordinatesTogether'))
+      return false
+    }
+    if (latitude !== undefined && Math.abs(latitude) > 90) {
+      setError(t('partner.latitudeRange'))
+      return false
+    }
+    if (longitude !== undefined && Math.abs(longitude) > 180) {
+      setError(t('partner.longitudeRange'))
+      return false
+    }
+    return true
   }
 
   const validateStep = (step: WizardStep): boolean => {
@@ -65,14 +88,19 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           setError(t('partner.addressLine1Is'))
           return false
         }
-        if (!formData.city.trim()) {
-          setError(t('partner.cityIsRequired'))
-          return false
-        }
-        if (!formData.country.trim()) {
+        if (location.country_ref === null) {
           setError(t('partner.countryIsRequired'))
           return false
         }
+        if (location.region_ref === null) {
+          setError(t('partner.regionIsRequired'))
+          return false
+        }
+        if (location.city_ref === null) {
+          setError(t('partner.cityIsRequired'))
+          return false
+        }
+        return validateCoordinates()
         return true
       case 'amenities':
         return true // No required fields
@@ -114,7 +142,12 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     setError(null)
 
     try {
-      const response = await partnerAdapter.createProperty(formData)
+      const response = await partnerAdapter.createProperty({
+        ...formData,
+        country_ref: location.country_ref as number,
+        region_ref: location.region_ref as number,
+        city_ref: location.city_ref as number,
+      })
       
       if (response.error) {
         setError(response.error)
@@ -226,27 +259,11 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   className="form-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="city">{t('partner.city')}</label>
-                <input
-                  id="city"
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="form-input"
-                  aria-required="true"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="state">{t('partner.stateRegion')}</label>
-                <input
-                  id="state"
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="form-input"
-                />
-              </div>
+              <GeographyPicker
+                value={location}
+                required
+                onChange={(next, labels) => { setLocation(next); setLocationLabels(labels); setError(null) }}
+              />
               <div className="form-group">
                 <label htmlFor="postal_code">{t('partner.postalCode')}</label>
                 <input
@@ -257,24 +274,20 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   className="form-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="country">{t('partner.country')}</label>
-                <input
-                  id="country"
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  className="form-input"
-                  aria-required="true"
-                />
-              </div>
+              <LocationPicker
+                value={toCoordinates(formData.latitude, formData.longitude)}
+                onChange={point => {
+                  setFormData(prev => ({ ...prev, latitude: point?.lat, longitude: point?.lng }))
+                  setError(null)
+                }}
+              />
               <div className="form-group">
                 <label htmlFor="latitude">{t('partner.latitude')}</label>
                 <input
                   id="latitude"
                   type="number"
                   step="any"
-                  value={formData.latitude || ''}
+                  value={formData.latitude ?? ''}
                   onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="form-input"
                 />
@@ -285,7 +298,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   id="longitude"
                   type="number"
                   step="any"
-                  value={formData.longitude || ''}
+                  value={formData.longitude ?? ''}
                   onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="form-input"
                 />
@@ -406,11 +419,11 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 <h3>{t('property.location')}</h3>
                 <p><strong>{t('partner.address')}</strong> {formData.address_line1}</p>
                 {formData.address_line2 && <p><strong>{t('partner.addressLine22')}</strong> {formData.address_line2}</p>}
-                <p><strong>{t('partner.city2')}</strong> {formData.city}</p>
-                {formData.state && <p><strong>{t('partner.state')}</strong> {formData.state}</p>}
+                <p><strong>{t('partner.city2')}</strong> {locationLabels.city}</p>
+                <p><strong>{t('partner.state')}</strong> {locationLabels.region}</p>
                 {formData.postal_code && <p><strong>{t('partner.postalCode2')}</strong> {formData.postal_code}</p>}
-                <p><strong>{t('partner.country2')}</strong> {formData.country}</p>
-                {formData.latitude && formData.longitude && (
+                <p><strong>{t('partner.country2')}</strong> {locationLabels.country}</p>
+                {formData.latitude !== undefined && formData.longitude !== undefined && (
                   <p><strong>{t('partner.coordinates')}</strong> {formData.latitude}, {formData.longitude}</p>
                 )}
               </div>
