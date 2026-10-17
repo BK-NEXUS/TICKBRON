@@ -1038,3 +1038,13 @@ Plan: `.ai/PLAN_R9_VIP.md` v2 (the owner decided: the hotel owner marks a room t
 - `RoomType.is_vip` (boolean, default `false`). Migration `properties/0015_r9_room_type_vip` (additive, reversible).
 - Hotel owner: `is_vip` is a normal writable field of `POST/PATCH /partner/rooms/` and is returned by `GET /partner/rooms/`. Only the owner of the hotel can change its room types (another owner, a guest and an anonymous visitor are refused as before); a value that is not a boolean is 400.
 - Public: `GET /properties/{id}/` `room_types[].is_vip` and `GET /properties/{id}/availability/` `room_types[].is_vip`. **VIP room types come first in both lists**, the rest keep the usual order (by name); several VIP rooms are in name order too. Prices are unchanged: a VIP room type has its own rate plans and nightly prices.
+
+## 2026-10-17 R12 additions, slice 1: `insights` on the hotel Status endpoints
+
+Added field `insights` (read only, same definitions as above, one module `bookings/metrics.py`) to `GET /api/v1/partner/status/`, `GET /api/v1/partner/status/hotels/{id}/` and `GET /api/v1/admin-panel/status/hotels/{id}/`. Same period parameters as the rest of the endpoint.
+- `previous_period`: `{ range: {from, to}, totals: {bookings, guests, nights, stayed, revenue} }`, the period of the same length right before; `null` for `period=all`
+- `change_pct`: `{ bookings, guests, nights, stayed, revenue: [{currency, pct}] }`, strings with one decimal (`"-50.0"`); a value is `null` when the previous value was 0; the whole field is `null` for `period=all`
+- `cancellation_rate`: string `"25.00"` = cancelled (not expired) / (cancelled + counted + no_show) bookings in the period; `null` without bookings
+- `occupancy_rate`: string `"11.43"` = room nights (by check-in date) / (rooms of the hotel(s) x days of the period), capped at 100; `null` for `period=all` or when the hotels have no rooms. Rooms = SUM of `total_rooms` of the not-deleted room types
+- `average_booking_value`: `[{currency, amount}]` per currency (booking value / bookings), `[]` without bookings
+- `average_stay_nights`: string `"2.33"` = nights / bookings, `null` without bookings

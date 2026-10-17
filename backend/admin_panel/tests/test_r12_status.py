@@ -324,5 +324,5 @@ class TestQueryCountIsConstant:
         beta = status_world['hotels']['beta']
         # hotel, refunded ids, totals (4), series (span, counts, revenue x2), reconciliation, years,
         # monthly (3)
-        with django_assert_max_num_queries(15):
+        with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{beta.id}/').status_code == 200

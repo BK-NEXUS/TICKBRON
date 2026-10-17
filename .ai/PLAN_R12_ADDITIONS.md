@@ -1,6 +1,6 @@
 # PLAN R12 additions (Status: comparison, rates, averages, Excel, owner rank)
 
-Status: WAITS FOR THE OWNER (answers to the 4 questions at the bottom). No code before that.
+Status: APPROVED by the owner 2026-10-17: Q1 yes, Q2 by number of bookings, Q3 yes (5), Q4 library chosen by me: XlsxWriter (write-only, small, no extra dependencies; openpyxl is only needed to read files).
 
 ## Already built (do not redo)
 CSV export (admin lists, owner reconciliation), owner "arriving today/tomorrow" (`/partner/status/arrivals/`), periods, series, totals with all counts (`bookings/metrics.py`).
@@ -11,8 +11,8 @@ CSV export (admin lists, owner reconciliation), owner "arriving today/tomorrow" 
    - `cancellation_rate` = cancelled (not expired) / (cancelled + counted + no_show) bookings in the period, in percent.
    - `occupancy_rate` = room_nights / (sum of `total_rooms` of the hotel x days in the period), in percent, never above 100. Owner and hotel detail only.
    - `average_booking_value` per currency (booking_value / bookings) and `average_stay_nights` (nights / bookings).
-2. **Owner anonymous rank**: "your hotel is #N of M in your region" by stayed nights in the period. Only the owner's own position and the count M are returned, never other hotels' names or numbers. Region with fewer than 5 hotels: no rank.
-3. **Excel export** (`?export=xlsx`) next to CSV, same permissions, row limit and audit log. Needs the new library `openpyxl` in requirements.
+2. **Owner anonymous rank**: "your hotel is #N of M in your region" by number of counted bookings in the period. Only the owner's own position and the count M are returned, never other hotels' names or numbers. Region with fewer than 5 hotels: no rank.
+3. **Excel export** (`?export=xlsx`) next to CSV, same permissions, row limit and audit log. Needs the new library `XlsxWriter` in requirements.
 4. **Frontend**: +/- % chips on the stat cards, the new cards, rank card, "Download Excel" button; uz/ru/en keys; 390px and 1440px checks.
 
 Each slice: tests first, contract in `API_CONTRACT.md`, note in `HANDOFF.md`, one PR per slice.

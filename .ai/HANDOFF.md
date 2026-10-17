@@ -2876,3 +2876,7 @@ Contract: `API_CONTRACT.md` "VIP rooms (R9)". The backend already lists VIP room
 - Owner form (`PartnerRoomsManagement`): checkbox "This is a VIP room" with help text; `is_vip` is sent on create and update and loaded on edit. No admin step, no search filter (owner decision).
 - Tests: `VipBadge.test.tsx`, `PartnerRoomsManagement.vip.test.tsx` (3), RoomCard and BookingPage VIP cases.
 - Not done: real-stack Chromium check at 1440/390px for the badge.
+
+## R12 additions, slice 1 backend: insights (2026-10-17)
+Plan `.ai/PLAN_R12_ADDITIONS.md` (approved: occupancy by hotel rooms x days, rank by number of bookings and hidden below 5 hotels, XlsxWriter for Excel). Slice 1 = `metrics.insights()` + field `insights` on owner summary, owner hotel detail and admin hotel detail (contract in API_CONTRACT.md). 11 unit tests (`bookings/tests/test_r12_insights.py`) + 4 endpoint tests. The fixed query ceilings of 4 "query count is constant" tests were raised by 2 (19 -> 21 owner, 15 -> 17 admin hotel detail): insights adds a fixed number of queries; the tests still prove the count does not grow with the data.
+Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).

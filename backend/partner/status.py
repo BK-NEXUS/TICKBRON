@@ -67,18 +67,21 @@ def _common(request):
     return period, date_range, year, granularity
 
 
-def _numbers(scope, period, date_range, year, granularity):
+def _numbers(scope, period, date_range, year, granularity, properties):
     """The shared part of the summary and the hotel detail, or a 400 Response."""
     refunded = metrics.fully_refunded_ids(scope)
     try:
         series = metrics.series(scope, date_range, granularity, refunded_ids=refunded)
     except InvalidPeriod as error:
         return bad_request('granularity', error)
+    totals = metrics.metric_totals(scope, date_range, refunded_ids=refunded)
     return {
         'period': period,
         'period_range': range_json(date_range),
         **metrics.status_meta(),
-        'totals': metrics.metric_totals(scope, date_range, refunded_ids=refunded),
+        'totals': totals,
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(properties),
+                                     refunded_ids=refunded),
         'granularity': granularity,
         'series': series,
         'reconciliation': metrics.reconciliation(scope, refunded_ids=refunded),
@@ -114,7 +117,7 @@ def partner_status(request):
     if wants_csv(request):
         return _reconciliation_csv(request, own)
     scope = metrics.all_bookings().filter(property__in=own)
-    numbers = _numbers(scope, period, date_range, year, granularity)
+    numbers = _numbers(scope, period, date_range, year, granularity, own)
     if isinstance(numbers, Response):
         return numbers
 
@@ -155,7 +158,8 @@ def partner_status_hotel(request, property_id):
         own_properties(request.user).annotate(name=hotel_name_expression(), region=region_expression()),
         pk=property_id,
     )
-    numbers = _numbers(metrics.all_bookings().filter(property=prop), period, date_range, year, granularity)
+    numbers = _numbers(metrics.all_bookings().filter(property=prop), period, date_range, year, granularity,
+                       Property.objects.filter(pk=prop.pk))
     if isinstance(numbers, Response):
         return numbers
     return Response({

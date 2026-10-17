@@ -137,7 +137,7 @@ class TestAggregatesInTheDatabase:
         alpha = status_world['hotels']['alpha']
         # R12 (was 6): hotel, fully refunded ids, totals (counts, revenue x2, booking value),
         # series (span, counts, revenue x2), reconciliation, years, monthly (counts, revenue x2) = 15
-        with django_assert_max_num_queries(15):
+        with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{alpha.id}/', year=2026).status_code == 200
 
     def test_users(self, get, status_world, django_assert_max_num_queries):
@@ -145,3 +145,11 @@ class TestAggregatesInTheDatabase:
         # refunds, was one query), the AdminAccessLog insert (R4). R12: 6, was 4
         with django_assert_max_num_queries(6):
             assert get(f'{S}/users/').status_code == 200
+
+
+@pytest.mark.django_db
+def test_hotel_detail_carries_the_insights(get, status_world):
+    hotel = status_world['hotels']['beta']
+    data = get(f'{S}/hotels/{hotel.id}/', period='2026').data
+    assert data['insights']['previous_period']['range'] == {'from': '2025-01-01', 'to': '2025-12-31'}
+    assert 'cancellation_rate' in data['insights']

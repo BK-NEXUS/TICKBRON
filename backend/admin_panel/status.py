@@ -349,6 +349,7 @@ def status_hotel_detail(request, property_id):
     except InvalidPeriod as error:
         return bad_request('granularity', error)
     owner = prop.owner
+    totals = metrics.metric_totals(scope, date_range, refunded_ids=refunded)
     return Response({
         'hotel': {
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
@@ -360,7 +361,9 @@ def status_hotel_detail(request, property_id):
                       'phone': owner.phone_number},
         },
         **period_extra(period, date_range),
-        'totals': metrics.metric_totals(scope, date_range, refunded_ids=refunded),
+        'totals': totals,
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(Property.objects.filter(pk=prop.pk)),
+                                     refunded_ids=refunded),
         'granularity': granularity,
         'series': series,
         'reconciliation': metrics.reconciliation(scope, refunded_ids=refunded),

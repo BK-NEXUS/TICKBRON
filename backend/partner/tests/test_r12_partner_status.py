@@ -135,5 +135,34 @@ class TestReconciliationCsv:
             for j in range(i):
                 make_booking(status_world['guests'][0], status_world['hotels']['beta'],
                              business_today() - timedelta(days=j + 1), '10.00', status='completed')
-            with django_assert_max_num_queries(19):
+            with django_assert_max_num_queries(21):
                 assert get_as(owner1, f'{P}/').status_code == 200
+
+
+@pytest.mark.django_db
+class TestInsights:
+
+    def test_summary_and_hotel_detail_carry_the_insights(self, status_world):
+        owner1 = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        summary = get_as(owner1, f'{P}/', period='2026').data['insights']
+        detail = get_as(owner1, f'{P}/hotels/{beta.id}/', period='2026').data['insights']
+        for insights in (summary, detail):
+            assert set(insights) == {'cancellation_rate', 'average_booking_value', 'average_stay_nights',
+                                     'occupancy_rate', 'previous_period', 'change_pct'}
+            assert insights['previous_period']['range'] == {'from': '2025-01-01', 'to': '2025-12-31'}
+        assert summary['occupancy_rate'] is None
+
+    def test_occupancy_uses_the_rooms_of_the_hotels_of_the_owner_only(self, status_world):
+        from properties.models import RoomType
+        owner1 = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        RoomType.objects.create(property=beta, name='Std', slug='std', base_occupancy=2, max_occupancy=2,
+                                base_price=1, total_rooms=10)
+        data = get_as(owner1, f'{P}/hotels/{beta.id}/', period='2026').data['insights']
+        assert data['occupancy_rate'] is not None
+        assert float(data['occupancy_rate']) <= 100
+
+    def test_all_time_has_no_comparison(self, status_world):
+        data = get_as(status_world['owners'][0], f'{P}/').data['insights']
+        assert data['previous_period'] is None and data['change_pct'] is None
