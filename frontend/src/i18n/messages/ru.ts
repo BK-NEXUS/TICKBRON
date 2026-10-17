@@ -1594,4 +1594,8 @@ export const ru: Catalog = {
   'map.pickHint': "Нажмите на карту или перетащите метку, чтобы указать точное место. Координаты можно ввести и ниже.",
   'map.pickMarker': "Местоположение объекта",
   'map.clear': "Убрать местоположение",
+  'map.clusterLabel.one': "Здесь {count} объект: приблизьте карту",
+  'map.clusterLabel.few': "Здесь {count} объекта: приблизьте карту",
+  'map.clusterLabel.many': "Здесь {count} объектов: приблизьте карту",
+  'map.clusterLabel.other': "Здесь {count} объектов: приблизьте карту",
 }

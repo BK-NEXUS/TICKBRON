@@ -91,7 +91,7 @@ describe('PropertiesMap', () => {
   it('marks the chosen pin', () => {
     renderMap([alpha, beta])
     fireEvent.click(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
-    expect(screen.getByRole('button', { name: 'Alpha Hotel, $60' }).closest('.leaflet-marker-icon')).toHaveClass('map-pin--active')
+    expect(screen.getByRole('button', { name: 'Alpha Hotel, $60' })).toHaveClass('map-pin--active')
   })
 
   it('the card goes away when its property leaves the results (a new search)', () => {
@@ -126,6 +126,24 @@ describe('PropertiesMap', () => {
     fireEvent.mouseLeave(screen.getByRole('button', { name: 'Alpha Hotel, $60' }))
     const icon = (name: string) => screen.getByRole('button', { name }).closest('.leaflet-marker-icon') as HTMLElement
     expect(Number(icon('Alpha Hotel, $60').style.zIndex)).toBeGreaterThan(Number(icon('Beta Hotel, $55').style.zIndex))
+  })
+
+  describe('pins that would cover each other', () => {
+    const alphaTwin = property(4, 'Alpha Twin Hotel', { latitude: '41.311082', longitude: '69.279738' }, 70)
+
+    it('are shown as one numbered group instead of lying on top of each other', () => {
+      const { container } = renderMap([alpha, alphaTwin, beta])
+      const group = container.querySelector('.map-cluster') as HTMLElement
+      expect(group).toHaveTextContent('2')
+      expect(group).toHaveAccessibleName('2 properties here: zoom in to see them')
+      expect(screen.queryByRole('button', { name: 'Alpha Hotel, $60' })).toBeNull()
+      expect(screen.getByRole('button', { name: 'Beta Hotel, $55' })).toBeInTheDocument()
+    })
+
+    it('a lone pin is not grouped', () => {
+      const { container } = renderMap([alpha, beta])
+      expect(container.querySelector('.map-cluster')).toBeNull()
+    })
   })
 
   it('draws the OpenStreetMap attribution the tile licence requires', () => {

@@ -1571,12 +1571,29 @@ table .btn {
   cursor: pointer;
 }
 
+.map-cluster {
+  display: inline-grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.map-cluster:focus-visible,
 .map-pin:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-.map-pin--active .map-pin {
+.map-pin.map-pin--active {
   background: var(--color-text-primary);
   color: var(--color-surface);
 }

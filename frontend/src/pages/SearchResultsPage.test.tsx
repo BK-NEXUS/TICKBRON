@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, waitFor, fireEvent, act, within } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { SearchResultsPage } from './SearchResultsPage'
@@ -320,6 +320,17 @@ describe('SearchResultsPage', () => {
 
   describe('map', () => {
     const located = [{ ...mockProperties[0], latitude: '48.856614', longitude: '2.352222' }]
+
+    // jsdom has no layout: give the map a size, so the pins are placed as in a browser
+    beforeEach(() => {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 800 })
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 500 })
+    })
+
+    afterEach(() => {
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientWidth
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight
+    })
 
     const renderSearch = async () => {
       vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue({

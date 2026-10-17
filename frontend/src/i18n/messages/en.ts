@@ -1560,6 +1560,10 @@ export const en = {
   'map.pickHint': "Click the map or drag the pin to set the exact location. You can also type the coordinates below.",
   'map.pickMarker': "Property location",
   'map.clear': "Remove location",
+  'map.clusterLabel.one': "{count} property here: zoom in to see it",
+  'map.clusterLabel.few': "{count} properties here: zoom in to see them",
+  'map.clusterLabel.many': "{count} properties here: zoom in to see them",
+  'map.clusterLabel.other': "{count} properties here: zoom in to see them",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

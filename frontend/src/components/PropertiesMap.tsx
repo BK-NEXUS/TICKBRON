@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import type { Property } from '../adapters/propertyAdapter'
@@ -27,7 +29,9 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
   const { t, tp, formatMoney } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
+  const groupRef = useRef<L.MarkerClusterGroup | null>(null)
   const markersRef = useRef<Map<number, L.Marker>>(new Map())
+  const pinsRef = useRef<Map<number, HTMLButtonElement>>(new Map())
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const selectedIdRef = useRef<number | null>(null)
   selectedIdRef.current = selectedId
@@ -48,12 +52,30 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
     })
     L.control.zoom({ zoomInTitle: t('map.zoomIn'), zoomOutTitle: t('map.zoomOut') }).addTo(map)
     L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map)
+    // Pins that would cover each other become one numbered group; clicking it zooms in
+    const group = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 40,
+      iconCreateFunction: cluster => {
+        const count = cluster.getChildCount()
+        const badge = document.createElement('button')
+        badge.type = 'button'
+        badge.className = 'map-cluster'
+        badge.textContent = String(count)
+        badge.setAttribute('aria-label', tp('map.clusterLabel', count))
+        return L.divIcon({ html: badge, className: 'map-pin-icon', iconSize: undefined })
+      },
+    }).addTo(map)
     mapRef.current = map
+    groupRef.current = group
     const markers = markersRef.current
+    const pinButtons = pinsRef.current
     return () => {
       map.remove()
       mapRef.current = null
+      groupRef.current = null
       markers.clear()
+      pinButtons.clear()
     }
     // The zoom titles follow the language when the pins are redrawn below; the map itself is not rebuilt
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,10 +84,12 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
   // Pins follow the results and the language
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    const group = groupRef.current
+    if (!map || !group) return
     const markers = markersRef.current
-    markers.forEach(marker => marker.remove())
+    group.clearLayers()
     markers.clear()
+    pinsRef.current.clear()
     for (const { property, lat, lng } of pins) {
       const name = property.translations[0]?.name ?? t('card.unknown')
       const price = formatMoney(property.base_price, property.currency, { minDecimals: 0, maxDecimals: 0 })
@@ -76,7 +100,9 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
       pin.setAttribute('aria-label', t('map.pinLabel', { name, price }))
       pin.addEventListener('click', () => setSelectedId(property.id))
       const icon = L.divIcon({ html: pin, className: 'map-pin-icon', iconSize: undefined })
-      const marker = L.marker([lat, lng], { icon, keyboard: false }).addTo(map)
+      const marker = L.marker([lat, lng], { icon, keyboard: false })
+      group.addLayer(marker)
+      pinsRef.current.set(property.id, pin)
       const raise = () => marker.setZIndexOffset(RAISED_Z_OFFSET)
       const lower = () => marker.setZIndexOffset(selectedIdRef.current === property.id ? ACTIVE_Z_OFFSET : 0)
       pin.addEventListener('mouseenter', raise)
@@ -88,14 +114,13 @@ export function PropertiesMap({ properties }: PropertiesMapProps) {
     const points = pins.map(pin => L.latLng(pin.lat, pin.lng))
     if (points.length === 1) map.setView(points[0], 13)
     else if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 14 })
-  }, [pins, t, formatMoney, hasPins])
+  }, [pins, t, tp, formatMoney, hasPins])
 
   // The chosen pin is marked; a new search that drops it clears the card
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => {
-      marker.getElement()?.classList.toggle('map-pin--active', id === selectedId)
-      marker.setZIndexOffset(id === selectedId ? ACTIVE_Z_OFFSET : 0)
-    })
+    // The class sits on the pin button itself: it stays right while a group hides and shows the marker
+    pinsRef.current.forEach((pin, id) => pin.classList.toggle('map-pin--active', id === selectedId))
+    markersRef.current.forEach((marker, id) => marker.setZIndexOffset(id === selectedId ? ACTIVE_Z_OFFSET : 0))
   }, [selectedId, pins])
   useEffect(() => {
     if (selectedId !== null && !selected) setSelectedId(null)

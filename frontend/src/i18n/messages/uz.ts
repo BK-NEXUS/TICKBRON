@@ -1560,4 +1560,6 @@ export const uz: Catalog = {
   'map.pickHint': "Aniq joyni belgilash uchun xaritani bosing yoki belgini suring. Koordinatalarni pastga yozish ham mumkin.",
   'map.pickMarker': "Obyekt joylashuvi",
   'map.clear': "Joylashuvni olib tashlash",
+  'map.clusterLabel.one': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
+  'map.clusterLabel.other': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
 }
