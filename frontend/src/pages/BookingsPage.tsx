@@ -9,14 +9,24 @@ import { Link } from 'react-router-dom'
 import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
+import { CancellationNote } from '../components/CancellationNote'
+import { CancelBookingDialog } from '../components/CancelBookingDialog'
+import type { Booking as CancelledBooking, CancelRefund } from '../adapters/bookingAdapter'
+import { businessToday } from '../utils/dates'
 
 interface BookingCardProps {
   booking: Booking
+  onCancelled: (booking: CancelledBooking & { refund: CancelRefund }) => void
 }
 
-function BookingCard({ booking }: BookingCardProps) {
+/** The guest may ask to cancel an upcoming booking that is still open; the backend has the last word. */
+const canCancel = (booking: Booking) =>
+  (booking.status === 'pending' || booking.status === 'confirmed') && booking.check_in > businessToday()
+
+function BookingCard({ booking, onCancelled }: BookingCardProps) {
   const { t, formatDate } = useI18n()
   const [copied, setCopied] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
 
   const handleCopyCode = async () => {
     try {
@@ -85,19 +95,39 @@ function BookingCard({ booking }: BookingCardProps) {
         </div>
       </div>
       
+      {booking.cancellation_terms && canCancel(booking) && (
+        <CancellationNote
+          freeUntil={booking.cancellation_terms.free_until}
+          percentAfter={booking.cancellation_terms.refund_percent_after}
+        />
+      )}
       <NoShowRefundNote info={booking} />
 
       <div className="booking-card-footer">
         <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
           {t('bookings.payment', { status: statusText('status.payment', booking.payment_status, t) })}
         </div>
-        <Link 
-          to={`/property/${booking.property}`}
-          className="btn btn-secondary"
-        >
-          {t('bookings.viewProperty')}
-        </Link>
+        <div className="booking-card-actions">
+          {canCancel(booking) && (
+            <button type="button" className="btn btn-secondary" onClick={() => setCancelling(true)}>
+              {t('cancel.button')}
+            </button>
+          )}
+          <Link
+            to={`/property/${booking.property}`}
+            className="btn btn-secondary"
+          >
+            {t('bookings.viewProperty')}
+          </Link>
+        </div>
       </div>
+      {cancelling && (
+        <CancelBookingDialog
+          bookingId={booking.id}
+          onClose={() => setCancelling(false)}
+          onCancelled={cancelled => { setCancelling(false); onCancelled(cancelled) }}
+        />
+      )}
     </div>
   )
 }
@@ -105,12 +135,13 @@ function BookingCard({ booking }: BookingCardProps) {
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function BookingsPage() {
-  const { t } = useI18n()
+  const { t, formatMoney } = useI18n()
   const { isAuthenticated } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filter, setFilter] = useState<BookingFilter>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -143,6 +174,14 @@ export function BookingsPage() {
 
     loadBookings()
   }, [isAuthenticated, filter])
+
+  // The booking is cancelled: show it so, and tell what is coming back (the amount is the backend's)
+  const handleCancelled = (cancelled: CancelledBooking & { refund: CancelRefund }) => {
+    setBookings(current => current.map(booking => (booking.id === cancelled.id ? { ...booking, status: 'cancelled' } : booking)))
+    setNotice(Number(cancelled.refund.amount) > 0
+      ? t('cancel.doneRefund', { amount: formatMoney(cancelled.refund.amount, cancelled.refund.currency, { minDecimals: 0, maxDecimals: 0 }) })
+      : t('cancel.done'))
+  }
 
   const filteredBookings = bookings.filter(booking => {
     if (filter === 'all') return true
@@ -260,9 +299,11 @@ export function BookingsPage() {
           </button>
         </div>
         
+        {notice && <p role="status" className="alert alert-success bookings-notice">{notice}</p>}
+
         <div className="bookings-list">
           {filteredBookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
+            <BookingCard key={booking.id} booking={booking} onCancelled={handleCancelled} />
           ))}
         </div>
       </div>

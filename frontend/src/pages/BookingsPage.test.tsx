@@ -5,9 +5,15 @@ import { BookingsPage } from './BookingsPage'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
+import { bookingAdapter } from '../adapters/bookingAdapter'
+import { addDays, businessToday } from '../utils/dates'
 
 // Mock adapters
 vi.mock('../adapters/accountAdapter')
+vi.mock('../adapters/bookingAdapter', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../adapters/bookingAdapter')>()),
+  bookingAdapter: { getCancelPreview: vi.fn(), cancelBooking: vi.fn() },
+}))
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -440,6 +446,91 @@ describe('BookingsPage', () => {
         const lastCall = mockAccountAdapter.getBookings.mock.calls[mockAccountAdapter.getBookings.mock.calls.length - 1]
         expect(lastCall[0]).toBe('cancelled')
       })
+    })
+  })
+
+  describe('Cancelling a booking (R11)', () => {
+    const upcoming = (patch = {}) => ({
+      ...mockBookings[0], id: 21, property_name: 'Future Hotel', confirmation_code: 'FUT001',
+      check_in: addDays(businessToday(), 20), check_out: addDays(businessToday(), 22),
+      cancellation_terms: { free_until: null, refund_percent_after: 50 }, ...patch,
+    })
+    const api = vi.mocked(bookingAdapter)
+
+    const open = async (bookings: unknown[]) => {
+      mockUseAuth.mockReturnValue({
+        user: { id: 1, email: 'test@example.com' }, isAuthenticated: true, isLoading: false,
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),
+      })
+      mockAccountAdapter.getBookings.mockResolvedValue({ data: bookings, error: null })
+      renderWithRouter(<BookingsPage />)
+      await screen.findAllByText(/Future Hotel|Test Property|Pending Hotel/)
+    }
+
+    beforeEach(() => {
+      api.getCancelPreview.mockResolvedValue({
+        data: { refund_amount: '1177295.00', refund_currency: 'UZS', refund_percent: 50, free_until: null }, error: null,
+      })
+      api.cancelBooking.mockResolvedValue({
+        data: { ...upcoming(), status: 'cancelled', refund: { amount: '1177295.00', currency: 'UZS', percent: 50 } } as never,
+        error: null,
+      })
+    })
+
+    it('offers Cancel booking on an upcoming pending or confirmed booking, with what it promised', async () => {
+      await open([upcoming(), upcoming({ id: 22, status: 'pending', property_name: 'Pending Hotel' })])
+      expect(screen.getAllByRole('button', { name: 'Cancel booking' })).toHaveLength(2)
+      expect(screen.getAllByTestId('cancellation-note')[0]).toHaveTextContent('If you cancel, 50% of your payment is refunded.')
+    })
+
+    it('offers nothing on a completed, cancelled, started or past booking', async () => {
+      await open([
+        upcoming({ id: 30, status: 'completed' }),
+        upcoming({ id: 31, status: 'cancelled' }),
+        upcoming({ id: 32, check_in: businessToday(), check_out: addDays(businessToday(), 2) }),
+        upcoming({ id: 33, check_in: addDays(businessToday(), -5), check_out: addDays(businessToday(), -3) }),
+      ])
+      expect(screen.queryByRole('button', { name: 'Cancel booking' })).toBeNull()
+    })
+
+    it('shows no cancellation note for an older booking without terms', async () => {
+      await open([upcoming({ cancellation_terms: null })])
+      expect(screen.queryByTestId('cancellation-note')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Cancel booking' })).toBeInTheDocument()
+    })
+
+    it('shows the refund first, then cancels on confirmation and tells what is coming back', async () => {
+      await open([upcoming()])
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }))
+      expect(await screen.findByText(/If you cancel now, 1 177 295 UZS \(50%\) is refunded/)).toBeInTheDocument()
+      expect(api.cancelBooking).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel booking' }))
+      expect(await screen.findByText('Booking cancelled. 1 177 295 UZS is being refunded.')).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Cancel booking' })).toBeNull()
+      expect(document.querySelector('.booking-card-status')).toHaveTextContent('Cancelled')
+    })
+
+    it('says only "Booking cancelled." when nothing is refunded', async () => {
+      api.cancelBooking.mockResolvedValue({
+        data: { ...upcoming(), status: 'cancelled', refund: { amount: '0.00', currency: 'UZS', percent: 0 } } as never, error: null,
+      })
+      await open([upcoming()])
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }))
+      await screen.findByText(/If you cancel now|non-refundable|nothing is refunded/i)
+      fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel booking' }))
+      expect(await screen.findByText('Booking cancelled.')).toBeInTheDocument()
+    })
+
+    it('Keep booking leaves everything as it was', async () => {
+      await open([upcoming()])
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }))
+      await screen.findByText(/is refunded/)
+      fireEvent.click(screen.getByRole('button', { name: 'Keep booking' }))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(api.cancelBooking).not.toHaveBeenCalled()
+      expect(screen.getByRole('button', { name: 'Cancel booking' })).toBeInTheDocument()
     })
   })
 })
