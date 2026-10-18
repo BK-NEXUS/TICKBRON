@@ -2892,3 +2892,6 @@ Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
 - `StatusCsvButton` now has an "Export Excel" button next to "Export CSV"; the four adapter exports take a `format` (`'csv'` default, `'xlsx'`). Three existing assertions got the extra `'csv'` argument; nothing was weakened.
 - uz/ru/en keys `status.insights.*`, `status.exportExcel`. Tests: `StatusInsights.test.tsx` (5), `StatusCsvButton.test.tsx` (+2), adapter (+1), owner tab (+1). Full run: 170 files, 1954 tests, lint and build clean.
 - Not done: real-browser check at 390px / 1440px of the new cards and the two export buttons.
+
+## R14 load test (2026-10-18)
+`backend/scripts/loadtest/` (Locust file, `make_sessions.py`, README) and a new section in `.ai/PERFORMANCE_REPORT.md`: 200 users, 2 min, 0 failures, 85.7 req/s on one shared 4-core box, server-side p95 search 163 ms, hotel page 36 ms, availability 61 ms, quote 12 ms, create booking 36 ms; client p95 2.1 s because the box is saturated (queueing). No application code changed, no migration. Redis cache and thumbnails deliberately not done (owner decision, reasons in the report). Not done: a run on a dedicated server.
