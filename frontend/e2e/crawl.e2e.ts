@@ -11,7 +11,7 @@
 import { Page } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
-import { test, expect, loginWithPassword, DEMO, API, DESKTOP, MOBILE, SCREENSHOT_DIR } from './support'
+import { test, expect, loginWithPassword, stubMapTiles, DEMO, API, DESKTOP, MOBILE, SCREENSHOT_DIR } from './support'
 
 type Role = 'guest' | 'owner' | 'admin'
 
@@ -154,6 +154,7 @@ async function crawl(page: Page, role: Role, viewport: typeof DESKTOP, viewportN
 for (const role of ['guest', 'owner', 'admin'] as Role[]) {
   test(`crawl as ${role}: no 404s, dead buttons or console errors`, async ({ page }) => {
     test.setTimeout(900_000)
+    await stubMapTiles(page)
     if (role === 'owner') await loginWithPassword(page, DEMO.owner.email, DEMO.owner.password)
     if (role === 'admin') await loginWithPassword(page, DEMO.admin.email, DEMO.admin.password)
 

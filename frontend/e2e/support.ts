@@ -16,6 +16,16 @@ export const DEMO = {
   guest: { email: 'guest@tickbron.demo', password: 'DemoGuest#2026' },
 }
 
+// A 1x1 transparent PNG
+const BLANK_TILE = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
+
+/** The map tiles come from the internet; tests must not depend on it (offline CI, proxies). */
+export async function stubMapTiles(page: Page) {
+  await page.route('https://tile.openstreetmap.org/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }))
+}
+
 export interface Issue {
   step: string
   kind: 'console' | 'http' | 'requestfailed' | 'pageerror'
