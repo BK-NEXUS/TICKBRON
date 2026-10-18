@@ -327,7 +327,7 @@ Before any real payment, each item below must be tested end to end in the provid
 ## Final pass (R15, 2026-10-18)
 
 Results on the code of this date (`master` after PR #54, plus the E2E changes of the R15 PR):
-- **Backend:** `pytest --create-db`: BACKEND_RESULT_PLACEHOLDER
+- **Backend:** `pytest --create-db`: 3153 passed, 0 failed (41 min 32 s), `makemigrations --check` clean.
 - **Frontend:** `npm test` 170 files, 1954 tests passed; `npm run lint` clean; `npm run build` clean (first load 85 KB app + 59 KB React, gzip).
 - **E2E against the real stack** (seed_demo + seed_demo_stats, Chromium): 29 of 29 passed (25 in the full run; the 3 crawls and promotions J5 passed in a second run after two environment fixes below). The crawl visits every page as guest, owner and admin at 1440px and 390px: no 404, dead button or console error.
 - **Load test** (R14, `.ai/PERFORMANCE_REPORT.md`): 200 users, 0 failures, server-side p95 search 163 ms, booking 36 ms.
