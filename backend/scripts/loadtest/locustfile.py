@@ -10,7 +10,7 @@ API = '/api/v1'
 CITIES = ['Tashkent', 'Samarkand', 'Bukhara', 'Khiva', 'Fergana', 'Namangan', 'Almaty', 'Istanbul']
 SESSIONS = json.loads(Path(__file__).with_name('sessions.json').read_text()) \
     if Path(__file__).with_name('sessions.json').exists() else []
-BUSINESS_REFUSALS = (400, 409)
+BUSINESS_REFUSALS = (400, 409, 429)
 
 
 def stay():
@@ -25,6 +25,8 @@ class Guest(HttpUser):
 
     def on_start(self):
         self.hotel = None
+        # Behind nginx every visitor has an own address; the API throttles per address (NUM_PROXIES=1)
+        self.client.headers['X-Forwarded-For'] = '.'.join(str(random.randint(1, 254)) for _ in range(4))
 
     def search(self):
         check_in, check_out = stay()
@@ -78,6 +80,9 @@ class Booker(Guest):
         super().on_start()
         if not SESSIONS:
             raise SystemExit('Run make_sessions.py first')
+        self.next_identity()
+
+    def next_identity(self):
         Booker.session_index += 1
         self.client.cookies.set('sessionid', SESSIONS[Booker.session_index % len(SESSIONS)])
         self.client.get(f'{API}/auth/csrf/', name='csrf')
@@ -98,7 +103,10 @@ class Booker(Guest):
                 'guest_count': 1}
         with self.client.post(f'{API}/bookings/', name='create booking', json=body, catch_response=True,
                               headers={'X-CSRFToken': self.csrf or ''}) as response:
-            if response.status_code in (200, 201) or response.status_code in BUSINESS_REFUSALS:
+            if response.status_code in (200, 201):
+                response.success()
+                self.next_identity()
+            elif response.status_code in BUSINESS_REFUSALS:
                 response.success()
             else:
                 response.failure(f'status {response.status_code}')
