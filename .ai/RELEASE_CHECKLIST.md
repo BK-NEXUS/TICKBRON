@@ -322,3 +322,33 @@ Before any real payment, each item below must be tested end to end in the provid
 
 - [ ] **A lawyer must review the guest-facing refund sentence** (`no_show_refund_statement` in uz, ru, en) and the owner and staff dialog texts (`noShow.*`, `noShowAdmin.*`) before launch.
 - [ ] Open client decisions that change this feature: who pays the provider fee, whether it applies to non-refundable rates, whether the hotel keeps the money or TICKBRON refunds from it.
+
+
+## Final pass (R15, 2026-10-18)
+
+Results on the code of this date (`master` after PR #54, plus the E2E changes of the R15 PR):
+- **Backend:** `pytest --create-db`: BACKEND_RESULT_PLACEHOLDER
+- **Frontend:** `npm test` 170 files, 1954 tests passed; `npm run lint` clean; `npm run build` clean (first load 85 KB app + 59 KB React, gzip).
+- **E2E against the real stack** (seed_demo + seed_demo_stats, Chromium): 29 of 29 passed (25 in the full run; the 3 crawls and promotions J5 passed in a second run after two environment fixes below). The crawl visits every page as guest, owner and admin at 1440px and 390px: no 404, dead button or console error.
+- **Load test** (R14, `.ai/PERFORMANCE_REPORT.md`): 200 users, 0 failures, server-side p95 search 163 ms, booking 36 ms.
+
+How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` and `seed_demo_stats`, `THROTTLE_ANON_RATE` and `THROTTLE_USER_RATE` very high, and the per-IP limits switched off (they are fixed: search 100/min, promotions 60/min, login 10/min; the E2E sends everything from one address), frontend `npm run dev` on port 3000, then `npm run test:e2e`. `E2E_CHROMIUM_PATH` points to a Chromium when Playwright's own is not installed. The crawl answers the OpenStreetMap tiles itself, so it needs no internet.
+
+### Before the first production start (everything added since the first checklist)
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** Migrations added since 2026-10-10, all additive or reversible: `bookings/0011` and `properties/0014` (free cancellation: rate-plan terms, cancellation snapshot on bookings, refund reason `cancel`), `properties/0015` (`RoomType.is_vip`), `admin_panel/0010`, `0011` (audit actions, IP, payment reads), `users/0007`-`0009` (unique verified phone, hashed codes, SMS login columns dropped). No migration came with R12 additions, R14 or R15.
+- [ ] New library **XlsxWriter 3.2.9** (Excel export, `requirements.txt`); `pip install -r requirements.txt` on the server.
+- [ ] CBU exchange rates are loaded (R6 section above); a hotel priced in USD or EUR refuses bookings with 503 `exchange_rate_unavailable` until a rate exists.
+- [ ] Map tiles come from `tile.openstreetmap.org` (CSP `img-src`, privacy note above): the guest's browser contacts OpenStreetMap on pages with a map. Decide whether the OSM usage policy fits the expected traffic or a paid tile provider is needed.
+- [ ] Size the server from the load test: 4 shared cores gave about 86 requests/s; plan more workers/cores and run the same Locust file (`backend/scripts/loadtest/README.md`) on the real server before launch.
+- [ ] Lawyer review of the refund wording (cancellation and no-show) and the "Reklama" label, as listed above.
+
+### Open decisions of the owner
+- UZS/USD selector on the front end: the backend sends no USD price. Add `base_price_usd_approx` or remove the selector?
+- Remove the free-text location compatibility fields from the property API (kept for the old front end)?
+- Redis search cache and image thumbnails were left out on purpose (R14 report); thumbnails belong to the "owners upload photos" feature, which does not exist yet.
+
+### Found, not fixed (see HANDOFF for each)
+- Owners cannot upload photos; photos are not served by a media route in development.
+- The guest bookings list is not paginated (owner decision, R14 report).
+- Provider partial refunds are unverified (Payme, Click, Visa).
+- The new R12 cards and the Excel buttons, and the VIP badge, were checked by tests only, not by eye at 390px and 1440px (the crawl does load the pages and finds no errors).
