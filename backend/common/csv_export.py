@@ -1,25 +1,39 @@
 """
-CSV export for the Status sections (R12 phase 2): `?export=csv` on a list endpoint.
+CSV and Excel export for the Status sections (R12 phase 2): `?export=csv` or `?export=xlsx` on a
+list endpoint (`export_response` picks the format; any other value gives the normal JSON).
 
 UTF-8 with a BOM (Excel opens Cyrillic and Uzbek text correctly), streamed, at most
 CSV_EXPORT_MAX_ROWS data rows followed by a final "truncated" line when there were more.
 Cells that a spreadsheet would run as a formula (starting with = + - @, tab or CR) get a
-leading apostrophe. Every export is written to the admin access log (`export_csv`, export
-name and row count only).
+leading apostrophe; in Excel files every text is written as text, so nothing runs as a formula.
+Every export is written to the admin access log (`export_csv`, export name, row count and, for
+Excel, `format: xlsx`).
 """
 import csv
+import io
+from decimal import Decimal
 from itertools import islice
 
 from django.conf import settings
-from django.http import StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
+from xlsxwriter import Workbook
 
 BOM = '﻿'
 TRUNCATED = 'truncated'
 _FORMULA_START = ('=', '+', '-', '@', '\t', '\r')
 
 
-def wants_csv(request):
-    return (request.query_params.get('export') or '').strip().lower() == 'csv'
+XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+def export_format(request):
+    """'csv', 'xlsx' or None."""
+    value = (request.query_params.get('export') or '').strip().lower()
+    return value if value in ('csv', 'xlsx') else None
+
+
+def wants_export(request):
+    return export_format(request) is not None
 
 
 def max_rows():
@@ -40,10 +54,11 @@ class _Echo:
         return value
 
 
-def csv_response(request, name, header, rows):
+def export_response(request, name, header, rows):
     """
-    StreamingHttpResponse with `header` and up to max_rows() of `rows` (an iterable of lists).
-    Records AdminAccessLog `export_csv` with {export: name, rows: n} before streaming.
+    CSV or Excel file (per `?export=`) with `header` and up to max_rows() of `rows` (an iterable of
+    lists). Records AdminAccessLog `export_csv` with {export: name, rows: n} (+ format for Excel)
+    before sending.
     """
     from admin_panel.models import AdminAccessLog
 
@@ -51,8 +66,15 @@ def csv_response(request, name, header, rows):
     taken = list(islice(iter(rows), limit + 1))
     truncated = len(taken) > limit
     taken = taken[:limit]
-    AdminAccessLog.record(request.user, 'export_csv', details={'export': name, 'rows': len(taken)})
+    fmt = export_format(request)
+    details = {'export': name, 'rows': len(taken)} | ({'format': 'xlsx'} if fmt == 'xlsx' else {})
+    AdminAccessLog.record(request.user, 'export_csv', details=details)
+    if fmt == 'xlsx':
+        return _xlsx_response(name, header, taken, truncated)
+    return _csv_response(name, header, taken, truncated)
 
+
+def _csv_response(name, header, taken, truncated):
     writer = csv.writer(_Echo())
 
     def stream():
@@ -64,6 +86,23 @@ def csv_response(request, name, header, rows):
 
     response = StreamingHttpResponse(stream(), content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{name}.csv"'
+    return response
+
+
+def _xlsx_response(name, header, taken, truncated):
+    buffer = io.BytesIO()
+    workbook = Workbook(buffer, {'in_memory': True})
+    sheet = workbook.add_worksheet()
+    lines = [header, *taken] + ([[TRUNCATED]] if truncated else [])
+    for row_number, line in enumerate(lines):
+        for column, value in enumerate(line):
+            if isinstance(value, (int, float, Decimal)) and not isinstance(value, bool):
+                sheet.write_number(row_number, column, float(value))
+            else:
+                sheet.write_string(row_number, column, '' if value is None else str(value))
+    workbook.close()
+    response = HttpResponse(buffer.getvalue(), content_type=XLSX_TYPE)
+    response['Content-Disposition'] = f'attachment; filename="{name}.xlsx"'
     return response
 
 

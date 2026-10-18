@@ -9084,6 +9084,12 @@ button.property-gallery-image {
   gap: var(--spacing-xs);
 }
 
+.status-csv-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
 .status-card-label {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -9100,6 +9106,41 @@ button.property-gallery-image {
 .status-card-caption {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+}
+
+.status-changes {
+  margin-bottom: var(--spacing-xl);
+}
+
+.status-changes-title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.status-changes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status-change {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+}
+
+.status-change-value {
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
 }
 
 .status-hotel-info {

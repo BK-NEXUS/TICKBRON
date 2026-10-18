@@ -39,6 +39,7 @@ All aggregation runs in the database; Python only reshapes already-aggregated ro
 """
 import re
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Sum, Value
@@ -494,6 +495,104 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
             'no_show_reported': totals['st_reported'],
         },
     }
+
+
+# --- insights (R12 additions) ---------------------------------------------------------
+
+def previous_range(date_range):
+    """The period of the same length right before `date_range`; None for all time."""
+    if date_range is None:
+        return None
+    first, after = date_range
+    return first - (after - first), first
+
+
+def _percent(part, whole):
+    return f'{Decimal(part) * 100 / Decimal(whole):.2f}' if whole else None
+
+
+def _change_pct(current, previous):
+    """Change in percent with one decimal ('-50.0'); None when there is nothing to compare with."""
+    return f'{(Decimal(current) - Decimal(previous)) * 100 / Decimal(previous):.1f}' if previous else None
+
+
+def _revenue_change(current, previous):
+    before = {row['currency']: Decimal(row['amount']) for row in previous}
+    return [{'currency': row['currency'], 'pct': _change_pct(row['amount'], before.get(row['currency'], 0))}
+            for row in current]
+
+
+def _average_values(bookings):
+    rows = (bookings.values('currency').annotate(amount=Sum('total_price'), count=Count('id')).order_by('currency'))
+    return [{'currency': row['currency'], 'amount': _money(row['amount'] / row['count'])} for row in rows]
+
+
+def rooms_offered(properties):
+    """Rooms the given hotels (a Property queryset) offer: SUM(total_rooms) of their room types."""
+    from properties.models import RoomType
+    return RoomType.objects.filter(property__in=properties, is_deleted=False).aggregate(
+        total=Coalesce(Sum('total_rooms'), 0))['total']
+
+
+RANK_MIN_HOTELS = 5   # below this a rank would let owners guess who is who
+
+
+def region_rank(prop, date_range):
+    """
+    {'position', 'of'}: the hotel's place among the active hotels of its region by counted
+    bookings in the period (equal numbers share a place). Only the hotel's own place and the
+    number of hotels leave this function. None without a region, when the hotel is not active
+    or when the region has fewer than RANK_MIN_HOTELS active hotels.
+    """
+    from properties.models import Property
+    if not prop.region_ref_id:
+        return None
+    peers = Property.objects.filter(region_ref_id=prop.region_ref_id, status='active', is_deleted=False)
+    peer_ids = list(peers.values_list('id', flat=True))
+    if len(peer_ids) < RANK_MIN_HOTELS or prop.id not in peer_ids:
+        return None
+    scope = all_bookings().filter(property_id__in=peer_ids)
+    counts = dict(scope.filter(counted_q('', date_range, fully_refunded_ids(scope)))
+                  .values_list('property_id').annotate(total=Count('id')).order_by())
+    own = counts.get(prop.id, 0)
+    return {'position': 1 + sum(1 for total in counts.values() if total > own), 'of': len(peer_ids)}
+
+
+def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=None):
+    """
+    Derived numbers of the Status pages for the bookings in `scope`, from their `totals`
+    (metric_totals of the same scope and range): the previous period and the
+    change in percent, cancellation rate, occupancy rate (needs `rooms`, the number of rooms the
+    hotels offer; room nights are by check-in date), average booking value per currency and
+    average stay length. Read only; every rate is None when its denominator is 0.
+    """
+    today = today or business_today()
+    if refunded_ids is None:
+        refunded_ids = fully_refunded_ids(scope)
+    status = totals['booking_status']
+    result = {
+        'cancellation_rate': _percent(status['cancelled'], status['cancelled'] + totals['bookings'] + totals['no_show']),
+        'average_booking_value': _average_values(scope.filter(counted_q('', date_range, refunded_ids))),
+        'average_stay_nights': (f"{Decimal(totals['nights']) / totals['bookings']:.2f}" if totals['bookings'] else None),
+        'occupancy_rate': None,
+        'previous_period': None,
+        'change_pct': None,
+    }
+    if date_range is None:
+        return result
+    days = (date_range[1] - date_range[0]).days
+    if rooms:
+        result['occupancy_rate'] = _percent(min(totals['room_nights'], rooms * days), rooms * days)
+    before = previous_range(date_range)
+    previous = metric_totals(scope, before, today, refunded_ids)
+    keys = ('bookings', 'guests', 'nights', 'stayed')
+    result['previous_period'] = {
+        'range': range_json(before),
+        'totals': {key: previous[key] for key in keys} | {'revenue': previous['revenue']},
+    }
+    result['change_pct'] = {key: _change_pct(totals[key], previous[key]) for key in keys} | {
+        'revenue': _revenue_change(totals['revenue'], previous['revenue'])}
+    return result
 
 
 # --- series -------------------------------------------------------------------------

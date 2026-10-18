@@ -132,7 +132,7 @@ describe('AdminStatusHotels', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
 
     await waitFor(() => expect(saveBlob).toHaveBeenCalled())
-    expect(exportHotels).toHaveBeenCalledWith({ period: 'all', search: 'alp', ordering: '-guests' })
+    expect(exportHotels).toHaveBeenCalledWith({ period: 'all', search: 'alp', ordering: '-guests' }, 'csv')
   })
 
   it('opens a hotel from its name', async () => {

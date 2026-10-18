@@ -1,9 +1,11 @@
 import { useI18n } from '../i18n/I18nContext'
 import type {
-  PeriodRange, StatusFullTotals, StatusGranularity, StatusReconciliation, StatusSeriesRow,
+  PeriodRange, StatusFullTotals, StatusGranularity, StatusInsights as Insights, StatusRank,
+  StatusReconciliation, StatusSeriesRow,
 } from '../adapters/statusAdapter'
 import { periodLabel } from '../utils/statusFormat'
 import { StatusStatsCards } from './StatusStatsCards'
+import { StatusInsights } from './StatusInsights'
 import { StatusStayedNote } from './StatusStayedNote'
 import { StatusBookingStatusCounts } from './StatusBookingStatusCounts'
 import { StatusSeriesSection } from './StatusSeriesSection'
@@ -13,6 +15,9 @@ interface StatusReportProps {
   period: string
   periodRange: PeriodRange
   totals: StatusFullTotals
+  insights: Insights
+  /** The owner's place in the region (owner hotel screen only) */
+  rank?: StatusRank | null
   series: StatusSeriesRow[]
   granularity: StatusGranularity
   onGranularityChange: (granularity: StatusGranularity) => void
@@ -24,12 +29,13 @@ interface StatusReportProps {
 
 /** The R12a body shared by the admin hotel, owner summary and owner hotel screens */
 export function StatusReport({
-  period, periodRange, totals, series, granularity, onGranularityChange, reconciliation, lead, guestsLabel,
+  period, periodRange, totals, insights, rank, series, granularity, onGranularityChange, reconciliation, lead, guestsLabel,
 }: StatusReportProps) {
   const i18n = useI18n()
   return (
     <>
       <StatusStatsCards totals={totals} caption={periodLabel(period, periodRange, i18n)} lead={lead} guestsLabel={guestsLabel} />
+      <StatusInsights insights={insights} rank={rank} />
       <StatusStayedNote periodRange={periodRange} />
       <StatusBookingStatusCounts counts={totals.booking_status} />
       <StatusSeriesSection series={series} granularity={granularity} onGranularityChange={onGranularityChange} />

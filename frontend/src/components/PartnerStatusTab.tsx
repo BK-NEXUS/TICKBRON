@@ -83,7 +83,7 @@ export function PartnerStatusTab() {
 
       <div className="status-controls">
         <StatusPeriodSelector value={period} range={range} onChange={setPeriod} onRangeChange={setRange} />
-        <StatusCsvButton onExport={() => statusAdapter.exportPartnerReconciliation(params)} />
+        <StatusCsvButton onExport={format => statusAdapter.exportPartnerReconciliation(params, format)} />
       </div>
 
       {error ? (
@@ -91,7 +91,7 @@ export function PartnerStatusTab() {
       ) : data && (
         <>
           <StatusReport
-            period={data.period} periodRange={data.period_range} totals={data.totals} series={data.series}
+            period={data.period} periodRange={data.period_range} totals={data.totals} insights={data.insights} series={data.series}
             granularity={granularity} onGranularityChange={setGranularity} reconciliation={data.reconciliation}
             lead={{ label: TEXT.since, value: formatDate(data.since, i18n) }} guestsLabel={TEXT.guestsLabel}
           />

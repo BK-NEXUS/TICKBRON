@@ -101,7 +101,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
 
       <div className="status-controls">
         <StatusPeriodSelector value={period} range={range} onChange={onPeriodChange} onRangeChange={onRangeChange} />
-        <StatusCsvButton onExport={() => statusAdapter.exportUserHistory(userId, periodParams(period, range))} />
+        <StatusCsvButton onExport={format => statusAdapter.exportUserHistory(userId, periodParams(period, range), format)} />
       </div>
 
       {error ? (

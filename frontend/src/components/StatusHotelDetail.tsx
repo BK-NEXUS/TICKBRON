@@ -104,7 +104,7 @@ export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRa
       ) : data && (
         <>
           <StatusReport
-            period={data.period} periodRange={data.period_range} totals={data.totals} series={data.series}
+            period={data.period} periodRange={data.period_range} totals={data.totals} insights={data.insights} series={data.series}
             granularity={granularity ?? data.granularity} onGranularityChange={setGranularity}
             reconciliation={data.reconciliation}
           />

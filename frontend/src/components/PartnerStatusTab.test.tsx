@@ -167,7 +167,18 @@ describe('PartnerStatusTab', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
 
       await waitFor(() => expect(saveBlob).toHaveBeenCalled())
-      expect(exportCsv).toHaveBeenCalledWith({ period: 'all' })
+      expect(exportCsv).toHaveBeenCalledWith({ period: 'all' }, 'csv')
+    })
+
+    it('exports the same table as an Excel file', async () => {
+      exportCsv.mockResolvedValue({ data: { blob: new Blob(['x']), filename: 'partner_reconciliation.xlsx' }, error: null })
+      render(<PartnerStatusTab />)
+      await screen.findByRole('table', { name: 'Your properties' })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }))
+
+      await waitFor(() => expect(saveBlob).toHaveBeenCalledWith(expect.any(Blob), 'partner_reconciliation.xlsx'))
+      expect(exportCsv).toHaveBeenCalledWith({ period: 'all' }, 'xlsx')
     })
 
     it('lists today and tomorrow arrivals of all hotels', async () => {

@@ -5,7 +5,7 @@ import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
 import { I18nProvider } from '../i18n/I18nContext'
 import { statusAdapter } from '../adapters/statusAdapter'
-import { HOTEL_DETAIL, TOTALS } from '../test/statusFixtures'
+import { HOTEL_DETAIL, INSIGHTS, TOTALS } from '../test/statusFixtures'
 
 vi.mock('../adapters/statusAdapter', () => ({
   statusAdapter: {
@@ -56,6 +56,7 @@ const DETAIL = {
   period: 'all',
   period_range: HOTEL_DETAIL.period_range,
   totals: { ...TOTALS, bookings: 1500, counted: 1500, guests: 30, revenue: [{ currency: 'USD', amount: '45000.00' }] },
+  insights: INSIGHTS,
   granularity: HOTEL_DETAIL.granularity,
   series: HOTEL_DETAIL.series,
   reconciliation: HOTEL_DETAIL.reconciliation,

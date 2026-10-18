@@ -130,6 +130,31 @@ export interface StatusMonth extends StatusTotals {
   month: string
 }
 
+/** R12 additions: read-only derived numbers; rates are percent strings, null when there is nothing to divide by */
+export interface StatusInsights {
+  cancellation_rate: string | null
+  occupancy_rate: string | null
+  average_booking_value: Money[]
+  average_stay_nights: string | null
+  previous_period: {
+    range: PeriodRange
+    totals: { bookings: number; guests: number; nights: number; stayed: number; revenue: Money[] }
+  } | null
+  change_pct: {
+    bookings: string | null
+    guests: string | null
+    nights: string | null
+    stayed: string | null
+    revenue: { currency: string; pct: string | null }[]
+  } | null
+}
+
+/** The owner's place among the active hotels of the region (the API hides it below 5 hotels) */
+export interface StatusRank {
+  position: number
+  of: number
+}
+
 export interface StatusHotelDetail {
   hotel: {
     id: number
@@ -145,6 +170,7 @@ export interface StatusHotelDetail {
   period: StatusPeriod
   period_range: PeriodRange
   totals: StatusFullTotals
+  insights: StatusInsights
   granularity: StatusGranularity
   series: StatusSeriesRow[]
   reconciliation: StatusReconciliation
@@ -265,6 +291,7 @@ export interface PartnerStatus {
   period: StatusPeriod
   period_range: PeriodRange
   totals: StatusFullTotals
+  insights: StatusInsights
   properties: PartnerStatusProperty[]
   granularity: StatusGranularity
   series: StatusSeriesRow[]
@@ -277,6 +304,7 @@ export interface PartnerStatus {
 /** GET /api/v1/partner/status/hotels/{id}/ (own hotel only) */
 export interface PartnerHotelStatus extends Omit<StatusHotelDetail, 'hotel'> {
   hotel: { id: number; name: string; status: string; address: string; city: string; region: string; country: string }
+  rank: StatusRank | null
 }
 
 export type ArrivalsDay = 'today' | 'tomorrow'
@@ -305,6 +333,8 @@ export interface PartnerArrivalsPage {
   day: ArrivalsDay
   date: string
 }
+
+export type ExportFormat = 'csv' | 'xlsx'
 
 export interface CsvFile {
   blob: Blob
@@ -408,7 +438,7 @@ function filenameFrom(response: Response, fallback: string): string {
   return match ? match[1] : fallback
 }
 
-/** CSV goes through apiFetch (session cookie + CSRF) and comes back as a blob; a plain link would not carry auth headers */
+/** CSV and Excel go through apiFetch (session cookie + CSRF) and comes back as a blob; a plain link would not carry auth headers */
 async function requestCsv(
   url: string,
   fallbackName: string,
@@ -434,7 +464,8 @@ const hotelsValues = ({ ordering, pageSize, country, region, status, ...list }: 
 const detailQuery = ({ year, ...period }: StatusDetailParams) => query({ ...periodValues(period), year })
 
 /** The export covers the whole list, so it never carries a page */
-const csvValues = (values: QueryValues): QueryValues => ({ ...values, page: undefined, export: 'csv' })
+const exportValues = (values: QueryValues, format: ExportFormat): QueryValues =>
+  ({ ...values, page: undefined, export: format })
 
 const PARTNER_URL = `${API_BASE_URL}/api/v1/partner/status`
 
@@ -457,8 +488,8 @@ export const statusAdapter = {
     return request<AdminHotelsPage>(`${STATUS_URL}/hotels/${query(hotelsValues(params))}`)
   },
 
-  exportAdminHotels(params: AdminHotelsParams) {
-    return requestCsv(`${STATUS_URL}/hotels/${query(csvValues(hotelsValues(params)))}`, 'status_hotels.csv')
+  exportAdminHotels(params: AdminHotelsParams, format: ExportFormat = 'csv') {
+    return requestCsv(`${STATUS_URL}/hotels/${query(exportValues(hotelsValues(params), format))}`, `status_hotels.${format}`)
   },
 
   getHotelDetail(hotelId: number, params: StatusDetailParams) {
@@ -469,28 +500,28 @@ export const statusAdapter = {
     return request<StatusPage<StatusUser>>(`${STATUS_URL}/users/${listQuery(params)}`)
   },
 
-  exportUsers(params: StatusListParams) {
-    return requestCsv(`${STATUS_URL}/users/${query(csvValues(listValues(params)))}`, 'status_users.csv')
+  exportUsers(params: StatusListParams, format: ExportFormat = 'csv') {
+    return requestCsv(`${STATUS_URL}/users/${query(exportValues(listValues(params), format))}`, `status_users.${format}`)
   },
 
   getUserDetail(userId: number, { page, ...period }: UserDetailParams) {
     return request<StatusUserDetail>(`${STATUS_URL}/users/${userId}/${query({ ...periodValues(period), page })}`)
   },
 
-  exportUserHistory(userId: number, period: StatusPeriodParams) {
+  exportUserHistory(userId: number, period: StatusPeriodParams, format: ExportFormat = 'csv') {
     return requestCsv(
-      `${STATUS_URL}/users/${userId}/${query({ ...periodValues(period), export: 'csv' })}`,
-      `status_user_${userId}_history.csv`)
+      `${STATUS_URL}/users/${userId}/${query({ ...periodValues(period), export: format })}`,
+      `status_user_${userId}_history.${format}`)
   },
 
   getPartnerStatus(params: StatusDetailParams) {
     return request<PartnerStatus>(`${PARTNER_URL}/${detailQuery(params)}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
-  exportPartnerReconciliation(period: StatusPeriodParams) {
+  exportPartnerReconciliation(period: StatusPeriodParams, format: ExportFormat = 'csv') {
     return requestCsv(
-      `${PARTNER_URL}/${query({ ...periodValues(period), export: 'csv' })}`,
-      'partner_reconciliation.csv', PARTNER_ERROR_MESSAGES)
+      `${PARTNER_URL}/${query({ ...periodValues(period), export: format })}`,
+      `partner_reconciliation.${format}`, PARTNER_ERROR_MESSAGES)
   },
 
   getPartnerHotel(hotelId: number, params: StatusDetailParams) {

@@ -137,7 +137,7 @@ class AdminAccessLog(models.Model):
 
     # The only keys `details` may hold: non-personal facts, flat scalar values
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
-                             'refund_id', 'export', 'rows', 'report_id',
+                             'refund_id', 'export', 'rows', 'format', 'report_id',
                              'promotion_id', 'property_id', 'start_date', 'end_date', 'amount',
                              'object_id', 'level'})
 

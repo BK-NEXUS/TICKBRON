@@ -95,5 +95,5 @@ class TestPartnerStatus:
     def test_query_count_is_constant(self, status_world, django_assert_max_num_queries):
         # R12 (was 8): role check, fully refunded ids (scope, period), totals (4), series (4),
         # reconciliation, years, monthly (3), properties, their revenue (2) and booking value = 19
-        with django_assert_max_num_queries(19):
+        with django_assert_max_num_queries(21):
             assert get_as(status_world['owners'][0], year=2026).status_code == 200

@@ -1,8 +1,18 @@
 // Mocks shaped like the real R12a Status responses (.ai/API_CONTRACT.md "R12 phase 2").
 
 import type {
-  PartnerHotelStatus, PartnerStatus, StatusFullTotals, StatusHotelDetail, StatusReconciliation, StatusSeriesRow,
+  PartnerHotelStatus, PartnerStatus, StatusFullTotals, StatusHotelDetail, StatusInsights, StatusReconciliation, StatusSeriesRow,
 } from '../adapters/statusAdapter'
+
+/** All time: nothing to compare with, no rooms to measure occupancy against */
+export const INSIGHTS: StatusInsights = {
+  cancellation_rate: '8.50',
+  occupancy_rate: null,
+  average_booking_value: [{ currency: 'USD', amount: '120.00' }],
+  average_stay_nights: '3.60',
+  previous_period: null,
+  change_pct: null,
+}
 
 export const TOTALS: StatusFullTotals = {
   bookings: 1500,
@@ -50,6 +60,7 @@ export const HOTEL_DETAIL: StatusHotelDetail = {
   period: 'all',
   period_range: { from: null, to: null },
   totals: TOTALS,
+  insights: INSIGHTS,
   granularity: 'month',
   series: SERIES,
   reconciliation: RECONCILIATION,
@@ -68,6 +79,7 @@ export const PARTNER_STATUS: PartnerStatus = {
   period: 'all',
   period_range: { from: null, to: null },
   totals: { ...TOTALS, bookings: 1205, counted: 1205, guests: 1003, revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '12530.00' }] },
+  insights: INSIGHTS,
   properties: [
     { id: 1, name: 'Alpha Hotel', city: 'Tashkent', region: 'Tashkent', country: 'Uzbekistan', status: 'active',
       bookings: 1203, guests: 1001, revenue: [{ currency: 'USD', amount: '12450.00' }] },
@@ -87,6 +99,8 @@ export const PARTNER_HOTEL: PartnerHotelStatus = {
   period: 'all',
   period_range: { from: null, to: null },
   totals: TOTALS,
+  insights: INSIGHTS,
+  rank: null,
   granularity: 'month',
   series: SERIES,
   reconciliation: RECONCILIATION,

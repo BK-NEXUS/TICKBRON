@@ -76,7 +76,7 @@ export function PartnerHotelStatus({ hotelId, onBack }: PartnerHotelStatusProps)
       ) : data && (
         <>
           <StatusReport
-            period={data.period} periodRange={data.period_range} totals={data.totals} series={data.series}
+            period={data.period} periodRange={data.period_range} totals={data.totals} insights={data.insights} rank={data.rank} series={data.series}
             granularity={granularity} onGranularityChange={setGranularity} reconciliation={data.reconciliation}
           />
           <PartnerArrivals propertyId={data.hotel.id} />

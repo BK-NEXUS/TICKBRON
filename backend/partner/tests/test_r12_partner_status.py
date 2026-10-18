@@ -135,5 +135,81 @@ class TestReconciliationCsv:
             for j in range(i):
                 make_booking(status_world['guests'][0], status_world['hotels']['beta'],
                              business_today() - timedelta(days=j + 1), '10.00', status='completed')
-            with django_assert_max_num_queries(19):
+            with django_assert_max_num_queries(21):
                 assert get_as(owner1, f'{P}/').status_code == 200
+
+
+@pytest.mark.django_db
+class TestInsights:
+
+    def test_summary_and_hotel_detail_carry_the_insights(self, status_world):
+        owner1 = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        summary = get_as(owner1, f'{P}/', period='2026').data['insights']
+        detail = get_as(owner1, f'{P}/hotels/{beta.id}/', period='2026').data['insights']
+        for insights in (summary, detail):
+            assert set(insights) == {'cancellation_rate', 'average_booking_value', 'average_stay_nights',
+                                     'occupancy_rate', 'previous_period', 'change_pct'}
+            assert insights['previous_period']['range'] == {'from': '2025-01-01', 'to': '2025-12-31'}
+        assert summary['occupancy_rate'] is None
+
+    def test_occupancy_uses_the_rooms_of_the_hotels_of_the_owner_only(self, status_world):
+        from properties.models import RoomType
+        owner1 = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        RoomType.objects.create(property=beta, name='Std', slug='std', base_occupancy=2, max_occupancy=2,
+                                base_price=1, total_rooms=10)
+        data = get_as(owner1, f'{P}/hotels/{beta.id}/', period='2026').data['insights']
+        assert data['occupancy_rate'] is not None
+        assert float(data['occupancy_rate']) <= 100
+
+    def test_all_time_has_no_comparison(self, status_world):
+        data = get_as(status_world['owners'][0], f'{P}/').data['insights']
+        assert data['previous_period'] is None and data['change_pct'] is None
+
+
+@pytest.mark.django_db
+class TestRegionRank:
+    """Owner's anonymous rank among the active hotels of the region, by counted bookings."""
+
+    def _more_hotels(self, status_world, count):
+        from properties.models import Property
+        alpha = status_world['hotels']['alpha']
+        for n in range(count):
+            Property.objects.create(
+                owner=status_world['owners'][1], property_type=alpha.property_type, status='active', max_guests=2,
+                address_line1=f'{n} Rank Street', country_ref=alpha.country_ref, region_ref=alpha.region_ref,
+                city_ref=alpha.city_ref, city='Tashkent', base_price=1, currency='USD')
+
+    def rank(self, status_world, hotel, **params):
+        owner = status_world['owners'][0]
+        return get_as(owner, f'{P}/hotels/{hotel.id}/', **params).data['rank']
+
+    def test_hidden_when_the_region_has_fewer_than_five_hotels(self, status_world):
+        self._more_hotels(status_world, 2)   # alpha, beta + 2 = 4
+        assert self.rank(status_world, status_world['hotels']['alpha'], period='2026') is None
+
+    def test_position_and_count_from_five_hotels(self, status_world):
+        self._more_hotels(status_world, 3)   # 5 hotels
+        alpha, beta = status_world['hotels']['alpha'], status_world['hotels']['beta']
+        # 2026: alpha has 3 counted bookings, beta 1, the three new ones 0
+        assert self.rank(status_world, alpha, period='2026') == {'position': 1, 'of': 5}
+        assert self.rank(status_world, beta, period='2026') == {'position': 2, 'of': 5}
+
+    def test_ties_share_the_position(self, status_world):
+        self._more_hotels(status_world, 3)
+        # 2025: only beta has a counted booking; alpha and the new hotels tie at 0 and share position 2
+        assert self.rank(status_world, status_world['hotels']['beta'], period='2025') == {'position': 1, 'of': 5}
+        assert self.rank(status_world, status_world['hotels']['alpha'], period='2025') == {'position': 2, 'of': 5}
+
+    def test_nothing_about_other_hotels_is_returned(self, status_world):
+        self._more_hotels(status_world, 3)
+        owner = status_world['owners'][0]
+        beta = status_world['hotels']['beta']
+        data = get_as(owner, f'{P}/hotels/{beta.id}/', period='2026').data
+        assert set(data['rank']) == {'position', 'of'}
+
+    def test_hotel_without_a_region_has_no_rank(self, status_world):
+        owner2 = status_world['owners'][1]
+        gamma = status_world['hotels']['gamma']
+        assert get_as(owner2, f'{P}/hotels/{gamma.id}/', period='2026').data['rank'] is None

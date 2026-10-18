@@ -26,7 +26,7 @@ from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdminOrStaff
 from bookings import metrics
 from bookings.metrics import InvalidPeriod, counted_q, metric_annotations, period_from_request, range_json
-from common.csv_export import csv_response, money_cell, wants_csv
+from common.csv_export import export_response, money_cell, wants_export
 from geography.models import Country, Region
 from payments.models import PaymentTransaction, Refund
 from properties.models import Property, PropertyTranslation
@@ -349,6 +349,7 @@ def status_hotel_detail(request, property_id):
     except InvalidPeriod as error:
         return bad_request('granularity', error)
     owner = prop.owner
+    totals = metrics.metric_totals(scope, date_range, refunded_ids=refunded)
     return Response({
         'hotel': {
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
@@ -360,7 +361,9 @@ def status_hotel_detail(request, property_id):
                       'phone': owner.phone_number},
         },
         **period_extra(period, date_range),
-        'totals': metrics.metric_totals(scope, date_range, refunded_ids=refunded),
+        'totals': totals,
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(Property.objects.filter(pk=prop.pk)),
+                                     refunded_ids=refunded),
         'granularity': granularity,
         'series': series,
         'reconciliation': metrics.reconciliation(scope, refunded_ids=refunded),
@@ -441,7 +444,7 @@ def status_users(request):
             'last_booking_date': item['last_booking_date'].isoformat(),
         }
 
-    if wants_csv(request):
+    if wants_export(request):
         top = list(rows[:TOP_USERS])
         spent = spent_for([item['id'] for item in top])
         lines = (
@@ -449,7 +452,7 @@ def status_users(request):
              money_cell(r['total_spent']), r['last_booking_date']]
             for r in (to_row(index + 1, item, spent) for index, item in enumerate(top))
         )
-        return csv_response(request, 'status_users', USERS_CSV_HEADER, lines)
+        return export_response(request, 'status_users', USERS_CSV_HEADER, lines)
 
     paginator = StatusPagination()
     page = list(paginator.paginate_queryset(rows[:TOP_USERS], request))
@@ -526,7 +529,7 @@ def status_user_detail(request, user_id):
                        'charge_amount', 'charge_currency')
                .order_by('-check_in', '-id'))
 
-    if wants_csv(request):
+    if wants_export(request):
         def lines():
             for chunk_start in range(0, csv_limit() + 1, 500):
                 chunk = list(history[chunk_start:chunk_start + 500])
@@ -539,7 +542,7 @@ def status_user_detail(request, user_id):
                            r['check_out'], r['nights'], r['rooms'], r['guests'], r['status'], r['total_price'],
                            r['currency'], r['charge_amount'], r['charge_currency'], money_cell(r['paid']),
                            money_cell(r['refunded'])]
-        return csv_response(request, f'status_user_{user.id}_history', HISTORY_CSV_HEADER, lines())
+        return export_response(request, f'status_user_{user.id}_history', HISTORY_CSV_HEADER, lines())
 
     user_refunded = metrics.fully_refunded_ids(scope)
     counted = scope.filter(counted_q('', date_range, user_refunded))
@@ -717,7 +720,7 @@ def status_hotels_flat(request):
             'rating': None if item['rating'] is None else f"{item['rating']:.2f}",
         }
 
-    if wants_csv(request):
+    if wants_export(request):
         top = list(rows[:TOP_HOTELS])
         revenue, value = page_money(bookings, 'property_id', [item['id'] for item in top], date_range)
         lines = (
@@ -728,7 +731,7 @@ def status_hotels_flat(request):
              money_cell(value.get(item['id'], []))]
             for index, item in enumerate(top)
         )
-        return csv_response(request, 'status_hotels', HOTELS_CSV_HEADER, lines)
+        return export_response(request, 'status_hotels', HOTELS_CSV_HEADER, lines)
 
     extra = {**period_extra(period, date_range), 'ordering': ordering}
     return ranked_page(request, rows, TOP_HOTELS, 'id', bookings, 'property_id', to_row, extra, date_range)

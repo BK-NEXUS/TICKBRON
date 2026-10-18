@@ -2876,3 +2876,19 @@ Contract: `API_CONTRACT.md` "VIP rooms (R9)". The backend already lists VIP room
 - Owner form (`PartnerRoomsManagement`): checkbox "This is a VIP room" with help text; `is_vip` is sent on create and update and loaded on edit. No admin step, no search filter (owner decision).
 - Tests: `VipBadge.test.tsx`, `PartnerRoomsManagement.vip.test.tsx` (3), RoomCard and BookingPage VIP cases.
 - Not done: real-stack Chromium check at 1440/390px for the badge.
+
+## R12 additions, slice 1 backend: insights (2026-10-17)
+Plan `.ai/PLAN_R12_ADDITIONS.md` (approved: occupancy by hotel rooms x days, rank by number of bookings and hidden below 5 hotels, XlsxWriter for Excel). Slice 1 = `metrics.insights()` + field `insights` on owner summary, owner hotel detail and admin hotel detail (contract in API_CONTRACT.md). 11 unit tests (`bookings/tests/test_r12_insights.py`) + 4 endpoint tests. The fixed query ceilings of 4 "query count is constant" tests were raised by 2 (19 -> 21 owner, 15 -> 17 admin hotel detail): insights adds a fixed number of queries; the tests still prove the count does not grow with the data.
+Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
+
+### R12 additions, slice 2 backend: anonymous rank (2026-10-17)
+`metrics.region_rank()` + field `rank` on the owner hotel detail; 5 tests in `partner/tests/test_r12_partner_status.py` (hidden below 5 hotels, position, ties, no other hotel data, no region). Rank is on the hotel detail only, not on the owner summary.
+
+### R12 additions, slice 3 backend: Excel export (2026-10-17)
+`common/csv_export.py`: `export_response` / `wants_export` replace `csv_response` / `wants_csv` (5 call sites); library **XlsxWriter 3.2.9** (write-only, no dependencies; chosen over openpyxl, which is for reading files). 8 tests in `admin_panel/tests/test_xlsx_export.py`. No migration (`makemigrations --check` clean).
+
+### R12 additions, slice 4 frontend (2026-10-17)
+- `StatusInsights` (new, `components/StatusInsights.tsx`) inside `StatusReport`: cards for cancellation rate, occupancy, average booking value, average stay, and the owner's rank card (owner hotel screen only, hidden when the API sends `rank: null`), plus a row of +/- % chips "Compared with <previous period>" (up / down / no change / nothing to compare with, readable by screen readers). Hidden for "All time".
+- `StatusCsvButton` now has an "Export Excel" button next to "Export CSV"; the four adapter exports take a `format` (`'csv'` default, `'xlsx'`). Three existing assertions got the extra `'csv'` argument; nothing was weakened.
+- uz/ru/en keys `status.insights.*`, `status.exportExcel`. Tests: `StatusInsights.test.tsx` (5), `StatusCsvButton.test.tsx` (+2), adapter (+1), owner tab (+1). Full run: 170 files, 1954 tests, lint and build clean.
+- Not done: real-browser check at 390px / 1440px of the new cards and the two export buttons.

@@ -1038,3 +1038,19 @@ Plan: `.ai/PLAN_R9_VIP.md` v2 (the owner decided: the hotel owner marks a room t
 - `RoomType.is_vip` (boolean, default `false`). Migration `properties/0015_r9_room_type_vip` (additive, reversible).
 - Hotel owner: `is_vip` is a normal writable field of `POST/PATCH /partner/rooms/` and is returned by `GET /partner/rooms/`. Only the owner of the hotel can change its room types (another owner, a guest and an anonymous visitor are refused as before); a value that is not a boolean is 400.
 - Public: `GET /properties/{id}/` `room_types[].is_vip` and `GET /properties/{id}/availability/` `room_types[].is_vip`. **VIP room types come first in both lists**, the rest keep the usual order (by name); several VIP rooms are in name order too. Prices are unchanged: a VIP room type has its own rate plans and nightly prices.
+
+## 2026-10-17 R12 additions, slice 1: `insights` on the hotel Status endpoints
+
+Added field `insights` (read only, same definitions as above, one module `bookings/metrics.py`) to `GET /api/v1/partner/status/`, `GET /api/v1/partner/status/hotels/{id}/` and `GET /api/v1/admin-panel/status/hotels/{id}/`. Same period parameters as the rest of the endpoint.
+- `previous_period`: `{ range: {from, to}, totals: {bookings, guests, nights, stayed, revenue} }`, the period of the same length right before; `null` for `period=all`
+- `change_pct`: `{ bookings, guests, nights, stayed, revenue: [{currency, pct}] }`, strings with one decimal (`"-50.0"`); a value is `null` when the previous value was 0; the whole field is `null` for `period=all`
+- `cancellation_rate`: string `"25.00"` = cancelled (not expired) / (cancelled + counted + no_show) bookings in the period; `null` without bookings
+- `occupancy_rate`: string `"11.43"` = room nights (by check-in date) / (rooms of the hotel(s) x days of the period), capped at 100; `null` for `period=all` or when the hotels have no rooms. Rooms = SUM of `total_rooms` of the not-deleted room types
+- `average_booking_value`: `[{currency, amount}]` per currency (booking value / bookings), `[]` without bookings
+- `average_stay_nights`: string `"2.33"` = nights / bookings, `null` without bookings
+
+### R12 additions, slice 2: owner's anonymous rank
+`GET /api/v1/partner/status/hotels/{id}/` gains `rank`: `{ position, of }` or `null`. Position among the **active** hotels of the hotel's region by number of counted bookings in the period (same `period` parameters; equal numbers share a position). Only the hotel's own position and the number of hotels are returned, never other hotels. `null` when the hotel has no region, is not active, or its region has fewer than 5 active hotels.
+
+### R12 additions, slice 3: Excel export
+Every endpoint with `?export=csv` also accepts `?export=xlsx` (admin hotels list, admin guests list, guest history, owner reconciliation): same permissions, same filters, same columns, same row limit (`CSV_EXPORT_MAX_ROWS`, then a final row `truncated`). Response: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename="<name>.xlsx"`. Numbers are Excel numbers, everything else is written as text, so a cell like `=HYPERLINK(...)` never runs as a formula. Audit log: same action `export_csv`, `details` gains `format: "xlsx"` (key added to `AdminAccessLog.DETAIL_KEYS`). Any other `export` value returns the normal JSON.
