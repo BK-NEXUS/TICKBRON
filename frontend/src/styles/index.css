@@ -3264,6 +3264,13 @@ button.property-gallery-image {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-pomegranate);
+  /* "≈ KZT 27,992" must not break after the ≈ */
+  white-space: nowrap;
+}
+
+/* The "Selected" badge sits in the top corner: leave room for it above the name and the price */
+.room-card--selected .room-card-header {
+  margin-top: var(--spacing-xl);
 }
 
 .room-card-price-period {
@@ -3924,6 +3931,7 @@ button.property-gallery-image {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-pomegranate);
+  white-space: nowrap;
 }
 
 .rate-plan-card-price-period {

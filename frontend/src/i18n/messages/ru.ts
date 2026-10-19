@@ -432,6 +432,7 @@ export const ru: Catalog = {
   'charge.rateOf': "Курс на {date} (ЦБ)",
   'charge.rateStale': "Курс может быть устаревшим",
   'charge.inSom': "Около {amount} по сегодняшнему курсу",
+  'charge.youPay': "Вы платите {amount} (цена отеля в сумах)",
   'gallery.label': "Галерея фотографий объекта",
   'gallery.previous': "Предыдущее фото",
   'gallery.next': "Следующее фото",

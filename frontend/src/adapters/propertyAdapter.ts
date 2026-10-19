@@ -112,6 +112,8 @@ export interface RatePlan {
   description: string
   base_price: number
   currency: string
+  /** R16: the price in every currency: the owner's own (`owner`), the main one, or a conversion (`converted`, show with ≈); amount is null while a conversion has no rate */
+  prices?: Record<string, { amount: string | null; source: 'main' | 'owner' | 'converted' }>
   min_nights: number
   max_nights: number
   is_active: boolean
@@ -177,6 +179,8 @@ export interface QuoteParams {
   /** Exclusive: the day the guest leaves */
   checkOut: string
   rooms: number
+  /** R16: show the stay in this currency (default: the plan's own) */
+  currency?: string
 }
 
 // GET /api/v1/properties/{id}/quote/: the same pricing Booking.create_booking charges
@@ -186,6 +190,8 @@ export interface StayQuote {
   number_of_nights: number
   number_of_rooms: number
   currency: string
+  /** R16: `main`, `owner` (the owner's own price in `currency`) or `converted` (show with ≈) */
+  price_source?: 'main' | 'owner' | 'converted'
   nights: Array<{ date: string; price: string }>
   total_price: string
   /** The same stay in so'm at today's rate; null when no rate is stored yet */
@@ -438,6 +444,7 @@ class PropertyAdapter {
       check_out: params.checkOut,
       rooms: String(params.rooms),
     })
+    if (params.currency) query.set('currency', params.currency)
     try {
       const response = await apiFetch(`${this.baseUrl}/api/v1/properties/${propertyId}/quote/?${query.toString()}`, {
         credentials: 'include',

@@ -416,6 +416,7 @@ export const uz: Catalog = {
   'charge.rateOf': "{date} dagi kurs (MB)",
   'charge.rateStale': "Kurs eskirgan bo'lishi mumkin",
   'charge.inSom': "Bugungi kurs bo'yicha taxminan {amount}",
+  'charge.youPay': "Siz {amount} to'laysiz (mehmon xona belgilagan so'mdagi narx)",
   'gallery.label': "Obyekt rasmlari galereyasi",
   'gallery.previous': "Oldingi rasm",
   'gallery.next': "Keyingi rasm",

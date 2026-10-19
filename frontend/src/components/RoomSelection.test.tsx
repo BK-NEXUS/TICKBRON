@@ -138,8 +138,20 @@ describe('RoomSelection', () => {
 
       expect(await screen.findByText('3 nights, total €195')).toBeInTheDocument()
       expect(mockGetQuote).toHaveBeenCalledWith(42, {
-        roomTypeId: 1, ratePlanId: 1, checkIn: localDate(1), checkOut: localDate(4), rooms: 1,
+        roomTypeId: 1, ratePlanId: 1, checkIn: localDate(1), checkOut: localDate(4), rooms: 1, currency: 'UZS',
       })
+    })
+
+    it('shows ≈ before a total that is a conversion, not the owner\'s own price (R16)', async () => {
+      mockGetAvailability.mockResolvedValue(availabilityResponse(fourNights()))
+      mockGetQuote.mockResolvedValue({ data: { ...quoteResponse(3, '195.00').data, price_source: 'converted' }, error: null })
+      const { container } = renderWithRouter(<RoomSelection roomTypes={mockRoomTypes} propertyId={42} />)
+      await selectRoomAndRate()
+
+      await clickDay(container, localDate(1))
+      await clickDay(container, localDate(4))
+
+      expect(await screen.findByText('3 nights, total ≈ €195')).toBeInTheDocument()
     })
 
     it('sends check-in and check-out to the booking page', async () => {

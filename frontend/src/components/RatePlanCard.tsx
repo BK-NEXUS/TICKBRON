@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { RatePlan } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
 import { PlanCancellationNote } from './CancellationNote'
+import { priceIn } from '../utils/price'
 
 interface RatePlanCardProps {
   ratePlan: RatePlan
@@ -14,10 +15,10 @@ interface RatePlanCardProps {
  * Shows rate plan details, pricing, cancellation policy, and deposit information
  */
 export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePlanCardProps) {
-  const { t, tp, formatMoney } = useI18n()
-  const formatPrice = (price: number, currencyCode: string) => {
-    return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })
-  }
+  const { t, tp, formatMoney, currency } = useI18n()
+  // The price in the chosen currency: the owner's own, or a conversion marked with ≈
+  const shown = priceIn(ratePlan, currency)
+  const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 
   const formatRateType = (rateType: string) => {
     switch (rateType) {
@@ -59,7 +60,7 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
         </div>
         <div className="rate-plan-card-price">
           <span className="rate-plan-card-price-value">
-            {formatPrice(ratePlan.base_price, ratePlan.currency)}
+            {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
           </span>
           <span className="rate-plan-card-price-period">{t('room.perNight')}</span>
         </div>
