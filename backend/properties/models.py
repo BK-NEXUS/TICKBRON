@@ -937,6 +937,30 @@ def _check_bulk_range(date_from, date_to):
         raise ValidationError({'date_to': _('The range can be at most %(days)d days') % {'days': MAX_STAY_NIGHTS}})
 
 
+class RatePlanPrice(models.Model):
+    """
+    R16: the hotel owner's own price of a rate plan in one more currency (USD, UZS, KZT, RUB).
+
+    The plan's main price stays in `RatePlan.base_price` + `currency` (the property's currency);
+    each row here is the same night's price entered by the owner in another currency, because
+    exchange rates move. A currency without a row is shown converted at the CBU rate ("approximate").
+    """
+    rate_plan = models.ForeignKey(RatePlan, on_delete=models.CASCADE, related_name='prices')
+    currency = models.CharField(max_length=3)
+    amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(0)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'rate_plan_prices'
+        constraints = [
+            models.UniqueConstraint(fields=['rate_plan', 'currency'], name='unique_rate_plan_price_currency'),
+        ]
+
+    def __str__(self):
+        return f'{self.rate_plan_id} {self.amount} {self.currency}'
+
+
 class DateInventory(BaseModel):
     """
     Date inventory model for tracking availability and pricing over time.

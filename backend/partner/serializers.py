@@ -4,12 +4,18 @@ Serializers for partner API endpoints.
 This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+from decimal import Decimal, InvalidOperation
+
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from rest_framework import serializers
-from common.money import SUPPORTED_BASE_CURRENCIES, is_whole_som
+from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import validate_image_file
 from geography.serializers import GeographyRefsMixin
-from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
+from properties.models import (
+    Property, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
+)
 
 
 # Upload limits: 40 megapixels per photo, 50 photos per property
@@ -160,22 +166,69 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
         return value
 
 
+class PriceMapField(serializers.Field):
+    """
+    R16: {currency: price} of a rate plan: the main price (`base_price`, the property's currency)
+    and the owner's own price in each other currency. Read: what the owner entered. Write: a map
+    whose keys are supported currencies and whose amounts fit the currency's smallest unit.
+    """
+    default_error_messages = {'not_a_map': 'Send an object like {"USD": "65.00", "UZS": "800000"}.'}
+
+    def get_attribute(self, instance):
+        return instance
+
+    def to_representation(self, plan):
+        from bookings.pricing import owner_prices_of
+
+        prices = owner_prices_of(plan)
+        return {code: f'{prices[code]:.2f}' for code in SUPPORTED_BASE_CURRENCIES if code in prices}
+
+    def to_internal_value(self, data):
+        if not isinstance(data, dict):
+            self.fail('not_a_map')
+        errors, prices = {}, {}
+        for code, raw in data.items():
+            if code not in SUPPORTED_BASE_CURRENCIES:
+                errors[code] = f"Unsupported currency. Use: {', '.join(SUPPORTED_BASE_CURRENCIES)}."
+                continue
+            try:
+                amount = Decimal(str(raw).strip())
+            except (InvalidOperation, ValueError):
+                errors[code] = 'Enter a number.'
+                continue
+            if not amount.is_finite() or amount < 0:
+                errors[code] = 'Enter a price of zero or more.'
+            elif not is_valid_unit(amount, code):
+                errors[code] = "Too many decimals for this currency." if code == 'USD' else 'Whole amounts only.'
+            else:
+                prices[code] = amount
+        if errors:
+            raise serializers.ValidationError(errors)
+        return prices
+
+
 class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for rate plan management by hotel-owners.
     
     Limited to rate plans in properties owned by the authenticated hotel-owner.
     """
+    prices = PriceMapField(required=False)
+
     class Meta:
         model = RatePlan
         fields = [
             'id', 'room_type', 'name', 'slug', 'rate_type', 'description', 'base_price',
-            'currency', 'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
+            'currency', 'prices', 'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
             'deposit_required', 'deposit_percentage', 'advance_booking_days',
             'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
-        extra_kwargs = {'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000}}
+        extra_kwargs = {
+            'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000},
+            # Optional when `prices` carries the main price
+            'base_price': {'required': False},
+        }
 
     def property_of(self, attrs):
         room_type = attrs.get('room_type') or getattr(self.instance, 'room_type', None)
@@ -190,6 +243,59 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
                     "You can only manage rate plans for your own properties."
                 )
         return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        prop = self.property_of(attrs)
+        if prop is None:
+            return attrs
+        prices = attrs.get('prices')
+        if prices is None:
+            if self.instance is None and attrs.get('base_price') is None:
+                raise serializers.ValidationError({'base_price': 'This field is required.'})
+            self._check_prices_present_when_required(prop)
+            return attrs
+        missing = [code for code in SUPPORTED_BASE_CURRENCIES if code not in prices]
+        if missing:
+            raise serializers.ValidationError({'prices': f"Enter the price in: {', '.join(missing)}."})
+        sent = attrs.get('base_price')
+        if sent is not None and sent != prices[prop.currency]:
+            raise serializers.ValidationError(
+                {'base_price': f'Must equal the price in {prop.currency} ({prices[prop.currency]}).'})
+        attrs['base_price'] = prices[prop.currency]
+        return attrs
+
+    def _check_prices_present_when_required(self, prop):
+        """With RATE_PLAN_PRICES_REQUIRED a plan is never saved without the owner's price in every currency."""
+        if not settings.RATE_PLAN_PRICES_REQUIRED:
+            return
+        known = set() if self.instance is None else set(self.instance.prices.values_list('currency', flat=True))
+        missing = [code for code in SUPPORTED_BASE_CURRENCIES if code != prop.currency and code not in known]
+        if missing:
+            raise serializers.ValidationError(
+                {'prices': f"Enter the price in every currency before saving: {', '.join(SUPPORTED_BASE_CURRENCIES)}."})
+
+    @transaction.atomic
+    def create(self, validated_data):
+        prices = validated_data.pop('prices', None)
+        plan = super().create(validated_data)
+        self._save_prices(plan, prices)
+        return plan
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        prices = validated_data.pop('prices', None)
+        plan = super().update(instance, validated_data)
+        self._save_prices(plan, prices)
+        return plan
+
+    def _save_prices(self, plan, prices):
+        if prices is None:
+            return
+        extra = {code: amount for code, amount in prices.items() if code != plan.currency}
+        plan.prices.exclude(currency__in=extra).delete()
+        for code, amount in extra.items():
+            RatePlanPrice.objects.update_or_create(rate_plan=plan, currency=code, defaults={'amount': amount})
 
 
 class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerializer):

@@ -22,6 +22,16 @@ pytestmark = pytest.mark.no_default_exchange_rate
 TODAY = date(2026, 10, 3)
 
 
+@pytest.fixture(autouse=True)
+def only_the_dollar(request):
+    """These tests are about one fetch (the dollar); the other currencies are covered in TestMoreCurrencies."""
+    if request.node.get_closest_marker('all_currencies') is not None:
+        yield
+        return
+    with mock.patch.object(cbu, 'FETCHED_CURRENCIES', ('USD',)):
+        yield
+
+
 def _body(rate='11772.95', nominal='1', day='03.10.2026', ccy='USD', code='840', extra=None):
     item = {'id': 1, 'Code': code, 'Ccy': ccy, 'CcyNm_EN': 'US Dollar', 'Nominal': nominal,
             'Rate': rate, 'Diff': '-35.81', 'Date': day}
@@ -179,6 +189,48 @@ class TestSanityChecks:
         with patcher:
             cbu.fetch_and_store(today=TODAY)
         assert (Decimal('13000.000000'), TODAY) in _accepted()
+
+
+@pytest.mark.django_db
+@pytest.mark.all_currencies
+class TestMoreCurrencies:
+    """R16: tenge and ruble rates are fetched like the dollar, with their own sane range."""
+
+    def test_every_supported_currency_but_the_so_m_is_fetched(self):
+        assert cbu.FETCHED_CURRENCIES == ('USD', 'KZT', 'RUB')
+
+    def test_tenge_and_ruble_are_stored(self):
+        patcher, calls = _serve(
+            FakeResponse(_body()),
+            FakeResponse(_body(rate='24.51', ccy='KZT', code='398')),
+            FakeResponse(_body(rate='141.30', ccy='RUB', code='643')),
+        )
+        with patcher:
+            cbu.fetch_and_store(today=TODAY)
+        stored = {row.currency: row.rate for row in ExchangeRate.objects.filter(status='accepted')}
+        assert stored == {'USD': Decimal('11772.950000'), 'KZT': Decimal('24.510000'), 'RUB': Decimal('141.300000')}
+        assert [url.split('/json/')[1].split('/')[0] for url, _ in calls] == ['USD', 'KZT', 'RUB']
+
+    def test_a_tenge_rate_far_outside_its_range_is_rejected(self):
+        patcher, _ = _serve(
+            FakeResponse(_body()),
+            FakeResponse(_body(rate='2451', ccy='KZT', code='398')),
+            FakeResponse(_body(rate='141.30', ccy='RUB', code='643')),
+        )
+        with patcher:
+            cbu.fetch_and_store(today=TODAY)
+        assert not ExchangeRate.objects.filter(currency='KZT', status='accepted').exists()
+        assert ExchangeRate.objects.filter(currency='KZT', status='rejected').exists()
+
+    def test_the_answer_must_carry_the_right_currency_code(self):
+        patcher, _ = _serve(
+            FakeResponse(_body()),
+            FakeResponse(_body(rate='24.51', ccy='KZT', code='840')),
+            FakeResponse(_body(rate='141.30', ccy='RUB', code='643')),
+        )
+        with patcher:
+            cbu.fetch_and_store(today=TODAY)
+        assert not ExchangeRate.objects.filter(currency='KZT').exists()
 
 
 @pytest.mark.django_db

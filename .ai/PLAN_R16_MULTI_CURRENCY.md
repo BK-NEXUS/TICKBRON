@@ -1,6 +1,6 @@
 # PLAN R16: prices in four currencies, entered by the hotel owner; easy to add currencies and languages
 
-Status: WAITS FOR THE OWNER (3 questions at the bottom). No code before "ha". This item touches money and the database, so it needs this plan and a pg_dump before the migration.
+Status: APPROVED by the owner 2026-10-19: (1) the guest pays in so'm using the owner's so'm price (recommended option a); (2) all four currencies are mandatory (new rate plans at once; existing ones when they are next edited, until then the other currencies show as converted); (3) date-specific prices follow the plan's ratio in the other currencies. S1 backend in progress.
 
 ## What the owner asked for (2026-10-19)
 - The hotel owner enters the price of a room himself in several currencies (USD, so'm, tenge, ruble), because exchange rates change.
@@ -24,7 +24,7 @@ Status: WAITS FOR THE OWNER (3 questions at the bottom). No code before "ha". Th
 9. **CBU rates** for KZT and RUB are fetched like USD (fallback conversion and reports).
 
 ## Slices (one PR each; tests first; contract in API_CONTRACT.md; note in HANDOFF.md)
-- S1 backend: registries, `RatePlanPrice` + migration (additive, reversible, backfill none), price rules (owner price or conversion), serializers, quote.
+- S1 backend (done): currency registry (`common/money.py CURRENCIES`), CBU fetch for KZT and RUB, `RatePlanPrice` + migration `properties/0016` (additive, reversible, no backfill), price rules in `bookings/pricing.py`, owner write API (`prices`), `prices` on the hotel page, `currency` on the quote, booking charge from the owner's so'm price. The mandatory rule is behind `RATE_PLAN_PRICES_REQUIRED` (default off) so the current owner screens keep working until S3 sends the four prices; S3 flips the default.
 - S2 backend: booking and charge rules, CBU for KZT/RUB, status in four currencies.
 - S3 frontend: owner price boxes and banner.
 - S4 frontend: real currency selector and price display everywhere.

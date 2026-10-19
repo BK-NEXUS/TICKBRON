@@ -24,7 +24,11 @@ from currency.models import ExchangeRate, ExchangeRateFetch
 logger = logging.getLogger(__name__)
 
 CBU_URL = 'https://cbu.uz/uz/arkhiv-kursov-valyut/json/{currency}/{day}/'
-CBU_CODES = {'USD': '840'}
+# ISO 4217 numeric code of each fetched currency (the CBU answer must carry it). To add a currency:
+# add it to common.money.CURRENCIES, here, and in RATE_SANITY_SHARE.
+CBU_CODES = {'USD': '840', 'KZT': '398', 'RUB': '643'}
+# FX_MIN_RATE / FX_MAX_RATE are written for one US dollar; a currency worth less gets its share of them
+RATE_SANITY_SHARE = {'USD': Decimal('1'), 'KZT': Decimal('0.002'), 'RUB': Decimal('0.01')}
 FETCHED_CURRENCIES = tuple(c for c in SUPPORTED_BASE_CURRENCIES if c != CHARGE_CURRENCY)
 MAX_BODY_BYTES = 64 * 1024
 MAX_RATE_AGE_DAYS = 10
@@ -95,8 +99,10 @@ def _parse(body, currency, today):
 
 
 def _rejection_reason(currency, rate):
-    if rate < settings.FX_MIN_RATE or rate > settings.FX_MAX_RATE:
-        return f'outside the sane range {settings.FX_MIN_RATE}-{settings.FX_MAX_RATE}'
+    low = settings.FX_MIN_RATE * RATE_SANITY_SHARE[currency]
+    high = settings.FX_MAX_RATE * RATE_SANITY_SHARE[currency]
+    if rate < low or rate > high:
+        return f'outside the sane range {low}-{high}'
     previous = ExchangeRate.objects.filter(currency=currency, status='accepted').first()
     if previous is not None:
         change = abs(rate - previous.rate) / previous.rate

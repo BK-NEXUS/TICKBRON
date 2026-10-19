@@ -2895,3 +2895,11 @@ Not yet: slice 2 (anonymous rank), slice 3 (Excel), slice 4 (frontend).
 
 ## R14 load test (2026-10-18)
 `backend/scripts/loadtest/` (Locust file, `make_sessions.py`, README) and a new section in `.ai/PERFORMANCE_REPORT.md`: 200 users, 2 min, 0 failures, 85.7 req/s on one shared 4-core box, server-side p95 search 163 ms, hotel page 36 ms, availability 61 ms, quote 12 ms, create booking 36 ms; client p95 2.1 s because the box is saturated (queueing). No application code changed, no migration. Redis cache and thumbnails deliberately not done (owner decision, reasons in the report). Not done: a run on a dedicated server.
+
+## R16 slice 1 backend: prices in four currencies (2026-10-19)
+Contract in `API_CONTRACT.md` "R16 slice 1"; plan `.ai/PLAN_R16_MULTI_CURRENCY.md` (approved: pay in so'm with the owner's so'm price, all four mandatory, date prices keep the ratio).
+- Code: `common/money.py` (registry, `is_valid_unit`), `properties/models.py` `RatePlanPrice` + migration `0016` (additive; applied, rolled back and re-applied on the dev database after a pg_dump), `bookings/pricing.py` (`StayQuote.total_in/nights_in`, `price_list`), `partner/serializers.py` (`PriceMapField`, `prices`), `properties/serializers.py` + `properties/views.py` (hotel page prices, quote `currency`), `bookings/models.py` (charge from the owner's so'm price), `currency/cbu.py` (KZT, RUB).
+- Tests: `bookings/tests/test_r16_pricing.py` (18), `partner/tests/test_r16_prices.py` (18), `common/tests/test_money.py` (+3), `currency/tests/test_cbu_fetch.py` (+3).
+- Changed existing tests (contract change, assertions otherwise untouched): `common/tests/test_money.py` expects the four currencies; `currency/tests/test_cbu_fetch.py` restricts the old tests to the dollar with an autouse fixture (they are about one fetch); `partner/tests/test_r6_currency_rules.py` "other country defaults to USD" now uses Turkey, and a new test says Kazakhstan defaults to tenge.
+- The "mandatory" rule is switched by `RATE_PLAN_PRICES_REQUIRED` (default off) so the current owner screens do not break before S3 (owner price boxes); S3 flips the default and the existing-plan banner.
+- Found, not fixed: search cards and Status still show the plan's main currency only (next slices).

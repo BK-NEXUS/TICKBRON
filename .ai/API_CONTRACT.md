@@ -1054,3 +1054,24 @@ Added field `insights` (read only, same definitions as above, one module `bookin
 
 ### R12 additions, slice 3: Excel export
 Every endpoint with `?export=csv` also accepts `?export=xlsx` (admin hotels list, admin guests list, guest history, owner reconciliation): same permissions, same filters, same columns, same row limit (`CSV_EXPORT_MAX_ROWS`, then a final row `truncated`). Response: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename="<name>.xlsx"`. Numbers are Excel numbers, everything else is written as text, so a cell like `=HYPERLINK(...)` never runs as a formula. Audit log: same action `export_csv`, `details` gains `format: "xlsx"` (key added to `AdminAccessLog.DETAIL_KEYS`). Any other `export` value returns the normal JSON.
+
+## 2026-10-19 R16 slice 1: prices in four currencies (USD, UZS, KZT, RUB)
+
+Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.py` `CURRENCIES` (code -> decimals): UZS, KZT, RUB whole units, USD cents. A property can now be priced in any of the four (the default is its country's currency when supported: Kazakhstan -> KZT, Uzbekistan -> UZS, else USD).
+
+**Owner write API** (`/api/v1/partner/rates/`, create and update): new field `prices`, an object `{ "USD": "65.00", "UZS": "800000", "KZT": "29000", "RUB": "5800" }`.
+- The price in the property's currency is the plan's main price and is stored in `base_price`; the other three are stored as the owner's own prices (new table `rate_plan_prices`). When `prices` is sent, `base_price` may be left out (if sent it must equal `prices[<property currency>]`, else 400 `base_price`).
+- `prices` must contain every supported currency (400 `prices`: "Enter the price in: KZT, RUB."), only supported keys, numbers >= 0, no finer part than the currency unit (whole so'm/tenge/rubles, cents for USD).
+- Read: `prices` lists what the owner entered (the main price and each other currency present).
+- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **false** until the owner screens send the four prices): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
+
+**Hotel page** (`GET /properties/{id}/`): each rate plan gains `prices`: `{ "USD": { "amount": "60.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, ... }`. `source` is `main` (the plan's own currency), `owner` (entered by the owner) or `converted` (main price at the CBU rates, show with "≈"); `amount` is null when a converted price has no rate yet.
+
+**Quote** (`GET /properties/{id}/quote/`): new optional query `currency` (UZS, USD, KZT, RUB; other value 400). The response `currency`, `nights[].price` and `total_price` are in that currency; new field `price_source` (as above). A night with its own price keeps the plan's ratio in the other currencies (+15% in dollars is +15% in so'm). The stay total is rounded once to the currency's unit. 503 `exchange_rate_unavailable` when a converted price has no rate. Without `currency` nothing changes (the plan's currency, `price_source: "main"`).
+- `uzs_total` is what the guest pays in so'm: the owner's so'm price for the stay when the owner entered one (then `exchange_rate` is null), otherwise the conversion as before.
+
+**Booking**: payment stays in so'm. When the plan has an owner so'm price, `charge_amount` is that price for the stay (no exchange rate needed, `exchange_rate_source: "owner"`, `exchange_rate` = charge / total (informational), `exchange_rate_date` null, `exchange_rate_stale` false). Without one, the CBU conversion is used as before. `total_price` and `currency` stay in the plan's currency.
+
+**CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
+
+Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).

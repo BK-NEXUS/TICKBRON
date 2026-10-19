@@ -37,13 +37,22 @@ class TestPropertyCurrency:
         assert response.status_code == 201, response.data
         assert response.data['currency'] == 'UZS'
 
-    def test_other_country_defaults_to_usd(self, owner, inventory):
-        city = City.objects.select_related('region__country').filter(region__country__code='KZ').first()
+    def test_a_country_whose_currency_is_not_supported_defaults_to_usd(self, owner, inventory):
+        city = City.objects.select_related('region__country').filter(region__country__code='TR').first()
         payload = _property_payload(inventory, country_ref=city.region.country_id, region_ref=city.region_id,
                                     city_ref=city.id, base_price='70.00')
         response = client_for(owner).post(f'{P}/properties/', payload, format='json')
         assert response.status_code == 201, response.data
         assert response.data['currency'] == 'USD'
+
+    def test_a_country_with_a_supported_currency_defaults_to_it(self, owner, inventory):
+        """R16: tenge and ruble are supported, so a Kazakh hotel starts in tenge."""
+        city = City.objects.select_related('region__country').filter(region__country__code='KZ').first()
+        payload = _property_payload(inventory, country_ref=city.region.country_id, region_ref=city.region_id,
+                                    city_ref=city.id, base_price='35000')
+        response = client_for(owner).post(f'{P}/properties/', payload, format='json')
+        assert response.status_code == 201, response.data
+        assert response.data['currency'] == 'KZT'
 
     def test_owner_may_choose_usd_in_uzbekistan(self, owner, inventory):
         response = client_for(owner).post(
