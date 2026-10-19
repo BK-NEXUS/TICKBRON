@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import validate_image_file
@@ -166,6 +167,7 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
         return value
 
 
+@extend_schema_field({'type': 'object', 'additionalProperties': {'type': 'string'}})
 class PriceMapField(serializers.Field):
     """
     R16: {currency: price} of a rate plan: the main price (`base_price`, the property's currency)
