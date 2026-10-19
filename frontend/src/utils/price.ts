@@ -27,3 +27,27 @@ export function roomFromPrice(room: Pick<RoomType, 'base_price' | 'currency' | '
   const lowest = shown.reduce((best, entry) => (Number(entry?.amount) < Number(best?.amount) ? entry : best))
   return { amount: lowest?.amount ?? own.amount, currency, approximate: lowest?.source === 'converted' }
 }
+
+/** A calendar night in `currency`: the backend's amount for that night, else the night's own price */
+export function nightPriceIn(
+  night: { price: number; currency: string; prices?: Record<string, string | null>; converted_currencies?: string[] },
+  currency: string,
+): ShownPrice {
+  const amount = night.prices?.[currency]
+  if (amount) {
+    return { amount, currency, approximate: night.converted_currencies?.includes(currency) ?? false }
+  }
+  return { amount: String(night.price), currency: night.currency, approximate: false }
+}
+
+/** The "from" price on the hotel page: the lowest room price in `currency`; the hotel's own price when that cannot be told */
+export function propertyFromPrice(
+  property: { base_price: number; currency: string },
+  rooms: Pick<RoomType, 'base_price' | 'currency' | 'rate_plans'>[],
+  currency: string,
+): ShownPrice {
+  const own: ShownPrice = { amount: String(property.base_price), currency: property.currency, approximate: false }
+  const shown = rooms.map(room => roomFromPrice(room, currency))
+  if (shown.length === 0 || shown.some(price => price.currency !== currency)) return own
+  return shown.reduce((best, price) => (Number(price.amount) < Number(best.amount) ? price : best))
+}

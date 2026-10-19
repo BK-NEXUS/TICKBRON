@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, House, MapPin, Pause, Play } from 'lucide-react'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { priceIn } from '../utils/price'
 import { StarIcon } from './StarIcon'
 
 const ROTATE_MS = 5000
@@ -25,7 +26,7 @@ function prefersReducedMotion(): boolean {
  * for visitors who prefer reduced motion. With nothing to show it renders nothing.
  */
 export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
-  const { t, formatMoney } = useI18n()
+  const { t } = useI18n()
   const [index, setIndex] = useState(0)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -113,7 +114,6 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
               }
               void promotionAdapter.trackClick(item.promotion_id)
             }}
-            formatPrice={(value, currency) => formatMoney(value, currency, { minDecimals: 0, maxDecimals: 0 })}
           />
         ))}
       </div>
@@ -173,11 +173,13 @@ interface PromoSlideProps {
   position: number
   total: number
   onOpen: (event: React.MouseEvent) => void
-  formatPrice: (value: number, currency: string) => string
 }
 
-function PromoSlide({ item, active, position, total, onOpen, formatPrice }: PromoSlideProps) {
-  const { t } = useI18n()
+function PromoSlide({ item, active, position, total, onOpen }: PromoSlideProps) {
+  const { t, formatMoney, currency } = useI18n()
+  // The "from" price in the chosen currency (≈ for a conversion); the hotel's own price when the backend has none
+  const shown = priceIn(item, currency)
+  const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
   const name = item.translations[0]?.name || t('card.unknown')
   const rating = item.average_rating ?? item.rating ?? 0
   const photo = item.primary_photo?.photo
@@ -211,7 +213,7 @@ function PromoSlide({ item, active, position, total, onOpen, formatPrice }: Prom
               </span>
             )}
             <span className="promo-slide-price">
-              {t('promo.perNight', { price: formatPrice(Number(item.base_price), item.currency) })}
+              {t('promo.perNight', { price: shown.approximate ? t('charge.approx', { amount: priceText }) : priceText })}
             </span>
           </span>
         </span>

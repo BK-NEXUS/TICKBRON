@@ -104,6 +104,9 @@ export interface RoomType {
   rate_plans?: RatePlan[]
 }
 
+/** R16: a price in every currency: the owner's own (`owner`), the main one, or a conversion (`converted`, show with ≈); amount is null while a conversion has no rate */
+export type PriceList = Record<string, { amount: string | null; source: 'main' | 'owner' | 'converted' }>
+
 export interface RatePlan {
   id: number
   name: string
@@ -112,8 +115,7 @@ export interface RatePlan {
   description: string
   base_price: number
   currency: string
-  /** R16: the price in every currency: the owner's own (`owner`), the main one, or a conversion (`converted`, show with ≈); amount is null while a conversion has no rate */
-  prices?: Record<string, { amount: string | null; source: 'main' | 'owner' | 'converted' }>
+  prices?: PriceList
   min_nights: number
   max_nights: number
   is_active: boolean
@@ -135,6 +137,9 @@ export interface DateInventory {
   booked_rooms: number
   price: number
   currency: string
+  /** R16: the night in every currency (amount strings, null while a conversion has no rate) and the currencies that are conversions */
+  prices?: Record<string, string | null>
+  converted_currencies?: string[]
   min_stay: number
   max_stay: number
   is_available: boolean
@@ -151,6 +156,7 @@ export interface AvailabilityDateInventory {
   remaining_rooms: number
   price: string | null
   currency: string
+  prices?: Record<string, string | null>
   is_available: boolean
   minimum_stay: number | null
   maximum_stay: number | null
@@ -229,6 +235,8 @@ export interface Property {
   longitude?: number
   base_price: number
   currency: string
+  /** R16: the "from" price in every currency (search cards); absent on the hotel page */
+  prices?: PriceList
   /** Informational so'm equivalent of `base_price` at the latest CBU rate; null while no rate exists, absent for hotels priced in so'm */
   base_price_uzs_approx?: string | null
   uzs_rate?: ExchangeRateInfo | null

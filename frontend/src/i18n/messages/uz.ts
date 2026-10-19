@@ -506,6 +506,7 @@ export const uz: Catalog = {
   'calendar.previousMonth': "Oldingi oy",
   'calendar.nextMonth': "Keyingi oy",
   'calendar.none': "Bo'sh joylar haqida ma'lumot yo'q",
+  'calendar.pricesIn': "Bir kecha narxi, {currency}da",
   'calendar.available': "Bo'sh",
   'calendar.limited': "Cheklangan",
   'calendar.fullyBooked': "To'liq band",

@@ -16,6 +16,7 @@ import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
 import { StarIcon } from '../components/StarIcon'
 import { PriceApprox } from '../components/PriceApprox'
+import { propertyFromPrice } from '../utils/price'
 import { PropertyLocationMap } from '../components/PropertyLocationMap'
 import { useI18n } from '../i18n/I18nContext'
 
@@ -24,7 +25,7 @@ import { useI18n } from '../i18n/I18nContext'
  * Includes gallery, header, and responsive interaction patterns
  */
 export function PropertyDetailPage() {
-  const { t, tp, formatMoney } = useI18n()
+  const { t, tp, formatMoney, currency } = useI18n()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
@@ -130,6 +131,10 @@ export function PropertyDetailPage() {
 
   const translation = property.translations[0] || { name: property.name || t('property.defaultName'), description: property.description || '' }
 
+  // The "from" price in the chosen currency: the lowest room price, else the hotel's own price
+  const shownFrom = propertyFromPrice(property, property.room_types ?? [], currency)
+  const fromText = formatMoney(shownFrom.amount, shownFrom.currency, { minDecimals: 0, maxDecimals: 0 })
+
   return (
     <div className="property-detail-page">
       <PropertyDetailHeader property={property} />
@@ -211,10 +216,13 @@ export function PropertyDetailPage() {
           <div className="property-detail-booking-card">
             <div className="property-detail-price">
               <span className="property-detail-price-value">
-                {formatMoney(property.base_price, property.currency, { minDecimals: 0, maxDecimals: 0 })}
+                {shownFrom.approximate ? t('charge.approx', { amount: fromText }) : fromText}
               </span>
               <span className="property-detail-price-period">{t('card.perNight')}</span>
-              <PriceApprox approx={property.base_price_uzs_approx} rate={property.uzs_rate} showRate />
+              {/* The date of the CBU rate (and its out-of-date warning) belongs to the so'm equivalent of the hotel's own price */}
+              {shownFrom.currency === property.currency && (
+                <PriceApprox approx={property.base_price_uzs_approx} rate={property.uzs_rate} showRate />
+              )}
             </div>
             
             {property.rating && (

@@ -2,6 +2,7 @@ import { DateInventory } from '../adapters/propertyAdapter'
 import { DateRangeCalendar } from './DateRangeCalendar'
 import { businessToday, nightsBetween } from '../utils/dates'
 import { useI18n } from '../i18n/I18nContext'
+import { nightPriceIn } from '../utils/price'
 
 interface AvailabilityCalendarProps {
   inventory: DateInventory[]
@@ -13,6 +14,10 @@ interface AvailabilityCalendarProps {
   minNights?: number | null
   maxNights?: number | null
 }
+
+// From this amount a night is shown compactly (1.09M): a day cell on a phone is narrow
+const COMPACT_FROM = 10_000
+const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 })
 
 type Status = 'available' | 'limited' | 'fully-booked' | 'unavailable'
 
@@ -46,9 +51,16 @@ export function AvailabilityCalendar({
   maxNights,
 }: AvailabilityCalendarProps) {
   const byDate = new Map(inventory.map(row => [row.date, row]))
-  const { t, tp, formatMoney, formatDay } = useI18n()
-  const formatPrice = (price: number, code: string) =>
-    formatMoney(price, code || currency, { minDecimals: 0, maxDecimals: 0 })
+  const { t, tp, formatMoney, formatDay, currency: chosenCurrency } = useI18n()
+  // The night in the chosen currency (≈ for a conversion); its own price when the backend has none
+  const formatPrice = (row: DateInventory) => {
+    const shown = nightPriceIn({ ...row, currency: row.currency || currency }, chosenCurrency)
+    const exact = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
+    // A long amount (1 085 850 so'm) does not fit a day cell on a phone: 1.09M, the exact price is the tooltip
+    const compact = Number(shown.amount) >= COMPACT_FROM ? COMPACT.format(Number(shown.amount)) : exact
+    const approx = (text: string) => (shown.approximate ? t('charge.approx', { amount: text }) : text)
+    return { text: approx(compact), title: approx(exact) }
+  }
 
   const validateRange = (start: string, end: string): string | null => {
     const nights = nightsBetween(start, end)
@@ -101,7 +113,7 @@ export function AvailabilityCalendar({
           status,
           content: row && (
             <>
-              <div className="availability-calendar-day-price">{formatPrice(row.price, row.currency)}</div>
+              <div className="availability-calendar-day-price" title={formatPrice(row).title}>{formatPrice(row).text}</div>
               <div
                 className="availability-calendar-day-indicator"
                 style={{ backgroundColor: STATUS_COLOR[status] }}
@@ -112,6 +124,7 @@ export function AvailabilityCalendar({
         }
       }}
     >
+      <p className="availability-calendar-note">{t('calendar.pricesIn', { currency: chosenCurrency })}</p>
       <div className="availability-calendar-legend">
         <div className="availability-calendar-legend-item">
           <div className="availability-calendar-legend-color" style={{ backgroundColor: STATUS_COLOR.available }} />

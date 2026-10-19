@@ -29,6 +29,8 @@ const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan)
     booked_rooms: row.booked_rooms,
     price: Number(row.price ?? ratePlan.base_price),
     currency: row.currency || ratePlan.currency,
+    prices: row.prices,
+    converted_currencies: Object.entries(ratePlan.prices ?? {}).filter(([, entry]) => entry.source === 'converted').map(([code]) => code),
     min_stay: row.minimum_stay ?? ratePlan.min_nights,
     max_stay: row.maximum_stay ?? ratePlan.max_nights,
     is_available: bookable,

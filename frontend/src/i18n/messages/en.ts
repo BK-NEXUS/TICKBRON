@@ -504,6 +504,7 @@ export const en = {
   'calendar.previousMonth': "Previous month",
   'calendar.nextMonth': "Next month",
   'calendar.none': "No availability data available",
+  'calendar.pricesIn': "Prices per night in {currency}",
   'calendar.available': "Available",
   'calendar.limited': "Limited",
   'calendar.fullyBooked': "Fully Booked",

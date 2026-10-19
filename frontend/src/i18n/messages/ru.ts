@@ -522,6 +522,7 @@ export const ru: Catalog = {
   'calendar.previousMonth': "Предыдущий месяц",
   'calendar.nextMonth': "Следующий месяц",
   'calendar.none': "Нет данных о доступности",
+  'calendar.pricesIn': "Цены за ночь в {currency}",
   'calendar.available': "Свободно",
   'calendar.limited': "Мало мест",
   'calendar.fullyBooked': "Всё занято",

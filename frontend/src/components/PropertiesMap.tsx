@@ -5,6 +5,7 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
+import { priceIn } from '../utils/price'
 import type { Property } from '../adapters/propertyAdapter'
 import { toCoordinates } from '../utils/coordinates'
 import { PropertyCard } from './PropertyCard'
@@ -59,7 +60,7 @@ interface Pin {
 export function PropertiesMap({
   properties, highlightedId = null, onSelectedChange, showSelectedCard = true, onSearchArea,
 }: PropertiesMapProps) {
-  const { t, tp, formatMoney } = useI18n()
+  const { t, tp, formatMoney, currency } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const groupRef = useRef<L.MarkerClusterGroup | null>(null)
@@ -140,7 +141,10 @@ export function PropertiesMap({
     pinsRef.current.clear()
     for (const { property, lat, lng } of pins) {
       const name = property.translations[0]?.name ?? t('card.unknown')
-      const price = formatMoney(property.base_price, property.currency, { minDecimals: 0, maxDecimals: 0 })
+      // The "from" price in the chosen currency (≈ for a conversion)
+      const shown = priceIn(property, currency)
+      const amount = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
+      const price = shown.approximate ? t('charge.approx', { amount }) : amount
       const pin = document.createElement('button')
       pin.type = 'button'
       pin.className = 'map-pin'
@@ -166,7 +170,7 @@ export function PropertiesMap({
     else if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 14, animate: false })
     programmaticRef.current = false
     setMoved(false)
-  }, [pins, t, tp, formatMoney, hasPins])
+  }, [pins, t, tp, formatMoney, currency, hasPins])
 
   // The chosen pin is marked; a new search that drops it clears the card
   useEffect(() => {

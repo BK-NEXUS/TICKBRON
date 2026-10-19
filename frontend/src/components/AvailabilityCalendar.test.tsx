@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AvailabilityCalendar } from './AvailabilityCalendar'
 import { DateInventory } from '../adapters/propertyAdapter'
+import { I18nProvider } from '../i18n/I18nContext'
 
 // Dates far enough ahead that "today" never makes them past dates
 const d = (n: number) => `2030-03-${String(n).padStart(2, '0')}`
@@ -139,5 +140,27 @@ describe('AvailabilityCalendar', () => {
     expect(cell(container, d(14))).toHaveAttribute('aria-disabled', 'true')
     expect(cell(container, d(15))).toHaveAttribute('aria-disabled', 'true')
     expect(cell(container, d(10))).toHaveAttribute('aria-disabled', 'false')
+  })
+
+  it('shows each night in the chosen currency, with ≈ for a conversion (R16)', () => {
+    localStorage.setItem('tickbron.language', 'en')
+    localStorage.setItem('tickbron.currency', 'KZT')
+    const withPrices = [row(d(10), { prices: { USD: '60.00', KZT: '27000.00' }, converted_currencies: ['KZT'] })]
+    const { container } = render(<I18nProvider><AvailabilityCalendar inventory={withPrices} checkIn={null} checkOut={null} onRangeChange={vi.fn()} /></I18nProvider>)
+    // 27 000 tenge does not fit a phone-sized day cell: the cell shows "27K", the tooltip the exact price
+    expect(cell(container, d(10))).toHaveTextContent('≈ 27K')
+    expect(cell(container, d(10)).querySelector('.availability-calendar-day-price')).toHaveAttribute('title', expect.stringMatching(/≈ .*27,000/))
+    localStorage.clear()
+  })
+
+  it('keeps small amounts as they are and shows a large so\'m amount compactly (R16)', () => {
+    localStorage.setItem('tickbron.language', 'en')
+    localStorage.setItem('tickbron.currency', 'UZS')
+    const rows = [row(d(10), { prices: { USD: '60.00', UZS: '1085850.00' } }), row(d(11), { price: 60 })]
+    const { container } = render(<I18nProvider><AvailabilityCalendar inventory={rows} checkIn={null} checkOut={null} onRangeChange={vi.fn()} /></I18nProvider>)
+    expect(cell(container, d(10))).toHaveTextContent('1.09M')
+    expect(cell(container, d(11))).toHaveTextContent('€60')
+    expect(screen.getByText('Prices per night in UZS')).toBeInTheDocument()
+    localStorage.clear()
   })
 })
