@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test'
  *             with THROTTLE_ANON_RATE=100000/hour and THROTTLE_USER_RATE=100000/hour set: the crawl (crawl.e2e.ts)
  *             loads every page many times and would otherwise use up the demo accounts' hourly API limit
  *   frontend: npm run dev            (http://localhost:3000)
- *   tests:    npm run test:e2e
+ *   tests:    npm run test:e2e   (E2E_CHROMIUM_PATH=/path/to/chrome when Playwright's own browser is not installed)
  * Screenshots (desktop 1440px + mobile 390px per step) and console/network logs go to e2e/screenshots/ (gitignored).
  */
 export default defineConfig({
@@ -27,5 +27,13 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     actionTimeout: 15_000,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } }],
+  projects: [{
+    name: 'chromium',
+    use: {
+      ...devices['Desktop Chrome'],
+      viewport: { width: 1440, height: 900 },
+      // For machines whose Chromium is not the one Playwright downloads (e.g. CI containers)
+      launchOptions: process.env.E2E_CHROMIUM_PATH ? { executablePath: process.env.E2E_CHROMIUM_PATH } : {},
+    },
+  }],
 })
