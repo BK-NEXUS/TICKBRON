@@ -3,7 +3,7 @@
  * a conversion with ≈. The amounts come from the backend.
  */
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { RatePlanCard } from './RatePlanCard'
 import { RoomCard } from './RoomCard'
 import { I18nProvider } from '../i18n/I18nContext'
