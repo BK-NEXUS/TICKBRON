@@ -3,8 +3,11 @@ Serializers for the accounts app.
 
 This module contains serializers for favorites, reviews, notifications, and account history.
 """
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from bookings.fields import OwnBookingField
+from bookings.pricing import property_price_list, rate_lookup
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
 
@@ -18,6 +21,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
     property_base_price = serializers.DecimalField(source='property.base_price', read_only=True, max_digits=10, decimal_places=2)
     property_currency = serializers.CharField(source='property.currency', read_only=True)
     property_primary_photo = serializers.SerializerMethodField()
+    # R16: the hotel's "from" price in every currency, like a hotel card ({code: {amount, source}})
+    property_prices = serializers.SerializerMethodField()
     # The property's name lives in its translations; FavoriteViewSet prefetches them
     property_translations = PropertyTranslationSerializer(
         source='property.translations', many=True, read_only=True
@@ -26,7 +31,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'property', 'property_translations', 'property_city',
-                  'property_country', 'property_base_price', 'property_currency', 
+                  'property_country', 'property_base_price', 'property_currency', 'property_prices',
                   'property_primary_photo', 'notes', 'created_at']
         # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
         read_only_fields = ['id', 'user', 'property', 'created_at']
@@ -38,6 +43,15 @@ class FavoriteSerializer(serializers.ModelSerializer):
             is_primary=True, is_deleted=False)
         photo = next(iter(photos), None)
         return photo.photo.url if photo and photo.photo else None
+
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_property_prices(self, obj):
+        """The list view loads the active rate plans of every favorite in a few queries; rates are read once."""
+        if not hasattr(self, '_rate_of'):
+            self._rate_of = rate_lookup(self.context.get('request'))
+        plans = [plan for room_type in getattr(obj.property, 'card_room_types', []) for plan in room_type.rate_plans.all()]
+        return property_price_list(obj.property, plans, self._rate_of)
 
 
 class FavoriteCreateSerializer(serializers.ModelSerializer):

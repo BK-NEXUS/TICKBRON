@@ -1,4 +1,5 @@
 import type { ExchangeRateInfo } from './bookingAdapter'
+import type { PriceList } from './propertyAdapter'
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 
@@ -15,6 +16,8 @@ export interface Favorite {
   property_country: string
   property_base_price: string
   property_currency: string
+  /** R16: the hotel's "from" price in every currency (like a hotel card); absent in older responses */
+  property_prices?: PriceList
   property_primary_photo: string | null
   notes: string | null
   created_at: string
