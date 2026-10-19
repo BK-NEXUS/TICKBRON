@@ -115,3 +115,14 @@ class TestCalendarRows:
         night = rows[(stay['start'] + timedelta(days=1)).isoformat()]['prices']
         assert night['KZT'] == '29388.00'
         assert night['RUB'] is None
+
+
+class TestRateLookups:
+
+    def test_a_card_page_with_four_currencies_reads_the_rates_once(self, stay):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        kzt_rate('24.50')
+        with CaptureQueriesContext(connection) as queries:
+            card(stay)
+        assert len([q for q in queries.captured_queries if 'exchange_rates' in q['sql']]) == 1
