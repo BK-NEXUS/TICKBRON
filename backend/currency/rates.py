@@ -56,22 +56,43 @@ def current_rate(currency, today=None):
     today = today or tashkent_today()
     row = (ExchangeRate.objects.filter(currency=currency, status='accepted', rate_date__lte=today)
            .order_by('-rate_date', '-fetched_at', '-id').first())
-    if row is None:
-        return None
+    return None if row is None else _rate_info(row, today)
+
+
+def _rate_info(row, today):
     stale = row.rate_date < today - timedelta(days=settings.FX_STALE_AFTER_DAYS)
     # Logged at most once per hour and rate date (cache.add is a no-op while the key exists)
-    if stale and cache.add(f'fx-stale-warning:{currency}:{row.rate_date}', 1, 3600):
-        logger.warning(f'{currency} exchange rate of {row.rate_date} is stale (older than '
+    if stale and cache.add(f'fx-stale-warning:{row.currency}:{row.rate_date}', 1, 3600):
+        logger.warning(f'{row.currency} exchange rate of {row.rate_date} is stale (older than '
                        f'{settings.FX_STALE_AFTER_DAYS} days); check the CBU fetch task')
-    return RateInfo(currency, row.rate, row.rate_date, row.source, stale, row.id)
+    return RateInfo(row.currency, row.rate, row.rate_date, row.source, stale, row.id)
+
+
+def current_rates(today=None):
+    """
+    {currency: RateInfo} for every supported currency in ONE query (R16: a page can show prices in
+    four currencies); a currency without an accepted rate is missing. Same rule as current_rate.
+    """
+    from common.money import SUPPORTED_BASE_CURRENCIES
+    from currency.cbu import tashkent_today
+    from currency.models import ExchangeRate
+
+    today = today or tashkent_today()
+    rows = (ExchangeRate.objects
+            .filter(currency__in=[c for c in SUPPORTED_BASE_CURRENCIES if c != CHARGE_CURRENCY],
+                    status='accepted', rate_date__lte=today)
+            .order_by('currency', '-rate_date', '-fetched_at', '-id').distinct('currency'))
+    rates = {row.currency: _rate_info(row, today) for row in rows}
+    rates[CHARGE_CURRENCY] = RateInfo(CHARGE_CURRENCY, Decimal('1'), None, 'identity', False)
+    return rates
 
 
 def rate_for_request(request, currency):
-    """current_rate() cached on the request: one lookup per request, never per row."""
-    rates = request.__dict__.setdefault('_tickbron_rates', {})
-    if currency not in rates:
-        rates[currency] = current_rate(currency)
-    return rates[currency]
+    """The rate of `currency`, from all rates loaded once per request (one query, never per row)."""
+    rates = request.__dict__.get('_tickbron_rates')
+    if rates is None:
+        rates = request.__dict__['_tickbron_rates'] = current_rates()
+    return rates.get(currency)
 
 
 def uzs_amount(request, amount, currency, key):

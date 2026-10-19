@@ -2928,3 +2928,7 @@ Needs the backend of slice 2 (PR #60: `prices` on cards and calendar rows). Disp
 - Tests: `PropertyCard.currency.test.tsx` (4), `utils/price.test.ts` (+4), `AvailabilityCalendar.test.tsx` (+2). Full run: 174 files, 1991+ tests, lint, tsc and build clean (exit codes checked).
 - Real stack (backend from the slice-2 branch) at 1440px (KZT) and 390px (UZS): cards, map pin, hotel-page price and calendar change with the currency; no horizontal scroll.
 - Not changed: favorites (`property_base_price`, the backend sends no per-currency price there) and the hotel page's own gallery/header price. Full crawl and E2E not run.
+## R16 slice 2 backend: prices per currency on cards and calendar rows (2026-10-19)
+Contract in `API_CONTRACT.md` "R16 slice 2". `bookings/pricing.py`: `rate_lookup`, `property_price_list`; `properties/search.py` prefetches the active rate plans and their prices (constant number of queries); `properties/serializers.py`: `CardPricesMixin` on `PropertySearchResultSerializer`, `prices` on availability rate plans and rows. Tests: `properties/tests/test_r16_card_prices.py` (8). The existing query-count tests still pass.
+Design note: the card "from" price comes from the rate plans, while the price filter and sort still use the property's own `base_price`; they can differ if an owner leaves `base_price` out of step with the plans (found, not fixed; a later item could sync them).
+Frontend for this slice (cards, map pins, the calendar) comes after PRs #58 and #59 are merged.
