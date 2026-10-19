@@ -211,10 +211,10 @@ class TestAggregatesInTheDatabase:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('status_world')
-class TestDeprecatedNameKeys:
+class TestOnlyCodesAndIdsAreKeys:
     """
-    DEPRECATED (2026-10-02, until the frontend moves to codes and ids, G5-G6): the URL keys may still
-    be the names shown in the lists ("Uzbekistan", "Tashkent"); they return the same rows.
+    Since 2026-10-19 the URL keys are an ISO country code (any case), a region id or "unspecified";
+    the names shown in the lists no longer work as keys (they used to until the frontend moved to ids).
     """
 
     @staticmethod
@@ -222,40 +222,30 @@ class TestDeprecatedNameKeys:
         assert response.status_code == 200
         return response.data['results']
 
-    @pytest.mark.parametrize('key', ['Uzbekistan', 'uzbekistan', 'Узбекистан', 'UZ', 'uz'])
-    def test_regions_by_country_name_or_code_are_the_same_rows(self, get, key):
-        assert self.rows(get(f'{S}/countries/{key}/regions/')) == self.rows(get(f'{S}/countries/UZ/regions/'))
+    def test_a_code_in_any_case_gives_the_same_rows(self, get):
+        assert self.rows(get(f'{S}/countries/uz/regions/')) == self.rows(get(f'{S}/countries/UZ/regions/'))
+        assert self.rows(get(f'{S}/countries/UZ/regions/'))
 
-    def test_the_country_is_echoed_as_sent_for_the_old_client(self, get):
-        assert get(f'{S}/countries/Uzbekistan/regions/').data['country'] == 'Uzbekistan'
-        assert get(f'{S}/countries/Uzbekistan/regions/').data['country_name'] == 'Uzbekistan'
-        assert get(f'{S}/countries/UZ/regions/').data['country'] == 'UZ'
+    @pytest.mark.parametrize('name', ['Uzbekistan', 'uzbekistan', 'Узбекистан', "O'zbekiston"])
+    def test_a_country_name_is_no_longer_a_key(self, get, name):
+        assert get(f'{S}/countries/{name}/regions/').data['count'] == 0
 
-    @pytest.mark.parametrize('region', ['Tashkent', 'tashkent', 'Toshkent shahri', 'город Ташкент'])
-    def test_hotels_by_names_are_the_same_rows(self, get, region):
-        by_id = self.rows(get(f'{S}/countries/UZ/regions/{tashkent_id()}/hotels/'))
-        assert by_id
-        assert self.rows(get(f'{S}/countries/Uzbekistan/regions/{region}/hotels/')) == by_id
+    @pytest.mark.parametrize('name', ['Tashkent', 'tashkent', 'Toshkent shahri', 'город Ташкент'])
+    def test_a_region_name_is_no_longer_a_key(self, get, name):
+        assert self.rows(get(f'{S}/countries/UZ/regions/{tashkent_id()}/hotels/'))
+        assert get(f'{S}/countries/UZ/regions/{name}/hotels/').data['count'] == 0
 
-    def test_hotel_names_response_echoes_the_names_and_resolves_the_labels(self, get):
-        response = get(f'{S}/countries/Uzbekistan/regions/Tashkent/hotels/')
-        assert (response.data['country'], response.data['region']) == ('Uzbekistan', 'Tashkent')
-        assert (response.data['country_name'], response.data['region_name']) == ('Uzbekistan', 'Tashkent')
+    def test_the_region_id_and_unspecified_still_work(self, get):
+        assert [row['name'] for row in self.rows(get(f'{S}/countries/UZ/regions/{tashkent_id()}/hotels/'))] == [
+            'Alpha Hotel', 'Beta Hotel']
+        assert [row['name'] for row in self.rows(get(f'{S}/countries/UZ/regions/unspecified/hotels/'))] == ['Gamma Hotel']
 
-    def test_unspecified_by_its_label(self, get):
-        response = get(f'{S}/countries/Uzbekistan/regions/Unspecified/hotels/')
-        assert [row['name'] for row in self.rows(response)] == ['Gamma Hotel']
+    def test_the_code_is_echoed_upper_case_with_the_name_of_the_country(self, get):
+        data = get(f'{S}/countries/uz/regions/').data
+        assert (data['country'], data['country_name']) == ('UZ', 'Uzbekistan')
 
-    def test_a_region_name_of_another_country_is_empty(self, get):
-        assert get(f'{S}/countries/Kazakhstan/regions/Tashkent/hotels/').data['count'] == 0
-
-    def test_unknown_names_are_empty_lists(self, get):
-        assert get(f'{S}/countries/Atlantis/regions/').data['count'] == 0
-        assert get(f'{S}/countries/Uzbekistan/regions/Atlantis/hotels/').data['count'] == 0
-
-    def test_the_whole_old_drill_down_walks_through_the_row_names(self, get):
-        # What the current frontend does: it builds the next URL from the names in the previous list
-        country = self.rows(get(f'{S}/countries/'))[0]['country']
-        region = self.rows(get(f'{S}/countries/{country}/regions/'))[0]['region']
-        hotels = self.rows(get(f'{S}/countries/{country}/regions/{region}/hotels/'))
-        assert [row['name'] for row in hotels] == ['Alpha Hotel', 'Beta Hotel']
+    def test_the_drill_down_walks_through_codes_and_ids(self, get):
+        country = self.rows(get(f'{S}/countries/'))[0]
+        region = self.rows(get(f'{S}/countries/{country["code"]}/regions/'))[0]
+        hotels = self.rows(get(f'{S}/countries/{country["code"]}/regions/{region["id"]}/hotels/'))
+        assert hotels

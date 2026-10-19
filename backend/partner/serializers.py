@@ -101,10 +101,8 @@ class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, seria
             'full_address', 'created_at', 'updated_at'
         ]
         # status is set by admin moderation (approve/suspend), never by the owner. The text location
-        # is derived from the Geography refs (English names); city / state / country are accepted as
-        # DEPRECATED input and resolved to refs (geography.serializers.resolve_text_location).
-        read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
-        extra_kwargs = {'city': {'required': False}, 'country': {'required': False}}
+        # (city / state / country) is derived from the Geography refs (English names) and read-only.
+        read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
     
     def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
@@ -126,11 +124,9 @@ class PartnerPropertyCreateSerializer(PropertyCurrencyMixin, GeographyRefsMixin,
             'property_type', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'postal_code',
             'country_ref', 'region_ref', 'city_ref',
-            'city', 'state', 'country',  # DEPRECATED input: resolved to the refs
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]
-        extra_kwargs = {'city': {'required': False}, 'country': {'required': False}}
     
     def create(self, validated_data):
         """Create property with owner set to authenticated user."""

@@ -58,12 +58,6 @@ def region_key(prefix=''):
     return Coalesce(Cast(f'{prefix}region_ref_id', CharField()), Value(UNSPECIFIED), output_field=CharField())
 
 
-def _alias_q(base, value):
-    """Q matching the uz, ru or en name (case-insensitive) behind `base` (e.g. 'country_ref__' or '')."""
-    return (Q(**{f'{base}name_en__iexact': value}) | Q(**{f'{base}name_uz__iexact': value})
-            | Q(**{f'{base}name_ru__iexact': value}))
-
-
 def is_iso_code(value):
     return len(value) == 2 and value.isascii() and value.isalpha()
 
@@ -73,32 +67,29 @@ def country_q(segment, path):
     Q for the country named by a URL segment, behind the relation `path` ('country_ref',
     'property__country_ref'; '' when the query is on Country itself).
 
-    The segment is an ISO code (any case) or "unspecified" (no country).
-    DEPRECATED (2026-10-02, until the frontend moves to codes, G5-G6): it may also be a country name
-    in any language, the value the old lists gave as `country`.
+    The segment is an ISO code (any case) or "unspecified" (no country); anything else matches nothing
+    (country names stopped working as keys on 2026-10-19).
     """
     base = f'{path}__' if path else ''
     if segment.lower() == UNSPECIFIED:
         return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
     if is_iso_code(segment):
         return Q(**{f'{base}code': segment.upper()})
-    return _alias_q(base, segment)
+    return Q(pk__in=[])
 
 
 def region_q(segment, path):
     """
     Q for the region named by a URL segment, behind `path` ('region_ref'; '' on Region itself).
 
-    The segment is a region id or "unspecified" (no region).
-    DEPRECATED (2026-10-02, until the frontend moves to ids, G5-G6): it may also be a region name in
-    any language, the value the old lists gave as `region`.
+    The segment is a region id or "unspecified" (no region); anything else matches nothing (region
+    names stopped working as keys on 2026-10-19).
     """
-    base = f'{path}__' if path else ''
     if segment.lower() == UNSPECIFIED:
         return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
     if segment.isdigit():
         return Q(**{f'{path}_id': int(segment)}) if path else Q(pk=int(segment))
-    return _alias_q(base, segment)
+    return Q(pk__in=[])
 
 
 def country_filter(segment, prefix=''):
@@ -110,7 +101,7 @@ def region_filter(segment, prefix=''):
 
 
 def echo_key(segment):
-    """The key as the response reports it: codes upper-case, "unspecified" lower-case, names as sent."""
+    """The key as the response reports it: codes upper-case, "unspecified" lower-case, anything else as sent."""
     if segment.lower() == UNSPECIFIED:
         return UNSPECIFIED
     return segment.upper() if is_iso_code(segment) else segment
