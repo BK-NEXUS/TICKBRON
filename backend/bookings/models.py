@@ -371,11 +371,20 @@ class Booking(BaseModel):
             currency = rate_plan.currency
             total_price = quantize(quote.total_price, currency)
 
-            # The charge snapshot: read the rate now, after the inventory is locked, from
-            # the database only. No rate yet for a foreign currency -> nothing is reserved.
-            rate = current_rate(currency)
-            if rate is None:
-                raise ExchangeRateUnavailable()
+            # The charge snapshot (so'm). The owner's own so'm price for this stay when there is one
+            # (R16): no exchange rate is needed. Otherwise the rate, read now after the inventory is
+            # locked, from the database only; no rate yet for a foreign currency -> nothing is reserved.
+            charge_amount, charge_source = quote.total_in(CHARGE_CURRENCY)
+            if charge_source == 'owner':
+                rate_value, rate_date, rate_stale = (
+                    (charge_amount / total_price).quantize(Decimal('0.000001')) if total_price else Decimal('1'),
+                    None, False)
+            else:
+                rate = current_rate(currency)
+                if rate is None:
+                    raise ExchangeRateUnavailable()
+                charge_amount, charge_source = to_uzs(total_price, rate.rate), rate.source
+                rate_value, rate_date, rate_stale = rate.rate, rate.date, rate.stale
 
             # The cancellation terms the guest is promised, copied from the rate plan now
             cancel_free_until, cancel_refund_percent_after = terms_for_plan(rate_plan, check_in)
@@ -393,11 +402,11 @@ class Booking(BaseModel):
                 total_price=total_price,
                 currency=currency,
                 charge_currency=CHARGE_CURRENCY,
-                charge_amount=to_uzs(total_price, rate.rate),
-                exchange_rate=rate.rate,
-                exchange_rate_date=rate.date,
-                exchange_rate_source=rate.source,
-                exchange_rate_stale=rate.stale,
+                charge_amount=charge_amount,
+                exchange_rate=rate_value,
+                exchange_rate_date=rate_date,
+                exchange_rate_source=charge_source,
+                exchange_rate_stale=rate_stale,
                 no_show_refund_percent=settings.NO_SHOW_REFUND_PERCENT,
                 cancel_free_until=cancel_free_until,
                 cancel_refund_percent_after=cancel_refund_percent_after,

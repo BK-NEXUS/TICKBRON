@@ -13,6 +13,8 @@ from typing import List
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
+from common.money import quantize
+
 # Longest stay anyone can quote or book, whatever the rate plan allows. Without it a
 # far-away check_out made quote_stay build (and lock) one row per night (R4 security review).
 MAX_STAY_NIGHTS = 365
@@ -31,6 +33,8 @@ class StayQuote:
     # The RoomInventory rows: physical room count, shared by every rate plan of the
     # room type (locked only when quote_stay(..., lock=True))
     room_inventory: list = field(default_factory=list)
+    # R16: the owner's own price of the rate plan per currency, the main one included
+    owner_prices: dict = field(default_factory=dict)
 
     @property
     def number_of_nights(self):
@@ -44,6 +48,80 @@ class StayQuote:
     @property
     def total_price(self):
         return self.nightly_total * self.number_of_rooms
+
+    def total_in(self, currency, rate_of=None):
+        """
+        (amount, source) of the whole stay in `currency`, rounded once to the currency's unit.
+
+        source is 'main' (the plan's own currency), 'owner' (the owner entered a price in that
+        currency; a night with its own price keeps the plan's ratio, e.g. +15% in dollars is +15%
+        in so'm) or 'converted' (no owner price: the main amount at the CBU rates).
+        (None, 'converted') when a rate is missing.
+        """
+        rate_of = rate_of or current_uzs_rate
+        total = Decimal('0')
+        source = 'main'
+        for _, price in self.nights:
+            amount, source = night_price_in(self.currency, self.owner_prices, price, currency, rate_of)
+            if amount is None:
+                return None, source
+            total += amount
+        return quantize(total * self.number_of_rooms, currency), source
+
+    def nights_in(self, currency, rate_of=None):
+        """[(date, price of one room)] in `currency`, each rounded for display; None when a rate is missing."""
+        rate_of = rate_of or current_uzs_rate
+        rows = []
+        for night, price in self.nights:
+            amount, _ = night_price_in(self.currency, self.owner_prices, price, currency, rate_of)
+            if amount is None:
+                return None
+            rows.append((night, quantize(amount, currency)))
+        return rows
+
+
+def current_uzs_rate(currency):
+    """so'm per one unit of `currency` from the database, or None without an accepted rate."""
+    from currency.rates import current_rate
+
+    info = current_rate(currency)
+    return None if info is None else info.rate
+
+
+def night_price_in(main, owner_prices, price, currency, rate_of):
+    """(unrounded price of one room-night in `currency`, source). See StayQuote.total_in."""
+    if currency == main:
+        return price, 'main'
+    if currency in owner_prices:
+        base = owner_prices[main]
+        owner = owner_prices[currency]
+        return (owner * price / base if base else owner), 'owner'
+    from_rate, to_rate = rate_of(main), rate_of(currency)
+    if from_rate is None or to_rate is None:
+        return None, 'converted'
+    return price * from_rate / to_rate, 'converted'
+
+
+def owner_prices_of(rate_plan):
+    """{currency: price} the owner entered for a rate plan, the main price included."""
+    return {rate_plan.currency: rate_plan.base_price,
+            **{row.currency: row.amount for row in rate_plan.prices.all()}}
+
+
+def price_list(rate_plan, rate_of=None):
+    """
+    The rate plan's price in every supported currency for the API:
+    {currency: {'amount': '1250000.00' or None, 'source': 'main' | 'owner' | 'converted'}}.
+    """
+    from common.money import SUPPORTED_BASE_CURRENCIES
+
+    rate_of = rate_of or current_uzs_rate
+    owner = owner_prices_of(rate_plan)
+    result = {}
+    for code in SUPPORTED_BASE_CURRENCIES:
+        amount, source = night_price_in(rate_plan.currency, owner, rate_plan.base_price, code, rate_of)
+        result[code] = {'amount': None if amount is None else f'{quantize(amount, code):.2f}', 'source': source}
+    return result
 
 
 def _nights(check_in, check_out):
@@ -134,6 +212,7 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     quote = StayQuote(
         check_in=check_in, check_out=check_out,
         number_of_rooms=number_of_rooms, currency=rate_plan.currency,
+        owner_prices=owner_prices_of(rate_plan),
     )
     for night in nights:
         row = by_date.get(night)

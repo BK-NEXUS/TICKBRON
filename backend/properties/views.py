@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
-from currency.rates import uzs_amount
+from currency.rates import rate_for_request, uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
 from promotions.search import promoted_for_search, serialize_banners
 from promotions.stats import IMPRESSION, record as record_stat
@@ -391,15 +391,33 @@ def property_quote(request, property_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    uzs = uzs_amount(request, quote.total_price, quote.currency, 'uzs_total')
+    def rate_of(code):
+        return getattr(rate_for_request(request, code), 'rate', None)
+
+    shown = data.get('currency') or quote.currency
+    total, source = quote.total_in(shown, rate_of)
+    nights = quote.nights_in(shown, rate_of)
+    if total is None or nights is None:
+        return Response(
+            {'error': 'Exchange rate unavailable', 'code': 'exchange_rate_unavailable',
+             'details': f'No exchange rate for {shown} yet.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    # What the guest pays is in so'm (Payme and Click): the owner's own so'm price when there is one
+    owner_uzs = quote.owner_prices.get('UZS') is not None and quote.currency != 'UZS'
+    if owner_uzs:
+        uzs = {'uzs_total': f"{quote.total_in('UZS', rate_of)[0]:.2f}", 'exchange_rate': None}
+    else:
+        uzs = uzs_amount(request, quote.total_price, quote.currency, 'uzs_total')
     return Response({
         'check_in': quote.check_in,
         'check_out': quote.check_out,
         'number_of_nights': quote.number_of_nights,
         'number_of_rooms': quote.number_of_rooms,
-        'currency': quote.currency,
-        'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in quote.nights],
-        'total_price': f'{quote.total_price:.2f}',
+        'currency': shown,
+        'price_source': source,
+        'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in nights],
+        'total_price': f'{total:.2f}',
         **uzs,
         # R12: what the guest is told before paying (the booking stores this percent at creation)
         **refund_disclosure(settings.NO_SHOW_REFUND_PERCENT, uzs['uzs_total']),

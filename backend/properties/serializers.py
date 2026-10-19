@@ -14,7 +14,9 @@ from properties.models import (
     RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
 from bookings.cancellation import plan_terms
-from currency.rates import uzs_amount
+from bookings.pricing import price_list
+from common.money import SUPPORTED_BASE_CURRENCIES
+from currency.rates import current_rate, rate_for_request, uzs_amount
 from django.utils.dateparse import parse_date
 
 MAX_AVAILABILITY_DAYS = 366
@@ -245,12 +247,23 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         """Get room types with rate plans for the property."""
         # Filtered in SQL inside the prefetch, so there are four queries however many room types exist
         room_types = obj.room_types.filter(is_deleted=False).prefetch_related(
-            Prefetch('rate_plans', queryset=RatePlan.objects.filter(is_active=True, is_deleted=False)),
+            Prefetch('rate_plans', queryset=RatePlan.objects.filter(
+                is_active=True, is_deleted=False).prefetch_related('prices')),
             Prefetch('photos', queryset=RoomPhoto.objects.filter(is_active=True, is_deleted=False)),
             Prefetch('room_amenities', queryset=RoomAmenity.objects.filter(
                 is_deleted=False).select_related('amenity__category')),
         )
         
+        request = self.context.get('request')
+        rates = {}
+
+        def rate_of(code):
+            """so'm per one unit of `code`; looked up once per currency for the whole hotel page."""
+            if code not in rates:
+                info = rate_for_request(request, code) if request else current_rate(code)
+                rates[code] = getattr(info, 'rate', None)
+            return rates[code]
+
         room_types_data = []
         for room_type in room_types:
             # Get active rate plans
@@ -272,6 +285,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'deposit_required': rate_plan.deposit_required,
                     'deposit_percentage': rate_plan.deposit_percentage,
                     'advance_booking_days': rate_plan.advance_booking_days,
+                    'prices': price_list(rate_plan, rate_of),
                     **plan_terms(rate_plan),
                 }
                 rate_plans_data.append(rate_plan_data)
@@ -691,6 +705,8 @@ class QuoteParamsSerializer(serializers.Serializer):
     check_in = serializers.DateField()
     check_out = serializers.DateField()
     rooms = serializers.IntegerField(min_value=1, max_value=20, default=1)
+    # R16: show the stay in this currency (default: the rate plan's own)
+    currency = serializers.ChoiceField(choices=SUPPORTED_BASE_CURRENCIES, required=False)
 
     def validate(self, data):
         if data['check_out'] <= data['check_in']:
