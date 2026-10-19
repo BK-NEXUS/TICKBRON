@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 
 from bookings.cancellation import free_until
 from bookings.tests.test_quote import stay  # noqa: F401  (fixture: property, room, rate plan, nights from start)
+from properties.models import RatePlanPrice
 
 P = '/api/v1/partner'
 
@@ -85,6 +86,9 @@ class TestOwnerSetsTheTerms:
         owner = stay['property'].owner
         owner.role = role
         owner.save()
+        # R16: a rate plan carries the owner's price in every currency, or it cannot be edited
+        for code, amount in (('UZS', 750000), ('KZT', 27000), ('RUB', 5400)):
+            RatePlanPrice.objects.create(rate_plan=stay['rate'], currency=code, amount=amount)
         client = APIClient()
         client.force_authenticate(user=owner)
         return client

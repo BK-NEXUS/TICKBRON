@@ -31,7 +31,7 @@ describe('partner room type and rate plan cards', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Manage rates and availability for Deluxe King' }))
 
-    expect(onManageRates).toHaveBeenCalledWith({ id: 7, name: 'Deluxe King' })
+    expect(onManageRates).toHaveBeenCalledWith({ id: 7, name: 'Deluxe King', currency: 'USD' })
   })
 
   it('opens the availability of a rate plan', async () => {

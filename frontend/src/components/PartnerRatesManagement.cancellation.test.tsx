@@ -15,7 +15,7 @@ const api = vi.mocked(partnerAdapter)
 
 const plan = (patch = {}) => ({
   id: 11, room_type: 7, name: 'Standard Rate', slug: 'standard', rate_type: 'standard', description: '', base_price: 95,
-  currency: 'USD', min_nights: 1, max_nights: 30, is_active: true, cancellation_policy: 'flexible',
+  currency: 'USD', prices: { USD: '95.00', UZS: '1150000.00', KZT: '42000.00', RUB: '8500.00' }, min_nights: 1, max_nights: 30, is_active: true, cancellation_policy: 'flexible',
   deposit_required: false, free_cancel_hours: null, cancel_refund_percent: null, ...patch,
 }) as never
 
@@ -111,6 +111,9 @@ describe('cancellation terms in the rate plan form', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add new rate plan' }))
     fireEvent.change(screen.getByLabelText(/Rate Plan Name/), { target: { value: 'Flex' } })
     fireEvent.change(screen.getByLabelText(/Slug/), { target: { value: 'flex' } })
+    for (const [code, value] of [['USD', '95'], ['UZS', '1150000'], ['KZT', '42000'], ['RUB', '8500']]) {
+      fireEvent.change(screen.getByLabelText(new RegExp(`\\(${code}\\)`)), { target: { value } })
+    }
     fireEvent.change(screen.getByLabelText(HOURS), { target: { value: '24' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Rate Plan' }))
     await waitFor(() => expect(api.createRatePlan).toHaveBeenCalledWith(expect.objectContaining({ free_cancel_hours: 24 })))

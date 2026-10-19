@@ -77,7 +77,8 @@ class TestWritePrices:
         assert response.status_code == 404
         assert not RatePlanPrice.objects.exists()
 
-    def test_without_the_requirement_prices_stay_optional(self, owner, inventory):
+    def test_without_the_requirement_prices_stay_optional(self, owner, inventory, settings):
+        settings.RATE_PLAN_PRICES_REQUIRED = False
         response = client_for(owner).post(f'{P}/rates/', new_plan(inventory, base_price='65.00'), format='json')
         assert response.status_code == 201, response.data
 

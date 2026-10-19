@@ -91,12 +91,12 @@ describe('MobileMenu', () => {
     const renderMenu = () =>
       render(<I18nProvider><MobileMenu isOpen={true} onClose={vi.fn()} /></I18nProvider>)
 
-    it('offers the three languages and the two currencies', () => {
+    it('offers the three languages and the four currencies', () => {
       renderMenu()
       const language = screen.getByRole('group', { name: 'Language' })
       expect(within(language).getAllByRole('button').map(b => b.textContent)).toEqual(['UZ', 'RU', 'EN'])
       const currency = screen.getByRole('group', { name: 'Currency' })
-      expect(within(currency).getAllByRole('button').map(b => b.textContent)).toEqual(['UZS', 'USD'])
+      expect(within(currency).getAllByRole('button').map(b => b.textContent)).toEqual(['UZS', 'USD', 'KZT', 'RUB'])
     })
 
     it('marks the active language and currency', () => {

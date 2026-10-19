@@ -147,6 +147,8 @@ export interface PartnerRatePlan {
   description: string
   base_price: number
   currency: string
+  /** R16: the price the owner entered in each currency (code -> amount string); the main one is `currency` */
+  prices?: Record<string, string>
   min_nights: number
   max_nights: number
   is_active: boolean
@@ -167,8 +169,8 @@ export interface CreateRatePlanRequest {
   slug: string
   rate_type: string
   description: string
-  base_price: number
-  currency: string
+  /** R16: the price in every currency; the backend takes the main price (the hotel's currency) from it */
+  prices: Record<string, string>
   min_nights: number
   max_nights: number
   is_active: boolean
@@ -186,8 +188,8 @@ export interface UpdateRatePlanRequest {
   slug?: string
   rate_type?: string
   description?: string
-  base_price?: number
-  currency?: string
+  /** R16: the price in every currency (the backend sets the main price from it) */
+  prices?: Record<string, string>
   min_nights?: number
   max_nights?: number
   is_active?: boolean

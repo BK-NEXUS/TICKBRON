@@ -1063,7 +1063,7 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 - The price in the property's currency is the plan's main price and is stored in `base_price`; the other three are stored as the owner's own prices (new table `rate_plan_prices`). When `prices` is sent, `base_price` may be left out (if sent it must equal `prices[<property currency>]`, else 400 `base_price`).
 - `prices` must contain every supported currency (400 `prices`: "Enter the price in: KZT, RUB."), only supported keys, numbers >= 0, no finer part than the currency unit (whole so'm/tenge/rubles, cents for USD).
 - Read: `prices` lists what the owner entered (the main price and each other currency present).
-- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **false** until the owner screens send the four prices): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
+- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **true** since R16 slice 3, 2026-10-19; was false in slice 1): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
 
 **Hotel page** (`GET /properties/{id}/`): each rate plan gains `prices`: `{ "USD": { "amount": "60.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, ... }`. `source` is `main` (the plan's own currency), `owner` (entered by the owner) or `converted` (main price at the CBU rates, show with "≈"); `amount` is null when a converted price has no rate yet.
 
@@ -1075,3 +1075,6 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 **CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
 
 Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
+
+### R16 slice 3: the rule is now on
+`RATE_PLAN_PRICES_REQUIRED` defaults to **true**: `POST /partner/rates/` without `prices` is 400, and a rate plan that has only its main price cannot be edited (400 `prices`) until the owner sends the other currencies. The owner screen sends `prices` (all four) and no `base_price`/`currency` on create and update. Set the variable to `false` only to roll back.
