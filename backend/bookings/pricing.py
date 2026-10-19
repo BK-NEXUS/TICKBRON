@@ -108,6 +108,50 @@ def owner_prices_of(rate_plan):
             **{row.currency: row.amount for row in rate_plan.prices.all()}}
 
 
+def rate_lookup(request=None):
+    """
+    A `rate_of(code)` for the price functions: so'm per one unit, looked up once per currency (and, with a
+    request, once per request via currency.rates.rate_for_request); None without an accepted rate.
+    """
+    from currency.rates import current_rate, rate_for_request
+
+    memo = {}
+
+    def rate_of(code):
+        if code not in memo:
+            info = rate_for_request(request, code) if request is not None else current_rate(code)
+            memo[code] = getattr(info, 'rate', None)
+        return memo[code]
+
+    return rate_of
+
+
+def _listing(prices_by_code):
+    from common.money import quantize
+
+    return {code: {'amount': None if amount is None else f'{quantize(amount, code):.2f}', 'source': source}
+            for code, (amount, source) in prices_by_code.items()}
+
+
+def property_price_list(prop, plans, rate_of=None):
+    """
+    A hotel's "from" price in every supported currency for its cards: the lowest price of its active rate
+    plans in that currency (the owner's own, or a conversion), or the hotel's own price converted when it has
+    no plan. Same shape as price_list. `plans` are the hotel's active rate plans (prices prefetched).
+    """
+    from common.money import SUPPORTED_BASE_CURRENCIES
+
+    rate_of = rate_of or current_uzs_rate
+    offers = [(plan.currency, owner_prices_of(plan), plan.base_price) for plan in plans] or [
+        (prop.currency, {}, prop.base_price)]
+    result = {}
+    for code in SUPPORTED_BASE_CURRENCIES:
+        found = [night_price_in(main, owner, price, code, rate_of) for main, owner, price in offers]
+        priced = [item for item in found if item[0] is not None]
+        result[code] = min(priced, key=lambda item: item[0]) if priced else (None, found[0][1])
+    return _listing(result)
+
+
 def price_list(rate_plan, rate_of=None):
     """
     The rate plan's price in every supported currency for the API:

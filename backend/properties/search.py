@@ -83,7 +83,7 @@ class PropertySearchService:
     
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
-        from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation
+        from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation, RatePlan, RoomType
         
         return with_review_scores(searchable_properties()).select_related(
             'owner',
@@ -96,6 +96,10 @@ class PropertySearchService:
                 is_available=True, amenity__is_searchable=True, is_deleted=False).select_related('amenity__category')),
             Prefetch('photos', to_attr='active_photos', queryset=PropertyPhoto.objects.filter(
                 is_active=True, is_deleted=False)),
+            # R16: the "from" price of the card in every currency comes from the active rate plans
+            Prefetch('room_types', to_attr='card_room_types', queryset=RoomType.objects.filter(
+                is_deleted=False).prefetch_related(Prefetch('rate_plans', queryset=RatePlan.objects.filter(
+                    is_active=True, is_deleted=False).prefetch_related('prices')))),
         )
     
     def _validate_search_params(self, search_params):

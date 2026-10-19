@@ -2903,3 +2903,8 @@ Contract in `API_CONTRACT.md` "R16 slice 1"; plan `.ai/PLAN_R16_MULTI_CURRENCY.m
 - Changed existing tests (contract change, assertions otherwise untouched): `common/tests/test_money.py` expects the four currencies; `currency/tests/test_cbu_fetch.py` restricts the old tests to the dollar with an autouse fixture (they are about one fetch); `partner/tests/test_r6_currency_rules.py` "other country defaults to USD" now uses Turkey, and a new test says Kazakhstan defaults to tenge.
 - The "mandatory" rule is switched by `RATE_PLAN_PRICES_REQUIRED` (default off) so the current owner screens do not break before S3 (owner price boxes); S3 flips the default and the existing-plan banner.
 - Found, not fixed: search cards and Status still show the plan's main currency only (next slices).
+
+## R16 slice 2 backend: prices per currency on cards and calendar rows (2026-10-19)
+Contract in `API_CONTRACT.md` "R16 slice 2". `bookings/pricing.py`: `rate_lookup`, `property_price_list`; `properties/search.py` prefetches the active rate plans and their prices (constant number of queries); `properties/serializers.py`: `CardPricesMixin` on `PropertySearchResultSerializer`, `prices` on availability rate plans and rows. Tests: `properties/tests/test_r16_card_prices.py` (8). The existing query-count tests still pass.
+Design note: the card "from" price comes from the rate plans, while the price filter and sort still use the property's own `base_price`; they can differ if an owner leaves `base_price` out of step with the plans (found, not fixed; a later item could sync them).
+Frontend for this slice (cards, map pins, the calendar) comes after PRs #58 and #59 are merged.
