@@ -10133,3 +10133,25 @@ button.property-gallery-image {
   align-items: center;
   color: var(--color-text-strong);
 }
+
+/* Geography pictures */
+.geography-picture-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 160px;
+  margin-top: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.geography-thumb {
+  display: block;
+  width: 56px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.geography-thumb--empty {
+  background: var(--color-border);
+}

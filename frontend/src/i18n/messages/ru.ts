@@ -1696,4 +1696,13 @@ export const ru: Catalog = {
   'map.clusterLabel.few': "Здесь {count} объекта: приблизьте карту",
   'map.clusterLabel.many': "Здесь {count} объектов: приблизьте карту",
   'map.clusterLabel.other': "Здесь {count} объектов: приблизьте карту",
+  'geoAdmin.field.image': "Картинка",
+  'geoAdmin.imageHelp': "JPG, PNG, WebP или GIF, до 10 МБ.",
+  'geoAdmin.errImageRequired': "Выберите картинку.",
+  'geoAdmin.errImageType': "Используйте картинку JPG, PNG, WebP или GIF.",
+  'geoAdmin.errImageSize': "Картинка больше 10 МБ.",
+  'geoAdmin.col.picture': "Картинка",
+  'geoAdmin.imageOf': "Картинка: {name}",
+  'geoAdmin.noImage': "Нет картинки",
+  'geoAdmin.imagePreview': "Предпросмотр",
 }

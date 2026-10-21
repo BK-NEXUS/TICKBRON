@@ -147,6 +147,7 @@ export function AdminGeography() {
           <table className="customers-table">
             <thead>
               <tr>
+                {kind !== 'cities' && <th>{t('geoAdmin.col.picture')}</th>}
                 <th>{t('geoAdmin.col.name')}</th>
                 {kind === 'countries' && <th>{t('geoAdmin.col.code')}</th>}
                 {kind !== 'cities' && <th>{t('geoAdmin.col.children')}</th>}
@@ -161,6 +162,13 @@ export function AdminGeography() {
                 const children = 'region_count' in row ? row.region_count : 'city_count' in row ? row.city_count : null
                 return (
                   <tr key={row.id}>
+                    {kind !== 'cities' && (
+                      <td>
+                        {'image_url' in row && row.image_url
+                          ? <img className="geography-thumb" src={row.image_url} alt={t('geoAdmin.imageOf', { name })} loading="lazy" />
+                          : <span className="geography-thumb geography-thumb--empty" aria-label={t('geoAdmin.noImage')} />}
+                      </td>
+                    )}
                     <td>{name}</td>
                     {kind === 'countries' && <td>{'code' in row ? row.code : ''}</td>}
                     {kind !== 'cities' && <td>{children}</td>}

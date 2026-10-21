@@ -2919,3 +2919,9 @@ Plan `.ai/PLAN_GEO_IMAGES.md` step 1 (approved). Contract: API_CONTRACT "Picture
 - Tests: `geography/tests/test_images.py` (17; 13 of the first 15 failed before the code, 2 more cover the is_active fix). Arrangement of three existing tests extended with a picture because a new country/region now needs one: `geography/tests/test_admin_api.py` (2: create country, create region) and `admin_panel/tests/test_audit_admin_actions.py` (1); their assertions are unchanged.
 - Not done yet: frontend (steps 1-frontend, 2, 3 of the plan).
 
+## Country and region pictures: Geography screen (2026-10-21)
+Plan step 1 frontend. The add/edit dialog of a country and a region has a "Picture" file picker (jpg/png/webp/gif, 10 MB, checked in the browser with the same limits as the server), a preview, and the current picture when editing; adding without a picture is refused ("Choose a picture."), editing without a new one keeps the old. The list has a thumbnail column (grey box when there is none). Cities have no picture. `adminGeographyAdapter` sends multipart when `image` is set, JSON otherwise; `utils/imageFile.ts` holds the check.
+- Tests: `utils/imageFile.test.ts` (2), `GeographyRowDialog.image.test.tsx` (7), adapter (+2). Existing tests extended, assertions kept: in `AdminGeography.test.tsx` the three tests that add a country or region now choose a picture first and the two create assertions include `image`; `URL.createObjectURL` is stubbed in its `beforeEach` (jsdom has none).
+- Texts `geoAdmin.*` (picture) in uz/ru/en; native-speaker review of uz/ru still open.
+- Not done yet: home "Where to?" (step 2) and the admin hotel account with a place (step 3).
+

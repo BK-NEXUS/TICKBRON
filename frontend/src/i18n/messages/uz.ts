@@ -1656,4 +1656,13 @@ export const uz: Catalog = {
   'map.searchArea': "Shu hududda qidirish",
   'map.clusterLabel.one': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
   'map.clusterLabel.other': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
+  'geoAdmin.field.image': "Rasm",
+  'geoAdmin.imageHelp': "JPG, PNG, WebP yoki GIF, 10 MB gacha.",
+  'geoAdmin.errImageRequired': "Rasm tanlang.",
+  'geoAdmin.errImageType': "JPG, PNG, WebP yoki GIF rasm tanlang.",
+  'geoAdmin.errImageSize': "Rasm 10 MB dan katta.",
+  'geoAdmin.col.picture': "Rasm",
+  'geoAdmin.imageOf': "{name} rasmi",
+  'geoAdmin.noImage': "Rasm yoʻq",
+  'geoAdmin.imagePreview': "Koʻrinish",
 }

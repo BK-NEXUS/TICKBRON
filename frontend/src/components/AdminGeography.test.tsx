@@ -22,6 +22,11 @@ const REGIONS = [
 const CITIES = [
   { id: 100, region: 10, slug: 'chilanzar', ...names('Chilanzar', 'Chilonzor', 'Чиланзар'), is_active: true, sort_order: 0, hotel_count: 2 },
 ]
+/** A new country or region needs a picture (plan PLAN_GEO_IMAGES.md) */
+const PICTURE = new File(['x'], 'picture.png', { type: 'image/png' })
+const choosePicture = (dialog: HTMLElement) =>
+  fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [PICTURE] } })
+
 const page = <T,>(results: T[]) => ({ data: { count: results.length, next: null, previous: null, results }, error: null })
 
 function renderScreen() {
@@ -38,6 +43,8 @@ describe('AdminGeography', () => {
     api.update.mockResolvedValue({ data: {} as never, error: null })
     api.create.mockResolvedValue({ data: {} as never, error: null })
     api.reorder.mockResolvedValue({ data: {}, error: null })
+    URL.createObjectURL = vi.fn(() => 'blob:preview') // jsdom has none; the dialog previews the chosen picture
+    URL.revokeObjectURL = vi.fn()
     api.remove.mockResolvedValue({ error: null, inUse: false })
   })
 
@@ -84,10 +91,11 @@ describe('AdminGeography', () => {
     fireEvent.change(within(dialog).getByLabelText('Name (Uzbek)'), { target: { value: 'Turkiya' } })
     fireEvent.change(within(dialog).getByLabelText('Name (Russian)'), { target: { value: 'Турция' } })
     fireEvent.change(within(dialog).getByLabelText('Name (English)'), { target: { value: 'Turkey' } })
+    choosePicture(dialog)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(api.create).toHaveBeenCalledWith('countries', {
-      code: 'tr', currency: 'try', name_uz: 'Turkiya', name_ru: 'Турция', name_en: 'Turkey',
+      code: 'tr', currency: 'try', name_uz: 'Turkiya', name_ru: 'Турция', name_en: 'Turkey', image: PICTURE,
     }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(api.list.mock.calls.filter(([kind]) => kind === 'countries').length).toBeGreaterThan(1)
@@ -102,9 +110,10 @@ describe('AdminGeography', () => {
     fireEvent.change(within(dialog).getByLabelText('Name (Uzbek)'), { target: { value: 'Buxoro' } })
     fireEvent.change(within(dialog).getByLabelText('Name (Russian)'), { target: { value: 'Бухара' } })
     fireEvent.change(within(dialog).getByLabelText('Name (English)'), { target: { value: 'Bukhara' } })
+    choosePicture(dialog)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(api.create).toHaveBeenCalledWith('regions', {
-      country: 1, name_uz: 'Buxoro', name_ru: 'Бухара', name_en: 'Bukhara',
+      country: 1, name_uz: 'Buxoro', name_ru: 'Бухара', name_en: 'Bukhara', image: PICTURE,
     }))
   })
 
@@ -118,6 +127,7 @@ describe('AdminGeography', () => {
     for (const label of ['Name (Uzbek)', 'Name (Russian)', 'Name (English)']) {
       fireEvent.change(within(dialog).getByLabelText(label), { target: { value: 'Tashkent' } })
     }
+    choosePicture(dialog)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('already exists')
   })

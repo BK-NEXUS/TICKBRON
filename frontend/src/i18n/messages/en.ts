@@ -1662,6 +1662,15 @@ export const en = {
   'map.clusterLabel.few': "{count} properties here: zoom in to see them",
   'map.clusterLabel.many': "{count} properties here: zoom in to see them",
   'map.clusterLabel.other': "{count} properties here: zoom in to see them",
+  'geoAdmin.field.image': "Picture",
+  'geoAdmin.imageHelp': "JPG, PNG, WebP or GIF, up to 10 MB.",
+  'geoAdmin.errImageRequired': "Choose a picture.",
+  'geoAdmin.errImageType': "Use a JPG, PNG, WebP or GIF picture.",
+  'geoAdmin.errImageSize': "The picture is larger than 10 MB.",
+  'geoAdmin.col.picture': "Picture",
+  'geoAdmin.imageOf': "Picture of {name}",
+  'geoAdmin.noImage': "No picture",
+  'geoAdmin.imagePreview': "Preview",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always
