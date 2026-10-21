@@ -2916,6 +2916,6 @@ Plan `.ai/PLAN_GEO_IMAGES.md` step 1 (approved). Contract: API_CONTRACT "Picture
 - `common/storage.image_upload_error` (type/size + 40 megapixels) is now shared by the hotel photos (`partner/serializers.py`, behavior unchanged) and the geography serializers.
 - Admin viewsets accept multipart; `_ImageMixin` (required on create, old file removed on replace), file removed on delete (not when the delete is refused with 409).
 - Found while testing and fixed: a multipart form that leaves out `is_active` was read as false by DRF (a new country would have been created hidden); both serializers now default it to true.
-- Tests: `geography/tests/test_images.py` (21; 13 of the first 15 failed before the code). Arrangement of three existing tests extended with a picture because a new country/region now needs one: `geography/tests/test_admin_api.py` (2: create country, create region) and `admin_panel/tests/test_audit_admin_actions.py` (1); their assertions are unchanged.
+- Tests: `geography/tests/test_images.py` (17; 13 of the first 15 failed before the code, 2 more cover the is_active fix). Arrangement of three existing tests extended with a picture because a new country/region now needs one: `geography/tests/test_admin_api.py` (2: create country, create region) and `admin_panel/tests/test_audit_admin_actions.py` (1); their assertions are unchanged.
 - Not done yet: frontend (steps 1-frontend, 2, 3 of the plan).
 
