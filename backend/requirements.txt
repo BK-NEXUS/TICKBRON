@@ -7,7 +7,7 @@ django-cors-headers==4.9.0
 psycopg2-binary==2.9.10
 
 # Image handling
-Pillow==12.3.0
+Pillow==13.0.0
 
 # Redis & Celery
 redis==5.0.1
