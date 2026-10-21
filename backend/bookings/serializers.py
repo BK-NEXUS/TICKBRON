@@ -2,6 +2,7 @@
 Serializers for TICKBRON booking endpoints.
 """
 import logging
+from common.validators import validate_person_name
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -103,7 +104,9 @@ class BookingCreateSerializer(serializers.Serializer):
     special_requests = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     
     # Guest contact details (optional - will be pre-filled from user profile)
-    guest_full_name = serializers.CharField(required=False, allow_blank=True, max_length=300)  # the column's size
+    guest_full_name = serializers.CharField(
+        required=False, allow_blank=True, max_length=300, validators=[validate_person_name],
+    )  # the column's size
     guest_phone = serializers.CharField(required=False, allow_blank=True)
     guest_email = serializers.EmailField(required=False, allow_blank=True)
     

@@ -1075,3 +1075,6 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 **CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
 
 Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
+
+## Person names take letters only (2026-10-21)
+`full_name` (register, profile), `first_name` / `last_name` (profile, admin create-hotel-owner) and the booking's `guest_full_name` are refused with 400 (`{field: ["Names can contain letters, spaces, hyphens, dots and apostrophes only."]}`) when they contain a digit or a symbol. Letters of any alphabet, space, hyphen, dot and the apostrophes ' ʻ ʼ ’ are accepted. Existing stored names are not touched.

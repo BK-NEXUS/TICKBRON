@@ -234,6 +234,18 @@ class AdminUserTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(User.objects.count(), 3)
     
+    def test_hotel_owner_names_take_no_digits(self):
+        self.client.force_authenticate(user=self.super_admin)
+        data = {
+            'email': 'digitowner@example.com', 'first_name': 'Hotel7', 'last_name': 'Owner',
+            'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
+        }
+        response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('first_name', response.data)
+        self.assertFalse(User.objects.filter(email='digitowner@example.com').exists())
+
     def test_password_mismatch_validation(self):
         """Test that password mismatch is validated."""
         self.client.force_authenticate(user=self.super_admin)

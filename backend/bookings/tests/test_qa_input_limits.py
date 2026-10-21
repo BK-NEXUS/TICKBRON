@@ -39,6 +39,13 @@ class BookingTextLimitTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('guest_full_name', response.data['details'])
 
+    def test_guest_name_with_digits_is_refused(self):
+        response = self._book(guest_full_name='Aziz 007')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('guest_full_name', response.data['details'])
+        self.assertFalse(Booking.objects.exists())
+
     def test_cancellation_reason_over_the_limit_is_refused(self):
         booking_id = self._book().data['id']
 

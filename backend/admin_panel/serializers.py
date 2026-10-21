@@ -4,6 +4,7 @@ Serializers for admin API endpoints.
 This module contains serializers for property moderation, user management,
 amenity management, and payment monitoring.
 """
+from common.validators import validate_person_name
 from rest_framework import serializers
 from geography.models import City, Country, Region
 from geography.serializers import REF_FIELDS, check_geography
@@ -125,6 +126,10 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm']
+        extra_kwargs = {
+            'first_name': {'validators': [validate_person_name]},
+            'last_name': {'validators': [validate_person_name]},
+        }
 
     def validate(self, data):
         """Validate password confirmation."""

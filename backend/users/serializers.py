@@ -3,6 +3,7 @@ Serializers for user models.
 
 This module contains serializers for the User model to be used in API endpoints.
 """
+from common.validators import validate_person_name
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
@@ -69,7 +70,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'full_name', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {'full_name': {'required': True}}
+        extra_kwargs = {'full_name': {'required': True, 'validators': [validate_person_name]}}
     
     def validate_email(self, value):
         """Validate email format."""
@@ -141,5 +142,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['full_name', 'first_name', 'last_name', 'whatsapp', 'telegram', 'preferred_contact_method']
-        extra_kwargs = {'full_name': {'required': False}}
+        extra_kwargs = {
+            'full_name': {'required': False, 'validators': [validate_person_name]},
+            'first_name': {'validators': [validate_person_name]},
+            'last_name': {'validators': [validate_person_name]},
+        }
 
