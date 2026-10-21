@@ -2909,3 +2909,12 @@ Owner decision: the frontend sends ids and codes since G5-G7 (checked: the wizar
 - `geography/serializers.py`: `resolve_text_location` and the text handling of `GeographyRefsMixin` removed; `partner/serializers.py`: `country`, `state`, `city` are read-only copies on the property serializer and not input on create; `admin_panel/status.py`: `_alias_q` removed, `country_q` / `region_q` accept only a code / an id / `unspecified` (anything else matches nothing, an empty list).
 - Tests replaced, not weakened: `partner/tests/test_partner_geography.py` `TestLegacyTextLocation` (text creates a property) became `TestTextLocationIsNoLongerInput` (text alone is 400 naming the three refs, text next to ids is ignored, text on an edit changes nothing, the response keeps the copies); `admin_panel/tests/test_status_geo.py` `TestDeprecatedNameKeys` (names as keys return rows) became `TestOnlyCodesAndIdsAreKeys` (names return an empty list, codes in any case, ids and `unspecified` still work). Everything else untouched.
 - `GeographyIndex` stays: the seeds and the data migrations use it. Contract: API_CONTRACT "REMOVED 2026-10-19".
+
+## Owner photo management: backend (2026-10-21)
+Plan `.ai/PLAN_OWNER_PHOTOS.md` (approved). Contract: API_CONTRACT "Owner photo management". READY FOR FRONTEND.
+- `partner/views.py`: `partner_property_photos` (GET list, POST upload) and `partner_property_photo_detail` (PATCH, DELETE); the old `partner_property_photo_upload` and URL name `partner-property-photo-upload` are replaced by `partner-property-photos` (no other caller).
+- `partner/serializers.py` `PartnerPropertyPhotoSerializer`: first photo is the cover, next display_order, random `<uuid>.<ext>` name (done here, so `common.storage.get_media_upload_path` and its test are unchanged), `is_primary=false` refused on update, `photo` ignored on update.
+- `PropertyPhoto.remove()` (model method, no migration): soft delete plus cover hand-over.
+- Tests: `partner/tests/test_partner_photos.py` (18, written first: 13 failed before the code); existing upload tests untouched and passing. Run: partner + properties + common = 581 passed.
+- Found, not fixed: the public property pages pick the cover by `is_primary`; a property whose last photo was deleted simply has none.
+

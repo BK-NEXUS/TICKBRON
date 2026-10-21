@@ -1075,3 +1075,11 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 **CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
 
 Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
+
+## Owner photo management (2026-10-21)
+All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own property only (another owner's property or photo = 404, guest = 403).
+- `GET .../photos/` -> list of `{id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text}` ordered by `display_order, id`; deleted photos are not listed.
+- `POST .../photos/` (multipart: `photo`, `photo_type`, `caption`, `alt_text`) -> 201 with the photo. The first photo of a property becomes the cover (`is_primary` true); later ones go to the end (`display_order` = highest + 1). The stored file name is `<uuid>.<ext>`, never the client's. Limits unchanged (type/size checks, 40 megapixels, 50 photos; errors are the plain serializer errors, 400).
+- `PATCH .../photos/{photo_id}/` JSON `caption`, `alt_text`, `photo_type`, `is_primary: true` (becomes the cover, the old cover is demoted). `is_primary: false` -> 400 (make another photo the cover). The image file itself cannot be replaced (delete and upload again).
+- `DELETE .../photos/{photo_id}/` -> 204, soft delete; a deleted cover passes to the first remaining photo (none left = no cover).
+
