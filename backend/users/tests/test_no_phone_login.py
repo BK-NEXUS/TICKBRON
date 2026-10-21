@@ -5,6 +5,7 @@ takes a phone number for an account. An old number stays on the account, read-on
 import pytest
 from rest_framework.test import APIClient
 
+from partner.tests.geography_helpers import uzbek_location
 from users.models import User
 
 REMOVED_ENDPOINTS = [
@@ -75,6 +76,7 @@ class TestPhoneIsNotAccepted:
         response = client.post('/api/v1/admin-panel/users/create-hotel-owner/', {
             'email': 'owner@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
             'phone_number': OLD_NUMBER, 'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
+            **uzbek_location('Tashkent'),  # a new account needs a place
         }, format='json')
 
         assert response.status_code == 201, response.data
