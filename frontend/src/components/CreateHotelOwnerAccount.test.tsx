@@ -2,9 +2,36 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { CreateHotelOwnerAccount } from './CreateHotelOwnerAccount'
 import { adminAdapter } from '../adapters/adminAdapter'
+import { geographyAdapter } from '../adapters/geographyAdapter'
 
 // Mock adminAdapter
 vi.mock('../adapters/adminAdapter')
+
+// The account needs a place (country > region > city) from the Geography dictionary. The lists never
+// answer unless a test asks for them, so the tests that only look at the form end with nothing pending.
+vi.mock('../adapters/geographyAdapter', async importOriginal => ({
+  ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
+  geographyAdapter: {
+    getCountries: vi.fn(() => new Promise(() => {})),
+    getRegions: vi.fn(() => new Promise(() => {})),
+    getCities: vi.fn(() => new Promise(() => {})),
+  },
+}))
+
+function answerGeography() {
+  vi.mocked(geographyAdapter.getCountries).mockResolvedValue({ data: [{ id: 1, code: 'UZ', currency: 'UZS', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotel_count: 1, image_url: null }], error: null })
+  vi.mocked(geographyAdapter.getRegions).mockResolvedValue({ data: [{ id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1, image_url: null }], error: null })
+  vi.mocked(geographyAdapter.getCities).mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null })
+}
+
+async function pickPlace() {
+  await screen.findByRole('option', { name: 'Uzbekistan' })
+  fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
+  await screen.findByRole('option', { name: 'Tashkent' })
+  fireEvent.change(screen.getByLabelText('Region'), { target: { value: '10' } })
+  await screen.findByRole('option', { name: 'Chilanzar' })
+  fireEvent.change(screen.getByLabelText('City'), { target: { value: '100' } })
+}
 
 describe('CreateHotelOwnerAccount', () => {
   const mockOnSuccess = vi.fn()
@@ -12,6 +39,9 @@ describe('CreateHotelOwnerAccount', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    for (const list of [geographyAdapter.getCountries, geographyAdapter.getRegions, geographyAdapter.getCities]) {
+      vi.mocked(list).mockImplementation(() => new Promise(() => {}))
+    }
   })
 
   it('should render the form', () => {
@@ -134,6 +164,7 @@ describe('CreateHotelOwnerAccount', () => {
       error: null,
     })
 
+    answerGeography()
     render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
 
     const emailInput = screen.getByLabelText('Email Address:')
@@ -151,6 +182,7 @@ describe('CreateHotelOwnerAccount', () => {
     const confirmPasswordInput = screen.getByLabelText('Confirm Password:')
     fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
 
+    await pickPlace()
     const submitButton = screen.getByRole('button', { name: /Create Account/i })
     fireEvent.click(submitButton)
 
@@ -161,6 +193,9 @@ describe('CreateHotelOwnerAccount', () => {
         last_name: 'Doe',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
+        country_ref: 1,
+        region_ref: 10,
+        city_ref: 100,
       })
     })
 
@@ -186,6 +221,7 @@ describe('CreateHotelOwnerAccount', () => {
       error: null,
     })
 
+    answerGeography()
     render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
 
     // Fill form
@@ -204,6 +240,7 @@ describe('CreateHotelOwnerAccount', () => {
     const confirmPasswordInput = screen.getByLabelText('Confirm Password:')
     fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
 
+    await pickPlace()
     const submitButton = screen.getByRole('button', { name: /Create Account/i })
     fireEvent.click(submitButton)
 
@@ -222,6 +259,7 @@ describe('CreateHotelOwnerAccount', () => {
       error: 'Super-admin required',
     })
 
+    answerGeography()
     render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
 
     // Fill form
@@ -240,6 +278,7 @@ describe('CreateHotelOwnerAccount', () => {
     const confirmPasswordInput = screen.getByLabelText('Confirm Password:')
     fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
 
+    await pickPlace()
     const submitButton = screen.getByRole('button', { name: /Create Account/i })
     fireEvent.click(submitButton)
 
@@ -274,6 +313,7 @@ describe('CreateHotelOwnerAccount', () => {
       error: null,
     })
 
+    answerGeography()
     render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
 
     // Fill and submit first form
@@ -292,6 +332,7 @@ describe('CreateHotelOwnerAccount', () => {
     const confirmPasswordInput = screen.getByLabelText('Confirm Password:')
     fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
 
+    await pickPlace()
     const submitButton = screen.getByRole('button', { name: /Create Account/i })
     fireEvent.click(submitButton)
 

@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from bookings.models import Booking
+from partner.models import OwnerPlace
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
@@ -370,6 +371,19 @@ def partner_property_photo_upload(request, property_id):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([IsHotelOwner])
+def partner_assigned_place(request):
+    """The place the super admin gave this account: {country_ref, region_ref, city_ref}, all null when none."""
+    place = OwnerPlace.objects.filter(owner=request.user).first()
+    return Response({
+        'country_ref': place.country_id if place else None,
+        'region_ref': place.region_id if place else None,
+        'city_ref': place.city_id if place else None,
+    })
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

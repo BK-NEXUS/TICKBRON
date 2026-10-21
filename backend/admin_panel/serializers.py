@@ -4,7 +4,9 @@ Serializers for admin API endpoints.
 This module contains serializers for property moderation, user management,
 amenity management, and payment monitoring.
 """
+from django.db import transaction
 from rest_framework import serializers
+from partner.models import OwnerPlace
 from geography.models import City, Country, Region
 from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
@@ -121,10 +123,15 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
+    # Where the owner's hotels will appear: all three are required and must fit together
+    country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), write_only=True)
+    region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
+    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm']
+        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm',
+                  'country_ref', 'region_ref', 'city_ref']
 
     def validate(self, data):
         """Validate password confirmation."""
@@ -133,14 +140,22 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
                 'password_confirm': 'Passwords do not match'
             })
         validate_new_password(data)
+        errors = check_geography(data)
+        if errors:
+            raise serializers.ValidationError(errors)
         return data
-    
+
+    @transaction.atomic
     def create(self, validated_data):
-        """Create user with hotel-owner role."""
+        """Create user with hotel-owner role, and the place of the account."""
         from permissions.models import Role
-        
-        # Remove password_confirm from validated_data
+
         validated_data.pop('password_confirm')
+        place = {
+            'country': validated_data.pop('country_ref'),
+            'region': validated_data.pop('region_ref'),
+            'city': validated_data.pop('city_ref'),
+        }
         
         # Get or create hotel-owner role
         hotel_owner_role, _ = Role.objects.get_or_create(
@@ -159,7 +174,8 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             role=hotel_owner_role
         )
-        
+        OwnerPlace.objects.create(owner=user, **place)
+
         return user
 
 

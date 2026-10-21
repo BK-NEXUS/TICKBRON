@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
+from partner.tests.geography_helpers import uzbek_location
 from properties.models import Property, PropertyType, Amenity, AmenityCategory, RoomType, RatePlan
 from permissions.models import Role
 from bookings.models import Booking, BookingItem
@@ -208,7 +209,8 @@ class AdminUserTests(TestCase):
             'last_name': 'Owner',
             'phone_number': '+998901234567',
             'password': 'Owner#Secret2026',
-            'password_confirm': 'Owner#Secret2026'
+            'password_confirm': 'Owner#Secret2026',
+            **uzbek_location('Tashkent'),  # a new account needs a place
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
@@ -242,7 +244,8 @@ class AdminUserTests(TestCase):
             'first_name': 'Hotel',
             'last_name': 'Owner',
             'password': 'testpassword123',
-            'password_confirm': 'differentpassword'
+            'password_confirm': 'differentpassword',
+            **uzbek_location('Tashkent'),  # a new account needs a place
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
@@ -257,7 +260,8 @@ class AdminUserTests(TestCase):
             'first_name': 'Hotel',
             'last_name': 'Owner',
             'password': 'Owner#Secret2026',
-            'password_confirm': 'Owner#Secret2026'
+            'password_confirm': 'Owner#Secret2026',
+            **uzbek_location('Tashkent'),  # a new account needs a place
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         

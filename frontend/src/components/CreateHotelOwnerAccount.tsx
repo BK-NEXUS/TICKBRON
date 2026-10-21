@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
+import { GeographyPicker, type GeographyValue } from './GeographyPicker'
 import { generatePassword as randomPassword } from '../utils/generatePassword'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
@@ -8,9 +9,12 @@ interface CreateHotelOwnerAccountProps {
   onCancel?: () => void
 }
 
+const NO_PLACE: GeographyValue = { country_ref: null, region_ref: null, city_ref: null }
+
 export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwnerAccountProps) {
   const { t } = useI18n()
-  const [formData, setFormData] = useState<CreateHotelOwnerRequest>({
+  const [place, setPlace] = useState<GeographyValue>(NO_PLACE)
+  const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>>({
     email: '',
     first_name: '',
     last_name: '',
@@ -32,6 +36,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   }
 
   const validateForm = (): string | null => {
+    if (place.country_ref === null || place.region_ref === null || place.city_ref === null) return t('admin.errPlace')
     if (!formData.email.trim()) return t('admin.errEmail')
     if (!formData.first_name.trim()) return t('admin.errFirstName')
     if (!formData.last_name.trim()) return t('admin.errLastName')
@@ -58,7 +63,12 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     setLoading(true)
 
     try {
-      const response = await adminAdapter.createHotelOwner(formData)
+      const response = await adminAdapter.createHotelOwner({
+        ...formData,
+        country_ref: place.country_ref as number,
+        region_ref: place.region_ref as number,
+        city_ref: place.city_ref as number,
+      })
       
       if (response.error) {
         setError(response.error)
@@ -83,6 +93,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
         password: '',
       password_confirm: '',
     })
+    setPlace(NO_PLACE)
     setError(null)
     setCreatedCredentials(null)
   }
@@ -243,6 +254,12 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               minLength={12}
             />
           </div>
+
+          <fieldset className="form-group create-owner-place">
+            <legend>{t('admin.whereHotelAppears')}</legend>
+            <GeographyPicker value={place} required disabled={loading}
+              onChange={next => { setPlace(next); setError(null) }} />
+          </fieldset>
 
           <div className="form-actions">
             <button

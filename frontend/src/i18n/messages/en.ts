@@ -1677,6 +1677,9 @@ export const en = {
   'home.whereToLoading': "Loading destinations...",
   'home.whereToError': "Could not load destinations.",
   'home.whereToNoRegions': "No regions here yet.",
+  'admin.whereHotelAppears': "Where will the hotel appear?",
+  'admin.errPlace': "Choose where the hotel will appear: country, region and city.",
+  'partner.placeLocked': "The place of your hotels is set by the administrator.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

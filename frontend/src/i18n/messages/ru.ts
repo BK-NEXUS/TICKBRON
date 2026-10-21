@@ -1711,4 +1711,7 @@ export const ru: Catalog = {
   'home.whereToLoading': "Загрузка направлений...",
   'home.whereToError': "Не удалось загрузить направления.",
   'home.whereToNoRegions': "Регионов пока нет.",
+  'admin.whereHotelAppears': "Где будет отель?",
+  'admin.errPlace': "Выберите, где будет отель: страна, регион и город.",
+  'partner.placeLocked': "Место ваших отелей задано администратором.",
 }

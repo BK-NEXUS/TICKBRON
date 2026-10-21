@@ -9,6 +9,7 @@ stored (no names, notes, reasons or e-mails).
 from decimal import Decimal
 
 import pytest
+from partner.tests.geography_helpers import uzbek_location
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
@@ -95,6 +96,7 @@ class TestHotelOwnerCreation:
         response = _as(superadmin).post(f'{A}/users/create-hotel-owner/', {
             'email': 'newowner@example.com', 'first_name': 'New', 'last_name': 'Owner',
             'password': 'Str0ng#Pass-2026!', 'password_confirm': 'Str0ng#Pass-2026!',
+            **uzbek_location('Tashkent'),  # a new account needs a place
         }, format='json')
 
         assert response.status_code == 201, response.data

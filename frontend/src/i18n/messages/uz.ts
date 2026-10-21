@@ -1671,4 +1671,7 @@ export const uz: Catalog = {
   'home.whereToLoading': "Yoʻnalishlar yuklanmoqda...",
   'home.whereToError': "Yoʻnalishlarni yuklab boʻlmadi.",
   'home.whereToNoRegions': "Hozircha viloyatlar yoʻq.",
+  'admin.whereHotelAppears': "Mehmonxona qayerda chiqadi?",
+  'admin.errPlace': "Mehmonxona qayerda chiqishini tanlang: mamlakat, viloyat va shahar.",
+  'partner.placeLocked': "Mehmonxonalaringiz joyini administrator belgilagan.",
 }

@@ -14,6 +14,7 @@ from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import image_upload_error
 from geography.serializers import GeographyRefsMixin
+from partner.models import OwnerPlace
 from properties.models import (
     Property, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
 )
@@ -79,7 +80,24 @@ class ChildCurrencyMixin:
         return attrs
 
 
-class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
+class AssignedPlaceMixin:
+    """An owner whose account has a place (set by the super admin) creates hotels there and cannot move them."""
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        place = OwnerPlace.objects.filter(owner=self.context['request'].user).first()
+        if place is not None:
+            assigned = {'country_ref': place.country_id, 'region_ref': place.region_id, 'city_ref': place.city_id}
+            wrong = {
+                field: 'Your hotels are placed by the administrator and cannot be moved.'
+                for field, row_id in assigned.items() if field in attrs and attrs[field].pk != row_id
+            }
+            if wrong:
+                raise serializers.ValidationError(wrong)
+        return attrs
+
+
+class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
     
@@ -111,7 +129,7 @@ class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, seria
         return obj.display_name()
 
 
-class PartnerPropertyCreateSerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
+class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for creating new properties by hotel-owners.
     

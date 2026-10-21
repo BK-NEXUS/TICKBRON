@@ -1081,3 +1081,9 @@ Not yet (next slices): Status in four currencies on the owner/admin screens beyo
 - Admin `/admin-panel/geography/countries/` and `.../regions/`: output has `image_url`; input `image` is accepted as multipart (JSON still works for edits without a picture). `image` is REQUIRED when creating a country or region (400 `{image: ...}`), optional on edit (no `image` = the picture stays), and can be replaced but not cleared. Checks: jpg/jpeg/png/gif/webp, 10 MB, 40 megapixels, must decode as an image. Stored name is random (`geography/countries|regions/<uuid>.<ext>`); the old file is deleted on replace and on delete.
 - Multipart note: `is_active` now defaults to true when a form omits it (a form without the checkbox used to mean false).
 - Existing rows (seeded countries, regions) have `image_url: null` until an admin edits them.
+
+## Place of a hotel-owner account (2026-10-21, plan PLAN_GEO_IMAGES.md step 3)
+- `POST /admin-panel/users/create-hotel-owner/` (super admin): `country_ref`, `region_ref`, `city_ref` (Geography ids) are now REQUIRED besides the old fields. They must fit together and be active (same checks as a property: 400 `{field: ...}`). The account and its place (`partner.OwnerPlace`, new table) are created in one transaction; any 400 creates nothing.
+- `GET /partner/assigned-place/` (hotel owner): `{country_ref, region_ref, city_ref}` of the place, all `null` when the account has none (older accounts).
+- An owner WITH a place: `POST /partner/properties/` and `PATCH /partner/properties/{id}/` refuse a `country_ref`/`region_ref`/`city_ref` that differs from it (400 `{field: "Your hotels are placed by the administrator and cannot be moved."}`); sending the same ids is fine. Owners without a place behave as before.
+- A geography row used by an account's place cannot be deleted (409 from the Geography screen), only hidden.
