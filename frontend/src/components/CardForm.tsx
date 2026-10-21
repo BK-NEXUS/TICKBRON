@@ -5,6 +5,7 @@ import { FlaskConical } from 'lucide-react'
 import {
   formatCardNumber, formatExpiry, isCardNumberValid, isCardholderValid, isCvvValid, isExpiryValid,
 } from '../utils/card'
+import { cleanPersonName } from '../utils/inputFilters'
 
 type Field = 'number' | 'expiry' | 'cvv' | 'holder'
 
@@ -113,7 +114,7 @@ export function CardForm({ onValidityChange, disabled }: CardFormProps) {
           type="text"
           autoComplete="cc-name"
           placeholder={t('card.placeholderHolder')}
-          onChange={(e) => set('holder', e.target.value)}
+          onChange={(e) => set('holder', cleanPersonName(e.target.value))}
         />
         {error('holder')}
       </div>

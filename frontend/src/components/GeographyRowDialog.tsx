@@ -1,3 +1,4 @@
+import { cleanPlaceName } from '../utils/inputFilters'
 import { FormEvent, useId, useState } from 'react'
 import { useI18n } from '../i18n/I18nContext'
 import { adminGeographyAdapter, type AdminGeographyRow, type GeographyKind } from '../adapters/adminGeographyAdapter'
@@ -55,12 +56,12 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
             <div className="form-group">
               <label htmlFor={`${id}-code`}>{t('geoAdmin.field.code')}</label>
               <input id={`${id}-code`} className="form-input" maxLength={2} required value={code}
-                onChange={e => setCode(e.target.value)} />
+                onChange={e => setCode(e.target.value.replace(/[^a-zA-Z]/g, ''))} />
             </div>
             <div className="form-group">
               <label htmlFor={`${id}-currency`}>{t('geoAdmin.field.currency')}</label>
               <input id={`${id}-currency`} className="form-input" maxLength={3} required value={currency}
-                onChange={e => setCurrency(e.target.value)} />
+                onChange={e => setCurrency(e.target.value.replace(/[^a-zA-Z]/g, ''))} />
             </div>
           </>
         )}
@@ -68,7 +69,7 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
           <div className="form-group" key={field}>
             <label htmlFor={`${id}-${field}`}>{t(`geoAdmin.field.${field}`)}</label>
             <input id={`${id}-${field}`} className="form-input" maxLength={100} required value={names[field]}
-              onChange={e => setNames(prev => ({ ...prev, [field]: e.target.value }))} />
+              onChange={e => setNames(prev => ({ ...prev, [field]: cleanPlaceName(e.target.value) }))} />
           </div>
         ))}
         {error && <p role="alert" className="geography-picker-error">{error}</p>}

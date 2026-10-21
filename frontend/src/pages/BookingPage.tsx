@@ -1,3 +1,4 @@
+import { cleanField } from '../utils/inputFilters'
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { chargeOf } from '../utils/charge'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
@@ -225,7 +226,7 @@ export function BookingPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setField(name, value)
+    setField(name, cleanField(name, value))
   }
 
   const setField = (name: string, value: string) => {

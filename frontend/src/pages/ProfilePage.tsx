@@ -1,3 +1,4 @@
+import { cleanField } from '../utils/inputFilters'
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Lock, Calendar, Heart, House } from 'lucide-react'
@@ -43,7 +44,7 @@ export function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setEditForm(prev => ({ ...prev, [name]: value }))
+    setEditForm(prev => ({ ...prev, [name]: cleanField(name, value) }))
   }
 
   const handleSave = async (e: React.FormEvent) => {

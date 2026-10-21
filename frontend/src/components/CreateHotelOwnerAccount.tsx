@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
+import { cleanField } from '../utils/inputFilters'
 import { generatePassword as randomPassword } from '../utils/generatePassword'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
@@ -28,7 +29,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    setFormData({ ...formData, [name]: cleanField(name, value) })
   }
 
   const validateForm = (): string | null => {

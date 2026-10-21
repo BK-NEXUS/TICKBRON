@@ -1,3 +1,4 @@
+import { cleanField } from '../utils/inputFilters'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -32,7 +33,7 @@ export function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: cleanField(e.target.name, e.target.value),
     }))
   }
 
