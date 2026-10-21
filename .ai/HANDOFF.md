@@ -2909,3 +2909,13 @@ Owner decision: the frontend sends ids and codes since G5-G7 (checked: the wizar
 - `geography/serializers.py`: `resolve_text_location` and the text handling of `GeographyRefsMixin` removed; `partner/serializers.py`: `country`, `state`, `city` are read-only copies on the property serializer and not input on create; `admin_panel/status.py`: `_alias_q` removed, `country_q` / `region_q` accept only a code / an id / `unspecified` (anything else matches nothing, an empty list).
 - Tests replaced, not weakened: `partner/tests/test_partner_geography.py` `TestLegacyTextLocation` (text creates a property) became `TestTextLocationIsNoLongerInput` (text alone is 400 naming the three refs, text next to ids is ignored, text on an edit changes nothing, the response keeps the copies); `admin_panel/tests/test_status_geo.py` `TestDeprecatedNameKeys` (names as keys return rows) became `TestOnlyCodesAndIdsAreKeys` (names return an empty list, codes in any case, ids and `unspecified` still work). Everything else untouched.
 - `GeographyIndex` stays: the seeds and the data migrations use it. Contract: API_CONTRACT "REMOVED 2026-10-19".
+
+## Country and region pictures: backend (2026-10-21)
+Plan `.ai/PLAN_GEO_IMAGES.md` step 1 (approved). Contract: API_CONTRACT "Pictures of countries and regions". READY FOR FRONTEND (Geography dialog picture picker, then the home "Where to?").
+- Migration `geography/0004_country_region_images` (two nullable ImageFields, additive, reversible); dev DB dumped first (`pg_dump -Fc` in the scratchpad).
+- `common/storage.image_upload_error` (type/size + 40 megapixels) is now shared by the hotel photos (`partner/serializers.py`, behavior unchanged) and the geography serializers.
+- Admin viewsets accept multipart; `_ImageMixin` (required on create, old file removed on replace), file removed on delete (not when the delete is refused with 409).
+- Found while testing and fixed: a multipart form that leaves out `is_active` was read as false by DRF (a new country would have been created hidden); both serializers now default it to true.
+- Tests: `geography/tests/test_images.py` (21; 13 of the first 15 failed before the code). Arrangement of three existing tests extended with a picture because a new country/region now needs one: `geography/tests/test_admin_api.py` (2: create country, create region) and `admin_panel/tests/test_audit_admin_actions.py` (1); their assertions are unchanged.
+- Not done yet: frontend (steps 1-frontend, 2, 3 of the plan).
+

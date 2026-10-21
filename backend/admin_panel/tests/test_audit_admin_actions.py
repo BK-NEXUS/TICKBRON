@@ -140,12 +140,16 @@ class TestAmenities:
 
 @pytest.mark.django_db
 class TestGeography:
-    def test_country_create_update_delete_and_reorder_are_logged_with_the_level(self, superadmin):
+    def test_country_create_update_delete_and_reorder_are_logged_with_the_level(self, superadmin, settings, tmp_path):
+        from geography.tests.test_images import picture
+
+        settings.MEDIA_ROOT = tmp_path  # a new country needs a picture
         client = _as(superadmin)
 
         created = client.post(f'{A}/geography/countries/', {
             'code': 'ZZ', 'currency': 'USD', 'name_en': 'Zedland', 'name_uz': 'Zedland', 'name_ru': 'Зедландия',
-        }, format='json')
+            'image': picture(),
+        }, format='multipart')
         assert created.status_code == 201, created.data
         country_id = created.data['id']
         assert _only_row('geography_create').details == {'level': 'country', 'object_id': country_id}

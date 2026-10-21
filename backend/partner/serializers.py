@@ -12,7 +12,7 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
-from common.storage import validate_image_file
+from common.storage import image_upload_error
 from geography.serializers import GeographyRefsMixin
 from properties.models import (
     Property, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
@@ -20,7 +20,6 @@ from properties.models import (
 
 
 # Upload limits: 40 megapixels per photo, 50 photos per property
-MAX_PHOTO_PIXELS = 40_000_000
 MAX_PHOTOS_PER_PROPERTY = 50
 
 
@@ -482,13 +481,9 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
         Enforce the size/extension/content-type rules from model.clean() here too,
         since DRF's create/update flow never calls full_clean().
         """
-        is_valid, error_message = validate_image_file(value)
-        if not is_valid:
+        error_message = image_upload_error(value)
+        if error_message:
             raise serializers.ValidationError(error_message)
-        width, height = value.image.size
-        if width * height > MAX_PHOTO_PIXELS:
-            # A tiny file can expand to gigabytes of pixels when decoded
-            raise serializers.ValidationError('Image dimensions are too large.')
         return value
 
     def validate_property(self, value):
