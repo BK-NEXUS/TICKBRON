@@ -1705,4 +1705,10 @@ export const ru: Catalog = {
   'geoAdmin.imageOf': "Картинка: {name}",
   'geoAdmin.noImage': "Нет картинки",
   'geoAdmin.imagePreview': "Предпросмотр",
+  'home.whereTo': "Куда поедем?",
+  'home.whereToHint': "Выберите страну, затем регион.",
+  'home.allCountries': "Все страны",
+  'home.whereToLoading': "Загрузка направлений...",
+  'home.whereToError': "Не удалось загрузить направления.",
+  'home.whereToNoRegions': "Регионов пока нет.",
 }

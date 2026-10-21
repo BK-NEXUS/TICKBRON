@@ -1671,6 +1671,12 @@ export const en = {
   'geoAdmin.imageOf': "Picture of {name}",
   'geoAdmin.noImage': "No picture",
   'geoAdmin.imagePreview': "Preview",
+  'home.whereTo': "Where to?",
+  'home.whereToHint': "Choose a country, then a region.",
+  'home.allCountries': "All countries",
+  'home.whereToLoading': "Loading destinations...",
+  'home.whereToError': "Could not load destinations.",
+  'home.whereToNoRegions': "No regions here yet.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

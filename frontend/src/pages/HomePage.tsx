@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
 import { HomeHotelSection } from '../components/HomeHotelSection'
 import { HomePropertyTypes } from '../components/HomePropertyTypes'
+import { HomeWhereTo } from '../components/HomeWhereTo'
 import { PromoCarousel } from '../components/PromoCarousel'
 import { SearchForm } from '../components/SearchForm'
 import { useI18n } from '../i18n/I18nContext'
@@ -36,6 +37,8 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeWhereTo />
 
       <div className="container home-promo">
         <PromoCarousel items={promoted ?? []} loading={promoted === null} />

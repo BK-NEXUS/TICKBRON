@@ -1665,4 +1665,10 @@ export const uz: Catalog = {
   'geoAdmin.imageOf': "{name} rasmi",
   'geoAdmin.noImage': "Rasm yoʻq",
   'geoAdmin.imagePreview': "Koʻrinish",
+  'home.whereTo': "Qayerga boramiz?",
+  'home.whereToHint': "Avval mamlakatni, keyin viloyatni tanlang.",
+  'home.allCountries': "Barcha mamlakatlar",
+  'home.whereToLoading': "Yoʻnalishlar yuklanmoqda...",
+  'home.whereToError': "Yoʻnalishlarni yuklab boʻlmadi.",
+  'home.whereToNoRegions': "Hozircha viloyatlar yoʻq.",
 }

@@ -2925,3 +2925,10 @@ Plan step 1 frontend. The add/edit dialog of a country and a region has a "Pictu
 - Texts `geoAdmin.*` (picture) in uz/ru/en; native-speaker review of uz/ru still open.
 - Not done yet: home "Where to?" (step 2) and the admin hotel account with a place (step 3).
 
+## Home "Where to?" (2026-10-21)
+Plan step 2. `components/HomeWhereTo.tsx` under the hero search on the home page: country cards (picture, name in the page language, hotel count), a country opens its region cards, a region links to `/search?destination=<name in the page language>`; "All countries" goes back. Loading, error (with retry, also for the regions) and empty ("No regions here yet."; the whole section is hidden while there is no active country) states; phone width = one scrolling row, from 900 px a grid. A card without a picture shows a neutral icon.
+- Two facts to know: (1) the plan said the search "already filters by region id"; it does not: it matches the typed place against the uz/ru/en names of city, region and country, so the link carries the region name (same mechanism as `DestinationsPage`); two regions with the same name in different countries would find both. (2) The section lists every ACTIVE country and region, also those with 0 hotels (an admin who just added a country sees it at once; the card says "0 properties"); change `HomeWhereTo` to filter `hotel_count > 0` if empty places should be hidden.
+- Tests: `HomeWhereTo.test.tsx` (8), `HomePage.test.tsx` (+1; the geography adapter is mocked there).
+- Real browser (Chromium, dev stack, admin demo account): the full flow worked: adding a country without a picture is refused, with a picture it is created; a region was added under it; the home page then showed both and the region link opened the search; no horizontal overflow at 1440 and 390 px (media answered from disk, Django does not serve /media in dev).
+- Texts `home.whereTo*` in uz/ru/en.
+
