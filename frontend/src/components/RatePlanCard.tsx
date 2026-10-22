@@ -1,7 +1,6 @@
 import { Check } from 'lucide-react'
 import { RatePlan } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
-import { PlanCancellationNote } from './CancellationNote'
 import { priceIn } from '../utils/price'
 
 interface RatePlanCardProps {
@@ -82,11 +81,6 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
         <div className="rate-plan-card-detail">
           <span className="rate-plan-card-detail-label">{t('rate.cancellation')}</span>
           <span className="rate-plan-card-detail-value">{ratePlan.cancellation_policy}</span>
-          <PlanCancellationNote
-            freeCancellation={ratePlan.free_cancellation}
-            freeCancelHours={ratePlan.free_cancel_hours}
-            refundPercent={ratePlan.cancel_refund_percent}
-          />
         </div>
 
         {ratePlan.deposit_required && ratePlan.deposit_percentage && (

@@ -352,10 +352,7 @@ def property_quote(request, property_id):
     """
     from django.core.exceptions import ValidationError as DjangoValidationError
     from properties.models import RatePlan
-    from bookings.cancellation import quote_terms
-    from bookings.noshow import refund_disclosure
     from bookings.pricing import quote_stay
-    from django.conf import settings
 
     params = QuoteParamsSerializer(data=request.query_params)
     if not params.is_valid():
@@ -419,8 +416,4 @@ def property_quote(request, property_id):
         'nights': [{'date': night, 'price': f'{price:.2f}'} for night, price in nights],
         'total_price': f'{total:.2f}',
         **uzs,
-        # R12: what the guest is told before paying (the booking stores this percent at creation)
-        **refund_disclosure(settings.NO_SHOW_REFUND_PERCENT, uzs['uzs_total']),
-        # R11: what the guest is told about cancelling these dates (the booking stores the terms at creation)
-        'cancellation_terms': quote_terms(rate_plan, data['check_in']),
     }, status=status.HTTP_200_OK)

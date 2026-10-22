@@ -42,13 +42,11 @@ const TEXT_KEYS = textKeys({
   rooms: 'status.rooms2',
   statusCol: 'status.statusCol',
   total: 'booking.total',
-  paid: 'status.paid',
-  refunded: 'status.refunded',
   charged: 'status.charged',
 })
 
 const NUMERIC_HOTEL_COLUMNS = new Set([2, 3, 4, 5, 6])
-const NUMERIC_HISTORY_COLUMNS = new Set([4, 5, 6, 8, 9, 10])
+const NUMERIC_HISTORY_COLUMNS = new Set([4, 5, 6, 8])
 
 const statusText = (status: string) => status.replace(/_/g, ' ')
 
@@ -156,7 +154,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
                 <table className="customers-table status-table" aria-label={TEXT.historyTitle}>
                   <thead>
                     <tr>
-                      {[TEXT.reference, TEXT.hotel, TEXT.checkIn, TEXT.checkOut, TEXT.nights, TEXT.rooms, TEXT.guests, TEXT.statusCol, TEXT.total, TEXT.paid, TEXT.refunded].map((header, index) => (
+                      {[TEXT.reference, TEXT.hotel, TEXT.checkIn, TEXT.checkOut, TEXT.nights, TEXT.rooms, TEXT.guests, TEXT.statusCol, TEXT.total].map((header, index) => (
                         <th key={header} scope="col" className={NUMERIC_HISTORY_COLUMNS.has(index) ? 'status-cell--numeric' : undefined}>
                           {header}
                         </th>
@@ -182,8 +180,6 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
                             </span>
                           )}
                         </td>
-                        <td className="status-cell--numeric">{formatMoneyList(booking.paid)}</td>
-                        <td className="status-cell--numeric">{formatMoneyList(booking.refunded)}</td>
                       </tr>
                     ))}
                   </tbody>

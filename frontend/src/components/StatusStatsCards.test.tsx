@@ -37,15 +37,13 @@ describe('StatusStatsCards', () => {
   it('hides fully refunded, no-show and reported no-show while they are zero', () => {
     render(<StatusStatsCards totals={TOTALS} caption="All time" />)
 
-    expect(screen.queryByText('Fully refunded')).not.toBeInTheDocument()
     expect(screen.queryByText('No-show')).not.toBeInTheDocument()
     expect(screen.queryByText('No-show reported')).not.toBeInTheDocument()
   })
 
   it('shows them when non-zero', () => {
-    render(<StatusStatsCards totals={{ ...TOTALS, fully_refunded: 2, no_show: 3, no_show_reported: 1 }} caption="All time" />)
+    render(<StatusStatsCards totals={{ ...TOTALS, no_show: 3, no_show_reported: 1 }} caption="All time" />)
 
-    expect(within(cardOf('Fully refunded')).getByText('2')).toBeInTheDocument()
     expect(within(cardOf('No-show')).getByText('3')).toBeInTheDocument()
     expect(within(cardOf('No-show reported')).getByText('1')).toBeInTheDocument()
   })

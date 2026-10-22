@@ -1,17 +1,13 @@
 """
-R12 phase 3: Status numbers fed by the no-show workflow. no_show, no_show_reported and
-fully_refunded now hold real values; an approved no-show is not a guest who stayed and its
-revenue is paid minus refunded.
+R12 phase 3: Status numbers fed by the no-show workflow. no_show and no_show_reported hold
+real values; an approved no-show is not a guest who stayed and is not revenue.
 """
 from datetime import timedelta
-from decimal import Decimal
 
 import pytest
 
 from bookings import metrics
-from bookings.models import Booking
 from bookings.tests.r12b_helpers import A, COMMENT, DECISION, P, client_for, make_stay, past_stay, report_url, world  # noqa: F401
-from payments.models import Refund
 
 
 def report(world, booking):
@@ -91,43 +87,11 @@ class TestApprovedNoShow:
         assert (t['bookings'], t['stayed'], t['guests'], t['nights']) == (1, 1, 1, 2)
         assert t['booking_status']['no_show'] == 1 and t['booking_status']['no_show_reported'] == 0
 
-    def test_revenue_is_what_was_paid_minus_what_was_refunded(self, world, django_capture_on_commit_callbacks):
-        booking = past_stay(world)                     # paid 2 354 590, refund 50 % = 1 177 295
-        decide(world, report(world, booking), 'approve', django_capture_on_commit_callbacks)
-        assert Refund.objects.get().status == 'succeeded'
-        assert money(totals(world)['revenue']) == {'UZS': '1177295.00'}
-
-    def test_pending_or_failed_refund_does_not_reduce_revenue(self, world, settings, django_capture_on_commit_callbacks):
-        settings.PAYMENT_TEST_MODE = False              # real mode: the refund waits for staff (needs_manual)
+    def test_an_approved_no_show_is_not_revenue(self, world, django_capture_on_commit_callbacks):
+        past_stay(world, status='completed')
         booking = past_stay(world)
         decide(world, report(world, booking), 'approve', django_capture_on_commit_callbacks)
-        assert Refund.objects.get().status == 'needs_manual'
         assert money(totals(world)['revenue']) == {'UZS': '2354590.00'}
-        assert totals(world)['fully_refunded'] == 0
-
-    def test_percent_zero_keeps_all_the_money(self, world, django_capture_on_commit_callbacks):
-        booking = past_stay(world, percent=0)
-        decide(world, report(world, booking), 'approve', django_capture_on_commit_callbacks)
-        t = totals(world)
-        assert t['no_show'] == 1 and money(t['revenue']) == {'UZS': '2354590.00'}
-
-    def test_a_full_refund_makes_it_fully_refunded_not_a_no_show(self, world, django_capture_on_commit_callbacks):
-        booking = past_stay(world, percent=100)
-        decide(world, report(world, booking), 'approve', django_capture_on_commit_callbacks)
-        t = totals(world)
-        assert (t['no_show'], t['fully_refunded']) == (0, 1)
-        assert t['revenue'] == []
-        assert Booking.objects.get(pk=booking.pk).status == 'no_show'
-
-    def test_fully_refunded_counts_bookings_refunded_in_full_by_staff(self, world):
-        booking = past_stay(world, status='completed')
-        from payments.models import PaymentTransaction
-        payment = PaymentTransaction.objects.get()
-        Refund.objects.create(payment=payment, booking=booking, amount=payment.amount, currency='UZS',
-                              reason='staff', status='succeeded', idempotency_key='full-1')
-        PaymentTransaction.objects.filter(pk=payment.pk).update(status='refunded')
-        t = totals(world)
-        assert (t['bookings'], t['stayed'], t['fully_refunded']) == (0, 0, 1)
 
     def test_reversing_the_approval_moves_the_booking_back_into_the_stay_numbers(
             self, world, django_capture_on_commit_callbacks):
@@ -141,8 +105,6 @@ class TestApprovedNoShow:
         assert response.status_code == 200
         t = totals(world)
         assert (t['no_show'], t['bookings'], t['stayed']) == (0, 1, 1)
-        # what was refunded stays refunded: revenue is paid minus refunded
-        assert money(t['revenue']) == {'UZS': '1177295.00'}
 
 
 @pytest.mark.django_db
@@ -160,4 +122,4 @@ class TestEndpoints:
         decide(world, report(world, past_stay(world)), 'approve', django_capture_on_commit_callbacks)
         data = client_for(world['owner']).get(f"{P}/status/hotels/{world['prop'].id}/?period=all").data
         assert data['totals']['no_show'] == 1
-        assert money(data['totals']['revenue']) == {'UZS': '1177295.00'}
+        assert data['totals']['revenue'] == []

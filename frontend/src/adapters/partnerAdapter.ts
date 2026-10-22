@@ -155,9 +155,6 @@ export interface PartnerRatePlan {
   cancellation_policy: string
   deposit_required: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
   created_at: string
   updated_at: string
@@ -177,9 +174,6 @@ export interface CreateRatePlanRequest {
   cancellation_policy: string
   deposit_required: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
 }
 
@@ -196,9 +190,6 @@ export interface UpdateRatePlanRequest {
   cancellation_policy?: string
   deposit_required?: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
 }
 
@@ -321,15 +312,26 @@ export interface CreateBlockRequest {
 // Photo Upload types from backend contract
 export interface PropertyPhoto {
   id: number
-  property: number
   photo: string
+  photo_url: string | null
   photo_type: string
-  caption?: string
+  caption: string | null
   is_primary: boolean
   display_order: number
+  alt_text: string | null
+}
+
+export interface UpdatePhotoRequest {
+  caption?: string
   alt_text?: string
-  created_at: string
-  updated_at: string
+  photo_type?: string
+  is_primary?: true
+}
+
+export interface AssignedPlace {
+  country_ref: number | null
+  region_ref: number | null
+  city_ref: number | null
 }
 
 export interface UploadPhotoRequest {
@@ -690,6 +692,16 @@ class PartnerAdapter {
     })
   }
 
+  /**
+   * The hotel says the guest of one of its bookings has arrived (cash at the hotel).
+   * Integrates with POST /api/v1/partner/bookings/{id}/arrived/ endpoint
+   */
+  async markGuestArrived(bookingId: number): Promise<ApiResponse<{ id: number; arrived_at: string }>> {
+    return this.request<{ id: number; arrived_at: string }>(`/api/v1/partner/bookings/${bookingId}/arrived/`, {
+      method: 'POST',
+    })
+  }
+
   // Photo Upload Methods
 
   /**
@@ -727,6 +739,31 @@ class PartnerAdapter {
         error: error instanceof Error ? error.message : 'Network error occurred',
       }
     }
+  }
+
+  /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */
+  async getAssignedPlace(): Promise<ApiResponse<AssignedPlace>> {
+    return this.request<AssignedPlace>('/api/v1/partner/assigned-place/')
+  }
+
+  /** GET /api/v1/partner/properties/{id}/photos/ (a plain list, cover and order as stored) */
+  async getPropertyPhotos(propertyId: number): Promise<ApiResponse<PropertyPhoto[]>> {
+    return this.request<PropertyPhoto[]>(`/api/v1/partner/properties/${propertyId}/photos/`)
+  }
+
+  /** PATCH /api/v1/partner/properties/{id}/photos/{photoId}/ (is_primary can only be set to true) */
+  async updatePropertyPhoto(propertyId: number, photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+    return this.request<PropertyPhoto>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /** DELETE /api/v1/partner/properties/{id}/photos/{photoId}/ */
+  async deletePropertyPhoto(propertyId: number, photoId: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
+      method: 'DELETE',
+    })
   }
 
   // Partner Bookings Methods

@@ -25,27 +25,6 @@ export interface ExchangeRateInfo {
   stale: boolean
 }
 
-/** R11: what the booking's rate plan promised about cancelling, copied when it was made; null on older bookings */
-export interface CancellationTerms {
-  free_until: string | null
-  refund_percent_after: number
-}
-
-/** `GET /bookings/{id}/cancel-preview/`: what cancelling right now would give back (percent null = no promise) */
-export interface CancelPreview {
-  refund_amount: string
-  refund_currency: string
-  refund_percent: number | null
-  free_until: string | null
-}
-
-/** What a cancellation refunded (`amount` "0.00" when nothing) */
-export interface CancelRefund {
-  amount: string
-  currency: string
-  percent: number | null
-}
-
 export interface Booking {
   id: number
   guest: number
@@ -77,12 +56,12 @@ export interface Booking {
   charge_amount?: string
   charge_currency?: string
   exchange_rate?: ExchangeRateInfo | null
-  /** R12b: what the guest is told about the no-show refund */
-  no_show_refund_percent?: number
-  no_show_refund_amount?: string | null
-  no_show_refund_text_key?: string | null
-  no_show_refund_text_params?: { percent: number; amount: string | null } | null
-  cancellation_terms?: CancellationTerms | null
+  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); absent on old bookings */
+  expected_arrival_time?: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at?: string | null
+  /** After this moment a guest who has not arrived is cancelled */
+  arrival_deadline?: string | null
 }
 
 export interface BookingCreateRequest {
@@ -98,6 +77,8 @@ export interface BookingCreateRequest {
   number_of_rooms?: number
   children?: number[]
   special_requests?: string
+  /** 'HH:MM' on the check-in day (cash at the hotel) */
+  expected_arrival_time: string
 }
 
 export interface BookingCancelRequest {
@@ -202,19 +183,11 @@ class BookingAdapter {
    */
   async cancelBooking(
     id: number, request?: BookingCancelRequest,
-  ): Promise<{ data: (Booking & { refund: CancelRefund }) | null; error: string | null }> {
-    return this.request<Booking & { refund: CancelRefund }>(`/api/v1/bookings/${id}/cancel/`, {
+  ): Promise<{ data: Booking | null; error: string | null }> {
+    return this.request<Booking>(`/api/v1/bookings/${id}/cancel/`, {
       method: 'POST',
       body: JSON.stringify(request || {}),
     })
-  }
-
-  /**
-   * What cancelling this booking right now would give back; nothing is changed
-   * Integrates with GET /api/v1/bookings/{id}/cancel-preview/ endpoint
-   */
-  async getCancelPreview(id: number): Promise<{ data: CancelPreview | null; error: string | null }> {
-    return this.request<CancelPreview>(`/api/v1/bookings/${id}/cancel-preview/`)
   }
 }
 

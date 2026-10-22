@@ -1,4 +1,4 @@
-"""R12 phase 3: two approvals at once refund once; the OpenAPI schema still builds without collisions."""
+"""R12 phase 3: two approvals at once decide once; the OpenAPI schema still builds without collisions."""
 import io
 import threading
 
@@ -9,11 +9,10 @@ from django.db import connection
 from bookings.models import NoShowReport
 from bookings.noshow import NoShowError, approve_report
 from bookings.tests.r12b_helpers import COMMENT, DECISION, past_stay, world  # noqa: F401
-from payments.models import Refund
 
 
 @pytest.mark.django_db(transaction=True)
-def test_two_concurrent_approves_refund_once(world):
+def test_two_concurrent_approves_decide_once(world):
     booking = past_stay(world)
     report = NoShowReport.objects.create(
         booking=booking, property=booking.property, created_by=world['owner'], comment=COMMENT)
@@ -36,7 +35,8 @@ def test_two_concurrent_approves_refund_once(world):
     for thread in threads:
         thread.join(timeout=30)
     assert sorted(results) == ['not_pending', 'ok']
-    assert Refund.objects.filter(booking=booking).count() == 1
+    booking.refresh_from_db()
+    assert booking.status == 'no_show'
 
 
 def test_openapi_schema_builds_without_collisions():

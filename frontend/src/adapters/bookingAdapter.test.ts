@@ -342,37 +342,12 @@ describe('BookingAdapter', () => {
     })
   })
 
-  describe('cancel preview (R11)', () => {
-    it('asks what cancelling now would give back, without changing anything', async () => {
-      const preview = { refund_amount: '2354590.00', refund_currency: 'UZS', refund_percent: 100, free_until: '2026-12-18T00:00:00+05:00' }
-      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => preview })
-
-      const result = await adapter.getCancelPreview(7)
-
-      const [url, init] = mockFetch.mock.calls[0]
-      expect(url).toBe('http://test-api.com/api/v1/bookings/7/cancel-preview/')
-      expect((init?.method ?? 'GET').toUpperCase()).toBe('GET')
-      expect(result).toEqual({ data: preview, error: null })
-    })
-
-    it('returns the reason when the booking cannot be cancelled (400)', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false, status: 400, clone() { return this },
-        json: async () => ({ error: 'Booking cannot be cancelled', details: { status: ['A stay that has started cannot be cancelled online.'] } }),
-      })
-      const result = await adapter.getCancelPreview(7)
-      expect(result.data).toBeNull()
-      expect(result.error).toBeTruthy()
-    })
-  })
-
-  describe('cancelBooking returns what was refunded (R11)', () => {
-    it('carries the refund of the cancellation', async () => {
-      const refund = { amount: '1177295.00', currency: 'UZS', percent: 50 }
-      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: 7, status: 'cancelled', refund }) })
+  describe('cancelBooking is free (cash at the hotel)', () => {
+    it('posts to the cancel endpoint and returns the booking without any refund', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: 7, status: 'cancelled' }) })
       const result = await adapter.cancelBooking(7)
       expect(mockFetch.mock.calls[0][0]).toBe('http://test-api.com/api/v1/bookings/7/cancel/')
-      expect(result.data?.refund).toEqual(refund)
+      expect(result.data).toEqual({ id: 7, status: 'cancelled' })
     })
   })
 

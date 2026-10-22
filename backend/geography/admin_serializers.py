@@ -1,7 +1,9 @@
 """Serializers for the super-admin geography API (Geography plan G3)."""
+from django.core.files.storage import default_storage
 from django.db.models import Q
 from rest_framework import serializers
 
+from common.storage import image_upload_error
 from geography.models import City, Country, Region
 
 
@@ -15,6 +17,31 @@ class _NamesMixin:
         return super().validate(attrs)
 
 
+class _ImageMixin:
+    """A country or region has a picture: required on create, kept when an edit sends none, old file removed on replace."""
+
+    def get_image_url(self, obj) -> str | None:
+        return default_storage.url(obj.image.name) if obj.image else None
+
+    def validate_image(self, value):
+        error = image_upload_error(value)
+        if error:
+            raise serializers.ValidationError(error)
+        return value
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get('image'):
+            raise serializers.ValidationError({'image': 'A picture is required.'})
+        return super().validate(attrs)
+
+    def update(self, instance, validated_data):
+        old_name = instance.image.name if instance.image else None
+        instance = super().update(instance, validated_data)
+        if old_name and old_name != (instance.image.name if instance.image else None):
+            default_storage.delete(old_name)
+        return instance
+
+
 class _ParentImmutableMixin:
     """The parent decides what a property's location means: it is set on create only."""
     parent_field = None
@@ -26,16 +53,19 @@ class _ParentImmutableMixin:
         return super().validate(attrs)
 
 
-class AdminCountrySerializer(_NamesMixin, serializers.ModelSerializer):
+class AdminCountrySerializer(_ImageMixin, _NamesMixin, serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    # A multipart form that leaves out a checkbox means False to DRF; a new row stays visible unless hidden on purpose
+    is_active = serializers.BooleanField(required=False, default=True)
     region_count = serializers.IntegerField(read_only=True)
     hotel_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Country
-        fields = ['id', 'code', 'currency', 'name_uz', 'name_ru', 'name_en', 'is_active', 'sort_order',
-                  'region_count', 'hotel_count']
+        fields = ['id', 'code', 'currency', 'name_uz', 'name_ru', 'name_en', 'image', 'image_url', 'is_active',
+                  'sort_order', 'region_count', 'hotel_count']
         read_only_fields = ['sort_order']
-        extra_kwargs = {'code': {'validators': []}}  # uniqueness is checked in validate_code
+        extra_kwargs = {'code': {'validators': []}, 'image': {'write_only': True}}  # uniqueness is checked in validate_code
 
     def validate_code(self, value):
         value = value.strip().upper()
@@ -52,16 +82,20 @@ class AdminCountrySerializer(_NamesMixin, serializers.ModelSerializer):
         return value
 
 
-class AdminRegionSerializer(_ParentImmutableMixin, _NamesMixin, serializers.ModelSerializer):
+class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, serializers.ModelSerializer):
     parent_field = 'country'
+    image_url = serializers.SerializerMethodField()
+    # A multipart form that leaves out a checkbox means False to DRF; a new row stays visible unless hidden on purpose
+    is_active = serializers.BooleanField(required=False, default=True)
     city_count = serializers.IntegerField(read_only=True)
     hotel_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Region
-        fields = ['id', 'country', 'slug', 'name_uz', 'name_ru', 'name_en', 'is_active', 'sort_order',
-                  'city_count', 'hotel_count']
+        fields = ['id', 'country', 'slug', 'name_uz', 'name_ru', 'name_en', 'image', 'image_url', 'is_active',
+                  'sort_order', 'city_count', 'hotel_count']
         read_only_fields = ['slug', 'sort_order']
+        extra_kwargs = {'image': {'write_only': True}}
         validators = []  # the name is checked below, so a clash is a plain 400 with a clear message
 
     def validate(self, attrs):

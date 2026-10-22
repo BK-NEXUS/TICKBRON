@@ -1,3 +1,4 @@
+import { cleanField, isPhoneValid } from '../utils/inputFilters'
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Lock, Calendar, Heart, House } from 'lucide-react'
@@ -14,6 +15,7 @@ export function ProfilePage() {
   const [editForm, setEditForm] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
+    phone_number: user?.phone_number || '',
     whatsapp: user?.whatsapp || '',
     telegram: user?.telegram || '',
     preferred_contact_method: user?.preferred_contact_method || 'email',
@@ -26,7 +28,8 @@ export function ProfilePage() {
     setEditForm({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
-        whatsapp: user?.whatsapp || '',
+      phone_number: user?.phone_number || '',
+      whatsapp: user?.whatsapp || '',
       telegram: user?.telegram || '',
       preferred_contact_method: user?.preferred_contact_method || 'email',
     })
@@ -43,7 +46,7 @@ export function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setEditForm(prev => ({ ...prev, [name]: value }))
+    setEditForm(prev => ({ ...prev, [name]: cleanField(name, value) }))
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -51,9 +54,18 @@ export function ProfilePage() {
     setError(null)
     setSuccess(false)
 
+    // The number can be changed but not blanked; an old account without one can save other changes
+    const phone = editForm.phone_number.trim()
+    if (phone ? !isPhoneValid(phone) : Boolean(user?.phone_number)) {
+      setError(t('auth.errPhone'))
+      return
+    }
+    const changes: Partial<typeof editForm> = { ...editForm, phone_number: phone }
+    if (!phone) delete changes.phone_number
+
     setSaving(true)
     try {
-      const response = await updateProfile(editForm)
+      const response = await updateProfile(changes)
       if (response.success) {
         setSuccess(true)
         setIsEditing(false)
@@ -140,6 +152,10 @@ export function ProfilePage() {
                 <p className="profile-field-value">{user.email}</p>
               </div>
               <div className="profile-field">
+                <label className="profile-field-label">{t('auth.phone')}</label>
+                <p className="profile-field-value">{user.phone_number || t('profile.notProvided')}</p>
+              </div>
+              <div className="profile-field">
                 <label className="profile-field-label">{t('profile.whatsapp')}</label>
                 <p className="profile-field-value">{user.whatsapp || t('profile.notProvided')}</p>
               </div>
@@ -192,6 +208,19 @@ export function ProfilePage() {
                         className="profile-form-input"
                       />
                     </div>
+                  </div>
+                  <div className="profile-form-field">
+                    <label htmlFor="phone_number" className="profile-form-label">{t('auth.phone')}</label>
+                    <input
+                      type="tel"
+                      id="phone_number"
+                      name="phone_number"
+                      value={editForm.phone_number}
+                      onChange={handleInputChange}
+                      className="profile-form-input"
+                      placeholder="+998 90 123 45 67"
+                      required={Boolean(user.phone_number)}
+                    />
                   </div>
                   <div className="profile-form-field">
                     <label htmlFor="whatsapp" className="profile-form-label">{t('profile.whatsapp')}</label>

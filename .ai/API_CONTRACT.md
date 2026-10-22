@@ -88,7 +88,7 @@ Core endpoints:
 - GET `/api/v1/admin-panel/statistics/top-bookers/` ✅ IMPLEMENTED (Checkpoint 26)
 
 ## 2026-10-02 Geography: Country > Region > City (Geography plan G3, G4)
-**DEPRECATED since 2026-10-02 (temporary backward compatibility, remove after the frontend moves to ids, G5-G6):** the old text location input on partner property writes and the name-based Status URL keys keep working next to the new ids / codes. They are marked DEPRECATED below. New code must use the ids and codes.
+**REMOVED 2026-10-19:** the old text location input on partner property writes and the name-based Status URL keys (they worked next to the ids and codes since 2026-10-02) are gone. Use the ids and codes; see the notes below.
 Dictionary rows carry `name_uz`, `name_ru`, `name_en`; the frontend picks the language (English until i18n exists). The old text fields `country` / `state` / `city` stay on Property but are now **read-only copies** of the English names of the refs (set by `Property.save()`).
 
 Public (no login, read-only, active rows only, ordered by `sort_order` then English name; `hotel_count` = public properties: active, approved, not deleted):
@@ -105,14 +105,14 @@ Super-admin only (`is_superuser`; staff get 403), under `/api/v1/admin-panel/geo
 
 Property writes (BREAKING):
 - `POST /api/v1/partner/properties/` needs the location: `country_ref`, `region_ref`, `city_ref` (ids). 400 when a ref is missing, null, hidden, the region is not in the country or the city not in the region (field errors under `error.details`)
-  - **DEPRECATED (2026-10-02):** instead of the ids the old text fields `country`, `state`, `city` are still accepted (also on PATCH). They are resolved through the geography mapping (uz/ru/en names and aliases, case- and apostrophe-insensitive); the region comes from the city, so `state` may be blank or wrong. `country` and `city` must match: otherwise 400 with `error.details.country` or `error.details.city` saying what was not found. When ids are sent too, the ids win and the text is ignored. On PATCH, text equal to what the property already has is ignored
-- `PATCH /api/v1/partner/properties/{id}/`: the three refs (or, DEPRECATED, the text fields) are optional; refs cannot be null; the merged result is validated the same way (changing only the region while the old city stays is a 400). Responses include `country_ref`, `region_ref`, `city_ref` (ids). Editing other fields never re-validates an unchanged location
+  - **REMOVED (2026-10-19):** the text fields `country`, `state`, `city` are no longer input on create or edit (they used to be resolved through the geography mapping). They stay in the response as read-only copies of the English names of the chosen refs. A create with text only is 400 naming `country_ref`, `region_ref` and `city_ref`; text sent next to the ids is ignored; text sent on a PATCH changes nothing.
+- `PATCH /api/v1/partner/properties/{id}/`: the three refs are optional; refs cannot be null; the merged result is validated the same way (changing only the region while the old city stays is a 400). Responses include `country_ref`, `region_ref`, `city_ref` (ids). Editing other fields never re-validates an unchanged location.
 - `PATCH /api/v1/admin-panel/properties/{id}/region/` accepts `{ country_ref, region_ref, city_ref }` (the admin can fix country and city too; all three `null` clears the location -> "Unspecified"). The old `{ state }` body still works when no ref is sent. Admin property list/detail now include the three ref ids
 
 Search: `location`, `q` and `suggestions` match the uz/ru/en names of the city, region and country through the refs ("Toshkent", "Ташкент" and "Tashkent" find the same hotel), and still match the old text fields, so unmapped hotels stay searchable. Suggestions are strings in the language that matched what was typed, for places with public hotels.
 
-Status (replaces the 2026-09-30 admin Status URLs below; the old name keys still work, DEPRECATED): hotels are grouped by their refs; hotels without a ref are "unspecified".
-- **DEPRECATED (2026-10-02):** wherever a URL key is `{code}` or `{region_id}` the old name keys are still accepted and return the same rows: a country name in any language (`Uzbekistan`, `Узбекистан`, case-insensitive) and a region name in any language (`Tashkent City`; `Unspecified` or `unspecified` for none). The response then echoes `country` / `region` exactly as sent (new format: upper-case code / region id as text); `country_name` and `region_name` are always the English names. The row fields `country` and `region` (English names) stay in the lists, so a client that builds the next URL from them keeps working
+Status (replaces the 2026-09-30 admin Status URLs below; the URL keys are an ISO country code and a region id, names no longer work, see below): hotels are grouped by their refs; hotels without a ref are "unspecified".
+- **REMOVED (2026-10-19):** wherever a URL key is `{code}` or `{region_id}` the old name keys (a country or region name in any language) are no longer accepted: a key that is not an ISO code (countries) or a number (regions) and not `unspecified` matches nothing, so the list is empty (`count: 0`). `country` / `region` in the response are the upper-case code / the region id as text; `country_name` and `region_name` are the English names. The row fields `country` and `region` (English names) stay in the lists for display only.
 - `GET /api/v1/admin-panel/status/countries/`: rows `{ rank, code, country, name_uz, name_ru, name_en, hotels, bookings, guests, revenue }`. `code` is the ISO2 code, `null` for the "Unspecified" group (`country: "Unspecified"`). `search` matches the names in all languages or the code
 - `GET /api/v1/admin-panel/status/countries/{code}/regions/`: `{code}` is the ISO2 code (any case) or `unspecified`. Rows `{ rank, id, region, name_uz, name_ru, name_en, hotels, bookings, guests, revenue }` (`id` null = "Unspecified"), plus `country` (upper-case code or `unspecified`) and `country_name` (English, null for an unknown code)
 - `GET /api/v1/admin-panel/status/countries/{code}/regions/{region_id}/hotels/`: `{region_id}` is a region id or `unspecified`; rows as before `{ rank, id, name, city, status, bookings, guests, revenue }`, plus `country`, `country_name`, `region` (the id as text or `unspecified`) and `region_name`. A region of another country or a non-numeric segment gives an empty list
@@ -1085,3 +1085,69 @@ Slices 2 to 5 below add the per-currency "from" price on cards, the owner screen
 - **Availability** (`GET /properties/{id}/availability/`): every rate plan gains `prices` (same shape as the hotel page: `{currency: {amount, source}}`), and every `date_inventory` row gains `prices`: `{ "USD": "69.00", "UZS": "862500.00", "KZT": "31050.00", "RUB": null }`, the night's price in each currency, with the plan's ratio for a night that has its own price (a night at +15% in dollars is +15% in the other currencies); null while a conversion has no rate. `price` and `currency` of the row are unchanged.
 - Not included: the hotel detail's own `base_price` stays in the hotel's main currency; the hotel page prices come from `room_types[].rate_plans[].prices` (slice 1). Favorites: see below.
 - **Favorites** (`GET /me/favorites/`): new field `property_prices`, the same list as a hotel card's `prices` (the lowest price of the hotel's active rate plans in every currency, `source` owner / main / converted). `property_base_price` and `property_currency` are unchanged.
+
+## Pictures of countries and regions (2026-10-21, plan PLAN_GEO_IMAGES.md)
+- Public `GET /geography/countries/` and `GET /geography/countries/{code}/regions/` rows carry `image_url` (relative media URL, or `null` when the row has no picture). Cities have none.
+- Admin `/admin-panel/geography/countries/` and `.../regions/`: output has `image_url`; input `image` is accepted as multipart (JSON still works for edits without a picture). `image` is REQUIRED when creating a country or region (400 `{image: ...}`), optional on edit (no `image` = the picture stays), and can be replaced but not cleared. Checks: jpg/jpeg/png/gif/webp, 10 MB, 40 megapixels, must decode as an image. Stored name is random (`geography/countries|regions/<uuid>.<ext>`); the old file is deleted on replace and on delete.
+- Multipart note: `is_active` now defaults to true when a form omits it (a form without the checkbox used to mean false).
+- Existing rows (seeded countries, regions) have `image_url: null` until an admin edits them.
+
+## Place of a hotel-owner account (2026-10-21, plan PLAN_GEO_IMAGES.md step 3)
+- `POST /admin-panel/users/create-hotel-owner/` (super admin): `country_ref`, `region_ref`, `city_ref` (Geography ids) are now REQUIRED besides the old fields. They must fit together and be active (same checks as a property: 400 `{field: ...}`). The account and its place (`partner.OwnerPlace`, new table) are created in one transaction; any 400 creates nothing.
+- `GET /partner/assigned-place/` (hotel owner): `{country_ref, region_ref, city_ref}` of the place, all `null` when the account has none (older accounts).
+- An owner WITH a place: `POST /partner/properties/` and `PATCH /partner/properties/{id}/` refuse a `country_ref`/`region_ref`/`city_ref` that differs from it (400 `{field: "Your hotels are placed by the administrator and cannot be moved."}`); sending the same ids is fine. Owners without a place behave as before.
+- A geography row used by an account's place cannot be deleted (409 from the Geography screen), only hidden.
+## Person names take letters only (2026-10-21)
+`full_name` (register, profile), `first_name` / `last_name` (profile, admin create-hotel-owner) and the booking's `guest_full_name` are refused with 400 (`{field: ["Names can contain letters, spaces, hyphens, dots and apostrophes only."]}`) when they contain a digit or a symbol. Letters of any alphabet, space, hyphen, dot and the apostrophes ' ʻ ʼ ’ are accepted. Existing stored names are not touched.
+
+## Phone number is back, stored only (2026-10-22, plan PLAN_CASH_ONLY.md stage 1)
+No SMS, no code, no verification, no uniqueness rule (several accounts may share a number). The number is parsed with the existing `validate_phone_number_format`: international format with a country code, separators allowed, stored as E.164 (`+998901234567`); an invalid one is 400 `{field: "Enter a valid phone number in international format, e.g. +998 90 123 45 67."}`.
+- `POST /auth/register/`: `phone_number` REQUIRED.
+- `PATCH /auth/me/update/`: `phone_number` can be changed, never blanked (400); not sending it leaves it as is (old accounts without a number can still edit other fields).
+- `POST /admin-panel/users/create-hotel-owner/`: `phone_number` REQUIRED.
+- `POST /bookings/`: the booking needs a phone: `guest_phone`, else the account's `phone_number`; neither = 400 `{guest_phone: "A phone number is required."}`.
+- `GET /auth/me/` and the admin Status/customer screens already return `phone_number` / `phone` and the e-mail; the owner's arrivals list still shows only `phone_last4` (open question for stage 2: a hotel taking cash bookings needs the full number).
+- The OTP / phone-verification endpoints stay removed (404).
+
+## Cash at the hotel: confirmed at once, arrival time, "guest arrived" (2026-10-22, plan PLAN_CASH_ONLY.md stage 2)
+- `POST /bookings/`: `expected_arrival_time` ("HH:MM", REQUIRED) is the time the guest will arrive on the check-in day. 400 `{expected_arrival_time}` when it is missing, malformed, or today's time has already passed (business time, Asia/Tashkent). The booking is created `confirmed` at once (`payment_status` stays `pending` = "pay at the hotel"), the rooms are taken at once, there is no 15-minute hold (`expires_at` is null).
+- Booking output (guest and admin serializers) has `expected_arrival_time` ("10:30:00" or null on old bookings), `arrived_at` (datetime or null) and `arrival_deadline` (ISO datetime in business time = arrival time + `ARRIVAL_GRACE_HOURS`, null on old bookings).
+- Limit: a guest can hold at most 5 upcoming bookings (not cancelled, not arrived, check-out not past): 429 `{code: "too_many_upcoming_bookings"}` (was `too_many_pending_bookings`, 3 unpaid holds). Needed because nothing is paid up front any more.
+- `POST /partner/bookings/{id}/arrived/` (hotel owner, own hotels only): the hotel says the guest arrived. 200 `{id, arrived_at}`; idempotent (the first time stays); 400 `{error}` unless the booking is `confirmed` and the check-in day has come; another owner's booking 404; guest 403.
+- `GET /partner/bookings/` rows and `GET /partner/status/arrivals/` rows carry `expected_arrival_time` and `arrived_at` (arrivals: "HH:MM" or null).
+- Auto-cancel: Celery task `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a `confirmed` booking with an arrival time, no `arrived_at`, and arrival time + `ARRIVAL_GRACE_HOURS` (default 2) passed: `status=cancelled`, `cancellation_reason="no_arrival"`, rooms released, notifications `booking_not_arrived` (guest) and `guest_not_arrived` (owner, no personal data). Bookings made before this existed have no arrival time and are never auto-cancelled.
+- Migration `bookings/0012_cash_arrival`: two nullable columns, and a data step that confirms `pending` bookings still inside their payment window (expired ones stay pending for the expiry task). Reverse of the data step is a no-op.
+- The payment endpoints still exist but the UI no longer uses them (removed in stage 3).
+
+## Status numbers with cash only (stage 3a of PLAN_CASH_ONLY, 2026-10-22)
+
+Supersedes the refund and revenue lines of the R12 definitions above; every other R12 number is unchanged.
+- **counted** = `confirmed` + `completed` (no refund filter), **stayed** = `completed`, `no_show` = status `no_show`.
+- **revenue** = per currency, never mixed: SUM(`total_price`) of `completed` bookings in the period (cash the hotel is expected to have received). `confirmed`, `cancelled`, `no_show`, `pending`, `expired` and soft-deleted bookings are never revenue. `booking_value` (counted bookings) is unchanged.
+- **Removed:** `totals.fully_refunded`; the user-history rows (`GET /admin-panel/status/users/{id}/`) and its CSV lose `paid` and `refunded`. The hotels list ordered by revenue uses the same SUM in UZS.
+
+## Cash only, stage 3b and 3c: no online payments, no refunds (2026-10-22)
+
+Supersedes the payment, refund, cancellation-terms and no-show-refund parts of the sections above (R6, R11, R12, R12b). Guests pay cash at the hotel; the platform moves no money.
+
+**Removed endpoints (404 now):**
+- every `/api/v1/payments/...` route (transactions, init, confirm, refund, webhooks, audit logs)
+- `GET /api/v1/admin-panel/payments/transactions/`
+- `GET /api/v1/admin-panel/refunds/needs-attention/`, `POST /api/v1/admin-panel/refunds/{id}/mark-done/` and `/retry/`
+- `GET /api/v1/bookings/{id}/cancel-preview/`
+
+**Changed responses:**
+- `POST /bookings/{id}/cancel/`: always free; returns the booking, no `refund` object.
+- Booking, booking list, quote and rate-plan responses no longer carry `cancellation_terms`, `no_show_refund_percent`, `no_show_refund_amount`, `no_show_refund_text_key`, `no_show_refund_text_params`, `free_cancellation`, `free_cancel_hours`, `cancel_refund_percent`. Partner rate plans cannot set `free_cancel_hours` / `cancel_refund_percent` any more (the DB columns stay, unused).
+- No-show reports (staff queue): no `refund_preview`, no `refunds`. Approving only moves the booking to `no_show` and releases the future nights. The guest notice is `no_show_marked_no_refund` ("marked as a no-show by the hotel"); the older notification codes stay so old rows still render.
+- `GET /admin-panel/customers/`: no `total_amount_paid` (and `sort_by=total_amount_paid` is no longer valid). `GET /admin-panel/customers/{id}/`: no `payments`.
+- Error code `refund_refused` of the no-show decision no longer exists.
+
+**Removed settings:** `PAYMENT_TEST_MODE`, `PAYME_*`, `CLICK_*`, `VISA_*`, `NO_SHOW_REFUND_PERCENT`, `CANCEL_REFUND_PERCENT`, `THROTTLE_WEBHOOK_RATE`; `VITE_PAYMENT_TEST_MODE` in the frontend.
+## Owner photo management (2026-10-21)
+All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own property only (another owner's property or photo = 404, guest = 403).
+- `GET .../photos/` -> list of `{id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text}` ordered by `display_order, id`; deleted photos are not listed.
+- `POST .../photos/` (multipart: `photo`, `photo_type`, `caption`, `alt_text`) -> 201 with the photo. The first photo of a property becomes the cover (`is_primary` true); later ones go to the end (`display_order` = highest + 1). The stored file name is `<uuid>.<ext>`, never the client's. Limits unchanged (type/size checks, 40 megapixels, 50 photos; errors are the plain serializer errors, 400).
+- `PATCH .../photos/{photo_id}/` JSON `caption`, `alt_text`, `photo_type`, `is_primary: true` (becomes the cover, the old cover is demoted). `is_primary: false` -> 400 (make another photo the cover). The image file itself cannot be replaced (delete and upload again).
+- `DELETE .../photos/{photo_id}/` -> 204, soft delete; a deleted cover passes to the first remaining photo (none left = no cover).
+

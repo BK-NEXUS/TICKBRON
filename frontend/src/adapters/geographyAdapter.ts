@@ -17,11 +17,13 @@ export interface GeographyCountry extends GeographyNames {
   code: string
   currency: string
   hotel_count: number
+  image_url: string | null
 }
 
 export interface GeographyRegion extends GeographyNames {
   id: number
   hotel_count: number
+  image_url: string | null
 }
 
 export interface GeographyCity extends GeographyNames {

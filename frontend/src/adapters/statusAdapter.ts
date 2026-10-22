@@ -93,7 +93,6 @@ export interface StatusFullTotals extends StatusTotals {
   room_nights: number
   no_show: number
   no_show_reported: number
-  fully_refunded: number
   upcoming: number
   booking_value: Money[]
   booking_status: BookingStatusCounts
@@ -248,8 +247,6 @@ export interface StatusUserBooking {
   currency: string
   charge_amount: string | null
   charge_currency: string | null
-  paid: Money[]
-  refunded: Money[]
 }
 
 export interface StatusUserDetail {
@@ -323,6 +320,10 @@ export interface PartnerArrival {
   special_requests: string
   /** Only the last 4 digits of the phone */
   phone_last4: string
+  /** Cash at the hotel: when the guest said they will arrive ('HH:MM'); null on old bookings */
+  expected_arrival_time: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at: string | null
 }
 
 export interface PartnerArrivalsPage {

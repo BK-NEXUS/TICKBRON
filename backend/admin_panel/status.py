@@ -28,7 +28,6 @@ from bookings import metrics
 from bookings.metrics import InvalidPeriod, counted_q, metric_annotations, period_from_request, range_json
 from common.csv_export import export_response, money_cell, wants_export
 from geography.models import Country, Region
-from payments.models import PaymentTransaction, Refund
 from properties.models import Property, PropertyTranslation
 from properties.regions import UNSPECIFIED_REGION, hotel_name_expression
 from users.models import User
@@ -58,12 +57,6 @@ def region_key(prefix=''):
     return Coalesce(Cast(f'{prefix}region_ref_id', CharField()), Value(UNSPECIFIED), output_field=CharField())
 
 
-def _alias_q(base, value):
-    """Q matching the uz, ru or en name (case-insensitive) behind `base` (e.g. 'country_ref__' or '')."""
-    return (Q(**{f'{base}name_en__iexact': value}) | Q(**{f'{base}name_uz__iexact': value})
-            | Q(**{f'{base}name_ru__iexact': value}))
-
-
 def is_iso_code(value):
     return len(value) == 2 and value.isascii() and value.isalpha()
 
@@ -73,32 +66,29 @@ def country_q(segment, path):
     Q for the country named by a URL segment, behind the relation `path` ('country_ref',
     'property__country_ref'; '' when the query is on Country itself).
 
-    The segment is an ISO code (any case) or "unspecified" (no country).
-    DEPRECATED (2026-10-02, until the frontend moves to codes, G5-G6): it may also be a country name
-    in any language, the value the old lists gave as `country`.
+    The segment is an ISO code (any case) or "unspecified" (no country); anything else matches nothing
+    (country names stopped working as keys on 2026-10-19).
     """
     base = f'{path}__' if path else ''
     if segment.lower() == UNSPECIFIED:
         return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
     if is_iso_code(segment):
         return Q(**{f'{base}code': segment.upper()})
-    return _alias_q(base, segment)
+    return Q(pk__in=[])
 
 
 def region_q(segment, path):
     """
     Q for the region named by a URL segment, behind `path` ('region_ref'; '' on Region itself).
 
-    The segment is a region id or "unspecified" (no region).
-    DEPRECATED (2026-10-02, until the frontend moves to ids, G5-G6): it may also be a region name in
-    any language, the value the old lists gave as `region`.
+    The segment is a region id or "unspecified" (no region); anything else matches nothing (region
+    names stopped working as keys on 2026-10-19).
     """
-    base = f'{path}__' if path else ''
     if segment.lower() == UNSPECIFIED:
         return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
     if segment.isdigit():
         return Q(**{f'{path}_id': int(segment)}) if path else Q(pk=int(segment))
-    return _alias_q(base, segment)
+    return Q(pk__in=[])
 
 
 def country_filter(segment, prefix=''):
@@ -110,7 +100,7 @@ def region_filter(segment, prefix=''):
 
 
 def echo_key(segment):
-    """The key as the response reports it: codes upper-case, "unspecified" lower-case, names as sent."""
+    """The key as the response reports it: codes upper-case, "unspecified" lower-case, anything else as sent."""
     if segment.lower() == UNSPECIFIED:
         return UNSPECIFIED
     return segment.upper() if is_iso_code(segment) else segment
@@ -157,11 +147,6 @@ def page_money(bookings, booking_key, keys, date_range):
     on_page = bookings.filter(**{f'{booking_key}__in': keys})
     return (metrics.revenue_by(on_page.filter(metrics.revenue_q('', date_range)), booking_key),
             metrics.booking_value_by(on_page.filter(counted_q('', date_range)), booking_key))
-
-
-def refunded_ids(date_range):
-    """Fully refunded booking ids in the period, computed once per request (see metrics.fully_refunded_ids)."""
-    return metrics.fully_refunded_ids(metrics.all_bookings().filter(metrics.period_q('', date_range)))
 
 
 def period_extra(period, date_range):
@@ -213,7 +198,7 @@ def status_countries(request):
     rows = (
         properties.values('country_key', 'country_ref__name_uz', 'country_ref__name_ru', 'country_ref__name_en')
         .annotate(hotels_count=Count('id', distinct=True),
-                  **metric_annotations('bookings__', date_range, refunded_ids(date_range)))
+                  **metric_annotations('bookings__', date_range))
         .order_by('-bookings_count', '-guests_count', 'country_ref__name_en', 'country_key')
     )
     bookings = metrics.all_bookings().filter(property__is_deleted=False).annotate(country_key=country_key('property__'))
@@ -249,7 +234,7 @@ def status_regions(request, country):
     rows = (
         properties.values('region_key', 'region_ref__name_uz', 'region_ref__name_ru', 'region_ref__name_en')
         .annotate(hotels_count=Count('id', distinct=True),
-                  **metric_annotations('bookings__', date_range, refunded_ids(date_range)))
+                  **metric_annotations('bookings__', date_range))
         .order_by('-bookings_count', '-guests_count', 'region_ref__name_en', 'region_key')
     )
     bookings = (
@@ -292,7 +277,7 @@ def status_hotels(request, country, region):
         properties = properties.filter(name__icontains=search)
     rows = (
         properties.values('id', 'name', 'city', 'status')
-        .annotate(**metric_annotations('bookings__', date_range, refunded_ids(date_range)))
+        .annotate(**metric_annotations('bookings__', date_range))
         .order_by('-bookings_count', '-guests_count', 'name', 'id')
     )
     bookings = metrics.all_bookings().filter(property__is_deleted=False)
@@ -342,14 +327,13 @@ def status_hotel_detail(request, property_id):
         pk=property_id, is_deleted=False,
     )
     scope = status_scope(property=prop)
-    refunded = metrics.fully_refunded_ids(scope)
     try:
         granularity = granularity_from(request)
-        series = metrics.series(scope, date_range, granularity, refunded_ids=refunded)
+        series = metrics.series(scope, date_range, granularity)
     except InvalidPeriod as error:
         return bad_request('granularity', error)
     owner = prop.owner
-    totals = metrics.metric_totals(scope, date_range, refunded_ids=refunded)
+    totals = metrics.metric_totals(scope, date_range)
     return Response({
         'hotel': {
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
@@ -362,14 +346,13 @@ def status_hotel_detail(request, property_id):
         },
         **period_extra(period, date_range),
         'totals': totals,
-        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(Property.objects.filter(pk=prop.pk)),
-                                     refunded_ids=refunded),
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(Property.objects.filter(pk=prop.pk))),
         'granularity': granularity,
         'series': series,
-        'reconciliation': metrics.reconciliation(scope, refunded_ids=refunded),
+        'reconciliation': metrics.reconciliation(scope),
         'year': year,
-        'available_years': metrics.available_years(scope, refunded),
-        'monthly': metrics.monthly_series(scope, year, refunded),
+        'available_years': metrics.available_years(scope),
+        'monthly': metrics.monthly_series(scope, year),
     })
 
 
@@ -387,7 +370,7 @@ USERS_CSV_HEADER = ['rank', 'id', 'full_name', 'phone', 'email', 'bookings', 'gu
 def status_users(request):
     """
     Top 1000 guests by counted bookings in ?period=: name, phone, email, bookings, guests
-    (persons), nights, total spent (paid - refunded, per currency) and the check-in date of
+    (persons), nights, total spent (completed bookings, per currency) and the check-in date of
     their latest counted booking. ?search= matches first/last/full name, phone, email or ID
     (partial, any case). ?export=csv downloads the whole top 1000.
     """
@@ -396,8 +379,7 @@ def status_users(request):
     except InvalidPeriod as error:
         return bad_request('period', error)
 
-    refunded = refunded_ids(date_range)
-    counted = counted_q('bookings__', date_range, refunded)
+    counted = counted_q('bookings__', date_range)
     users = User.objects.filter(is_deleted=False)
     search = search_term(request)
     if search:
@@ -412,7 +394,7 @@ def status_users(request):
             guests_count=Coalesce(Sum('bookings__guest_count', filter=counted), 0),
             nights_count=Coalesce(Sum('bookings__number_of_nights', filter=counted), 0),
             last_booking_date=Max('bookings__check_in', filter=counted),
-            **metrics.guest_annotations('bookings__', date_range, refunded),
+            **metrics.guest_annotations('bookings__', date_range),
         )
         .filter(bookings_count__gt=0)
         .values('id', 'full_name', 'first_name', 'last_name', 'phone_number', 'email',
@@ -466,26 +448,10 @@ def status_users(request):
 
 
 HISTORY_CSV_HEADER = ['booking_id', 'reference', 'hotel_id', 'hotel', 'check_in', 'check_out', 'nights', 'rooms',
-                      'guests', 'status', 'total_price', 'currency', 'charge_amount', 'charge_currency', 'paid',
-                      'refunded']
+                      'guests', 'status', 'total_price', 'currency', 'charge_amount', 'charge_currency']
 
 
-def _money_per_booking(ids):
-    """({booking id: paid per currency}, {booking id: refunded per currency}) - two queries."""
-    paid, refunded = {}, {}
-    if not ids:
-        return paid, refunded
-    for row in (PaymentTransaction.objects.filter(booking_id__in=ids, status__in=metrics.PAID_PAYMENT_STATUSES)
-                .values('booking_id', 'currency').annotate(amount=Sum('amount')).order_by('booking_id', 'currency')):
-        paid.setdefault(row['booking_id'], []).append({'currency': row['currency'], 'amount': f"{row['amount']:.2f}"})
-    for row in (Refund.objects.filter(booking_id__in=ids, status='succeeded')
-                .values('booking_id', 'currency').annotate(amount=Sum('amount')).order_by('booking_id', 'currency')):
-        refunded.setdefault(row['booking_id'], []).append(
-            {'currency': row['currency'], 'amount': f"{row['amount']:.2f}"})
-    return paid, refunded
-
-
-def _history_row(booking, paid, refunded):
+def _history_row(booking):
     return {
         'id': booking['id'],
         'reference': booking['confirmation_code'],
@@ -500,8 +466,6 @@ def _history_row(booking, paid, refunded):
         'currency': booking['currency'],
         'charge_amount': None if booking['charge_amount'] is None else f"{booking['charge_amount']:.2f}",
         'charge_currency': booking['charge_currency'],
-        'paid': paid.get(booking['id'], []),
-        'refunded': refunded.get(booking['id'], []),
     }
 
 
@@ -535,17 +499,14 @@ def status_user_detail(request, user_id):
                 chunk = list(history[chunk_start:chunk_start + 500])
                 if not chunk:
                     return
-                paid, refunded = _money_per_booking([b['id'] for b in chunk])
                 for booking in chunk:
-                    r = _history_row(booking, paid, refunded)
+                    r = _history_row(booking)
                     yield [r['id'], r['reference'], r['hotel']['id'], r['hotel']['name'], r['check_in'],
                            r['check_out'], r['nights'], r['rooms'], r['guests'], r['status'], r['total_price'],
-                           r['currency'], r['charge_amount'], r['charge_currency'], money_cell(r['paid']),
-                           money_cell(r['refunded'])]
+                           r['currency'], r['charge_amount'], r['charge_currency']]
         return export_response(request, f'status_user_{user.id}_history', HISTORY_CSV_HEADER, lines())
 
-    user_refunded = metrics.fully_refunded_ids(scope)
-    counted = scope.filter(counted_q('', date_range, user_refunded))
+    counted = scope.filter(counted_q('', date_range))
     per_hotel = list(
         counted.values('property_id')
         .annotate(bookings_count=Count('id'), guests_count=Coalesce(Sum('guest_count'), 0),
@@ -561,13 +522,12 @@ def status_user_detail(request, user_id):
         Property.objects.filter(id__in=ids).annotate(name=hotel_name_expression())
         .values('id', 'name', 'city', 'country')
     } if ids else {}
-    spent = metrics.revenue_by(scope.filter(metrics.revenue_q('', date_range, user_refunded), property_id__in=ids),
+    spent = metrics.revenue_by(scope.filter(metrics.revenue_q('', date_range), property_id__in=ids),
                                'property_id') if ids else {}
 
     paginator = StatusPagination()
     page = list(paginator.paginate_queryset(history, request))
-    paid, refunded = _money_per_booking([b['id'] for b in page])
-    response = paginator.get_paginated_response([_history_row(b, paid, refunded) for b in page])
+    response = paginator.get_paginated_response([_history_row(b) for b in page])
     history_data = dict(response.data)
     AdminAccessLog.record(request.user, 'status_user_view', target_user_id=user.id)
     return Response({
@@ -577,7 +537,7 @@ def status_user_detail(request, user_id):
             'date_joined': user.date_joined,
         },
         **period_extra(period, date_range),
-        'totals': metrics.metric_totals(scope, date_range, refunded_ids=user_refunded),
+        'totals': metrics.metric_totals(scope, date_range),
         'hotels_visited': sum(1 for row in per_hotel if row['stayed_count']),
         'hotels': [
             {
@@ -624,22 +584,11 @@ def parse_hotel_ordering(value):
 
 
 def uzs_revenue_by_hotel(properties, date_range):
-    """
-    {hotel id: UZS revenue (paid - succeeded refunds)} for ordering the hotels list by revenue.
-    Two grouped queries over the hotels' revenue bookings (a correlated subquery per hotel would
-    re-run the refund rule for every hotel: minutes on 50k bookings, see the R12 checkpoint).
-    """
-    bookings = (metrics.all_bookings().filter(property__in=properties.values('id'))
+    """{hotel id: UZS revenue (completed bookings' total price)} for ordering the hotels list by revenue."""
+    bookings = (metrics.all_bookings().filter(property__in=properties.values('id'), currency='UZS')
                 .filter(metrics.revenue_q('', date_range)))
-    revenue = {}
-    for row in (bookings.filter(payment_transactions__status__in=metrics.PAID_PAYMENT_STATUSES,
-                                payment_transactions__currency='UZS')
-                .values('property_id').annotate(total=Sum('payment_transactions__amount')).order_by()):
-        revenue[row['property_id']] = row['total']
-    for row in (bookings.filter(refunds__status='succeeded', refunds__currency='UZS')
-                .values('property_id').annotate(total=Sum('refunds__amount')).order_by()):
-        revenue[row['property_id']] = revenue.get(row['property_id'], 0) - row['total']
-    return revenue
+    return {row['property_id']: row['total']
+            for row in bookings.values('property_id').annotate(total=Sum('total_price')).order_by()}
 
 
 def _sorted_by_revenue(rows, revenue, descending):
@@ -703,7 +652,7 @@ def status_hotels_flat(request):
         properties.annotate(name=hotel_name_expression(), rating=rating_expression())
         .values('id', 'name', 'city', 'status', 'created_at', 'rating', 'country_ref__code', 'region_ref_id',
                 'region_ref__name_en')
-        .annotate(**metric_annotations('bookings__', date_range, refunded_ids(date_range)))
+        .annotate(**metric_annotations('bookings__', date_range))
     )
     if field == 'revenue_uzs':
         rows = _sorted_by_revenue(list(rows), uzs_revenue_by_hotel(properties, date_range), descending)

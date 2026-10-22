@@ -14,16 +14,6 @@ interface PartnerRatesManagementProps {
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-const MAX_FREE_CANCEL_HOURS = 8760
-
-/** Empty is fine (the term is not set); a number must be whole and in range. The backend checks it too. */
-const isWholeNumberIn = (value: number | null | undefined, max: number) =>
-  value === undefined || value === null || (Number.isInteger(value) && value >= 0 && value <= max)
-
-/** The two cancellation fields carry no min/max/step attributes on purpose: the browser's own popup would hide our message */
-/** A number field: empty is "not set" (undefined), anything else is the number typed (checked on save) */
-const numberOrUndefined = (raw: string) => (raw === '' ? undefined : Number(raw))
-
 const PRICE_FORMAT = /^\d+(\.\d+)?$/
 
 /** True when the plan carries the owner's own price in every currency */
@@ -59,8 +49,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     deposit_required: false,
     deposit_percentage: undefined,
     advance_booking_days: undefined,
-    free_cancel_hours: undefined,
-    cancel_refund_percent: undefined,
   })
 
   useEffect(() => {
@@ -137,9 +125,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
         deposit_required: formData.deposit_required,
         deposit_percentage: formData.deposit_percentage,
         advance_booking_days: formData.advance_booking_days,
-        // null clears a term: no free window / the platform percent
-        free_cancel_hours: formData.free_cancel_hours ?? null,
-        cancel_refund_percent: formData.cancel_refund_percent ?? null,
       }
 
       const response = await partnerAdapter.updateRatePlan(selectedRatePlan.id, updateData)
@@ -204,8 +189,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       deposit_required: ratePlan.deposit_required,
       deposit_percentage: ratePlan.deposit_percentage,
       advance_booking_days: ratePlan.advance_booking_days,
-      free_cancel_hours: ratePlan.free_cancel_hours ?? undefined,
-      cancel_refund_percent: ratePlan.cancel_refund_percent ?? undefined,
     })
     setViewMode('edit')
   }
@@ -253,14 +236,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       setError(t('partner.depositPercentageMustBe'))
       return false
     }
-    if (!isWholeNumberIn(formData.free_cancel_hours, MAX_FREE_CANCEL_HOURS)) {
-      setError(t('partner.cancelHoursRange'))
-      return false
-    }
-    if (!isWholeNumberIn(formData.cancel_refund_percent, 100)) {
-      setError(t('partner.cancelPercentRange'))
-      return false
-    }
     return true
   }
 
@@ -279,8 +254,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       deposit_required: false,
       deposit_percentage: undefined,
       advance_booking_days: undefined,
-      free_cancel_hours: undefined,
-      cancel_refund_percent: undefined,
     })
   }
 
@@ -573,32 +546,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
             <option value="strict">{t('policies.strict')}</option>
             <option value="non_refundable">{t('rate.non_refundable')}</option>
           </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="free_cancel_hours">{t('partner.freeCancelHours')}</label>
-          <input
-            id="free_cancel_hours"
-            type="number"
-            value={formData.free_cancel_hours ?? ''}
-            onChange={(e) => handleInputChange('free_cancel_hours', numberOrUndefined(e.target.value))}
-            className="form-input"
-            aria-describedby="free_cancel_hours_help"
-          />
-          <small id="free_cancel_hours_help">{t('partner.freeCancelHoursHelp')}</small>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="cancel_refund_percent">{t('partner.cancelRefundPercent')}</label>
-          <input
-            id="cancel_refund_percent"
-            type="number"
-            value={formData.cancel_refund_percent ?? ''}
-            onChange={(e) => handleInputChange('cancel_refund_percent', numberOrUndefined(e.target.value))}
-            className="form-input"
-            aria-describedby="cancel_refund_percent_help"
-          />
-          <small id="cancel_refund_percent_help">{t('partner.cancelRefundPercentHelp')}</small>
         </div>
 
         <div className="form-group checkbox-group">

@@ -7,6 +7,7 @@ import { settle } from '../test/utils'
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     createProperty: vi.fn(),
+    getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: null, region_ref: null, city_ref: null }, error: null }),
   },
 }))
 

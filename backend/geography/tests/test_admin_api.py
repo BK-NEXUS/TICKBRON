@@ -7,9 +7,12 @@ Super-admin geography CRUD (Geography plan G3) under /api/v1/admin-panel/geograp
 Hide/show is PATCH {"is_active": false}. Rows in use cannot be deleted (PROTECT), only hidden.
 Who may call what is in test_access_matrix.py.
 """
+import io
 from decimal import Decimal
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from rest_framework.test import APIClient
 
 from geography.models import City, Country, Region
@@ -17,6 +20,18 @@ from properties.models import Property, PropertyType
 from users.models import User
 
 BASE = '/api/v1/admin-panel/geography'
+
+
+def picture():
+    """A new country or region needs a picture (plan .ai/PLAN_GEO_IMAGES.md)."""
+    buffer = io.BytesIO()
+    Image.new('RGB', (40, 30), (200, 30, 30)).save(buffer, format='PNG')
+    return SimpleUploadedFile('picture.png', buffer.getvalue(), content_type='image/png')
+
+
+@pytest.fixture(autouse=True)
+def media_root(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
 
 
 @pytest.fixture
@@ -56,7 +71,8 @@ class TestCountries:
     def test_create_normalises_the_codes_and_lists_it(self, client):
         response = client.post(f'{BASE}/countries/', {
             'code': 'xb', 'currency': 'eur', 'name_uz': 'Bland', 'name_ru': 'Бландия', 'name_en': 'Bland',
-        }, format='json')
+            'image': picture(),
+        }, format='multipart')
         assert response.status_code == 201, response.data
         assert (response.data['code'], response.data['currency'], response.data['is_active']) == ('XB', 'EUR', True)
         assert 'XB' in [row['code'] for row in client.get(f'{BASE}/countries/').data['results']]
@@ -129,7 +145,8 @@ class TestRegions:
         country = world[0]
         response = client.post(f'{BASE}/regions/', {
             'country': country.id, 'name_uz': 'G\'arb', 'name_ru': 'Запад', 'name_en': 'West',
-        }, format='json')
+            'image': picture(),
+        }, format='multipart')
         assert response.status_code == 201, response.data
         assert response.data['slug'] == 'xa-west'
         rows = client.get(f'{BASE}/regions/', {'country': country.id}).data['results']

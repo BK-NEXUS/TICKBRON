@@ -19,12 +19,14 @@ export interface AdminCountry extends RowBase {
   code: string
   currency: string
   region_count: number
+  image_url: string | null
 }
 
 export interface AdminRegion extends RowBase {
   country: number
   slug: string
   city_count: number
+  image_url: string | null
 }
 
 export interface AdminCity extends RowBase {
@@ -49,6 +51,18 @@ export interface GeographyWrite extends Partial<GeographyNames> {
   country?: number
   region?: number
   is_active?: boolean
+  /** Countries and regions only: required when adding, optional when editing */
+  image?: File
+}
+
+/** JSON, or multipart when a picture is attached (the browser sets the boundary header) */
+function writeInit(method: string, body: GeographyWrite): RequestInit {
+  if (!body.image) return { method, body: JSON.stringify(body) }
+  const form = new FormData()
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) form.append(key, value instanceof File ? value : String(value))
+  }
+  return { method, body: form }
 }
 
 type Result<T> = { data: T | null; error: string | null }
@@ -62,7 +76,8 @@ export class AdminGeographyAdapter {
 
   private async send<T>(url: string, init: RequestInit = {}): Promise<Result<T>> {
     try {
-      const response = await apiFetch(url, init.body ? { ...init, headers: { 'Content-Type': 'application/json' } } : init)
+      const json = typeof init.body === 'string'
+      const response = await apiFetch(url, json ? { ...init, headers: { 'Content-Type': 'application/json' } } : init)
       if (!response.ok) return { data: null, error: (await readApiError(response)).message }
       return { data: response.status === 204 ? null : await response.json(), error: null }
     } catch (error) {
@@ -80,11 +95,11 @@ export class AdminGeographyAdapter {
   }
 
   create(kind: GeographyKind, body: GeographyWrite) {
-    return this.send<AdminGeographyRow>(this.url(kind), { method: 'POST', body: JSON.stringify(body) })
+    return this.send<AdminGeographyRow>(this.url(kind), writeInit('POST', body))
   }
 
   update(kind: GeographyKind, id: number, body: GeographyWrite) {
-    return this.send<AdminGeographyRow>(this.url(kind, `${id}/`), { method: 'PATCH', body: JSON.stringify(body) })
+    return this.send<AdminGeographyRow>(this.url(kind, `${id}/`), writeInit('PATCH', body))
   }
 
   /** 409 means the row is in use (children or hotels): the screen then suggests hiding it. */

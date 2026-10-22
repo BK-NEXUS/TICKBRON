@@ -1,17 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingPage } from './BookingPage'
 import { bookingAdapter } from '../adapters/bookingAdapter'
 import { propertyAdapter } from '../adapters/propertyAdapter'
-import { paymentAdapter } from '../adapters/paymentAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
 
 // Mock adapters
 vi.mock('../adapters/bookingAdapter')
 vi.mock('../adapters/propertyAdapter')
-vi.mock('../adapters/paymentAdapter')
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -36,12 +34,6 @@ const quote = (total: string, rooms = 1) => ({
   },
   error: null,
 })
-const mockPaymentAdapter = paymentAdapter as {
-  createPayment: ReturnType<typeof vi.fn>
-  confirmPayment: ReturnType<typeof vi.fn>
-  generateIdempotencyKey: ReturnType<typeof vi.fn>
-  getUserAgent: ReturnType<typeof vi.fn>
-}
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
 const mockProperty = {
@@ -185,50 +177,6 @@ describe('BookingPage', () => {
     mockPropertyAdapter.getQuote.mockResolvedValue(quote('500.00'))
     mockBookingAdapter.createBooking.mockResolvedValue({
       data: mockBooking,
-      error: null,
-    })
-    mockPaymentAdapter.generateIdempotencyKey.mockReturnValue('test_idempotency_key_123')
-    mockPaymentAdapter.getUserAgent.mockReturnValue('test-agent')
-    mockPaymentAdapter.createPayment.mockResolvedValue({
-      data: {
-        id: 1,
-        idempotency_key: 'test_key_123',
-        booking: 1,
-        provider: 'payme',
-        provider_transaction_id: 'txn_123',
-        amount: 500,
-        currency: 'USD',
-        status: 'processing',
-        payment_method_token: null,
-        provider_response: { success: true },
-        error_code: null,
-        error_message: null,
-        client_ip: '127.0.0.1',
-        user_agent: 'test-agent',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      },
-      error: null,
-    })
-    mockPaymentAdapter.confirmPayment.mockResolvedValue({
-      data: {
-        id: 1,
-        idempotency_key: 'test_key_123',
-        booking: 1,
-        provider: 'payme',
-        provider_transaction_id: 'txn_123',
-        amount: 500,
-        currency: 'USD',
-        status: 'completed',
-        payment_method_token: null,
-        provider_response: { success: true },
-        error_code: null,
-        error_message: null,
-        client_ip: '127.0.0.1',
-        user_agent: 'test-agent',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      },
       error: null,
     })
   })
@@ -380,7 +328,7 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-        expect(screen.queryByLabelText(/phone number/i)).not.toBeInTheDocument()
+        expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument() // was: no phone box while accounts were e-mail only
         expect(screen.getByLabelText(/number of rooms/i)).toBeInTheDocument()
         expect(screen.getByText(/children/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/special requests/i)).toBeInTheDocument()
@@ -442,7 +390,7 @@ describe('BookingPage', () => {
       fireEvent.change(firstNameInput, { target: { value: '' } })
 
       // Submit the form without filling required fields
-      const submitButton = screen.getByText('Continue to Payment')
+      const submitButton = screen.getByText('Confirm booking')
       fireEvent.click(submitButton)
 
       // Check that the adapter was not called (logic/safety validation)
@@ -468,7 +416,7 @@ describe('BookingPage', () => {
       fireEvent.change(lastNameInput, { target: { value: '' } })
 
       // Submit the form
-      const submitButton = screen.getByText('Continue to Payment')
+      const submitButton = screen.getByText('Confirm booking')
       fireEvent.click(submitButton)
 
       // Check that the adapter was not called (logic/safety validation)
@@ -593,57 +541,6 @@ describe('BookingPage', () => {
         expect(screen.getByText(/You pay .*2.500.000/)).toBeInTheDocument()
       })
 
-      it('shows the no-show refund sentence from the quote beside the total', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: {
-            ...quote('515.00').data,
-            no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
-            no_show_refund_text_key: 'no_show_refund_statement',
-            no_show_refund_text_params: { percent: 50, amount: '450000.00' },
-          },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-
-        const note = await screen.findByTestId('no-show-refund-note')
-        expect(note).toHaveTextContent('50% of your payment')
-      })
-
-      it('tells the guest about cancelling these dates before they pay (R11)', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: {
-            ...quote('515.00').data,
-            cancellation_terms: { free_cancellation: true, free_until: '2099-01-01T00:00:00+05:00', refund_percent_after: 50 },
-          },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-        const note = await screen.findByTestId('cancellation-note')
-        expect(note).toHaveTextContent('Free cancellation until')
-        expect(note).toHaveTextContent('After that, 50% of your payment is refunded.')
-      })
-
-      it('says "non-refundable" when the quote promises no refund', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: { ...quote('515.00').data, cancellation_terms: { free_cancellation: false, free_until: null, refund_percent_after: 0 } },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-        expect(await screen.findByTestId('cancellation-note')).toHaveTextContent('Non-refundable')
-      })
-
-      it('shows nothing about cancelling when the quote has no terms', async () => {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
-        expect(screen.queryByTestId('cancellation-note')).toBeNull()
-      })
-
-      it('shows no refund sentence when the quote has none', async () => {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
-        expect(screen.queryByTestId('no-show-refund-note')).toBeNull()
-      })
-
       it('adds the so\'m amount at today\'s rate beside the quoted hotel price when the backend has a rate', async () => {
         mockPropertyAdapter.getQuote.mockResolvedValue({
           data: { ...quote('515.00').data, uzs_total: '6062740.00', exchange_rate: { rate: '11772.95', date: '2025-01-15', source: 'cbu.uz', stale: false } },
@@ -681,7 +578,7 @@ describe('BookingPage', () => {
         expect(await screen.findByText('2025-01-22 is not available.')).toBeInTheDocument()
         // No "nights x base price" fallback: the old fallback showed a total the backend never charged
         expect(totalText(container)).toBeUndefined()
-        expect(screen.getByText('Continue to Payment').closest('button')).toBeDisabled()
+        expect(screen.getByText('Confirm booking').closest('button')).toBeDisabled()
       })
     })
   })
@@ -722,138 +619,152 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
       })
 
-      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
+      expect(screen.getByText('Confirm booking')).toBeInTheDocument()
     })
   })
 
-  describe('Confirmation step', () => {
+  describe('guest phone (plan PLAN_CASH_ONLY stage 1)', () => {
+    const renderFor = (phone: string | null) => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: 3, email: 'guest@example.com', first_name: 'Demo', last_name: 'Guest', full_name: 'Demo Guest',
+          phone_number: phone, is_active: true, date_joined: '2025-01-01T00:00:00Z',
+          last_login: null, email_verified: true, two_factor_enabled: false,
+        },
+        isAuthenticated: true, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn(),
+        refreshUser: vi.fn(), updateProfile: vi.fn(),
+      })
+      return renderWithRouter(<BookingPage />)
+    }
+
+    it('pre-fills the phone from the account and marks it required', async () => {
+      renderFor('+998900000003')
+      const box = await screen.findByLabelText(/Phone number/)
+      await waitFor(() => expect(box).toHaveValue('+998900000003'))
+      expect(box).toBeRequired()
+      expect(box).toHaveAttribute('type', 'tel')
+    })
+
+    it('keeps only digits and a leading plus while typing', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      fireEvent.change(box, { target: { value: '+998 90 1x2' } })
+      expect(box).toHaveValue('+9989012')
+    })
+
+    it('refuses to book without a valid number and does not call the server', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      expect(box).toHaveValue('')
+      fireEvent.submit(box.closest('form') as HTMLFormElement)
+      expect(await screen.findByText(/Enter a valid phone number in international format/)).toBeInTheDocument()
+      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+    })
+
+    it('sends the number as guest_phone', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      fireEvent.change(box, { target: { value: '+998915554433' } })
+      await waitFor(() => expect(screen.getByText('Confirm booking').closest('button')).toBeEnabled())
+      fireEvent.click(screen.getByText('Confirm booking'))
+      await waitFor(() => expect(mockBookingAdapter.createBooking).toHaveBeenCalledWith(
+        expect.objectContaining({ guest_phone: '+998915554433' })))
+    })
+  })
+
+  describe('cash booking (plan PLAN_CASH_ONLY stage 2)', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({
         user: {
-          id: 1,
-          email: 'john@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
-          full_name: 'John Doe',
-          phone_number: '+998901234567',
-          is_active: true,
-          date_joined: '2025-01-01T00:00:00Z',
-          last_login: '2025-01-15T00:00:00Z',
-          email_verified: true,
-          two_factor_enabled: false,
-          whatsapp: '+9876543210',
-          telegram: '@johndoe',
-          preferred_contact_method: 'email' as const,
+          id: 1, email: 'john@example.com', first_name: 'John', last_name: 'Doe', full_name: 'John Doe',
+          phone_number: '+998901234567', is_active: true, date_joined: '2025-01-01T00:00:00Z',
+          last_login: '2025-01-15T00:00:00Z', email_verified: true, two_factor_enabled: false,
+          whatsapp: '', telegram: '', preferred_contact_method: 'email' as const,
         },
-        isAuthenticated: true,
-        isLoading: false,
-        login: vi.fn(),
-        register: vi.fn(),
-        logout: vi.fn(),
-        refreshUser: vi.fn(),
-        updateProfile: vi.fn(),
+        isAuthenticated: true, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn(),
+        refreshUser: vi.fn(), updateProfile: vi.fn(),
       })
     })
 
-    it('should display booking confirmation details', async () => {
+    const ready = async () => {
       renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+      await waitFor(() => expect(screen.getByText('Confirm booking').closest('button')).toBeEnabled())
+    }
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      // Just verify the form renders properly
-      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
+    it('asks when the guest will arrive (14:00 by default) and explains the 2 hour wait', async () => {
+      await ready()
+      const box = screen.getByLabelText(/Arrival time/)
+      expect(box).toHaveValue('14:00')
+      expect(box).toBeRequired()
+      expect(box).toHaveAttribute('type', 'time')
+      expect(screen.getByText(/If you do not arrive at 14:00, we wait 2 more hours\. If you still do not come, the booking is cancelled\./)).toBeInTheDocument()
+      fireEvent.change(box, { target: { value: '10:30' } })
+      expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
     })
 
-    it('should show booking expiry warning', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+    it('confirms the booking at once: a confirmed page with the arrival rule', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: { ...mockBooking, status: 'confirmed', expected_arrival_time: '10:30:00', arrival_deadline: '2025-01-20T12:30:00+05:00' },
+        error: null,
       })
+      await ready()
+      fireEvent.change(screen.getByLabelText(/Arrival time/), { target: { value: '10:30' } })
+      fireEvent.click(screen.getByText('Confirm booking'))
 
-      // Just verify the form renders properly
-      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
+      expect(await screen.findByText('Booking Confirmed!')).toBeInTheDocument()
+      expect(mockBookingAdapter.createBooking).toHaveBeenCalledWith(expect.objectContaining({ expected_arrival_time: '10:30' }))
+      expect(screen.getByText(mockBooking.confirmation_code)).toBeInTheDocument()
+      expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
+      expect(screen.getByText(/pay at the hotel/i)).toBeInTheDocument()
+      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
     })
 
-    it('should allow going back to details', async () => {
-      renderWithRouter(<BookingPage />)
+    it('refuses to book without an arrival time and does not call the server', async () => {
+      await ready()
+      const box = screen.getByLabelText(/Arrival time/)
+      fireEvent.change(box, { target: { value: '' } })
+      fireEvent.submit(box.closest('form') as HTMLFormElement)
+      expect(await screen.findByText('Choose when you will arrive.')).toBeInTheDocument()
+      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+    })
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+    it('refuses an arrival time that has already passed today, before the server is asked', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2025-01-20T10:00:00Z')) // 15:00 in Tashkent; the test stay checks in on 2025-01-20
+      try {
+        renderWithRouter(<BookingPage />, { ...bookingState, checkIn: '2025-01-20', checkOut: '2025-01-25' })
+        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+        const box = screen.getByLabelText(/Arrival time/)
+        fireEvent.change(box, { target: { value: '14:00' } })
+        fireEvent.submit(box.closest('form') as HTMLFormElement)
+        expect(await screen.findByText('That time has already passed today. Choose a later time.')).toBeInTheDocument()
+        expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('says the booking is temporarily unavailable when no exchange rate exists yet (503)', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: null, error: 'Server error. Please try again later.', code: 'exchange_rate_unavailable',
       })
+      await ready()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Booking is temporarily unavailable, please try again later')
+      expect(screen.queryByText('Booking Confirmed!')).not.toBeInTheDocument()
+    })
 
-      // Just verify the form renders properly
-      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
+    it('shows the reason when the booking is refused (for example too many upcoming bookings)', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: null, error: 'Too many upcoming bookings. Cancel one or wait until you have stayed.', code: 'too_many_upcoming_bookings',
+      })
+      await ready()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Too many upcoming bookings')
     })
   })
 
-  describe('Success state', () => {
-    beforeEach(() => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: 1,
-          email: 'john@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
-          full_name: 'John Doe',
-          phone_number: '+998901234567',
-          is_active: true,
-          date_joined: '2025-01-01T00:00:00Z',
-          last_login: '2025-01-15T00:00:00Z',
-          email_verified: true,
-          two_factor_enabled: false,
-          whatsapp: '+9876543210',
-          telegram: '@johndoe',
-          preferred_contact_method: 'email' as const,
-        },
-        isAuthenticated: true,
-        isLoading: false,
-        login: vi.fn(),
-        register: vi.fn(),
-        logout: vi.fn(),
-        refreshUser: vi.fn(),
-        updateProfile: vi.fn(),
-      })
-    })
-
-    it('should display success message after confirmation', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Test that payment method selection UI shows
-      expect(screen.getByText('Select Payment Method')).toBeInTheDocument()
-    })
-
-    it('should provide navigation options after success', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Test that back button is available (using aria-label since the button shows "← Back to Details")
-      expect(screen.getByLabelText('Back to guest details')).toBeInTheDocument()
-    })
-  })
 
   describe('Error handling', () => {
     beforeEach(() => {
@@ -911,423 +822,4 @@ describe('BookingPage', () => {
     })
   })
 
-  describe('Payment flow', () => {
-    beforeEach(() => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: 1,
-          email: 'john@example.com',
-          first_name: 'John',
-          last_name: 'Doe',
-          full_name: 'John Doe',
-          phone_number: '+998901234567',
-          is_active: true,
-          date_joined: '2025-01-01T00:00:00Z',
-          last_login: '2025-01-15T00:00:00Z',
-          email_verified: true,
-          two_factor_enabled: false,
-          whatsapp: '+9876543210',
-          telegram: '@johndoe',
-          preferred_contact_method: 'email' as const,
-        },
-        isAuthenticated: true,
-        isLoading: false,
-        login: vi.fn(),
-        register: vi.fn(),
-        logout: vi.fn(),
-        refreshUser: vi.fn(),
-        updateProfile: vi.fn(),
-      })
-    })
-
-    it('should show payment method selection after booking creation', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      expect(screen.getByText('Select Payment Method')).toBeInTheDocument()
-      expect(screen.getByText('Payme')).toBeInTheDocument()
-      expect(screen.getByText('Click')).toBeInTheDocument()
-      expect(screen.getByText('Visa')).toBeInTheDocument()
-    })
-
-    it('shows the no-show refund sentence of the created booking before the guest pays', async () => {
-      mockBookingAdapter.createBooking.mockResolvedValue({
-        data: {
-          ...mockBooking,
-          no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
-          no_show_refund_text_key: 'no_show_refund_statement',
-          no_show_refund_text_params: { percent: 50, amount: '450000.00' },
-        },
-        error: null,
-      })
-      renderWithRouter(<BookingPage />)
-      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-      fireEvent.click(screen.getByText('Continue to Payment'))
-      await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-
-      // The sentence stands above the payment methods, so it is read before choosing how to pay
-      const note = screen.getByTestId('no-show-refund-note')
-      const methods = screen.getByText('Select Payment Method')
-      expect(note.compareDocumentPosition(methods) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-      expect(note).toHaveTextContent('50% of your payment')
-    })
-
-    it('says the booking is temporarily unavailable when no exchange rate exists yet (503)', async () => {
-      mockBookingAdapter.createBooking.mockResolvedValue({
-        data: null, error: 'Server error. Please try again later.', code: 'exchange_rate_unavailable',
-      })
-      renderWithRouter(<BookingPage />)
-      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-      fireEvent.click(screen.getByText('Continue to Payment'))
-      expect(await screen.findByRole('alert')).toHaveTextContent('Booking is temporarily unavailable, please try again later')
-      expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
-    })
-
-    it('repeats the cancellation terms of the created booking above the payment methods (R11)', async () => {
-      mockBookingAdapter.createBooking.mockResolvedValue({
-        data: { ...mockBooking, cancellation_terms: { free_until: null, refund_percent_after: 50 } },
-        error: null,
-      })
-      renderWithRouter(<BookingPage />)
-      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-      fireEvent.click(screen.getByText('Continue to Payment'))
-      await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-
-      const note = screen.getByTestId('cancellation-note')
-      const methods = screen.getByText('Select Payment Method')
-      expect(note.compareDocumentPosition(methods) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-      expect(note).toHaveTextContent('If you cancel, 50% of your payment is refunded.')
-    })
-
-    describe('card form (test mode)', () => {
-      afterEach(() => vi.unstubAllEnvs())
-
-      const toPaymentStep = async () => {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-        fireEvent.click(screen.getByText('Continue to Payment'))
-        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-      }
-
-      it('shows the card form for Visa in test mode and keeps Pay disabled until the card is valid', async () => {
-        vi.stubEnv('VITE_PAYMENT_TEST_MODE', 'true')
-        await toPaymentStep()
-        fireEvent.click(screen.getByText('Visa').closest('.payment-method-card')!)
-
-        expect(screen.getByLabelText('Card number')).toBeInTheDocument()
-        const pay = screen.getByRole('button', { name: /Pay with Visa/ })
-        expect(pay).toBeDisabled()
-
-        fireEvent.change(screen.getByLabelText('Card number'), { target: { value: '4111111111111111' } })
-        fireEvent.change(screen.getByLabelText('Expiry (MM/YY)'), { target: { value: '1245' } })
-        fireEvent.change(screen.getByLabelText('CVV'), { target: { value: '123' } })
-        fireEvent.change(screen.getByLabelText('Name on card'), { target: { value: 'Alisher Navoiy' } })
-        expect(pay).toBeEnabled()
-      })
-
-      it('does not show the card form for Payme or when test mode is off', async () => {
-        vi.stubEnv('VITE_PAYMENT_TEST_MODE', 'true')
-        await toPaymentStep()
-        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
-        expect(screen.queryByLabelText('Card number')).not.toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /Pay with Payme/ })).toBeEnabled()
-      })
-
-      it('shows no card form for Visa when test mode is off', async () => {
-        vi.stubEnv('VITE_PAYMENT_TEST_MODE', '')
-        await toPaymentStep()
-        fireEvent.click(screen.getByText('Visa').closest('.payment-method-card')!)
-        expect(screen.queryByLabelText('Card number')).not.toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /Pay with Visa/ })).toBeEnabled()
-      })
-    })
-
-    it('should show payment processing state when payment is initiated', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Select Payme
-      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
-      fireEvent.click(paymeCard!)
-
-      // Click pay button
-      const payButton = screen.getByText(/Pay with Payme/)
-      fireEvent.click(payButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Processing Payment')).toBeInTheDocument()
-      }, { timeout: 5000 })
-    })
-
-    it('should show payment confirmation on successful payment', async () => {
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Select Payme
-      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
-      fireEvent.click(paymeCard!)
-
-      // Click pay button
-      const payButton = screen.getByText(/Pay with Payme/)
-      fireEvent.click(payButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Successful!')).toBeInTheDocument()
-      }, { timeout: 5000 })
-    })
-
-    describe('what the payment asks for (the booking charge, never the hotel price)', () => {
-      const usdBooking = {
-        ...mockBooking,
-        charge_amount: '2354590.00',
-        charge_currency: 'UZS',
-        exchange_rate: { rate: '11772.950000', date: '2025-01-15', source: 'cbu.uz', stale: false },
-      }
-
-      async function payWithPayme() {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-        fireEvent.click(screen.getByText('Continue to Payment'))
-        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
-        fireEvent.click(screen.getByText(/Pay with Payme/))
-      }
-
-      it('sends the UZS charge of a booking priced in dollars', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        await payWithPayme()
-        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
-        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
-          expect.objectContaining({ booking: 1, provider: 'payme', amount: '2354590.00', currency: 'UZS' }),
-        )
-      })
-
-      it('sends the same numbers for a booking priced in so\'m', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({
-          data: {
-            ...mockBooking, total_price: 500000, currency: 'UZS', charge_amount: '500000.00', charge_currency: 'UZS',
-            exchange_rate: { rate: '1.000000', date: null, source: 'identity', stale: false },
-          },
-          error: null,
-        })
-        await payWithPayme()
-        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
-        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
-          expect.objectContaining({ amount: '500000.00', currency: 'UZS' }),
-        )
-      })
-
-      it('falls back to the booking price when an old booking has no charge fields (charge = price)', async () => {
-        await payWithPayme()
-        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
-        expect(mockPaymentAdapter.createPayment).toHaveBeenCalledWith(
-          expect.objectContaining({ amount: '500', currency: 'USD' }),
-        )
-      })
-
-      it('never sends the hotel-currency price when the booking has a charge', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        await payWithPayme()
-        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(1))
-        const request = mockPaymentAdapter.createPayment.mock.calls[0][0]
-        expect(request.currency).not.toBe('USD')
-        expect(String(request.amount)).not.toBe('500')
-      })
-
-      async function toPaymentStep() {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
-        fireEvent.click(screen.getByText('Continue to Payment'))
-        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-      }
-
-      it('shows the so\'m charge as the total on the payment step, with the hotel price after a ≈ and the rate date', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        await toPaymentStep()
-        const total = document.querySelector('.booking-summary-total-value') as HTMLElement
-        expect(total).toHaveTextContent('2 354 590')
-        expect(total).not.toHaveTextContent('$500')
-        const notes = document.querySelector('.booking-summary-card .charge-notes') as HTMLElement
-        expect(notes).toHaveTextContent('≈ $500')
-        expect(notes).toHaveTextContent('Rate of Jan 15, 2025 (CBU)')
-        expect(notes).not.toHaveTextContent('out of date')
-      })
-
-      it('warns on the payment step when the rate may be out of date', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({
-          data: { ...usdBooking, exchange_rate: { ...usdBooking.exchange_rate, stale: true } }, error: null,
-        })
-        await toPaymentStep()
-        expect(document.querySelector('.booking-summary-card .charge-notes')).toHaveTextContent('The rate may be out of date')
-      })
-
-      it('shows a so\'m booking as it is, with no ≈ line and no rate', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({
-          data: {
-            ...mockBooking, total_price: 500000, currency: 'UZS', charge_amount: '500000.00', charge_currency: 'UZS',
-            exchange_rate: { rate: '1.000000', date: null, source: 'identity', stale: false },
-          },
-          error: null,
-        })
-        await toPaymentStep()
-        expect(document.querySelector('.booking-summary-total-value')).toHaveTextContent('500 000')
-        expect(document.querySelector('.booking-summary-card .charge-notes')).toBeNull()
-      })
-
-      it('shows the so\'m charge on the processing and failure screens too', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        mockPaymentAdapter.createPayment.mockReturnValue(new Promise(() => {}))
-        await toPaymentStep()
-        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
-        fireEvent.click(screen.getByText(/Pay with Payme/))
-        await screen.findByText('Processing Payment')
-        expect(document.body).toHaveTextContent('2 354 590')
-      })
-
-      it('shows the so\'m charge on the failure screen', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        mockPaymentAdapter.createPayment.mockResolvedValue({ data: null, error: 'Provider unavailable' })
-        await toPaymentStep()
-        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
-        fireEvent.click(screen.getByText(/Pay with Payme/))
-        await screen.findByText('Payment Failed', {}, { timeout: 5000 })
-        expect(document.body).toHaveTextContent('2 354 590')
-        expect(document.body).not.toHaveTextContent('$500')
-      })
-
-      it('retries with the same charge after a failed payment', async () => {
-        mockBookingAdapter.createBooking.mockResolvedValue({ data: usdBooking, error: null })
-        mockPaymentAdapter.createPayment.mockResolvedValueOnce({ data: null, error: 'Provider unavailable' })
-        await payWithPayme()
-        fireEvent.click(await screen.findByRole('button', { name: 'Retry payment' }, { timeout: 5000 }))
-        await waitFor(() => expect(screen.getByText('Payment Method')).toBeInTheDocument(), { timeout: 5000 })
-        fireEvent.click(screen.getByText('Payme').closest('.payment-method-card')!)
-        fireEvent.click(screen.getByText(/Pay with Payme/))
-        await waitFor(() => expect(mockPaymentAdapter.createPayment).toHaveBeenCalledTimes(2))
-        const [first, second] = mockPaymentAdapter.createPayment.mock.calls.map(call => call[0])
-        expect([second.amount, second.currency]).toEqual([first.amount, first.currency])
-        expect(second.amount).toBe('2354590.00')
-      })
-    })
-
-    it('should show payment failure on payment error', async () => {
-      mockPaymentAdapter.createPayment.mockResolvedValue({
-        data: null,
-        error: 'Payment failed due to insufficient funds',
-      })
-
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Select Payme
-      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
-      fireEvent.click(paymeCard!)
-
-      // Click pay button
-      const payButton = screen.getByText(/Pay with Payme/)
-      fireEvent.click(payButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Failed')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      expect(screen.getByText('Payment failed due to insufficient funds')).toBeInTheDocument()
-    })
-
-    it('should allow retrying payment after failure', async () => {
-      mockPaymentAdapter.createPayment.mockResolvedValue({
-        data: null,
-        error: 'Payment failed',
-      })
-
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      })
-
-      const submitButton = screen.getByText('Continue to Payment')
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Select Payme
-      const paymeCard = screen.getByText('Payme').closest('.payment-method-card')
-      fireEvent.click(paymeCard!)
-
-      // Click pay button
-      const payButton = screen.getByText(/Pay with Payme/)
-      fireEvent.click(payButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Failed')).toBeInTheDocument()
-      }, { timeout: 5000 })
-
-      // Click retry button
-      const retryButton = screen.getByText('Try Again')
-      fireEvent.click(retryButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      }, { timeout: 5000 })
-    })
-
-    it('should allow trying different payment method after failure', async () => {
-      mockPaymentAdapter.createPayment.mockResolvedValue({
-        data: null,
-        error: 'Payment failed',
-      })
-
-      renderWithRouter(<BookingPage />)
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-      }, { timeout: 10000 })
-
-      // Just verify the booking form renders
-      expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
-    })
-  })
 })

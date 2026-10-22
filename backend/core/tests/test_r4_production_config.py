@@ -47,7 +47,6 @@ def test_good_production_settings_start():
 
 
 @pytest.mark.parametrize('overrides, message', [
-    ({'PAYMENT_TEST_MODE': 'True'}, 'PAYMENT_TEST_MODE'),
     ({'SECRET_KEY': 'your-secret-key-here-change-in-production'}, 'SECRET_KEY'),
     ({'SECRET_KEY': 'django-insecure-' + 'x' * 50}, 'SECRET_KEY'),
     ({'SECRET_KEY': 'short-key'}, 'SECRET_KEY'),
@@ -89,7 +88,7 @@ def test_remote_database_with_required_tls_starts():
 def test_debug_still_allows_local_development_values():
     result = _start(
         DEBUG='True', SECRET_KEY=None, ALLOWED_HOSTS=None, CORS_ALLOWED_ORIGINS=None,
-        CSRF_TRUSTED_ORIGINS=None, PAYMENT_TEST_MODE='True',
+        CSRF_TRUSTED_ORIGINS=None,
     )
     assert result.returncode == 0, result.stderr
 

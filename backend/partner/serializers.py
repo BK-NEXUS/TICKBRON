@@ -4,23 +4,26 @@ Serializers for partner API endpoints.
 This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+import os
+import uuid
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Max
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
-from common.storage import validate_image_file
+from common.storage import image_upload_error
 from geography.serializers import GeographyRefsMixin
+from partner.models import OwnerPlace
 from properties.models import (
     Property, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
 )
 
 
 # Upload limits: 40 megapixels per photo, 50 photos per property
-MAX_PHOTO_PIXELS = 40_000_000
 MAX_PHOTOS_PER_PROPERTY = 50
 
 
@@ -80,7 +83,24 @@ class ChildCurrencyMixin:
         return attrs
 
 
-class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
+class AssignedPlaceMixin:
+    """An owner whose account has a place (set by the super admin) creates hotels there and cannot move them."""
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        place = OwnerPlace.objects.filter(owner=self.context['request'].user).first()
+        if place is not None:
+            assigned = {'country_ref': place.country_id, 'region_ref': place.region_id, 'city_ref': place.city_id}
+            wrong = {
+                field: 'Your hotels are placed by the administrator and cannot be moved.'
+                for field, row_id in assigned.items() if field in attrs and attrs[field].pk != row_id
+            }
+            if wrong:
+                raise serializers.ValidationError(wrong)
+        return attrs
+
+
+class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
     
@@ -101,10 +121,8 @@ class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, seria
             'full_address', 'created_at', 'updated_at'
         ]
         # status is set by admin moderation (approve/suspend), never by the owner. The text location
-        # is derived from the Geography refs (English names); city / state / country are accepted as
-        # DEPRECATED input and resolved to refs (geography.serializers.resolve_text_location).
-        read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
-        extra_kwargs = {'city': {'required': False}, 'country': {'required': False}}
+        # (city / state / country) is derived from the Geography refs (English names) and read-only.
+        read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
     
     def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
@@ -114,7 +132,7 @@ class PartnerPropertySerializer(PropertyCurrencyMixin, GeographyRefsMixin, seria
         return obj.display_name()
 
 
-class PartnerPropertyCreateSerializer(PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
+class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for creating new properties by hotel-owners.
     
@@ -126,11 +144,9 @@ class PartnerPropertyCreateSerializer(PropertyCurrencyMixin, GeographyRefsMixin,
             'property_type', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'postal_code',
             'country_ref', 'region_ref', 'city_ref',
-            'city', 'state', 'country',  # DEPRECATED input: resolved to the refs
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]
-        extra_kwargs = {'city': {'required': False}, 'country': {'required': False}}
     
     def create(self, validated_data):
         """Create property with owner set to authenticated user."""
@@ -223,7 +239,6 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
             'id', 'room_type', 'name', 'slug', 'rate_type', 'description', 'base_price',
             'currency', 'prices', 'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
             'deposit_required', 'deposit_percentage', 'advance_booking_days',
-            'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
         extra_kwargs = {
@@ -481,18 +496,36 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
             return obj.photo.url
         return None
 
+    def validate_is_primary(self, value):
+        # A property always keeps one cover; it moves by making another photo the cover.
+        if self.instance is not None and not value:
+            raise serializers.ValidationError('Make another photo the cover instead.')
+        return value
+
+    def create(self, validated_data):
+        prop = validated_data['property']
+        photos = PropertyPhoto.objects.filter(property=prop, is_deleted=False)
+        validated_data['display_order'] = (photos.aggregate(top=Max('display_order'))['top'] or 0) + 1
+        if not photos.filter(is_primary=True).exists():
+            validated_data['is_primary'] = True
+        # The client's file name is never used: stored paths are public and must not be guessable.
+        upload = validated_data['photo']
+        extension = os.path.splitext(upload.name)[1].lower()
+        upload.name = f'{uuid.uuid4().hex}{extension}'
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('photo', None)
+        return super().update(instance, validated_data)
+
     def validate_photo(self, value):
         """
         Enforce the size/extension/content-type rules from model.clean() here too,
         since DRF's create/update flow never calls full_clean().
         """
-        is_valid, error_message = validate_image_file(value)
-        if not is_valid:
+        error_message = image_upload_error(value)
+        if error_message:
             raise serializers.ValidationError(error_message)
-        width, height = value.image.size
-        if width * height > MAX_PHOTO_PIXELS:
-            # A tiny file can expand to gigabytes of pixels when decoded
-            raise serializers.ValidationError('Image dimensions are too large.')
         return value
 
     def validate_property(self, value):

@@ -10,7 +10,6 @@ from bookings.views_noshow import (
     admin_no_show_report_reverse, admin_no_show_reports,
 )
 from promotions import admin_views as promotion_views
-from payments.admin_views import refund_mark_done, refund_retry, refunds_needs_attention
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
@@ -21,7 +20,7 @@ from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
     admin_property_approve, admin_property_suspend, admin_property_region,
-    admin_create_hotel_owner, admin_payment_transactions,
+    admin_create_hotel_owner,
     admin_booking_lookup_by_reference,
     admin_customers_directory,
     admin_customer_detail,
@@ -69,9 +68,6 @@ urlpatterns = [
          name='admin-no-show-report-reject'),
     path('no-show-reports/<int:report_id>/reverse/', admin_no_show_report_reverse,
          name='admin-no-show-report-reverse'),
-    path('refunds/needs-attention/', refunds_needs_attention, name='admin-refunds-needs-attention'),
-    path('refunds/<int:refund_id>/mark-done/', refund_mark_done, name='admin-refund-mark-done'),
-    path('refunds/<int:refund_id>/retry/', refund_retry, name='admin-refund-retry'),
     path('exchange-rates/', exchange_rate_list, name='admin-exchange-rates'),
     path('exchange-rates/status/', exchange_rate_status, name='admin-exchange-rate-status'),
     path('exchange-rates/<int:rate_id>/accept/', exchange_rate_accept, name='admin-exchange-rate-accept'),
@@ -79,7 +75,6 @@ urlpatterns = [
     path('properties/<int:property_id>/approve/', admin_property_approve, name='admin-property-approve'),
     path('properties/<int:property_id>/suspend/', admin_property_suspend, name='admin-property-suspend'),
     path('properties/<int:property_id>/region/', admin_property_region, name='admin-property-region'),
-    path('payments/transactions/', admin_payment_transactions, name='admin-payment-transactions'),
     path('bookings/lookup/', admin_booking_lookup_by_reference, name='admin-booking-lookup'),
     path('promotion-hotels/', promotion_views.promotion_hotels, name='admin-promotion-hotels'),
     path('promotions/', promotion_views.promotions, name='admin-promotions'),

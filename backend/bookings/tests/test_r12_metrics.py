@@ -3,40 +3,18 @@ R12 phase 2: the Status definitions in bookings/metrics.py (PLAN_R12 section 1).
 """
 from datetime import date, timedelta
 from decimal import Decimal
-from itertools import count
 
 import pytest
 
 from bookings import metrics
 from bookings.metrics import InvalidPeriod, parse_period
 from bookings.tests.r12_helpers import make_booking
-from payments.models import PaymentTransaction, Refund
 from properties.models import Property, PropertyType
 from users.models import User
 
 pytestmark = pytest.mark.django_db
 
 TODAY = date(2026, 10, 6)   # a Tuesday
-_keys = count(1)
-
-
-def pay(booking, amount, currency='UZS', status='completed'):
-    """A payment row; split or failed payments are set with update() (model validation wants one full charge)."""
-    n = next(_keys)
-    tx = PaymentTransaction.objects.create(
-        idempotency_key=f'pay-{n}', booking=booking, provider='payme', amount=booking.charge_amount,
-        currency=booking.charge_currency, status='completed', provider_transaction_id=f'ptx-{n}',
-    )
-    PaymentTransaction.objects.filter(pk=tx.pk).update(amount=Decimal(amount), currency=currency, status=status)
-    tx.refresh_from_db()
-    return tx
-
-
-def refund(payment, amount, status='succeeded'):
-    return Refund.objects.create(
-        payment=payment, booking=payment.booking, amount=Decimal(amount), currency=payment.currency,
-        reason='staff', status=status, idempotency_key=f'ref-{next(_keys)}',
-    )
 
 
 @pytest.fixture
@@ -176,104 +154,65 @@ class TestCounting:
 
     def test_soft_deleted_bookings_never_count(self, hotel, guest):
         b = make_booking(hotel, guest, TODAY - timedelta(days=3), status='completed')
-        pay(b, '1000000')
         b.is_deleted = True
         b.save(update_fields=['is_deleted'])
         t = totals(hotel)
         assert (t['bookings'], t['revenue'], t['booking_status']['completed']) == (0, [], 0)
 
 
-class TestRefundRule:
+class TestCashRevenue:
+    """Cash at the hotel: revenue is the total price of completed bookings, per currency."""
 
-    def test_full_refund_over_two_payments_is_excluded(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed', guest_count=3)
-        refund(pay(b, '600000'), '600000')
-        refund(pay(b, '400000'), '400000')
+    def test_revenue_is_the_total_price_of_completed_bookings(self, hotel, guest):
+        make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
+        make_booking(hotel, guest, TODAY - timedelta(days=9), status='completed')
         t = totals(hotel)
-        assert (t['bookings'], t['guests'], t['nights'], t['stayed'], t['revenue']) == (0, 0, 0, 0, [])
-        assert t['fully_refunded'] == 1
-        assert t['booking_value'] == []
+        assert t['bookings'] == 2
+        assert money(t['revenue']) == {'UZS': '2000000.00'}
 
-    def test_partial_refund_stays_counted_with_paid_minus_refunded(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
-        p = pay(b, '1000000')
-        refund(p, '300000')
-        refund(p, '100000')
-        t = totals(hotel)
-        assert (t['bookings'], t['fully_refunded']) == (1, 0)
-        assert money(t['revenue']) == {'UZS': '600000.00'}
+    @pytest.mark.parametrize('status', ['confirmed', 'cancelled', 'no_show', 'pending', 'expired'])
+    def test_only_completed_bookings_are_revenue(self, hotel, guest, status):
+        make_booking(hotel, guest, TODAY - timedelta(days=10), status=status)
+        assert totals(hotel)['revenue'] == []
 
-    def test_one_payment_refunded_the_other_not_stays_counted(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
-        refund(pay(b, '600000'), '600000')
-        pay(b, '400000')
+    def test_a_confirmed_booking_counts_but_is_not_revenue_yet(self, hotel, guest):
+        make_booking(hotel, guest, TODAY + timedelta(days=5), status='confirmed')
         t = totals(hotel)
-        assert (t['bookings'], t['fully_refunded']) == (1, 0)
-        assert money(t['revenue']) == {'UZS': '400000.00'}
-
-    @pytest.mark.parametrize('status', ['failed', 'pending', 'needs_manual'])
-    def test_refunds_that_did_not_succeed_are_ignored(self, hotel, guest, status):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
-        refund(pay(b, '1000000'), '1000000', status=status)
-        t = totals(hotel)
-        assert (t['bookings'], t['fully_refunded']) == (1, 0)
-        assert money(t['revenue']) == {'UZS': '1000000.00'}
+        assert t['revenue'] == []
+        assert t['upcoming'] == 1
 
     def test_currencies_are_never_mixed(self, hotel, guest):
-        b1 = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
-        b2 = make_booking(hotel, guest, TODAY - timedelta(days=9), status='completed', currency='USD',
-                          price=Decimal('50'))
-        pay(b1, '1000000')
-        p = pay(b2, '100.00', currency='USD')
-        refund(p, '30.00')
-        assert money(totals(hotel)['revenue']) == {'UZS': '1000000.00', 'USD': '70.00'}
-        assert money(totals(hotel)['booking_value']) == {'UZS': '1000000.00', 'USD': '100.00'}
+        make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
+        make_booking(hotel, guest, TODAY - timedelta(days=9), status='completed', currency='USD',
+                     price=Decimal('50'))
+        assert money(totals(hotel)['revenue']) == {'UZS': '1000000.00', 'USD': '100.00'}
 
-    def test_unpaid_or_failed_payments_are_not_revenue(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
-        pay(b, '1000000', status='failed')
-        pay(b, '1000000', status='pending')
-        t = totals(hotel)
-        assert (t['bookings'], t['revenue'], t['fully_refunded']) == (1, [], 0)
-
-    def test_booking_without_payments_counts_with_revenue_zero(self, hotel, guest):
+    def test_revenue_and_booking_value_agree(self, hotel, guest):
         make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
         t = totals(hotel)
-        assert (t['bookings'], t['revenue'], t['fully_refunded']) == (1, [], 0)
-        assert money(t['booking_value']) == {'UZS': '1000000.00'}
+        assert money(t['revenue']) == money(t['booking_value'])
 
-    def test_no_show_keeps_the_money_not_refunded(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='no_show')
-        refund(pay(b, '1000000'), '500000')
-        t = totals(hotel)
-        assert (t['bookings'], t['no_show'], t['fully_refunded']) == (0, 1, 0)
-        assert money(t['revenue']) == {'UZS': '500000.00'}
+    def test_refunds_no_longer_exist_in_the_totals(self, hotel, guest):
+        make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
+        assert 'fully_refunded' not in totals(hotel)
 
-    def test_fully_refunded_no_show_is_only_in_fully_refunded(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='no_show')
-        refund(pay(b, '1000000'), '1000000')
-        t = totals(hotel)
-        assert (t['no_show'], t['fully_refunded'], t['revenue']) == (0, 1, [])
-
-    def test_cancelled_refunded_booking_is_not_fully_refunded_count(self, hotel, guest):
-        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='cancelled')
-        refund(pay(b, '1000000'), '1000000')
-        t = totals(hotel)
-        assert (t['fully_refunded'], t['revenue']) == (0, [])
+    def test_soft_deleted_bookings_are_not_revenue(self, hotel, guest):
+        b = make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
+        type(b).objects.filter(pk=b.pk).update(is_deleted=True)
+        assert totals(hotel)['revenue'] == []
 
 
 class TestSeries:
 
     def test_empty_buckets_are_included(self, hotel, guest):
-        b = make_booking(hotel, guest, date(2026, 9, 29), status='completed', guest_count=2)
-        pay(b, '1000000')
+        make_booking(hotel, guest, date(2026, 9, 29), status='completed', guest_count=2)
         make_booking(hotel, guest, date(2026, 10, 1), status='completed')
         rows = metrics.series(metrics.all_bookings().filter(property=hotel),
                               (date(2026, 9, 28), date(2026, 10, 12)), 'week', today=TODAY)
         assert [(r['period'], r['bookings'], r['guests'], r['stayed']) for r in rows] == [
             ('2026-09-28', 2, 3, 2), ('2026-10-05', 0, 0, 0),
         ]
-        assert money(rows[0]['revenue']) == {'UZS': '1000000.00'} and rows[1]['revenue'] == []
+        assert money(rows[0]['revenue']) == {'UZS': '2000000.00'} and rows[1]['revenue'] == []
 
     def test_day_month_year_labels(self, hotel, guest):
         make_booking(hotel, guest, date(2026, 2, 3), status='completed')

@@ -17,8 +17,7 @@ function report(id: number, extra: Partial<StaffNoShowReport> = {}): StaffNoShow
     check_in: '2026-10-05', check_out: '2026-10-07', comment: `Owner comment ${id}`, status: 'pending',
     decision_comment: '', decided_at: null, created_at: '2026-10-08T10:00:00Z', decided_by_id: null, created_by_id: 7,
     hotel_flagged: false,
-    refund_preview: { amount: '450000.00', currency: 'UZS', percent: 50, already_refunded: '0.00', paid: '900000.00' },
-    refunds: [], ...extra,
+    ...extra,
   }
 }
 
@@ -50,24 +49,13 @@ describe('AdminNoShowReports', () => {
       expect(screen.getByLabelText('Status')).toHaveValue('pending')
     })
 
-    it('shows the booking reference, hotel, stay, owner comment and the exact refund', async () => {
+    it('shows the booking reference, hotel, stay and owner comment, and no refund', async () => {
       renderScreen()
       const item = (await screen.findByText('REF1')).closest('li') as HTMLElement
       expect(within(item).getByText('Silk Road Plaza')).toBeInTheDocument()
       expect(within(item).getByText('Owner comment 1')).toBeInTheDocument()
       expect(within(item).getByText('Waiting for a decision')).toBeInTheDocument()
-      expect(item).toHaveTextContent('50%')
-      expect(item).toHaveTextContent('450')
-      expect(item).toHaveTextContent('900')
-    })
-
-    it('says when part of the money was already refunded', async () => {
-      adapter.listReports.mockResolvedValue(page([report(1, {
-        refund_preview: { amount: '300000.00', currency: 'UZS', percent: 50, already_refunded: '150000.00', paid: '900000.00' },
-      })]))
-      renderScreen()
-      const item = (await screen.findByText('REF1')).closest('li') as HTMLElement
-      expect(within(item).getByText(/Already refunded/)).toHaveTextContent('150')
+      expect(item).not.toHaveTextContent('refund')
     })
 
     it('marks a hotel that reports unusually often', async () => {
@@ -76,25 +64,6 @@ describe('AdminNoShowReports', () => {
       const items = await screen.findAllByRole('listitem')
       expect(within(items[0]).getByText('Reports often')).toBeInTheDocument()
       expect(within(items[1]).queryByText('Reports often')).toBeNull()
-    })
-
-    it('does not show a refund line for a report without a preview', async () => {
-      adapter.listReports.mockResolvedValue(page([report(2, { status: 'rejected', refund_preview: null, decision_comment: 'Guest arrived late' })]))
-      renderScreen()
-      const item = (await screen.findByText('REF2')).closest('li') as HTMLElement
-      expect(item).not.toHaveTextContent('If approved')
-      expect(within(item).getByText('Guest arrived late')).toBeInTheDocument()
-    })
-
-    it('lists the refunds of an approved report with their state', async () => {
-      adapter.listReports.mockResolvedValue(page([report(3, {
-        status: 'approved', refund_preview: null, decision_comment: 'ok ok ok ok',
-        refunds: [{ id: 1, amount: '450000.00', currency: 'UZS', status: 'needs_manual' }],
-      })]))
-      renderScreen()
-      const item = (await screen.findByText('REF3')).closest('li') as HTMLElement
-      expect(item).toHaveTextContent('450')
-      expect(within(item).getByText(/Pay by hand/)).toBeInTheDocument()
     })
 
     it('shows loading, then an empty message', async () => {
@@ -161,13 +130,12 @@ describe('AdminNoShowReports', () => {
       expect(within(items[3]).queryAllByRole('button')).toHaveLength(0)
     })
 
-    it('approving needs a comment, shows the refund, then sends it and reloads', async () => {
+    it('approving needs a comment, then sends it and reloads', async () => {
       adapter.approveReport.mockResolvedValue(done)
       renderScreen()
       fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
       const dialog = await screen.findByRole('dialog', { name: 'Approve report' })
-      expect(dialog).toHaveTextContent('450')
-      const send = within(dialog).getByRole('button', { name: 'Approve and refund' })
+      const send = within(dialog).getByRole('button', { name: 'Approve report' })
       expect(send).toBeDisabled()
       fireEvent.change(within(dialog).getByLabelText('Decision comment (required)'), { target: { value: 'short' } })
       expect(send).toBeDisabled()
@@ -178,23 +146,6 @@ describe('AdminNoShowReports', () => {
       await waitFor(() => expect(adapter.approveReport).toHaveBeenCalledWith(1, COMMENT))
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
       await waitFor(() => expect(adapter.listReports).toHaveBeenCalledTimes(2))
-    })
-
-    it('warns that approving refunds nothing when the booking carries no refund promise (0%)', async () => {
-      adapter.listReports.mockResolvedValue(page([report(1, {
-        refund_preview: { amount: '0.00', currency: 'UZS', percent: 0, already_refunded: '0.00', paid: '900000.00' },
-      })]))
-      renderScreen()
-      fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Approve report' })
-      expect(within(dialog).getByText(/refunds nothing/)).toBeInTheDocument()
-    })
-
-    it('does not show that warning for a normal 50% booking', async () => {
-      renderScreen()
-      fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Approve report' })
-      expect(within(dialog).queryByText(/refunds nothing/)).toBeNull()
     })
 
     it('rejecting sends the comment to reject', async () => {
@@ -225,7 +176,7 @@ describe('AdminNoShowReports', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
       const dialog = await screen.findByRole('dialog')
       fireEvent.change(within(dialog).getByLabelText('Decision comment (required)'), { target: { value: COMMENT } })
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve and refund' }))
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve report' }))
       expect(await within(dialog).findByRole('alert')).toHaveTextContent('The rooms are no longer free, so the booking cannot be restored.')
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
@@ -237,7 +188,7 @@ describe('AdminNoShowReports', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
       const dialog = await screen.findByRole('dialog')
       fireEvent.change(within(dialog).getByLabelText('Decision comment (required)'), { target: { value: COMMENT } })
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve and refund' }))
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve report' }))
       await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Sending...' })).toBeDisabled())
       expect(adapter.approveReport).toHaveBeenCalledTimes(1)
       adapter.listReports.mockResolvedValue(page([]))

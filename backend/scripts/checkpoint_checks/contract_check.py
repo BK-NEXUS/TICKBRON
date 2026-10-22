@@ -37,8 +37,7 @@ def check_contract_consistency():
             'auth/login', 
             'auth/refresh',
             'properties/search',
-            'bookings',
-            'payments'
+            'bookings'
         ]
         missing_endpoints = []
         for endpoint in required_endpoints:

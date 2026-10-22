@@ -6,13 +6,6 @@ const css = readFileSync(resolve(__dirname, 'index.css'), 'utf-8')
 const rule = (selector: string) => css.match(new RegExp(`\n${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`))?.[1] ?? ''
 
 describe('long unbroken values stay inside the screen', () => {
-  it('lets the transaction id on the payment confirmation wrap instead of widening the page', () => {
-    const value = rule('.payment-confirmation-value')
-
-    expect(value).toContain('overflow-wrap: anywhere')
-    expect(value).toContain('min-width: 0')
-  })
-
   it('lets the hotel page columns shrink below their content, so a calendar cannot widen a phone page', () => {
     const columns = [...css.matchAll(/\.property-detail-content \{[^}]*?grid-template-columns: ([^;]+);/g)].map(match => match[1])
 

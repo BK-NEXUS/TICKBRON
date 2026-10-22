@@ -4,6 +4,7 @@ Public geography API (Geography plan G3). Read-only, no login.
 Only active rows are listed. hotel_count is the number of public properties
 (active, approved, not deleted) and comes from one annotated query per list.
 """
+from django.core.files.storage import default_storage
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -19,11 +20,16 @@ NAME_FIELDS = ('name_uz', 'name_ru', 'name_en')
 
 
 def _rows(queryset, *fields):
-    return list(
+    rows = list(
         queryset.annotate(hotel_count=Count('properties', filter=PUBLIC_PROPERTY))
         .order_by('sort_order', 'name_en')  # Meta.ordering is ignored once the query aggregates
         .values('id', *fields, *NAME_FIELDS, 'hotel_count')
     )
+    if 'image' in fields:
+        for row in rows:
+            name = row.pop('image')
+            row['image_url'] = default_storage.url(name) if name else None
+    return rows
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -31,7 +37,7 @@ def _rows(queryset, *fields):
 @permission_classes([AllowAny])
 def country_list(request):
     """Active countries with their currency and hotel counts."""
-    return Response(_rows(Country.objects.filter(is_active=True), 'code', 'currency'))
+    return Response(_rows(Country.objects.filter(is_active=True), 'code', 'currency', 'image'))
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -40,7 +46,7 @@ def country_list(request):
 def region_list(request, code):
     """Active regions of an active country (code is case-insensitive)."""
     country = get_object_or_404(Country, code=code.upper(), is_active=True)
-    return Response(_rows(Region.objects.filter(country=country, is_active=True)))
+    return Response(_rows(Region.objects.filter(country=country, is_active=True), 'image'))
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

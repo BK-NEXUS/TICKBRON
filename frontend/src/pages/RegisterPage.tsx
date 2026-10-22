@@ -1,3 +1,4 @@
+import { cleanField, isPhoneValid } from '../utils/inputFilters'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -14,6 +15,7 @@ export function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
+    phone_number: '',
     password: '',
     password_confirm: '',
   })
@@ -32,7 +34,7 @@ export function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: cleanField(e.target.name, e.target.value),
     }))
   }
 
@@ -41,6 +43,11 @@ export function RegisterPage() {
     setError('')
 
     // Basic validation
+    if (!isPhoneValid(formData.phone_number)) {
+      setError(t('auth.errPhone'))
+      return
+    }
+
     if (formData.password !== formData.password_confirm) {
       setError(t('auth.errorPasswordMismatch'))
       return
@@ -100,6 +107,27 @@ export function RegisterPage() {
                 disabled={isLoading}
                 autoComplete="name"
               />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="phone_number" className="auth-label">
+                {t('auth.phone')}
+              </label>
+              <input
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                inputMode="tel"
+                className="auth-input"
+                value={formData.phone_number}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                autoComplete="tel"
+                placeholder="+998 90 123 45 67"
+                aria-describedby="phone_number-hint"
+              />
+              <span id="phone_number-hint" className="auth-hint">{t('auth.phoneHint')}</span>
             </div>
 
             <div className="auth-field">

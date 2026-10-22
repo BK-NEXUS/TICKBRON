@@ -3,6 +3,7 @@ Serializers for user models.
 
 This module contains serializers for the User model to be used in API endpoints.
 """
+from common.validators import validate_person_name
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
@@ -64,19 +65,24 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
+    # Stored only (no SMS, no code); several accounts may share a number
+    phone_number = serializers.CharField(max_length=30)
 
     class Meta:
         model = User
-        fields = ['email', 'full_name', 'whatsapp', 'telegram',
+        fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {'full_name': {'required': True}}
+        extra_kwargs = {'full_name': {'required': True, 'validators': [validate_person_name]}}
     
     def validate_email(self, value):
         """Validate email format."""
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
-    
+
+    def validate_phone_number(self, value):
+        return validate_phone_number_format(value)
+
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
@@ -135,11 +141,19 @@ class PasswordChangeSerializer(NewPasswordSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating user profile. The phone number is not editable: accounts are e-mail only.
+    Serializer for updating user profile. The phone number can be changed but never blanked.
     """
+    phone_number = serializers.CharField(required=False, max_length=30)
 
     class Meta:
         model = User
-        fields = ['full_name', 'first_name', 'last_name', 'whatsapp', 'telegram', 'preferred_contact_method']
-        extra_kwargs = {'full_name': {'required': False}}
+        fields = ['full_name', 'first_name', 'last_name', 'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method']
+        extra_kwargs = {
+            'full_name': {'required': False, 'validators': [validate_person_name]},
+            'first_name': {'validators': [validate_person_name]},
+            'last_name': {'validators': [validate_person_name]},
+        }
+
+    def validate_phone_number(self, value):
+        return validate_phone_number_format(value)
 

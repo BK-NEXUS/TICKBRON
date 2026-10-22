@@ -15,9 +15,8 @@ from rest_framework.test import APIClient
 
 from accounts.models import Review
 from admin_panel.models import AdminAccessLog
-from admin_panel.tests.status_fixtures import make_booking, make_payment
+from admin_panel.tests.status_fixtures import make_booking
 from common.dates import business_today
-from payments.models import Refund
 from users.models import User
 
 S = '/api/v1/admin-panel/status'
@@ -63,11 +62,11 @@ class TestFlatHotelsList:
             (1, 'Alpha Hotel', 'Tashkent', 'UZ', 'Tashkent')
         assert (alpha['bookings'], alpha['stayed'], alpha['guests'], alpha['unique_customers'], alpha['nights']) == \
             (3, 1, 3, 2, 3)
-        assert money(alpha['revenue']) == {'USD': '450.00'}
+        assert money(alpha['revenue']) == {'USD': '150.00'}
         assert money(alpha['booking_value']) == {'USD': '450.00'}
         assert alpha['rating'] is None
-        # gamma: only a no-show (kept money is revenue, never a counted booking)
-        assert (rows[3]['bookings'], money(rows[3]['revenue'])) == (0, {'USD': '999.00'})
+        # gamma: only a no-show (never a counted booking, never revenue)
+        assert (rows[3]['bookings'], money(rows[3]['revenue'])) == (0, {})
 
     @pytest.mark.parametrize('ordering', ['price', 'name', '--bookings', 'revenue_uzs'])
     def test_unknown_ordering_is_400(self, get, status_world, ordering):
@@ -78,13 +77,9 @@ class TestFlatHotelsList:
         h = status_world['hotels']
         guest = status_world['guests'][0]
         day = business_today() - timedelta(days=40)
-        big = make_booking(guest, h['gamma'], day, '10.00', status='completed')
-        make_payment(big, '5000000', 'UZS')
-        small = make_booking(guest, h['delta'], day, '10.00', status='completed')
-        make_payment(small, '1000000', 'UZS')
-        refunded = make_payment(make_booking(guest, h['beta'], day, '10.00', status='completed'), '9000000', 'UZS')
-        Refund.objects.create(payment=refunded, booking=refunded.booking, amount=Decimal('8500000'), currency='UZS',
-                              reason='staff', status='succeeded', idempotency_key='r-big')
+        make_booking(guest, h['gamma'], day, '5000000', status='completed', currency='UZS')
+        make_booking(guest, h['delta'], day, '1000000', status='completed', currency='UZS')
+        make_booking(guest, h['beta'], day, '500000', status='completed', currency='UZS')
         ids = [row['id'] for row in get(f'{S}/hotels/', ordering='-revenue').data['results']]
         assert ids == [h['gamma'].id, h['delta'].id, h['beta'].id, h['alpha'].id]
         ids = [row['id'] for row in get(f'{S}/hotels/', ordering='revenue').data['results']]
@@ -140,7 +135,7 @@ class TestFlatHotelsList:
         response = get(f'{S}/hotels/', period='custom', **{'from': '2026-04-01', 'to': '2026-04-30'})
         assert response.data['period_range'] == {'from': '2026-04-01', 'to': '2026-04-30'}
         alpha = response.data['results'][0]
-        assert (alpha['bookings'], money(alpha['revenue'])) == (2, {'USD': '350.00'})
+        assert (alpha['bookings'], money(alpha['revenue'])) == (2, {'USD': '150.00'})
         for params in ({'period': 'custom', 'from': '2026-05-01', 'to': '2026-04-01'},
                        {'period': 'custom', 'from': '2000-01-01', 'to': '2026-01-01'},
                        {'period': 'custom', 'from': 'x', 'to': '2026-01-01'},
@@ -154,7 +149,7 @@ class TestFlatHotelsList:
         rows = read_csv(response)
         assert rows[0][:3] == ['rank', 'id', 'name']
         assert [row[2] for row in rows[1:]] == ['Alpha Hotel', 'Beta Hotel', 'Delta Hotel', 'Gamma Hotel']
-        assert rows[1][-2] == 'USD 450.00'
+        assert rows[1][-2] == 'USD 150.00'
         log = AdminAccessLog.objects.get(action='export_csv')
         assert (log.actor_id, log.details) == (staff.id, {'export': 'status_hotels', 'rows': 4})
 
@@ -176,17 +171,17 @@ class TestUserDetail:
             (g1.id, 'guest1@example.com', '+998903330001')
         totals = data['totals']
         assert (totals['bookings'], totals['stayed'], totals['guests'], totals['nights']) == (2, 1, 2, 2)
-        assert money(totals['revenue']) == {'USD': '250.00'}
+        assert money(totals['revenue']) == {'USD': '150.00'}
         assert data['hotels_visited'] == 1
         assert [(row['id'], row['bookings'], row['stayed'], row['nights'], row['guests'], money(row['spent']))
-                for row in data['hotels']] == [(h['alpha'].id, 2, 1, 2, 2, {'USD': '250.00'})]
+                for row in data['hotels']] == [(h['alpha'].id, 2, 1, 2, 2, {'USD': '150.00'})]
         history = data['history']
         # every status except soft-deleted, newest check-in first
         assert history['count'] == 2
         first = history['results'][0]
         assert (first['check_in'], first['status'], first['hotel']['name'], first['total_price']) == \
             ('2026-04-10', 'completed', 'Alpha Hotel', '150.00')
-        assert money(first['paid']) == {'USD': '150.00'} and first['refunded'] == []
+        assert 'paid' not in first and 'refunded' not in first
         log = AdminAccessLog.objects.get(action='status_user_view')
         assert (log.actor_id, log.target_user_id) == (staff.id, g1.id)
 
@@ -289,7 +284,7 @@ class TestConsistency:
         g2 = status_world['guests'][1]
         alpha = status_world['hotels']['alpha']
         row = next(r for r in get(f'{S}/users/{g2.id}/').data['hotels'] if r['id'] == alpha.id)
-        assert (row['bookings'], row['guests'], money(row['spent'])) == (1, 1, {'USD': '200.00'})
+        assert (row['bookings'], row['guests'], money(row['spent'])) == (1, 1, {})
 
 
 @pytest.mark.django_db
@@ -304,8 +299,7 @@ class TestQueryCountIsConstant:
     @pytest.mark.parametrize('n', [5, 50])
     def test_hotels_list(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
-        # fully refunded ids, UZS revenue (payments, refunds), the list, revenue (payments, refunds),
-        # booking value (the revenue sort is done on the list, so no COUNT query)
+        # UZS revenue, the list, revenue, booking value (the revenue sort is done on the list, so no COUNT query)
         with django_assert_max_num_queries(7):
             assert get(f'{S}/hotels/', ordering='-revenue').status_code == 200
 
@@ -313,8 +307,7 @@ class TestQueryCountIsConstant:
     def test_user_detail(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
         g1 = status_world['guests'][0]
-        # user, refunded ids, history (count, page, paid, refunded), totals (counts, revenue x2,
-        # value), per hotel, hotel names, spent (x2), audit insert
+        # user, history (count, page), totals (counts, revenue x2, value), per hotel, hotel names, spent (x2), audit insert
         with django_assert_max_num_queries(15):
             assert get(f'{S}/users/{g1.id}/').status_code == 200
 
@@ -322,7 +315,7 @@ class TestQueryCountIsConstant:
     def test_hotel_detail(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
         beta = status_world['hotels']['beta']
-        # hotel, refunded ids, totals (4), series (span, counts, revenue x2), reconciliation, years,
+        # hotel, totals (4), series (span, counts, revenue x2), reconciliation, years,
         # monthly (3)
         with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{beta.id}/').status_code == 200

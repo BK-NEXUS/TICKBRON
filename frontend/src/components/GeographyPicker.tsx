@@ -24,6 +24,8 @@ export interface GeographyLabels {
 interface GeographyPickerProps {
   value: GeographyValue
   onChange: (value: GeographyValue, labels: GeographyLabels) => void
+  /** Called with the names of the chosen rows once they are loaded (for a value set from outside) */
+  onLabels?: (labels: GeographyLabels) => void
   disabled?: boolean
   required?: boolean
 }
@@ -61,7 +63,7 @@ function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | nul
 }
 
 /** Country > Region > City dropdowns from the public geography dictionary, names in the page language. */
-export function GeographyPicker({ value, onChange, disabled = false, required = false }: GeographyPickerProps) {
+export function GeographyPicker({ value, onChange, onLabels, disabled = false, required = false }: GeographyPickerProps) {
   const { t, language } = useI18n()
   const id = useId()
 
@@ -80,6 +82,17 @@ export function GeographyPicker({ value, onChange, disabled = false, required = 
     const row = items.find(item => item.id === id)
     return row ? geographyName(row, language) : ''
   }
+  const labels = {
+    country: nameOf(countries.items, value.country_ref),
+    region: nameOf(regions.items, value.region_ref),
+    city: nameOf(cities.items, value.city_ref),
+  }
+  useEffect(() => {
+    onLabels?.(labels)
+    // only when a name really changes; `onLabels` is rebuilt on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labels.country, labels.region, labels.city])
+
   const emit = (next: GeographyValue) => onChange(next, {
     country: nameOf(countries.items, next.country_ref),
     region: nameOf(regions.items, next.region_ref),

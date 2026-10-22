@@ -18,7 +18,22 @@ vi.mock('../adapters/propertyAdapter', () => ({
   },
 }))
 
+// "Where to?" asks the geography dictionary: no answer here either
+vi.mock('../adapters/geographyAdapter', async importOriginal => ({
+  ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
+  geographyAdapter: { getCountries: vi.fn(() => new Promise(() => {})), getRegions: vi.fn(() => new Promise(() => {})) },
+}))
+
 describe('HomePage', () => {
+  it('shows "Where to?" under the search', () => {
+    render(
+      <BrowserRouter>
+        <HomePage />
+      </BrowserRouter>
+    )
+    expect(screen.getByRole('heading', { name: 'Where to?' })).toBeInTheDocument()
+  })
+
   it('renders the hero section', () => {
     render(
       <BrowserRouter>
