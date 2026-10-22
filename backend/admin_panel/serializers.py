@@ -215,22 +215,6 @@ class AdminAmenityReadSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class AdminPaymentTransactionSerializer(serializers.Serializer):
-    """
-    Serializer for payment transaction monitoring by admins.
-    
-    Read-only view of payment transactions for admin oversight.
-    """
-    id = serializers.IntegerField()
-    booking_id = serializers.IntegerField()
-    provider = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
-    currency = serializers.CharField()
-    status = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    updated_at = serializers.DateTimeField()
-
-
 class AdminCustomerSerializer(serializers.Serializer):
     """
     Serializer for admin customers directory.
@@ -247,7 +231,6 @@ class AdminCustomerSerializer(serializers.Serializer):
     preferred_contact_method = serializers.CharField(allow_null=True)
     total_booking_count = serializers.IntegerField()
     last_booking_date = serializers.DateTimeField(allow_null=True)
-    total_amount_paid = serializers.DecimalField(max_digits=12, decimal_places=2)
     customer_status = serializers.CharField()
 
 
@@ -288,19 +271,6 @@ class AdminBookingSummarySerializer(serializers.Serializer):
     currency = serializers.CharField()
     property_name = serializers.CharField()
     property_city = serializers.CharField()
-    created_at = serializers.DateTimeField()
-
-
-class AdminPaymentSummarySerializer(serializers.Serializer):
-    """
-    Serializer for payment summary in customer detail.
-    """
-    id = serializers.IntegerField()
-    booking_id = serializers.IntegerField()
-    provider = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    currency = serializers.CharField()
-    status = serializers.CharField()
     created_at = serializers.DateTimeField()
 
 

@@ -1,5 +1,4 @@
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
-import { NoShowRefundNote } from '../components/NoShowRefundNote'
 import { useI18n } from '../i18n/I18nContext'
 import { statusText } from '../utils/statusText'
 import { useState, useEffect } from 'react'
@@ -9,15 +8,14 @@ import { Link } from 'react-router-dom'
 import { accountAdapter, Booking } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
-import { CancellationNote } from '../components/CancellationNote'
 import { CancelBookingDialog } from '../components/CancelBookingDialog'
-import type { Booking as CancelledBooking, CancelRefund } from '../adapters/bookingAdapter'
+import type { Booking as CancelledBooking } from '../adapters/bookingAdapter'
 import { businessToday } from '../utils/dates'
 import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
 
 interface BookingCardProps {
   booking: Booking
-  onCancelled: (booking: CancelledBooking & { refund: CancelRefund }) => void
+  onCancelled: (booking: CancelledBooking) => void
 }
 
 /** The guest may ask to cancel an upcoming booking that is still open; the backend has the last word. */
@@ -112,14 +110,6 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
         <p className="booking-arrival-notice">{t('bookings.cancelledNoArrival')}</p>
       )}
 
-      {booking.cancellation_terms && canCancel(booking) && (
-        <CancellationNote
-          freeUntil={booking.cancellation_terms.free_until}
-          percentAfter={booking.cancellation_terms.refund_percent_after}
-        />
-      )}
-      <NoShowRefundNote info={booking} />
-
       <div className="booking-card-footer">
         <div className={`booking-card-payment-status booking-card-payment-status--${booking.payment_status}`}>
           {t('bookings.payment', { status: statusText('status.payment', booking.payment_status, t) })}
@@ -152,7 +142,7 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function BookingsPage() {
-  const { t, formatMoney } = useI18n()
+  const { t } = useI18n()
   const { isAuthenticated } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filter, setFilter] = useState<BookingFilter>('all')
@@ -192,12 +182,9 @@ export function BookingsPage() {
     loadBookings()
   }, [isAuthenticated, filter])
 
-  // The booking is cancelled: show it so, and tell what is coming back (the amount is the backend's)
-  const handleCancelled = (cancelled: CancelledBooking & { refund: CancelRefund }) => {
+  const handleCancelled = (cancelled: CancelledBooking) => {
     setBookings(current => current.map(booking => (booking.id === cancelled.id ? { ...booking, status: 'cancelled' } : booking)))
-    setNotice(Number(cancelled.refund.amount) > 0
-      ? t('cancel.doneRefund', { amount: formatMoney(cancelled.refund.amount, cancelled.refund.currency, { minDecimals: 0, maxDecimals: 0 }) })
-      : t('cancel.done'))
+    setNotice(t('cancel.done'))
   }
 
   const filteredBookings = bookings.filter(booking => {

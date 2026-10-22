@@ -4,14 +4,12 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingPage } from './BookingPage'
 import { bookingAdapter } from '../adapters/bookingAdapter'
 import { propertyAdapter } from '../adapters/propertyAdapter'
-import { paymentAdapter } from '../adapters/paymentAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
 
 // Mock adapters
 vi.mock('../adapters/bookingAdapter')
 vi.mock('../adapters/propertyAdapter')
-vi.mock('../adapters/paymentAdapter')
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: vi.fn(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -36,12 +34,6 @@ const quote = (total: string, rooms = 1) => ({
   },
   error: null,
 })
-const mockPaymentAdapter = paymentAdapter as {
-  createPayment: ReturnType<typeof vi.fn>
-  confirmPayment: ReturnType<typeof vi.fn>
-  generateIdempotencyKey: ReturnType<typeof vi.fn>
-  getUserAgent: ReturnType<typeof vi.fn>
-}
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
 const mockProperty = {
@@ -185,50 +177,6 @@ describe('BookingPage', () => {
     mockPropertyAdapter.getQuote.mockResolvedValue(quote('500.00'))
     mockBookingAdapter.createBooking.mockResolvedValue({
       data: mockBooking,
-      error: null,
-    })
-    mockPaymentAdapter.generateIdempotencyKey.mockReturnValue('test_idempotency_key_123')
-    mockPaymentAdapter.getUserAgent.mockReturnValue('test-agent')
-    mockPaymentAdapter.createPayment.mockResolvedValue({
-      data: {
-        id: 1,
-        idempotency_key: 'test_key_123',
-        booking: 1,
-        provider: 'payme',
-        provider_transaction_id: 'txn_123',
-        amount: 500,
-        currency: 'USD',
-        status: 'processing',
-        payment_method_token: null,
-        provider_response: { success: true },
-        error_code: null,
-        error_message: null,
-        client_ip: '127.0.0.1',
-        user_agent: 'test-agent',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      },
-      error: null,
-    })
-    mockPaymentAdapter.confirmPayment.mockResolvedValue({
-      data: {
-        id: 1,
-        idempotency_key: 'test_key_123',
-        booking: 1,
-        provider: 'payme',
-        provider_transaction_id: 'txn_123',
-        amount: 500,
-        currency: 'USD',
-        status: 'completed',
-        payment_method_token: null,
-        provider_response: { success: true },
-        error_code: null,
-        error_message: null,
-        client_ip: '127.0.0.1',
-        user_agent: 'test-agent',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      },
       error: null,
     })
   })
@@ -582,57 +530,6 @@ describe('BookingPage', () => {
         expect(screen.getByText('5 nights')).toBeInTheDocument()
       })
 
-      it('shows the no-show refund sentence from the quote beside the total', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: {
-            ...quote('515.00').data,
-            no_show_refund_percent: 50, no_show_refund_amount: '450000.00',
-            no_show_refund_text_key: 'no_show_refund_statement',
-            no_show_refund_text_params: { percent: 50, amount: '450000.00' },
-          },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-
-        const note = await screen.findByTestId('no-show-refund-note')
-        expect(note).toHaveTextContent('50% of your payment')
-      })
-
-      it('tells the guest about cancelling these dates before they pay (R11)', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: {
-            ...quote('515.00').data,
-            cancellation_terms: { free_cancellation: true, free_until: '2099-01-01T00:00:00+05:00', refund_percent_after: 50 },
-          },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-        const note = await screen.findByTestId('cancellation-note')
-        expect(note).toHaveTextContent('Free cancellation until')
-        expect(note).toHaveTextContent('After that, 50% of your payment is refunded.')
-      })
-
-      it('says "non-refundable" when the quote promises no refund', async () => {
-        mockPropertyAdapter.getQuote.mockResolvedValue({
-          data: { ...quote('515.00').data, cancellation_terms: { free_cancellation: false, free_until: null, refund_percent_after: 0 } },
-          error: null,
-        })
-        renderWithRouter(<BookingPage />)
-        expect(await screen.findByTestId('cancellation-note')).toHaveTextContent('Non-refundable')
-      })
-
-      it('shows nothing about cancelling when the quote has no terms', async () => {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
-        expect(screen.queryByTestId('cancellation-note')).toBeNull()
-      })
-
-      it('shows no refund sentence when the quote has none', async () => {
-        renderWithRouter(<BookingPage />)
-        await waitFor(() => expect(screen.getByText('Price Summary')).toBeInTheDocument())
-        expect(screen.queryByTestId('no-show-refund-note')).toBeNull()
-      })
-
       it('adds the so\'m amount at today\'s rate beside the quoted hotel price when the backend has a rate', async () => {
         mockPropertyAdapter.getQuote.mockResolvedValue({
           data: { ...quote('515.00').data, uzs_total: '6062740.00', exchange_rate: { rate: '11772.95', date: '2025-01-15', source: 'cbu.uz', stale: false } },
@@ -795,7 +692,7 @@ describe('BookingPage', () => {
       expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
     })
 
-    it('confirms the booking at once: no payment step, a confirmed page with the arrival rule', async () => {
+    it('confirms the booking at once: a confirmed page with the arrival rule', async () => {
       mockBookingAdapter.createBooking.mockResolvedValue({
         data: { ...mockBooking, status: 'confirmed', expected_arrival_time: '10:30:00', arrival_deadline: '2025-01-20T12:30:00+05:00' },
         error: null,
@@ -810,7 +707,6 @@ describe('BookingPage', () => {
       expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
       expect(screen.getByText(/pay at the hotel/i)).toBeInTheDocument()
       expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
-      expect(mockPaymentAdapter.createPayment).not.toHaveBeenCalled()
     })
 
     it('refuses to book without an arrival time and does not call the server', async () => {

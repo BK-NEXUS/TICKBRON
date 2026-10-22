@@ -40,7 +40,6 @@ describe('AdminCustomersList', () => {
         preferred_contact_method: 'email',
         total_booking_count: 5,
         last_booking_date: '2024-09-01T00:00:00Z',
-        total_amount_paid: 1500,
         customer_status: 'active',
       },
       {
@@ -54,7 +53,6 @@ describe('AdminCustomersList', () => {
         preferred_contact_method: 'phone',
         total_booking_count: 2,
         last_booking_date: '2024-08-15T00:00:00Z',
-        total_amount_paid: 800,
         customer_status: 'active',
       },
     ],
@@ -328,7 +326,7 @@ describe('AdminCustomersList', () => {
       .map(header => header.textContent)
     expect(headers).toEqual([
       'ID', 'Registration Date', 'Name', 'Phone', 'Email', 'WhatsApp', 'Telegram',
-      'Preferred Contact', 'Booking Count', 'Last Booking Date', 'Total Paid', 'Status',
+      'Preferred Contact', 'Booking Count', 'Last Booking Date', 'Status',
     ])
   })
 
@@ -349,7 +347,6 @@ describe('AdminCustomersList', () => {
           preferred_contact_method: 'email',
           total_booking_count: 0,
           last_booking_date: null,
-          total_amount_paid: 0,
           customer_status: 'active',
         },
       ],
@@ -388,7 +385,6 @@ describe('AdminCustomersList', () => {
           preferred_contact_method: 'email',
           total_booking_count: 5,
           last_booking_date: '2024-09-01T00:00:00Z',
-          total_amount_paid: 1500,
           customer_status: 'active',
         },
         {
@@ -402,7 +398,6 @@ describe('AdminCustomersList', () => {
           preferred_contact_method: 'phone',
           total_booking_count: 0,
           last_booking_date: null,
-          total_amount_paid: 0,
           customer_status: 'inactive',
         },
       ],
@@ -418,20 +413,6 @@ describe('AdminCustomersList', () => {
     await waitFor(() => {
       expect(screen.getByText('Active')).toBeInTheDocument()
       expect(screen.getByText('Inactive')).toBeInTheDocument()
-    })
-  })
-
-  it('should format currency correctly', async () => {
-    (adminAdapter.getCustomers as never).mockResolvedValueOnce({
-      data: mockCustomersResponse,
-      error: null,
-    })
-
-    render(<AdminCustomersList />)
-
-    await waitFor(() => {
-      expect(screen.getByText('$1,500.00')).toBeInTheDocument()
-      expect(screen.getByText('$800.00')).toBeInTheDocument()
     })
   })
 

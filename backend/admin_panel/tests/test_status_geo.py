@@ -193,7 +193,7 @@ class TestHotels:
 class TestAggregatesInTheDatabase:
     """A fixed number of queries per page, however many rows there are."""
 
-    # R12: fully refunded ids, count, page, revenue (payments, refunds), booking value = 6
+    # R12: count, page, revenue, booking value
     # (was 3: count, page, revenue)
     @pytest.mark.parametrize('url,queries', [
         (f'{S}/countries/', 6),

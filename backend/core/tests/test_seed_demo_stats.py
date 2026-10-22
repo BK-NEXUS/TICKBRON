@@ -129,28 +129,21 @@ class TestSeedDemoStats:
 
 
 @pytest.mark.django_db
-class TestSeedDemoStatsPayments:
-    """R12: Status revenue is paid - refunded, so the demo bookings carry their payments."""
+class TestSeedDemoStatsCash:
+    """Cash at the hotel: demo bookings carry no payment rows and are paid at the hotel."""
 
     @pytest.fixture(autouse=True)
     def debug_on(self, settings):
         settings.DEBUG = True
 
-    def test_every_demo_booking_has_its_payment_and_cancelled_ones_a_full_refund(self):
-        from payments.models import PaymentTransaction, Refund
+    def test_demo_bookings_have_no_payments(self):
+        from payments.models import PaymentTransaction
 
         run_seed()
-        run_seed()   # idempotent
 
         bookings = demo_bookings()
-        payments = PaymentTransaction.objects.filter(booking__in=bookings)
-        assert payments.count() == 250
-        for tx in payments.select_related('booking'):
-            assert (tx.amount, tx.currency) == (tx.booking.charge_amount, tx.booking.charge_currency)
-            assert tx.status == ('refunded' if tx.booking.status == 'cancelled' else 'completed')
-        refunds = Refund.objects.filter(booking__in=bookings)
-        assert refunds.count() == bookings.filter(status='cancelled').count()
-        assert all(r.status == 'succeeded' and r.amount == r.payment.amount for r in refunds.select_related('payment'))
+        assert not PaymentTransaction.objects.filter(booking__in=bookings).exists()
+        assert set(bookings.values_list('payment_status', flat=True)) == {'pending'}
 
 
 @pytest.mark.django_db

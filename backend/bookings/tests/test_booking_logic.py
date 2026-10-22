@@ -311,15 +311,3 @@ class TestExpiredBookingTask(BookingLogicTestBase):
 
         assert result.failed()
         assert isinstance(result.result, ExpiredBookingProcessingError)
-
-    def test_payment_cannot_start_for_expired_booking(self):
-        booking = self.create_booking()
-        self.expire_now(booking)
-
-        response = self.client.post('/api/v1/payments/transactions/', {
-            'idempotency_key': 'k-expired', 'booking': booking.id, 'provider': 'payme',
-            'amount': str(booking.total_price), 'currency': 'USD',
-        }, format='json')
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'booking' in response.data['error']['details']

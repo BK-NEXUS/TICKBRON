@@ -1,4 +1,4 @@
-"""Shared helpers for the R12 phase 3 (no-show reports and the refund) tests."""
+"""Shared helpers for the R12 phase 3 (no-show reports) tests."""
 from datetime import timedelta
 from decimal import Decimal
 
@@ -7,7 +7,6 @@ from rest_framework.test import APIClient
 
 from bookings.models import Booking, BookingItem
 from common.dates import business_today
-from payments.models import PaymentTransaction
 from permissions.models import Role
 from properties.models import Property, PropertyType, RatePlan, RoomType
 from users.models import User
@@ -46,44 +45,25 @@ def make_hotel(owner, name='Alpha', currency='UZS', rooms=3):
     return prop, room, rate
 
 
-def make_stay(prop, guest, check_in, nights=2, status='confirmed', percent=50, price=UZS_PRICE, rooms=1,
-              room=None, rate=None, paid=True, currency='UZS', **fields):
+def make_stay(prop, guest, check_in, nights=2, status='confirmed', price=UZS_PRICE, rooms=1,
+              room=None, rate=None, currency='UZS', **fields):
     """
-    A booking row as the engine leaves it, with the no-show refund snapshot `percent`, its
-    booking item (when room and rate are given) and, when `paid`, one completed payment of
-    the whole charge.
+    A booking row as the engine leaves it, with its booking item (when room and rate are given).
     """
     booking = Booking.objects.create(
         guest=guest, property=prop, status=status,
-        payment_status='paid' if status in ('confirmed', 'completed', 'no_show') else 'pending',
+        payment_status='pending',
         check_in=check_in, check_out=check_in + timedelta(days=nights), number_of_nights=nights,
         number_of_rooms=rooms, guest_count=1, total_price=price * nights * rooms, currency=currency,
         guest_full_name='Test Guest', guest_email=guest.email, expires_at=None,
-        no_show_refund_percent=percent, **fields,
+        **fields,
     )
     if room is not None and rate is not None:
         BookingItem.objects.create(
             booking=booking, room_type=room, rate_plan=rate, number_of_rooms=rooms,
             price_per_night=price, currency=currency,
         )
-    if paid:
-        pay(booking)
     return booking
-
-
-def pay(booking, amount=None, provider='payme', status='completed'):
-    """One payment row (written with update(): the model wants one full charge)."""
-    n = PaymentTransaction.objects.count()
-    tx = PaymentTransaction.objects.create(
-        idempotency_key=f'r12b-{booking.pk}-{n}', booking=booking, provider=provider,
-        amount=booking.charge_amount, currency=booking.charge_currency, status='completed',
-        provider_transaction_id=f'r12b-ptx-{booking.pk}-{n}',
-    )
-    if amount is not None or status != 'completed':
-        PaymentTransaction.objects.filter(pk=tx.pk).update(
-            amount=Decimal(amount) if amount is not None else tx.amount, status=status)
-        tx.refresh_from_db()
-    return tx
 
 
 @pytest.fixture

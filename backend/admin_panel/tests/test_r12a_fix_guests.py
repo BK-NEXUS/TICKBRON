@@ -17,7 +17,6 @@ from admin_panel.tests.status_fixtures import make_booking
 from bookings.metrics import status_meta
 from bookings.models import Booking
 from common.dates import business_today
-from payments.models import PaymentTransaction, Refund
 from users.models import User
 
 S = '/api/v1/admin-panel/status'
@@ -78,13 +77,6 @@ class TestPersonsAreNotBookings:
     def test_cancelled_is_not_counted_anywhere(self, get, people):
         totals = beta_totals(get, people)
         assert totals['counted_guests'] == 16 and totals['stayed_guests'] == 8
-
-    def test_a_partial_refund_still_counts(self, get, people):
-        booking = Booking.objects.filter(property=people, status='completed', guest_count=4).get()
-        payment = PaymentTransaction.objects.get(booking=booking)
-        Refund.objects.create(payment=payment, booking=booking, amount=payment.amount / 2, currency=payment.currency,
-                              reason='no_show', status='succeeded', idempotency_key='fix-half')
-        assert beta_totals(get, people)['stayed_guests'] == 8
 
     def test_period_limits_stayed_but_not_upcoming(self, get, people):
         totals = get(f'{S}/hotels/{people.id}/', period='today').data['totals']

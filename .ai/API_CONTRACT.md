@@ -1104,3 +1104,22 @@ Supersedes the refund and revenue lines of the R12 definitions above; every othe
 - **counted** = `confirmed` + `completed` (no refund filter), **stayed** = `completed`, `no_show` = status `no_show`.
 - **revenue** = per currency, never mixed: SUM(`total_price`) of `completed` bookings in the period (cash the hotel is expected to have received). `confirmed`, `cancelled`, `no_show`, `pending`, `expired` and soft-deleted bookings are never revenue. `booking_value` (counted bookings) is unchanged.
 - **Removed:** `totals.fully_refunded`; the user-history rows (`GET /admin-panel/status/users/{id}/`) and its CSV lose `paid` and `refunded`. The hotels list ordered by revenue uses the same SUM in UZS.
+
+## Cash only, stage 3b and 3c: no online payments, no refunds (2026-10-22)
+
+Supersedes the payment, refund, cancellation-terms and no-show-refund parts of the sections above (R6, R11, R12, R12b). Guests pay cash at the hotel; the platform moves no money.
+
+**Removed endpoints (404 now):**
+- every `/api/v1/payments/...` route (transactions, init, confirm, refund, webhooks, audit logs)
+- `GET /api/v1/admin-panel/payments/transactions/`
+- `GET /api/v1/admin-panel/refunds/needs-attention/`, `POST /api/v1/admin-panel/refunds/{id}/mark-done/` and `/retry/`
+- `GET /api/v1/bookings/{id}/cancel-preview/`
+
+**Changed responses:**
+- `POST /bookings/{id}/cancel/`: always free; returns the booking, no `refund` object.
+- Booking, booking list, quote and rate-plan responses no longer carry `cancellation_terms`, `no_show_refund_percent`, `no_show_refund_amount`, `no_show_refund_text_key`, `no_show_refund_text_params`, `free_cancellation`, `free_cancel_hours`, `cancel_refund_percent`. Partner rate plans cannot set `free_cancel_hours` / `cancel_refund_percent` any more (the DB columns stay, unused).
+- No-show reports (staff queue): no `refund_preview`, no `refunds`. Approving only moves the booking to `no_show` and releases the future nights. The guest notice is `no_show_marked_no_refund` ("marked as a no-show by the hotel"); the older notification codes stay so old rows still render.
+- `GET /admin-panel/customers/`: no `total_amount_paid` (and `sort_by=total_amount_paid` is no longer valid). `GET /admin-panel/customers/{id}/`: no `payments`.
+- Error code `refund_refused` of the no-show decision no longer exists.
+
+**Removed settings:** `PAYMENT_TEST_MODE`, `PAYME_*`, `CLICK_*`, `VISA_*`, `NO_SHOW_REFUND_PERCENT`, `CANCEL_REFUND_PERCENT`, `THROTTLE_WEBHOOK_RATE`; `VITE_PAYMENT_TEST_MODE` in the frontend.

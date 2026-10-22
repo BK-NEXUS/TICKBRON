@@ -147,22 +147,6 @@ export interface UpdateAmenityCategoryRequest {
   sort_order?: number
 }
 
-// Admin Payment Transaction types from backend contract
-export interface AdminPaymentTransaction {
-  id: number
-  booking: number
-  provider: string
-  amount: number
-  currency: string
-  status: string
-  payment_method_token?: string
-  client_ip?: string
-  user_agent?: string
-  provider_response?: string
-  created_at: string
-  updated_at: string
-}
-
 // Admin Customer types from backend contract (Checkpoint 24)
 export interface AdminCustomer {
   id: number
@@ -175,7 +159,6 @@ export interface AdminCustomer {
   preferred_contact_method: string
   total_booking_count: number
   last_booking_date?: string
-  total_amount_paid: number
   customer_status: string
 }
 
@@ -223,15 +206,6 @@ export interface AdminCustomerProfile {
     currency: string
     property_name: string
     property_city: string
-    created_at: string
-  }>
-  payments: Array<{
-    id: number
-    booking_id: number
-    provider: string
-    amount: number
-    currency: string
-    status: string
     created_at: string
   }>
   internal_notes: Array<{
@@ -568,21 +542,6 @@ class AdminAdapter {
     })
   }
 
-  // Admin Payment Monitoring Methods
-
-  /**
-   * List payment transactions for monitoring
-   * Integrates with GET /api/v1/admin-panel/payments/transactions/ endpoint
-   */
-  async getPaymentTransactions(status?: string, provider?: string): Promise<ApiResponse<AdminPaymentTransaction[]>> {
-    const params = new URLSearchParams()
-    if (status) params.append('status', status)
-    if (provider) params.append('provider', provider)
-
-    const endpoint = `/api/v1/admin-panel/payments/transactions/${params.toString() ? `?${params.toString()}` : ''}`
-    return this.request<AdminPaymentTransaction[]>(endpoint)
-  }
-
   // Admin Customers Directory Methods (Checkpoint 24)
 
   /**
@@ -604,7 +563,7 @@ class AdminAdapter {
   // Admin Customer Profile Methods (Checkpoint 25)
 
   /**
-   * Get customer profile with bookings, payments, and internal notes
+   * Get customer profile with bookings and internal notes
    * Integrates with GET /api/v1/admin-panel/customers/{id}/ endpoint
    */
   async getCustomerProfile(customerId: number, params?: GetCustomerProfileParams): Promise<ApiResponse<AdminCustomerProfile>> {

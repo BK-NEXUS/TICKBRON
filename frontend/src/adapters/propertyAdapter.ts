@@ -119,10 +119,6 @@ export interface RatePlan {
   deposit_required: boolean
   deposit_percentage?: number
   advance_booking_days?: number
-  /** R11: the plan has a free cancellation window; its length, and the percent refunded after it (always a number) */
-  free_cancellation?: boolean
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number
 }
 
 export interface DateInventory {
@@ -191,13 +187,6 @@ export interface StayQuote {
   /** The same stay in so'm at today's rate; null when no rate is stored yet */
   uzs_total?: string | null
   exchange_rate?: { rate: string; date: string | null; source: string; stale: boolean } | null
-  /** R12b: what the guest is told about the no-show refund */
-  no_show_refund_percent?: number
-  no_show_refund_amount?: string | null
-  no_show_refund_text_key?: string | null
-  no_show_refund_text_params?: { percent: number; amount: string | null } | null
-  /** R11: cancelling THESE dates; free_cancellation is true only while the free window is still ahead */
-  cancellation_terms?: { free_cancellation: boolean; free_until: string | null; refund_percent_after: number }
 }
 
 export interface AvailabilityParams {

@@ -33,7 +33,6 @@ from bookings.noshow_serializers import (
 )
 from common.dates import business_time_zone
 from partner.views import IsHotelOwner
-from payments.models import Refund
 
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
@@ -128,18 +127,8 @@ def partner_no_show_report_withdraw(request, report_id):
 
 def _staff_context(reports):
     """Everything the staff rows need, in a fixed number of queries whatever the page size."""
-    bookings = [report.booking for report in reports]
-    pending = [report.booking for report in reports if report.status == 'pending']
-    refunds = {}
-    for refund in Refund.objects.filter(booking_id__in=[b.pk for b in bookings], reason='no_show'
-                                        ).order_by('id'):
-        refunds.setdefault(refund.booking_id, []).append({
-            'id': refund.pk, 'amount': f'{refund.amount:.2f}', 'currency': refund.currency, 'status': refund.status,
-        })
     return {
         'flagged': noshow.flagged_property_ids({report.property_id for report in reports}) if reports else set(),
-        'previews': noshow.refund_previews(pending) if pending else {},
-        'refunds': refunds,
     }
 
 

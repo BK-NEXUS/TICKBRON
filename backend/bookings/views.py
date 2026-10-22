@@ -18,7 +18,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from common.dates import business_today
 from currency.rates import ExchangeRateUnavailable
-from .cancellation import cancel_preview
 from .models import Booking, BookingItem
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
@@ -204,7 +203,7 @@ class BookingViewSet(mixins.CreateModelMixin,
 @permission_classes([IsAuthenticated])
 def booking_cancel(request, booking_id):
     """
-    Cancel a booking, restore inventory and refund what the booking's terms promise (R11).
+    Cancel a booking and restore inventory. Cancelling is always free: the guest pays cash at the hotel.
     
     Path parameters:
         booking_id: Booking ID
@@ -213,7 +212,7 @@ def booking_cancel(request, booking_id):
         cancellation_reason: Optional reason for cancellation
     
     Returns:
-        Updated booking with cancelled status and `refund` {amount, currency, percent}
+        Updated booking with cancelled status
     """
     booking = get_object_or_404(
         Booking,
@@ -237,9 +236,7 @@ def booking_cancel(request, booking_id):
     
     try:
         updated_booking = serializer.save()
-        # What came back to the guest: decided and computed on the backend from the booking's terms
-        return Response({**BookingSerializer(updated_booking).data, 'refund': serializer.refund},
-                        status=status.HTTP_200_OK)
+        return Response(BookingSerializer(updated_booking).data, status=status.HTTP_200_OK)
     except DRFValidationError as e:
         # BookingCancelSerializer.update() raises this for both business-rule
         # violations and unexpected internal errors; e.detail is already safe.
@@ -253,22 +250,3 @@ def booking_cancel(request, booking_id):
             {'error': 'Failed to cancel booking'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-
-@extend_schema(responses=OpenApiTypes.OBJECT)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def booking_cancel_preview(request, booking_id):
-    """
-    What cancelling this booking right now would give back (R11); nothing is changed.
-
-    Returns:
-        { amount, currency, percent, free_until } (percent null: the booking has no promise)
-        400 when the booking cannot be cancelled in its state, 404 for another guest's booking
-    """
-    booking = get_object_or_404(Booking, id=booking_id, guest=request.user, is_deleted=False)
-    check = BookingCancelSerializer(booking, data={}, partial=True, context={'booking': booking})
-    if not check.is_valid():
-        return Response({'error': 'Booking cannot be cancelled', 'details': check.errors},
-                        status=status.HTTP_400_BAD_REQUEST)
-    return Response(cancel_preview(booking), status=status.HTTP_200_OK)

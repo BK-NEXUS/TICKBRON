@@ -13,7 +13,7 @@ import { addDays, businessToday } from '../utils/dates'
 vi.mock('../adapters/accountAdapter')
 vi.mock('../adapters/bookingAdapter', async importOriginal => ({
   ...(await importOriginal<typeof import('../adapters/bookingAdapter')>()),
-  bookingAdapter: { getCancelPreview: vi.fn(), cancelBooking: vi.fn() },
+  bookingAdapter: { cancelBooking: vi.fn() },
 }))
 vi.mock('../contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 

@@ -1,10 +1,9 @@
 /**
- * What cannot be valid is never typed: no digits in names, no letters in number boxes, card limits.
+ * What cannot be valid is never typed: no digits in names, no letters in number boxes.
  */
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { CardForm } from './CardForm'
 import { CreateHotelOwnerAccount } from './CreateHotelOwnerAccount'
 import { RegisterPage } from '../pages/RegisterPage'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -16,25 +15,6 @@ vi.mock('../adapters/authAdapter', () => ({
 }))
 
 const typeInto = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } })
-
-describe('card form', () => {
-  it('holder name takes letters only', () => {
-    render(<CardForm onValidityChange={() => {}} />)
-    const holder = screen.getByLabelText(/name on card/i)
-    typeInto(holder, 'Olim 123 Karimov')
-    expect(holder).toHaveValue('Olim  Karimov')
-  })
-
-  it('number stops at 16 digits, expiry at MM/YY, and neither takes letters', () => {
-    render(<CardForm onValidityChange={() => {}} />)
-    const number = screen.getByLabelText(/card number/i)
-    typeInto(number, '4242abcd424242424242424242')
-    expect(number).toHaveValue('4242 4242 4242 4242')
-    const expiry = screen.getByLabelText(/expir/i)
-    typeInto(expiry, 'ab12345')
-    expect(expiry).toHaveValue('12/34')
-  })
-})
 
 describe('name fields', () => {
   it('hotel owner account: first and last name take no digits', () => {

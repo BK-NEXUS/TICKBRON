@@ -1,17 +1,9 @@
 // "Guest did not arrive" (R12b): the owner's reports and the staff queue.
-// Contract: .ai/API_CONTRACT.md, section "R12b: no-show reports and the 50% refund".
+// Contract: .ai/API_CONTRACT.md, sections "R12b: no-show reports" and "Cash only".
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-
-/** What a guest is told about the no-show refund; the backend sends numbers and a text key, never the sentence. */
-export interface NoShowRefundInfo {
-  no_show_refund_percent?: number
-  no_show_refund_amount?: string | null
-  no_show_refund_text_key?: string | null
-  no_show_refund_text_params?: { percent: number; amount: string | null } | null
-}
 
 export type NoShowReportStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn'
 
@@ -30,21 +22,10 @@ export interface OwnerNoShowReport {
   created_at: string
 }
 
-/** Exact amounts the backend would refund if the report is approved now (strings, never computed here). */
-export interface RefundPreview {
-  amount: string
-  currency: string
-  percent: number
-  already_refunded: string
-  paid: string
-}
-
 export interface StaffNoShowReport extends OwnerNoShowReport {
   decided_by_id: number | null
   created_by_id: number | null
   hotel_flagged: boolean
-  refund_preview: RefundPreview | null
-  refunds: Array<{ id: number; amount: string; currency: string; status: string }>
 }
 
 export interface ReportPage<T> {

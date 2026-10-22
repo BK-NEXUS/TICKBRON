@@ -124,27 +124,6 @@ class BookingConcurrencyTests(TransactionTestCase):
         self._assert_losers_got_validation_errors(results)
         assert self._booked_rooms() == 1
 
-    def test_cancel_and_confirm_leave_a_consistent_booking(self):
-        to_cancel, to_confirm = self._stale_copies()
-
-        results = run_concurrently(to_cancel.cancel_booking, to_confirm.confirm_booking)
-
-        # Both orders are legal once serialized: cancel first makes the confirm
-        # fail (cancelled -> confirmed is invalid); confirm first lets the cancel
-        # succeed afterwards (confirmed -> cancelled is allowed).
-        self._assert_losers_got_validation_errors(results)
-        booking = Booking.objects.get(pk=self.booking.pk)
-        cancel_result, confirm_result = results
-        if confirm_result[0] == 'error':
-            assert cancel_result[0] == 'ok'
-            assert (booking.status, booking.payment_status) == ('cancelled', 'pending')
-        else:
-            # Confirm ran first; the cancel saw the confirmed booking and still won
-            assert cancel_result[0] == 'ok'
-            assert (booking.status, booking.payment_status) == ('cancelled', 'paid')
-        # Either way the cancelled booking released its room exactly once
-        assert self._booked_rooms() == 1
-
     def test_last_room_cannot_be_sold_twice(self):
         RoomInventory.objects.filter(pk=self.room_inventory.pk).update(available_rooms=3)  # 2 held, 1 left
 

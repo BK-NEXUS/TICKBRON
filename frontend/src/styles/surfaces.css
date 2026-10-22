@@ -14,8 +14,7 @@
 .feature-card,
 .testimonial-card,
 .booking-summary-card,
-.property-detail-booking-card,
-.payment-method-card {
+.property-detail-booking-card {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
 }
@@ -123,7 +122,6 @@ textarea.form-input {
 .role-badge,
 .profile-status-badge,
 .property-policy-item-badge,
-.payment-method-card-badge,
 .amenity-tag,
 .rank-badge {
   border-radius: var(--radius-pill);
@@ -317,26 +315,6 @@ textarea.form-input {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-}
-
-.cancellation-note {
-  display: grid;
-  gap: 2px;
-  margin: var(--spacing-xs) 0;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.cancellation-note p {
-  margin: 0;
-}
-
-.cancellation-note-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  color: var(--color-text-strong);
 }
 
 .vip-badge {

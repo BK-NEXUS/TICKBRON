@@ -153,9 +153,6 @@ export interface PartnerRatePlan {
   cancellation_policy: string
   deposit_required: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
   created_at: string
   updated_at: string
@@ -175,9 +172,6 @@ export interface CreateRatePlanRequest {
   cancellation_policy: string
   deposit_required: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
 }
 
@@ -194,9 +188,6 @@ export interface UpdateRatePlanRequest {
   cancellation_policy?: string
   deposit_required?: boolean
   deposit_percentage?: number
-  /** R11: free cancellation window in hours before the check-in day, and the percent refunded after it (null/empty = defaults) */
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number | null
   advance_booking_days?: number
 }
 

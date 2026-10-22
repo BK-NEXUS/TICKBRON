@@ -5,9 +5,7 @@ This module contains models for bookings, booking items, and related structures
 with transaction-safe inventory locking and double-booking prevention.
 """
 import logging
-from datetime import timedelta
 
-from django.conf import settings
 from django.db import models, transaction
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -18,13 +16,9 @@ from common.dates import business_today
 from common.models import BaseModel
 from common.money import CHARGE_CURRENCY, quantize, to_uzs
 from currency.rates import ExchangeRateUnavailable, current_rate
-from .cancellation import terms_for_plan
-from .state_machine import BookingStateMachine, PaymentStateMachine, BookingState, PaymentState
+from .state_machine import BookingStateMachine, BookingState
 
 logger = logging.getLogger(__name__)
-
-# How long after expires_at a booking with a payment in progress is still held (see process_expired_bookings)
-PAYMENT_IN_PROGRESS_GRACE = timedelta(minutes=30)
 
 
 class ExpiredBookingProcessingError(Exception):
@@ -392,9 +386,6 @@ class Booking(BaseModel):
                 charge_amount, charge_source = to_uzs(total_price, rate.rate), rate.source
                 rate_value, rate_date, rate_stale = rate.rate, rate.date, rate.stale
 
-            # The cancellation terms the guest is promised, copied from the rate plan now
-            cancel_free_until, cancel_refund_percent_after = terms_for_plan(rate_plan, check_in)
-
             # Create the booking
             booking = cls.objects.create(
                 guest=guest,
@@ -416,9 +407,6 @@ class Booking(BaseModel):
                 exchange_rate_date=rate_date,
                 exchange_rate_source=charge_source,
                 exchange_rate_stale=rate_stale,
-                no_show_refund_percent=settings.NO_SHOW_REFUND_PERCENT,
-                cancel_free_until=cancel_free_until,
-                cancel_refund_percent_after=cancel_refund_percent_after,
                 special_requests=special_requests,
                 guest_full_name=guest_full_name or guest.get_full_name(),
                 guest_phone=guest_phone or guest.phone_number,
@@ -596,21 +584,11 @@ class Booking(BaseModel):
         Returns:
             int: Number of bookings processed
         """
-        from django.db.models import Exists, OuterRef
-        from payments.models import PaymentTransaction
-
-        # A guest who pays at the last minute has a payment in progress whose webhook may arrive after
-        # expires_at. Hold the room while the payment is fresh; the grace is bounded so a payment that
-        # never reports back cannot hold it for ever.
-        now = timezone.now()
-        payment_in_progress = PaymentTransaction.objects.filter(
-            booking=OuterRef('pk'), status='processing', updated_at__gte=now - PAYMENT_IN_PROGRESS_GRACE,
-        )
         expired_bookings = cls.objects.filter(
             status='pending',
-            expires_at__lt=now,
+            expires_at__lt=timezone.now(),
             is_deleted=False
-        ).exclude(Exists(payment_in_progress))
+        )
         
         processed_count = 0
         failed_ids = []
@@ -635,39 +613,6 @@ class Booking(BaseModel):
                 f"{len(failed_ids)} expired booking(s) could not be processed: {failed_ids}"
             )
         return processed_count
-    
-    def confirm_booking(self):
-        """
-        Confirm a booking after successful payment.
-        
-        This method is called when payment is completed to transition the booking
-        from pending to confirmed status.
-        
-        Raises:
-            ValidationError: If booking cannot be confirmed
-            Exception: If database error occurs
-        """
-        with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
-            self._lock_row()
-            # Validate state transition using state machine
-            from_state = BookingState(self.status)
-            to_state = BookingState('confirmed')
-            is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='payment_completed')
-            if not is_valid:
-                raise ValidationError({
-                    'status': error_message
-                })
-            
-            # Update booking status
-            old_status = self.status
-            self.status = 'confirmed'
-            self.payment_status = 'paid'
-            self.save(update_fields=['status', 'payment_status'])
-            
-            # Log state transition
-            self._log_state_transition(old_status, 'confirmed', 'payment_completed')
     
     def complete_booking(self):
         """
@@ -759,40 +704,6 @@ class Booking(BaseModel):
             self.save(update_fields=['status'])
             self._log_state_transition(old_status, to_state.value, 'no_show_report_reversed')
 
-    def update_payment_status(self, new_payment_status):
-        """
-        Update payment status with state machine validation.
-        
-        This method validates payment status transitions before updating.
-        
-        Args:
-            new_payment_status: New payment status
-        
-        Raises:
-            ValidationError: If payment status transition is invalid
-            Exception: If database error occurs
-        """
-        with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
-            self._lock_row()
-            # Validate state transition using state machine
-            from_state = PaymentState(self.payment_status)
-            to_state = PaymentState(new_payment_status)
-            is_valid, error_message = PaymentStateMachine.validate_transition(from_state, to_state)
-            if not is_valid:
-                raise ValidationError({
-                    'payment_status': error_message
-                })
-            
-            # Update payment status
-            old_payment_status = self.payment_status
-            self.payment_status = new_payment_status
-            self.save(update_fields=['payment_status'])
-            
-            # Log state transition
-            self._log_payment_status_transition(old_payment_status, new_payment_status)
-    
     def _log_state_transition(self, old_status, new_status, reason):
         """
         Log booking state transition for audit purposes.
@@ -816,27 +727,6 @@ class Booking(BaseModel):
         except Exception:
             # The state change itself stands; the missing history row must not be silent
             logger.exception('Could not write the audit entry for booking %s (%s -> %s)', self.pk, old_status, new_status)
-    
-    def _log_payment_status_transition(self, old_status, new_status):
-        """
-        Log payment status transition for audit purposes.
-        
-        Args:
-            old_status: Previous payment status
-            new_status: New payment status
-        """
-        try:
-            from payments.models import PaymentAuditLog
-            with transaction.atomic():
-                PaymentAuditLog.log_action(
-                    action='payment_status_changed',
-                    booking=self,
-                    old_status=old_status,
-                    new_status=new_status
-                )
-        except Exception:
-            logger.exception('Could not write the audit entry for booking %s payment (%s -> %s)',
-                             self.pk, old_status, new_status)
 
 
 class BookingItem(BaseModel):

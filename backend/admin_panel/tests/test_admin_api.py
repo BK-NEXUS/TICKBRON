@@ -2,7 +2,7 @@
 Tests for admin API endpoints.
 
 This module contains tests for property moderation, user management,
-amenity management, and payment monitoring.
+and amenity management.
 """
 import pytest
 from django.test import TestCase, Client
@@ -415,76 +415,6 @@ class AdminAmenityTests(TestCase):
         self.assertEqual(AmenityCategory.objects.count(), 2)
 
 
-class AdminPaymentTests(TestCase):
-    """Tests for admin payment monitoring endpoints."""
-    
-    def setUp(self):
-        """Set up test data."""
-        self.client = APIClient()
-        
-        # Create super-admin user
-        self.super_admin = User.objects.create_superuser(
-            email='admin@example.com',
-            password='testpassword123',
-            first_name='Admin',
-            last_name='User'
-        )
-        
-        # Create staff user
-        self.staff_user = User.objects.create_user(
-            email='staff@example.com',
-            password='testpassword123',
-            first_name='Staff',
-            last_name='User',
-            is_staff=True
-        )
-        
-        # Create regular user
-        self.regular_user = User.objects.create_user(
-            email='regular@example.com',
-            password='testpassword123',
-            first_name='Regular',
-            last_name='User'
-        )
-    
-    def test_super_admin_can_list_payment_transactions(self):
-        """Test that super-admin can list payment transactions."""
-        self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Should return empty list if no transactions exist
-        self.assertEqual(response.data, [])
-    
-    def test_staff_can_list_payment_transactions(self):
-        """Test that staff can list payment transactions."""
-        self.client.force_authenticate(user=self.staff_user)
-        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_regular_user_cannot_list_payment_transactions(self):
-        """Test that regular user cannot access admin payment endpoints."""
-        self.client.force_authenticate(user=self.regular_user)
-        response = self.client.get('/api/v1/admin-panel/payments/transactions/')
-        
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-    
-    def test_admin_can_filter_transactions_by_status(self):
-        """Test that admin can filter transactions by status."""
-        self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin-panel/payments/transactions/?status=completed')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_admin_can_filter_transactions_by_provider(self):
-        """Test that admin can filter transactions by provider."""
-        self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin-panel/payments/transactions/?provider=payme')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
 class AdminPermissionTests(TestCase):
     """Tests for admin permission scoping."""
     
@@ -523,7 +453,6 @@ class AdminPermissionTests(TestCase):
             '/api/v1/admin-panel/properties/',
             '/api/v1/admin-panel/users/',
             '/api/v1/admin-panel/amenities/',
-            '/api/v1/admin-panel/payments/transactions/'
         ]
         
         for endpoint in endpoints:
@@ -538,7 +467,6 @@ class AdminPermissionTests(TestCase):
             '/api/v1/admin-panel/properties/',
             '/api/v1/admin-panel/users/',
             '/api/v1/admin-panel/amenities/',
-            '/api/v1/admin-panel/payments/transactions/'
         ]
         
         for endpoint in endpoints:
@@ -892,16 +820,6 @@ class AdminCustomersDirectoryTests(TestCase):
             currency='USD'
         )
         
-        # Create payment transaction for booking1
-        from payments.models import PaymentTransaction
-        self.payment1 = PaymentTransaction.objects.create(
-            idempotency_key='test-payment-1',
-            booking=self.booking1,
-            provider='payme',
-            amount=Decimal('200.00'),
-            currency='USD',
-            status='completed'
-        )
     
     def test_super_admin_can_access_customers_directory(self):
         """Test that super-admin can access customers directory."""
@@ -946,7 +864,7 @@ class AdminCustomersDirectoryTests(TestCase):
             required_fields = [
                 'id', 'registration_date', 'full_name', 'phone', 'email',
                 'whatsapp', 'telegram', 'preferred_contact_method',
-                'total_booking_count', 'last_booking_date', 'total_amount_paid', 'customer_status'
+                'total_booking_count', 'last_booking_date', 'customer_status'
             ]
             for field in required_fields:
                 self.assertIn(field, customer_data)
@@ -967,7 +885,7 @@ class AdminCustomersDirectoryTests(TestCase):
         
         self.assertIsNotNone(regular_user_data)
         self.assertEqual(regular_user_data['total_booking_count'], 1)
-        self.assertEqual(regular_user_data['total_amount_paid'], '200.00')  # DRF renders decimals as strings
+        self.assertNotIn('total_amount_paid', regular_user_data)
         self.assertIsNotNone(regular_user_data['last_booking_date'])
     
     def test_search_by_name(self):
@@ -1058,13 +976,6 @@ class AdminCustomersDirectoryTests(TestCase):
         """Test sorting by total booking count."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?sort_by=total_booking_count&sort_order=desc')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_sorting_by_total_amount_paid(self):
-        """Test sorting by total amount paid."""
-        self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get('/api/v1/admin-panel/customers/?sort_by=total_amount_paid&sort_order=desc')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
@@ -1159,9 +1070,8 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(len(emails), 2)
 
     def test_aggregates_are_not_multiplied_by_joins(self):
-        """Several payments on one booking must not inflate the booking count or the total."""
-        from payments.models import PaymentTransaction
-        booking2 = Booking.objects.create(
+        """Several bookings of one customer are each counted once."""
+        Booking.objects.create(
             guest=self.regular_user,
             property=self.property,
             status='confirmed',
@@ -1173,16 +1083,6 @@ class AdminCustomersDirectoryTests(TestCase):
             total_price=Decimal('150.00'),
             currency='USD',
         )
-        # A failed attempt and two completed charges (e.g. a provider double charge)
-        for key, txn_status in [
-            ('test-payment-2a', 'failed'),
-            ('test-payment-2b', 'completed'),
-            ('test-payment-2c', 'completed'),
-        ]:
-            PaymentTransaction.objects.create(
-                idempotency_key=key, booking=booking2, provider='payme',
-                amount=Decimal('150.00'), currency='USD', status=txn_status,
-            )
 
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?search=regular@example.com')
@@ -1190,8 +1090,6 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         customer = response.data['results'][0]
         self.assertEqual(customer['total_booking_count'], 2)
-        # booking1: 200; booking2: two completed charges of 150
-        self.assertEqual(customer['total_amount_paid'], '500.00')
 
     def test_sorting_and_pagination_happen_in_the_database(self):
         """The page is fetched with LIMIT instead of loading every user into memory."""
@@ -1402,26 +1300,6 @@ class AdminCustomerDetailTests(TestCase):
             currency='USD'
         )
         
-        # Create payment transactions
-        from payments.models import PaymentTransaction
-        self.payment1 = PaymentTransaction.objects.create(
-            idempotency_key='test-payment-1',
-            booking=self.booking_confirmed,
-            provider='payme',
-            amount=Decimal('200.00'),
-            currency='USD',
-            status='completed'
-        )
-        
-        self.payment2 = PaymentTransaction.objects.create(
-            idempotency_key='test-payment-2',
-            booking=self.booking_completed,
-            provider='click',
-            amount=Decimal('200.00'),
-            currency='USD',
-            status='completed'
-        )
-        
         # Create internal notes
         self.note1 = InternalNote.objects.create(
             customer=self.customer,
@@ -1443,7 +1321,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('customer', response.data)
         self.assertIn('bookings', response.data)
-        self.assertIn('payments', response.data)
+        self.assertNotIn('payments', response.data)
         self.assertIn('internal_notes', response.data)
         self.assertIn('last_activity', response.data)
     
@@ -1514,16 +1392,6 @@ class AdminCustomerDetailTests(TestCase):
         bookings = response.data['bookings']
         self.assertEqual(len(bookings), 1)
         self.assertEqual(bookings[0]['status'], 'cancelled')
-    
-    def test_customer_detail_returns_payments(self):
-        """Test that customer detail returns all payments."""
-        self.client.force_authenticate(user=self.super_admin)
-        response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        payments = response.data['payments']
-        self.assertEqual(len(payments), 2)
-        self.assertEqual(payments[0]['amount'], '200.00')
     
     def test_customer_detail_returns_internal_notes(self):
         """Test that customer detail returns internal notes."""

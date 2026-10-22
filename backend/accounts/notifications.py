@@ -113,7 +113,7 @@ NOTIFICATION_CODES = {
         'type': 'booking',
         'params': ('booking_id', 'booking_reference'),
         'title': 'Booking {booking_reference} marked as a no-show',
-        'message': 'Your booking {booking_reference} was marked as a no-show. No refund is due for it.',
+        'message': 'Your booking {booking_reference} was marked as a no-show by the hotel.',
     },
     'booking_not_arrived': {
         'type': 'booking',
