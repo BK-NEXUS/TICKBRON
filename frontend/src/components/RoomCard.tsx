@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { RoomType } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
 import { VipBadge } from './VipBadge'
+import { roomFromPrice } from '../utils/price'
 
 interface RoomCardProps {
   room: RoomType
@@ -14,10 +15,10 @@ interface RoomCardProps {
  * Shows room details, occupancy, bed configuration, size, and pricing
  */
 export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) {
-  const { t, formatMoney } = useI18n()
-  const formatPrice = (price: number, currencyCode: string) => {
-    return formatMoney(price, currencyCode, { minDecimals: 0, maxDecimals: 0 })
-  }
+  const { t, formatMoney, currency } = useI18n()
+  // The lowest price of the room's rate plans in the chosen currency (its own price when that cannot be told)
+  const shown = roomFromPrice(room, currency)
+  const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 
   return (
     <div 
@@ -37,7 +38,7 @@ export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) 
         <h3 className="room-card-name">{room.name} {room.is_vip && <VipBadge />}</h3>
         <div className="room-card-price">
           <span className="room-card-price-value">
-            {formatPrice(room.base_price, room.currency)}
+            {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
           </span>
           <span className="room-card-price-period">{t('room.perNight')}</span>
         </div>

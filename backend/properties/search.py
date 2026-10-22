@@ -36,6 +36,18 @@ def searchable_properties():
     return Property.objects.filter(is_active=True, is_deleted=False, status='active')
 
 
+def card_prices_prefetch(prefix=''):
+    """
+    R16: the active rate plans (with the owner's prices) a hotel card needs for its "from" price in every
+    currency, as `card_room_types` on the property; `prefix` is the path to the property ("property__").
+    """
+    from properties.models import RatePlan, RoomType
+
+    return Prefetch(f'{prefix}room_types', to_attr='card_room_types', queryset=RoomType.objects.filter(
+        is_deleted=False).prefetch_related(Prefetch('rate_plans', queryset=RatePlan.objects.filter(
+            is_active=True, is_deleted=False).prefetch_related('prices'))))
+
+
 GEOGRAPHY_LEVELS = ('city_ref', 'region_ref', 'country_ref')
 GEOGRAPHY_LANGUAGES = ('uz', 'ru', 'en')
 MAX_SEARCH_WORDS = 8
@@ -96,6 +108,7 @@ class PropertySearchService:
                 is_available=True, amenity__is_searchable=True, is_deleted=False).select_related('amenity__category')),
             Prefetch('photos', to_attr='active_photos', queryset=PropertyPhoto.objects.filter(
                 is_active=True, is_deleted=False)),
+            card_prices_prefetch(),
         )
     
     def _validate_search_params(self, search_params):

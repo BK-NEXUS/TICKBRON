@@ -45,7 +45,7 @@ type Message = { text: string } | { key: MessageKey }
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
 export function BookingPage() {
-  const { t, tp, formatMoney: formatAmount, formatDate } = useI18n()
+  const { t, tp, formatMoney: formatAmount, formatDate, currency: chosenCurrency } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated } = useAuth()
@@ -132,6 +132,7 @@ export function BookingPage() {
           checkIn: bookingState.checkIn,
           checkOut: bookingState.checkOut,
           rooms: roomsForQuote,
+          currency: chosenCurrency,
         })
       } catch {
         response = undefined
@@ -144,7 +145,7 @@ export function BookingPage() {
       }
     }
     loadQuote()
-  }, [bookingState, roomsForQuote])
+  }, [bookingState, roomsForQuote, chosenCurrency])
 
   // Load property, room type, and rate plan data
   useEffect(() => {
@@ -190,6 +191,9 @@ export function BookingPage() {
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
   const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
+  // A price the owner did not enter (a conversion at the CBU rate) is shown with ≈
+  const approximate = !booking && quote?.price_source === 'converted'
+  const showMoney = (value: number) => (approximate ? t('charge.approx', { amount: formatMoney(value) }) : formatMoney(value))
 
   /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
   const priceBreakdownLabel = (): string => {
@@ -731,18 +735,19 @@ export function BookingPage() {
                     <div className="booking-summary-breakdown">
                       <div className="booking-summary-item">
                         <span className="booking-summary-label">{priceBreakdownLabel()}</span>
-                        <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
+                        <span className="booking-summary-value">{showMoney(totalPrice)}</span>
                       </div>
                     </div>
 
                     <div className="booking-summary-total">
                       <span className="booking-summary-total-label">{t('booking.total')}</span>
-                      <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
+                      <span className="booking-summary-total-value">{showMoney(totalPrice)}</span>
                     </div>
                     {quote?.uzs_total && (
                       <p className="charge-notes">
                         <span className="charge-approx">
-                          {t('charge.inSom', { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
+                          {t(quote.exchange_rate === null && quote.currency !== 'UZS' ? 'charge.youPay' : 'charge.inSom',
+                            { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
                         </span>
                       </p>
                     )}

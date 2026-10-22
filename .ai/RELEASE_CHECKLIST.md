@@ -334,6 +334,13 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - Provider partial refunds are unverified (Payme, Click, Visa).
 - The new R12 cards and the Excel buttons, and the VIP badge, were checked by tests only, not by eye at 390px and 1440px (the crawl does load the pages and finds no errors).
 
+## Prices in four currencies (R16, 2026-10-19)
+
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** Migration `properties/0016` adds the table `rate_plan_prices` (additive, reversible).
+- [ ] `RATE_PLAN_PRICES_REQUIRED` is true (the default): owners must enter the price in USD, UZS, KZT and RUB for every rate plan, and an old plan cannot be edited until they do. Existing plans keep working; their other currencies show as converted (≈) until the owner enters them. Tell owners before launch.
+- [ ] The CBU fetch now also stores KZT and RUB; check `GET /admin-panel/exchange-rates/status/` shows all three currencies fresh after the first run.
+- [ ] Guests pay in so'm: when the owner entered a so'm price, that exact price is charged; otherwise the CBU conversion. Paying in tenge, rubles or dollars needs a provider that takes them (not confirmed).
+
 ## Cash bookings (stage 2 of PLAN_CASH_ONLY, 2026-10-22)
 - [ ] Backup first (`pg_dump -Fc`): migration `bookings/0012_cash_arrival` adds two columns and confirms `pending` bookings still inside their 15-minute window.
 - [ ] Celery **beat** and a worker run: `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a confirmed booking whose guest is not marked "arrived" `ARRIVAL_GRACE_HOURS` (default 2) after the arrival time. Without beat nothing is ever cancelled.

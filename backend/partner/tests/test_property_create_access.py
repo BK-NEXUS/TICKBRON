@@ -96,6 +96,7 @@ def create_requests(inv):
         ('/api/v1/partner/rates/', {
             'room_type': inv['room'].id, 'name': 'Flexible', 'slug': 'flexible',
             'rate_type': 'standard', 'base_price': '65.00', 'currency': 'USD',
+            'prices': {'USD': '65.00', 'UZS': '800000', 'KZT': '29000', 'RUB': '5800'},
             'min_nights': 1, 'is_active': True,
         }, 'json'),
         ('/api/v1/partner/inventory/', {

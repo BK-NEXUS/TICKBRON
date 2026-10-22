@@ -363,9 +363,9 @@ else:
         }
     }
 
-# R16: when True, a rate plan must carry the owner's price in every supported currency (create and every edit).
-# Off until the owner screens send the four prices; then the default flips (see .ai/PLAN_R16_MULTI_CURRENCY.md).
-RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'False').lower() == 'true'
+# R16: when True (the default), a rate plan must carry the owner's price in every supported currency (create and
+# every edit); the owner decided this on 2026-10-19 (see .ai/PLAN_R16_MULTI_CURRENCY.md).
+RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'True').lower() == 'true'
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')

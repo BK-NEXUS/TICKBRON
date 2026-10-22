@@ -82,7 +82,8 @@ class TestChildrenFollowTheProperty:
         ('rooms', lambda inv: {'property': inv['property'].id, 'name': 'Deluxe', 'slug': 'deluxe',
                                'base_occupancy': 2, 'max_occupancy': 3, 'base_price': '90.00', 'total_rooms': 2}),
         ('rates', lambda inv: {'room_type': inv['room'].id, 'name': 'Flex', 'slug': 'flex', 'rate_type': 'standard',
-                               'base_price': '65.00', 'min_nights': 1, 'is_active': True}),
+                               'base_price': '65.00', 'min_nights': 1, 'is_active': True,
+                               'prices': {'USD': '65.00', 'UZS': '800000', 'KZT': '29000', 'RUB': '5800'}}),
         ('inventory', lambda inv: {'rate_plan': inv['rate'].id, 'date': (date.today() + timedelta(days=1)).isoformat(),
                                    'available_rooms': 3, 'price': '60.00', 'is_available': True}),
     ])

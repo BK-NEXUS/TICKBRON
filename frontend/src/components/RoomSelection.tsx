@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   RoomType,
@@ -29,6 +29,8 @@ const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan)
     booked_rooms: row.booked_rooms,
     price: Number(row.price ?? ratePlan.base_price),
     currency: row.currency || ratePlan.currency,
+    prices: row.prices,
+    converted_currencies: Object.entries(ratePlan.prices ?? {}).filter(([, entry]) => entry.source === 'converted').map(([code]) => code),
     min_stay: row.minimum_stay ?? ratePlan.min_nights,
     max_stay: row.maximum_stay ?? ratePlan.max_nights,
     is_available: bookable,
@@ -140,7 +142,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     const requestId = ++quoteRequestId.current
     setQuoteLoading(true)
     const response = await propertyAdapter.getQuote(propertyId, {
-      roomTypeId: selectedRoomId, ratePlanId: selectedRatePlanId, checkIn: start, checkOut: end, rooms: 1,
+      roomTypeId: selectedRoomId, ratePlanId: selectedRatePlanId, checkIn: start, checkOut: end, rooms: 1, currency,
     })
     if (requestId !== quoteRequestId.current) return
     setQuote(response?.data ?? null)
@@ -171,7 +173,14 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     }
   }
 
-  const { t, tp, formatMoney: formatAmount, formatDate } = useI18n()
+  const { t, tp, formatMoney: formatAmount, formatDate, currency } = useI18n()
+
+  // The guest changes the currency with a stay already priced: price it again in the new one
+  useEffect(() => {
+    if (checkIn && checkOut) loadQuote(checkIn, checkOut)
+  // Only the currency triggers it; the range handlers price their own changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currency])
   const formatMoney = (amount: string | number, code: string) =>
     formatAmount(Number(amount), code, { minDecimals: 0, maxDecimals: 2 })
 
@@ -305,7 +314,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
                 {quoteLoading
                   ? t('rooms.calculating')
                   : quote
-                    ? t('rooms.nightsTotal', { nights: tp('rooms.nights', quote.number_of_nights), total: formatMoney(quote.total_price, quote.currency) })
+                    ? t('rooms.nightsTotal', { nights: tp('rooms.nights', quote.number_of_nights), total: quote.price_source === 'converted' ? t('charge.approx', { amount: formatMoney(quote.total_price, quote.currency) }) : formatMoney(quote.total_price, quote.currency) })
                     : '—'}
               </span>
             </div>

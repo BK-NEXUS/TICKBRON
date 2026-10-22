@@ -124,6 +124,9 @@ function dateInCurrentMonth(preferredOffset: number) {
 }
 
 test('A guest books a room and it is confirmed at once (cash at the hotel)', async ({ page, audit }) => {
+  // R16: prices are shown in the guest's chosen currency (default so'm). This flow compares the total shown
+  // when the dates were picked with the booking form's total, which is in the hotel's currency (dollars), so it chooses dollars.
+  await page.addInitScript(() => localStorage.setItem('tickbron.currency', 'USD'))
   await step(audit, 'A0 login-as-guest', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
   })

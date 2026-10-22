@@ -26,7 +26,7 @@ export function PartnerDashboardPage() {
   const [currentView, setCurrentView] = useState<DashboardView>('properties')
   const [properties, setProperties] = useState<PartnerProperty[]>([])
   const [selectedProperty, setSelectedProperty] = useState<PartnerProperty | null>(null)
-  const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string } | null>(null)
+  const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string; currency?: string } | null>(null)
   const [selectedRatePlan, setSelectedRatePlan] = useState<{ id: number; name: string } | null>(null)
   const [calendarRoomType, setCalendarRoomType] = useState<{ id: number; name: string; totalRooms: number } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -77,7 +77,7 @@ export function PartnerDashboardPage() {
     setCurrentView('properties')
   }
 
-  const handleRoomTypeSelect = (roomType: { id: number; name: string }) => {
+  const handleRoomTypeSelect = (roomType: { id: number; name: string; currency?: string }) => {
     setSelectedRoomType(roomType)
     setSelectedRatePlan(null)
     setCurrentView('rates')
@@ -363,6 +363,7 @@ export function PartnerDashboardPage() {
           <PartnerRatesManagement
             roomTypeId={selectedRoomType.id}
             roomTypeName={selectedRoomType.name}
+            currency={selectedRoomType.currency}
             onManageAvailability={handleRatePlanSelect}
           />
         ) : null

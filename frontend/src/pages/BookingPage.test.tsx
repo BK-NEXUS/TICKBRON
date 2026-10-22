@@ -525,9 +525,20 @@ describe('BookingPage', () => {
           expect(totalText(container)).toBe('$515')
         })
         expect(propertyAdapter.getQuote).toHaveBeenCalledWith(1, {
-          roomTypeId: 1, ratePlanId: 1, checkIn: '2025-01-20', checkOut: '2025-01-25', rooms: 1,
+          roomTypeId: 1, ratePlanId: 1, checkIn: '2025-01-20', checkOut: '2025-01-25', rooms: 1, currency: 'UZS',
         })
         expect(screen.getByText('5 nights')).toBeInTheDocument()
+      })
+
+      it('shows ≈ before a total that is a conversion and "You pay" for the owner\'s so\'m price (R16)', async () => {
+        mockPropertyAdapter.getQuote.mockResolvedValue({
+          ...quote('515.00'),
+          data: { ...quote('515.00').data, price_source: 'converted', uzs_total: '2500000.00', exchange_rate: null },
+        })
+        const { container } = renderWithRouter(<BookingPage />)
+
+        await waitFor(() => expect(totalText(container)).toBe('≈ $515'))
+        expect(screen.getByText(/You pay .*2.500.000/)).toBeInTheDocument()
       })
 
       it('adds the so\'m amount at today\'s rate beside the quoted hotel price when the backend has a rate', async () => {

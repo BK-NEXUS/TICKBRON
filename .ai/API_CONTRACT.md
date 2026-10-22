@@ -1063,7 +1063,7 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 - The price in the property's currency is the plan's main price and is stored in `base_price`; the other three are stored as the owner's own prices (new table `rate_plan_prices`). When `prices` is sent, `base_price` may be left out (if sent it must equal `prices[<property currency>]`, else 400 `base_price`).
 - `prices` must contain every supported currency (400 `prices`: "Enter the price in: KZT, RUB."), only supported keys, numbers >= 0, no finer part than the currency unit (whole so'm/tenge/rubles, cents for USD).
 - Read: `prices` lists what the owner entered (the main price and each other currency present).
-- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **false** until the owner screens send the four prices): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
+- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **true** since R16 slice 3, 2026-10-19; was false in slice 1): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
 
 **Hotel page** (`GET /properties/{id}/`): each rate plan gains `prices`: `{ "USD": { "amount": "60.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, ... }`. `source` is `main` (the plan's own currency), `owner` (entered by the owner) or `converted` (main price at the CBU rates, show with "≈"); `amount` is null when a converted price has no rate yet.
 
@@ -1074,7 +1074,17 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 
 **CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
 
-Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
+Slices 2 to 5 below add the per-currency "from" price on cards, the owner screens and the guest screens.
+
+### R16 slice 3: the rule is now on
+`RATE_PLAN_PRICES_REQUIRED` defaults to **true**: `POST /partner/rates/` without `prices` is 400, and a rate plan that has only its main price cannot be edited (400 `prices`) until the owner sends the other currencies. The owner screen sends `prices` (all four) and no `base_price`/`currency` on create and update. Set the variable to `false` only to roll back.
+
+## 2026-10-19 R16 slice 2: "from" price per currency on hotel cards, night prices per currency in the calendar
+
+- **Hotel cards** (`GET /properties/search/` results, the home promotion items and the map pins use the same serializer): new field `prices`: `{ "USD": { "amount": "54.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, "RUB": { "amount": null, "source": "converted" } }`. Each currency holds the **lowest price of the hotel's active rate plans in that currency** (the owner's own price, or a conversion at the CBU rate when the owner entered none; `amount` is null when a conversion has no rate yet). A hotel without active rate plans gets its own `base_price` converted. `base_price`, `currency` and `base_price_uzs_approx` are unchanged, and the price filters and the price sort still use `base_price` (the owner's property-level price).
+- **Availability** (`GET /properties/{id}/availability/`): every rate plan gains `prices` (same shape as the hotel page: `{currency: {amount, source}}`), and every `date_inventory` row gains `prices`: `{ "USD": "69.00", "UZS": "862500.00", "KZT": "31050.00", "RUB": null }`, the night's price in each currency, with the plan's ratio for a night that has its own price (a night at +15% in dollars is +15% in the other currencies); null while a conversion has no rate. `price` and `currency` of the row are unchanged.
+- Not included: the hotel detail's own `base_price` stays in the hotel's main currency; the hotel page prices come from `room_types[].rate_plans[].prices` (slice 1). Favorites: see below.
+- **Favorites** (`GET /me/favorites/`): new field `property_prices`, the same list as a hotel card's `prices` (the lowest price of the hotel's active rate plans in every currency, `source` owner / main / converted). `property_base_price` and `property_currency` are unchanged.
 
 ## Pictures of countries and regions (2026-10-21, plan PLAN_GEO_IMAGES.md)
 - Public `GET /geography/countries/` and `GET /geography/countries/{code}/regions/` rows carry `image_url` (relative media URL, or `null` when the row has no picture). Cities have none.

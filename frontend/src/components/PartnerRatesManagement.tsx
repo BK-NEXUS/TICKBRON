@@ -1,17 +1,29 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanRequest } from '../adapters/partnerAdapter'
+import { CURRENCIES } from '../i18n/options'
 
 interface PartnerRatesManagementProps {
   roomTypeId: number
   roomTypeName: string
+  /** The hotel's currency: the main price of every rate plan of this room type */
+  currency?: string
   /** Open the per-date availability of a rate plan */
   onManageAvailability?: (ratePlan: { id: number; name: string }) => void
 }
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvailability }: PartnerRatesManagementProps) {
+const PRICE_FORMAT = /^\d+(\.\d+)?$/
+
+/** True when the plan carries the owner's own price in every currency */
+const hasAllPrices = (plan: PartnerRatePlan) => CURRENCIES.every(({ code }) => plan.prices?.[code] !== undefined)
+
+/** What the owner already entered for a plan; an old plan only has its main price */
+const pricesOf = (plan: PartnerRatePlan): Record<string, string> =>
+  plan.prices ?? { [plan.currency]: String(plan.base_price) }
+
+export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onManageAvailability }: PartnerRatesManagementProps) {
   const { t, tp } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [ratePlans, setRatePlans] = useState<PartnerRatePlan[]>([])
@@ -20,14 +32,16 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  // The main price is in the hotel's currency; an existing plan knows it too
+  const mainCurrency = currency ?? selectedRatePlan?.currency ?? ratePlans[0]?.currency ?? 'USD'
+
   const [formData, setFormData] = useState<CreateRatePlanRequest>({
     room_type: roomTypeId,
     name: '',
     slug: '',
     rate_type: 'standard',
     description: '',
-    base_price: 100,
-    currency: 'USD',
+    prices: {},
     min_nights: 1,
     max_nights: 30,
     is_active: true,
@@ -103,8 +117,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
         slug: formData.slug,
         rate_type: formData.rate_type,
         description: formData.description,
-        base_price: formData.base_price,
-        currency: formData.currency,
+        prices: formData.prices,
         min_nights: formData.min_nights,
         max_nights: formData.max_nights,
         is_active: formData.is_active,
@@ -168,8 +181,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
       slug: ratePlan.slug,
       rate_type: ratePlan.rate_type,
       description: ratePlan.description,
-      base_price: ratePlan.base_price,
-      currency: ratePlan.currency,
+      prices: pricesOf(ratePlan),
       min_nights: ratePlan.min_nights,
       max_nights: ratePlan.max_nights,
       is_active: ratePlan.is_active,
@@ -179,6 +191,23 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
       advance_booking_days: ratePlan.advance_booking_days,
     })
     setViewMode('edit')
+  }
+
+  /** The first problem with the prices typed so far, as a message, or null. The backend checks again. */
+  const firstPriceError = (): string | null => {
+    for (const { code, decimals } of CURRENCIES) {
+      const raw = (formData.prices[code] ?? '').trim()
+      if (raw === '') return t('partner.priceRequired', { code })
+      if (!PRICE_FORMAT.test(raw)) return t('partner.priceNumber', { code })
+      if (decimals === 0 && !Number.isInteger(Number(raw))) return t('partner.priceWhole', { code })
+      if (decimals > 0 && !new RegExp(`^\\d+(\\.\\d{1,${decimals}})?$`).test(raw)) return t('partner.priceCents', { code })
+    }
+    return null
+  }
+
+  const handlePriceChange = (code: string, value: string) => {
+    setFormData(prev => ({ ...prev, prices: { ...prev.prices, [code]: value } }))
+    setError(null)
   }
 
   const validateForm = (): boolean => {
@@ -198,8 +227,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
       setError(t('partner.maximumNightsCannotBe'))
       return false
     }
-    if (formData.base_price < 0) {
-      setError(t('partner.basePriceMustBe'))
+    const priceError = firstPriceError()
+    if (priceError) {
+      setError(priceError)
       return false
     }
     if (formData.deposit_required && (formData.deposit_percentage === undefined || formData.deposit_percentage < 0 || formData.deposit_percentage > 100)) {
@@ -216,8 +246,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
       slug: '',
       rate_type: 'standard',
       description: '',
-      base_price: 100,
-      currency: 'USD',
+      prices: {},
       min_nights: 1,
       max_nights: 30,
       is_active: true,
@@ -283,6 +312,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                   <span className="rate-plan-badge rate-plan-badge--type">
                     {ratePlan.rate_type}
                   </span>
+                  {!hasAllPrices(ratePlan) && (
+                    <span className="rate-plan-badge rate-plan-badge--inactive">{t('partner.pricesIncompleteBadge')}</span>
+                  )}
                 </div>
               </div>
               <div className="rate-plan-card-body">
@@ -292,6 +324,15 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
                     <span className="detail-label">{t('partner.basePrice')}</span>
                     <span className="detail-value">{ratePlan.base_price} {ratePlan.currency}</span>
                   </div>
+                  {ratePlan.prices && (
+                    <div className="rate-plan-detail">
+                      <span className="detail-label">{t('partner.pricesLine')}</span>
+                      <span className="detail-value">
+                        {CURRENCIES.filter(({ code }) => ratePlan.prices?.[code] !== undefined)
+                          .map(({ code }) => `${code} ${ratePlan.prices?.[code]}`).join(' · ')}
+                      </span>
+                    </div>
+                  )}
                   <div className="rate-plan-detail">
                     <span className="detail-label">{t('partner.minMaxNights')}</span>
                     <span className="detail-value">{ratePlan.min_nights} - {ratePlan.max_nights}</span>
@@ -434,38 +475,31 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, onManageAvail
           />
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="base_price">{t('partner.basePrice2')}</label>
-            <input
-              id="base_price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.base_price}
-              onChange={(e) => handleInputChange('base_price', parseFloat(e.target.value) || 0)}
-              className="form-input"
-              required
-              aria-required="true"
-            />
+        <fieldset className="price-fieldset">
+          <legend>{t('partner.pricesLegend')}</legend>
+          <p className="form-hint">{t('partner.pricesHint')}</p>
+          {viewMode === 'edit' && selectedRatePlan && !hasAllPrices(selectedRatePlan) && (
+            <div className="alert alert-warning" role="status">{t('partner.pricesLegacyNotice')}</div>
+          )}
+          <div className="form-row">
+            {CURRENCIES.map(({ code, decimals }) => (
+              <div className="form-group" key={code}>
+                <label htmlFor={`price_${code}`}>{t('partner.priceBox', { name: t(`currency.${code}`), code })}</label>
+                <input
+                  id={`price_${code}`}
+                  type="number"
+                  inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+                  step="any"
+                  value={formData.prices[code] ?? ''}
+                  onChange={(e) => handlePriceChange(code, e.target.value)}
+                  className="form-input"
+                  aria-required="true"
+                />
+                {code === mainCurrency && <small className="form-hint">{t('partner.priceMain')}</small>}
+              </div>
+            ))}
           </div>
-
-          <div className="form-group">
-            <label htmlFor="currency">{t('partner.currency')}</label>
-            <select
-              id="currency"
-              value={formData.currency}
-              onChange={(e) => handleInputChange('currency', e.target.value)}
-              className="form-input"
-              required
-              aria-required="true"
-            >
-              <option value="USD">{t('partner.usdUsDollar')}</option>
-              <option value="EUR">{t('partner.eurEuro')}</option>
-              <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
-            </select>
-          </div>
-        </div>
+        </fieldset>
 
         <div className="form-row">
           <div className="form-group">

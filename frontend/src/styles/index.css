@@ -3264,6 +3264,13 @@ button.property-gallery-image {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-pomegranate);
+  /* "≈ KZT 27,992" must not break after the ≈ */
+  white-space: nowrap;
+}
+
+/* The "Selected" badge sits in the top corner: leave room for it above the name and the price */
+.room-card--selected .room-card-header {
+  margin-top: var(--spacing-xl);
 }
 
 .room-card-price-period {
@@ -3924,6 +3931,7 @@ button.property-gallery-image {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-pomegranate);
+  white-space: nowrap;
 }
 
 .rate-plan-card-price-period {
@@ -9679,4 +9687,31 @@ button.property-gallery-image {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
+}
+
+/* R16: the owner's price boxes, one per currency */
+.price-fieldset {
+  min-width: 0;
+  margin: 0 0 var(--spacing-lg) 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.price-fieldset legend {
+  padding: 0 var(--spacing-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.price-fieldset .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.availability-calendar-note {
+  margin: var(--spacing-sm) 0 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
 }
