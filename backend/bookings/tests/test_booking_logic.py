@@ -29,7 +29,7 @@ class BookingLogicTestBase(TestCase):
 
     def setUp(self):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
-        self.user = User.objects.create_user(email='guest@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='guest@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',

@@ -20,7 +20,7 @@ class BookingModelTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -359,7 +359,7 @@ class BookingSerializerTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -712,7 +712,7 @@ class BookingExpiryTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -1015,7 +1015,7 @@ class TransactionSafetyTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',

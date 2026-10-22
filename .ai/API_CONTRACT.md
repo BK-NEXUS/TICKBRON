@@ -1078,3 +1078,12 @@ Not yet (next slices): Status in four currencies on the owner/admin screens beyo
 
 ## Person names take letters only (2026-10-21)
 `full_name` (register, profile), `first_name` / `last_name` (profile, admin create-hotel-owner) and the booking's `guest_full_name` are refused with 400 (`{field: ["Names can contain letters, spaces, hyphens, dots and apostrophes only."]}`) when they contain a digit or a symbol. Letters of any alphabet, space, hyphen, dot and the apostrophes ' ʻ ʼ ’ are accepted. Existing stored names are not touched.
+
+## Phone number is back, stored only (2026-10-22, plan PLAN_CASH_ONLY.md stage 1)
+No SMS, no code, no verification, no uniqueness rule (several accounts may share a number). The number is parsed with the existing `validate_phone_number_format`: international format with a country code, separators allowed, stored as E.164 (`+998901234567`); an invalid one is 400 `{field: "Enter a valid phone number in international format, e.g. +998 90 123 45 67."}`.
+- `POST /auth/register/`: `phone_number` REQUIRED.
+- `PATCH /auth/me/update/`: `phone_number` can be changed, never blanked (400); not sending it leaves it as is (old accounts without a number can still edit other fields).
+- `POST /admin-panel/users/create-hotel-owner/`: `phone_number` REQUIRED.
+- `POST /bookings/`: the booking needs a phone: `guest_phone`, else the account's `phone_number`; neither = 400 `{guest_phone: "A phone number is required."}`.
+- `GET /auth/me/` and the admin Status/customer screens already return `phone_number` / `phone` and the e-mail; the owner's arrivals list still shows only `phone_last4` (open question for stage 2: a hotel taking cash bookings needs the full number).
+- The OTP / phone-verification endpoints stay removed (404).

@@ -91,7 +91,7 @@ def world(db):
     """Two hotel owners with a hotel each, a guest, a staff member and a super-admin."""
     owner_role, _ = Role.objects.get_or_create(name='hotel-owner', defaults={'is_system_role': True})
     people = {
-        'guest': User.objects.create_user(email='guest@example.com', password='x', full_name='Gita Guest'),
+        'guest': User.objects.create_user(email='guest@example.com', password='x', full_name='Gita Guest', phone_number='+998901112233'),
         'owner': User.objects.create_user(email='owner@example.com', password='x', role=owner_role),
         'other_owner': User.objects.create_user(email='owner2@example.com', password='x', role=owner_role),
         'staff': User.objects.create_user(email='staff@example.com', password='x', is_staff=True),

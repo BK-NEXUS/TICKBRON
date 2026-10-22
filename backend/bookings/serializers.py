@@ -119,7 +119,7 @@ class BookingCreateSerializer(serializers.Serializer):
     )
 
     def validate_guest_phone(self, value):
-        """Optional (the profile number is used when blank); stored as E.164."""
+        """The profile number is used when blank (the booking needs one of the two); stored as E.164."""
         if not value.strip():
             return ''
         return validate_phone_number_format(value)
@@ -127,6 +127,9 @@ class BookingCreateSerializer(serializers.Serializer):
     def validate(self, data):
         """Validate booking creation parameters."""
         from properties.models import Property, RoomType, RatePlan
+
+        if not (data.get('guest_phone') or self.context['request'].user.phone_number):
+            raise serializers.ValidationError({'guest_phone': 'A phone number is required.'})
         
         # Validate date range
         if data['check_out'] <= data['check_in']:

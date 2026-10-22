@@ -17,6 +17,9 @@ export function cleanPhone(value: string): string {
   return value.trimStart().startsWith('+') ? `+${digits}` : digits
 }
 
+/** A plus, a country code and 8 to 15 digits; whether the number really exists is the server's call */
+export const isPhoneValid = (value: string): boolean => /^\+\d{8,15}$/.test(value.replace(/[\s\-.()]/g, ''))
+
 /** Keys a number box must not accept: exponent letters and signs (no price or count here is negative) */
 export const blocksNumberKey = (key: string): boolean => ['e', 'E', '+', '-'].includes(key)
 

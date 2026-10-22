@@ -54,7 +54,7 @@ class BookingConcurrencyTests(TransactionTestCase):
     def setUp(self):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
-        self.user = User.objects.create_user(email='race@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='race@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',
@@ -165,7 +165,7 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
     def setUp(self):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
-        self.user = User.objects.create_user(email='race-two-rate-plans@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='race-two-rate-plans@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',
@@ -218,7 +218,7 @@ class PendingCapRaceTests(TransactionTestCase):
 
     def setUp(self):
         make_usd_rate()
-        self.user = User.objects.create_user(email='holder@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='holder@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',

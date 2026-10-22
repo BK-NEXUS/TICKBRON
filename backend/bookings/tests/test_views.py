@@ -21,7 +21,7 @@ class BookingViewTests(APITestCase):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
         self.client = APIClient()
         
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',

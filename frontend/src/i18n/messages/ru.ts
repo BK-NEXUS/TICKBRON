@@ -1696,4 +1696,7 @@ export const ru: Catalog = {
   'map.clusterLabel.few': "Здесь {count} объекта: приблизьте карту",
   'map.clusterLabel.many': "Здесь {count} объектов: приблизьте карту",
   'map.clusterLabel.other': "Здесь {count} объектов: приблизьте карту",
+  'auth.phone': "Номер телефона",
+  'auth.phoneHint': "В международном формате, например +998 90 123 45 67",
+  'auth.errPhone': "Введите номер телефона в международном формате, например +998 90 123 45 67.",
 }

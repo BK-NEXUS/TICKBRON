@@ -254,7 +254,8 @@ class AdminUserTests(TestCase):
             'first_name': 'Hotel',
             'last_name': 'Owner',
             'password': 'testpassword123',
-            'password_confirm': 'differentpassword'
+            'password_confirm': 'differentpassword',
+            'phone_number': '+998901234567',  # a new account needs a phone number
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         
@@ -269,7 +270,8 @@ class AdminUserTests(TestCase):
             'first_name': 'Hotel',
             'last_name': 'Owner',
             'password': 'Owner#Secret2026',
-            'password_confirm': 'Owner#Secret2026'
+            'password_confirm': 'Owner#Secret2026',
+            'phone_number': '+998901234567',  # a new account needs a phone number
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
         

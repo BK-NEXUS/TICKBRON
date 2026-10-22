@@ -1656,4 +1656,7 @@ export const uz: Catalog = {
   'map.searchArea': "Shu hududda qidirish",
   'map.clusterLabel.one': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
   'map.clusterLabel.other': "Bu yerda {count} ta obyekt: koʻrish uchun kattalashtiring",
+  'auth.phone': "Telefon raqami",
+  'auth.phoneHint': "Xalqaro formatda, masalan +998 90 123 45 67",
+  'auth.errPhone': "Telefon raqamini xalqaro formatda kiriting, masalan +998 90 123 45 67.",
 }

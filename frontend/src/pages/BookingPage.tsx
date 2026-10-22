@@ -1,4 +1,4 @@
-import { cleanField } from '../utils/inputFilters'
+import { cleanField, isPhoneValid } from '../utils/inputFilters'
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { chargeOf } from '../utils/charge'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
@@ -38,6 +38,7 @@ interface GuestDetails {
   first_name: string
   last_name: string
   email: string
+  phone_number: string
   number_of_rooms: number
   children: number[]
   special_requests?: string
@@ -65,6 +66,7 @@ export function BookingPage() {
     first_name: '',
     last_name: '',
     email: '',
+    phone_number: '',
     number_of_rooms: 1,
     children: [],
     special_requests: '',
@@ -122,6 +124,7 @@ export function BookingPage() {
         first_name: user.first_name || nameFromFull,
         last_name: user.last_name || restOfName.join(' '),
         email: user.email || '',
+        phone_number: user.phone_number || '',
       }))
     }
   }, [location.state, user])
@@ -280,6 +283,10 @@ export function BookingPage() {
       errors.email = t('booking.emailInvalid')
     }
 
+    if (!isPhoneValid(guestDetails.phone_number)) {
+      errors.phone_number = t('auth.errPhone')
+    }
+
     if (guestDetails.number_of_rooms < 1) {
       errors.number_of_rooms = t('booking.roomsMin')
     }
@@ -317,6 +324,7 @@ export function BookingPage() {
         guest_count: bookingState.guestCount,
         guest_full_name: `${guestDetails.first_name} ${guestDetails.last_name}`,
         guest_email: guestDetails.email,
+        guest_phone: guestDetails.phone_number,
         number_of_rooms: guestDetails.number_of_rooms,
         children: guestDetails.children.length > 0 ? guestDetails.children : undefined,
         special_requests: guestDetails.special_requests || undefined,
@@ -779,6 +787,32 @@ export function BookingPage() {
                   {validationErrors.email && (
                     <span id="email-error" className="booking-form-error" role="alert">
                       {validationErrors.email}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="phone_number" className="booking-form-label">
+                    {t('auth.phone')} <span className="required">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value={guestDetails.phone_number}
+                    onChange={handleInputChange}
+                    className={`booking-form-input ${validationErrors.phone_number ? 'booking-form-input--error' : ''}`}
+                    aria-invalid={!!validationErrors.phone_number}
+                    aria-describedby={validationErrors.phone_number ? 'phone_number-error' : 'phone_number-hint'}
+                    autoComplete="tel"
+                    placeholder="+998 90 123 45 67"
+                    required
+                  />
+                  <span id="phone_number-hint" className="booking-form-hint">{t('auth.phoneHint')}</span>
+                  {validationErrors.phone_number && (
+                    <span id="phone_number-error" className="booking-form-error" role="alert">
+                      {validationErrors.phone_number}
                     </span>
                   )}
                 </div>

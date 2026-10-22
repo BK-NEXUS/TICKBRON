@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cleanField, cleanPersonName, cleanPlaceName, cleanPhone, blocksNumberKey } from './inputFilters'
+import { cleanField, cleanPersonName, cleanPlaceName, cleanPhone, isPhoneValid, blocksNumberKey } from './inputFilters'
 
 describe('cleanPersonName', () => {
   it('drops digits and symbols but keeps letters of every alphabet, spaces, hyphen, dot and apostrophes', () => {
@@ -42,5 +42,16 @@ describe('cleanField', () => {
     expect(cleanField('full_name', 'Ali 9 Vali')).toBe('Ali  Vali')
     expect(cleanField('whatsapp', '+99 8x9')).toBe('+9989')
     expect(cleanField('special_requests', 'Room 12, high floor')).toBe('Room 12, high floor')
+  })
+})
+
+describe('isPhoneValid', () => {
+  it('needs a plus, a country code and 8 to 15 digits (the server checks the number itself)', () => {
+    expect(isPhoneValid('+998901234567')).toBe(true)
+    expect(isPhoneValid('+998 90 123 45 67')).toBe(true)
+    expect(isPhoneValid('998901234567')).toBe(false)
+    expect(isPhoneValid('+99890')).toBe(false)
+    expect(isPhoneValid('+9989012345678901')).toBe(false)
+    expect(isPhoneValid('')).toBe(false)
   })
 })

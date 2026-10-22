@@ -67,7 +67,7 @@ export interface CreateHotelOwnerRequest {
   email: string
   first_name: string
   last_name: string
-  phone_number?: string
+  phone_number: string
   password: string
   password_confirm: string
 }

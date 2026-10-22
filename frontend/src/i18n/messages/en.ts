@@ -1662,6 +1662,9 @@ export const en = {
   'map.clusterLabel.few': "{count} properties here: zoom in to see them",
   'map.clusterLabel.many': "{count} properties here: zoom in to see them",
   'map.clusterLabel.other': "{count} properties here: zoom in to see them",
+  'auth.phone': "Phone number",
+  'auth.phoneHint': "International format, e.g. +998 90 123 45 67",
+  'auth.errPhone': "Enter a valid phone number in international format, e.g. +998 90 123 45 67.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

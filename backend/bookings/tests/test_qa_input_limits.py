@@ -53,3 +53,45 @@ class BookingTextLimitTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Booking.objects.get(pk=booking_id).status, 'pending')
+
+
+class BookingPhoneTests(APITestCase):
+    """The guest's phone is required: the booking's own number, else the account's (plan PLAN_CASH_ONLY stage 1)."""
+
+    def setUp(self):
+        test_views.BookingViewTests.setUp(self)
+        self.client.force_authenticate(user=self.user)
+
+    def _book(self, **extra):
+        data = {
+            'property_id': self.property.id, 'room_type_id': self.room_type.id, 'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'), 'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': 1, **extra,
+        }
+        return self.client.post('/api/v1/bookings/', data, format='json')
+
+    def test_no_number_anywhere_is_refused(self):
+        self.user.phone_number = None
+        self.user.save()
+        response = self._book()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('guest_phone', response.data['details'])
+        self.assertFalse(Booking.objects.exists())
+
+    def test_the_account_number_is_used_when_the_booking_has_none(self):
+        self.user.phone_number = '+998901112233'
+        self.user.save()
+        response = self._book()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(Booking.objects.get().guest_phone, '+998901112233')
+
+    def test_the_booking_number_wins_and_is_stored_in_e164_form(self):
+        response = self._book(guest_phone='+998 91 555 44 33')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(Booking.objects.get().guest_phone, '+998915554433')
+
+    def test_a_bad_number_is_refused(self):
+        response = self._book(guest_phone='12345')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('guest_phone', response.data['details'])
+

@@ -380,7 +380,7 @@ describe('BookingPage', () => {
         expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-        expect(screen.queryByLabelText(/phone number/i)).not.toBeInTheDocument()
+        expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument() // was: no phone box while accounts were e-mail only
         expect(screen.getByLabelText(/number of rooms/i)).toBeInTheDocument()
         expect(screen.getByText(/children/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/special requests/i)).toBeInTheDocument()
@@ -712,6 +712,55 @@ describe('BookingPage', () => {
       })
 
       expect(screen.getByText('Continue to Payment')).toBeInTheDocument()
+    })
+  })
+
+  describe('guest phone (plan PLAN_CASH_ONLY stage 1)', () => {
+    const renderFor = (phone: string | null) => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: 3, email: 'guest@example.com', first_name: 'Demo', last_name: 'Guest', full_name: 'Demo Guest',
+          phone_number: phone, is_active: true, date_joined: '2025-01-01T00:00:00Z',
+          last_login: null, email_verified: true, two_factor_enabled: false,
+        },
+        isAuthenticated: true, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn(),
+        refreshUser: vi.fn(), updateProfile: vi.fn(),
+      })
+      return renderWithRouter(<BookingPage />)
+    }
+
+    it('pre-fills the phone from the account and marks it required', async () => {
+      renderFor('+998900000003')
+      const box = await screen.findByLabelText(/Phone number/)
+      await waitFor(() => expect(box).toHaveValue('+998900000003'))
+      expect(box).toBeRequired()
+      expect(box).toHaveAttribute('type', 'tel')
+    })
+
+    it('keeps only digits and a leading plus while typing', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      fireEvent.change(box, { target: { value: '+998 90 1x2' } })
+      expect(box).toHaveValue('+9989012')
+    })
+
+    it('refuses to book without a valid number and does not call the server', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      expect(box).toHaveValue('')
+      fireEvent.submit(box.closest('form') as HTMLFormElement)
+      expect(await screen.findByText(/Enter a valid phone number in international format/)).toBeInTheDocument()
+      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+    })
+
+    it('sends the number as guest_phone', async () => {
+      renderFor(null)
+      const box = await screen.findByLabelText(/Phone number/)
+      fireEvent.change(box, { target: { value: '+998915554433' } })
+      await waitFor(() => expect(screen.getByText('Continue to Payment').closest('button')).toBeEnabled())
+      fireEvent.click(screen.getByText('Continue to Payment'))
+      await waitFor(() => expect(mockBookingAdapter.createBooking).toHaveBeenCalledWith(
+        expect.objectContaining({ guest_phone: '+998915554433' })))
     })
   })
 
