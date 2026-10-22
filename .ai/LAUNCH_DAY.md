@@ -2,10 +2,8 @@
 
 Guests pay cash at the hotel; the platform moves no money (`PLAN_CASH_ONLY.md`). The list below is only what code cannot do: owner decisions, accounts, servers. Details and exact variable names: `RELEASE_CHECKLIST.md` ("Production settings", "Prices in four currencies").
 
-## 0. Merge first (the code is not on master until these are merged)
-- Cash chain, in this order: #66 input rules, #68 phone number, #69 cash bookings, #71 no online payments. Or only #72, which carries all four.
-- Already merged: #64 owner photos (owners can upload photos) with Pillow 13.
-- Still open and independent: #67 country/region pictures and the place of an owner account, R16 stack #58-#61.
+## 0. Code status
+Everything is merged into master (2026-10-22): input rules, phone number, cash bookings, no online payments (#72), owner photos (#64), country/region pictures and the owner account place (#67), the four-currency prices (#61, with #58-#60). Only the Dependabot PRs are open. Run the smoke test below on the deployed build, not on a branch.
 
 ## 1. Owner must supply
 - Hosting: server, domain, TLS certificate, nginx (`NUM_PROXIES`, `USE_X_FORWARDED_PROTO`), Postgres, Redis, Celery worker AND beat.
@@ -18,7 +16,7 @@ Guests pay cash at the hotel; the platform moves no money (`PLAN_CASH_ONLY.md`).
 1. `pg_dump -Fc` backup, kept off the server (new migrations below).
 2. Set the production `.env` (checklist section "Production settings"); `DEBUG=False`. There are no payment settings any more. `ARRIVAL_GRACE_HOURS` defaults to 2.
 3. Persistent `MEDIA_ROOT` and nginx `/media/` (owner photos, country and region pictures; checklist "safe `/media/` serving").
-4. `python manage.py migrate` (new: `bookings/0012_cash_arrival` with a data step that confirms bookings still in their window, `geography/0004`, `partner/0002`), then `python manage.py check --deploy` (must print "no issues").
+4. `python manage.py migrate` (new: `bookings/0012_cash_arrival` with a data step that confirms bookings still in their window, `geography/0004`, `partner/0002`, `properties/0016` for the per-currency prices), then `python manage.py check --deploy` (must print "no issues").
 5. `python manage.py fetch_exchange_rates` (USD, KZT, RUB from cbu.uz); confirm beat runs it at 09:00 and 18:00. Confirm beat also runs the arrival check every 10 minutes (`cancel_unarrived_bookings`): without beat, guests who do not arrive are never cancelled.
 6. Create the super-admin; do NOT run `seed_demo*`; delete any `*@tickbron.demo` rows if the DB came from dev.
 7. Owners enter all four prices (UZS, USD, KZT, RUB) per rate plan (mandatory, `RATE_PLAN_PRICES_REQUIRED=true`). Super admin creates the hotel-owner accounts with phone and place.
@@ -31,4 +29,4 @@ Guests pay cash at the hotel; the platform moves no money (`PLAN_CASH_ONLY.md`).
 ## 4. Known, not fixed (none blocks launch)
 Hotel owners cannot rename or edit a hotel after it is created; guest bookings list not paginated; geography table scrolls sideways on phones; the payment tables and `PaymentAuditLog` stay in the database as history (the booking status history is written there); Dependabot PRs #33-#41 unreviewed; Redis result cache and thumbnails deliberately skipped (R14: 200 users, 0 failures, p95 search 163 ms).
 
-Last full runs on the cash branch: backend 2833 passed, frontend 1824 passed.
+Last full runs before the last merge (cash, pictures and prices together): backend 2901 passed, frontend 1902 passed.
