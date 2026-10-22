@@ -411,6 +411,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bookings.tasks.expire_pending_bookings',
         'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
     },
+    # A confirmed booking whose guest has not arrived ARRIVAL_GRACE_HOURS after the given time is cancelled
+    'cancel-unarrived-bookings': {
+        'task': 'bookings.tasks.cancel_unarrived_bookings',
+        'schedule': crontab(minute='*/10'),
+    },
     # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (CELERY_TIMEZONE)
     'fetch-exchange-rates': {
         'task': 'currency.tasks.fetch_exchange_rates',
@@ -443,6 +448,8 @@ NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
 # R12 phase 3: the share of the amount paid that goes back to the guest when staff approve a hotel's
 # no-show report. A whole number 0-100 (startup fails otherwise). Every booking stores the value at
 # creation (Booking.no_show_refund_percent); changing this never changes existing bookings.
+# Cash bookings: hours the hotel waits after the arrival time the guest gave before the booking is cancelled
+ARRIVAL_GRACE_HOURS = int(os.getenv('ARRIVAL_GRACE_HOURS', '2'))
 NO_SHOW_REFUND_PERCENT = parse_percent('NO_SHOW_REFUND_PERCENT', os.getenv('NO_SHOW_REFUND_PERCENT'), default=50)
 # R11: percent of the amount paid that comes back when a guest cancels a paid booking outside any free window
 # (the owner's answer to decision 1). A whole number 0-100 (startup fails otherwise). A rate plan may set its

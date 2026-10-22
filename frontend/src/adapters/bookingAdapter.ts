@@ -83,6 +83,12 @@ export interface Booking {
   no_show_refund_text_key?: string | null
   no_show_refund_text_params?: { percent: number; amount: string | null } | null
   cancellation_terms?: CancellationTerms | null
+  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); absent on old bookings */
+  expected_arrival_time?: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at?: string | null
+  /** After this moment a guest who has not arrived is cancelled */
+  arrival_deadline?: string | null
 }
 
 export interface BookingCreateRequest {
@@ -98,6 +104,8 @@ export interface BookingCreateRequest {
   number_of_rooms?: number
   children?: number[]
   special_requests?: string
+  /** 'HH:MM' on the check-in day (cash at the hotel) */
+  expected_arrival_time: string
 }
 
 export interface BookingCancelRequest {

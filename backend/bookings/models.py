@@ -83,6 +83,12 @@ class Booking(BaseModel):
         db_index=True
     )
     
+    # Cash at the hotel: when the guest says they will arrive on the check-in day, and when the hotel
+    # marked them as arrived. A confirmed booking without arrived_at is cancelled ARRIVAL_GRACE_HOURS
+    # after the given time (bookings/arrival.py). Old bookings have no arrival time and are never cancelled.
+    expected_arrival_time = models.TimeField(null=True, blank=True)
+    arrived_at = models.DateTimeField(null=True, blank=True)
+
     # Date information
     check_in = models.DateField(db_index=True)
     check_out = models.DateField(db_index=True)
@@ -304,7 +310,7 @@ class Booking(BaseModel):
         return ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
     
     @classmethod
-    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None):
+    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None):
         """
         Create a booking with transaction-safe inventory locking.
         
@@ -393,8 +399,9 @@ class Booking(BaseModel):
             booking = cls.objects.create(
                 guest=guest,
                 property=property_obj,
-                status='pending',
+                status='confirmed',  # cash at the hotel: no payment window, the room is taken at once
                 payment_status='pending',
+                expected_arrival_time=expected_arrival_time,
                 check_in=check_in,
                 check_out=check_out,
                 number_of_nights=number_of_nights,

@@ -688,6 +688,16 @@ class PartnerAdapter {
     })
   }
 
+  /**
+   * The hotel says the guest of one of its bookings has arrived (cash at the hotel).
+   * Integrates with POST /api/v1/partner/bookings/{id}/arrived/ endpoint
+   */
+  async markGuestArrived(bookingId: number): Promise<ApiResponse<{ id: number; arrived_at: string }>> {
+    return this.request<{ id: number; arrived_at: string }>(`/api/v1/partner/bookings/${bookingId}/arrived/`, {
+      method: 'POST',
+    })
+  }
+
   // Photo Upload Methods
 
   /**

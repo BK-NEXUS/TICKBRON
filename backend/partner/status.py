@@ -224,6 +224,8 @@ def partner_status_arrivals(request):
             'check_out': booking.check_out.isoformat(),
             'special_requests': booking.special_requests or '',
             'phone_last4': phone_last4(booking.guest_phone),
+            'expected_arrival_time': booking.expected_arrival_time.strftime('%H:%M') if booking.expected_arrival_time else None,
+            'arrived_at': booking.arrived_at.isoformat() if booking.arrived_at else None,
         }
         for booking in page
     ]

@@ -13,6 +13,7 @@ import { CancellationNote } from '../components/CancellationNote'
 import { CancelBookingDialog } from '../components/CancelBookingDialog'
 import type { Booking as CancelledBooking, CancelRefund } from '../adapters/bookingAdapter'
 import { businessToday } from '../utils/dates'
+import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
 
 interface BookingCardProps {
   booking: Booking
@@ -78,6 +79,12 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
           <span className="booking-card-detail-label">{t('bookings.checkOut')}</span>
           <span className="booking-card-detail-value">{formatDate(booking.check_out)}</span>
         </div>
+        {booking.expected_arrival_time && (
+          <div className="booking-card-detail">
+            <span className="booking-card-detail-label">{t('booking.arrivalTime')}</span>
+            <span className="booking-card-detail-value">{formatArrivalTime(booking.expected_arrival_time)}</span>
+          </div>
+        )}
         <div className="booking-card-detail">
           <span className="booking-card-detail-label">{t('bookings.nights')}</span>
           <span className="booking-card-detail-value">{booking.number_of_nights}</span>
@@ -95,6 +102,16 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
         </div>
       </div>
       
+      {booking.status === 'confirmed' && booking.expected_arrival_time && !booking.arrived_at && (
+        <p className="booking-arrival-notice" role="note">
+          {t('booking.arrivalNotice', { time: formatArrivalTime(booking.expected_arrival_time), hours: ARRIVAL_GRACE_HOURS })}
+        </p>
+      )}
+      {booking.arrived_at && <p className="booking-arrival-notice">{t('bookings.arrived')}</p>}
+      {booking.status === 'cancelled' && booking.cancellation_reason === 'no_arrival' && (
+        <p className="booking-arrival-notice">{t('bookings.cancelledNoArrival')}</p>
+      )}
+
       {booking.cancellation_terms && canCancel(booking) && (
         <CancellationNote
           freeUntil={booking.cancellation_terms.free_until}

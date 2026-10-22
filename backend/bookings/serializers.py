@@ -9,6 +9,7 @@ from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from common.dates import business_today
+from bookings.arrival import arrival_deadline, arrival_time_error
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
 from .cancellation import cancel_with_refund, cancellation_terms
@@ -44,6 +45,7 @@ class BookingSerializer(serializers.ModelSerializer):
     no_show_refund_text_key = serializers.SerializerMethodField()
     no_show_refund_text_params = serializers.SerializerMethodField()
     cancellation_terms = serializers.SerializerMethodField()
+    arrival_deadline = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -57,10 +59,17 @@ class BookingSerializer(serializers.ModelSerializer):
             'charge_amount', 'charge_currency', 'exchange_rate',
             'no_show_refund_percent', 'no_show_refund_amount', 'no_show_refund_text_key',
             'no_show_refund_text_params', 'cancellation_terms',
+            'expected_arrival_time', 'arrived_at', 'arrival_deadline',
         ]
         # Output-only serializer: bookings are created via BookingCreateSerializer
         # and changed only through model methods, never written from request data.
         read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.DATETIME)
+    def get_arrival_deadline(self, obj):
+        """When the guest counts as not arrived (ISO, business time), or null for an old booking."""
+        deadline = arrival_deadline(obj)
+        return deadline.isoformat() if deadline else None
 
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_cancellation_terms(self, obj):
@@ -108,6 +117,8 @@ class BookingCreateSerializer(serializers.Serializer):
         required=False, allow_blank=True, max_length=300, validators=[validate_person_name],
     )  # the column's size
     guest_phone = serializers.CharField(required=False, allow_blank=True)
+    # Cash at the hotel: when the guest will arrive on the check-in day (HH:MM)
+    expected_arrival_time = serializers.TimeField(input_formats=['%H:%M', '%H:%M:%S'])
     guest_email = serializers.EmailField(required=False, allow_blank=True)
     
     # Room and children information
@@ -127,6 +138,10 @@ class BookingCreateSerializer(serializers.Serializer):
     def validate(self, data):
         """Validate booking creation parameters."""
         from properties.models import Property, RoomType, RatePlan
+
+        arrival_error = arrival_time_error(data['check_in'], data['expected_arrival_time'])
+        if arrival_error:
+            raise serializers.ValidationError({'expected_arrival_time': arrival_error})
 
         if not (data.get('guest_phone') or self.context['request'].user.phone_number):
             raise serializers.ValidationError({'guest_phone': 'A phone number is required.'})
@@ -236,7 +251,8 @@ class BookingCreateSerializer(serializers.Serializer):
                 guest_phone=guest_phone,
                 guest_email=guest_email,
                 number_of_rooms=validated_data.get('number_of_rooms', 1),
-                children=validated_data.get('children', [])
+                children=validated_data.get('children', []),
+                expected_arrival_time=validated_data['expected_arrival_time'],
             )
             return booking
         except ExchangeRateUnavailable:

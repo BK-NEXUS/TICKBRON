@@ -352,3 +352,10 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - The guest bookings list is not paginated (owner decision, R14 report).
 - Provider partial refunds are unverified (Payme, Click, Visa).
 - The new R12 cards and the Excel buttons, and the VIP badge, were checked by tests only, not by eye at 390px and 1440px (the crawl does load the pages and finds no errors).
+
+## Cash bookings (stage 2 of PLAN_CASH_ONLY, 2026-10-22)
+- [ ] Backup first (`pg_dump -Fc`): migration `bookings/0012_cash_arrival` adds two columns and confirms `pending` bookings still inside their 15-minute window.
+- [ ] Celery **beat** and a worker run: `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a confirmed booking whose guest is not marked "arrived" `ARRIVAL_GRACE_HOURS` (default 2) after the arrival time. Without beat nothing is ever cancelled.
+- [ ] Hotels are told to press "Guest arrived" in Status > arrivals; otherwise guests who did come are cancelled.
+- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (5, `bookings/views.py`) is the only brake on one account taking rooms without paying: confirm the number.
+

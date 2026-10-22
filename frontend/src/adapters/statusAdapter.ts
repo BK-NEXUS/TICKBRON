@@ -323,6 +323,10 @@ export interface PartnerArrival {
   special_requests: string
   /** Only the last 4 digits of the phone */
   phone_last4: string
+  /** Cash at the hotel: when the guest said they will arrive ('HH:MM'); null on old bookings */
+  expected_arrival_time: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at: string | null
 }
 
 export interface PartnerArrivalsPage {

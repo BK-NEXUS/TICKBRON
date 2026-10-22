@@ -75,6 +75,10 @@ export interface Booking {
   no_show_refund_text_params?: { percent: number; amount: string | null } | null
   /** R11: what the rate plan promised about cancelling, copied when the booking was made; null on older bookings */
   cancellation_terms?: { free_until: string | null; refund_percent_after: number } | null
+  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); null on old bookings */
+  expected_arrival_time?: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at?: string | null
 }
 
 // Review types from backend contract

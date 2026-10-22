@@ -1,4 +1,5 @@
 import { cleanField, isPhoneValid } from '../utils/inputFilters'
+import { ARRIVAL_GRACE_HOURS, DEFAULT_ARRIVAL_TIME, formatArrivalTime, isArrivalPassed } from '../utils/arrival'
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { chargeOf } from '../utils/charge'
 import { NoShowRefundNote } from '../components/NoShowRefundNote'
@@ -39,6 +40,7 @@ interface GuestDetails {
   last_name: string
   email: string
   phone_number: string
+  arrival_time: string
   number_of_rooms: number
   children: number[]
   special_requests?: string
@@ -67,6 +69,7 @@ export function BookingPage() {
     last_name: '',
     email: '',
     phone_number: '',
+    arrival_time: DEFAULT_ARRIVAL_TIME,
     number_of_rooms: 1,
     children: [],
     special_requests: '',
@@ -287,6 +290,12 @@ export function BookingPage() {
       errors.phone_number = t('auth.errPhone')
     }
 
+    if (!guestDetails.arrival_time) {
+      errors.arrival_time = t('booking.arrivalRequired')
+    } else if (bookingState && isArrivalPassed(bookingState.checkIn, guestDetails.arrival_time)) {
+      errors.arrival_time = t('booking.arrivalPassed')
+    }
+
     if (guestDetails.number_of_rooms < 1) {
       errors.number_of_rooms = t('booking.roomsMin')
     }
@@ -325,6 +334,7 @@ export function BookingPage() {
         guest_full_name: `${guestDetails.first_name} ${guestDetails.last_name}`,
         guest_email: guestDetails.email,
         guest_phone: guestDetails.phone_number,
+        expected_arrival_time: guestDetails.arrival_time,
         number_of_rooms: guestDetails.number_of_rooms,
         children: guestDetails.children.length > 0 ? guestDetails.children : undefined,
         special_requests: guestDetails.special_requests || undefined,
@@ -341,8 +351,9 @@ export function BookingPage() {
         return
       }
 
+      // Cash at the hotel: the booking is confirmed at once, there is no payment step
       setBooking(response.data)
-      setStep('payment')
+      setStep('success')
       setSubmitting(false)
     } catch (err) {
       setError({ key: 'booking.errorCreateRetry' })
@@ -514,7 +525,19 @@ export function BookingPage() {
                 <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
                 <span className="booking-confirmation-value"><ChargeMain booking={booking} /><ChargeNotes booking={booking} /></span>
               </div>
+              {booking.expected_arrival_time && (
+                <div className="booking-confirmation-item">
+                  <span className="booking-confirmation-label">{t('booking.arrivalTime')}</span>
+                  <span className="booking-confirmation-value">{formatArrivalTime(booking.expected_arrival_time)}</span>
+                </div>
+              )}
             </div>
+
+            {booking.expected_arrival_time && (
+              <p className="booking-arrival-notice" role="note">
+                {t('booking.arrivalNotice', { time: formatArrivalTime(booking.expected_arrival_time), hours: ARRIVAL_GRACE_HOURS })}
+              </p>
+            )}
 
             <div className="booking-confirmation-actions">
               <button 
@@ -813,6 +836,33 @@ export function BookingPage() {
                   {validationErrors.phone_number && (
                     <span id="phone_number-error" className="booking-form-error" role="alert">
                       {validationErrors.phone_number}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="arrival_time" className="booking-form-label">
+                    {t('booking.arrivalTime')} <span className="required">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    id="arrival_time"
+                    name="arrival_time"
+                    value={guestDetails.arrival_time}
+                    onChange={handleInputChange}
+                    className={`booking-form-input ${validationErrors.arrival_time ? 'booking-form-input--error' : ''}`}
+                    aria-invalid={!!validationErrors.arrival_time}
+                    aria-describedby={validationErrors.arrival_time ? 'arrival_time-error' : 'arrival_time-hint'}
+                    required
+                  />
+                  {guestDetails.arrival_time && (
+                    <span id="arrival_time-hint" className="booking-form-hint">
+                      {t('booking.arrivalNotice', { time: guestDetails.arrival_time, hours: ARRIVAL_GRACE_HOURS })}
+                    </span>
+                  )}
+                  {validationErrors.arrival_time && (
+                    <span id="arrival_time-error" className="booking-form-error" role="alert">
+                      {validationErrors.arrival_time}
                     </span>
                   )}
                 </div>
