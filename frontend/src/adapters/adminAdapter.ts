@@ -70,6 +70,10 @@ export interface CreateHotelOwnerRequest {
   phone_number: string
   password: string
   password_confirm: string
+  /** Where the owner's hotels will appear (Geography ids) */
+  country_ref: number
+  region_ref: number
+  city_ref: number
 }
 
 export interface CreateHotelOwnerResponse {

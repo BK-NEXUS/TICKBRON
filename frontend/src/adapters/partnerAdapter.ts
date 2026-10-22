@@ -326,6 +326,12 @@ export interface UpdatePhotoRequest {
   is_primary?: true
 }
 
+export interface AssignedPlace {
+  country_ref: number | null
+  region_ref: number | null
+  city_ref: number | null
+}
+
 export interface UploadPhotoRequest {
   photo: File
   photo_type: string
@@ -731,6 +737,11 @@ class PartnerAdapter {
         error: error instanceof Error ? error.message : 'Network error occurred',
       }
     }
+  }
+
+  /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */
+  async getAssignedPlace(): Promise<ApiResponse<AssignedPlace>> {
+    return this.request<AssignedPlace>('/api/v1/partner/assigned-place/')
   }
 
   /** GET /api/v1/partner/properties/{id}/photos/ (a plain list, cover and order as stored) */

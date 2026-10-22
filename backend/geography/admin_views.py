@@ -4,12 +4,14 @@ Super-admin geography API (Geography plan G3), mounted at /api/v1/admin-panel/ge
 Countries, regions and cities: list (search, filters, hidden rows included), create, edit,
 hide/show (PATCH is_active) and reorder. A row in use cannot be deleted (PROTECT): 409, hide it instead.
 """
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.deletion import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from admin_panel.audit import AuditedModelViewSetMixin
@@ -31,6 +33,7 @@ class GeographyPagination(PageNumberPagination):
 
 class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsSuperAdmin]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # countries and regions upload a picture
     pagination_class = GeographyPagination
     audit_name = 'geography'
     model = None
@@ -54,6 +57,7 @@ class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         object_id = instance.pk
+        image_name = instance.image.name if getattr(instance, 'image', None) else None
         try:
             with transaction.atomic():
                 instance.delete()
@@ -62,6 +66,8 @@ class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
                 {'error': 'This row is in use (it has regions, cities or properties). Hide it instead.'},
                 status=status.HTTP_409_CONFLICT,
             )
+        if image_name:
+            default_storage.delete(image_name)
         self.audit('delete', object_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

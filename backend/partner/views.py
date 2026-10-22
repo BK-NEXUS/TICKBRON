@@ -17,6 +17,7 @@ from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
 from bookings.arrival import mark_arrived
 from bookings.models import Booking
+from partner.models import OwnerPlace
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
@@ -395,6 +396,19 @@ def partner_booking_arrived(request, booking_id):
     except ValueError as exc:
         return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({'id': booking.id, 'arrived_at': booking.arrived_at})
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([IsHotelOwner])
+def partner_assigned_place(request):
+    """The place the super admin gave this account: {country_ref, region_ref, city_ref}, all null when none."""
+    place = OwnerPlace.objects.filter(owner=request.user).first()
+    return Response({
+        'country_ref': place.country_id if place else None,
+        'region_ref': place.region_id if place else None,
+        'city_ref': place.city_id if place else None,
+    })
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

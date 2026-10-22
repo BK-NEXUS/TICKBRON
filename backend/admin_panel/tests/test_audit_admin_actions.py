@@ -9,6 +9,7 @@ stored (no names, notes, reasons or e-mails).
 from decimal import Decimal
 
 import pytest
+from partner.tests.geography_helpers import uzbek_location
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
@@ -95,6 +96,7 @@ class TestHotelOwnerCreation:
         response = _as(superadmin).post(f'{A}/users/create-hotel-owner/', {
             'email': 'newowner@example.com', 'first_name': 'New', 'last_name': 'Owner',
             'password': 'Str0ng#Pass-2026!', 'password_confirm': 'Str0ng#Pass-2026!',
+            **uzbek_location('Tashkent'),  # a new account needs a place
             'phone_number': '+998901234567',  # a new account needs a phone number
         }, format='json')
 
@@ -141,12 +143,16 @@ class TestAmenities:
 
 @pytest.mark.django_db
 class TestGeography:
-    def test_country_create_update_delete_and_reorder_are_logged_with_the_level(self, superadmin):
+    def test_country_create_update_delete_and_reorder_are_logged_with_the_level(self, superadmin, settings, tmp_path):
+        from geography.tests.test_images import picture
+
+        settings.MEDIA_ROOT = tmp_path  # a new country needs a picture
         client = _as(superadmin)
 
         created = client.post(f'{A}/geography/countries/', {
             'code': 'ZZ', 'currency': 'USD', 'name_en': 'Zedland', 'name_uz': 'Zedland', 'name_ru': 'Зедландия',
-        }, format='json')
+            'image': picture(),
+        }, format='multipart')
         assert created.status_code == 201, created.data
         country_id = created.data['id']
         assert _only_row('geography_create').details == {'level': 'country', 'object_id': country_id}
