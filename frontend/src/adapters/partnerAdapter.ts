@@ -319,15 +319,20 @@ export interface CreateBlockRequest {
 // Photo Upload types from backend contract
 export interface PropertyPhoto {
   id: number
-  property: number
   photo: string
+  photo_url: string | null
   photo_type: string
-  caption?: string
+  caption: string | null
   is_primary: boolean
   display_order: number
+  alt_text: string | null
+}
+
+export interface UpdatePhotoRequest {
+  caption?: string
   alt_text?: string
-  created_at: string
-  updated_at: string
+  photo_type?: string
+  is_primary?: true
 }
 
 export interface AssignedPlace {
@@ -736,6 +741,26 @@ class PartnerAdapter {
   /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */
   async getAssignedPlace(): Promise<ApiResponse<AssignedPlace>> {
     return this.request<AssignedPlace>('/api/v1/partner/assigned-place/')
+  }
+
+  /** GET /api/v1/partner/properties/{id}/photos/ (a plain list, cover and order as stored) */
+  async getPropertyPhotos(propertyId: number): Promise<ApiResponse<PropertyPhoto[]>> {
+    return this.request<PropertyPhoto[]>(`/api/v1/partner/properties/${propertyId}/photos/`)
+  }
+
+  /** PATCH /api/v1/partner/properties/{id}/photos/{photoId}/ (is_primary can only be set to true) */
+  async updatePropertyPhoto(propertyId: number, photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+    return this.request<PropertyPhoto>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /** DELETE /api/v1/partner/properties/{id}/photos/{photoId}/ */
+  async deletePropertyPhoto(propertyId: number, photoId: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
+      method: 'DELETE',
+    })
   }
 
   // Partner Bookings Methods
