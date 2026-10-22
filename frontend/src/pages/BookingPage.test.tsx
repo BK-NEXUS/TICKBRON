@@ -470,13 +470,13 @@ describe('BookingPage', () => {
       })
     })
 
-    it('should display price summary', async () => {
+    it('should display price summary', { timeout: 5000 }, async () => {
       renderWithRouter(<BookingPage />)
 
       await waitFor(() => {
         expect(screen.getByText('Price Summary')).toBeInTheDocument()
       })
-    }, { timeout: 5000 })
+    })
 
     it('should calculate total price correctly', async () => {
       renderWithRouter(<BookingPage />)

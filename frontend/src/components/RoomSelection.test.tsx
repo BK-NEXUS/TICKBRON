@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { RoomSelection } from './RoomSelection'
 import { addDays, businessToday } from '../utils/dates'
@@ -111,7 +111,10 @@ describe('RoomSelection', () => {
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByText('Standard Rate'))
+    // The click starts the availability request: let it finish inside act, or its updates land outside it
+    await act(async () => {
+      fireEvent.click(screen.getByText('Standard Rate'))
+    })
   }
 
   const calendarDay = (container: HTMLElement, date: string) =>
@@ -121,7 +124,10 @@ describe('RoomSelection', () => {
   const clickDay = async (container: HTMLElement, date: string) => {
     await waitFor(() => expect(container.querySelector('.availability-calendar-day[data-date]')).not.toBeNull())
     if (!calendarDay(container, date)) fireEvent.click(screen.getByRole('button', { name: /next month/i }))
-    fireEvent.click(calendarDay(container, date))
+    // A click can start the quote request: let it finish inside act
+    await act(async () => {
+      fireEvent.click(calendarDay(container, date))
+    })
   }
 
   describe('check-in and check-out range', () => {
@@ -428,7 +434,9 @@ describe('RoomSelection', () => {
     await waitFor(() => {
       expect(screen.getByText('Standard Rate')).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByText('Standard Rate'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Standard Rate'))
+    })
     await waitFor(() => {
       expect(screen.getByText('Availability Calendar')).toBeInTheDocument()
     })
