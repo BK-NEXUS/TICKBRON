@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 import { ImageOff } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
@@ -12,7 +12,7 @@ interface Place extends GeographyNames {
   image_url: string | null
 }
 
-function PlaceCard({ place, children }: { place: Place; children: (body: JSX.Element) => JSX.Element }) {
+function PlaceCard({ place, children }: { place: Place; children: (body: ReactElement) => ReactElement }) {
   const { tp, language } = useI18n()
   const body = (
     <>

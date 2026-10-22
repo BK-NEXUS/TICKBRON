@@ -17,15 +17,15 @@ export default defineConfig({
     sourcemap: false,
     // Optimize chunk size warning threshold
     chunkSizeWarningLimit: 1000,
-    // Minify output using esbuild (built into Vite)
-    minify: 'esbuild',
     // Rollup options for bundle optimization
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['react-helmet-async'],
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'react-vendor'
+          if (id.includes('node_modules/react-helmet-async/')) return 'ui-vendor'
+          return undefined
         },
       },
     },
