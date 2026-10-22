@@ -1123,3 +1123,10 @@ Supersedes the payment, refund, cancellation-terms and no-show-refund parts of t
 - Error code `refund_refused` of the no-show decision no longer exists.
 
 **Removed settings:** `PAYMENT_TEST_MODE`, `PAYME_*`, `CLICK_*`, `VISA_*`, `NO_SHOW_REFUND_PERCENT`, `CANCEL_REFUND_PERCENT`, `THROTTLE_WEBHOOK_RATE`; `VITE_PAYMENT_TEST_MODE` in the frontend.
+## Owner photo management (2026-10-21)
+All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own property only (another owner's property or photo = 404, guest = 403).
+- `GET .../photos/` -> list of `{id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text}` ordered by `display_order, id`; deleted photos are not listed.
+- `POST .../photos/` (multipart: `photo`, `photo_type`, `caption`, `alt_text`) -> 201 with the photo. The first photo of a property becomes the cover (`is_primary` true); later ones go to the end (`display_order` = highest + 1). The stored file name is `<uuid>.<ext>`, never the client's. Limits unchanged (type/size checks, 40 megapixels, 50 photos; errors are the plain serializer errors, 400).
+- `PATCH .../photos/{photo_id}/` JSON `caption`, `alt_text`, `photo_type`, `is_primary: true` (becomes the cover, the old cover is demoted). `is_primary: false` -> 400 (make another photo the cover). The image file itself cannot be replaced (delete and upload again).
+- `DELETE .../photos/{photo_id}/` -> 204, soft delete; a deleted cover passes to the first remaining photo (none left = no cover).
+

@@ -4,11 +4,14 @@ Serializers for partner API endpoints.
 This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+import os
+import uuid
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Max
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
@@ -475,6 +478,28 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
         if obj.photo:
             return obj.photo.url
         return None
+
+    def validate_is_primary(self, value):
+        # A property always keeps one cover; it moves by making another photo the cover.
+        if self.instance is not None and not value:
+            raise serializers.ValidationError('Make another photo the cover instead.')
+        return value
+
+    def create(self, validated_data):
+        prop = validated_data['property']
+        photos = PropertyPhoto.objects.filter(property=prop, is_deleted=False)
+        validated_data['display_order'] = (photos.aggregate(top=Max('display_order'))['top'] or 0) + 1
+        if not photos.filter(is_primary=True).exists():
+            validated_data['is_primary'] = True
+        # The client's file name is never used: stored paths are public and must not be guessable.
+        upload = validated_data['photo']
+        extension = os.path.splitext(upload.name)[1].lower()
+        upload.name = f'{uuid.uuid4().hex}{extension}'
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('photo', None)
+        return super().update(instance, validated_data)
 
     def validate_photo(self, value):
         """

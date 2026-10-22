@@ -1556,6 +1556,23 @@ export const en = {
   'arrivals.markArrivedFor': "Guest arrived: {reference}",
   'arrivals.rule': "A confirmed booking that is not marked as arrived {hours} hours after the arrival time is cancelled and the room is released.",
   'booking.arrivalPassed': "That time has already passed today. Choose a later time.",
+  'photos.title': "Photos",
+  'photos.loading': "Loading photos...",
+  'photos.empty': "No photos yet",
+  'photos.emptyHint': "Add photos so guests can see your hotel. The first one becomes the cover.",
+  'photos.add': "Add photos",
+  'photos.help': "JPG, PNG, WebP or GIF, up to 10 MB each.",
+  'photos.count': "{count} of {max} photos",
+  'photos.cover': "Cover",
+  'photos.makeCover': "Make cover",
+  'photos.delete': "Delete",
+  'photos.confirmDelete': "Delete this photo?",
+  'photos.caption': "Caption",
+  'photos.saveCaption': "Save caption",
+  'photos.uploading': "Uploading photos...",
+  'photos.uploadFailed': "{name}: {error}",
+  'photos.alt': "Photo {number}",
+  'photos.nav': "Photos",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

@@ -2849,7 +2849,7 @@ Branch `claude/tickbron-email-registration-gh4p45`. Frontend only; no API change
 - **Photos are not served in development:** the uploaded files live at `/media/...` (relative URL) but Django has no media route and the Vite dev server does not proxy `/media`; production needs nginx for `/media/` (RELEASE_CHECKLIST). For the browser check I answered `/media/` from disk inside Playwright. Adding a DEBUG-only media route and a Vite proxy would show photos in development.
 - The photo API sends `photo` as a relative path, so a frontend on another domain than the backend would not find it; same-origin (nginx) is assumed.
 - The gallery arrows are the characters ‹ ›, not icons; room photos (`RoomType.photos`) are not shown in `RoomSelection`.
-- Hotel owners cannot upload photos yet in the frontend (no screen), so real hotels will have none until that exists.
+- (Fixed 2026-10-21, see "Owner photo management: frontend") Hotel owners could not upload photos in the frontend.
 
 ## R11 free cancellation: backend (2026-10-17, PR #49) and frontend (2026-10-17)
 Plan `.ai/PLAN_R11_CANCELLATION.md` (approved by the owner), contract `API_CONTRACT.md` "Free cancellation and the cancellation refund (R11)". READY FOR FRONTEND was delivered together with the frontend below.
@@ -2953,3 +2953,19 @@ Contract: API_CONTRACT "Cash only, stage 3b and 3c". Stacked on 3a (Status reven
 - Tests that asserted the removed behaviour were removed or changed by the owner's decision: the whole `payments/tests/` package (14 files), `bookings/tests/test_cancellation_refund.py`, `test_cancellation_rule.py`, `test_cancellation_snapshot.py`, `test_r12b_refund.py`, `properties/tests/test_cancellation_api.py`, the payment-state-machine and `confirm_booking` tests in `test_state_machine.py` and `test_concurrency.py`, the payment cases in `test_admin_api.py`, `test_owasp_batch3_logging.py`, `test_r4_idor.py`, `test_r4_permission_matrix.py`, `test_settings_defaults.py`, `test_r4_production_config.py`, `test_seed_demo_stats.py`; frontend: the payment component tests, `CancellationNote`/`NoShowRefundNote` tests, `paymentAdapter` and `card`/`paymentTestMode` tests, the payments tab and "total paid" tests, the cancel-preview and refund-text tests.
 - Kept on purpose: the payment tables and `PaymentAuditLog` (the booking status history is written there), the `bookings.payment_status` column ("Pay at the hotel"), the rate-plan and booking refund columns (no destructive migration), the UZS "charge" display of a booking priced in dollars.
 - Found, not fixed: the pending booking state and its 15-minute expiry now only exist for direct `create_booking` calls (the API confirms at once); `PaymentAuditLog` should get its own name when the payments tables are finally dropped; the `charge_*` booking fields are really "the price in so'm".
+## Owner photo management: backend (2026-10-21)
+Plan `.ai/PLAN_OWNER_PHOTOS.md` (approved). Contract: API_CONTRACT "Owner photo management". READY FOR FRONTEND.
+- `partner/views.py`: `partner_property_photos` (GET list, POST upload) and `partner_property_photo_detail` (PATCH, DELETE); the old `partner_property_photo_upload` and URL name `partner-property-photo-upload` are replaced by `partner-property-photos` (no other caller).
+- `partner/serializers.py` `PartnerPropertyPhotoSerializer`: first photo is the cover, next display_order, random `<uuid>.<ext>` name (done here, so `common.storage.get_media_upload_path` and its test are unchanged), `is_primary=false` refused on update, `photo` ignored on update.
+- `PropertyPhoto.remove()` (model method, no migration): soft delete plus cover hand-over.
+- Tests: `partner/tests/test_partner_photos.py` (18, written first: 13 failed before the code); existing upload tests untouched and passing. Run: partner + properties + common = 581 passed.
+- Found, not fixed: the public property pages pick the cover by `is_primary`; a property whose last photo was deleted simply has none.
+
+## Owner photo management: frontend (2026-10-21)
+Contract: `API_CONTRACT.md` "Owner photo management".
+- `components/PartnerPhotosManagement.tsx` (new view "Photos" in the owner dashboard side menu once a hotel is selected, breadcrumb "hotel > Photos"): multi-file upload (each file uploaded in turn, a failed file is named in the error and the rest still go), grid with the cover badge, "Make cover", caption edit, delete with a confirm. Loading, empty and error (with retry) states; the picker is disabled at 50 photos or while busy.
+- Adapter: `getPropertyPhotos`, `updatePropertyPhoto`, `deletePropertyPhoto`; the `PropertyPhoto` type now matches the API (`photo_url`, nullable caption/alt_text; the old fields `property`, `created_at`, `updated_at` were never sent).
+- Texts `photos.*` in uz/ru/en (native-speaker review of uz/ru still open).
+- Tests: `PartnerPhotosManagement.test.tsx` (10), `PartnerDashboardPage.photos.test.tsx` (2). Full frontend: 172 files, 1966 tests passed; eslint, tsc and build exit 0.
+- Real browser (Chromium against the dev stack, owner demo account): upload of 3 files, make cover, delete, cover count always 1, no horizontal overflow at 1440 and 390 px. Images show as broken in dev only because Django does not serve /media there (production: nginx, RELEASE_CHECKLIST).
+
