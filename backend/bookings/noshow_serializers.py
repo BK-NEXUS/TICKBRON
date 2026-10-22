@@ -1,14 +1,12 @@
 """
 Serializers for the no-show report endpoints (R12 phase 3).
 
-Owner rows carry the report, the booking reference and the hotel; staff rows add the exact
-refund an approval would pay, the refunds already made and the abuse flag. No guest name,
-phone or email in either: the staff see the booking reference and look the guest up the usual way.
+Owner rows carry the report, the booking reference and the hotel; staff rows add the abuse
+flag. No guest name, phone or email in either: the staff see the booking reference and look the
+guest up the usual way.
 """
 import re
 
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from bookings.models import NoShowReport
@@ -60,26 +58,13 @@ class OwnerReportSerializer(serializers.ModelSerializer):
 
 
 class StaffReportSerializer(OwnerReportSerializer):
-    """Context: flagged (set of property ids), previews ({booking id: preview}), refunds ({booking id: [rows]})."""
+    """Context: flagged (set of property ids)."""
     hotel_flagged = serializers.SerializerMethodField()
-    refund_preview = serializers.SerializerMethodField()
-    refunds = serializers.SerializerMethodField()
 
     class Meta(OwnerReportSerializer.Meta):
         fields = OwnerReportSerializer.Meta.fields + [
-            'decided_by_id', 'created_by_id', 'hotel_flagged', 'refund_preview', 'refunds']
+            'decided_by_id', 'created_by_id', 'hotel_flagged']
         read_only_fields = fields
 
     def get_hotel_flagged(self, obj) -> bool:
         return obj.property_id in self.context.get('flagged', ())
-
-    @extend_schema_field(OpenApiTypes.OBJECT)
-    def get_refund_preview(self, obj):
-        # Only a pending report still has a refund to preview; a decided one shows `refunds`
-        if obj.status != 'pending':
-            return None
-        return self.context.get('previews', {}).get(obj.booking_id)
-
-    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
-    def get_refunds(self, obj):
-        return self.context.get('refunds', {}).get(obj.booking_id, [])

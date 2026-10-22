@@ -76,6 +76,7 @@ def _create_owner(client, password, n):
         'email': f'owner{n}@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
         'password': password, 'password_confirm': password,
         **uzbek_location('Tashkent'),  # a new account needs a place
+        'phone_number': '+998901112233',  # a new account needs a phone number
     }, format='json')
 
 

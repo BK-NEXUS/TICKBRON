@@ -13,16 +13,12 @@ import random
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-# Test mode settings
-os.environ.setdefault('PAYMENT_TEST_MODE', 'True')
-
 django.setup()
 
 from django.test import Client
 from django.contrib.auth import get_user_model
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from bookings.models import Booking, BookingItem
-from payments.models import PaymentTransaction
 from admin_panel.models import InternalNote
 from decimal import Decimal
 from datetime import date, timedelta

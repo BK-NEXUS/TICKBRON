@@ -46,7 +46,8 @@ class TestUserRegistrationSerializer(TestCase):
             'email': 'newuser@example.com',
             'full_name': 'New User',
             'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
+            'password_confirm': 'SecureP@ssw0rd123',
+            'phone_number': '+998901234567',
         }
         
         serializer = UserRegistrationSerializer(data=data)
@@ -55,7 +56,7 @@ class TestUserRegistrationSerializer(TestCase):
         user = serializer.save()
         assert user.email == 'newuser@example.com'
         assert user.full_name == 'New User'
-        assert user.phone_number is None
+        assert user.phone_number == '+998901234567'  # stored in E.164 form (was: not stored, accounts were e-mail only)
         assert user.check_password('SecureP@ssw0rd123')
     
     def test_password_mismatch(self):
@@ -64,7 +65,8 @@ class TestUserRegistrationSerializer(TestCase):
             'email': 'newuser@example.com',
             'full_name': 'New User',
             'password': 'securepass123',
-            'password_confirm': 'differentpass123'
+            'password_confirm': 'differentpass123',
+            'phone_number': '+998901234567',
         }
         
         serializer = UserRegistrationSerializer(data=data)
@@ -89,35 +91,22 @@ class TestUserRegistrationSerializer(TestCase):
         data = {
             'email': 'newuser@example.com',
             'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
+            'password_confirm': 'SecureP@ssw0rd123',
+            'phone_number': '+998901234567',
         }
         
         serializer = UserRegistrationSerializer(data=data)
         assert not serializer.is_valid()
         assert 'full_name' in serializer.errors
     
-    def test_phone_number_is_not_part_of_registration(self):
-        """A phone number sent anyway is ignored: accounts are created by e-mail only."""
-        data = {
-            'email': 'newuser@example.com',
-            'full_name': 'New User',
-            'phone_number': '+998901234567',
-            'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
-        }
-
-        serializer = UserRegistrationSerializer(data=data)
-        assert serializer.is_valid(), serializer.errors
-        assert 'phone_number' not in serializer.fields
-        assert serializer.save().phone_number is None
-
     def test_optional_first_name_last_name(self):
         """Test that first_name and last_name are optional."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
             'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
+            'password_confirm': 'SecureP@ssw0rd123',
+            'phone_number': '+998901234567',
         }
         
         serializer = UserRegistrationSerializer(data=data)
@@ -137,7 +126,8 @@ class TestUserRegistrationSerializer(TestCase):
             'telegram': '@telegramuser',
             'preferred_contact_method': 'whatsapp',
             'password': 'SecureP@ssw0rd123',
-            'password_confirm': 'SecureP@ssw0rd123'
+            'password_confirm': 'SecureP@ssw0rd123',
+            'phone_number': '+998901234567',
         }
         
         serializer = UserRegistrationSerializer(data=data)
@@ -249,15 +239,6 @@ class TestUserUpdateSerializer(TestCase):
         assert updated_user.whatsapp == '+998917654321'
         assert updated_user.telegram == '@newtelegram'
         assert updated_user.preferred_contact_method == 'whatsapp'
-    
-    def test_phone_number_is_not_updatable(self):
-        """Accounts are e-mail only, so a phone number in the body is ignored."""
-        before = self.user.phone_number
-        serializer = UserUpdateSerializer(self.user, data={'phone_number': '+998917654321'}, partial=True)
-        assert serializer.is_valid()
-        assert 'phone_number' not in serializer.fields
-
-        assert serializer.save().phone_number == before
     
     def test_partial_update(self):
         """Test partial update (only some fields)."""

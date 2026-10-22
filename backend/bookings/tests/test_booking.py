@@ -20,7 +20,7 @@ class BookingModelTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -359,7 +359,7 @@ class BookingSerializerTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -438,7 +438,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'special_requests': 'Late check-in requested'
         }
         
@@ -448,7 +448,7 @@ class BookingSerializerTests(TestCase):
         booking = serializer.save()
         self.assertIsNotNone(booking)
         self.assertEqual(booking.guest, self.user)
-        self.assertEqual(booking.status, 'pending')
+        self.assertEqual(booking.status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
     
     def test_booking_create_serializer_invalid_date_range(self):
         """Test booking create serializer with invalid date range."""
@@ -458,7 +458,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_out.strftime('%Y-%m-%d'),
             'check_out': self.check_in.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
@@ -473,7 +473,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
@@ -488,7 +488,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 10  # Exceeds max_occupancy of 4
+            'guest_count': 10, 'expected_arrival_time': '14:00'  # Exceeds max_occupancy of 4
         }
         
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
@@ -508,7 +508,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
@@ -532,7 +532,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'guest_full_name': 'Jane Smith',
             'guest_phone': '+998917654321',
             'guest_email': 'jane@example.com'
@@ -554,7 +554,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'number_of_rooms': 2
         }
         
@@ -574,7 +574,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'children': [5, 8]
         }
         
@@ -592,7 +592,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'children': [-1, 5]
         }
         
@@ -608,7 +608,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'children': [18, 5]
         }
         
@@ -712,7 +712,7 @@ class BookingExpiryTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
@@ -1015,7 +1015,7 @@ class TransactionSafetyTests(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_user(phone_number='+998901112233', 
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',

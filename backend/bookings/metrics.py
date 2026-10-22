@@ -4,8 +4,8 @@ a guest, a stay, a night and revenue are; bookings/stats.py keeps its old public
 thin wrappers, and every Status view (admin and partner) reads these functions.
 
 - Date basis: the CHECK-IN date. "Today" = common.dates.business_today() (Asia/Tashkent).
-- counted   = confirmed + completed, not soft-deleted, not fully refunded.
-- stayed    = completed, not fully refunded (the headline number).
+- counted   = confirmed + completed, not soft-deleted.
+- stayed    = completed (the headline number).
 - upcoming  = confirmed with check-in after today; never limited by the period.
 - bookings  = COUNT of counted bookings.
 - every headline number also exists as PERSONS (SUM(guest_count)): counted_guests (= guests),
@@ -14,18 +14,13 @@ thin wrappers, and every Status view (admin and partner) reads these functions.
 - guests    = SUM(guest_count) of counted bookings (persons; guest_count includes children).
 - unique_customers = COUNT(DISTINCT guest) of counted bookings (the old `guests`).
 - nights    = SUM(number_of_nights); room_nights = SUM(number_of_nights x number_of_rooms).
-- no_show   = status no_show (an approved report), not fully refunded; no_show_reported = has a
+- no_show   = status no_show (an approved report); no_show_reported = has a
               pending no-show report. A reported booking is neither stayed nor no_show until staff
               decide: it is left out of the confirmed / completed counts of booking_status.
-- fully_refunded = counted or no_show bookings excluded by the refund rule: the booking has
-              at least one paid payment and every paid payment is refunded in full by
-              `succeeded` Refund rows (per payment, so per currency too). Failed, pending or
-              needs_manual refunds never count.
-- revenue   = per currency, never mixed: SUM(paid payments) - SUM(succeeded refunds) of the
-              counted + no_show bookings (a no-show keeps what was not refunded). A booking
-              without payment rows (legacy / demo) counts with revenue 0.
-- booking_value = SUM(total_price) of counted bookings in the hotel's currency (the old
-              `revenue`).
+- revenue   = cash expected at the hotel (plan .ai/PLAN_CASH_ONLY.md: there are no online payments): per
+              currency, never mixed, SUM(total_price) of COMPLETED bookings. A confirmed booking is not revenue
+              until the stay is completed; cancelled, expired and no-show bookings are never revenue.
+- booking_value = SUM(total_price) of counted bookings (confirmed + completed) in the hotel's currency.
 - booking_status = raw counts per status in the period: pending, confirmed, completed,
               cancelled (not expired), expired (cancelled by expiry, EXPIRY_REASON), no_show,
               no_show_reported.
@@ -42,14 +37,12 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.conf import settings
-from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek, TruncYear
 
 from common.dates import business_today
 
 COUNTED_STATUSES = ('confirmed', 'completed')
-REVENUE_STATUSES = ('confirmed', 'completed', 'no_show')
-PAID_PAYMENT_STATUSES = ('completed', 'refunded', 'partially_refunded')
 EXPIRY_REASON = 'Booking expired - payment not completed within time limit'
 BOOKING_STATUS_KEYS = ('pending', 'confirmed', 'completed', 'cancelled', 'expired', 'no_show', 'no_show_reported')
 
@@ -225,49 +218,6 @@ def parse_granularity(value, default='month'):
 _TRUNC = {'day': TruncDay, 'week': TruncWeek, 'month': TruncMonth, 'year': TruncYear}
 
 
-# --- the refund rule ------------------------------------------------------------------
-
-def fully_refunded_booking_ids():
-    """
-    Subquery of booking ids that are fully refunded: at least one paid payment, and no
-    paid payment with money left after its `succeeded` refunds.
-
-    The refunds of one payment never exceed it (payments.refunds.create_refund checks it with
-    the payment locked; the backfill skips such rows), so "every paid payment is refunded in
-    full" is the same as "succeeded refunds of paid payments >= everything paid". Only bookings
-    with a succeeded refund are looked at, which keeps the subquery small.
-    """
-    from payments.models import PaymentTransaction, Refund
-
-    paid = (PaymentTransaction.objects.filter(booking_id=OuterRef('booking_id'), status__in=PAID_PAYMENT_STATUSES)
-            .values('booking_id').annotate(total=Sum('amount')).values('total'))
-    return (
-        Refund.objects.filter(status='succeeded', payment__status__in=PAID_PAYMENT_STATUSES)
-        .values('booking_id')
-        .annotate(refunded=Sum('amount'))
-        .filter(refunded__gte=Subquery(paid))
-        .values('booking_id')
-    )
-
-
-def fully_refunded_ids(scope):
-    """
-    Ids of the fully refunded bookings in `scope` (one query). The aggregates below take this
-    list instead of the subquery: Postgres would rebuild the subquery's hash for every FILTER
-    clause (about 25 ms each on 50k bookings, see the R12 checkpoint).
-    """
-    return list(scope.filter(fully_refunded_q()).values_list('id', flat=True))
-
-
-def fully_refunded_q(prefix='', refunded_ids=None):
-    """Q for fully refunded bookings; with `refunded_ids` (fully_refunded_ids()) a plain id list."""
-    if refunded_ids is None:
-        return Q(**{f'{prefix}id__in': fully_refunded_booking_ids()})
-    if not refunded_ids:
-        return Q(**{f'{prefix}id': -1})    # no booking has this id: nothing is fully refunded
-    return Q(**{f'{prefix}id__in': refunded_ids})
-
-
 # --- booking sets -------------------------------------------------------------------
 
 def period_q(prefix='', date_range=None):
@@ -277,16 +227,14 @@ def period_q(prefix='', date_range=None):
     return Q(**{f'{prefix}check_in__gte': first, f'{prefix}check_in__lt': after})
 
 
-def counted_q(prefix='', date_range=None, refunded_ids=None):
+def counted_q(prefix='', date_range=None):
     """Q for counted bookings; `prefix` is the path to Booking, e.g. 'bookings__'."""
-    return (Q(**{f'{prefix}status__in': COUNTED_STATUSES, f'{prefix}is_deleted': False})
-            & period_q(prefix, date_range) & ~fully_refunded_q(prefix, refunded_ids))
+    return Q(**{f'{prefix}status__in': COUNTED_STATUSES, f'{prefix}is_deleted': False}) & period_q(prefix, date_range)
 
 
-def revenue_q(prefix='', date_range=None, refunded_ids=None):
-    """Bookings whose money is revenue: counted + no_show, not fully refunded."""
-    return (Q(**{f'{prefix}status__in': REVENUE_STATUSES, f'{prefix}is_deleted': False})
-            & period_q(prefix, date_range) & ~fully_refunded_q(prefix, refunded_ids))
+def revenue_q(prefix='', date_range=None):
+    """Bookings whose money is revenue: the stay is completed (the cash was handed over at the hotel)."""
+    return Q(**{f'{prefix}status': 'completed', f'{prefix}is_deleted': False}) & period_q(prefix, date_range)
 
 
 def _bookings():
@@ -310,15 +258,14 @@ def all_bookings():
 # --- grouped annotations (on a query of Property, User, ...) ---------------------------
 
 def upcoming_q(prefix='', today=None):
-    """Confirmed bookings checking in after today, not fully refunded; never limited by a period."""
+    """Confirmed bookings checking in after today; never limited by a period."""
     today = today or business_today()
-    return (Q(**{f'{prefix}status': 'confirmed', f'{prefix}is_deleted': False, f'{prefix}check_in__gt': today})
-            & ~fully_refunded_q(prefix))
+    return Q(**{f'{prefix}status': 'confirmed', f'{prefix}is_deleted': False, f'{prefix}check_in__gt': today})
 
 
-def guest_annotations(prefix='bookings__', date_range=None, refunded_ids=None, today=None):
+def guest_annotations(prefix='bookings__', date_range=None, today=None):
     """Persons (SUM guest_count) of counted, stayed and upcoming bookings, for .annotate()."""
-    counted = counted_q(prefix, date_range, refunded_ids)
+    counted = counted_q(prefix, date_range)
     return {
         'counted_guests_count': Coalesce(Sum(f'{prefix}guest_count', filter=counted), 0),
         'stayed_guests_count': Coalesce(
@@ -327,12 +274,11 @@ def guest_annotations(prefix='bookings__', date_range=None, refunded_ids=None, t
     }
 
 
-def metric_annotations(prefix='bookings__', date_range=None, refunded_ids=None, today=None):
+def metric_annotations(prefix='bookings__', date_range=None, today=None):
     """
     Counted bookings, guests, unique customers, nights, room nights and stays, for .annotate().
-    Pass `refunded_ids` (fully_refunded_ids()) so the refund rule is not re-run per aggregate.
     """
-    counted = counted_q(prefix, date_range, refunded_ids)
+    counted = counted_q(prefix, date_range)
     return {
         'bookings_count': Count(f'{prefix}id', filter=counted, distinct=True),
         'guests_count': Coalesce(Sum(f'{prefix}guest_count', filter=counted), 0),
@@ -342,7 +288,7 @@ def metric_annotations(prefix='bookings__', date_range=None, refunded_ids=None, 
             Sum(F(f'{prefix}number_of_nights') * F(f'{prefix}number_of_rooms'), filter=counted,
                 output_field=IntegerField()), 0),
         'stayed_count': Count(f'{prefix}id', filter=counted & Q(**{f'{prefix}status': 'completed'}), distinct=True),
-        **guest_annotations(prefix, date_range, refunded_ids, today),
+        **guest_annotations(prefix, date_range, today),
     }
 
 
@@ -376,28 +322,10 @@ def _money(amount):
 
 def revenue_by(bookings, key):
     """
-    {key value: [{'currency', 'amount'}, ...]}: paid payments minus succeeded refunds, per
-    currency, for already-filtered revenue bookings. `key` is a Booking lookup or annotation.
-    Two aggregated queries (payments, refunds); currencies without a paid payment are left out.
+    {key value: [{'currency', 'amount'}, ...]}: SUM(total_price) per booking currency, for already-filtered
+    revenue bookings (completed stays). `key` is a Booking lookup or annotation.
     """
-    paid_rows = (bookings.values(key, 'payment_transactions__currency')
-                 .annotate(amount=Sum('payment_transactions__amount',
-                                      filter=Q(payment_transactions__status__in=PAID_PAYMENT_STATUSES)))
-                 .order_by())
-    refunded_rows = (bookings.filter(refunds__status='succeeded')
-                     .values(key, 'refunds__currency').annotate(amount=Sum('refunds__amount')).order_by())
-    paid = {}
-    for row in paid_rows:
-        if row['payment_transactions__currency'] and row['amount'] is not None:
-            paid[(row[key], row['payment_transactions__currency'])] = row['amount']
-    for row in refunded_rows:
-        pair = (row[key], row['refunds__currency'])
-        if pair in paid:
-            paid[pair] -= row['amount']
-    result = {}
-    for (group, currency), amount in sorted(paid.items(), key=lambda item: (str(item[0][0]), item[0][1])):
-        result.setdefault(group, []).append({'currency': currency, 'amount': _money(amount)})
-    return result
+    return booking_value_by(bookings, key)
 
 
 def revenue_total(bookings):
@@ -441,19 +369,16 @@ def _status_counts(date_range):
     }
 
 
-def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
+def metric_totals(scope, date_range=None, today=None):
     """
     Every number of section 1 for the bookings in `scope` (a not-deleted Booking queryset
     narrowed to a hotel, an owner or a guest; NOT narrowed to the period). One aggregate
     query for the counts plus two for revenue and one for booking value.
     """
     today = today or business_today()
-    if refunded_ids is None:
-        refunded_ids = fully_refunded_ids(scope)
-    counted = counted_q('', date_range, refunded_ids)
+    counted = counted_q('', date_range)
     in_period = period_q('', date_range)
-    refunded = fully_refunded_q('', refunded_ids)
-    upcoming = Q(status='confirmed', check_in__gt=today) & ~refunded
+    upcoming = Q(status='confirmed', check_in__gt=today)
     totals = scope.aggregate(
         bookings=Count('id', filter=counted),
         guests=Coalesce(Sum('guest_count', filter=counted), 0),
@@ -465,11 +390,10 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         stayed_guests=Coalesce(Sum('guest_count', filter=counted & Q(status='completed')), 0),
         upcoming=Count('id', filter=upcoming),
         upcoming_guests=Coalesce(Sum('guest_count', filter=upcoming), 0),
-        no_show=Count('id', filter=in_period & Q(status='no_show') & ~refunded),
-        fully_refunded=Count('id', filter=in_period & Q(status__in=REVENUE_STATUSES) & refunded),
+        no_show=Count('id', filter=in_period & Q(status='no_show')),
         **_status_counts(date_range),
     )
-    in_revenue = scope.filter(revenue_q('', date_range, refunded_ids))
+    in_revenue = scope.filter(revenue_q('', date_range))
     in_counted = scope.filter(counted)
     return {
         'bookings': totals['bookings'],
@@ -484,7 +408,6 @@ def metric_totals(scope, date_range=None, today=None, refunded_ids=None):
         'room_nights': totals['room_nights'],
         'no_show': totals['no_show'],
         'no_show_reported': totals['st_reported'],
-        'fully_refunded': totals['fully_refunded'],
         'upcoming': totals['upcoming'],
         'revenue': revenue_total(in_revenue),
         'booking_value': booking_value_total(in_counted),
@@ -552,13 +475,13 @@ def region_rank(prop, date_range):
     if len(peer_ids) < RANK_MIN_HOTELS or prop.id not in peer_ids:
         return None
     scope = all_bookings().filter(property_id__in=peer_ids)
-    counts = dict(scope.filter(counted_q('', date_range, fully_refunded_ids(scope)))
+    counts = dict(scope.filter(counted_q('', date_range))
                   .values_list('property_id').annotate(total=Count('id')).order_by())
     own = counts.get(prop.id, 0)
     return {'position': 1 + sum(1 for total in counts.values() if total > own), 'of': len(peer_ids)}
 
 
-def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=None):
+def insights(scope, date_range, totals, rooms=None, today=None):
     """
     Derived numbers of the Status pages for the bookings in `scope`, from their `totals`
     (metric_totals of the same scope and range): the previous period and the
@@ -567,12 +490,10 @@ def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=Non
     average stay length. Read only; every rate is None when its denominator is 0.
     """
     today = today or business_today()
-    if refunded_ids is None:
-        refunded_ids = fully_refunded_ids(scope)
     status = totals['booking_status']
     result = {
         'cancellation_rate': _percent(status['cancelled'], status['cancelled'] + totals['bookings'] + totals['no_show']),
-        'average_booking_value': _average_values(scope.filter(counted_q('', date_range, refunded_ids))),
+        'average_booking_value': _average_values(scope.filter(counted_q('', date_range))),
         'average_stay_nights': (f"{Decimal(totals['nights']) / totals['bookings']:.2f}" if totals['bookings'] else None),
         'occupancy_rate': None,
         'previous_period': None,
@@ -584,7 +505,7 @@ def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=Non
     if rooms:
         result['occupancy_rate'] = _percent(min(totals['room_nights'], rooms * days), rooms * days)
     before = previous_range(date_range)
-    previous = metric_totals(scope, before, today, refunded_ids)
+    previous = metric_totals(scope, before, today)
     keys = ('bookings', 'guests', 'nights', 'stayed')
     result['previous_period'] = {
         'range': range_json(before),
@@ -597,7 +518,7 @@ def insights(scope, date_range, totals, rooms=None, today=None, refunded_ids=Non
 
 # --- series -------------------------------------------------------------------------
 
-def series(scope, date_range, granularity, today=None, refunded_ids=None):
+def series(scope, date_range, granularity, today=None):
     """
     One row per bucket ({'period', 'start', 'bookings', 'guests', 'nights', 'stayed',
     'revenue'}), empty buckets included. With date_range None the range runs from the first
@@ -605,16 +526,14 @@ def series(scope, date_range, granularity, today=None, refunded_ids=None):
     MAX_BUCKETS buckets.
     """
     today = today or business_today()
-    if refunded_ids is None:
-        refunded_ids = fully_refunded_ids(scope)
     if date_range is None:
-        span = scope.filter(counted_q('', None, refunded_ids)).aggregate(first=Min('check_in'), last=Max('check_in'))
+        span = scope.filter(counted_q('', None)).aggregate(first=Min('check_in'), last=Max('check_in'))
         if span['first'] is None:
             return []
         date_range = (span['first'], max(span['last'], today) + timedelta(days=1))
     starts = buckets(date_range, granularity)
     trunc = _TRUNC[granularity]('check_in')
-    counted = scope.filter(counted_q('', date_range, refunded_ids)).annotate(bucket=trunc)
+    counted = scope.filter(counted_q('', date_range)).annotate(bucket=trunc)
     counts = {
         _as_date(row['bucket']): row
         for row in counted.values('bucket').annotate(
@@ -622,7 +541,7 @@ def series(scope, date_range, granularity, today=None, refunded_ids=None):
             stayed=Count('id', filter=Q(status='completed')),
         ).order_by('bucket')
     }
-    money = revenue_by(scope.filter(revenue_q('', date_range, refunded_ids)).annotate(bucket=trunc), 'bucket')
+    money = revenue_by(scope.filter(revenue_q('', date_range)).annotate(bucket=trunc), 'bucket')
     money = {_as_date(key): value for key, value in money.items()}
     rows = []
     for start in starts:
@@ -639,19 +558,19 @@ def _as_date(value):
     return value.date() if hasattr(value, 'date') and callable(value.date) else value
 
 
-def monthly_series(scope, year, refunded_ids=None):
+def monthly_series(scope, year):
     """
     Twelve rows for `year` ({'month': 'YYYY-MM', 'bookings', 'guests', 'revenue'}), kept for
     the existing `monthly` field. `scope` is a not-deleted Booking queryset.
     """
-    rows = series(scope, (date(year, 1, 1), date(year + 1, 1, 1)), 'month', refunded_ids=refunded_ids)
+    rows = series(scope, (date(year, 1, 1), date(year + 1, 1, 1)), 'month')
     return [{'month': row['period'], 'bookings': row['bookings'], 'guests': row['guests'],
              'nights': row['nights'], 'stayed': row['stayed'], 'revenue': row['revenue']} for row in rows]
 
 
-def available_years(scope, refunded_ids=None):
+def available_years(scope):
     """Years (ascending) that have at least one counted booking, for the year selector."""
-    return [day.year for day in scope.filter(counted_q('', None, refunded_ids)).dates('check_in', 'year')]
+    return [day.year for day in scope.filter(counted_q('', None)).dates('check_in', 'year')]
 
 
 # --- reconciliation -----------------------------------------------------------------
@@ -669,10 +588,10 @@ def reconciliation_windows(today=None):
     }
 
 
-def _reconciliation_aggregates(windows, refunded_ids):
+def _reconciliation_aggregates(windows):
     aggregates = {}
     for name, window in windows.items():
-        counted = counted_q('', window, refunded_ids)
+        counted = counted_q('', window)
         stayed = counted & Q(status='completed')
         aggregates[f'{name}__cb'] = Count('id', filter=counted)
         aggregates[f'{name}__cg'] = Coalesce(Sum('guest_count', filter=counted), 0)
@@ -692,21 +611,19 @@ def _reconciliation_block(windows, values):
     }
 
 
-def reconciliation(scope, today=None, refunded_ids=None):
+def reconciliation(scope, today=None):
     """
     {window: {'from', 'to', 'counted': {bookings, guests}, 'stayed': {bookings, guests}}}
     for today, this week (Mon-Sun), this month, this year and all time. One query.
     """
     windows = reconciliation_windows(today)
-    if refunded_ids is None:
-        refunded_ids = fully_refunded_ids(scope)
-    aggregates = _reconciliation_aggregates(windows, refunded_ids)
+    aggregates = _reconciliation_aggregates(windows)
     return _reconciliation_block(windows, scope.aggregate(**aggregates))
 
 
 def reconciliation_by(scope, key, today=None):
     """{key value: reconciliation block} grouped by `key` (e.g. 'property_id'). One query."""
     windows = reconciliation_windows(today)
-    aggregates = _reconciliation_aggregates(windows, fully_refunded_ids(scope))
+    aggregates = _reconciliation_aggregates(windows)
     rows = scope.values(key).annotate(**aggregates).order_by(key)
     return {row[key]: _reconciliation_block(windows, row) for row in rows}

@@ -2,7 +2,7 @@
 Booking statistics shared by the admin and partner Status sections.
 
 R12: the definitions live in bookings/metrics.py (guests = persons, unique customers,
-nights, stays, the refund rule, revenue = paid - refunded per currency, periods, series).
+nights, stays, revenue = completed bookings' total price per currency, periods, series).
 This module keeps the old public names as thin wrappers so older callers keep working:
 
 - parse_period, parse_year, InvalidPeriod, counted_q, counted_bookings, available_years,

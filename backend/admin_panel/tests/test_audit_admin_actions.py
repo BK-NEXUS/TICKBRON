@@ -97,6 +97,7 @@ class TestHotelOwnerCreation:
             'email': 'newowner@example.com', 'first_name': 'New', 'last_name': 'Owner',
             'password': 'Str0ng#Pass-2026!', 'password_confirm': 'Str0ng#Pass-2026!',
             **uzbek_location('Tashkent'),  # a new account needs a place
+            'phone_number': '+998901234567',  # a new account needs a phone number
         }, format='json')
 
         assert response.status_code == 201, response.data

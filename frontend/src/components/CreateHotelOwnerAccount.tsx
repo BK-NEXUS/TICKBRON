@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { GeographyPicker, type GeographyValue } from './GeographyPicker'
+import { cleanField, isPhoneValid } from '../utils/inputFilters'
 import { generatePassword as randomPassword } from '../utils/generatePassword'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
@@ -18,6 +19,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     email: '',
     first_name: '',
     last_name: '',
+    phone_number: '',
     password: '',
     password_confirm: '',
   })
@@ -32,13 +34,14 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    setFormData({ ...formData, [name]: cleanField(name, value) })
   }
 
   const validateForm = (): string | null => {
     if (place.country_ref === null || place.region_ref === null || place.city_ref === null) return t('admin.errPlace')
     if (!formData.email.trim()) return t('admin.errEmail')
     if (!formData.first_name.trim()) return t('admin.errFirstName')
+    if (!isPhoneValid(formData.phone_number)) return t('auth.errPhone')
     if (!formData.last_name.trim()) return t('admin.errLastName')
     if (!formData.password) return t('admin.errPassword')
     if (formData.password.length < 12) return t('admin.errPasswordShort')
@@ -90,7 +93,8 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
       email: '',
       first_name: '',
       last_name: '',
-        password: '',
+      phone_number: '',
+      password: '',
       password_confirm: '',
     })
     setPlace(NO_PLACE)
@@ -209,6 +213,22 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
               required
               autoComplete="family-name"
               placeholder={t('admin.doe')}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone_number">{t('auth.phone')}</label>
+            <input
+              id="phone_number"
+              name="phone_number"
+              type="tel"
+              inputMode="tel"
+              value={formData.phone_number}
+              onChange={handleChange}
+              className="form-control"
+              required
+              autoComplete="tel"
+              placeholder="+998 90 123 45 67"
             />
           </div>
 

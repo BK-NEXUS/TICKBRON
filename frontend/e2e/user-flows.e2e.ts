@@ -1,7 +1,6 @@
 /**
  * User flows A-H against the real local stack (seed_demo data).
  * No mocked API, with two documented exceptions:
- *  - B intercepts one /confirm/ call, because test-mode payments always succeed.
  *  - C and E fall back to the real API where the UI has no control for the step.
  * Every step takes a desktop + mobile screenshot and logs console errors / failed requests
  * to e2e/screenshots/<flow>/issues.json. expect.soft marks a finding without stopping the flow.
@@ -124,19 +123,7 @@ function dateInCurrentMonth(preferredOffset: number) {
   return preferred.slice(0, 7) === localDate(0).slice(0, 7) ? preferred : localDate(0)
 }
 
-async function fillBookingFormAndPay(page: Page) {
-  await expect(page.getByRole('heading', { name: 'Complete Your Booking' })).toBeVisible()
-  const firstName = page.getByLabel(/first name/i)
-  const lastName = page.getByLabel(/last name/i)
-  if (!(await firstName.inputValue())) await firstName.fill('Demo')
-  if (!(await lastName.inputValue())) await lastName.fill('Guest')
-  await page.getByRole('button', { name: /continue to payment/i }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Payment Method' })).toBeVisible()
-  await page.getByRole('radio').first().click()
-  await page.getByRole('button', { name: /^Pay with/ }).click()
-}
-
-test('A guest books a room and pays in test mode', async ({ page, audit }) => {
+test('A guest books a room and it is confirmed at once (cash at the hotel)', async ({ page, audit }) => {
   await step(audit, 'A0 login-as-guest', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
   })
@@ -192,7 +179,7 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(page.getByRole('heading', { name: 'Complete Your Booking' })).toBeVisible()
     // Guest data comes from the logged-in profile (checkpoint 22)
     await expect.soft(page.getByLabel(/email/i).first()).toHaveValue(DEMO.guest.email)
-    await expect.soft(page.getByLabel(/phone/i)).toHaveCount(0)
+    await expect.soft(page.getByLabel(/phone number/i), 'phone pre-filled from the profile').not.toHaveValue('')
     // The profile has full_name "Demo Guest"; first/last name should be filled from it
     const firstName = page.getByLabel(/first name/i)
     const lastName = page.getByLabel(/last name/i)
@@ -203,14 +190,14 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     expect(summaryTotal, 'booking form total = total shown when the dates were picked').toBe(selectionTotal)
     if (!(await firstName.inputValue())) await firstName.fill('Demo')
     if (!(await lastName.inputValue())) await lastName.fill('Guest')
-    await page.getByRole('button', { name: /continue to payment/i }).click()
+    await page.getByLabel(/arrival time/i).fill('23:30') // late enough for a stay that starts today
+    await page.getByRole('button', { name: /confirm booking/i }).click()
   })
 
-  await step(audit, 'A6 pay-test-mode', async () => {
-    await expect(page.getByRole('heading', { level: 1, name: 'Payment Method' })).toBeVisible()
-    await page.getByRole('radio').first().click()
-    await page.getByRole('button', { name: /^Pay with/ }).click()
-    await expect(page.getByRole('heading', { name: /Payment Successful|Booking Confirmed/ })).toBeVisible({ timeout: 20_000 })
+  await step(audit, 'A6 confirmed-at-once-cash', async () => {
+    // Cash at the hotel: no payment step, the booking is confirmed straight away
+    await expect(page.getByRole('heading', { name: 'Booking Confirmed!' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(/we wait 2 more hours/)).toBeVisible()
   })
 
   await step(audit, 'A7 confirmation-reference-code', async () => {
@@ -218,50 +205,17 @@ test('A guest books a room and pays in test mode', async ({ page, audit }) => {
     await expect(code).toBeVisible()
     shared.referenceCode = (await code.textContent())?.trim()
     expect(shared.referenceCode).toMatch(/^[A-Z2-9]{6}$/)
-    // Money is charged in so'm: what the guest was shown as paid is the booking's stored charge
-    const paidText = await page.getByText('Amount Paid:').first().locator('..').innerText()
-    const paid = Number(paidText.replace(/^Amount Paid:/, '').replace(/\D/g, ''))
     const bookings = await (await page.request.get(`${API}/api/v1/bookings/`)).json()
     const rows = Array.isArray(bookings) ? bookings : bookings.results
     const stored = rows.find((b: { confirmation_code: string }) => b.confirmation_code === shared.referenceCode)
-    expect(Number(stored.total_price), 'backend booking total = hotel price shown before payment').toBe(summaryTotal)
-    expect(stored.charge_currency).toBe('UZS')
-    expect(paid, `amount paid (${paidText}) should equal the stored charge (${stored.charge_amount})`)
-      .toBe(Math.round(Number(stored.charge_amount)))
+    expect(Number(stored.total_price), 'backend booking total = hotel price shown before booking').toBe(summaryTotal)
+    expect(stored.status, 'confirmed at once, paid in cash at the hotel').toBe('confirmed')
+    expect(stored.expected_arrival_time).toBe('23:30:00')
   })
 
   await step(audit, 'A8 my-bookings', async () => {
     await page.goto('/bookings')
     await expect(page.getByText(shared.referenceCode ?? 'NO-CODE').first()).toBeVisible()
-  })
-})
-
-test('B payment failure shows the failure screen and retry works', async ({ page, audit }) => {
-  await step(audit, 'B0 login-and-open-property', async () => {
-    await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
-    await page.goto('/search?destination=Tashkent')
-    await page.locator('.search-results-grid').getByRole('button', { name: new RegExp(`${TASHKENT} in Tashkent`) }).click()
-    await pickStay(page, 'Standard Double', 'Standard Rate', { nights: 1, skip: 1 })
-    await page.getByRole('button', { name: 'Proceed to booking' }).click()
-  })
-
-  await step(audit, 'B1 pay-with-simulated-provider-failure', async () => {
-    // Test-mode payments always succeed, so one confirm call is failed here to reach the failure screen
-    await page.route('**/api/v1/payments/transactions/*/confirm/', (route) =>
-      route.fulfill({ status: 502, json: { error: { code: 'provider_error', message: 'Provider declined the payment', details: {} } } }),
-    { times: 1 })
-    await fillBookingFormAndPay(page)
-    await expect(page.getByRole('button', { name: 'Retry payment' })).toBeVisible({ timeout: 20_000 })
-  })
-
-  await step(audit, 'B2 retry-succeeds', async () => {
-    await page.getByRole('button', { name: 'Retry payment' }).click()
-    const payAgain = page.getByRole('button', { name: /^Pay with/ })
-    if (await payAgain.isVisible().catch(() => false)) {
-      await page.getByRole('radio').first().click()
-      await payAgain.click()
-    }
-    await expect(page.getByRole('heading', { name: /Payment Successful|Booking Confirmed/ })).toBeVisible({ timeout: 20_000 })
   })
 })
 

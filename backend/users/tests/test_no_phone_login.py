@@ -1,11 +1,10 @@
 """
-Accounts are e-mail only: there is no SMS login, no phone verification, and no endpoint that
-takes a phone number for an account. An old number stays on the account, read-only.
+There is no SMS login and no phone verification: the removed endpoints answer 404 and a phone and a
+code cannot log anyone in. The number itself is only stored data (see test_phone_number.py).
 """
 import pytest
 from rest_framework.test import APIClient
 
-from partner.tests.geography_helpers import uzbek_location
 from users.models import User
 
 REMOVED_ENDPOINTS = [
@@ -48,36 +47,10 @@ class TestRemovedEndpoints:
 
 
 @pytest.mark.django_db
-class TestPhoneIsNotAccepted:
-
-    def test_profile_update_ignores_a_phone_number(self, user):
-        client = APIClient()
-        client.force_authenticate(user=user)
-
-        response = client.patch('/api/v1/auth/me/update/', {'phone_number': '+998915554433', 'telegram': '@guest'},
-                                format='json')
-
-        assert response.status_code == 200, response.data
-        user.refresh_from_db()
-        assert user.phone_number == OLD_NUMBER
-        assert user.telegram == '@guest'
+class TestOldNumberStaysVisible:
 
     def test_old_number_is_still_returned_read_only(self, user):
         client = APIClient()
         client.force_authenticate(user=user)
 
         assert client.get('/api/v1/auth/me/').data['phone_number'] == OLD_NUMBER
-
-    def test_create_hotel_owner_ignores_a_phone_number(self, db):
-        admin = User.objects.create_superuser(email='admin@example.com', password='AdminPassword#123')
-        client = APIClient()
-        client.force_authenticate(user=admin)
-
-        response = client.post('/api/v1/admin-panel/users/create-hotel-owner/', {
-            'email': 'owner@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
-            'phone_number': OLD_NUMBER, 'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
-            **uzbek_location('Tashkent'),  # a new account needs a place
-        }, format='json')
-
-        assert response.status_code == 201, response.data
-        assert not User.objects.get(email='owner@example.com').phone_number

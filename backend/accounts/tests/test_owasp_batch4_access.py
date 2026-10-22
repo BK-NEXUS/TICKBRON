@@ -80,7 +80,7 @@ class PublicHotelPageHidesInternalFieldsTests(_Fixture):
 
 
 class BookingIdGivesNoHintTests(_Fixture):
-    def test_review_and_payment_answer_the_same_for_a_foreign_and_a_missing_booking(self):
+    def test_review_answers_the_same_for_a_foreign_and_a_missing_booking(self):
         room = RoomType.objects.get(property=self.hotel)
         foreign = Booking.objects.create(
             guest=self.other, property=self.hotel, status='completed', payment_status='paid',
@@ -88,9 +88,8 @@ class BookingIdGivesNoHintTests(_Fixture):
             number_of_nights=2, number_of_rooms=1, guest_count=1, total_price=Decimal('80'), currency='USD',
             guest_full_name='Other', guest_email='other@example.com')
         review = {'property': self.hotel.id, 'overall_rating': 5, 'title': 't', 'comment': 'c'}
-        payment = {'idempotency_key': 'k' * 16, 'provider': 'payme', 'amount': '80', 'currency': 'USD'}
 
-        for url, body in (('/api/v1/me/reviews/', review), ('/api/v1/payments/transactions/', payment)):
+        for url, body in (('/api/v1/me/reviews/', review),):
             foreign_answer = self.client.post(url, {**body, 'booking': foreign.id}, format='json')
             missing_answer = self.client.post(url, {**body, 'booking': 999999}, format='json')
 

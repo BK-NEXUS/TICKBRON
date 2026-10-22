@@ -73,28 +73,6 @@ describe('RegisterPage', () => {
     })
   })
 
-  describe('e-mail only registration', () => {
-    it('does not ask for a phone number', async () => {
-      await renderWithRouter(<RegisterPage />)
-
-      expect(screen.queryByLabelText('Phone Number')).not.toBeInTheDocument()
-    })
-
-    it('sends no phone number', async () => {
-      const { authAdapter } = await import('../adapters/authAdapter')
-      vi.mocked(authAdapter.register).mockResolvedValue({ success: false, error: 'stop here' })
-      await renderWithRouter(<RegisterPage />)
-      fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } })
-      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
-      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'SecurePassword123!' } })
-      fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'SecurePassword123!' } })
-      fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-
-      await waitFor(() => expect(authAdapter.register).toHaveBeenCalled())
-      expect(vi.mocked(authAdapter.register).mock.calls[0][0]).not.toHaveProperty('phone_number')
-    })
-  })
-
   describe('password visibility', () => {
     it('shows and hides the password with the eye button', async () => {
       await renderWithRouter(<RegisterPage />)
@@ -137,6 +115,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -145,6 +124,7 @@ describe('RegisterPage', () => {
         expect(authAdapter.register).toHaveBeenCalledWith({
           email: 'test@example.com',
           full_name: 'John Doe',
+          phone_number: '+998901234567',
           password: 'SecurePassword123!',
           password_confirm: 'SecurePassword123!',
         })
@@ -162,6 +142,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)
@@ -182,6 +163,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'Short1!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'Short1!' } })
       fireEvent.click(submitButton)
@@ -208,6 +190,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -235,6 +218,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'SecurePassword123!' } })
       fireEvent.click(submitButton)
@@ -293,6 +277,7 @@ describe('RegisterPage', () => {
 
       fireEvent.change(fullNameInput, { target: { value: 'John Doe' } })
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
       fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
       fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword123!' } })
       fireEvent.click(submitButton)

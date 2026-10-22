@@ -11,7 +11,7 @@ from partner.status import partner_status, partner_status_arrivals, partner_stat
 from partner.views import (
     PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
     PartnerRatePlanViewSet, PartnerDateInventoryViewSet, PartnerRoomInventoryViewSet,
-    PartnerBlockViewSet, partner_property_photos, partner_property_photo_detail, partner_bookings, partner_assigned_place
+    PartnerBlockViewSet, partner_property_photos, partner_property_photo_detail, partner_bookings, partner_booking_arrived, partner_assigned_place
 )
 
 app_name = 'partner'
@@ -35,6 +35,7 @@ urlpatterns = [
          name='partner-property-photo-detail'),
     path('assigned-place/', partner_assigned_place, name='partner-assigned-place'),
     path('bookings/', partner_bookings, name='partner-bookings'),
+    path('bookings/<int:booking_id>/arrived/', partner_booking_arrived, name='partner-booking-arrived'),
     path('bookings/<int:booking_id>/no-show-report/', partner_no_show_report_create,
          name='partner-no-show-report-create'),
     path('no-show-reports/', partner_no_show_reports, name='partner-no-show-reports'),

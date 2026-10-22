@@ -49,7 +49,7 @@ class TestCanReportNoShow:
 
     @pytest.mark.parametrize('status', ['cancelled', 'no_show', 'pending'])
     def test_other_statuses_are_not_reportable(self, world, status):
-        booking = past_stay(world, status=status, paid=False)
+        booking = past_stay(world, status=status)
         assert listing(world)[booking.pk]['can_report_no_show'] is False
 
     def test_completed_is_reportable(self, world):

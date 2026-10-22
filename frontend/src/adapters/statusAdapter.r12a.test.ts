@@ -21,7 +21,7 @@ const money = [{ currency: 'UZS', amount: '1500000.00' }, { currency: 'USD', amo
 
 const totals = {
   bookings: 12, stayed: 9, counted: 12, guests: 31, unique_customers: 10, nights: 40, room_nights: 52,
-  no_show: 1, no_show_reported: 0, fully_refunded: 2, upcoming: 3, revenue: money, booking_value: money,
+  no_show: 1, no_show_reported: 0, upcoming: 3, revenue: money, booking_value: money,
   booking_status: { pending: 1, confirmed: 3, completed: 9, cancelled: 2, expired: 1, no_show: 1, no_show_reported: 0 },
 }
 

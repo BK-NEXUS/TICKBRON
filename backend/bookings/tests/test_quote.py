@@ -41,7 +41,7 @@ def stay(db):
             rate_plan=rate, date=day, available_rooms=3, booked_rooms=0,
             price=price, currency='USD', is_available=True,
         )
-    guest = User.objects.create_user(email='guest@example.com', password='GuestPassword#123')
+    guest = User.objects.create_user(email='guest@example.com', password='GuestPassword#123', phone_number='+998901112233')
     return {'property': prop, 'room': room, 'rate': rate, 'start': start, 'days': days, 'guest': guest}
 
 

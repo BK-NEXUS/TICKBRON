@@ -176,6 +176,8 @@ describe('CreateHotelOwnerAccount', () => {
     const lastNameInput = screen.getByLabelText('Last Name:')
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
 
@@ -191,6 +193,7 @@ describe('CreateHotelOwnerAccount', () => {
         email: 'owner@example.com',
         first_name: 'John',
         last_name: 'Doe',
+        phone_number: '+998901234567',
         password: 'SecurePassword123!',
         password_confirm: 'SecurePassword123!',
         country_ref: 1,
@@ -234,6 +237,8 @@ describe('CreateHotelOwnerAccount', () => {
     const lastNameInput = screen.getByLabelText('Last Name:')
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
 
@@ -271,6 +276,8 @@ describe('CreateHotelOwnerAccount', () => {
 
     const lastNameInput = screen.getByLabelText('Last Name:')
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
+
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
@@ -325,6 +332,8 @@ describe('CreateHotelOwnerAccount', () => {
 
     const lastNameInput = screen.getByLabelText('Last Name:')
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
+
+    fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })

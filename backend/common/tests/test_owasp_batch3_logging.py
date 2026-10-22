@@ -164,38 +164,6 @@ class TestStaffActionsHaveASourceAddress:
 
         assert AdminAccessLog.objects.filter(action='customer_list').get().ip_address == '203.0.113.7'
 
-    def test_staff_reading_payment_data_is_logged(self, db):
-        staff = User.objects.create_user(email='staff@example.com', password='x', is_staff=True)
-        client = APIClient()
-        client.force_authenticate(staff)
-
-        for url, action in (('/api/v1/payments/webhooks/', 'webhook_list'),
-                            ('/api/v1/payments/audit-logs/', 'payment_audit_list')):
-            assert client.get(url).status_code == 200, url
-            assert AdminAccessLog.objects.filter(action=action, actor_id=staff.id).count() == 1, action
-
-    def test_opening_one_webhook_event_or_audit_entry_is_logged_with_its_id(self, db):
-        from payments.models import PaymentAuditLog, WebhookEvent
-        staff = User.objects.create_user(email='staff@example.com', password='x', is_staff=True)
-        event = WebhookEvent.objects.create(provider='payme', provider_event_id='e-1', payload={}, status='processed')
-        entry = PaymentAuditLog.objects.create(action='webhook_received', webhook_event=event)
-        client = APIClient()
-        client.force_authenticate(staff)
-
-        assert client.get(f'/api/v1/payments/webhooks/{event.id}/').status_code == 200
-        assert client.get(f'/api/v1/payments/audit-logs/{entry.id}/').status_code == 200
-
-        assert AdminAccessLog.objects.get(action='webhook_view').details == {'object_id': event.id}
-        assert AdminAccessLog.objects.get(action='payment_audit_view').details == {'object_id': entry.id}
-
-    def test_a_guest_listing_their_own_audit_entries_is_not_an_admin_read(self, user):
-        client = APIClient()
-        client.force_authenticate(user)
-
-        assert client.get('/api/v1/payments/audit-logs/').status_code == 200
-
-        assert not AdminAccessLog.objects.filter(action='payment_audit_list').exists()
-
 
 class TestHealthEndpoints:
     def test_liveness_needs_nothing(self, client):
@@ -216,15 +184,3 @@ class TestHealthEndpoints:
 
         assert response.status_code == 503
         assert response.json() == {'status': 'unavailable'}
-
-
-@pytest.mark.django_db
-class TestWebhookRejectionsNameTheSource:
-    def test_a_forged_webhook_records_the_address_and_the_provider(self, security):
-        with override_settings(PAYME_SECRET_KEY='a-configured-secret'):
-            response = APIClient().post('/api/v1/payments/webhook/payme/', {'id': 'x', 'status': 'completed'},
-                                        format='json', HTTP_X_SIGNATURE='forged', REMOTE_ADDR='198.51.100.9')
-
-        assert response.status_code == 400
-        [line] = _events(security, 'webhook_rejected')
-        assert 'ip=198.51.100.9' in line and 'provider=payme' in line

@@ -13,7 +13,6 @@ from properties.models import (
     Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
     RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
-from bookings.cancellation import plan_terms
 from bookings.pricing import price_list
 from common.money import SUPPORTED_BASE_CURRENCIES
 from currency.rates import current_rate, rate_for_request, uzs_amount
@@ -286,7 +285,6 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'deposit_percentage': rate_plan.deposit_percentage,
                     'advance_booking_days': rate_plan.advance_booking_days,
                     'prices': price_list(rate_plan, rate_of),
-                    **plan_terms(rate_plan),
                 }
                 rate_plans_data.append(rate_plan_data)
             
@@ -557,7 +555,6 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'rate_type', 'description', 'base_price', 'currency',
             'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
             'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory',
-            'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
     
