@@ -277,7 +277,8 @@ class TestDatabaseOutageIsNotAClientError:
         body = {'property_id': booked['property'].id, 'room_type_id': booked['room'].id,
                 'rate_plan_id': booked['rate'].id,
                 'check_in': (booked['start'] + timedelta(days=6)).isoformat(),
-                'check_out': (booked['start'] + timedelta(days=7)).isoformat(), 'guest_count': 1}
+                'check_out': (booked['start'] + timedelta(days=7)).isoformat(), 'guest_count': 1,
+                'expected_arrival_time': '14:00'}
         client = booked['client']
         client.raise_request_exception = False
 

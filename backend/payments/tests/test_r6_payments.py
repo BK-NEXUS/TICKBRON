@@ -39,8 +39,12 @@ def booked(stay):
         'property_id': stay['property'].id, 'room_type_id': stay['room'].id, 'rate_plan_id': stay['rate'].id,
         'check_in': (stay['start'] + timedelta(days=1)).isoformat(),
         'check_out': (stay['start'] + timedelta(days=4)).isoformat(), 'guest_count': 1,
+        'expected_arrival_time': '14:00',
     }, format='json')
     assert response.status_code == 201, response.data
+    # The booking API confirms at once (cash at the hotel); these tests are about the payment code, which still
+    # starts from a pending booking, so the booking is put back to the state the payment flow expects
+    Booking.objects.filter(pk=response.data['id']).update(status='pending')
     return {'client': client, 'booking': Booking.objects.get(pk=response.data['id']), **stay}
 
 
