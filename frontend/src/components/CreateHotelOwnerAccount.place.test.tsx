@@ -20,6 +20,7 @@ function fillAccount() {
   fireEvent.change(screen.getByLabelText('Email Address:'), { target: { value: 'owner@example.com' } })
   fireEvent.change(screen.getByLabelText('First Name:'), { target: { value: 'Olim' } })
   fireEvent.change(screen.getByLabelText('Last Name:'), { target: { value: 'Karimov' } })
+  fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } })
   fireEvent.change(screen.getByLabelText('Password:'), { target: { value: 'Owner#Secret2026' } })
   fireEvent.change(screen.getByLabelText('Confirm Password:'), { target: { value: 'Owner#Secret2026' } })
 }
