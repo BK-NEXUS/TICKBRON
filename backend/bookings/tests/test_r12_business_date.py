@@ -30,7 +30,7 @@ def _book(stay, check_in, nights=2):
     return client.post('/api/v1/bookings/', {
         'property_id': stay['property'].id, 'room_type_id': stay['room'].id, 'rate_plan_id': stay['rate'].id,
         'check_in': check_in.isoformat(), 'check_out': (check_in + timedelta(days=nights)).isoformat(),
-        'guest_count': 1,
+        'guest_count': 1, 'expected_arrival_time': '23:59',
     }, format='json')
 
 

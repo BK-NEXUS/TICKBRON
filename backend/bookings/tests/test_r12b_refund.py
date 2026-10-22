@@ -66,7 +66,7 @@ class TestSnapshot:
         return client.post('/api/v1/bookings/', {
             'property_id': stay['property'].id, 'room_type_id': stay['room'].id,
             'rate_plan_id': stay['rate'].id, 'check_in': (stay['start'] + timedelta(days=1)).isoformat(),
-            'check_out': (stay['start'] + timedelta(days=3)).isoformat(), 'guest_count': 1,
+            'check_out': (stay['start'] + timedelta(days=3)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
         }, format='json')
 
     def test_new_booking_snapshots_the_setting(self, stay, settings):

@@ -253,6 +253,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 number_of_rooms=validated_data.get('number_of_rooms', 1),
                 children=validated_data.get('children', []),
                 expected_arrival_time=validated_data['expected_arrival_time'],
+                confirmed=True,
             )
             return booking
         except ExchangeRateUnavailable:

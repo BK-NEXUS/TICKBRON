@@ -16,7 +16,7 @@ class BookingTextLimitTests(APITestCase):
             'property_id': self.property.id, 'room_type_id': self.room_type.id,
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'), 'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 1,
+            'guest_count': 1, 'expected_arrival_time': '14:00',
         }
         data.update(extra)
         return self.client.post('/api/v1/bookings/', data, format='json')
@@ -52,7 +52,7 @@ class BookingTextLimitTests(APITestCase):
         response = self.client.post(f'/api/v1/bookings/{booking_id}/cancel/', {'cancellation_reason': 'r' * 1001}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Booking.objects.get(pk=booking_id).status, 'pending')
+        self.assertEqual(Booking.objects.get(pk=booking_id).status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
 
 
 class BookingPhoneTests(APITestCase):
@@ -66,7 +66,7 @@ class BookingPhoneTests(APITestCase):
         data = {
             'property_id': self.property.id, 'room_type_id': self.room_type.id, 'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'), 'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 1, **extra,
+            'guest_count': 1, 'expected_arrival_time': '14:00', **extra,
         }
         return self.client.post('/api/v1/bookings/', data, format='json')
 

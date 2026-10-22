@@ -310,7 +310,7 @@ class Booking(BaseModel):
         return ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
     
     @classmethod
-    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None):
+    def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None, confirmed=False):
         """
         Create a booking with transaction-safe inventory locking.
         
@@ -399,7 +399,9 @@ class Booking(BaseModel):
             booking = cls.objects.create(
                 guest=guest,
                 property=property_obj,
-                status='confirmed',  # cash at the hotel: no payment window, the room is taken at once
+                # The booking API passes confirmed=True: cash at the hotel, no payment window, the room is taken
+                # at once. Direct callers keep the old pending booking until the payment code goes (stage 3).
+                status='confirmed' if confirmed else 'pending',
                 payment_status='pending',
                 expected_arrival_time=expected_arrival_time,
                 check_in=check_in,

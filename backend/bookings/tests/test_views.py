@@ -97,7 +97,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2,
+            'guest_count': 2, 'expected_arrival_time': '14:00',
             'special_requests': 'Late check-in requested'
         }
         
@@ -105,7 +105,7 @@ class BookingViewTests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('confirmation_code', response.data)
-        self.assertEqual(response.data['status'], 'pending')
+        self.assertEqual(response.data['status'], 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
         self.assertEqual(response.data['guest_count'], 2)
     
     def test_create_booking_unauthenticated(self):
@@ -116,7 +116,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         response = self.client.post('/api/v1/bookings/', data, format='json')
@@ -237,7 +237,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_out.strftime('%Y-%m-%d'),
             'check_out': self.check_in.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         response = self.client.post('/api/v1/bookings/', data, format='json')
@@ -261,7 +261,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
         
         response = self.client.post('/api/v1/bookings/', data, format='json')
@@ -330,7 +330,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return Booking.objects.get(id=response.data['id'])
@@ -346,7 +346,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(patch_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(put_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         booking.refresh_from_db()
-        self.assertEqual(booking.status, 'pending')
+        self.assertEqual(booking.status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
         self.assertEqual(booking.payment_status, 'pending')
         self.assertEqual(booking.total_price, Decimal('200.00'))
 
@@ -386,7 +386,7 @@ class BookingViewTests(APITestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2
+            'guest_count': 2, 'expected_arrival_time': '14:00'
         }
 
         secret = 'CHECK constraint "chk_secret_internal_detail" violated on table bookings_x7f2'

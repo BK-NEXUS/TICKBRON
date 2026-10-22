@@ -243,7 +243,7 @@ class PendingCapRaceTests(TransactionTestCase):
 
     def test_parallel_creates_never_exceed_the_cap(self):
         from rest_framework.test import APIClient
-        from bookings.views import MAX_PENDING_BOOKINGS_PER_GUEST
+        from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # was MAX_PENDING_BOOKINGS_PER_GUEST
 
         def book():
             client = APIClient()
@@ -251,11 +251,11 @@ class PendingCapRaceTests(TransactionTestCase):
             return client.post('/api/v1/bookings/', {
                 'property_id': self.property.id, 'room_type_id': self.room_type.id,
                 'rate_plan_id': self.rate_plan.id, 'check_in': self.check_in.isoformat(),
-                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1,
+                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
             }, format='json').status_code
 
         results = run_concurrently(*[book] * 8)
 
         assert [r for r in results if r[0] == 'error'] == []
-        pending = Booking.objects.filter(guest=self.user, status='pending').count()
-        assert pending == MAX_PENDING_BOOKINGS_PER_GUEST, [r[1] for r in results]
+        upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bookings are confirmed at once
+        assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST, [r[1] for r in results]

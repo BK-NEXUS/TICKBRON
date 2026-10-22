@@ -73,7 +73,7 @@ class BookingLogicTestBase(TestCase):
         check_in = check_in or self.start + timedelta(days=day_offset)
         data = {
             'property_id': self.property.id, 'room_type_id': self.room_type.id, 'rate_plan_id': self.rate_plan.id,
-            'check_in': str(check_in), 'check_out': str(check_in + timedelta(days=nights)), 'guest_count': 2,
+            'check_in': str(check_in), 'check_out': str(check_in + timedelta(days=nights)), 'guest_count': 2, 'expected_arrival_time': '23:59',
         }
         data.update(extra)
         return self.client.post(BOOKINGS_URL, data, format='json')
