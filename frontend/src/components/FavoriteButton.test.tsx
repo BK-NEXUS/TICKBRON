@@ -2,7 +2,7 @@
  * E2E BUG 4: there was no way to add a property to favorites.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { FavoriteButton } from './FavoriteButton'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { resetFavoritesStore } from '../hooks/useFavorites'
@@ -64,7 +64,9 @@ describe('FavoriteButton', () => {
 
     const button = await screen.findByRole('button', { name: 'Save Hotel Tashkent to favorites' })
     await waitFor(() => expect(button).toBeEnabled())
-    fireEvent.click(button)
+    await act(async () => {
+      fireEvent.click(button)
+    })
     expect(accountAdapter.addFavorite).toHaveBeenCalledWith(5)
     expect(mockNavigate).not.toHaveBeenCalled()
   })

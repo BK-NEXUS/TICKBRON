@@ -3,10 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { ThemeProvider, useTheme } from './ThemeContext'
 import { ThemeToggle } from '../components/ThemeToggle'
 
-const mockSystemDark = (dark: boolean) =>
-  vi.spyOn(window, 'matchMedia').mockImplementation(
+// jsdom has no matchMedia, so the test defines it (restoreAllMocks in afterEach resets the mock)
+const mockSystemDark = (dark: boolean) => {
+  window.matchMedia = vi.fn(
     (query: string) => ({ matches: dark && query.includes('dark'), media: query, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList,
   )
+}
 
 function Probe() {
   const { theme, effectiveTheme } = useTheme()
