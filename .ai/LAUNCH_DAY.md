@@ -4,8 +4,8 @@ Guests pay cash at the hotel; the platform moves no money (`PLAN_CASH_ONLY.md`).
 
 ## 0. Merge first (the code is not on master until these are merged)
 - Cash chain, in this order: #66 input rules, #68 phone number, #69 cash bookings, #71 no online payments. Or only #72, which carries all four.
-- Independent: #64 owner photos, #65 Pillow 13 (needs `pip-audit` clean), #67 country/region pictures and the place of an owner account, R16 stack #58-#61.
-- After #64 is merged: owners can upload photos (this file no longer lists it as missing).
+- Already merged: #64 owner photos (owners can upload photos) with Pillow 13.
+- Still open and independent: #67 country/region pictures and the place of an owner account, R16 stack #58-#61.
 
 ## 1. Owner must supply
 - Hosting: server, domain, TLS certificate, nginx (`NUM_PROXIES`, `USE_X_FORWARDED_PROTO`), Postgres, Redis, Celery worker AND beat.
