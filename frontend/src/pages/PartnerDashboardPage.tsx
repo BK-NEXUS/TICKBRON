@@ -1,10 +1,11 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, House, Calendar, BedDouble, Banknote, UserX } from 'lucide-react'
+import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { PartnerRoomsManagement } from '../components/PartnerRoomsManagement'
+import { PartnerPhotosManagement } from '../components/PartnerPhotosManagement'
 import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
 import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
@@ -14,7 +15,7 @@ import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
-type DashboardView = 'properties' | 'rooms' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -25,7 +26,7 @@ export function PartnerDashboardPage() {
   const [currentView, setCurrentView] = useState<DashboardView>('properties')
   const [properties, setProperties] = useState<PartnerProperty[]>([])
   const [selectedProperty, setSelectedProperty] = useState<PartnerProperty | null>(null)
-  const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string } | null>(null)
+  const [selectedRoomType, setSelectedRoomType] = useState<{ id: number; name: string; currency?: string } | null>(null)
   const [selectedRatePlan, setSelectedRatePlan] = useState<{ id: number; name: string } | null>(null)
   const [calendarRoomType, setCalendarRoomType] = useState<{ id: number; name: string; totalRooms: number } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -76,7 +77,7 @@ export function PartnerDashboardPage() {
     setCurrentView('properties')
   }
 
-  const handleRoomTypeSelect = (roomType: { id: number; name: string }) => {
+  const handleRoomTypeSelect = (roomType: { id: number; name: string; currency?: string }) => {
     setSelectedRoomType(roomType)
     setSelectedRatePlan(null)
     setCurrentView('rates')
@@ -112,8 +113,8 @@ export function PartnerDashboardPage() {
   if (currentView === 'bookings') trail.push({ label: t('partner.bookings') })
   if (currentView === 'no-show-reports') trail.push({ label: t('noShow.myReports') })
   if (currentView === 'status') trail.push({ label: t('partner.status') })
-  if (selectedProperty && ['rooms', 'rates', 'availability', 'calendar'].includes(currentView)) {
-    trail.push(currentView === 'rooms'
+  if (selectedProperty && ['rooms', 'photos', 'rates', 'availability', 'calendar'].includes(currentView)) {
+    trail.push(currentView === 'rooms' || currentView === 'photos'
       ? { label: propertyName(selectedProperty) }
       : { label: propertyName(selectedProperty), onClick: handleBackToRooms })
     if (selectedRoomType && currentView !== 'rooms' && currentView !== 'calendar') {
@@ -123,6 +124,7 @@ export function PartnerDashboardPage() {
     }
     if (selectedRatePlan && currentView === 'availability') trail.push({ label: selectedRatePlan.name })
     if (calendarRoomType && currentView === 'calendar') trail.push({ label: calendarRoomType.name })
+    if (currentView === 'photos') trail.push({ label: t('photos.title') })
   }
   usePageTrail(trail)
 
@@ -192,6 +194,14 @@ export function PartnerDashboardPage() {
           >
             <span className="nav-icon"><BedDouble size={18} /></span>
             <span className="nav-label">{t('searchForm.rooms')}</span>
+          </button>
+          <button
+            onClick={() => setCurrentView('photos')}
+            className={`nav-item ${currentView === 'photos' ? 'nav-item--active' : ''}`}
+            aria-current={currentView === 'photos' ? 'page' : undefined}
+          >
+            <span className="nav-icon"><Images size={18} /></span>
+            <span className="nav-label">{t('photos.nav')}</span>
           </button>
           {calendarRoomType && (
             <button
@@ -338,6 +348,8 @@ export function PartnerDashboardPage() {
             onManageCalendar={handleCalendarSelect}
           />
         ) : null
+      case 'photos':
+        return selectedProperty ? <PartnerPhotosManagement propertyId={selectedProperty.id} /> : null
       case 'calendar':
         return calendarRoomType ? (
           <PartnerRoomCalendar
@@ -351,6 +363,7 @@ export function PartnerDashboardPage() {
           <PartnerRatesManagement
             roomTypeId={selectedRoomType.id}
             roomTypeName={selectedRoomType.name}
+            currency={selectedRoomType.currency}
             onManageAvailability={handleRatePlanSelect}
           />
         ) : null

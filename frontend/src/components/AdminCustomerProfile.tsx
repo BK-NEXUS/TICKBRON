@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/I18nContext'
 import { ContactLink } from './ContactLink'
 import { telegramLink, whatsappLink } from '../utils/contactLinks'
 
-type TabType = 'bookings' | 'payments' | 'notes'
+type TabType = 'bookings' | 'notes'
 type BookingFilterType = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function AdminCustomerProfile() {
@@ -323,7 +323,6 @@ export function AdminCustomerProfile() {
         onChange={setActiveTab}
         options={[
           { value: 'bookings', label: t('admin.tabBookings', { count: profile.bookings.length }), controls: 'bookings-panel' },
-          { value: 'payments', label: t('admin.tabPayments', { count: profile.payments.length }), controls: 'payments-panel' },
           { value: 'notes', label: t('admin.tabNotes', { count: profile.internal_notes.length }), controls: 'notes-panel' },
         ]}
       />
@@ -392,47 +391,6 @@ export function AdminCustomerProfile() {
                           </span>
                         </td>
                         <td className="booking-created">{formatDate(booking.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'payments' && (
-          <div className="tab-panel" id="payments-panel" role="tabpanel">
-            {profile.payments.length === 0 ? (
-              <div className="empty-state">
-                <p>{t('admin.noPaymentsFoundFor')}</p>
-              </div>
-            ) : (
-              <div className="table-scroll">
-                <table className="payments-table" role="table" aria-label={t('admin.customerPayments')}>
-                  <thead>
-                    <tr>
-                      <th scope="col">{t('admin.id')}</th>
-                      <th scope="col">{t('admin.bookingId')}</th>
-                      <th scope="col">{t('admin.provider')}</th>
-                      <th scope="col">{t('admin.amount')}</th>
-                      <th scope="col">{t('partner.status')}</th>
-                      <th scope="col">{t('status.created')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profile.payments.map(payment => (
-                      <tr key={payment.id}>
-                        <td className="payment-id">{payment.id}</td>
-                        <td className="payment-booking-id">{payment.booking_id}</td>
-                        <td className="payment-provider">{payment.provider}</td>
-                        <td className="payment-amount">{formatCurrency(payment.amount, payment.currency)}</td>
-                        <td className="payment-status">
-                          <span className={`status-badge ${getPaymentStatusClass(payment.status)}`}>
-                            {payment.status}
-                          </span>
-                        </td>
-                        <td className="payment-created">{formatDate(payment.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>

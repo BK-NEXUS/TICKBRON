@@ -446,10 +446,11 @@ class PartnerRatePlanTests(TestCase):
             'rate_type': 'non_refundable',
             'base_price': 90.00,
             'currency': 'USD',
+            'prices': {'USD': '90.00', 'UZS': '1100000', 'KZT': '40000', 'RUB': '8000'},
             'min_nights': 1,
             'is_active': True
         }
-        response = self.client.post('/api/v1/partner/rates/', data)
+        response = self.client.post('/api/v1/partner/rates/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(RatePlan.objects.count(), 2)

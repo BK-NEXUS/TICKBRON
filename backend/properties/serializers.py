@@ -13,8 +13,7 @@ from properties.models import (
     Amenity, AmenityCategory, PropertyAmenity, PropertyPhoto,
     RoomType, RatePlan, DateInventory, RoomPhoto, RoomAmenity
 )
-from bookings.cancellation import plan_terms
-from bookings.pricing import price_list
+from bookings.pricing import owner_prices_of, price_list, property_price_list, rate_lookup, night_price_in
 from common.money import SUPPORTED_BASE_CURRENCIES
 from currency.rates import current_rate, rate_for_request, uzs_amount
 from django.utils.dateparse import parse_date
@@ -46,6 +45,22 @@ class ApproxUzsPriceMixin(serializers.Serializer):
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_uzs_rate(self, obj):
         return self._approx_uzs(obj)['exchange_rate']
+
+
+class CardPricesMixin(serializers.Serializer):
+    """
+    R16: the "from" price of a hotel card in every supported currency (the lowest price of its active rate
+    plans in that currency): {code: {amount, source}}; see bookings.pricing.property_price_list.
+    """
+    prices = serializers.SerializerMethodField()
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_prices(self, obj):
+        request = self.context.get('rate_request') or self.context.get('request')
+        if not hasattr(self, '_rate_of'):
+            self._rate_of = rate_lookup(request)
+        plans = [plan for room_type in getattr(obj, 'card_room_types', []) for plan in room_type.rate_plans.all()]
+        return property_price_list(obj, plans, self._rate_of)
 
 
 class PropertyTypeSerializer(serializers.ModelSerializer):
@@ -120,7 +135,7 @@ class PropertyPolicySerializer(serializers.ModelSerializer):
         read_only_fields = []
 
 
-class PropertySearchResultSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
+class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for property search results.
     
@@ -141,7 +156,7 @@ class PropertySearchResultSerializer(ApproxUzsPriceMixin, serializers.ModelSeria
         fields = [
             'id', 'translations', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate',
+            'latitude', 'longitude', 'base_price', 'currency', 'prices', 'base_price_uzs_approx', 'uzs_rate',
             'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'primary_photo', 'amenities', 'full_address', 'average_rating', 'review_count', 'created_at'
@@ -286,7 +301,6 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'deposit_percentage': rate_plan.deposit_percentage,
                     'advance_booking_days': rate_plan.advance_booking_days,
                     'prices': price_list(rate_plan, rate_of),
-                    **plan_terms(rate_plan),
                 }
                 rate_plans_data.append(rate_plan_data)
             
@@ -533,14 +547,31 @@ class DateInventorySerializer(serializers.ModelSerializer):
     Represents daily availability and pricing data.
     """
     remaining_rooms = serializers.IntegerField(help_text="Calculated remaining available rooms")
+    # R16: the night's price in every currency; needs the rate plan in the context (see RatePlanAvailabilitySerializer)
+    prices = serializers.SerializerMethodField()
     
     class Meta:
         model = DateInventory
         fields = [
             'id', 'date', 'available_rooms', 'booked_rooms', 'remaining_rooms',
-            'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay'
+            'price', 'currency', 'prices', 'is_available', 'minimum_stay', 'maximum_stay'
         ]
         read_only_fields = ['id']
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_prices(self, row):
+        from common.money import SUPPORTED_BASE_CURRENCIES, quantize
+
+        plan = self.context.get('rate_plan')
+        if plan is None:
+            return None
+        price = row.price if row.price is not None else plan.base_price
+        owner = self.context['owner_prices']
+        result = {}
+        for code in SUPPORTED_BASE_CURRENCIES:
+            amount, _ = night_price_in(plan.currency, owner, price, code, self.context['rate_of'])
+            result[code] = None if amount is None else f'{quantize(amount, code):.2f}'
+        return result
 
 
 class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
@@ -550,14 +581,15 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
     Includes rate plan details and date inventory for specified date range.
     """
     date_inventory = serializers.SerializerMethodField()
+    # R16: the plan's price in every currency (owner / main / converted), see bookings.pricing.price_list
+    prices = serializers.SerializerMethodField()
     
     class Meta:
         model = RatePlan
         fields = [
-            'id', 'name', 'slug', 'rate_type', 'description', 'base_price', 'currency',
+            'id', 'name', 'slug', 'rate_type', 'description', 'base_price', 'currency', 'prices',
             'min_nights', 'max_nights', 'is_active', 'cancellation_policy',
             'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory',
-            'free_cancel_hours', 'cancel_refund_percent',
         ]
         read_only_fields = ['id']
     
@@ -603,7 +635,18 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
                     row.available_rooms = obj.room_type.total_rooms
                     row.booked_rooms = 0
 
-        return DateInventorySerializer(rows, many=True).data
+        return DateInventorySerializer(rows, many=True, context={
+            'rate_plan': obj, 'owner_prices': owner_prices_of(obj), 'rate_of': self._rate_of(),
+        }).data
+
+    def _rate_of(self):
+        if 'rate_of' not in self.context:
+            self.context['rate_of'] = rate_lookup(self.context.get('request'))
+        return self.context['rate_of']
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_prices(self, obj):
+        return price_list(obj, self._rate_of())
 
 
 class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
@@ -628,12 +671,12 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
         rate_plans = obj.rate_plans.filter(
             is_active=True,
             is_deleted=False
-        ).order_by('name')
+        ).prefetch_related('prices').order_by('name')
         
         return RatePlanAvailabilitySerializer(
             rate_plans, 
             many=True, 
-            context={'request': request}
+            context={'request': request, 'rate_of': rate_lookup(request)}
         ).data
 
 

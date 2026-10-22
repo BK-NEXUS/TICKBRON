@@ -1,6 +1,6 @@
 """
 R4 security review: a guest cannot read or change another guest's objects by
-putting their id in the URL or body (booking, payment, favorite, review,
+putting their id in the URL or body (booking, favorite, review,
 notification, account history). Hotel-owner to hotel-owner isolation is covered
 by partner/tests/test_access_matrix.py and the partner block/inventory tests.
 """
@@ -13,7 +13,6 @@ from rest_framework.test import APIClient
 
 from accounts.models import AccountHistory, Favorite, Notification, Review
 from bookings.models import Booking
-from payments.models import PaymentTransaction
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -40,12 +39,8 @@ def world(db):
         number_of_nights=1, guest_count=1, total_price=Decimal('50'), currency='USD',
         confirmation_code='ALI002', expires_at=timezone.now() + timedelta(minutes=15),
     )
-    payment = PaymentTransaction.objects.create(
-        idempotency_key='alice-key', booking=booking, provider='payme', amount=Decimal('100'),
-        currency='USD', status='completed', provider_transaction_id='txn-alice',
-    )
     objects = {
-        'booking': booking, 'pending': pending, 'payment': payment,
+        'booking': booking, 'pending': pending,
         'favorite': Favorite.objects.create(user=alice, property=prop),
         'review': Review.objects.create(
             user=alice, property=prop, booking=booking, overall_rating=5, title='Nice', comment='Good stay',
@@ -63,7 +58,6 @@ def world(db):
 
 READ_URLS = {
     'booking': '/api/v1/bookings/{id}/',
-    'payment': '/api/v1/payments/transactions/{id}/',
     'favorite': '/api/v1/me/favorites/{id}/',
     'review': '/api/v1/me/reviews/{id}/',
     'notification': '/api/v1/me/notifications/{id}/',
@@ -102,9 +96,8 @@ def test_cannot_change_another_guests_object(world, kind, method, body):
 @pytest.mark.django_db
 def test_lists_show_only_own_objects(world):
     client, _ = world
-    for url in ('/api/v1/bookings/', '/api/v1/payments/transactions/', '/api/v1/me/favorites/',
-                '/api/v1/me/reviews/', '/api/v1/me/notifications/', '/api/v1/me/history/',
-                '/api/v1/payments/audit-logs/'):
+    for url in ('/api/v1/bookings/', '/api/v1/me/favorites/', '/api/v1/me/reviews/',
+                '/api/v1/me/notifications/', '/api/v1/me/history/'):
         data = client.get(url).data
         rows = data['results'] if isinstance(data, dict) and 'results' in data else data
         assert len(rows) == 0, url
@@ -118,18 +111,6 @@ def test_cannot_cancel_another_guests_booking(world):
     assert response.status_code == 404
     objects['pending'].refresh_from_db()
     assert objects['pending'].status == 'pending'
-
-
-@pytest.mark.django_db
-def test_cannot_pay_for_another_guests_booking(world):
-    client, objects = world
-    response = client.post('/api/v1/payments/transactions/', {
-        'idempotency_key': 'bob-key', 'booking': objects['pending'].id, 'provider': 'payme',
-        'amount': '50.00', 'currency': 'USD',
-    }, format='json')
-
-    assert response.status_code == 400
-    assert not PaymentTransaction.objects.filter(idempotency_key='bob-key').exists()
 
 
 @pytest.mark.django_db

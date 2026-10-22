@@ -30,8 +30,6 @@ const TEXT_KEYS = textKeys({
   revenueHint: 'status.revenueHint',
   value: 'status.value',
   valueHint: 'status.valueHint',
-  fullyRefunded: 'status.fullyRefunded',
-  fullyRefundedHint: 'status.fullyRefundedHint',
   noShow: 'status.booking.no_show',
   noShowHint: 'status.noShowHint',
   noShowReported: 'status.noShowReported',
@@ -59,9 +57,6 @@ function cardsOf(totals: StatusFullTotals, guestsLabel: string, TEXT: Text): Car
     { label: TEXT.revenue, value: formatMoneyList(totals.revenue), hint: TEXT.revenueHint },
     { label: TEXT.value, value: formatMoneyList(totals.booking_value), hint: TEXT.valueHint },
   ]
-  if (totals.fully_refunded > 0) {
-    cards.push({ label: TEXT.fullyRefunded, value: formatCount(totals.fully_refunded), hint: TEXT.fullyRefundedHint })
-  }
   if (totals.no_show > 0) cards.push({ label: TEXT.noShow, value: formatCount(totals.no_show), hint: TEXT.noShowHint })
   if (totals.no_show_reported > 0) {
     cards.push({ label: TEXT.noShowReported, value: formatCount(totals.no_show_reported), hint: TEXT.noShowReportedHint })

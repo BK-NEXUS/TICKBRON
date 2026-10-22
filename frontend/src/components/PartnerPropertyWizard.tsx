@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
 import { LocationPicker } from './LocationPicker'
 import { toCoordinates } from '../utils/coordinates'
@@ -22,6 +22,19 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
 
   const [location, setLocation] = useState<GeographyValue>({ country_ref: null, region_ref: null, city_ref: null })
   const [locationLabels, setLocationLabels] = useState<GeographyLabels>({ country: '', region: '', city: '' })
+  // The super admin may have given this account a place: then it is preset and cannot be changed here
+  const [placeLocked, setPlaceLocked] = useState(false)
+
+  useEffect(() => {
+    let current = true
+    void partnerAdapter.getAssignedPlace().then(({ data }) => {
+      if (current && data && data.country_ref !== null && data.region_ref !== null && data.city_ref !== null) {
+        setLocation(data)
+        setPlaceLocked(true)
+      }
+    })
+    return () => { current = false }
+  }, [])
 
   const [formData, setFormData] = useState<PropertyForm>({
     property_type: 1, // Default property type (should be selected from a list)
@@ -262,8 +275,11 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
               <GeographyPicker
                 value={location}
                 required
+                disabled={placeLocked}
+                onLabels={placeLocked ? setLocationLabels : undefined}
                 onChange={(next, labels) => { setLocation(next); setLocationLabels(labels); setError(null) }}
               />
+              {placeLocked && <p className="geography-picker-hint">{t('partner.placeLocked')}</p>}
               <div className="form-group">
                 <label htmlFor="postal_code">{t('partner.postalCode')}</label>
                 <input

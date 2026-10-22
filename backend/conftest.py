@@ -26,17 +26,6 @@ pytest_plugins = ['admin_panel.tests.status_fixtures']
 
 
 @pytest.fixture(autouse=True)
-def provider_test_modes(settings):
-    """
-    Run the payment providers in test mode during tests.
-
-    The setting defaults to False outside tests; tests that need the
-    production behaviour override it back to False.
-    """
-    settings.PAYMENT_TEST_MODE = True
-
-
-@pytest.fixture(autouse=True)
 def geography_dictionary(request, django_db_blocker):
     """
     Keep the Geography dictionary available for normal database tests.

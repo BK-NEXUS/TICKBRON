@@ -251,3 +251,21 @@ def validate_image_file(file):
         return False, f"File content type {file.content_type} is not a valid image"
     
     return True, None
+
+
+MAX_IMAGE_PIXELS = 40_000_000
+
+
+def image_upload_error(file):
+    """
+    Message for an upload that is not an acceptable picture, else None: type and size checks, plus a
+    pixel limit (a tiny file can expand to gigabytes of pixels when decoded).
+    """
+    is_valid, error_message = validate_image_file(file)
+    if not is_valid:
+        return error_message
+    width, height = file.image.size
+    if width * height > MAX_IMAGE_PIXELS:
+        return 'Image dimensions are too large.'
+    return None
+

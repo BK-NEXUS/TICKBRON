@@ -9,6 +9,7 @@ now run on both.
 import pytest
 from rest_framework.test import APIClient
 
+from partner.tests.geography_helpers import uzbek_location
 from users.models import User
 
 REGISTER_URL = '/api/v1/auth/register/'
@@ -74,6 +75,8 @@ def _create_owner(client, password, n):
     return client.post(CREATE_OWNER_URL, {
         'email': f'owner{n}@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
         'password': password, 'password_confirm': password,
+        **uzbek_location('Tashkent'),  # a new account needs a place
+        'phone_number': '+998901112233',  # a new account needs a phone number
     }, format='json')
 
 

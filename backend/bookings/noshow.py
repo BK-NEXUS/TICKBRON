@@ -1,28 +1,25 @@
 """
-No-show reports and the no-show refund (R12 phase 3, .ai/PLAN_R12.md sections 3 and 4).
+No-show reports (R12 phase 3, .ai/PLAN_R12.md section 3). The guest pays cash at the hotel, so a
+no-show moves no money.
 
 The hotel reports that a guest did not arrive; staff decide. Owners never decide.
 
 create_report()    owner: one open report per booking, inside the window after check-out
 withdraw_report()  owner: own pending report only
-approve_report()   staff: ONE transaction: booking -> no_show, future nights released, Refund rows
-                   (idempotency key "<booking id>:no_show"), audit row, notifications. The provider
-                   is called AFTER commit through payments.refunds.send_refund.
-reject_report()    staff: the booking is untouched, no money moves
-reverse_report()   staff correction: approved -> rejected (money already refunded is NOT taken back),
-                   rejected -> approved (runs the normal approval; the refund exists once)
+approve_report()   staff: ONE transaction: booking -> no_show, future nights released, audit row,
+                   notifications
+reject_report()    staff: the booking is untouched
+reverse_report()   staff correction: approved -> rejected (the booking is restored),
+                   rejected -> approved (runs the normal approval)
 flagged_property_ids()  hotels whose report rate is unusually high (thresholds are settings)
-refund_previews()  the exact refund an approval would pay, computed with the same functions
 """
-import logging
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
-from functools import partial
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Exists, OuterRef, Sum
+from django.db.models import Count, Exists, OuterRef
 from django.utils import timezone
 
 from accounts.models import Notification
@@ -30,15 +27,8 @@ from accounts.notifications import notify
 from admin_panel.models import AdminAccessLog
 from bookings.models import Booking, NoShowReport
 from common.dates import business_today
-from common.money import CHARGE_CURRENCY, quantize
-from payments.models import PaymentTransaction, Refund
-from payments.refunds import RefundError, create_refund, remaining_amount, send_refund
 
-logger = logging.getLogger(__name__)
-
-PAID_PAYMENT_STATUSES = ('completed', 'partially_refunded', 'refunded')
 REPORTABLE_STATUSES = ('confirmed', 'completed')
-TEXT_KEY = 'no_show_refund_statement'
 
 
 class NoShowError(Exception):
@@ -48,102 +38,6 @@ class NoShowError(Exception):
         super().__init__(message)
         self.code = code
         self.message = message
-
-
-# --- disclosure (quote, booking creation, booking detail) ---------------------------------
-
-def refund_amount_for(percent, charge_amount, charge_currency=CHARGE_CURRENCY):
-    """The UZS refund promised for a charge: whole so'm, ROUND_HALF_UP. None when it cannot be told."""
-    if charge_amount is None or charge_currency != CHARGE_CURRENCY:
-        return None
-    return quantize(Decimal(charge_amount) * Decimal(percent) / Decimal(100), CHARGE_CURRENCY)
-
-
-def refund_disclosure(percent, charge_amount, charge_currency=CHARGE_CURRENCY):
-    """
-    The fields every guest-facing response carries. The frontend renders the sentence from
-    `no_show_refund_text_key` + `no_show_refund_text_params` in the guest's language and never
-    computes the amount itself. Percent 0 (old bookings, or the setting at 0) promises nothing.
-    """
-    if not percent:
-        return {'no_show_refund_percent': 0, 'no_show_refund_amount': None,
-                'no_show_refund_text_key': None, 'no_show_refund_text_params': None}
-    amount = refund_amount_for(percent, charge_amount, charge_currency)
-    amount_text = f'{amount:.2f}' if amount is not None else None
-    return {
-        'no_show_refund_percent': percent,
-        'no_show_refund_amount': amount_text,
-        'no_show_refund_text_key': TEXT_KEY,
-        'no_show_refund_text_params': {'percent': percent, 'amount': amount_text},
-    }
-
-
-# --- the refund an approval pays ----------------------------------------------------------
-
-def _target(paid, percent):
-    return quantize(Decimal(paid) * Decimal(percent) / Decimal(100), CHARGE_CURRENCY)
-
-
-def refund_now(paid, already, percent):
-    """target = percent of what was paid; pay what is still missing, never below 0, never above paid."""
-    target = min(_target(paid, percent), paid)
-    return max(Decimal('0'), target - already)
-
-
-def paid_and_refunded(booking_ids):
-    """({booking id: paid}, {booking id: already refunded}) in UZS: two queries however many bookings."""
-    paid = dict(PaymentTransaction.objects.filter(
-        booking_id__in=booking_ids, currency=CHARGE_CURRENCY, status__in=PAID_PAYMENT_STATUSES,
-    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
-    already = dict(Refund.objects.filter(
-        booking_id__in=booking_ids, currency=CHARGE_CURRENCY, status__in=Refund.COUNTED_STATUSES,
-    ).values('booking_id').annotate(total=Sum('amount')).values_list('booking_id', 'total'))
-    return paid, already
-
-
-def refund_previews(bookings):
-    """
-    {booking id: {amount, currency, percent, already_refunded, paid}} for a list of bookings in
-    two queries however many there are (the staff queue). Same arithmetic as approval.
-    """
-    paid, already = paid_and_refunded([booking.pk for booking in bookings])
-    previews = {}
-    for booking in bookings:
-        booking_paid = paid.get(booking.pk) or Decimal('0')
-        booking_already = already.get(booking.pk) or Decimal('0')
-        percent = booking.no_show_refund_percent
-        previews[booking.pk] = {
-            'amount': f'{refund_now(booking_paid, booking_already, percent):.2f}',
-            'currency': CHARGE_CURRENCY,
-            'percent': percent,
-            'already_refunded': f'{booking_already:.2f}',
-            'paid': f'{booking_paid:.2f}',
-        }
-    return previews
-
-
-def refund_allocations(booking, percent):
-    """
-    Locks the booking's payments and returns [(payment, amount)]: the refund split across the
-    payments, newest first, never more than each payment still has. Total = refund_now() at `percent`.
-    """
-    payments = list(PaymentTransaction.objects.select_for_update().filter(
-        booking=booking, currency=CHARGE_CURRENCY, status__in=PAID_PAYMENT_STATUSES,
-    ).order_by('-created_at', '-id'))
-    paid = sum((payment.amount for payment in payments), Decimal('0'))
-    already = Refund.objects.filter(
-        booking=booking, currency=CHARGE_CURRENCY, status__in=Refund.COUNTED_STATUSES,
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    left = refund_now(paid, already, percent)
-    allocations = []
-    for payment in payments:
-        if left <= 0:
-            break
-        take = min(left, remaining_amount(payment))
-        if take > 0:
-            allocations.append((payment, take))
-            left -= take
-    return allocations
 
 
 # --- inventory -----------------------------------------------------------------------------
@@ -262,56 +156,26 @@ def _notify_owner(report, code):
     }, booking=report.booking)
 
 
-def _notify_guest(booking, refund_total):
+def _notify_guest(booking):
     if Notification.objects.filter(booking=booking, code__in=('no_show_marked', 'no_show_marked_no_refund')).exists():
         return                                         # a corrected decision never repeats the notice
-    base = {'booking_id': booking.pk, 'booking_reference': booking.confirmation_code}
-    if refund_total > 0:
-        notify(booking.guest, 'no_show_marked', {
-            **base, 'amount': str(int(refund_total)), 'currency': CHARGE_CURRENCY,
-            'percent': booking.no_show_refund_percent}, booking=booking)
-    else:
-        notify(booking.guest, 'no_show_marked_no_refund', base, booking=booking)
+    notify(booking.guest, 'no_show_marked_no_refund',
+           {'booking_id': booking.pk, 'booking_reference': booking.confirmation_code}, booking=booking)
 
 
-def _apply_approval(report, actor):
-    """
-    Inside the caller's transaction: booking -> no_show, future nights released, Refund rows.
-    Returns the Refund rows created now (pending or needs_manual).
-    """
+def _apply_approval(report):
+    """Inside the caller's transaction: booking -> no_show and the future nights released."""
     booking = Booking.objects.select_for_update().get(pk=report.booking_id)
     try:
         booking.mark_no_show(via_approved_report=True)
     except ValidationError:
         raise NoShowError('booking_not_reportable', 'The booking can no longer be marked as a no-show')
     release_future_nights(booking, business_today())
-    refunds = []
-    for index, (payment, amount) in enumerate(refund_allocations(booking, booking.no_show_refund_percent)):
-        key = f'{booking.pk}:no_show' if index == 0 else f'{booking.pk}:no_show:{payment.pk}'
-        try:
-            refunds.append(create_refund(payment, amount, 'no_show', created_by=actor, idempotency_key=key))
-        except RefundError as exc:                      # cannot happen with the locks held; never half-approve
-            raise NoShowError('refund_refused', exc.message)
-    return booking, refunds
-
-
-def send_after_commit(refunds, actor):
-    ids = [refund.pk for refund in refunds if refund.status == 'pending']
-    if ids:
-        transaction.on_commit(partial(send_pending_refunds, ids, actor))
-
-
-def send_pending_refunds(refund_ids, actor):
-    """After commit, outside any transaction: ask the provider once for each pending refund (no-show and cancel)."""
-    for refund in Refund.objects.filter(pk__in=refund_ids):
-        try:
-            send_refund(refund, actor=actor)
-        except Exception:                               # the decision is committed; staff see the refund
-            logger.exception('Refund %s could not be sent', refund.pk)
+    return booking
 
 
 def approve_report(report_id, actor, decision_comment):
-    """Approve a pending report. Returns (report, refunds created now). Raises NoShowError."""
+    """Approve a pending report. Returns the report. Raises NoShowError."""
     with transaction.atomic():
         report = _lock_report(report_id)
         if report.status != 'pending':
@@ -320,14 +184,13 @@ def approve_report(report_id, actor, decision_comment):
 
 
 def _approve_locked(report, actor, decision_comment, audit=True):
-    booking, refunds = _apply_approval(report, actor)
+    booking = _apply_approval(report)
     _decide(report, 'approved', actor, decision_comment)
     if audit:
         _audit(actor, 'no_show_report_approve', report)
     _notify_owner(report, 'no_show_report_approved')
-    _notify_guest(booking, sum((refund.amount for refund in refunds), Decimal('0')))
-    send_after_commit(refunds, actor)
-    return report, refunds
+    _notify_guest(booking)
+    return report
 
 
 def reject_report(report_id, actor, decision_comment):
@@ -344,8 +207,8 @@ def reject_report(report_id, actor, decision_comment):
 def reverse_report(report_id, actor, decision_comment):
     """
     Correct a decision. approved -> rejected: the booking goes back to completed (check-out
-    passed) or confirmed, the future nights are reserved again if still free, and money already
-    refunded stays refunded. rejected -> approved: the normal approval (the refund exists once).
+    passed) or confirmed and the future nights are reserved again if still free.
+    rejected -> approved: the normal approval.
     """
     with transaction.atomic():
         report = _lock_report(report_id)

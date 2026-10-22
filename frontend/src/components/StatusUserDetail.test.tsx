@@ -16,7 +16,7 @@ const exportHistory = vi.mocked(statusAdapter.exportUserHistory)
 const BOOKING = {
   id: 901, reference: 'TB-901', hotel: { id: 11, name: 'Alpha Hotel' }, check_in: '2026-04-10', check_out: '2026-04-13',
   nights: 3, rooms: 1, guests: 2, status: 'completed', total_price: '300.00', currency: 'USD',
-  charge_amount: '3750000.00', charge_currency: 'UZS', paid: [{ currency: 'UZS', amount: '3750000.00' }], refunded: [],
+  charge_amount: '3750000.00', charge_currency: 'UZS',
 }
 
 const DETAIL = {
@@ -81,11 +81,11 @@ describe('StatusUserDetail', () => {
     expect(within(row).getByText('Tashkent, Uzbekistan')).toBeInTheDocument()
   })
 
-  it('lists the booking history with every status, paid and refunded', async () => {
+  it('lists the booking history with every status', async () => {
     getUser.mockResolvedValue(loaded({
       history: {
         count: 2, next: null, previous: null,
-        results: [BOOKING, { ...BOOKING, id: 902, reference: 'TB-902', status: 'cancelled', paid: [], refunded: [{ currency: 'UZS', amount: '100000.00' }] }],
+        results: [BOOKING, { ...BOOKING, id: 902, reference: 'TB-902', status: 'cancelled' }],
       },
     }))
     renderDetail()
@@ -98,7 +98,6 @@ describe('StatusUserDetail', () => {
     expect(within(first).getByText('completed')).toBeInTheDocument()
     const second = within(table).getByText('TB-902').closest('tr') as HTMLElement
     expect(within(second).getByText('cancelled')).toBeInTheDocument()
-    expect(within(second).getByText('UZS 100,000.00')).toBeInTheDocument()
   })
 
   it('paginates the history on the server and starts over when the period changes', async () => {

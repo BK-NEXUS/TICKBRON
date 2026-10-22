@@ -35,10 +35,6 @@ ACCESS = [
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
     (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
-    (r'^/api/v1/payments/webhook/payme/$', None, PUBLIC),  # signature-checked, no session
-    (r'^/api/v1/payments/transactions/999999/refund/$', None, STAFF),
-    (r'^/api/v1/payments/webhooks/', None, STAFF),
-    (r'^/api/v1/payments/', None, AUTHENTICATED),
     (r'^/api/v1/me/reviews/property_scores/$', None, PUBLIC),
     (r'^/api/v1/me/', None, AUTHENTICATED),
     (r'^/api/v1/bookings/', None, AUTHENTICATED),
@@ -48,17 +44,15 @@ ACCESS = [
     (r'^/api/v1/admin-panel/users/create-hotel-owner/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
-    (r'^/api/v1/admin-panel/refunds/\d+/(mark-done|retry)/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
     (r'^/api/v1/admin-panel/$', None, STAFF),
-    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|customers|exchange-rates|no-show-reports|payments'
-     r'|promotion-hotels|promotions|properties|refunds|statistics|status|users)/', None, STAFF),
+    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|customers|exchange-rates|no-show-reports'
+     r'|promotion-hotels|promotions|properties|statistics|status|users)/', None, STAFF),
 ]
 
 # Allowed roles that still get 403 by design, not because of a permission check
 FORBIDDEN_BY_DESIGN = {
     ('post', '/api/v1/me/notifications/'),  # notifications are created by the system only
-    ('post', '/api/v1/payments/transactions/999999/confirm/'),  # test-mode endpoint, needs DEBUG
 }
 
 PATH_VALUES = {'provider': 'payme', 'code': 'UZ', 'country': 'UZ', 'region': '1'}

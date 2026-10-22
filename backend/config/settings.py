@@ -14,7 +14,6 @@ from decimal import Decimal
 from celery.schedules import crontab
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
-from common.money import parse_percent
 from .logging_config import get_logging_config
 
 # Load environment variables
@@ -308,13 +307,12 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         # Per IP for anonymous visitors. One property page makes ~6 API calls, and
         # many users can share one IP (mobile carriers, offices), so this must not
-        # be tight. Login, register, OTP and payment keep their own strict limits.
+        # be tight. Login, register and OTP keep their own strict limits.
         'anon': os.getenv('THROTTLE_ANON_RATE', '2000/hour'),
         # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
         'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
-        # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
-        'webhook': os.getenv('THROTTLE_WEBHOOK_RATE', '600/min'),
         'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
+        # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
     },
 }
@@ -328,8 +326,6 @@ SPECTACULAR_SETTINGS = {
     # Several models have a field named "status" with different choices
     'ENUM_NAME_OVERRIDES': {
         'BookingStatusEnum': 'bookings.models.Booking.STATUS_CHOICES',
-        'PaymentTransactionStatusEnum': 'payments.models.PaymentTransaction.STATUS_CHOICES',
-        'WebhookEventStatusEnum': 'payments.models.WebhookEvent.STATUS_CHOICES',
         'PropertyStatusEnum': 'properties.models.Property.STATUS_CHOICES',
         'ReviewStatusEnum': 'accounts.models.Review.STATUS_CHOICES',
         'NoShowReportStatusEnum': 'bookings.models.NoShowReport.STATUS_CHOICES',
@@ -367,9 +363,9 @@ else:
         }
     }
 
-# R16: when True, a rate plan must carry the owner's price in every supported currency (create and every edit).
-# Off until the owner screens send the four prices; then the default flips (see .ai/PLAN_R16_MULTI_CURRENCY.md).
-RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'False').lower() == 'true'
+# R16: when True (the default), a rate plan must carry the owner's price in every supported currency (create and
+# every edit); the owner decided this on 2026-10-19 (see .ai/PLAN_R16_MULTI_CURRENCY.md).
+RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'True').lower() == 'true'
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -411,6 +407,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bookings.tasks.expire_pending_bookings',
         'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
     },
+    # A confirmed booking whose guest has not arrived ARRIVAL_GRACE_HOURS after the given time is cancelled
+    'cancel-unarrived-bookings': {
+        'task': 'bookings.tasks.cancel_unarrived_bookings',
+        'schedule': crontab(minute='*/10'),
+    },
     # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (CELERY_TIMEZONE)
     'fetch-exchange-rates': {
         'task': 'currency.tasks.fetch_exchange_rates',
@@ -440,14 +441,8 @@ CSV_EXPORT_MAX_ROWS = int(os.getenv('CSV_EXPORT_MAX_ROWS', '10000'))
 # R12: hotels may report a no-show up to this many days after check-out (phase 3), so the
 # Status "stayed" numbers of that window can still change
 NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
-# R12 phase 3: the share of the amount paid that goes back to the guest when staff approve a hotel's
-# no-show report. A whole number 0-100 (startup fails otherwise). Every booking stores the value at
-# creation (Booking.no_show_refund_percent); changing this never changes existing bookings.
-NO_SHOW_REFUND_PERCENT = parse_percent('NO_SHOW_REFUND_PERCENT', os.getenv('NO_SHOW_REFUND_PERCENT'), default=50)
-# R11: percent of the amount paid that comes back when a guest cancels a paid booking outside any free window
-# (the owner's answer to decision 1). A whole number 0-100 (startup fails otherwise). A rate plan may set its
-# own percent; every booking stores the terms at creation, so changing this never changes existing bookings.
-CANCEL_REFUND_PERCENT = parse_percent('CANCEL_REFUND_PERCENT', os.getenv('CANCEL_REFUND_PERCENT'), default=50)
+# Cash bookings: hours the hotel waits after the arrival time the guest gave before the booking is cancelled
+ARRIVAL_GRACE_HOURS = int(os.getenv('ARRIVAL_GRACE_HOURS', '2'))
 # R12 phase 3: a hotel is flagged in the staff queue when, over the last NO_SHOW_FLAG_DAYS days, it has at
 # least NO_SHOW_FLAG_MIN_REPORTS reports AND its report rate is at least NO_SHOW_FLAG_FACTOR times the
 # platform rate AND at least NO_SHOW_FLAG_MIN_RATE (so a near-zero average does not flag everyone)
@@ -457,20 +452,6 @@ NO_SHOW_FLAG_FACTOR = Decimal(os.getenv('NO_SHOW_FLAG_FACTOR', '3'))
 NO_SHOW_FLAG_MIN_RATE = Decimal(os.getenv('NO_SHOW_FLAG_MIN_RATE', '0.10'))
 
 # Database connection health check
-
-# Payment Configuration
-# Defaults to False: test mode confirms payments without a real provider.
-PAYMENT_TEST_MODE = os.getenv('PAYMENT_TEST_MODE', 'False').lower() == 'true'
-
-# Payment Provider Configuration (placeholders for production)
-PAYME_MERCHANT_ID = os.getenv('PAYME_MERCHANT_ID', '')
-PAYME_SECRET_KEY = os.getenv('PAYME_SECRET_KEY', '')
-CLICK_SERVICE_ID = os.getenv('CLICK_SERVICE_ID', '')
-CLICK_SECRET_KEY = os.getenv('CLICK_SECRET_KEY', '')
-CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
-VISA_API_KEY = os.getenv('VISA_API_KEY', '')
-VISA_SECRET_KEY = os.getenv('VISA_SECRET_KEY', '')
-
 
 # Production refuses to start on insecure settings (R4 security review).
 # Local development (DEBUG=True) and the test run keep their defaults.
@@ -482,8 +463,6 @@ _PLACEHOLDER_SECRET_KEYS = {
 
 def _production_config_errors():
     errors = []
-    if PAYMENT_TEST_MODE:
-        errors.append('PAYMENT_TEST_MODE must be False when DEBUG is False (payments would not reach a provider)')
     if (SECRET_KEY in _PLACEHOLDER_SECRET_KEYS or SECRET_KEY.startswith('django-insecure-')
             or len(SECRET_KEY) < 50):
         errors.append('SECRET_KEY must be a random value of at least 50 characters, not a placeholder')

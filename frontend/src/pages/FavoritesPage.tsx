@@ -6,12 +6,22 @@ import { accountAdapter, Favorite } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 import { markFavoriteRemoved } from '../hooks/useFavorites'
+import { priceIn } from '../utils/price'
 
 /** Display name of a favorite: its first translation, else the city */
 const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
 
 export function FavoritesPage() {
-  const { t, tp, formatMoney } = useI18n()
+  const { t, tp, formatMoney, currency } = useI18n()
+
+  // The "from" price in the chosen currency (≈ for a conversion); the hotel's own price when the backend has none
+  const priceText = (favorite: Favorite) => {
+    const shown = priceIn({
+      base_price: Number(favorite.property_base_price), currency: favorite.property_currency, prices: favorite.property_prices,
+    }, currency)
+    const text = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 2 })
+    return shown.approximate ? t('charge.approx', { amount: text }) : text
+  }
   const { isAuthenticated, isLoading: sessionLoading } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [loading, setLoading] = useState(true)
@@ -151,7 +161,7 @@ export function FavoritesPage() {
                 </p>
                 
                 <p className="favorite-card-price">
-                  {t('favorites.perNight', { price: formatMoney(favorite.property_base_price, favorite.property_currency, { minDecimals: 0, maxDecimals: 2 }) })}
+                  {t('favorites.perNight', { price: priceText(favorite) })}
                 </p>
                 
                 {favorite.notes && (

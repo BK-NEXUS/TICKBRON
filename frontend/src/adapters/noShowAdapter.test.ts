@@ -131,7 +131,7 @@ describe('NoShowAdapter', () => {
 describe('noShowErrorKey', () => {
   it.each([
     'not_reportable_status', 'too_early', 'window_closed', 'report_exists', 'not_found', 'not_pending',
-    'not_decided', 'booking_not_reportable', 'inventory_unavailable', 'refund_refused',
+    'not_decided', 'booking_not_reportable', 'inventory_unavailable',
   ])('has a message for %s', (code) => {
     expect(noShowErrorKey(code)).toBe(`noShow.error.${code}`)
   })

@@ -40,23 +40,6 @@ def user(db):
 
 
 @pytest.mark.django_db
-class TestRegister:
-
-    def test_phone_number_sent_with_the_form_is_not_stored(self):
-        response = APIClient().post(
-            '/api/v1/auth/register/', register_payload('+998 90 123 45 67'), format='json'
-        )
-        assert response.status_code == 201, response.data
-        assert User.objects.get(email='newcomer@example.com').phone_number is None
-
-    def test_registration_needs_no_phone_number(self):
-        payload = register_payload('')
-        del payload['phone_number']
-        response = APIClient().post('/api/v1/auth/register/', payload, format='json')
-        assert response.status_code == 201, response.data
-
-
-@pytest.mark.django_db
 class TestBookingGuestPhone:
 
     @pytest.mark.parametrize('phone', INVALID_NUMBERS)

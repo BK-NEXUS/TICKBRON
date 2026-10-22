@@ -1,3 +1,4 @@
+import { useNumberKeyGuard } from './hooks/useNumberKeyGuard'
 import { useI18n } from './i18n/I18nContext'
 import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
@@ -36,6 +37,7 @@ function PageLoader() {
 }
 
 function App() {
+  useNumberKeyGuard()
   return (
     <ThemeProvider>
       <I18nProvider>

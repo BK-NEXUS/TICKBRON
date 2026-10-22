@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { FavoriteButton } from './FavoriteButton'
 import { StarIcon } from './StarIcon'
 import { PriceApprox } from './PriceApprox'
+import { priceIn } from '../utils/price'
 import { useI18n } from '../i18n/I18nContext'
 
 interface PropertyCardProps {
@@ -17,7 +18,7 @@ interface PropertyCardProps {
  */
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const navigate = useNavigate()
-  const { t, tp, formatMoney } = useI18n()
+  const { t, tp, formatMoney, currency } = useI18n()
   const translation = property.translations[0] || { name: t('card.unknown'), description: '' }
   const rating = property.rating || property.average_rating || 0
   const reviewCount = property.review_count || 0
@@ -30,9 +31,9 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
   }
 
 
-  const formatPrice = (price: number, currency: string) => {
-    return formatMoney(price, currency, { minDecimals: 0, maxDecimals: 0 })
-  }
+  // The "from" price in the chosen currency; the hotel's own price when the backend has none for it
+  const shown = priceIn(property, currency)
+  const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 
   const getLocationString = () => {
     const parts = [property.city, property.country]
@@ -124,10 +125,11 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
         <div className="property-card-footer">
           <div className="property-card-price">
             <span className="property-card-price-value">
-              {formatPrice(property.base_price, property.currency)}
+              {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
             </span>
             <span className="property-card-price-period">{t('card.perNight')}</span>
-            <PriceApprox approx={property.base_price_uzs_approx} />
+            {/* Without the per-currency prices (an older API) the hotel's own price keeps its so'm equivalent */}
+            {!property.prices && <PriceApprox approx={property.base_price_uzs_approx} />}
           </div>
           <button className="btn btn-secondary btn-small property-card-cta">
             {t('card.viewDetails')}

@@ -104,6 +104,9 @@ export interface RoomType {
   rate_plans?: RatePlan[]
 }
 
+/** R16: a price in every currency: the owner's own (`owner`), the main one, or a conversion (`converted`, show with ≈); amount is null while a conversion has no rate */
+export type PriceList = Record<string, { amount: string | null; source: 'main' | 'owner' | 'converted' }>
+
 export interface RatePlan {
   id: number
   name: string
@@ -112,6 +115,7 @@ export interface RatePlan {
   description: string
   base_price: number
   currency: string
+  prices?: PriceList
   min_nights: number
   max_nights: number
   is_active: boolean
@@ -119,10 +123,6 @@ export interface RatePlan {
   deposit_required: boolean
   deposit_percentage?: number
   advance_booking_days?: number
-  /** R11: the plan has a free cancellation window; its length, and the percent refunded after it (always a number) */
-  free_cancellation?: boolean
-  free_cancel_hours?: number | null
-  cancel_refund_percent?: number
 }
 
 export interface DateInventory {
@@ -133,6 +133,9 @@ export interface DateInventory {
   booked_rooms: number
   price: number
   currency: string
+  /** R16: the night in every currency (amount strings, null while a conversion has no rate) and the currencies that are conversions */
+  prices?: Record<string, string | null>
+  converted_currencies?: string[]
   min_stay: number
   max_stay: number
   is_available: boolean
@@ -149,6 +152,7 @@ export interface AvailabilityDateInventory {
   remaining_rooms: number
   price: string | null
   currency: string
+  prices?: Record<string, string | null>
   is_available: boolean
   minimum_stay: number | null
   maximum_stay: number | null
@@ -177,6 +181,8 @@ export interface QuoteParams {
   /** Exclusive: the day the guest leaves */
   checkOut: string
   rooms: number
+  /** R16: show the stay in this currency (default: the plan's own) */
+  currency?: string
 }
 
 // GET /api/v1/properties/{id}/quote/: the same pricing Booking.create_booking charges
@@ -186,18 +192,13 @@ export interface StayQuote {
   number_of_nights: number
   number_of_rooms: number
   currency: string
+  /** R16: `main`, `owner` (the owner's own price in `currency`) or `converted` (show with ≈) */
+  price_source?: 'main' | 'owner' | 'converted'
   nights: Array<{ date: string; price: string }>
   total_price: string
   /** The same stay in so'm at today's rate; null when no rate is stored yet */
   uzs_total?: string | null
   exchange_rate?: { rate: string; date: string | null; source: string; stale: boolean } | null
-  /** R12b: what the guest is told about the no-show refund */
-  no_show_refund_percent?: number
-  no_show_refund_amount?: string | null
-  no_show_refund_text_key?: string | null
-  no_show_refund_text_params?: { percent: number; amount: string | null } | null
-  /** R11: cancelling THESE dates; free_cancellation is true only while the free window is still ahead */
-  cancellation_terms?: { free_cancellation: boolean; free_until: string | null; refund_percent_after: number }
 }
 
 export interface AvailabilityParams {
@@ -223,6 +224,8 @@ export interface Property {
   longitude?: number
   base_price: number
   currency: string
+  /** R16: the "from" price in every currency (search cards); absent on the hotel page */
+  prices?: PriceList
   /** Informational so'm equivalent of `base_price` at the latest CBU rate; null while no rate exists, absent for hotels priced in so'm */
   base_price_uzs_approx?: string | null
   uzs_rate?: ExchangeRateInfo | null
@@ -438,6 +441,7 @@ class PropertyAdapter {
       check_out: params.checkOut,
       rooms: String(params.rooms),
     })
+    if (params.currency) query.set('currency', params.currency)
     try {
       const response = await apiFetch(`${this.baseUrl}/api/v1/properties/${propertyId}/quote/?${query.toString()}`, {
         credentials: 'include',

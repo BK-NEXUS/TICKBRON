@@ -15,7 +15,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
+from bookings.arrival import mark_arrived
 from bookings.models import Booking
+from partner.models import OwnerPlace
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
@@ -325,51 +327,88 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
         instance.release()
 
 
+def _owned_property(request, property_id):
+    return get_object_or_404(Property, id=property_id, owner=request.user, is_deleted=False)
+
+
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsHotelOwner])
-def partner_property_photo_upload(request, property_id):
+def partner_property_photos(request, property_id):
     """
-    Upload a photo for a property.
-    
-    Path Parameters:
-        property_id: Property ID
-    
-    Request Body:
-        photo: Image file
-        photo_type: Photo type (exterior, interior, amenity, room, other)
-        caption: Photo caption (optional)
-        is_primary: Whether this is the primary photo (optional)
-        display_order: Display order (optional)
-        alt_text: Alt text for accessibility (optional)
-    
-    Returns:
-        Created property photo object
+    GET: the owner's photos of one property, cover and order as stored.
+    POST: upload a photo (multipart: photo, photo_type, caption, alt_text).
+    The first photo becomes the cover; new photos go to the end; the stored
+    file name is random.
     """
-    # Verify property ownership
-    property = get_object_or_404(
-        Property,
-        id=property_id,
-        owner=request.user,
-        is_deleted=False
-    )
-    
+    property = _owned_property(request, property_id)
+
+    if request.method == 'GET':
+        photos = PropertyPhoto.objects.filter(property=property, is_deleted=False).order_by('display_order', 'id')
+        return Response(PartnerPropertyPhotoSerializer(photos, many=True, context={'request': request}).data)
+
     if PropertyPhoto.objects.filter(property=property, is_deleted=False).count() >= MAX_PHOTOS_PER_PROPERTY:
         return Response(
             {'photo': [f'A property can have at most {MAX_PHOTOS_PER_PROPERTY} photos.']},
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    serializer = PartnerPropertyPhotoSerializer(
-        data=request.data,
-        context={'request': request}
-    )
-    
-    if serializer.is_valid():
-        serializer.save(property=property)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = PartnerPropertyPhotoSerializer(data=request.data, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.save(property=property)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsHotelOwner])
+def partner_property_photo_detail(request, property_id, photo_id):
+    """
+    PATCH: caption, alt_text, photo_type, is_primary=true (makes it the cover).
+    DELETE: remove the photo; a removed cover passes to the first remaining photo.
+    """
+    property = _owned_property(request, property_id)
+    photo = get_object_or_404(PropertyPhoto, id=photo_id, property=property, is_deleted=False)
+
+    if request.method == 'DELETE':
+        photo.remove()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    serializer = PartnerPropertyPhotoSerializer(photo, data=request.data, partial=True, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.save()
+    return Response(serializer.data)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsHotelOwner])
+def partner_booking_arrived(request, booking_id):
+    """
+    The hotel says the guest of one of its own bookings has arrived (cash at the hotel). Idempotent: the first
+    time stays. Only a confirmed booking, from the check-in day on (400 otherwise).
+    """
+    booking = get_object_or_404(Booking, id=booking_id, property__owner=request.user, is_deleted=False)
+    try:
+        mark_arrived(booking)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'id': booking.id, 'arrived_at': booking.arrived_at})
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([IsHotelOwner])
+def partner_assigned_place(request):
+    """The place the super admin gave this account: {country_ref, region_ref, city_ref}, all null when none."""
+    place = OwnerPlace.objects.filter(owner=request.user).first()
+    return Response({
+        'country_ref': place.country_id if place else None,
+        'region_ref': place.region_id if place else None,
+        'city_ref': place.city_id if place else None,
+    })
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -425,6 +464,8 @@ def partner_bookings(request):
             'currency': booking.currency,
             'confirmation_code': booking.confirmation_code,
             'created_at': booking.created_at,
+            'expected_arrival_time': booking.expected_arrival_time,
+            'arrived_at': booking.arrived_at,
             'can_report_no_show': booking.id in reportable_ids,
             'report_deadline': report_deadline(booking) if booking.id in reportable_ids else None,
         }

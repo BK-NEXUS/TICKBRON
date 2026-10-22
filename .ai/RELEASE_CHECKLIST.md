@@ -112,16 +112,6 @@
 - `SECURE_BROWSER_XSS_FILTER` - Set to `True`
 - `X_FRAME_OPTIONS` - Frame options (default: `DENY`)
 
-### Payment Provider Credentials (REAL CREDENTIALS REQUIRED)
-- `PAYMENT_TEST_MODE` - Set to `False` for production payments
-- `PAYME_MERCHANT_ID` - Payme merchant ID from Payme dashboard
-- `PAYME_SECRET_KEY` - Payme secret key from Payme dashboard
-- `CLICK_SERVICE_ID` - Click service ID from Click dashboard
-- `CLICK_SECRET_KEY` - Click secret key from Click dashboard
-- `CLICK_MERCHANT_ID` - Click merchant ID from Click dashboard
-- `VISA_API_KEY` - Visa API key from Visa developer portal
-- `VISA_SECRET_KEY` - Visa secret key from Visa developer portal
-
 ### Redis/Celery Configuration
 - `REDIS_HOST` - Redis host (default: `localhost`)
 - `REDIS_PORT` - Redis port (default: `6379`)
@@ -133,8 +123,8 @@
 
 ### Monitoring
 
-## Current PAYMENT_TEST_MODE Value
-**Default:** `False` (code and `.env.example`). Since R4 (2026-10-03) the app refuses to start with `DEBUG=False` and `PAYMENT_TEST_MODE=True`. SMS login was removed (2026-10), so there is no SMS setting.
+## Payments
+There are no online payments: guests pay cash at the hotel (`.ai/PLAN_CASH_ONLY.md`). The payment settings (`PAYMENT_TEST_MODE`, Payme, Click, Visa keys) no longer exist, so there is nothing to configure. Old payment rows stay in the database as history.
 
 ## Deployment Readiness
 - ✅ All migrations apply cleanly from scratch
@@ -143,13 +133,11 @@
 - ✅ Security measures in place
 - ✅ Rate limiting configured
 - ✅ OpenAPI schema documented
-- ⚠️ Payment test mode active (requires real credentials for production)
 - ⚠️ SMS provider not yet implemented (checkpoint 21)
 
 ## Release Notes
 - Backend main plan (checkpoints 1-20) is complete
 - All core functionality implemented and tested
-- Payment system ready for live credentials
 - Permission system properly scoped
 - Security measures comprehensive
 - Rate limiting protects sensitive endpoints
@@ -157,18 +145,15 @@
 - Comprehensive test coverage
 
 ## Next Steps
-1. Set real payment provider credentials in production environment
-2. Set `PAYMENT_TEST_MODE=False` for production
-3. Configure all security variables for production
-4. Set up production database (PostgreSQL recommended)
-5. Configure Redis for Celery
-6. Set up SMS provider when checkpoint 21 is implemented
-7. Perform production deployment testing
-8. Configure monitoring and logging
+1. Configure all security variables for production
+2. Set up production database (PostgreSQL recommended)
+3. Configure Redis for Celery
+4. Set up SMS provider when checkpoint 21 is implemented
+5. Perform production deployment testing
+6. Configure monitoring and logging
 
 ## Known Limitations
 - SMS functionality not yet implemented (checkpoint 21)
-- Payment system in test mode (requires live credentials)
 - Some OpenAPI warnings for type hints (non-critical)
 - Admin endpoints use APIViews without serializers (graceful fallback handling)
 
@@ -212,7 +197,7 @@ proxy_set_header Host              $host;
 ### Environment variables (the app refuses to start without the starred ones being safe)
 - [ ] `DEBUG=False` (the app also refuses `DEBUG=True` when `ALLOWED_HOSTS` lists a public domain)
 - [ ] `FRONTEND_URL`* the https:// address of the site (reset links point to it) and `EMAIL_HOST`* (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`): password reset e-mails are sent through it. A Celery worker must run, the mail is sent by a task
-- [ ] `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID`: alerts for locked accounts, forged or unappliable payment webhooks and server errors (empty = no alerts; add the bot to the chat first)
+- [ ] `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID`: alerts for locked accounts and server errors (empty = no alerts; add the bot to the chat first)
 - [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
 - [ ] `ALLOWED_HOSTS`* real host names, no `*`
 - [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only
@@ -227,7 +212,6 @@ proxy_set_header Host              $host;
 
 ### Test modes off
 - [ ] `SMS_TEST_MODE=False`* (True returns OTP codes in responses)
-- [ ] `PAYMENT_TEST_MODE=False`* (True fakes provider calls; `/confirm/` additionally needs DEBUG)
 - [ ] `scripts/checkpoint_checks/*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
 
 ### Demo data
@@ -245,9 +229,6 @@ proxy_set_header Host              $host;
 - [ ] `python manage.py migrate` and `python manage.py check --deploy` (must print "no issues") on each release
 
 ### Real credentials still missing (owner decision / contracts)
-- [ ] Payme: `PAYME_MERCHANT_ID`, `PAYME_SECRET_KEY` (and real API integration + webhook status mapping)
-- [ ] Click: `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET_KEY`
-- [ ] Visa: `VISA_API_KEY`, `VISA_SECRET_KEY` (card payments must use provider tokenization; card data never touches our backend)
 - [ ] Eskiz (SMS for OTP): API credentials and sender id; until then OTP login cannot work in production (`SMS_TEST_MODE` must stay False)
 
 
@@ -352,3 +333,17 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - The guest bookings list is not paginated (owner decision, R14 report).
 - Provider partial refunds are unverified (Payme, Click, Visa).
 - The new R12 cards and the Excel buttons, and the VIP badge, were checked by tests only, not by eye at 390px and 1440px (the crawl does load the pages and finds no errors).
+
+## Prices in four currencies (R16, 2026-10-19)
+
+- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** Migration `properties/0016` adds the table `rate_plan_prices` (additive, reversible).
+- [ ] `RATE_PLAN_PRICES_REQUIRED` is true (the default): owners must enter the price in USD, UZS, KZT and RUB for every rate plan, and an old plan cannot be edited until they do. Existing plans keep working; their other currencies show as converted (≈) until the owner enters them. Tell owners before launch.
+- [ ] The CBU fetch now also stores KZT and RUB; check `GET /admin-panel/exchange-rates/status/` shows all three currencies fresh after the first run.
+- [ ] Guests pay in so'm: when the owner entered a so'm price, that exact price is charged; otherwise the CBU conversion. Paying in tenge, rubles or dollars needs a provider that takes them (not confirmed).
+
+## Cash bookings (stage 2 of PLAN_CASH_ONLY, 2026-10-22)
+- [ ] Backup first (`pg_dump -Fc`): migration `bookings/0012_cash_arrival` adds two columns and confirms `pending` bookings still inside their 15-minute window.
+- [ ] Celery **beat** and a worker run: `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a confirmed booking whose guest is not marked "arrived" `ARRIVAL_GRACE_HOURS` (default 2) after the arrival time. Without beat nothing is ever cancelled.
+- [ ] Hotels are told to press "Guest arrived" in Status > arrivals; otherwise guests who did come are cancelled.
+- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (5, `bookings/views.py`) is the only brake on one account taking rooms without paying: confirm the number.
+

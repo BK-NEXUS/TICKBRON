@@ -1,4 +1,5 @@
 import type { ExchangeRateInfo } from './bookingAdapter'
+import type { PriceList } from './propertyAdapter'
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 
@@ -15,6 +16,8 @@ export interface Favorite {
   property_country: string
   property_base_price: string
   property_currency: string
+  /** R16: the hotel's "from" price in every currency (like a hotel card); absent in older responses */
+  property_prices?: PriceList
   property_primary_photo: string | null
   notes: string | null
   created_at: string
@@ -68,13 +71,10 @@ export interface Booking {
   charge_amount?: string
   charge_currency?: string
   exchange_rate?: ExchangeRateInfo | null
-  /** R12b: what the guest is told about the no-show refund */
-  no_show_refund_percent?: number
-  no_show_refund_amount?: string | null
-  no_show_refund_text_key?: string | null
-  no_show_refund_text_params?: { percent: number; amount: string | null } | null
-  /** R11: what the rate plan promised about cancelling, copied when the booking was made; null on older bookings */
-  cancellation_terms?: { free_until: string | null; refund_percent_after: number } | null
+  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); null on old bookings */
+  expected_arrival_time?: string | null
+  /** When the hotel marked the guest as arrived */
+  arrived_at?: string | null
 }
 
 // Review types from backend contract

@@ -4,12 +4,28 @@ Geography dictionary: Country > Region > City.
 Names are stored in Uzbek (Latin), Russian and English; the frontend picks the
 language. Rows in use are never deleted (PROTECT): hide them with is_active=False.
 """
+import os
+import uuid
+
 from django.db import models
 from django.utils.text import slugify
 
 from common.models import BaseModel
 
 LANGUAGES = ('uz', 'ru', 'en')
+
+
+def _random_image_path(folder, filename):
+    """Stored picture names are random: the path is public and must not be guessable."""
+    return f'geography/{folder}/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}'
+
+
+def country_image_path(instance, filename):
+    return _random_image_path('countries', filename)
+
+
+def region_image_path(instance, filename):
+    return _random_image_path('regions', filename)
 
 
 class GeoName(BaseModel):
@@ -37,6 +53,7 @@ class GeoName(BaseModel):
 class Country(GeoName):
     code = models.CharField(max_length=2, unique=True, help_text='ISO 3166-1 alpha-2, e.g. UZ')
     currency = models.CharField(max_length=3, help_text='ISO 4217, e.g. UZS')
+    image = models.ImageField(upload_to=country_image_path, null=True, blank=True)
 
     class Meta:
         db_table = 'geo_countries'
@@ -51,6 +68,7 @@ class Country(GeoName):
 
 class Region(GeoName):
     country = models.ForeignKey(Country, on_delete=models.PROTECT, related_name='regions')
+    image = models.ImageField(upload_to=region_image_path, null=True, blank=True)
     # Stable key (e.g. "uz-khorezm-region"): set once, never changed by a rename
     slug = models.SlugField(max_length=200, unique=True, blank=True)
 

@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { FavoritesPage } from './FavoritesPage'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { I18nProvider } from '../i18n/I18nContext'
 
 // Mock adapters
 vi.mock('../adapters/accountAdapter')
@@ -233,6 +234,25 @@ describe('FavoritesPage', () => {
       expect(screen.getByText('Tashkent, Uzbekistan')).toBeInTheDocument()
       expect(screen.getByText('$100 / night')).toBeInTheDocument()
       expect(screen.getByText('Great place!')).toBeInTheDocument()
+    })
+
+    it('shows the hotel\'s "from" price in the chosen currency, ≈ for a conversion (R16)', async () => {
+      localStorage.setItem('tickbron.language', 'en')
+      localStorage.setItem('tickbron.currency', 'KZT')
+      mockAccountAdapter.getFavorites.mockResolvedValue({
+        data: [{
+          ...mockFavorites[0],
+          property_prices: {
+            USD: { amount: '100.00', source: 'main' }, UZS: { amount: '1250000.00', source: 'owner' },
+            KZT: { amount: '49000.00', source: 'converted' }, RUB: { amount: null, source: 'converted' },
+          },
+        }],
+        error: null,
+      })
+      renderWithRouter(<I18nProvider><FavoritesPage /></I18nProvider>)
+
+      expect(await screen.findByText(/≈ .*49,000 \/ night/)).toBeInTheDocument()
+      localStorage.clear()
     })
 
     it('should display property without photo', async () => {

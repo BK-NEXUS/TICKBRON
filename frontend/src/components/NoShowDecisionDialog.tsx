@@ -11,7 +11,7 @@ const MAX_LENGTH = 500
 export type NoShowDecision = 'approve' | 'reject' | 'reverse'
 
 const TITLE = { approve: 'noShowAdmin.approveTitle', reject: 'noShowAdmin.rejectTitle', reverse: 'noShowAdmin.reverseTitle' } as const
-const CONFIRM = { approve: 'noShowAdmin.approveAndRefund', reject: 'noShowAdmin.rejectTitle', reverse: 'noShowAdmin.reverseTitle' } as const
+const CONFIRM = { approve: 'noShowAdmin.approveTitle', reject: 'noShowAdmin.rejectTitle', reverse: 'noShowAdmin.reverseTitle' } as const
 
 interface NoShowDecisionDialogProps {
   report: StaffNoShowReport
@@ -22,14 +22,13 @@ interface NoShowDecisionDialogProps {
 
 /** Staff decide a report. A comment is required: the hotel reads it. */
 export function NoShowDecisionDialog({ report, decision, onDone, onClose }: NoShowDecisionDialogProps) {
-  const { t, formatMoney } = useI18n()
+  const { t } = useI18n()
   const [comment, setComment] = useState('')
   const [sending, setSending] = useState(false)
   const [errorKey, setErrorKey] = useState<ReturnType<typeof noShowErrorKey> | null>(null)
 
   const trimmed = comment.trim()
   const canSend = trimmed.length >= MIN_LENGTH && !sending
-  const preview = report.refund_preview
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -52,16 +51,6 @@ export function NoShowDecisionDialog({ report, decision, onDone, onClose }: NoSh
       {decision === 'approve' && (
         <>
           <p>{t('noShowAdmin.approveHint')}</p>
-          {preview && preview.percent === 0 && <p className="alert alert-warning">{t('noShowAdmin.noPromise')}</p>}
-          {preview && (
-            <p className="no-show-refund-preview">
-              {t('noShowAdmin.ifApproved', {
-                percent: preview.percent,
-                paid: formatMoney(preview.paid, preview.currency, { minDecimals: 0, maxDecimals: 0 }),
-                amount: formatMoney(preview.amount, preview.currency, { minDecimals: 0, maxDecimals: 0 }),
-              })}
-            </p>
-          )}
         </>
       )}
       {decision === 'reverse' && <p>{t('noShowAdmin.reverseHint')}</p>}

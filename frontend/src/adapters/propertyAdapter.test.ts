@@ -272,6 +272,25 @@ describe('PropertyAdapter', () => {
     })
   })
 
+  describe('getQuote', () => {
+    const params = { roomTypeId: 1, ratePlanId: 2, checkIn: '2026-11-01', checkOut: '2026-11-04', rooms: 1 }
+    const ok = () => mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ total_price: '1.00' }) })
+    const askedUrl = () => new URL(mockFetch.mock.calls[0][0] as string)
+
+    it('asks for the chosen currency (R16)', async () => {
+      ok()
+      await adapter.getQuote(7, { ...params, currency: 'KZT' })
+      expect(askedUrl().pathname).toBe('/api/v1/properties/7/quote/')
+      expect(askedUrl().searchParams.get('currency')).toBe('KZT')
+    })
+
+    it('sends no currency when none is chosen, so the plan\'s own is shown', async () => {
+      ok()
+      await adapter.getQuote(7, params)
+      expect(askedUrl().searchParams.has('currency')).toBe(false)
+    })
+  })
+
   describe('singleton instance', () => {
     it('should export singleton instance', () => {
       expect(propertyAdapter).toBeInstanceOf(PropertyAdapter)

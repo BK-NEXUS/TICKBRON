@@ -19,6 +19,7 @@ from .serializers import (
     AccountHistorySerializer
 )
 from properties.models import PropertyPhoto, PropertyTranslation
+from properties.search import card_prices_prefetch
 from bookings.models import Booking
 from common.request import get_client_ip
 
@@ -46,6 +47,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                 'property__photos', to_attr='primary_photos',
                 queryset=PropertyPhoto.objects.filter(is_primary=True, is_deleted=False),
             ),
+            card_prices_prefetch('property__'),
         )
     
     def get_serializer_class(self):

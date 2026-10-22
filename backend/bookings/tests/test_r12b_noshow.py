@@ -6,7 +6,6 @@ POST /partner/no-show-reports/{id}/withdraw/.
 Staff: GET /admin-panel/no-show-reports/ (+ detail), POST .../{id}/approve|reject|reverse/.
 """
 from datetime import timedelta
-from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -19,7 +18,7 @@ from bookings.models import Booking, NoShowReport
 from bookings.tests.r12b_helpers import (
     A, COMMENT, DECISION, P, client_for, make_stay, past_stay, report_url, world,  # noqa: F401
 )
-from payments.models import PaymentAuditLog, Refund
+from payments.models import PaymentAuditLog
 from properties.models import RoomInventory
 
 
@@ -61,7 +60,7 @@ class TestCreateReport:
 
     @pytest.mark.parametrize('status', ['pending', 'cancelled', 'no_show'])
     def test_other_statuses_are_refused(self, world, status):
-        booking = past_stay(world, status=status, paid=False)
+        booking = past_stay(world, status=status)
         response = report(world, booking)
         assert response.status_code == 400
         assert response.data['code'] == 'not_reportable_status'
@@ -295,8 +294,8 @@ class TestStaffQueue:
         assert staff.get(f'{A}/no-show-reports/?from={tomorrow}').data['results'] == []
         assert staff.get(f'{A}/no-show-reports/?from=nonsense').status_code == 400
 
-    def test_row_carries_booking_hotel_comment_and_the_exact_refund(self, world):
-        booking = past_stay(world)           # 2 354 590 paid, 50 %
+    def test_row_carries_booking_hotel_comment_and_the_flag(self, world):
+        booking = past_stay(world)
         report(world, booking)
         row = client_for(world['staff']).get(f'{A}/no-show-reports/').data['results'][0]
         assert row['booking_reference'] == booking.confirmation_code
@@ -304,10 +303,7 @@ class TestStaffQueue:
         assert (row['check_in'], row['check_out']) == (booking.check_in.isoformat(), booking.check_out.isoformat())
         assert row['comment'] == COMMENT
         assert row['hotel_flagged'] is False
-        assert row['refund_preview'] == {
-            'amount': '1177295.00', 'currency': 'UZS', 'percent': 50,
-            'already_refunded': '0.00', 'paid': '2354590.00',
-        }
+        assert 'refund_preview' not in row and 'refunds' not in row
 
     def test_row_has_no_guest_personal_data(self, world):
         report(world, past_stay(world))
@@ -319,13 +315,8 @@ class TestStaffQueue:
         report_id = report(world, past_stay(world)).data['id']
         staff = client_for(world['staff'])
         data = staff.get(f'{A}/no-show-reports/{report_id}/').data
-        assert data['id'] == report_id and data['refund_preview']['amount'] == '1177295.00'
+        assert data['id'] == report_id
         assert staff.get(f'{A}/no-show-reports/999999/').status_code == 404
-
-    def test_old_booking_without_a_promise_previews_zero(self, world):
-        report(world, past_stay(world, percent=0))
-        row = client_for(world['staff']).get(f'{A}/no-show-reports/').data['results'][0]
-        assert row['refund_preview']['amount'] == '0.00' and row['refund_preview']['percent'] == 0
 
 
 @pytest.mark.django_db
@@ -369,7 +360,7 @@ class TestDecisions:
         assert audit.details == {'report_id': report_id}
         assert DECISION not in str(audit.details) and audit.target_user_id is None
 
-    def test_reject_changes_nothing_and_moves_no_money(self, world, django_capture_on_commit_callbacks):
+    def test_reject_changes_nothing(self, world, django_capture_on_commit_callbacks):
         booking = past_stay(world)
         report_id = report(world, booking).data['id']
         with django_capture_on_commit_callbacks(execute=True):
@@ -377,7 +368,6 @@ class TestDecisions:
         assert response.status_code == 200 and response.data['status'] == 'rejected'
         booking.refresh_from_db()
         assert booking.status == 'confirmed'
-        assert Refund.objects.count() == 0
         row = NoShowReport.objects.get()
         assert (row.status, row.decided_by_id, row.decision_comment) == ('rejected', world['staff'].id, DECISION)
         assert AdminAccessLog.objects.filter(action='no_show_report_reject').count() == 1
@@ -391,7 +381,7 @@ class TestDecisions:
         assert response.status_code == 400 and 'decision_comment' in response.data
         assert NoShowReport.objects.get().status == 'pending'
         booking.refresh_from_db()
-        assert booking.status == 'confirmed' and Refund.objects.count() == 0
+        assert booking.status == 'confirmed'
 
     def test_decision_on_a_decided_report_is_refused(self, world, django_capture_on_commit_callbacks):
         report_id = report(world, past_stay(world)).data['id']
@@ -410,7 +400,6 @@ class TestDecisions:
         response = decide(world, report_id, 'approve')
         assert response.status_code == 400 and response.data['code'] == 'booking_not_reportable'
         assert NoShowReport.objects.get().status == 'pending'
-        assert Refund.objects.count() == 0
 
     def test_super_admin_decides_too(self, world, django_capture_on_commit_callbacks):
         report_id = report(world, past_stay(world)).data['id']
@@ -420,22 +409,19 @@ class TestDecisions:
 @pytest.mark.django_db
 class TestReverse:
 
-    def test_approved_to_rejected_restores_the_booking_and_keeps_the_money(
+    def test_approved_to_rejected_restores_the_booking(
             self, world, django_capture_on_commit_callbacks):
         booking = past_stay(world)     # check-out in the past -> back to completed
         report_id = report(world, booking).data['id']
         approve(world, report_id, django_capture_on_commit_callbacks)
-        refund = Refund.objects.get()
         with django_capture_on_commit_callbacks(execute=True):
             response = decide(world, report_id, 'reverse', comment='Mistake: the guest did arrive late.')
         assert response.status_code == 200 and response.data['status'] == 'rejected'
         booking.refresh_from_db()
         assert booking.status == 'completed'
-        # money already refunded is not taken back; no second refund row
-        assert Refund.objects.count() == 1 and Refund.objects.get().pk == refund.pk
         assert AdminAccessLog.objects.filter(action='no_show_report_reverse').count() == 1
         # the guest is not notified a second time
-        assert Notification.objects.filter(code='no_show_marked').count() == 1
+        assert Notification.objects.filter(code='no_show_marked_no_refund').count() == 1
 
     def test_reverse_before_check_out_goes_back_to_confirmed(self, world, django_capture_on_commit_callbacks):
         booking = make_stay(world['prop'], world['guest'], world['today'] - timedelta(days=1), nights=3,
@@ -446,7 +432,7 @@ class TestReverse:
         booking.refresh_from_db()
         assert booking.status == 'confirmed'
 
-    def test_rejected_to_approved_refunds_once(self, world, django_capture_on_commit_callbacks):
+    def test_rejected_to_approved_marks_the_no_show(self, world, django_capture_on_commit_callbacks):
         booking = past_stay(world)
         report_id = report(world, booking).data['id']
         decide(world, report_id, 'reject')
@@ -455,9 +441,8 @@ class TestReverse:
         assert response.status_code == 200 and response.data['status'] == 'approved'
         booking.refresh_from_db()
         assert booking.status == 'no_show'
-        assert Refund.objects.get().amount == Decimal('1177295')
 
-    def test_reverse_twice_flips_back_but_never_refunds_twice(self, world, django_capture_on_commit_callbacks):
+    def test_reverse_twice_flips_back_and_forth(self, world, django_capture_on_commit_callbacks):
         booking = past_stay(world)
         report_id = report(world, booking).data['id']
         approve(world, report_id, django_capture_on_commit_callbacks)
@@ -465,7 +450,6 @@ class TestReverse:
             with django_capture_on_commit_callbacks(execute=True):
                 assert decide(world, report_id, 'reverse', comment=comment).status_code == 200
         assert NoShowReport.objects.get().status == 'approved'
-        assert Refund.objects.count() == 1
 
     def test_reverse_needs_a_decided_report_and_a_comment(self, world):
         report_id = report(world, past_stay(world)).data['id']
@@ -578,20 +562,9 @@ class TestNotifications:
         assert owner_note.params == {'report_id': report_id, 'booking_id': booking.id,
                                      'booking_reference': booking.confirmation_code}
         guest_note = Notification.objects.get(user=world['guest'])
-        assert guest_note.code == 'no_show_marked'
-        assert guest_note.params == {
-            'booking_id': booking.id, 'booking_reference': booking.confirmation_code,
-            'amount': '1177295', 'currency': 'UZS', 'percent': 50,
-        }
+        assert guest_note.code == 'no_show_marked_no_refund'
+        assert guest_note.params == {'booking_id': booking.id, 'booking_reference': booking.confirmation_code}
         assert guest_note.booking_id == booking.id
-
-    def test_guest_without_a_promised_refund_gets_the_no_refund_notice(
-            self, world, django_capture_on_commit_callbacks):
-        booking = past_stay(world, percent=0)
-        approve(world, report(world, booking).data['id'], django_capture_on_commit_callbacks)
-        note = Notification.objects.get(user=world['guest'])
-        assert note.code == 'no_show_marked_no_refund'
-        assert note.params == {'booking_id': booking.id, 'booking_reference': booking.confirmation_code}
 
     def test_owner_only_is_notified_on_rejection(self, world):
         booking = past_stay(world)
@@ -623,7 +596,7 @@ class TestAbuseFlag:
         """Plenty of ordinary stays at the other hotel (no reports) so the platform average is small."""
         for _ in range(count):
             make_stay(world['other_prop'], world['guest'], world['today'] - timedelta(days=5), status='completed',
-                      room=world['other_room'], rate=world['other_rate'], paid=False)
+                      room=world['other_room'], rate=world['other_rate'])
 
     def flagged(self, world):
         rows = client_for(world['staff']).get(f'{A}/no-show-reports/').data['results']
@@ -653,7 +626,7 @@ class TestAbuseFlag:
         self._reports(world, 5)
         for _ in range(55):
             make_stay(world['prop'], world['guest'], world['today'] - timedelta(days=5), status='completed',
-                      room=world['room'], rate=world['rate'], paid=False)
+                      room=world['room'], rate=world['rate'])
         assert self.flagged(world) == {world['prop'].id: False}
         settings.NO_SHOW_FLAG_MIN_RATE = '0.05'
         assert self.flagged(world) == {world['prop'].id: True}

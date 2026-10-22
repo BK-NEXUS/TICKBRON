@@ -3,8 +3,8 @@ Telegram alerts for the events somebody should look at now.
 
 A logging handler on the security log and the error logs decides what is worth a message:
 
-- security events listed in ALERT_EVENTS (an account lock, a forged or unappliable payment webhook)
-- any ERROR record (a server error, a failed money operation)
+- security events listed in ALERT_EVENTS (an account lock)
+- any ERROR record (a server error)
 
 The same message is sent once per ALERT_COOLDOWN_SECONDS, so an attack or an error loop produces
 one message, not a flood. Sending happens in a Celery task (common/tasks.py), never in the request.
@@ -18,7 +18,7 @@ from django.core.cache import cache
 
 from common.security_log import security_logger
 
-ALERT_EVENTS = frozenset({'lockout', 'webhook_rejected', 'webhook_not_applied'})
+ALERT_EVENTS = frozenset({'lockout'})
 ALERT_COOLDOWN_SECONDS = 10 * 60
 MAX_ALERT_LENGTH = 500
 

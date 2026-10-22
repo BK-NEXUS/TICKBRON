@@ -54,7 +54,7 @@ class TestHotelDetail:
         data = get_as(owner1, f'{P}/hotels/{beta.id}/', granularity='year').data
         assert (data['hotel']['id'], data['hotel']['name']) == (beta.id, 'Beta Hotel')
         assert 'owner' not in data['hotel']
-        assert (data['totals']['bookings'], money(data['totals']['revenue'])) == (2, {'EUR': '60.00', 'USD': '80.00'})
+        assert (data['totals']['bookings'], money(data['totals']['revenue'])) == (2, {'USD': '80.00'})
         assert [row['period'] for row in data['series']][:2] == ['2025', '2026']
         assert data['monthly'][3]['month'].endswith('-04')
 

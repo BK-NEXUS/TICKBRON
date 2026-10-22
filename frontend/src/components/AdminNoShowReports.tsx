@@ -9,11 +9,10 @@ const STATUSES: NoShowReportStatus[] = ['pending', 'approved', 'rejected', 'with
 const BADGE: Record<NoShowReportStatus, string> = {
   pending: 'pending', approved: 'completed', rejected: 'cancelled', withdrawn: 'inactive',
 }
-const REFUND_STATES = ['pending', 'succeeded', 'failed', 'needs_manual'] as const
 
 /** The staff queue of "guest did not arrive" reports. Staff and super-admin may both decide. */
 export function AdminNoShowReports() {
-  const { t, formatDate, formatMoney } = useI18n()
+  const { t, formatDate } = useI18n()
   const [status, setStatus] = useState('pending')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -37,10 +36,7 @@ export function AdminNoShowReports() {
     void load()
   }, [load])
 
-  const money = (amount: string, currency: string) => formatMoney(amount, currency, { minDecimals: 0, maxDecimals: 0 })
 
-  const refundState = (state: string) =>
-    (REFUND_STATES as readonly string[]).includes(state) ? t(`noShowAdmin.refundState.${state}` as 'noShowAdmin.refundState.pending') : state
 
   const reports = data?.results ?? []
 
@@ -109,25 +105,6 @@ export function AdminNoShowReports() {
                     <p className="detail-value">{report.decision_comment}</p>
                   </div>
                 )}
-                {report.refund_preview && (
-                  <div className="no-show-refund-preview">
-                    <p>
-                      {t('noShowAdmin.ifApproved', {
-                        percent: report.refund_preview.percent,
-                        paid: money(report.refund_preview.paid, report.refund_preview.currency),
-                        amount: money(report.refund_preview.amount, report.refund_preview.currency),
-                      })}
-                    </p>
-                    {Number(report.refund_preview.already_refunded) > 0 && (
-                      <p>{t('noShowAdmin.alreadyRefunded', { amount: money(report.refund_preview.already_refunded, report.refund_preview.currency) })}</p>
-                    )}
-                  </div>
-                )}
-                {report.refunds.map(refund => (
-                  <p key={refund.id} className="no-show-refund-line">
-                    {t('noShowAdmin.refund', { amount: money(refund.amount, refund.currency), state: refundState(refund.status) })}
-                  </p>
-                ))}
               </div>
               <div className="booking-card-footer">
                 {report.status === 'pending' && (

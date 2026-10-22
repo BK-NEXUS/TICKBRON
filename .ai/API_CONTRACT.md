@@ -1063,7 +1063,7 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 - The price in the property's currency is the plan's main price and is stored in `base_price`; the other three are stored as the owner's own prices (new table `rate_plan_prices`). When `prices` is sent, `base_price` may be left out (if sent it must equal `prices[<property currency>]`, else 400 `base_price`).
 - `prices` must contain every supported currency (400 `prices`: "Enter the price in: KZT, RUB."), only supported keys, numbers >= 0, no finer part than the currency unit (whole so'm/tenge/rubles, cents for USD).
 - Read: `prices` lists what the owner entered (the main price and each other currency present).
-- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **false** until the owner screens send the four prices): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
+- Setting `RATE_PLAN_PRICES_REQUIRED` (env, default **true** since R16 slice 3, 2026-10-19; was false in slice 1): when true, create without `prices` is 400, and a plan without the other prices cannot be edited until `prices` is sent (400 `prices`); a complete plan can be edited without resending them.
 
 **Hotel page** (`GET /properties/{id}/`): each rate plan gains `prices`: `{ "USD": { "amount": "60.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, ... }`. `source` is `main` (the plan's own currency), `owner` (entered by the owner) or `converted` (main price at the CBU rates, show with "≈"); `amount` is null when a converted price has no rate yet.
 
@@ -1074,4 +1074,80 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 
 **CBU**: the daily fetch now also stores KZT (code 398) and RUB (643); each currency has its own sane range (a share of `FX_MIN_RATE`/`FX_MAX_RATE`, `currency/cbu.py RATE_SANITY_SHARE`).
 
-Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
+Slices 2 to 5 below add the per-currency "from" price on cards, the owner screens and the guest screens.
+
+### R16 slice 3: the rule is now on
+`RATE_PLAN_PRICES_REQUIRED` defaults to **true**: `POST /partner/rates/` without `prices` is 400, and a rate plan that has only its main price cannot be edited (400 `prices`) until the owner sends the other currencies. The owner screen sends `prices` (all four) and no `base_price`/`currency` on create and update. Set the variable to `false` only to roll back.
+
+## 2026-10-19 R16 slice 2: "from" price per currency on hotel cards, night prices per currency in the calendar
+
+- **Hotel cards** (`GET /properties/search/` results, the home promotion items and the map pins use the same serializer): new field `prices`: `{ "USD": { "amount": "54.00", "source": "main" }, "UZS": { "amount": "750000.00", "source": "owner" }, "KZT": { "amount": "29388.00", "source": "converted" }, "RUB": { "amount": null, "source": "converted" } }`. Each currency holds the **lowest price of the hotel's active rate plans in that currency** (the owner's own price, or a conversion at the CBU rate when the owner entered none; `amount` is null when a conversion has no rate yet). A hotel without active rate plans gets its own `base_price` converted. `base_price`, `currency` and `base_price_uzs_approx` are unchanged, and the price filters and the price sort still use `base_price` (the owner's property-level price).
+- **Availability** (`GET /properties/{id}/availability/`): every rate plan gains `prices` (same shape as the hotel page: `{currency: {amount, source}}`), and every `date_inventory` row gains `prices`: `{ "USD": "69.00", "UZS": "862500.00", "KZT": "31050.00", "RUB": null }`, the night's price in each currency, with the plan's ratio for a night that has its own price (a night at +15% in dollars is +15% in the other currencies); null while a conversion has no rate. `price` and `currency` of the row are unchanged.
+- Not included: the hotel detail's own `base_price` stays in the hotel's main currency; the hotel page prices come from `room_types[].rate_plans[].prices` (slice 1). Favorites: see below.
+- **Favorites** (`GET /me/favorites/`): new field `property_prices`, the same list as a hotel card's `prices` (the lowest price of the hotel's active rate plans in every currency, `source` owner / main / converted). `property_base_price` and `property_currency` are unchanged.
+
+## Pictures of countries and regions (2026-10-21, plan PLAN_GEO_IMAGES.md)
+- Public `GET /geography/countries/` and `GET /geography/countries/{code}/regions/` rows carry `image_url` (relative media URL, or `null` when the row has no picture). Cities have none.
+- Admin `/admin-panel/geography/countries/` and `.../regions/`: output has `image_url`; input `image` is accepted as multipart (JSON still works for edits without a picture). `image` is REQUIRED when creating a country or region (400 `{image: ...}`), optional on edit (no `image` = the picture stays), and can be replaced but not cleared. Checks: jpg/jpeg/png/gif/webp, 10 MB, 40 megapixels, must decode as an image. Stored name is random (`geography/countries|regions/<uuid>.<ext>`); the old file is deleted on replace and on delete.
+- Multipart note: `is_active` now defaults to true when a form omits it (a form without the checkbox used to mean false).
+- Existing rows (seeded countries, regions) have `image_url: null` until an admin edits them.
+
+## Place of a hotel-owner account (2026-10-21, plan PLAN_GEO_IMAGES.md step 3)
+- `POST /admin-panel/users/create-hotel-owner/` (super admin): `country_ref`, `region_ref`, `city_ref` (Geography ids) are now REQUIRED besides the old fields. They must fit together and be active (same checks as a property: 400 `{field: ...}`). The account and its place (`partner.OwnerPlace`, new table) are created in one transaction; any 400 creates nothing.
+- `GET /partner/assigned-place/` (hotel owner): `{country_ref, region_ref, city_ref}` of the place, all `null` when the account has none (older accounts).
+- An owner WITH a place: `POST /partner/properties/` and `PATCH /partner/properties/{id}/` refuse a `country_ref`/`region_ref`/`city_ref` that differs from it (400 `{field: "Your hotels are placed by the administrator and cannot be moved."}`); sending the same ids is fine. Owners without a place behave as before.
+- A geography row used by an account's place cannot be deleted (409 from the Geography screen), only hidden.
+## Person names take letters only (2026-10-21)
+`full_name` (register, profile), `first_name` / `last_name` (profile, admin create-hotel-owner) and the booking's `guest_full_name` are refused with 400 (`{field: ["Names can contain letters, spaces, hyphens, dots and apostrophes only."]}`) when they contain a digit or a symbol. Letters of any alphabet, space, hyphen, dot and the apostrophes ' ʻ ʼ ’ are accepted. Existing stored names are not touched.
+
+## Phone number is back, stored only (2026-10-22, plan PLAN_CASH_ONLY.md stage 1)
+No SMS, no code, no verification, no uniqueness rule (several accounts may share a number). The number is parsed with the existing `validate_phone_number_format`: international format with a country code, separators allowed, stored as E.164 (`+998901234567`); an invalid one is 400 `{field: "Enter a valid phone number in international format, e.g. +998 90 123 45 67."}`.
+- `POST /auth/register/`: `phone_number` REQUIRED.
+- `PATCH /auth/me/update/`: `phone_number` can be changed, never blanked (400); not sending it leaves it as is (old accounts without a number can still edit other fields).
+- `POST /admin-panel/users/create-hotel-owner/`: `phone_number` REQUIRED.
+- `POST /bookings/`: the booking needs a phone: `guest_phone`, else the account's `phone_number`; neither = 400 `{guest_phone: "A phone number is required."}`.
+- `GET /auth/me/` and the admin Status/customer screens already return `phone_number` / `phone` and the e-mail; the owner's arrivals list still shows only `phone_last4` (open question for stage 2: a hotel taking cash bookings needs the full number).
+- The OTP / phone-verification endpoints stay removed (404).
+
+## Cash at the hotel: confirmed at once, arrival time, "guest arrived" (2026-10-22, plan PLAN_CASH_ONLY.md stage 2)
+- `POST /bookings/`: `expected_arrival_time` ("HH:MM", REQUIRED) is the time the guest will arrive on the check-in day. 400 `{expected_arrival_time}` when it is missing, malformed, or today's time has already passed (business time, Asia/Tashkent). The booking is created `confirmed` at once (`payment_status` stays `pending` = "pay at the hotel"), the rooms are taken at once, there is no 15-minute hold (`expires_at` is null).
+- Booking output (guest and admin serializers) has `expected_arrival_time` ("10:30:00" or null on old bookings), `arrived_at` (datetime or null) and `arrival_deadline` (ISO datetime in business time = arrival time + `ARRIVAL_GRACE_HOURS`, null on old bookings).
+- Limit: a guest can hold at most 5 upcoming bookings (not cancelled, not arrived, check-out not past): 429 `{code: "too_many_upcoming_bookings"}` (was `too_many_pending_bookings`, 3 unpaid holds). Needed because nothing is paid up front any more.
+- `POST /partner/bookings/{id}/arrived/` (hotel owner, own hotels only): the hotel says the guest arrived. 200 `{id, arrived_at}`; idempotent (the first time stays); 400 `{error}` unless the booking is `confirmed` and the check-in day has come; another owner's booking 404; guest 403.
+- `GET /partner/bookings/` rows and `GET /partner/status/arrivals/` rows carry `expected_arrival_time` and `arrived_at` (arrivals: "HH:MM" or null).
+- Auto-cancel: Celery task `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a `confirmed` booking with an arrival time, no `arrived_at`, and arrival time + `ARRIVAL_GRACE_HOURS` (default 2) passed: `status=cancelled`, `cancellation_reason="no_arrival"`, rooms released, notifications `booking_not_arrived` (guest) and `guest_not_arrived` (owner, no personal data). Bookings made before this existed have no arrival time and are never auto-cancelled.
+- Migration `bookings/0012_cash_arrival`: two nullable columns, and a data step that confirms `pending` bookings still inside their payment window (expired ones stay pending for the expiry task). Reverse of the data step is a no-op.
+- The payment endpoints still exist but the UI no longer uses them (removed in stage 3).
+
+## Status numbers with cash only (stage 3a of PLAN_CASH_ONLY, 2026-10-22)
+
+Supersedes the refund and revenue lines of the R12 definitions above; every other R12 number is unchanged.
+- **counted** = `confirmed` + `completed` (no refund filter), **stayed** = `completed`, `no_show` = status `no_show`.
+- **revenue** = per currency, never mixed: SUM(`total_price`) of `completed` bookings in the period (cash the hotel is expected to have received). `confirmed`, `cancelled`, `no_show`, `pending`, `expired` and soft-deleted bookings are never revenue. `booking_value` (counted bookings) is unchanged.
+- **Removed:** `totals.fully_refunded`; the user-history rows (`GET /admin-panel/status/users/{id}/`) and its CSV lose `paid` and `refunded`. The hotels list ordered by revenue uses the same SUM in UZS.
+
+## Cash only, stage 3b and 3c: no online payments, no refunds (2026-10-22)
+
+Supersedes the payment, refund, cancellation-terms and no-show-refund parts of the sections above (R6, R11, R12, R12b). Guests pay cash at the hotel; the platform moves no money.
+
+**Removed endpoints (404 now):**
+- every `/api/v1/payments/...` route (transactions, init, confirm, refund, webhooks, audit logs)
+- `GET /api/v1/admin-panel/payments/transactions/`
+- `GET /api/v1/admin-panel/refunds/needs-attention/`, `POST /api/v1/admin-panel/refunds/{id}/mark-done/` and `/retry/`
+- `GET /api/v1/bookings/{id}/cancel-preview/`
+
+**Changed responses:**
+- `POST /bookings/{id}/cancel/`: always free; returns the booking, no `refund` object.
+- Booking, booking list, quote and rate-plan responses no longer carry `cancellation_terms`, `no_show_refund_percent`, `no_show_refund_amount`, `no_show_refund_text_key`, `no_show_refund_text_params`, `free_cancellation`, `free_cancel_hours`, `cancel_refund_percent`. Partner rate plans cannot set `free_cancel_hours` / `cancel_refund_percent` any more (the DB columns stay, unused).
+- No-show reports (staff queue): no `refund_preview`, no `refunds`. Approving only moves the booking to `no_show` and releases the future nights. The guest notice is `no_show_marked_no_refund` ("marked as a no-show by the hotel"); the older notification codes stay so old rows still render.
+- `GET /admin-panel/customers/`: no `total_amount_paid` (and `sort_by=total_amount_paid` is no longer valid). `GET /admin-panel/customers/{id}/`: no `payments`.
+- Error code `refund_refused` of the no-show decision no longer exists.
+
+**Removed settings:** `PAYMENT_TEST_MODE`, `PAYME_*`, `CLICK_*`, `VISA_*`, `NO_SHOW_REFUND_PERCENT`, `CANCEL_REFUND_PERCENT`, `THROTTLE_WEBHOOK_RATE`; `VITE_PAYMENT_TEST_MODE` in the frontend.
+## Owner photo management (2026-10-21)
+All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own property only (another owner's property or photo = 404, guest = 403).
+- `GET .../photos/` -> list of `{id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text}` ordered by `display_order, id`; deleted photos are not listed.
+- `POST .../photos/` (multipart: `photo`, `photo_type`, `caption`, `alt_text`) -> 201 with the photo. The first photo of a property becomes the cover (`is_primary` true); later ones go to the end (`display_order` = highest + 1). The stored file name is `<uuid>.<ext>`, never the client's. Limits unchanged (type/size checks, 40 megapixels, 50 photos; errors are the plain serializer errors, 400).
+- `PATCH .../photos/{photo_id}/` JSON `caption`, `alt_text`, `photo_type`, `is_primary: true` (becomes the cover, the old cover is demoted). `is_primary: false` -> 400 (make another photo the cover). The image file itself cannot be replaced (delete and upload again).
+- `DELETE .../photos/{photo_id}/` -> 204, soft delete; a deleted cover passes to the first remaining photo (none left = no cover).
+

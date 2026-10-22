@@ -32,3 +32,20 @@ def complete_finished_stays():
     if result['failed']:
         raise CompletionError(f"{result['failed']} finished stay(s) could not be completed")
     return result
+
+
+@shared_task
+def cancel_unarrived_bookings():
+    """
+    Cancel confirmed bookings whose guest has not arrived ARRIVAL_GRACE_HOURS after the arrival time they gave.
+
+    Scheduled every 10 minutes (CELERY_BEAT_SCHEDULE). Raises after the run if any booking could not be
+    cancelled, so the failure shows in Celery monitoring; the others are still processed first.
+    """
+    from bookings.arrival import ArrivalCancellationError, cancel_unarrived_bookings as run
+
+    result = run()
+    if result['failed']:
+        raise ArrivalCancellationError(f"{result['failed']} unarrived booking(s) could not be cancelled")
+    return result
+

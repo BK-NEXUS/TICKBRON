@@ -54,7 +54,7 @@ class BookingConcurrencyTests(TransactionTestCase):
     def setUp(self):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
-        self.user = User.objects.create_user(email='race@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='race@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',
@@ -124,27 +124,6 @@ class BookingConcurrencyTests(TransactionTestCase):
         self._assert_losers_got_validation_errors(results)
         assert self._booked_rooms() == 1
 
-    def test_cancel_and_confirm_leave_a_consistent_booking(self):
-        to_cancel, to_confirm = self._stale_copies()
-
-        results = run_concurrently(to_cancel.cancel_booking, to_confirm.confirm_booking)
-
-        # Both orders are legal once serialized: cancel first makes the confirm
-        # fail (cancelled -> confirmed is invalid); confirm first lets the cancel
-        # succeed afterwards (confirmed -> cancelled is allowed).
-        self._assert_losers_got_validation_errors(results)
-        booking = Booking.objects.get(pk=self.booking.pk)
-        cancel_result, confirm_result = results
-        if confirm_result[0] == 'error':
-            assert cancel_result[0] == 'ok'
-            assert (booking.status, booking.payment_status) == ('cancelled', 'pending')
-        else:
-            # Confirm ran first; the cancel saw the confirmed booking and still won
-            assert cancel_result[0] == 'ok'
-            assert (booking.status, booking.payment_status) == ('cancelled', 'paid')
-        # Either way the cancelled booking released its room exactly once
-        assert self._booked_rooms() == 1
-
     def test_last_room_cannot_be_sold_twice(self):
         RoomInventory.objects.filter(pk=self.room_inventory.pk).update(available_rooms=3)  # 2 held, 1 left
 
@@ -165,7 +144,7 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
     def setUp(self):
         make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
 
-        self.user = User.objects.create_user(email='race-two-rate-plans@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='race-two-rate-plans@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',
@@ -218,7 +197,7 @@ class PendingCapRaceTests(TransactionTestCase):
 
     def setUp(self):
         make_usd_rate()
-        self.user = User.objects.create_user(email='holder@example.com', password='testpass123')
+        self.user = User.objects.create_user(phone_number='+998901112233', email='holder@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
             owner=self.user, property_type=property_type, status='active',
@@ -243,7 +222,7 @@ class PendingCapRaceTests(TransactionTestCase):
 
     def test_parallel_creates_never_exceed_the_cap(self):
         from rest_framework.test import APIClient
-        from bookings.views import MAX_PENDING_BOOKINGS_PER_GUEST
+        from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # was MAX_PENDING_BOOKINGS_PER_GUEST
 
         def book():
             client = APIClient()
@@ -251,11 +230,11 @@ class PendingCapRaceTests(TransactionTestCase):
             return client.post('/api/v1/bookings/', {
                 'property_id': self.property.id, 'room_type_id': self.room_type.id,
                 'rate_plan_id': self.rate_plan.id, 'check_in': self.check_in.isoformat(),
-                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1,
+                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
             }, format='json').status_code
 
         results = run_concurrently(*[book] * 8)
 
         assert [r for r in results if r[0] == 'error'] == []
-        pending = Booking.objects.filter(guest=self.user, status='pending').count()
-        assert pending == MAX_PENDING_BOOKINGS_PER_GUEST, [r[1] for r in results]
+        upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bookings are confirmed at once
+        assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST, [r[1] for r in results]

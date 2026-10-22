@@ -74,7 +74,7 @@ def test_booking_longer_than_max_stay_creates_no_inventory_rows(stay):
         'property_id': stay['property'].id, 'room_type_id': stay['room'].id,
         'rate_plan_id': stay['rate'].id, 'check_in': stay['start'].isoformat(),
         'check_out': (stay['start'] + timedelta(days=MAX_STAY_NIGHTS + 1)).isoformat(),
-        'guest_count': 1,
+        'guest_count': 1, 'expected_arrival_time': '14:00',
     }, format='json')
 
     assert response.status_code == 400

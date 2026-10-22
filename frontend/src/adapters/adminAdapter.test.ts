@@ -467,70 +467,6 @@ describe('AdminAdapter', () => {
     })
   })
 
-  describe('Payment Monitoring Methods', () => {
-    it('should get payment transactions successfully', async () => {
-      const mockTransactions = [
-        {
-          id: 1,
-          booking: 1,
-          provider: 'payme',
-          amount: 100,
-          currency: 'USD',
-          status: 'completed',
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      ]
-
-      ;(global.fetch as never).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockTransactions,
-      })
-
-      const result = await adapter.getPaymentTransactions()
-
-      expect(result.data).toEqual(mockTransactions)
-      expect(result.error).toBeNull()
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api/api/v1/admin-panel/payments/transactions/',
-        expect.objectContaining({
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
-    })
-
-    it('should get payment transactions with filters', async () => {
-      const mockTransactions = [
-        {
-          id: 1,
-          booking: 1,
-          provider: 'payme',
-          amount: 100,
-          currency: 'USD',
-          status: 'completed',
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      ]
-
-      ;(global.fetch as never).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockTransactions,
-      })
-
-      const result = await adapter.getPaymentTransactions('completed', 'payme')
-
-      expect(result.data).toEqual(mockTransactions)
-      expect(result.error).toBeNull()
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api/api/v1/admin-panel/payments/transactions/?status=completed&provider=payme',
-        expect.objectContaining({
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
-    })
-  })
-
   describe('Customers Directory Methods (Checkpoint 24)', () => {
     it('should get customers successfully', async () => {
       const mockCustomersResponse = {
@@ -549,7 +485,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'email',
             total_booking_count: 5,
             last_booking_date: '2024-09-01T00:00:00Z',
-            total_amount_paid: 1500,
             customer_status: 'active',
           },
           {
@@ -563,7 +498,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'phone',
             total_booking_count: 2,
             last_booking_date: '2024-08-15T00:00:00Z',
-            total_amount_paid: 800,
             customer_status: 'active',
           },
         ],
@@ -604,7 +538,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'email',
             total_booking_count: 5,
             last_booking_date: '2024-09-01T00:00:00Z',
-            total_amount_paid: 1500,
             customer_status: 'active',
           },
         ],
@@ -645,7 +578,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'email',
             total_booking_count: 5,
             last_booking_date: '2024-09-01T00:00:00Z',
-            total_amount_paid: 1500,
             customer_status: 'active',
           },
         ],
@@ -686,7 +618,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'email',
             total_booking_count: 5,
             last_booking_date: '2024-09-01T00:00:00Z',
-            total_amount_paid: 1500,
             customer_status: 'active',
           },
         ],
@@ -727,7 +658,6 @@ describe('AdminAdapter', () => {
             preferred_contact_method: 'email',
             total_booking_count: 5,
             last_booking_date: '2024-09-01T00:00:00Z',
-            total_amount_paid: 1500,
             customer_status: 'active',
           },
         ],
@@ -742,14 +672,14 @@ describe('AdminAdapter', () => {
         search: 'John',
         page: 1,
         page_size: 50,
-        sort_by: 'total_amount_paid',
+        sort_by: 'last_booking_date',
         sort_order: 'desc',
       })
 
       expect(result.data).toEqual(mockCustomersResponse)
       expect(result.error).toBeNull()
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api/api/v1/admin-panel/customers/?search=John&page=1&page_size=50&sort_by=total_amount_paid&sort_order=desc',
+        'http://test-api/api/v1/admin-panel/customers/?search=John&page=1&page_size=50&sort_by=last_booking_date&sort_order=desc',
         expect.objectContaining({
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -868,17 +798,6 @@ describe('AdminAdapter', () => {
             created_at: '2024-09-01T00:00:00Z',
           },
         ],
-        payments: [
-          {
-            id: 1,
-            booking_id: 1,
-            provider: 'payme',
-            amount: 200,
-            currency: 'USD',
-            status: 'paid',
-            created_at: '2024-09-01T00:00:00Z',
-          },
-        ],
         internal_notes: [
           {
             id: 1,
@@ -930,7 +849,6 @@ describe('AdminAdapter', () => {
           email_verified: true,
         },
         bookings: [],
-        payments: [],
         internal_notes: [],
       }
 

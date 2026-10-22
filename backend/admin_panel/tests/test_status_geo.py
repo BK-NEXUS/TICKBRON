@@ -50,16 +50,16 @@ class TestCountries:
             (1, 'UZ', 'Uzbekistan', 3, 5, 5)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
         assert (uz['name_uz'], uz['name_ru'], uz['name_en']) == ("O'zbekiston", 'Узбекистан', 'Uzbekistan')
         # Revenue is grouped per currency, never mixed
-        assert revenue(uz) == {'EUR': '60.00', 'USD': '1529.00'}  # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was USD 530.00)
+        assert revenue(uz) == {'USD': '230.00'}
         assert (kz['rank'], kz['code'], kz['country'], kz['hotels'], kz['bookings'], kz['guests']) == \
             (2, 'KZ', 'Kazakhstan', 1, 1, 1)
-        assert revenue(kz) == {'KZT': '50000.00'}
+        assert revenue(kz) == {}
 
     def test_month_period_uses_the_check_in_date(self, get):
         uz, kz = get(f'{S}/countries/', period='2026-04').data['results']
 
         assert (uz['bookings'], uz['guests']) == (3, 3)
-        assert revenue(uz) == {'EUR': '60.00', 'USD': '1349.00'}  # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was USD 350.00)
+        assert revenue(uz) == {'USD': '150.00'}
         assert kz['bookings'] == 1
 
     def test_year_period(self, get):
@@ -124,10 +124,9 @@ class TestRegions:
             (tashkent_id(), 'Tashkent', 2, 5, 5)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
         assert (tashkent['name_uz'], tashkent['name_ru'], tashkent['name_en']) == \
             ('Toshkent shahri', 'город Ташкент', 'Tashkent')
-        assert revenue(tashkent) == {'EUR': '60.00', 'USD': '530.00'}
+        assert revenue(tashkent) == {'USD': '230.00'}
         assert (unspecified['id'], unspecified['region'], unspecified['hotels'], unspecified['bookings'],
-                unspecified['revenue']) == (None, 'Unspecified', 1, 0, [{'currency': 'USD', 'amount': '999.00'}])
-        # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was [])
+                unspecified['revenue']) == (None, 'Unspecified', 1, 0, [])
         assert (response.data['country'], response.data['country_name']) == ('UZ', 'Uzbekistan')
 
     def test_country_code_is_case_insensitive(self, get):
@@ -163,8 +162,8 @@ class TestHotels:
         alpha, beta = response.data['results']
         assert (alpha['id'], alpha['name'], alpha['city'], alpha['bookings'], alpha['guests']) == \
             (status_world['hotels']['alpha'].id, 'Alpha Hotel', 'Tashkent', 3, 3)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
-        assert revenue(alpha) == {'USD': '450.00'}
-        assert (beta['name'], beta['bookings'], revenue(beta)) == ('Beta Hotel', 2, {'EUR': '60.00', 'USD': '80.00'})
+        assert revenue(alpha) == {'USD': '150.00'}
+        assert (beta['name'], beta['bookings'], revenue(beta)) == ('Beta Hotel', 2, {'USD': '80.00'})
         assert (response.data['country'], response.data['country_name']) == ('UZ', 'Uzbekistan')
         assert (response.data['region'], response.data['region_name']) == (str(tashkent_id()), 'Tashkent')
 
@@ -194,7 +193,7 @@ class TestHotels:
 class TestAggregatesInTheDatabase:
     """A fixed number of queries per page, however many rows there are."""
 
-    # R12: fully refunded ids, count, page, revenue (payments, refunds), booking value = 6
+    # R12: count, page, revenue, booking value
     # (was 3: count, page, revenue)
     @pytest.mark.parametrize('url,queries', [
         (f'{S}/countries/', 6),

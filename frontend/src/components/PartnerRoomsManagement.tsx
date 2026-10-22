@@ -7,7 +7,7 @@ interface PartnerRoomsManagementProps {
   propertyId: number
   propertyName: string
   /** Open the rate plans (and from there availability) of a room type */
-  onManageRates?: (roomType: { id: number; name: string }) => void
+  onManageRates?: (roomType: { id: number; name: string; currency: string }) => void
   /** Open the calendar (RoomInventory + external-booking blocks) of a room type */
   onManageCalendar?: (roomType: { id: number; name: string; totalRooms: number }) => void
 }
@@ -303,7 +303,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
               <div className="room-type-card-footer">
                 {onManageRates && (
                   <button
-                    onClick={() => onManageRates({ id: roomType.id, name: roomType.name })}
+                    onClick={() => onManageRates({ id: roomType.id, name: roomType.name, currency: roomType.currency })}
                     className="btn btn-primary"
                     aria-label={t('partner.manageRatesFor', { name: roomType.name })}
                   >

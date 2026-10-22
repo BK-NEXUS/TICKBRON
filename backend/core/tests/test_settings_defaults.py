@@ -11,7 +11,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 # Variables that must come from each test, not from the developer's shell or
 # from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
 ISOLATED_ENV_VARS = (
-    'PAYMENT_TEST_MODE', 'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
+    'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
     'USE_X_FORWARDED_PROTO', 'SECURE_SSL_REDIRECT', 'SECURE_HSTS_PRELOAD', 'SESSION_COOKIE_AGE',
     'DB_HOST', 'DB_SSLMODE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
@@ -39,10 +39,6 @@ def _load_settings(expression, **env_overrides):
     return result.stdout.strip().splitlines()[-1]
 
 
-def _load_test_mode_settings(**env_overrides):
-    return _load_settings('settings.PAYMENT_TEST_MODE', **env_overrides)
-
-
 def _cache_backend(**env_overrides):
     return _load_settings("settings.CACHES['default']['BACKEND']", **env_overrides)
 
@@ -54,30 +50,6 @@ PRODUCTION_ENV = {
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
     'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # password reset links and mail
 }
-
-
-def test_payment_test_mode_defaults_to_false():
-    assert _load_test_mode_settings() == 'False'
-
-
-def _env_example_values():
-    values = {}
-    for line in (BACKEND_DIR / '.env.example').read_text(encoding='utf-8').splitlines():
-        line = line.strip()
-        if line and not line.startswith('#') and '=' in line:
-            key, value = line.split('=', 1)
-            values[key.strip()] = value.split('#', 1)[0].strip()
-    return values
-
-
-def test_env_example_keeps_the_payment_test_mode_off():
-    # Copying .env.example must not turn on client-side payment confirmation
-    values = _env_example_values()
-    assert values.get('PAYMENT_TEST_MODE', 'False').lower() == 'false'
-
-
-def test_payment_test_mode_can_be_enabled_explicitly():
-    assert _load_test_mode_settings(PAYMENT_TEST_MODE='True') == 'True'
 
 
 def test_production_uses_redis_cache_by_default():
@@ -129,7 +101,7 @@ def test_anonymous_browsing_limit_allows_normal_use():
     # R12b: the no_show_report scope joined the throttle rates; anon and user are unchanged
     # N-7: the booking_create scope joined the rates; anon and user are still unchanged
     assert _throttle_rates() == (
-        "{'anon': '2000/hour', 'user': '1000/hour', 'webhook': '600/min', 'booking_create': '30/hour', "
+        "{'anon': '2000/hour', 'user': '1000/hour', 'booking_create': '30/hour', "
         "'no_show_report': '20/hour'}"
     )
 
@@ -144,14 +116,12 @@ def test_user_limit_can_be_set_from_the_environment():
 
 
 def test_sensitive_endpoints_keep_their_strict_limits():
-    from payments.views import PaymentRateThrottle
     from users.throttles import (
         LoginRateThrottle, RegisterRateThrottle,
     )
 
     assert LoginRateThrottle.rate == '10/min'
     assert RegisterRateThrottle.rate == '5/min'
-    assert PaymentRateThrottle.rate == '20/min'
 
 
 def _test_db_name(**env_overrides):

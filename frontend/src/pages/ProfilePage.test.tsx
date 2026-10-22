@@ -225,14 +225,6 @@ describe('ProfilePage', () => {
       expect(emailValue?.textContent).toBe('john@example.com')
     })
 
-    it('shows no phone number anywhere on the profile', () => {
-      renderWithRouter(<ProfilePage />)
-
-      expect(screen.queryByText('Phone Number')).not.toBeInTheDocument()
-      expect(screen.queryByText('+1234567890')).not.toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Verify phone' })).not.toBeInTheDocument()
-    })
-
     it('should display WhatsApp', () => {
       renderWithRouter(<ProfilePage />)
 
@@ -532,6 +524,7 @@ describe('ProfilePage', () => {
         expect(mockUpdateProfile).toHaveBeenCalledWith({
           first_name: 'Jane',
           last_name: 'Doe',
+          phone_number: '+1234567890',
           whatsapp: '+9876543210',
           telegram: '@johndoe',
           preferred_contact_method: 'whatsapp',

@@ -14,14 +14,12 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import (
-    Count, Sum, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField, DecimalField
+    Count, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField
 )
 from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat, Lower, NullIf, Trim
 from datetime import timedelta
-from decimal import Decimal
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
-from payments.models import PaymentTransaction
 from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog, InternalNote
@@ -33,7 +31,6 @@ from admin_panel.serializers import (
     AdminCustomerSerializer,
     AdminCustomerDetailSerializer,
     AdminBookingSummarySerializer,
-    AdminPaymentSummarySerializer,
     AdminInternalNoteSerializer,
     AdminInternalNoteCreateSerializer
 )
@@ -302,51 +299,6 @@ class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
-def admin_payment_transactions(request):
-    """
-    List payment transactions for admin monitoring.
-    
-    Query Parameters:
-        status: Filter by transaction status (optional)
-        provider: Filter by payment provider (optional)
-    
-    Returns:
-        List of payment transactions for monitoring
-    """
-    transactions = PaymentTransaction.objects.filter(
-        is_deleted=False
-    ).select_related('booking')
-    
-    # Apply filters
-    status_filter = request.query_params.get('status')
-    if status_filter:
-        transactions = transactions.filter(status=status_filter)
-    
-    provider_filter = request.query_params.get('provider')
-    if provider_filter:
-        transactions = transactions.filter(provider=provider_filter)
-    
-    # Serialize transactions
-    transactions_data = []
-    for transaction in transactions:
-        transaction_data = {
-            'id': transaction.id,
-            'booking_id': transaction.booking.id if transaction.booking else None,
-            'provider': transaction.provider,
-            'amount': str(transaction.amount),
-            'currency': transaction.currency,
-            'status': transaction.status,
-            'created_at': transaction.created_at,
-            'updated_at': transaction.updated_at
-        }
-        transactions_data.append(transaction_data)
-    
-    return Response(transactions_data, status=status.HTTP_200_OK)
-
-
-@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
-@api_view(['GET'])
-@permission_classes([IsSuperAdminOrStaff])
 def admin_booking_lookup_by_reference(request):
     """
     Look up a customer's full details and booking by reference code.
@@ -512,19 +464,15 @@ def admin_customers_directory(request):
     # Validate sort_by field
     valid_sort_fields = [
         'registration_date', 'full_name', 'email', 'total_booking_count',
-        'last_booking_date', 'total_amount_paid', 'customer_status'
+        'last_booking_date', 'customer_status'
     ]
     if sort_by not in valid_sort_fields:
         sort_by = 'registration_date'
     
-    # Aggregates come from correlated subqueries: joining bookings and their payments
-    # in one query would count a booking once per payment row
+    # Aggregates come from correlated subqueries, so one customer is never counted twice
     customer_bookings = Booking.objects.filter(
         guest=OuterRef('pk'), is_deleted=False
     ).order_by().values('guest')
-    completed_payments = PaymentTransaction.objects.filter(
-        booking__guest=OuterRef('pk'), booking__is_deleted=False, status='completed'
-    ).order_by().values('booking__guest')
 
     # Active: is_active=True and (has booking in last 90 days OR no bookings yet)
     # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
@@ -538,11 +486,6 @@ def admin_customers_directory(request):
             Subquery(customer_bookings.annotate(c=Count('id')).values('c')), 0
         ),
         last_booking_date=Subquery(customer_bookings.annotate(m=Max('created_at')).values('m')),
-        total_amount_paid=Coalesce(
-            Subquery(completed_payments.annotate(s=Sum('amount')).values('s')),
-            Value(Decimal('0')),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
-        ),
         # Same fallback as User.get_full_name(): full_name, else first + last, else email
         display_name=Coalesce(
             NullIf('full_name', Value('')),
@@ -577,7 +520,6 @@ def admin_customers_directory(request):
         'email': F('email'),
         'total_booking_count': F('total_booking_count'),
         'last_booking_date': F('last_booking_date'),
-        'total_amount_paid': F('total_amount_paid'),
         'customer_status': F('customer_status'),
     }
     sort_expression = sort_expressions[sort_by]
@@ -602,7 +544,6 @@ def admin_customers_directory(request):
             'preferred_contact_method': user.preferred_contact_method,
             'total_booking_count': user.total_booking_count,
             'last_booking_date': user.last_booking_date,
-            'total_amount_paid': user.total_amount_paid,
             'customer_status': user.customer_status,
         }
         for user in page
@@ -625,7 +566,6 @@ def admin_customer_detail(request, customer_id):
     Returns:
     - Contact information (full profile)
     - All bookings filterable by all/upcoming/completed/cancelled
-    - All payments (amount, date, payment status)
     - Last activity timestamp
     - Internal notes (staff-only)
     
@@ -679,26 +619,6 @@ def admin_customer_detail(request, customer_id):
     
     bookings_serializer = AdminBookingSummarySerializer(bookings_data, many=True)
     
-    # Get payments
-    payments = PaymentTransaction.objects.filter(
-        booking__guest=customer,
-        is_deleted=False
-    ).select_related('booking').order_by('-created_at')
-    
-    payments_data = []
-    for payment in payments:
-        payments_data.append({
-            'id': payment.id,
-            'booking_id': payment.booking.id if payment.booking else None,
-            'provider': payment.provider,
-            'amount': str(payment.amount),
-            'currency': payment.currency,
-            'status': payment.status,
-            'created_at': payment.created_at
-        })
-    
-    payments_serializer = AdminPaymentSummarySerializer(payments_data, many=True)
-    
     # Get internal notes
     internal_notes = InternalNote.objects.filter(
         customer=customer,
@@ -708,14 +628,12 @@ def admin_customer_detail(request, customer_id):
     internal_notes_serializer = AdminInternalNoteSerializer(internal_notes, many=True)
     
     # Calculate last activity timestamp
-    # Last activity is the most recent of: last_login, last booking created_at, last payment created_at
+    # Last activity is the most recent of: last_login, last booking created_at
     last_activities = []
     if customer.last_login:
         last_activities.append(customer.last_login)
     if bookings.exists():
         last_activities.append(bookings.first().created_at)
-    if payments.exists():
-        last_activities.append(payments.first().created_at)
     
     last_activity = max(last_activities) if last_activities else None
     
@@ -723,7 +641,6 @@ def admin_customer_detail(request, customer_id):
     response_data = {
         'customer': AdminCustomerDetailSerializer(customer).data,
         'bookings': bookings_serializer.data,
-        'payments': payments_serializer.data,
         'internal_notes': internal_notes_serializer.data,
         'last_activity': last_activity
     }

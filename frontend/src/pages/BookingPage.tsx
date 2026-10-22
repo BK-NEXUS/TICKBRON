@@ -1,21 +1,13 @@
+import { cleanField, isPhoneValid } from '../utils/inputFilters'
+import { ARRIVAL_GRACE_HOURS, DEFAULT_ARRIVAL_TIME, formatArrivalTime, isArrivalPassed } from '../utils/arrival'
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
-import { chargeOf } from '../utils/charge'
-import { NoShowRefundNote } from '../components/NoShowRefundNote'
-import { CancellationNote } from '../components/CancellationNote'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingAdapter, BookingCreateRequest, Booking } from '../adapters/bookingAdapter'
 import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../adapters/propertyAdapter'
-import { paymentAdapter, PaymentProvider, PaymentTransaction, PaymentStatus } from '../adapters/paymentAdapter'
 import { useAuth } from '../contexts/AuthContext'
-import { PaymentMethodSelector } from '../components/PaymentMethodSelector'
-import { CardForm } from '../components/CardForm'
-import { isCardTestMode } from '../utils/paymentTestMode'
-import { PaymentProcessing } from '../components/PaymentProcessing'
-import { PaymentConfirmation } from '../components/PaymentConfirmation'
-import { PaymentFailure } from '../components/PaymentFailure'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { propertyDisplayName } from '../utils/propertyName'
@@ -37,6 +29,8 @@ interface GuestDetails {
   first_name: string
   last_name: string
   email: string
+  phone_number: string
+  arrival_time: string
   number_of_rooms: number
   children: number[]
   special_requests?: string
@@ -51,7 +45,7 @@ type Message = { text: string } | { key: MessageKey }
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
 export function BookingPage() {
-  const { t, tp, formatMoney: formatAmount, formatDate } = useI18n()
+  const { t, tp, formatMoney: formatAmount, formatDate, currency: chosenCurrency } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated } = useAuth()
@@ -64,6 +58,8 @@ export function BookingPage() {
     first_name: '',
     last_name: '',
     email: '',
+    phone_number: '',
+    arrival_time: DEFAULT_ARRIVAL_TIME,
     number_of_rooms: 1,
     children: [],
     special_requests: '',
@@ -80,12 +76,7 @@ export function BookingPage() {
     { label: t('booking.crumb') },
   ] : null)
   const [error, setError] = useState<Message | null>(null)
-  const [step, setStep] = useState<'details' | 'payment' | 'processing' | 'confirmation' | 'success' | 'failure'>('details')
-  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null)
-  const [cardValid, setCardValid] = useState(false)
-  const [paymentTransaction, setPaymentTransaction] = useState<PaymentTransaction | null>(null)
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending')
-  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [step, setStep] = useState<'details' | 'success'>('details')
 
   // GET /properties/{id}/quote/: priced by the same backend code that charges the booking,
   // so the total shown here is the amount paid. There is no local fallback price.
@@ -121,6 +112,7 @@ export function BookingPage() {
         first_name: user.first_name || nameFromFull,
         last_name: user.last_name || restOfName.join(' '),
         email: user.email || '',
+        phone_number: user.phone_number || '',
       }))
     }
   }, [location.state, user])
@@ -140,6 +132,7 @@ export function BookingPage() {
           checkIn: bookingState.checkIn,
           checkOut: bookingState.checkOut,
           rooms: roomsForQuote,
+          currency: chosenCurrency,
         })
       } catch {
         response = undefined
@@ -152,7 +145,7 @@ export function BookingPage() {
       }
     }
     loadQuote()
-  }, [bookingState, roomsForQuote])
+  }, [bookingState, roomsForQuote, chosenCurrency])
 
   // Load property, room type, and rate plan data
   useEffect(() => {
@@ -197,9 +190,10 @@ export function BookingPage() {
   // null while neither is known or when the stay cannot be booked
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
-  // The test card form stands in for the Visa page only while the backend runs in test payment mode
-  const needsCard = selectedProvider === 'visa' && isCardTestMode()
   const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
+  // A price the owner did not enter (a conversion at the CBU rate) is shown with ≈
+  const approximate = !booking && quote?.price_source === 'converted'
+  const showMoney = (value: number) => (approximate ? t('charge.approx', { amount: formatMoney(value) }) : formatMoney(value))
 
   /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
   const priceBreakdownLabel = (): string => {
@@ -225,7 +219,7 @@ export function BookingPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setField(name, value)
+    setField(name, cleanField(name, value))
   }
 
   const setField = (name: string, value: string) => {
@@ -279,6 +273,16 @@ export function BookingPage() {
       errors.email = t('booking.emailInvalid')
     }
 
+    if (!isPhoneValid(guestDetails.phone_number)) {
+      errors.phone_number = t('auth.errPhone')
+    }
+
+    if (!guestDetails.arrival_time) {
+      errors.arrival_time = t('booking.arrivalRequired')
+    } else if (bookingState && isArrivalPassed(bookingState.checkIn, guestDetails.arrival_time)) {
+      errors.arrival_time = t('booking.arrivalPassed')
+    }
+
     if (guestDetails.number_of_rooms < 1) {
       errors.number_of_rooms = t('booking.roomsMin')
     }
@@ -316,6 +320,8 @@ export function BookingPage() {
         guest_count: bookingState.guestCount,
         guest_full_name: `${guestDetails.first_name} ${guestDetails.last_name}`,
         guest_email: guestDetails.email,
+        guest_phone: guestDetails.phone_number,
+        expected_arrival_time: guestDetails.arrival_time,
         number_of_rooms: guestDetails.number_of_rooms,
         children: guestDetails.children.length > 0 ? guestDetails.children : undefined,
         special_requests: guestDetails.special_requests || undefined,
@@ -332,100 +338,14 @@ export function BookingPage() {
         return
       }
 
+      // Cash at the hotel: the booking is confirmed at once, there is no payment step
       setBooking(response.data)
-      setStep('payment')
+      setStep('success')
       setSubmitting(false)
     } catch (err) {
       setError({ key: 'booking.errorCreateRetry' })
       setSubmitting(false)
     }
-  }
-
-  const handleConfirmBooking = async () => {
-    if (!booking || !selectedProvider) {
-      setError({ key: 'booking.errorMethod' })
-      return
-    }
-
-    setSubmitting(true)
-    setError(null)
-    setPaymentError(null)
-    setStep('processing')
-    setPaymentStatus('pending')
-
-    try {
-      const charge = chargeOf(booking)
-      // Generate idempotency key for payment
-      const idempotencyKey = paymentAdapter.generateIdempotencyKey()
-      
-      // The backend records the client IP from the request itself
-      const userAgent = paymentAdapter.getUserAgent()
-
-      // Create payment transaction
-      const paymentRequest = {
-        idempotency_key: idempotencyKey,
-        booking: booking.id,
-        provider: selectedProvider,
-        // The backend accepts only the booking's own charge (the UZS snapshot), not the hotel price
-        amount: charge.amount,
-        currency: charge.currency,
-        user_agent: userAgent,
-      }
-
-      setPaymentStatus('processing')
-      const paymentResponse = await paymentAdapter.createPayment(paymentRequest)
-
-      if (paymentResponse.error || !paymentResponse.data) {
-        setPaymentError(paymentResponse.error || t('booking.errorPayInit'))
-        setPaymentStatus('failed')
-        setStep('failure')
-        setSubmitting(false)
-        return
-      }
-
-      setPaymentTransaction(paymentResponse.data)
-      setPaymentStatus('processing')
-
-      // Confirm payment
-      const confirmResponse = await paymentAdapter.confirmPayment(paymentResponse.data.id)
-
-      if (confirmResponse.error || !confirmResponse.data) {
-        setPaymentError(confirmResponse.error || t('booking.errorPayConfirm'))
-        setPaymentStatus('failed')
-        setStep('failure')
-        setSubmitting(false)
-        return
-      }
-
-      setPaymentTransaction(confirmResponse.data)
-      setPaymentStatus('completed')
-      setStep('confirmation')
-      setSubmitting(false)
-    } catch (err) {
-      setPaymentError(t('booking.errorPayFailed'))
-      setPaymentStatus('failed')
-      setStep('failure')
-      setSubmitting(false)
-    }
-  }
-
-  const handleRetryPayment = () => {
-    setPaymentError(null)
-    setPaymentTransaction(null)
-    setPaymentStatus('pending')
-    setStep('payment')
-  }
-
-  const handleTryDifferentMethod = () => {
-    setPaymentError(null)
-    setPaymentTransaction(null)
-    setPaymentStatus('pending')
-    setSelectedProvider(null)
-    setStep('payment')
-  }
-
-  const handleCancelBooking = () => {
-    navigate('/search')
   }
 
   const handleBackToProperty = () => {
@@ -505,7 +425,19 @@ export function BookingPage() {
                 <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
                 <span className="booking-confirmation-value"><ChargeMain booking={booking} /><ChargeNotes booking={booking} /></span>
               </div>
+              {booking.expected_arrival_time && (
+                <div className="booking-confirmation-item">
+                  <span className="booking-confirmation-label">{t('booking.arrivalTime')}</span>
+                  <span className="booking-confirmation-value">{formatArrivalTime(booking.expected_arrival_time)}</span>
+                </div>
+              )}
             </div>
+
+            {booking.expected_arrival_time && (
+              <p className="booking-arrival-notice" role="note">
+                {t('booking.arrivalNotice', { time: formatArrivalTime(booking.expected_arrival_time), hours: ARRIVAL_GRACE_HOURS })}
+              </p>
+            )}
 
             <div className="booking-confirmation-actions">
               <button 
@@ -524,168 +456,6 @@ export function BookingPage() {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 'payment' && booking) {
-    return (
-      <div className="booking-page booking-page--payment">
-        <div className="container booking-page-container">
-          <div className="booking-page-main">
-            <div className="booking-page-header">
-              <button 
-                className="btn btn-link booking-page-back"
-                onClick={() => setStep('details')}
-                aria-label={t('booking.backToDetailsLabel')}
-              >
-                ← {t('booking.backToDetails')}
-              </button>
-              <h1>{t('booking.paymentMethod')}</h1>
-            </div>
-
-            {booking.cancellation_terms && (
-              <CancellationNote
-                freeUntil={booking.cancellation_terms.free_until}
-                percentAfter={booking.cancellation_terms.refund_percent_after}
-              />
-            )}
-            <NoShowRefundNote info={booking} />
-
-            <PaymentMethodSelector
-              selectedProvider={selectedProvider}
-              onProviderSelect={setSelectedProvider}
-              disabled={submitting}
-            />
-
-            {needsCard && <CardForm onValidityChange={setCardValid} disabled={submitting} />}
-
-            {selectedProvider && (
-              <div className="payment-method-actions">
-                {error && (
-                  <div className="booking-form-error" role="alert" aria-live="assertive">
-                    {errorText}
-                  </div>
-                )}
-                <button 
-                  className="btn btn-primary btn-large"
-                  onClick={handleConfirmBooking}
-                  disabled={submitting || (needsCard && !cardValid)}
-                  aria-busy={submitting}
-                >
-                  {submitting ? t('booking.processing') : t('pay.payWith', { provider: selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1) })}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <aside className="booking-page-sidebar">
-            <div className="booking-summary-card">
-              <h3 className="booking-summary-title">{t('booking.summary')}</h3>
-              
-              {property && (
-                <div className="booking-summary-property">
-                  <div className="booking-summary-property-name">{property.translations[0]?.name || property.name}</div>
-                  <div className="booking-summary-property-location">
-                    {property.city}, {property.country}
-                  </div>
-                </div>
-              )}
-
-              {roomType && ratePlan && (
-                <>
-                  <div className="booking-summary-room">
-                    <div className="booking-summary-room-name">{roomType.name} {roomType.is_vip && <VipBadge />}</div>
-                    <div className="booking-summary-rate-plan">{ratePlan.name}</div>
-                  </div>
-
-                  {totalPrice !== null && (
-                    <>
-                      <div className="booking-summary-breakdown">
-                        <div className="booking-summary-item">
-                          <span className="booking-summary-label">{priceBreakdownLabel()}</span>
-                          <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
-                        </div>
-                      </div>
-
-                      <div className="booking-summary-total">
-                        <span className="booking-summary-total-label">{t('booking.total')}</span>
-                        <span className="booking-summary-total-value"><ChargeMain booking={booking} /></span>
-                      </div>
-                      <ChargeNotes booking={booking} />
-                    </>
-                  )}
-                </>
-              )}
-
-              {booking && booking.expires_at && (
-                <div className="booking-summary-expiry">
-                  <div className="booking-summary-expiry-icon">
-                    <Clock size={20} />
-                  </div>
-                  <div className="booking-summary-expiry-text">
-                    <strong>{t('booking.expires')}</strong>
-                    <div>{t('booking.expiresBefore', { time: new Date(booking.expires_at).toLocaleTimeString() })}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 'processing' && booking && selectedProvider) {
-    return (
-      <div className="booking-page booking-page--processing">
-        <div className="container">
-          <PaymentProcessing
-            provider={selectedProvider}
-            amount={chargeOf(booking).amount}
-            currency={chargeOf(booking).currency}
-            status={paymentStatus}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 'confirmation' && paymentTransaction && booking) {
-    return (
-      <div className="booking-page booking-page--confirmation">
-        <div className="container">
-          <PaymentConfirmation
-            payment={paymentTransaction}
-            bookingDetails={{
-              property_name: booking.property_name,
-              check_in: booking.check_in,
-              check_out: booking.check_out,
-              confirmation_code: booking.confirmation_code,
-            }}
-            noShowRefund={booking}
-            onViewBookings={() => navigate('/bookings')}
-            onBackToProperty={handleBackToProperty}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 'failure' && booking && selectedProvider) {
-    return (
-      <div className="booking-page booking-page--failure">
-        <div className="container">
-          <PaymentFailure
-            provider={selectedProvider}
-            amount={chargeOf(booking).amount}
-            currency={chargeOf(booking).currency}
-            error={paymentError || undefined}
-            onRetry={handleRetryPayment}
-            onTryDifferentMethod={handleTryDifferentMethod}
-            onCancel={handleCancelBooking}
-          />
         </div>
       </div>
     )
@@ -778,6 +548,59 @@ export function BookingPage() {
                   {validationErrors.email && (
                     <span id="email-error" className="booking-form-error" role="alert">
                       {validationErrors.email}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="phone_number" className="booking-form-label">
+                    {t('auth.phone')} <span className="required">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value={guestDetails.phone_number}
+                    onChange={handleInputChange}
+                    className={`booking-form-input ${validationErrors.phone_number ? 'booking-form-input--error' : ''}`}
+                    aria-invalid={!!validationErrors.phone_number}
+                    aria-describedby={validationErrors.phone_number ? 'phone_number-error' : 'phone_number-hint'}
+                    autoComplete="tel"
+                    placeholder="+998 90 123 45 67"
+                    required
+                  />
+                  <span id="phone_number-hint" className="booking-form-hint">{t('auth.phoneHint')}</span>
+                  {validationErrors.phone_number && (
+                    <span id="phone_number-error" className="booking-form-error" role="alert">
+                      {validationErrors.phone_number}
+                    </span>
+                  )}
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="arrival_time" className="booking-form-label">
+                    {t('booking.arrivalTime')} <span className="required">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    id="arrival_time"
+                    name="arrival_time"
+                    value={guestDetails.arrival_time}
+                    onChange={handleInputChange}
+                    className={`booking-form-input ${validationErrors.arrival_time ? 'booking-form-input--error' : ''}`}
+                    aria-invalid={!!validationErrors.arrival_time}
+                    aria-describedby={validationErrors.arrival_time ? 'arrival_time-error' : 'arrival_time-hint'}
+                    required
+                  />
+                  {guestDetails.arrival_time && (
+                    <span id="arrival_time-hint" className="booking-form-hint">
+                      {t('booking.arrivalNotice', { time: guestDetails.arrival_time, hours: ARRIVAL_GRACE_HOURS })}
+                    </span>
+                  )}
+                  {validationErrors.arrival_time && (
+                    <span id="arrival_time-error" className="booking-form-error" role="alert">
+                      {validationErrors.arrival_time}
                     </span>
                   )}
                 </div>
@@ -879,77 +702,6 @@ export function BookingPage() {
               </button>
             </form>
           )}
-
-          {step === 'confirmation' && booking && (
-            <div className="booking-confirmation">
-              <h2 className="booking-confirmation-title">{t('booking.review')}</h2>
-              
-              <div className="booking-confirmation-summary">
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.property')}</span>
-                  <span className="booking-confirmation-value">{booking.property_name}</span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.room')}</span>
-                  <span className="booking-confirmation-value">{roomType?.name}</span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.ratePlan')}</span>
-                  <span className="booking-confirmation-value">{ratePlan?.name}</span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.checkIn')}</span>
-                  <span className="booking-confirmation-value">
-                    {formatDate(booking.check_in, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.checkOut')}</span>
-                  <span className="booking-confirmation-value">
-                    {formatDate(booking.check_out, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.guests')}</span>
-                  <span className="booking-confirmation-value">{booking.guest_count}</span>
-                </div>
-                <div className="booking-confirmation-item">
-                  <span className="booking-confirmation-label">{t('booking.totalPrice')}</span>
-                  <span className="booking-confirmation-value"><ChargeMain booking={booking} /><ChargeNotes booking={booking} /></span>
-                </div>
-                {booking.special_requests && (
-                  <div className="booking-confirmation-item">
-                    <span className="booking-confirmation-label">{t('booking.specialRequests')}</span>
-                    <span className="booking-confirmation-value">{booking.special_requests}</span>
-                  </div>
-                )}
-              </div>
-
-              {error && (
-                <div className="booking-confirmation-error" role="alert" aria-live="assertive">
-                  {errorText}
-                </div>
-              )}
-
-              <div className="booking-confirmation-actions">
-                <button 
-                  className="btn btn-primary btn-large"
-                  onClick={handleConfirmBooking}
-                  disabled={submitting}
-                  aria-busy={submitting}
-                >
-                  {submitting ? t('booking.confirming') : t('booking.confirm')}
-                </button>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setStep('details')}
-                  disabled={submitting}
-                >
-                  {t('booking.backToDetails')}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         <aside className="booking-page-sidebar">
@@ -983,28 +735,22 @@ export function BookingPage() {
                     <div className="booking-summary-breakdown">
                       <div className="booking-summary-item">
                         <span className="booking-summary-label">{priceBreakdownLabel()}</span>
-                        <span className="booking-summary-value">{formatMoney(totalPrice)}</span>
+                        <span className="booking-summary-value">{showMoney(totalPrice)}</span>
                       </div>
                     </div>
 
                     <div className="booking-summary-total">
                       <span className="booking-summary-total-label">{t('booking.total')}</span>
-                      <span className="booking-summary-total-value">{formatMoney(totalPrice)}</span>
+                      <span className="booking-summary-total-value">{showMoney(totalPrice)}</span>
                     </div>
                     {quote?.uzs_total && (
                       <p className="charge-notes">
                         <span className="charge-approx">
-                          {t('charge.inSom', { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
+                          {t(quote.exchange_rate === null && quote.currency !== 'UZS' ? 'charge.youPay' : 'charge.inSom',
+                            { amount: formatAmount(quote.uzs_total, 'UZS', { minDecimals: 0, maxDecimals: 0 }) })}
                         </span>
                       </p>
                     )}
-                    {quote?.cancellation_terms && (
-                      <CancellationNote
-                        freeUntil={quote.cancellation_terms.free_until}
-                        percentAfter={quote.cancellation_terms.refund_percent_after}
-                      />
-                    )}
-                    <NoShowRefundNote info={quote} />
                   </>
                 )}
               </>

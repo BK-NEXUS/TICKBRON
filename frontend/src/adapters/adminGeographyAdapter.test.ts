@@ -84,4 +84,30 @@ describe('AdminGeographyAdapter', () => {
     fetchMock.mockRejectedValue(new Error('offline'))
     expect((await adapter.list('countries', {})).error).toBe('offline')
   })
+
+  it('sends a picture as multipart (no JSON header) with every field, on create and on edit', async () => {
+    fetchMock.mockResolvedValue(ok({ id: 7 }, 201))
+    const image = new File(['x'], 'flag.png', { type: 'image/png' })
+    await adapter.create('countries', { code: 'TR', currency: 'TRY', name_uz: 'Turkiya', name_ru: 'Турция', name_en: 'Turkey', image })
+    const [, createInit] = fetchMock.mock.calls[0]
+    expect(createInit.body).toBeInstanceOf(FormData)
+    expect(createInit.body.get('image')).toBe(image)
+    expect(createInit.body.get('code')).toBe('TR')
+    expect(createInit.headers?.['Content-Type']).toBeUndefined()
+
+    await adapter.update('regions', 3, { name_en: 'East', image })
+    const [, updateInit] = fetchMock.mock.calls[1]
+    expect(updateInit.method).toBe('PATCH')
+    expect(updateInit.body).toBeInstanceOf(FormData)
+    expect(updateInit.body.get('name_en')).toBe('East')
+  })
+
+  it('still sends JSON when there is no picture', async () => {
+    fetchMock.mockResolvedValue(ok({ id: 7 }))
+    await adapter.update('cities', 3, { name_en: 'Capital' })
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.body).toBe(JSON.stringify({ name_en: 'Capital' }))
+    expect(init.headers['Content-Type']).toBe('application/json')
+  })
 })
+

@@ -3,6 +3,8 @@ import { textKeys, useTexts } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
 import { SegmentedControl } from './SegmentedControl'
 import { statusAdapter, ArrivalsDay, PartnerArrivalsPage } from '../adapters/statusAdapter'
+import { partnerAdapter } from '../adapters/partnerAdapter'
+import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
 import { StatusPagination } from './StatusPagination'
 import { formatCount, formatDate } from '../utils/statusFormat'
 
@@ -21,7 +23,9 @@ const TEXT_KEYS = textKeys({
   emptyToday: 'status.noArrivalsToday',
   emptyTomorrow: 'status.noArrivalsTomorrow',
   headers: { reference: 'status.reference', guest: 'status.guest', hotel: 'status.hotel', rooms: 'status.rooms', roomCount: 'searchForm.rooms', nights: 'status.nights',
-    guests: 'searchForm.guests', checkIn: 'searchForm.checkIn', checkOut: 'searchForm.checkOut', phone: 'profile.contact.phone', requests: 'status.requests' },
+    guests: 'searchForm.guests', checkIn: 'searchForm.checkIn', checkOut: 'searchForm.checkOut', phone: 'profile.contact.phone', requests: 'status.requests',
+    arrival: 'arrivals.arrivalTime', arrived: 'arrivals.arrivedHeader' },
+  arrived: 'arrivals.arrived',
 
 })
 
@@ -38,6 +42,19 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
   const [data, setData] = useState<PartnerArrivalsPage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Bookings the owner marked as arrived in this session (the list is not reloaded), and the one being sent
+  const [markedIds, setMarkedIds] = useState<number[]>([])
+  const [markingId, setMarkingId] = useState<number | null>(null)
+  const [markError, setMarkError] = useState<string | null>(null)
+
+  const markArrived = async (id: number) => {
+    setMarkingId(id)
+    setMarkError(null)
+    const response = await partnerAdapter.markGuestArrived(id)
+    setMarkingId(null)
+    if (response.error) setMarkError(response.error)
+    else setMarkedIds(prev => [...prev, id])
+  }
 
   // Another day starts from its first page
   const page = pageState.day === day ? pageState.page : 1
@@ -64,6 +81,8 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
         <SegmentedControl<ArrivalsDay> aria-label={TEXT.title} options={days} value={day} onChange={setDay} />
         {data && <span className="status-card-caption">{formatDate(data.date, i18n)}</span>}
       </div>
+      <p className="status-card-caption">{i18n.t('arrivals.rule', { hours: ARRIVAL_GRACE_HOURS })}</p>
+      {markError && <div className="alert alert-error" role="alert">{markError}</div>}
 
       {error ? (
         <div className="alert alert-error" role="alert">{error}</div>
@@ -87,6 +106,8 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
                   <th scope="col">{TEXT.headers.checkIn}</th>
                   <th scope="col">{TEXT.headers.checkOut}</th>
                   <th scope="col">{TEXT.headers.phone}</th>
+                  <th scope="col">{TEXT.headers.arrival}</th>
+                  <th scope="col">{TEXT.headers.arrived}</th>
                   <th scope="col">{TEXT.headers.requests}</th>
                 </tr>
               </thead>
@@ -103,6 +124,22 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
                     <td>{formatDate(arrival.check_in, i18n)}</td>
                     <td>{formatDate(arrival.check_out, i18n)}</td>
                     <td>{`•••• ${arrival.phone_last4}`}</td>
+                    <td>{arrival.expected_arrival_time ? formatArrivalTime(arrival.expected_arrival_time) : '—'}</td>
+                    <td>
+                      {arrival.arrived_at || markedIds.includes(arrival.id) ? (
+                        <span className="status-badge status-badge--active">{TEXT.arrived}</span>
+                      ) : day === 'today' ? (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          disabled={markingId === arrival.id}
+                          aria-label={i18n.t('arrivals.markArrivedFor', { reference: arrival.reference })}
+                          onClick={() => void markArrived(arrival.id)}
+                        >
+                          {i18n.t('arrivals.markArrived')}
+                        </button>
+                      ) : '—'}
+                    </td>
                     <td>{arrival.special_requests || '—'}</td>
                   </tr>
                 ))}

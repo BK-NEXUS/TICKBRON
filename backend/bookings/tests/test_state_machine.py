@@ -8,13 +8,7 @@ from datetime import timedelta
 from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
 from bookings.models import Booking, BookingItem
-from bookings.state_machine import (
-    BookingStateMachine, 
-    PaymentStateMachine, 
-    BookingPaymentStateMachine,
-    BookingState, 
-    PaymentState
-)
+from bookings.state_machine import BookingStateMachine, BookingState
 
 
 class BookingStateMachineTests(TestCase):
@@ -155,176 +149,6 @@ class BookingStateMachineTests(TestCase):
         self.assertEqual(valid_transitions, expected)
 
 
-class PaymentStateMachineTests(TestCase):
-    """Tests for PaymentStateMachine."""
-    
-    def test_valid_transition_pending_to_paid(self):
-        """Test valid transition from pending to paid."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PENDING, 
-            PaymentState.PAID
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_transition_pending_to_failed(self):
-        """Test valid transition from pending to failed."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PENDING, 
-            PaymentState.FAILED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_transition_paid_to_refunded(self):
-        """Test valid transition from paid to refunded."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PAID, 
-            PaymentState.REFUNDED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_transition_paid_to_partially_refunded(self):
-        """Test valid transition from paid to partially_refunded."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PAID, 
-            PaymentState.PARTIALLY_REFUNDED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_transition_partially_refunded_to_refunded(self):
-        """Test valid transition from partially_refunded to refunded."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PARTIALLY_REFUNDED, 
-            PaymentState.REFUNDED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_invalid_transition_paid_to_pending(self):
-        """Test invalid transition from paid to pending."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PAID, 
-            PaymentState.PENDING
-        )
-        self.assertFalse(is_valid)
-    
-    def test_invalid_transition_failed_to_paid(self):
-        """Test invalid transition from failed to paid."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.FAILED, 
-            PaymentState.PAID
-        )
-        self.assertFalse(is_valid)
-    
-    def test_self_transition_rejected(self):
-        """Test that self-transitions are rejected."""
-        is_valid = PaymentStateMachine.can_transition(
-            PaymentState.PENDING, 
-            PaymentState.PENDING
-        )
-        self.assertFalse(is_valid)
-    
-    def test_validate_transition_valid(self):
-        """Test validate_transition for valid transition."""
-        is_valid, error = PaymentStateMachine.validate_transition(
-            PaymentState.PENDING, 
-            PaymentState.PAID
-        )
-        self.assertTrue(is_valid)
-        self.assertIsNone(error)
-    
-    def test_validate_transition_invalid(self):
-        """Test validate_transition for invalid transition."""
-        is_valid, error = PaymentStateMachine.validate_transition(
-            PaymentState.PAID, 
-            PaymentState.PENDING
-        )
-        self.assertFalse(is_valid)
-        self.assertIsNotNone(error)
-    
-    def test_get_transition_reason(self):
-        """Test getting transition reason."""
-        reason = PaymentStateMachine.get_transition_reason(
-            PaymentState.PENDING, 
-            PaymentState.PAID
-        )
-        self.assertEqual(reason, 'payment_completed')
-
-
-class BookingPaymentStateMachineTests(TestCase):
-    """Tests for BookingPaymentStateMachine."""
-    
-    def test_valid_combined_transition_pending_to_confirmed_paid(self):
-        """Test valid combined transition from pending/pending to confirmed/paid."""
-        is_valid = BookingPaymentStateMachine.can_transition_combined(
-            BookingState.PENDING, 
-            PaymentState.PENDING,
-            BookingState.CONFIRMED, 
-            PaymentState.PAID
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_combined_transition_pending_to_cancelled_failed(self):
-        """Test valid combined transition from pending/pending to cancelled/failed."""
-        is_valid = BookingPaymentStateMachine.can_transition_combined(
-            BookingState.PENDING, 
-            PaymentState.PENDING,
-            BookingState.CANCELLED, 
-            PaymentState.FAILED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_combined_transition_confirmed_to_cancelled_refunded(self):
-        """Test valid combined transition from confirmed/paid to cancelled/refunded."""
-        is_valid = BookingPaymentStateMachine.can_transition_combined(
-            BookingState.CONFIRMED, 
-            PaymentState.PAID,
-            BookingState.CANCELLED, 
-            PaymentState.REFUNDED
-        )
-        self.assertTrue(is_valid)
-    
-    def test_valid_combined_transition_confirmed_to_completed_paid(self):
-        """Test valid combined transition from confirmed/paid to completed/paid."""
-        is_valid = BookingPaymentStateMachine.can_transition_combined(
-            BookingState.CONFIRMED, 
-            PaymentState.PAID,
-            BookingState.COMPLETED, 
-            PaymentState.PAID
-        )
-        self.assertTrue(is_valid)
-    
-    def test_invalid_combined_transition_confirmed_to_pending_paid(self):
-        """Test invalid combined transition from confirmed/paid to pending/paid."""
-        is_valid = BookingPaymentStateMachine.can_transition_combined(
-            BookingState.CONFIRMED, 
-            PaymentState.PAID,
-            BookingState.PENDING, 
-            PaymentState.PAID
-        )
-        self.assertFalse(is_valid)
-    
-    def test_validate_combined_transition_valid(self):
-        """Test validate_transition_combined for valid transition."""
-        is_valid, error = BookingPaymentStateMachine.validate_transition_combined(
-            BookingState.PENDING, 
-            PaymentState.PENDING,
-            BookingState.CONFIRMED, 
-            PaymentState.PAID
-        )
-        self.assertTrue(is_valid)
-        self.assertIsNone(error)
-    
-    def test_validate_combined_transition_invalid(self):
-        """Test validate_transition_combined for invalid transition."""
-        is_valid, error = BookingPaymentStateMachine.validate_transition_combined(
-            BookingState.CONFIRMED, 
-            PaymentState.PAID,
-            BookingState.PENDING, 
-            PaymentState.PAID
-        )
-        self.assertFalse(is_valid)
-        self.assertIsNotNone(error)
-
-
 class BookingModelStateMachineIntegrationTests(TestCase):
     """Tests for Booking model integration with state machine."""
     
@@ -418,22 +242,6 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             currency='USD'
         )
     
-    def test_confirm_booking_valid_transition(self):
-        """Test confirm_booking performs valid state transition."""
-        self.booking.confirm_booking()
-        self.booking.refresh_from_db()
-        
-        self.assertEqual(self.booking.status, 'confirmed')
-        self.assertEqual(self.booking.payment_status, 'paid')
-    
-    def test_confirm_booking_invalid_status(self):
-        """Test confirm_booking fails for invalid status."""
-        self.booking.status = 'cancelled'
-        self.booking.save()
-        
-        with self.assertRaises(Exception):
-            self.booking.confirm_booking()
-    
     def test_cancel_booking_valid_transition(self):
         """Test cancel_booking performs valid state transition."""
         # First set the booking items to have proper inventory
@@ -494,21 +302,6 @@ class BookingModelStateMachineIntegrationTests(TestCase):
         """Test mark_no_show fails for invalid status."""
         with self.assertRaises(Exception):
             self.booking.mark_no_show()
-    
-    def test_update_payment_status_valid_transition(self):
-        """Test update_payment_status performs valid state transition."""
-        self.booking.update_payment_status('paid')
-        self.booking.refresh_from_db()
-        
-        self.assertEqual(self.booking.payment_status, 'paid')
-    
-    def test_update_payment_status_invalid_transition(self):
-        """Test update_payment_status fails for invalid transition."""
-        self.booking.payment_status = 'paid'
-        self.booking.save()
-        
-        with self.assertRaises(Exception):
-            self.booking.update_payment_status('pending')
     
     def test_booking_clean_validates_state_transition(self):
         """Test booking clean method validates state transitions."""
