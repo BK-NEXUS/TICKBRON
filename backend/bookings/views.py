@@ -16,16 +16,16 @@ from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from common.dates import business_today
 from currency.rates import ExchangeRateUnavailable
-from .cancellation import cancel_preview
 from .models import Booking, BookingItem
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
 
 logger = logging.getLogger('tickbron')
 
-# Unpaid holds block inventory for 15 minutes each; without a cap one free
-# account could keep a whole hotel unavailable
-MAX_PENDING_BOOKINGS_PER_GUEST = 3
+# Bookings are confirmed at once and paid in cash, so nothing stops a free account from taking rooms;
+# without a cap one account could keep a whole hotel unavailable (also the old cap on unpaid holds)
+MAX_UPCOMING_BOOKINGS_PER_GUEST = 5
 
 
 class BookingCreateThrottle(UserRateThrottle):
@@ -67,13 +67,18 @@ class BookingViewSet(mixins.CreateModelMixin,
     
     @staticmethod
     def _pending_cap_reached(user):
-        pending = Booking.objects.filter(guest=user, status='pending', is_deleted=False).count()
-        return pending >= MAX_PENDING_BOOKINGS_PER_GUEST
+        """The guest already holds the most upcoming bookings (not cancelled, not arrived, not over)."""
+        upcoming = Booking.objects.filter(
+            guest=user, status__in=('pending', 'confirmed'), arrived_at__isnull=True,
+            check_out__gte=business_today(), is_deleted=False,
+        ).count()
+        return upcoming >= MAX_UPCOMING_BOOKINGS_PER_GUEST
 
     @staticmethod
     def _pending_cap_response():
         return Response(
-            {'error': 'Too many unpaid bookings. Pay or cancel one first.', 'code': 'too_many_pending_bookings'},
+            {'error': 'Too many upcoming bookings. Cancel one or wait until you have stayed.',
+             'code': 'too_many_upcoming_bookings'},
             status=status.HTTP_429_TOO_MANY_REQUESTS
         )
 
@@ -198,7 +203,7 @@ class BookingViewSet(mixins.CreateModelMixin,
 @permission_classes([IsAuthenticated])
 def booking_cancel(request, booking_id):
     """
-    Cancel a booking, restore inventory and refund what the booking's terms promise (R11).
+    Cancel a booking and restore inventory. Cancelling is always free: the guest pays cash at the hotel.
     
     Path parameters:
         booking_id: Booking ID
@@ -207,7 +212,7 @@ def booking_cancel(request, booking_id):
         cancellation_reason: Optional reason for cancellation
     
     Returns:
-        Updated booking with cancelled status and `refund` {amount, currency, percent}
+        Updated booking with cancelled status
     """
     booking = get_object_or_404(
         Booking,
@@ -231,9 +236,7 @@ def booking_cancel(request, booking_id):
     
     try:
         updated_booking = serializer.save()
-        # What came back to the guest: decided and computed on the backend from the booking's terms
-        return Response({**BookingSerializer(updated_booking).data, 'refund': serializer.refund},
-                        status=status.HTTP_200_OK)
+        return Response(BookingSerializer(updated_booking).data, status=status.HTTP_200_OK)
     except DRFValidationError as e:
         # BookingCancelSerializer.update() raises this for both business-rule
         # violations and unexpected internal errors; e.detail is already safe.
@@ -247,22 +250,3 @@ def booking_cancel(request, booking_id):
             {'error': 'Failed to cancel booking'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-
-@extend_schema(responses=OpenApiTypes.OBJECT)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def booking_cancel_preview(request, booking_id):
-    """
-    What cancelling this booking right now would give back (R11); nothing is changed.
-
-    Returns:
-        { amount, currency, percent, free_until } (percent null: the booking has no promise)
-        400 when the booking cannot be cancelled in its state, 404 for another guest's booking
-    """
-    booking = get_object_or_404(Booking, id=booking_id, guest=request.user, is_deleted=False)
-    check = BookingCancelSerializer(booking, data={}, partial=True, context={'booking': booking})
-    if not check.is_valid():
-        return Response({'error': 'Booking cannot be cancelled', 'details': check.errors},
-                        status=status.HTTP_400_BAD_REQUEST)
-    return Response(cancel_preview(booking), status=status.HTTP_200_OK)

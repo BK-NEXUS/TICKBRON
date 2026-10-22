@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
+from bookings.arrival import mark_arrived
 from bookings.models import Booking
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
@@ -381,6 +382,22 @@ def partner_property_photo_detail(request, property_id, photo_id):
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsHotelOwner])
+def partner_booking_arrived(request, booking_id):
+    """
+    The hotel says the guest of one of its own bookings has arrived (cash at the hotel). Idempotent: the first
+    time stays. Only a confirmed booking, from the check-in day on (400 otherwise).
+    """
+    booking = get_object_or_404(Booking, id=booking_id, property__owner=request.user, is_deleted=False)
+    try:
+        mark_arrived(booking)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'id': booking.id, 'arrived_at': booking.arrived_at})
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_bookings(request):
@@ -433,6 +450,8 @@ def partner_bookings(request):
             'currency': booking.currency,
             'confirmation_code': booking.confirmation_code,
             'created_at': booking.created_at,
+            'expected_arrival_time': booking.expected_arrival_time,
+            'arrived_at': booking.arrived_at,
             'can_report_no_show': booking.id in reportable_ids,
             'report_deadline': report_deadline(booking) if booking.id in reportable_ids else None,
         }

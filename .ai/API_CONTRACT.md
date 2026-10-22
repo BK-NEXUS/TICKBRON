@@ -1076,6 +1076,53 @@ Plan: `.ai/PLAN_R16_MULTI_CURRENCY.md`. The currency registry is `common/money.p
 
 Not yet (next slices): Status in four currencies on the owner/admin screens beyond what already groups by currency, search "from" price per currency, the owner price boxes and the guest currency selector (frontend).
 
+## Person names take letters only (2026-10-21)
+`full_name` (register, profile), `first_name` / `last_name` (profile, admin create-hotel-owner) and the booking's `guest_full_name` are refused with 400 (`{field: ["Names can contain letters, spaces, hyphens, dots and apostrophes only."]}`) when they contain a digit or a symbol. Letters of any alphabet, space, hyphen, dot and the apostrophes ' ʻ ʼ ’ are accepted. Existing stored names are not touched.
+
+## Phone number is back, stored only (2026-10-22, plan PLAN_CASH_ONLY.md stage 1)
+No SMS, no code, no verification, no uniqueness rule (several accounts may share a number). The number is parsed with the existing `validate_phone_number_format`: international format with a country code, separators allowed, stored as E.164 (`+998901234567`); an invalid one is 400 `{field: "Enter a valid phone number in international format, e.g. +998 90 123 45 67."}`.
+- `POST /auth/register/`: `phone_number` REQUIRED.
+- `PATCH /auth/me/update/`: `phone_number` can be changed, never blanked (400); not sending it leaves it as is (old accounts without a number can still edit other fields).
+- `POST /admin-panel/users/create-hotel-owner/`: `phone_number` REQUIRED.
+- `POST /bookings/`: the booking needs a phone: `guest_phone`, else the account's `phone_number`; neither = 400 `{guest_phone: "A phone number is required."}`.
+- `GET /auth/me/` and the admin Status/customer screens already return `phone_number` / `phone` and the e-mail; the owner's arrivals list still shows only `phone_last4` (open question for stage 2: a hotel taking cash bookings needs the full number).
+- The OTP / phone-verification endpoints stay removed (404).
+
+## Cash at the hotel: confirmed at once, arrival time, "guest arrived" (2026-10-22, plan PLAN_CASH_ONLY.md stage 2)
+- `POST /bookings/`: `expected_arrival_time` ("HH:MM", REQUIRED) is the time the guest will arrive on the check-in day. 400 `{expected_arrival_time}` when it is missing, malformed, or today's time has already passed (business time, Asia/Tashkent). The booking is created `confirmed` at once (`payment_status` stays `pending` = "pay at the hotel"), the rooms are taken at once, there is no 15-minute hold (`expires_at` is null).
+- Booking output (guest and admin serializers) has `expected_arrival_time` ("10:30:00" or null on old bookings), `arrived_at` (datetime or null) and `arrival_deadline` (ISO datetime in business time = arrival time + `ARRIVAL_GRACE_HOURS`, null on old bookings).
+- Limit: a guest can hold at most 5 upcoming bookings (not cancelled, not arrived, check-out not past): 429 `{code: "too_many_upcoming_bookings"}` (was `too_many_pending_bookings`, 3 unpaid holds). Needed because nothing is paid up front any more.
+- `POST /partner/bookings/{id}/arrived/` (hotel owner, own hotels only): the hotel says the guest arrived. 200 `{id, arrived_at}`; idempotent (the first time stays); 400 `{error}` unless the booking is `confirmed` and the check-in day has come; another owner's booking 404; guest 403.
+- `GET /partner/bookings/` rows and `GET /partner/status/arrivals/` rows carry `expected_arrival_time` and `arrived_at` (arrivals: "HH:MM" or null).
+- Auto-cancel: Celery task `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a `confirmed` booking with an arrival time, no `arrived_at`, and arrival time + `ARRIVAL_GRACE_HOURS` (default 2) passed: `status=cancelled`, `cancellation_reason="no_arrival"`, rooms released, notifications `booking_not_arrived` (guest) and `guest_not_arrived` (owner, no personal data). Bookings made before this existed have no arrival time and are never auto-cancelled.
+- Migration `bookings/0012_cash_arrival`: two nullable columns, and a data step that confirms `pending` bookings still inside their payment window (expired ones stay pending for the expiry task). Reverse of the data step is a no-op.
+- The payment endpoints still exist but the UI no longer uses them (removed in stage 3).
+
+## Status numbers with cash only (stage 3a of PLAN_CASH_ONLY, 2026-10-22)
+
+Supersedes the refund and revenue lines of the R12 definitions above; every other R12 number is unchanged.
+- **counted** = `confirmed` + `completed` (no refund filter), **stayed** = `completed`, `no_show` = status `no_show`.
+- **revenue** = per currency, never mixed: SUM(`total_price`) of `completed` bookings in the period (cash the hotel is expected to have received). `confirmed`, `cancelled`, `no_show`, `pending`, `expired` and soft-deleted bookings are never revenue. `booking_value` (counted bookings) is unchanged.
+- **Removed:** `totals.fully_refunded`; the user-history rows (`GET /admin-panel/status/users/{id}/`) and its CSV lose `paid` and `refunded`. The hotels list ordered by revenue uses the same SUM in UZS.
+
+## Cash only, stage 3b and 3c: no online payments, no refunds (2026-10-22)
+
+Supersedes the payment, refund, cancellation-terms and no-show-refund parts of the sections above (R6, R11, R12, R12b). Guests pay cash at the hotel; the platform moves no money.
+
+**Removed endpoints (404 now):**
+- every `/api/v1/payments/...` route (transactions, init, confirm, refund, webhooks, audit logs)
+- `GET /api/v1/admin-panel/payments/transactions/`
+- `GET /api/v1/admin-panel/refunds/needs-attention/`, `POST /api/v1/admin-panel/refunds/{id}/mark-done/` and `/retry/`
+- `GET /api/v1/bookings/{id}/cancel-preview/`
+
+**Changed responses:**
+- `POST /bookings/{id}/cancel/`: always free; returns the booking, no `refund` object.
+- Booking, booking list, quote and rate-plan responses no longer carry `cancellation_terms`, `no_show_refund_percent`, `no_show_refund_amount`, `no_show_refund_text_key`, `no_show_refund_text_params`, `free_cancellation`, `free_cancel_hours`, `cancel_refund_percent`. Partner rate plans cannot set `free_cancel_hours` / `cancel_refund_percent` any more (the DB columns stay, unused).
+- No-show reports (staff queue): no `refund_preview`, no `refunds`. Approving only moves the booking to `no_show` and releases the future nights. The guest notice is `no_show_marked_no_refund` ("marked as a no-show by the hotel"); the older notification codes stay so old rows still render.
+- `GET /admin-panel/customers/`: no `total_amount_paid` (and `sort_by=total_amount_paid` is no longer valid). `GET /admin-panel/customers/{id}/`: no `payments`.
+- Error code `refund_refused` of the no-show decision no longer exists.
+
+**Removed settings:** `PAYMENT_TEST_MODE`, `PAYME_*`, `CLICK_*`, `VISA_*`, `NO_SHOW_REFUND_PERCENT`, `CANCEL_REFUND_PERCENT`, `THROTTLE_WEBHOOK_RATE`; `VITE_PAYMENT_TEST_MODE` in the frontend.
 ## Owner photo management (2026-10-21)
 All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own property only (another owner's property or photo = 404, guest = 403).
 - `GET .../photos/` -> list of `{id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text}` ordered by `display_order, id`; deleted photos are not listed.

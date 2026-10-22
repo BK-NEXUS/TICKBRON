@@ -74,6 +74,7 @@ def _create_owner(client, password, n):
     return client.post(CREATE_OWNER_URL, {
         'email': f'owner{n}@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
         'password': password, 'password_confirm': password,
+        'phone_number': '+998901112233',  # a new account needs a phone number
     }, format='json')
 
 

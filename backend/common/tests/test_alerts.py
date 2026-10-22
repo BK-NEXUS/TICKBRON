@@ -64,7 +64,7 @@ def test_nothing_is_queued_while_alerts_are_not_configured(queued, settings):
 
 @pytest.mark.usefixtures('configured')
 class TestHandler:
-    @pytest.mark.parametrize('event', ['lockout', 'webhook_rejected', 'webhook_not_applied'])
+    @pytest.mark.parametrize('event', ['lockout'])
     def test_alert_events_are_sent(self, queued, event):
         AlertHandler().emit(_record(f'event={event} user=none ip=198.51.100.9'))
 
@@ -77,7 +77,7 @@ class TestHandler:
         queued.assert_not_called()
 
     def test_an_error_from_any_logger_is_sent(self, queued):
-        AlertHandler().emit(_record('Refund 7: unexpected error', name='payments.refunds', level=logging.ERROR))
+        AlertHandler().emit(_record('Booking 7: unexpected error', name='bookings.models', level=logging.ERROR))
 
         queued.assert_called_once()
 

@@ -62,17 +62,6 @@ describe('AdminCustomerProfile', () => {
         created_at: '2024-09-01T00:00:00Z',
       },
     ],
-    payments: [
-      {
-        id: 1,
-        booking_id: 1,
-        provider: 'payme',
-        amount: 200,
-        currency: 'USD',
-        status: 'paid',
-        created_at: '2024-09-01T00:00:00Z',
-      },
-    ],
     internal_notes: [
       {
         id: 1,
@@ -208,7 +197,7 @@ describe('AdminCustomerProfile', () => {
       expect(screen.getByText('Bookings (1)')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Payments (1)')).toBeInTheDocument()
+    expect(screen.queryByText(/^Payments/)).toBeNull()
     expect(screen.getByText('Internal Notes (1)')).toBeInTheDocument()
   })
 
@@ -236,32 +225,8 @@ describe('AdminCustomerProfile', () => {
     expect(screen.getByText('Tashkent')).toBeInTheDocument()
   })
 
-  it('should render payments tab with table', async () => {
-    (adminAdapter.getCustomerProfile as never).mockResolvedValueOnce({
-      data: mockCustomerProfile,
-      error: null,
-    })
-
-    renderWithRouter(<AdminCustomerProfile />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Payments (1)')).toBeInTheDocument()
-    })
-
-    // Click on payments tab
-    const paymentsTab = screen.getByText('Payments (1)')
-    fireEvent.click(paymentsTab)
-
-    await waitFor(() => {
-      expect(screen.getByText('payme')).toBeInTheDocument()
-    })
-
-    expect(screen.getByText('$200.00')).toBeInTheDocument()
-  })
-
   it.each([
     ['Bookings (1)', 'Customer bookings'],
-    ['Payments (1)', 'Customer payments'],
   ])('keeps the %s table inside a scrolling box so a phone page never widens', async (tabLabel, tableName) => {
     (adminAdapter.getCustomerProfile as never).mockResolvedValueOnce({ data: mockCustomerProfile, error: null })
     renderWithRouter(<AdminCustomerProfile />)
@@ -510,31 +475,6 @@ describe('AdminCustomerProfile', () => {
 
     await waitFor(() => {
       expect(screen.getByText('No bookings found for this customer.')).toBeInTheDocument()
-    })
-  })
-
-  it('should render empty payments state', async () => {
-    const emptyProfile = {
-      ...mockCustomerProfile,
-      payments: [],
-    }
-
-    ;(adminAdapter.getCustomerProfile as never).mockResolvedValueOnce({
-      data: emptyProfile,
-      error: null,
-    })
-
-    renderWithRouter(<AdminCustomerProfile />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Payments (0)')).toBeInTheDocument()
-    })
-
-    const paymentsTab = screen.getByText('Payments (0)')
-    fireEvent.click(paymentsTab)
-
-    await waitFor(() => {
-      expect(screen.getByText('No payments found for this customer.')).toBeInTheDocument()
     })
   })
 

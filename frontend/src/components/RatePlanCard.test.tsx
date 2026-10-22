@@ -169,16 +169,7 @@ describe('RatePlanCard', () => {
     expect(screen.getByText('Custom Type')).toBeInTheDocument()
   })
 
-  it('tells what the plan offers about cancelling (R11)', () => {
-    const { rerender } = render(<RatePlanCard ratePlan={{ ...mockRatePlan, free_cancellation: true, free_cancel_hours: 48, cancel_refund_percent: 50 }} />)
-    expect(screen.getByTestId('cancellation-note')).toHaveTextContent('Free cancellation · up to 48 hours before the check-in day')
-    expect(screen.getByTestId('cancellation-note')).toHaveTextContent('After that, 50% of your payment is refunded.')
-
-    rerender(<RatePlanCard ratePlan={{ ...mockRatePlan, free_cancellation: false, free_cancel_hours: null, cancel_refund_percent: 0 }} />)
-    expect(screen.getByTestId('cancellation-note')).toHaveTextContent('Non-refundable')
-  })
-
-  it('shows no cancellation note for an API answer without the new fields', () => {
+  it('shows no cancellation note: cancelling is free and there is nothing to refund', () => {
     render(<RatePlanCard ratePlan={mockRatePlan} />)
     expect(screen.queryByTestId('cancellation-note')).toBeNull()
   })

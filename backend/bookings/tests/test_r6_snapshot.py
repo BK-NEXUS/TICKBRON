@@ -36,7 +36,7 @@ def _book(stay, first=1, last=4, **extra):
     body = {
         'property_id': stay['property'].id, 'room_type_id': stay['room'].id, 'rate_plan_id': stay['rate'].id,
         'check_in': (stay['start'] + timedelta(days=first)).isoformat(),
-        'check_out': (stay['start'] + timedelta(days=last)).isoformat(), 'guest_count': 1,
+        'check_out': (stay['start'] + timedelta(days=last)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
     }
     body.update(extra)
     return client.post('/api/v1/bookings/', body, format='json')
@@ -137,8 +137,7 @@ class TestSnapshotNeverChanges:
 
         ExchangeRate.objects.create(currency='USD', rate=Decimal('12500'), nominal=1, source='cbu.uz',
                                     status='accepted', rate_date=tashkent_today() + timedelta(days=1))
-        booking = Booking.objects.get()
-        booking.confirm_booking()
+        booking = Booking.objects.get()  # the booking API confirms at once, so there is nothing to confirm
         booking.cancel_booking('changed plans')
 
         assert Booking.objects.values('charge_amount', 'exchange_rate', 'exchange_rate_date').get() == before

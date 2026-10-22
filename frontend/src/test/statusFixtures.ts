@@ -24,7 +24,6 @@ export const TOTALS: StatusFullTotals = {
   room_nights: 6100,
   no_show: 0,
   no_show_reported: 0,
-  fully_refunded: 0,
   upcoming: 42,
   revenue: [{ currency: 'UZS', amount: '1500000000.00' }, { currency: 'USD', amount: '45000.00' }],
   booking_value: [{ currency: 'UZS', amount: '1600000000.00' }],

@@ -10,7 +10,6 @@ const SORT_FIELDS = [
   { value: 'email', labelKey: 'auth.email' },
   { value: 'total_booking_count', labelKey: 'admin.bookingCount' },
   { value: 'last_booking_date', labelKey: 'admin.lastBookingDate' },
-  { value: 'total_amount_paid', labelKey: 'admin.totalPaid' },
   { value: 'customer_status', labelKey: 'status.statusCol' },
 ] as const
 
@@ -105,11 +104,7 @@ export function AdminCustomersList() {
 
   const formatDate = (dateString: string) => (dateString ? formatLocalDate(dateString) : t('admin.na'))
 
-  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return formatMoney(amount, currency)
-  }
+  const { t, formatDate: formatLocalDate } = useI18n()
 
   const getContactMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
@@ -233,7 +228,6 @@ export function AdminCustomersList() {
                   <th scope="col">{t('admin.preferredContact')}</th>
                   <th scope="col">{t('admin.bookingCount')}</th>
                   <th scope="col">{t('admin.lastBookingDate')}</th>
-                  <th scope="col">{t('admin.totalPaid')}</th>
                   <th scope="col">{t('partner.status')}</th>
                 </tr>
               </thead>
@@ -258,7 +252,6 @@ export function AdminCustomersList() {
                     <td className="customer-preferred-contact">{getContactMethodLabel(customer.preferred_contact_method)}</td>
                     <td className="customer-booking-count">{customer.total_booking_count}</td>
                     <td className="customer-last-booking-date">{formatDate(customer.last_booking_date)}</td>
-                    <td className="customer-total-paid">{formatCurrency(customer.total_amount_paid)}</td>
                     <td className="customer-status">
                       <span className={`status-badge ${getStatusClass(customer.customer_status)}`}>
                         {customer.customer_status === 'active' ? t('profile.active') : t('profile.inactive')}

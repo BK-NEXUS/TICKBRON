@@ -4,13 +4,14 @@ Serializers for admin API endpoints.
 This module contains serializers for property moderation, user management,
 amenity management, and payment monitoring.
 """
+from common.validators import validate_person_name
 from rest_framework import serializers
 from geography.models import City, Country, Region
 from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
-from users.serializers import validate_new_password
+from users.serializers import validate_new_password, validate_phone_number_format
 from admin_panel.models import InternalNote
 
 
@@ -121,10 +122,18 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
+    phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm']
+        fields = ['email', 'first_name', 'last_name', 'phone_number', 'password', 'password_confirm']
+        extra_kwargs = {
+            'first_name': {'validators': [validate_person_name]},
+            'last_name': {'validators': [validate_person_name]},
+        }
+
+    def validate_phone_number(self, value):
+        return validate_phone_number_format(value)
 
     def validate(self, data):
         """Validate password confirmation."""
@@ -157,6 +166,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
+            phone_number=validated_data['phone_number'],
             role=hotel_owner_role
         )
         
@@ -205,22 +215,6 @@ class AdminAmenityReadSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class AdminPaymentTransactionSerializer(serializers.Serializer):
-    """
-    Serializer for payment transaction monitoring by admins.
-    
-    Read-only view of payment transactions for admin oversight.
-    """
-    id = serializers.IntegerField()
-    booking_id = serializers.IntegerField()
-    provider = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
-    currency = serializers.CharField()
-    status = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    updated_at = serializers.DateTimeField()
-
-
 class AdminCustomerSerializer(serializers.Serializer):
     """
     Serializer for admin customers directory.
@@ -237,7 +231,6 @@ class AdminCustomerSerializer(serializers.Serializer):
     preferred_contact_method = serializers.CharField(allow_null=True)
     total_booking_count = serializers.IntegerField()
     last_booking_date = serializers.DateTimeField(allow_null=True)
-    total_amount_paid = serializers.DecimalField(max_digits=12, decimal_places=2)
     customer_status = serializers.CharField()
 
 
@@ -278,19 +271,6 @@ class AdminBookingSummarySerializer(serializers.Serializer):
     currency = serializers.CharField()
     property_name = serializers.CharField()
     property_city = serializers.CharField()
-    created_at = serializers.DateTimeField()
-
-
-class AdminPaymentSummarySerializer(serializers.Serializer):
-    """
-    Serializer for payment summary in customer detail.
-    """
-    id = serializers.IntegerField()
-    booking_id = serializers.IntegerField()
-    provider = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    currency = serializers.CharField()
-    status = serializers.CharField()
     created_at = serializers.DateTimeField()
 
 
