@@ -1,7 +1,8 @@
+import type { ReactElement } from 'react'
 import type { Language } from '../i18n/options'
 
 // Inline SVG instead of flag emoji: emoji look different on every platform and Windows shows letters
-const FLAGS: Record<Language, JSX.Element> = {
+const FLAGS: Record<Language, ReactElement> = {
   uz: (
     <>
       <rect width="24" height="16" fill="#1eb53a" />
