@@ -40,12 +40,6 @@ def bad_request(field, error):
     return Response({field: [str(error)]}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def refunded_ids(date_range, own=None):
-    """Fully refunded booking ids in the period (see metrics.fully_refunded_ids)."""
-    scope = metrics.all_bookings().filter(metrics.period_q('', date_range))
-    return metrics.fully_refunded_ids(scope if own is None else scope.filter(property__in=own))
-
-
 def own_properties(user):
     return Property.objects.filter(owner=user, is_deleted=False)
 
@@ -69,25 +63,23 @@ def _common(request):
 
 def _numbers(scope, period, date_range, year, granularity, properties):
     """The shared part of the summary and the hotel detail, or a 400 Response."""
-    refunded = metrics.fully_refunded_ids(scope)
     try:
-        series = metrics.series(scope, date_range, granularity, refunded_ids=refunded)
+        series = metrics.series(scope, date_range, granularity)
     except InvalidPeriod as error:
         return bad_request('granularity', error)
-    totals = metrics.metric_totals(scope, date_range, refunded_ids=refunded)
+    totals = metrics.metric_totals(scope, date_range)
     return {
         'period': period,
         'period_range': range_json(date_range),
         **metrics.status_meta(),
         'totals': totals,
-        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(properties),
-                                     refunded_ids=refunded),
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(properties)),
         'granularity': granularity,
         'series': series,
-        'reconciliation': metrics.reconciliation(scope, refunded_ids=refunded),
+        'reconciliation': metrics.reconciliation(scope),
         'year': year,
-        'available_years': metrics.available_years(scope, refunded),
-        'monthly': metrics.monthly_series(scope, year, refunded),
+        'available_years': metrics.available_years(scope),
+        'monthly': metrics.monthly_series(scope, year),
     }
 
 
@@ -124,7 +116,7 @@ def partner_status(request):
     rows = list(
         own.annotate(name=hotel_name_expression(), region=region_expression())
         .values('id', 'name', 'city', 'region', 'country', 'status')
-        .annotate(**metrics.metric_annotations('bookings__', date_range, refunded_ids(date_range, own)))
+        .annotate(**metrics.metric_annotations('bookings__', date_range))
         .order_by('name', 'id')
     )
     revenue = metrics.revenue_by(scope.filter(metrics.revenue_q('', date_range)), 'property_id')

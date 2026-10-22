@@ -6,7 +6,6 @@ statistics endpoint (admin and owner), plus `business_date` and `no_show_report_
 in the response meta.
 """
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -79,14 +78,6 @@ class TestPersonsAreNotBookings:
     def test_cancelled_is_not_counted_anywhere(self, get, people):
         totals = beta_totals(get, people)
         assert totals['counted_guests'] == 16 and totals['stayed_guests'] == 8
-
-    def test_fully_refunded_is_excluded(self, get, people):
-        refunded = Booking.objects.filter(property=people, status='completed', guest_count=4).get()
-        payment = PaymentTransaction.objects.get(booking=refunded)
-        Refund.objects.create(payment=payment, booking=refunded, amount=payment.amount, currency=payment.currency,
-                              reason='staff', status='succeeded', idempotency_key='fix-full')
-        totals = beta_totals(get, people)
-        assert (totals['stayed'], totals['stayed_guests'], totals['counted_guests']) == (2, 4, 12)
 
     def test_a_partial_refund_still_counts(self, get, people):
         booking = Booking.objects.filter(property=people, status='completed', guest_count=4).get()

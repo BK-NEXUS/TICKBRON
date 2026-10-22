@@ -62,7 +62,7 @@ class TestAdminXlsx:
         rows, _ = read_xlsx(response)
         assert rows[0][:3] == ['rank', 'id', 'name']
         assert [row[2] for row in rows[1:]] == ['Alpha Hotel', 'Beta Hotel', 'Delta Hotel', 'Gamma Hotel']
-        assert rows[1][-2] == 'USD 450.00'
+        assert rows[1][-2] == 'USD 150.00'
 
     def test_it_is_audit_logged_with_its_format(self, staff, status_world):
         get_as(staff, f'{S}/hotels/', export='xlsx')

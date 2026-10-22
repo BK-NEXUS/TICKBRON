@@ -2936,3 +2936,11 @@ Contract: API_CONTRACT "Cash at the hotel: confirmed at once, arrival time, gues
 - Real browser (Chromium, dev stack): flow A books and is confirmed at once (screenshots in `e2e/screenshots/A`), the owner marks the guest as arrived in Status > arrivals; no horizontal overflow at 1440 and 390 px. The title of the confirmation page needed a CSS fix to fit 390 px.
 - Found, not fixed: the owner still sees only the last 4 digits of a guest's phone in the arrivals list (a hotel taking cash needs the full number: decision for the owner); repeated E2E runs of the same demo guest now hit the 5-upcoming-bookings limit (cancel the demo guest's bookings first).
 - Release: set `ARRIVAL_GRACE_HOURS` if not 2, run Celery beat (RELEASE_CHECKLIST), and tell hotels to press "Guest arrived": a confirmed booking without it is cancelled 2 hours after the arrival time.
+
+## Cash only, stage 3a: Status revenue (2026-10-22)
+Contract: API_CONTRACT "Status numbers with cash only". Slice of stage 3 (remove online payments); 3b (refund rules) and 3c (payments code) follow.
+- Backend: `bookings/metrics.py` has no refund rule; revenue = SUM(`total_price`) of completed bookings per currency; `admin_panel/status.py` and `partner/status.py` lost the refund plumbing and the paid/refunded history columns.
+- Frontend: "Fully refunded" card and the paid/refunded history columns removed; revenue hint text updated (en/ru/uz).
+- Tests first: `TestCashRevenue` in `bookings/tests/test_r12_metrics.py` (completed only, per currency, no `fully_refunded`).
+- Tests that asserted the removed refund behaviour were removed by the owner's decision: `TestRefundRule` (12) in `test_r12_metrics.py` (replaced by `TestCashRevenue`), five refund tests in `test_r12b_metrics.py` (one replaced: an approved no-show is not revenue), `test_fully_refunded_is_excluded` in `admin_panel/tests/test_r12a_fix_guests.py`, the refunded-amount assertion in `StatusUserDetail.test.tsx`.
+- Found, not fixed: the DB keeps the payment tables; `charge_amount` stays in the history until 3b.

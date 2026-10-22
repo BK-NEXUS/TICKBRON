@@ -93,7 +93,6 @@ export interface StatusFullTotals extends StatusTotals {
   room_nights: number
   no_show: number
   no_show_reported: number
-  fully_refunded: number
   upcoming: number
   booking_value: Money[]
   booking_status: BookingStatusCounts
@@ -248,8 +247,6 @@ export interface StatusUserBooking {
   currency: string
   charge_amount: string | null
   charge_currency: string | null
-  paid: Money[]
-  refunded: Money[]
 }
 
 export interface StatusUserDetail {

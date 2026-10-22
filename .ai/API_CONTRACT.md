@@ -1097,3 +1097,10 @@ No SMS, no code, no verification, no uniqueness rule (several accounts may share
 - Auto-cancel: Celery task `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a `confirmed` booking with an arrival time, no `arrived_at`, and arrival time + `ARRIVAL_GRACE_HOURS` (default 2) passed: `status=cancelled`, `cancellation_reason="no_arrival"`, rooms released, notifications `booking_not_arrived` (guest) and `guest_not_arrived` (owner, no personal data). Bookings made before this existed have no arrival time and are never auto-cancelled.
 - Migration `bookings/0012_cash_arrival`: two nullable columns, and a data step that confirms `pending` bookings still inside their payment window (expired ones stay pending for the expiry task). Reverse of the data step is a no-op.
 - The payment endpoints still exist but the UI no longer uses them (removed in stage 3).
+
+## Status numbers with cash only (stage 3a of PLAN_CASH_ONLY, 2026-10-22)
+
+Supersedes the refund and revenue lines of the R12 definitions above; every other R12 number is unchanged.
+- **counted** = `confirmed` + `completed` (no refund filter), **stayed** = `completed`, `no_show` = status `no_show`.
+- **revenue** = per currency, never mixed: SUM(`total_price`) of `completed` bookings in the period (cash the hotel is expected to have received). `confirmed`, `cancelled`, `no_show`, `pending`, `expired` and soft-deleted bookings are never revenue. `booking_value` (counted bookings) is unchanged.
+- **Removed:** `totals.fully_refunded`; the user-history rows (`GET /admin-panel/status/users/{id}/`) and its CSV lose `paid` and `refunded`. The hotels list ordered by revenue uses the same SUM in UZS.

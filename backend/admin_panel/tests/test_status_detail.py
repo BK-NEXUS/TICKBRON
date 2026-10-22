@@ -46,22 +46,22 @@ class TestHotelDetail:
         }
 
         totals = response.data['totals']
-        assert (totals['bookings'], totals['guests'], revenue(totals)) == (3, 3, {'USD': '450.00'})  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
+        assert (totals['bookings'], totals['guests'], revenue(totals)) == (3, 3, {'USD': '150.00'})
 
         assert response.data['year'] == 2026
         assert response.data['available_years'] == [2026]
         months = {row['month']: row for row in response.data['monthly']}
         assert list(months) == [f'2026-{m:02d}' for m in range(1, 13)]
         assert (months['2026-03']['bookings'], months['2026-03']['guests'], revenue(months['2026-03'])) == \
-            (1, 1, {'USD': '100.00'})
+            (1, 1, {})
         assert (months['2026-04']['bookings'], months['2026-04']['guests'], revenue(months['2026-04'])) == \
-            (2, 2, {'USD': '350.00'})
+            (2, 2, {'USD': '150.00'})
         assert (months['2026-05']['bookings'], months['2026-05']['revenue']) == (0, [])
 
     def test_totals_follow_the_period(self, get, status_world):
         alpha = status_world['hotels']['alpha']
         totals = get(f'{S}/hotels/{alpha.id}/', period='2026-03').data['totals']
-        assert (totals['bookings'], revenue(totals)) == (1, {'USD': '100.00'})
+        assert (totals['bookings'], revenue(totals)) == (1, {})
 
     def test_hotel_without_region_is_unspecified(self, get, status_world):
         gamma = status_world['hotels']['gamma']
@@ -99,9 +99,8 @@ class TestUsers:
             (1, 'Madina Nazarova', 'Madina', 'Nazarova')
         assert (first['phone'], first['email'], first['bookings'], first['last_booking_date']) == \
             ('+998903330002', 'guest2@example.com', 2, '2026-04-12')
-        assert revenue({'revenue': first['total_spent']}) == {'USD': '280.00'}
-        assert revenue({'revenue': rows[2]['total_spent']}) == {'EUR': '60.00', 'KZT': '50000.00', 'USD': '999.00'}
-        # R12: revenue = paid - refunded incl. money kept from the gamma no-show (999 USD) (was without USD)
+        assert revenue({'revenue': first['total_spent']}) == {'USD': '80.00'}
+        assert revenue({'revenue': rows[2]['total_spent']}) == {}
         # Hotel owners and staff without counted bookings are not listed
         assert response.data['count'] == 3
 
@@ -135,14 +134,13 @@ class TestAggregatesInTheDatabase:
 
     def test_hotel_detail(self, get, status_world, django_assert_max_num_queries):
         alpha = status_world['hotels']['alpha']
-        # R12 (was 6): hotel, fully refunded ids, totals (counts, revenue x2, booking value),
+        # R12 (was 6): hotel, totals (counts, revenue x2, booking value),
         # series (span, counts, revenue x2), reconciliation, years, monthly (counts, revenue x2) = 15
         with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{alpha.id}/', year=2026).status_code == 200
 
     def test_users(self, get, status_world, django_assert_max_num_queries):
-        # R12 fully refunded ids, count, page, total spent for the page's guests (R12: payments and
-        # refunds, was one query), the AdminAccessLog insert (R4). R12: 6, was 4
+        # count, page, total spent for the page's guests, the AdminAccessLog insert (R4)
         with django_assert_max_num_queries(6):
             assert get(f'{S}/users/').status_code == 200
 
