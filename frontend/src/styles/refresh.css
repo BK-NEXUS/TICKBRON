@@ -212,3 +212,92 @@
     box-shadow: var(--shadow-md);
   }
 }
+
+/* --- Round 2: calmer admin screens, tighter property page, nicer empty photos ---------------------- */
+
+.admin-dashboard-page,
+.partner-dashboard-page {
+  padding-top: var(--spacing-md);
+}
+
+.dashboard-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-subtitle .role-badge {
+  margin-left: 0;
+}
+
+.admin-view-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-view-title {
+  font-size: var(--font-size-xl);
+}
+
+/* The "Total users: 91" bars become small pills instead of full-width beige bands */
+.users-count,
+.customers-count {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-pill);
+  background: var(--color-tint);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.customers-table th,
+.customers-table td {
+  padding: var(--spacing-12) var(--spacing-md);
+}
+
+.customers-table td {
+  font-size: var(--font-size-sm);
+}
+
+/* A month with one data point is a bar, not a wall */
+.bar-chart {
+  justify-content: center;
+}
+
+.bar-chart-item {
+  max-width: 96px;
+}
+
+/* Property page */
+.property-detail-main {
+  gap: var(--spacing-lg);
+}
+
+.property-detail-content {
+  gap: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+}
+
+@media (max-width: 767px) {
+  .property-detail-header-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .property-detail-section {
+    padding: var(--spacing-md);
+  }
+}
+
+/* A hotel without photos shows a soft panel with the lattice, not a flat beige box */
+.property-card-image-placeholder,
+.property-gallery-image-placeholder,
+.where-to-picture:not(:has(img)) {
+  background:
+    repeating-linear-gradient(45deg, var(--color-tint) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(-45deg, var(--color-tint) 0 1px, transparent 1px 28px),
+    linear-gradient(135deg, var(--color-background-alt), var(--color-cream-deep));
+}

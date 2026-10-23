@@ -19,3 +19,11 @@ The brand palette (gold, cream, ink) is the client's and stays.
 - Property detail page (gallery, sticky booking card), search results filters, booking page.
 - Admin lists and detail screens inside the panel (tables, cards with gold outline), owner panel inner screens.
 - Dark theme check of the new parts by eye; empty/failed photo placeholders (a gradient with the logo instead of a broken image icon).
+
+## Round 2 (2026-10-23, same file `refresh.css`)
+- Admin screens: shorter page header (badge on the same line), smaller view titles, the "Total users: N" bands are small pills, tighter table cells.
+- Statistics chart: a month with one data point is a bar of at most 96 px (it was a full-width wall).
+- Property page: smaller gaps between sections, the type/guests/bedrooms/bathrooms row is 2 x 2 on phones (was 4 rows), sections have less padding on phones.
+- Empty photos (hotel card, gallery, destination card) show a soft panel with the lattice instead of a flat beige box.
+- Checked by screenshots at 1440 and 390 px in the light and the dark theme (property page, admin users, customers, statistics).
+- Still open: the customers table has 12 columns and scrolls sideways inside its card on 1440 px (Status and actions are at the far right); booking page and owner inner screens not reviewed by eye.
