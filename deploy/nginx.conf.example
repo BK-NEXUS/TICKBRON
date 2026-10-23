@@ -1,17 +1,26 @@
 # Reference nginx configuration for TICKBRON (one host serves the SPA, /api/ and /media/).
-# Copy, replace tickbron.example and the paths, then test with `nginx -t`. See .ai/RELEASE_CHECKLIST.md.
+# Copy, check the paths, then test with `nginx -t`. See .ai/RELEASE_CHECKLIST.md.
 # The Django app must run with NUM_PROXIES=1 and USE_X_FORWARDED_PROTO=True behind this file.
 
 server {
     listen 80;
-    server_name tickbron.example;
-    return 301 https://$host$request_uri;
+    server_name tickbron.com www.tickbron.com;
+    return 301 https://tickbron.com$request_uri;
+}
+
+# www goes to the bare name (Django only knows tickbron.com)
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name www.tickbron.com;
+    # ssl_certificate / ssl_certificate_key: the same certificate, it must cover www.tickbron.com too
+    return 301 https://tickbron.com$request_uri;
 }
 
 server {
     listen 443 ssl;
     http2 on;
-    server_name tickbron.example;
+    server_name tickbron.com;
 
     # ssl_certificate / ssl_certificate_key: managed by your certificate tool
 
