@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 
 from bookings.models import Booking
 from bookings.tests import test_views
+from bookings.tests.stays import stay
 from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # was MAX_UPCOMING_BOOKINGS_PER_GUEST (unpaid holds)
 
 
@@ -33,10 +34,10 @@ class PendingBookingCapTests(APITestCase):
         assert 'number_of_rooms' in response.data['details']
 
     def test_guest_cannot_hold_more_than_the_upcoming_limit(self):
-        for _ in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
-            assert self._book().status_code == status.HTTP_201_CREATED
+        for index in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
+            assert self._book(**stay(self, index)).status_code == status.HTTP_201_CREATED
 
-        response = self._book()
+        response = self._book(**stay(self, MAX_UPCOMING_BOOKINGS_PER_GUEST))
 
         assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
         assert response.data['code'] == 'too_many_upcoming_bookings'
@@ -44,9 +45,9 @@ class PendingBookingCapTests(APITestCase):
         assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST
 
     def test_cancelled_booking_frees_a_slot(self):
-        for _ in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
-            self._book()
-        # cancel_booking also gives the room back (a plain status update would leave all 5 rooms taken)
+        for index in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
+            self._book(**stay(self, index))
+        # cancel_booking also gives the room back (a plain status update would leave all the rooms taken)
         Booking.objects.filter(guest=self.user).first().cancel_booking('user_cancelled')
 
-        assert self._book().status_code == status.HTTP_201_CREATED
+        assert self._book(**stay(self, MAX_UPCOMING_BOOKINGS_PER_GUEST)).status_code == status.HTTP_201_CREATED

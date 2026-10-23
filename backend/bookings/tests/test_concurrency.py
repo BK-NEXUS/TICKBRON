@@ -213,28 +213,36 @@ class PendingCapRaceTests(TransactionTestCase):
             base_price=Decimal('100.00'), currency='USD', min_nights=1, max_nights=30, is_active=True
         )
         self.check_in = timezone.localdate() + timedelta(days=5)
-        for offset in range(3):
+        for offset in range(8):
             day = self.check_in + timedelta(days=offset)
             DateInventory.objects.create(rate_plan=self.rate_plan, date=day, available_rooms=50, booked_rooms=0,
                                          price=Decimal('100.00'), currency='USD', is_available=True)
             RoomInventory.objects.create(room_type=self.room_type, date=day, available_rooms=50, booked_rooms=0,
                                          is_available=True)
 
-    def test_parallel_creates_never_exceed_the_cap(self):
+    def book_nights(self, first_night, nights=1):
         from rest_framework.test import APIClient
+        client = APIClient()
+        client.force_authenticate(self.user)
+        check_in = self.check_in + timedelta(days=first_night)
+        return client.post('/api/v1/bookings/', {
+            'property_id': self.property.id, 'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id, 'check_in': check_in.isoformat(),
+            'check_out': (check_in + timedelta(days=nights)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
+        }, format='json').status_code
+
+    def test_parallel_creates_never_exceed_the_cap(self):
         from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # was MAX_PENDING_BOOKINGS_PER_GUEST
 
-        def book():
-            client = APIClient()
-            client.force_authenticate(self.user)
-            return client.post('/api/v1/bookings/', {
-                'property_id': self.property.id, 'room_type_id': self.room_type.id,
-                'rate_plan_id': self.rate_plan.id, 'check_in': self.check_in.isoformat(),
-                'check_out': (self.check_in + timedelta(days=1)).isoformat(), 'guest_count': 1, 'expected_arrival_time': '14:00',
-            }, format='json').status_code
-
-        results = run_concurrently(*[book] * 8)
+        # eight different nights, so only the limit (not the overlap rule) can refuse them
+        results = run_concurrently(*[lambda night=night: self.book_nights(night) for night in range(8)])
 
         assert [r for r in results if r[0] == 'error'] == []
         upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bookings are confirmed at once
         assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST, [r[1] for r in results]
+
+    def test_parallel_creates_for_the_same_nights_book_them_once(self):
+        results = run_concurrently(*[lambda: self.book_nights(0, nights=2)] * 6)
+
+        assert [r for r in results if r[0] == 'error'] == []
+        assert Booking.objects.filter(guest=self.user, status='confirmed').count() == 1, [r[1] for r in results]

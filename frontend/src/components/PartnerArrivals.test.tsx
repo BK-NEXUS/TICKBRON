@@ -11,7 +11,7 @@ const getArrivals = vi.mocked(statusAdapter.getPartnerArrivals)
 
 const ARRIVAL = {
   id: 1, reference: 'TB-1', property: { id: 7, name: 'Hotel A' }, guest_name: 'Aziz K.', room_types: ['Double', 'Twin'],
-  rooms: 2, nights: 3, guests: 4, check_in: '2026-10-07', check_out: '2026-10-10', special_requests: 'Late arrival', phone_last4: '1234',
+  rooms: 2, nights: 3, guests: 4, check_in: '2026-10-07', check_out: '2026-10-10', special_requests: 'Late arrival', phone: '+998 90 333-12-34',
 }
 
 const pageOf = (results: unknown[], extra: Record<string, unknown> = {}) => ({
@@ -25,7 +25,7 @@ describe('PartnerArrivals', () => {
     getArrivals.mockResolvedValue(pageOf([ARRIVAL]))
   })
 
-  it('shows today by default with the guest, rooms and only the last 4 phone digits', async () => {
+  it('shows today by default with the guest, rooms and the full phone as a call link', async () => {
     render(<PartnerArrivals />)
 
     const row = (await screen.findByText('TB-1')).closest('tr') as HTMLElement
@@ -33,7 +33,7 @@ describe('PartnerArrivals', () => {
     expect(within(row).getByText('Aziz K.')).toBeInTheDocument()
     expect(within(row).getByText('Double, Twin')).toBeInTheDocument()
     expect(within(row).getByText('Hotel A')).toBeInTheDocument()
-    expect(within(row).getByText('•••• 1234')).toBeInTheDocument()
+    expect(within(row).getByRole('link', { name: '+998 90 333-12-34' })).toHaveAttribute('href', 'tel:+998903331234')
     expect(within(row).getByText('Late arrival')).toBeInTheDocument()
     expect(document.querySelector('.status-controls .status-card-caption')).toHaveTextContent('Oct 7, 2026')
   })

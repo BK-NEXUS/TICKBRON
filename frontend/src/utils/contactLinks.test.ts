@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { telegramLink, whatsappLink } from './contactLinks'
+import { phoneLink, telegramLink, whatsappLink } from './contactLinks'
 
 describe('telegramLink', () => {
   it('builds a link from a username with or without @', () => {
@@ -22,5 +22,16 @@ describe('whatsappLink', () => {
 
   it.each(['', 'abc', '12', '9989012345678901234567'])('refuses %j', (value) => {
     expect(whatsappLink(value)).toBeNull()
+  })
+})
+
+describe('phoneLink', () => {
+  it('keeps the plus and the digits only', () => {
+    expect(phoneLink('+998 90 123-45-67')).toBe('tel:+998901234567')
+    expect(phoneLink('90 123 45 67')).toBe('tel:901234567')
+  })
+
+  it.each(['', 'abc', '12', '+99890123456789012', 'javascript:alert(1)'])('refuses %j', (value) => {
+    expect(phoneLink(value)).toBeNull()
   })
 })

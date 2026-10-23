@@ -155,7 +155,12 @@ class TestMultiRoomBooking(BookingLogicTestBase):
         assert self.inventory(0).booked_rooms == 0
 
     def test_more_rooms_than_remaining_is_rejected(self):
-        self.create_booking(nights=1, number_of_rooms=4)  # 1 room left
+        # another guest holds 4 rooms (1 left); the same guest could not overlap his own stay (409)
+        other = User.objects.create_user(phone_number='+998901112244', email='other-guest@example.com', password='testpass123')
+        Booking.create_booking(
+            guest=other, property_obj=self.property, room_type=self.room_type, rate_plan=self.rate_plan,
+            check_in=self.start, check_out=self.start + timedelta(days=1), guest_count=2, number_of_rooms=4,
+        )
 
         response = self.post_booking(nights=1, number_of_rooms=2)
 

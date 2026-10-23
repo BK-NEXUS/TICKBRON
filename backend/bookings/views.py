@@ -25,7 +25,8 @@ logger = logging.getLogger('tickbron')
 
 # Bookings are confirmed at once and paid in cash, so nothing stops a free account from taking rooms;
 # without a cap one account could keep a whole hotel unavailable (also the old cap on unpaid holds)
-MAX_UPCOMING_BOOKINGS_PER_GUEST = 5
+# Owner decision 2026-10-23: one account holds at most two upcoming bookings, and their dates never overlap
+MAX_UPCOMING_BOOKINGS_PER_GUEST = 2
 
 
 class BookingCreateThrottle(UserRateThrottle):
@@ -82,6 +83,30 @@ class BookingViewSet(mixins.CreateModelMixin,
             status=status.HTTP_429_TOO_MANY_REQUESTS
         )
 
+    @staticmethod
+    def _overlaps_another_stay(user, check_in, check_out):
+        """The guest already has a live booking whose nights share a night with these dates (check-out day is free)."""
+        return Booking.objects.filter(
+            guest=user, status__in=('pending', 'confirmed'), is_deleted=False,
+            check_in__lt=check_out, check_out__gt=check_in,
+        ).exists()
+
+    @staticmethod
+    def _overlap_response():
+        return Response(
+            {'error': 'You already have a booking for these dates. Choose dates that start after it ends.',
+             'code': 'overlapping_booking'},
+            status=status.HTTP_409_CONFLICT
+        )
+
+    def _refused_by_account_rules(self, user, serializer):
+        """The response when one account may not book these dates now, else None."""
+        if self._pending_cap_reached(user):
+            return self._pending_cap_response()
+        if self._overlaps_another_stay(user, serializer.validated_data['check_in'], serializer.validated_data['check_out']):
+            return self._overlap_response()
+        return None
+
     def get_throttles(self):
         if self.action == 'create':
             return [BookingCreateThrottle()]
@@ -103,9 +128,6 @@ class BookingViewSet(mixins.CreateModelMixin,
         Returns:
             Created booking with confirmation code
         """
-        if self._pending_cap_reached(request.user):
-            return self._pending_cap_response()
-
         serializer = BookingCreateSerializer(
             data=request.data,
             context={'request': request}
@@ -117,13 +139,18 @@ class BookingViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        refused = self._refused_by_account_rules(request.user, serializer)
+        if refused is not None:
+            return refused
+
         try:
             with transaction.atomic():
-                # Check the cap again under a lock on the guest's row: without it, parallel
-                # requests all read the same count and every one of them passes the check above
+                # Check the rules again under a lock on the guest's row: without it, parallel
+                # requests all read the same bookings and every one of them passes the check above
                 get_user_model().objects.select_for_update().get(pk=request.user.pk)
-                if self._pending_cap_reached(request.user):
-                    return self._pending_cap_response()
+                refused = self._refused_by_account_rules(request.user, serializer)
+                if refused is not None:
+                    return refused
                 booking = serializer.save()
             response_serializer = BookingSerializer(booking)
             return Response(

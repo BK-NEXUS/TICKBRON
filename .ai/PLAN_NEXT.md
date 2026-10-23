@@ -21,8 +21,8 @@ Why: today an owner cannot give a hotel a name (the cards show the address inste
 - Decision needed: which fields may an owner edit after the hotel is active (name and description only, or also address and room counts)? Does an edit of an active hotel need staff approval again? Default if you do not decide: name, description and address editable at once, no re-approval.
 
 ## Step 3: small decisions already open (about half a day together)
-- Owner arrivals list shows only the last 4 digits of the guest phone. A hotel taking cash needs the full number to call a late guest. If you agree: show the full phone only for today's and tomorrow's arrivals of that hotel, log nothing extra. Decision: yes / no / other rule.
-- Cap of 5 upcoming bookings per guest (`MAX_UPCOMING_BOOKINGS_PER_GUEST`): keep 5, change the number, or remove. One setting, plus a test.
+- DONE 2026-10-23 (yes, for today's and tomorrow's arrivals): owner arrivals list shows only the last 4 digits of the guest phone. A hotel taking cash needs the full number to call a late guest. If you agree: show the full phone only for today's and tomorrow's arrivals of that hotel, log nothing extra. Decision: yes / no / other rule.
+- DONE 2026-10-23 (owner: 2 at a time, and a new booking must start after the previous one ends): cap of 5 upcoming bookings per guest (`MAX_UPCOMING_BOOKINGS_PER_GUEST`).
 - Commission model with cash payment: no code until you decide (see LAUNCH_DAY section 1).
 
 ## Step 4: guest "My bookings" pagination and the Geography table on phones (about 1 day)

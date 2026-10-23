@@ -91,8 +91,10 @@ class TestArrivals:
         assert (row['id'], row['reference'], row['guest_name'], row['special_requests']) == \
             (a.id, a.confirmation_code, 'Aziz Karimov', 'Late arrival')
         assert (row['property']['name'], row['rooms'], row['nights'], row['guests']) == ('Alpha Hotel', 1, 1, 1)
-        assert row['phone_last4'] == '1234'
-        assert 'email' not in str(row) and '333' not in str(row['phone_last4'])
+        # a hotel taking cash needs the whole number to call a late guest (owner decision 2026-10-23)
+        assert row['phone'] == '+998 90 333-12-34'
+        assert 'phone_last4' not in row
+        assert 'email' not in str(row)
         assert not any('@' in str(value) for value in row.values())
 
     def test_tomorrow_and_property_filter(self, status_world):
@@ -104,6 +106,15 @@ class TestArrivals:
         assert get_as(owner1, f'{P}/arrivals/', property=hotels['delta'].id).status_code == 404
         assert get_as(owner1, f'{P}/arrivals/', day='yesterday').status_code == 400
         assert get_as(owner1, f'{P}/arrivals/', property='x').status_code == 400
+
+    def test_the_full_phone_is_only_in_the_arrivals_of_today_and_tomorrow(self, status_world):
+        a = self._arrivals(status_world)
+        owner1 = status_world['owners'][0]
+        assert get_as(owner1, f'{P}/arrivals/', day='yesterday').status_code == 400
+        rows = get_as(owner1, '/api/v1/partner/bookings/').data
+        rows = rows['results'] if isinstance(rows, dict) else rows
+        assert rows and not any('phone' in str(key) for row in rows for key in row)
+        assert a.guest_phone not in str(rows)
 
     def test_other_owner_sees_only_own_arrivals(self, status_world):
         self._arrivals(status_world)

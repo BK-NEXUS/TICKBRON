@@ -15,6 +15,7 @@ from accounts.models import Notification
 from bookings.arrival import arrival_deadline, arrival_time_error, cancel_unarrived_bookings
 from bookings.models import Booking
 from bookings.tests import test_views
+from bookings.tests.stays import stay
 from permissions.models import Role
 from properties.models import RoomInventory
 from users.models import User
@@ -88,16 +89,16 @@ class CreateTests(CashFixture):
 
     def test_a_guest_cannot_hold_more_than_the_limit_of_upcoming_bookings(self):
         from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST
-        for _ in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
-            self.assertEqual(self.book().status_code, status.HTTP_201_CREATED)
-        response = self.book()
+        for index in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
+            self.assertEqual(self.book(**stay(self, index)).status_code, status.HTTP_201_CREATED)
+        response = self.book(**stay(self, MAX_UPCOMING_BOOKINGS_PER_GUEST))
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(response.data['code'], 'too_many_upcoming_bookings')
 
     def test_cancelled_and_arrived_bookings_do_not_count_against_the_limit(self):
         from bookings.views import BookingViewSet, MAX_UPCOMING_BOOKINGS_PER_GUEST
-        for _ in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
-            self.book()
+        for index in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
+            self.book(**stay(self, index))
         self.assertTrue(BookingViewSet._pending_cap_reached(self.user))
         first, second = Booking.objects.order_by('id')[:2]
         first.cancel_booking('user_cancelled')
@@ -233,6 +234,9 @@ class AutoCancelTests(CashFixture):
 
     def test_one_failing_booking_does_not_stop_the_others(self):
         first = self.make('10:00')
+        # the same nights for a second booking need another guest: one guest cannot overlap his own stays
+        self.client.force_authenticate(user=User.objects.create_user(
+            email='second-guest@example.com', password='GuestPass#123', phone_number='+998901112288'))
         second = self.make('10:00')
         original = Booking.cancel_booking
         calls = []

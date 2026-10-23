@@ -345,5 +345,5 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - [ ] Backup first (`pg_dump -Fc`): migration `bookings/0012_cash_arrival` adds two columns and confirms `pending` bookings still inside their 15-minute window.
 - [ ] Celery **beat** and a worker run: `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a confirmed booking whose guest is not marked "arrived" `ARRIVAL_GRACE_HOURS` (default 2) after the arrival time. Without beat nothing is ever cancelled.
 - [ ] Hotels are told to press "Guest arrived" in Status > arrivals; otherwise guests who did come are cancelled.
-- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (5, `bookings/views.py`) is the only brake on one account taking rooms without paying: confirm the number.
+- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (2, `bookings/views.py`, decided 2026-10-23) and the no-overlap rule are the only brake on one account taking rooms without paying.
 

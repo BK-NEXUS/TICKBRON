@@ -10,7 +10,7 @@ Everything is merged into master (2026-10-22): input rules, phone number, cash b
 - E-mail SMTP (`EMAIL_*`, `FRONTEND_URL`) for password reset. Telegram bot token + chat id for alerts.
 - Decisions: how the commission is taken now that guests pay cash at the hotel; logo files.
 - Reviews: lawyer on the wording of the arrival rule ("if you do not arrive at that time we wait 2 more hours, then the booking is cancelled") and "Reklama"; a native speaker on all uz/ru texts (cancel dialog, arrival notices, no-show approval, phone hints).
-- Two numbers the owner may want to change: the cap of 5 upcoming bookings per guest (`MAX_UPCOMING_BOOKINGS_PER_GUEST`), and whether a hotel should see the full guest phone in the arrivals list (today only the last 4 digits).
+- Decided 2026-10-23: a guest holds at most 2 upcoming bookings and their dates never overlap; the hotel sees the whole guest phone in the arrivals list of today and tomorrow (`MAX_UPCOMING_BOOKINGS_PER_GUEST` in `bookings/views.py`).
 
 ## 2. Deploy order (each step has a rollback)
 1. `pg_dump -Fc` backup, kept off the server (new migrations below).

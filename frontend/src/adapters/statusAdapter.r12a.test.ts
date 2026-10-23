@@ -138,7 +138,7 @@ describe('statusAdapter R12a', () => {
       count: 1, next: null, previous: null, day: 'tomorrow', date: '2026-10-08',
       results: [{
         id: 1, reference: 'TB-1', property: { id: 7, name: 'Hotel A' }, guest_name: 'Aziz K.', room_types: ['Double'],
-        rooms: 1, nights: 2, guests: 2, check_in: '2026-10-08', check_out: '2026-10-10', special_requests: '', phone_last4: '1234',
+        rooms: 1, nights: 2, guests: 2, check_in: '2026-10-08', check_out: '2026-10-10', special_requests: '', phone: '+998 90 333-12-34',
       }],
     }
     fetchMock.mockResolvedValue(okJson(body))
@@ -148,7 +148,7 @@ describe('statusAdapter R12a', () => {
     const url = calledUrl()
     expect(url.pathname).toBe('/api/v1/partner/status/arrivals/')
     expect(Object.fromEntries(url.searchParams)).toEqual({ day: 'tomorrow', property: '7', page: '2' })
-    expect(result.data?.results[0].phone_last4).toBe('1234')
+    expect(result.data?.results[0].phone).toBe('+998 90 333-12-34')
   })
 
   describe('CSV export', () => {

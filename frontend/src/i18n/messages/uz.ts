@@ -555,6 +555,8 @@ export const uz: Catalog = {
   'booking.errorInfo': "Bron ma'lumotlari yetishmayapti",
   'booking.errorCreate': "Bronni yaratib bo'lmadi",
   'booking.rateUnavailable': "Bron qilish vaqtincha mavjud emas, keyinroq qayta urinib koʻring.",
+  'booking.tooManyUpcoming': "Kelgusi bronlar juda koʻp: bir vaqtda 2 tasini ushlab turish mumkin. Birini bekor qiling yoki yashab boʻlguncha kuting.",
+  'booking.overlapping': "Bu sanalarga sizda allaqachon bron bor. U tugagandan keyin boshlanadigan sanalarni tanlang.",
   'fxAdmin.nav': "Valyuta kurslari",
   'fxAdmin.title': "Valyuta kurslari",
   'fxAdmin.subtitle': "Oʻzbekiston Markaziy banki kurslari (cbu.uz). Mehmonlardan bron kunidagi kurs boʻyicha soʻmda pul olinadi.",

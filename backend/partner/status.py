@@ -8,8 +8,8 @@ GET /api/v1/partner/status/                  totals since the account was create
     reconciliation table (one row per own hotel and window).
 GET /api/v1/partner/status/hotels/{id}/      the same for one own hotel (another owner's: 404).
 GET /api/v1/partner/status/arrivals/?day=today|tomorrow   confirmed check-ins of own hotels
-    (guest name, booking reference, room types, rooms, nights, special requests, phone last 4
-    digits only, no email).
+    (guest name, booking reference, room types, rooms, nights, special requests, the whole phone
+    number, no email).
 Definitions of counted bookings, guests, nights, stays and revenue: bookings/metrics.py.
 """
 from datetime import timedelta
@@ -170,11 +170,6 @@ class ArrivalsPagination(PageNumberPagination):
     max_page_size = 100
 
 
-def phone_last4(phone):
-    digits = ''.join(ch for ch in (phone or '') if ch.isdigit())
-    return digits[-4:] if digits else None
-
-
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
@@ -215,7 +210,7 @@ def partner_status_arrivals(request):
             'check_in': booking.check_in.isoformat(),
             'check_out': booking.check_out.isoformat(),
             'special_requests': booking.special_requests or '',
-            'phone_last4': phone_last4(booking.guest_phone),
+            'phone': booking.guest_phone or '',
             'expected_arrival_time': booking.expected_arrival_time.strftime('%H:%M') if booking.expected_arrival_time else None,
             'arrived_at': booking.arrived_at.isoformat() if booking.arrived_at else None,
         }
