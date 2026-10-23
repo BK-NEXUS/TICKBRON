@@ -274,7 +274,8 @@ export function BookingsPage() {
     )
   }
 
-  if (filteredBookings.length === 0) {
+  // Only a guest with no bookings at all gets the bare empty screen; an empty filter keeps the buttons to switch back
+  if (filteredBookings.length === 0 && filter === 'all') {
     return (
       <div className="bookings-page">
         <div className="container">
@@ -328,21 +329,33 @@ export function BookingsPage() {
         
         {notice && <p role="status" className="alert alert-success bookings-notice">{notice}</p>}
 
-        <div className="bookings-list">
-          {filteredBookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} onCancelled={handleCancelled} />
-          ))}
-        </div>
+        {filteredBookings.length === 0 ? (
+          <EmptyState
+            icon={<Calendar size={40} />}
+            title={t('bookings.emptyTitle')}
+            message={t('bookings.emptyText')}
+            ctaText={t('bookings.emptyCta')}
+            ctaLink="/"
+          />
+        ) : (
+          <>
+            <div className="bookings-list">
+              {filteredBookings.map((booking) => (
+                <BookingCard key={booking.id} booking={booking} onCancelled={handleCancelled} />
+              ))}
+            </div>
 
-        <div className="bookings-more">
-          <p className="bookings-shown">{t('bookings.shown', { shown: bookings.length, total })}</p>
-          {loadMoreError && <p role="alert" className="alert alert-error">{t('bookings.loadMoreFailed')}</p>}
-          {nextPage !== null && (
-            <button type="button" className="btn btn-secondary" onClick={handleLoadMore} disabled={loadingMore}>
-              {loadingMore ? t('bookings.loadingMore') : t('bookings.loadMore')}
-            </button>
-          )}
-        </div>
+            <div className="bookings-more">
+              <p className="bookings-shown">{t('bookings.shown', { shown: bookings.length, total })}</p>
+              {loadMoreError && <p role="alert" className="alert alert-error">{t('bookings.loadMoreFailed')}</p>}
+              {nextPage !== null && (
+                <button type="button" className="btn btn-secondary" onClick={handleLoadMore} disabled={loadingMore}>
+                  {loadingMore ? t('bookings.loadingMore') : t('bookings.loadMore')}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

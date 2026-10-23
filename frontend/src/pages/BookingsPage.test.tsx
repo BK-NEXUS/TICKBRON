@@ -587,4 +587,21 @@ describe('BookingsPage pages', () => {
     expect(screen.queryByText('Hotel 1')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Show more bookings' })).not.toBeInTheDocument()
   })
+
+  it('keeps the filter buttons when a filter has no bookings, so the guest can switch back', async () => {
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: pageOf([booking(1)]), error: null })
+      .mockResolvedValueOnce({ data: pageOf([]), error: null })
+      .mockResolvedValueOnce({ data: pageOf([booking(1)]), error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed bookings' }))
+
+    expect(await screen.findByText('No bookings yet')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show all bookings' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all bookings' }))
+    await screen.findByText('Hotel 1')
+  })
 })
