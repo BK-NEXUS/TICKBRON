@@ -37,10 +37,10 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.conf import settings
-from django.db.models import Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Sum, Value
-from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncWeek, TruncYear
+from django.db.models import Avg, Count, DurationField, Exists, ExpressionWrapper, F, IntegerField, Max, Min, OuterRef, Q, Sum, Value
+from django.db.models.functions import Coalesce, TruncDate, TruncDay, TruncMonth, TruncWeek, TruncYear
 
-from common.dates import business_today
+from common.dates import business_time_zone, business_today
 
 COUNTED_STATUSES = ('confirmed', 'completed')
 EXPIRY_REASON = 'Booking expired - payment not completed within time limit'
@@ -481,6 +481,91 @@ def region_rank(prop, date_range):
     return {'position': 1 + sum(1 for total in counts.values() if total > own), 'of': len(peer_ids)}
 
 
+def average_lead_days(bookings):
+    """Days between the day a booking was made (business date) and its check-in, on average; None without bookings."""
+    lead = ExpressionWrapper(F('check_in') - TruncDate('created_at', tzinfo=business_time_zone()), output_field=DurationField())
+    average = bookings.aggregate(days=Avg(lead))['days']
+    return f'{average.total_seconds() / 86400:.1f}' if average is not None else None
+
+
+def repeat_guest_pct(bookings, unique_customers):
+    """Share of the guests (accounts) with more than one of these bookings, in percent; None without guests."""
+    repeat = bookings.values('guest').annotate(n=Count('id')).filter(n__gt=1).count()
+    return _percent(repeat, unique_customers)
+
+
+def month_comparison(scope, today=None):
+    """
+    This calendar month against the last one (whatever period the page shows) and the guests arriving in the next
+    7 days (today included): {'current', 'previous'} with the month, its range, bookings, guests and revenue,
+    'change_pct' and 'next_7_days' {'bookings', 'guests'} (confirmed bookings).
+    """
+    today = today or business_today()
+    this_first = today.replace(day=1)
+    next_first = _next_month(this_first)
+    last_first = _previous_month(this_first)
+    blocks = {}
+    for key, first, after in (('current', this_first, next_first), ('previous', last_first, this_first)):
+        totals = metric_totals(scope, (first, after), today)
+        blocks[key] = {'month': first.strftime('%Y-%m'), 'range': range_json((first, after)), 'bookings': totals['bookings'],
+                       'guests': totals['guests'], 'revenue': totals['revenue']}
+    soon = scope.filter(status='confirmed', check_in__gte=today, check_in__lt=today + timedelta(days=7)).aggregate(
+        bookings=Count('id'), guests=Coalesce(Sum('guest_count'), 0))
+    return {
+        **blocks,
+        'change_pct': {
+            'bookings': _change_pct(blocks['current']['bookings'], blocks['previous']['bookings']),
+            'guests': _change_pct(blocks['current']['guests'], blocks['previous']['guests']),
+            'revenue': _revenue_change(blocks['current']['revenue'], blocks['previous']['revenue']),
+        },
+        'next_7_days': soon,
+    }
+
+
+def _next_month(first):
+    return (first.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+
+def _previous_month(first):
+    return (first - timedelta(days=1)).replace(day=1)
+
+
+def room_type_stats(scope, date_range, room_types):
+    """
+    One row per room type of `room_types` (a RoomType queryset; types nobody booked are listed with zeros),
+    busiest first: counted bookings that include it, room nights (rooms x nights by check-in date), revenue per currency
+    (its items of completed stays: price per night x rooms x nights), its share of all the counted room-type bookings
+    in percent, and the occupancy rate over a bounded period (room nights / rooms offered x days; None for all time).
+    `scope` is a Booking queryset (not narrowed to the period).
+    """
+    from bookings.models import BookingItem
+    items = BookingItem.objects.filter(is_deleted=False, room_type__in=room_types)
+    counted = items.filter(booking__in=scope.filter(counted_q('', date_range)))
+    nights = F('number_of_rooms') * F('booking__number_of_nights')
+    stats = {
+        row['room_type_id']: row for row in counted.values('room_type_id').annotate(
+            bookings=Count('booking', distinct=True), room_nights=Coalesce(Sum(nights, output_field=IntegerField()), 0))
+    }
+    money = {}
+    revenue_items = items.filter(booking__in=scope.filter(revenue_q('', date_range)))
+    for row in revenue_items.values('room_type_id', 'currency').annotate(
+            amount=Sum(F('price_per_night') * nights)).order_by('room_type_id', 'currency'):
+        money.setdefault(row['room_type_id'], []).append({'currency': row['currency'], 'amount': _money(row['amount'])})
+    total_bookings = sum(row['bookings'] for row in stats.values())
+    days = (date_range[1] - date_range[0]).days if date_range else None
+    rows = []
+    for kind in room_types.order_by('id'):
+        row = stats.get(kind.id, {'bookings': 0, 'room_nights': 0})
+        offered = kind.total_rooms * days if days and kind.total_rooms else 0
+        rows.append({
+            'room_type_id': kind.id, 'name': kind.name, 'property_id': kind.property_id, 'total_rooms': kind.total_rooms,
+            'bookings': row['bookings'], 'room_nights': row['room_nights'], 'revenue': money.get(kind.id, []),
+            'share_pct': _percent(row['bookings'], total_bookings),
+            'occupancy_rate': _percent(min(row['room_nights'], offered), offered) if offered else None,
+        })
+    return sorted(rows, key=lambda row: (-row['bookings'], -row['room_nights'], row['name'], row['room_type_id']))
+
+
 def insights(scope, date_range, totals, rooms=None, today=None):
     """
     Derived numbers of the Status pages for the bookings in `scope`, from their `totals`
@@ -496,6 +581,8 @@ def insights(scope, date_range, totals, rooms=None, today=None):
         'average_booking_value': _average_values(scope.filter(counted_q('', date_range))),
         'average_stay_nights': (f"{Decimal(totals['nights']) / totals['bookings']:.2f}" if totals['bookings'] else None),
         'occupancy_rate': None,
+        'average_lead_days': average_lead_days(scope.filter(counted_q('', date_range))),
+        'repeat_guest_pct': repeat_guest_pct(scope.filter(counted_q('', date_range)), totals['unique_customers']),
         'previous_period': None,
         'change_pct': None,
     }

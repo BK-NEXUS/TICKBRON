@@ -10,6 +10,7 @@ vi.mock('../adapters/statusAdapter', () => ({
     getPartnerStatus: vi.fn(),
     getPartnerHotel: vi.fn(),
     getPartnerArrivals: vi.fn(),
+    getPartnerRooms: vi.fn(),
     exportPartnerReconciliation: vi.fn(),
   },
 }))
@@ -18,6 +19,7 @@ vi.mock('../utils/saveBlob', () => ({ saveBlob: vi.fn() }))
 const getStatus = vi.mocked(statusAdapter.getPartnerStatus)
 const getHotel = vi.mocked(statusAdapter.getPartnerHotel)
 const getArrivals = vi.mocked(statusAdapter.getPartnerArrivals)
+const getRooms = vi.mocked(statusAdapter.getPartnerRooms)
 const exportCsv = vi.mocked(statusAdapter.exportPartnerReconciliation)
 
 const months = Array.from({ length: 12 }, (_, i) => ({
@@ -48,6 +50,8 @@ const STATUS = {
   monthly: months,
 }
 
+const openTab = (name: string) => fireEvent.click(screen.getByRole('tab', { name }))
+
 describe('PartnerStatusTab', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -62,12 +66,71 @@ describe('PartnerStatusTab', () => {
 
     expect(await screen.findByRole('heading', { name: 'Status' })).toBeInTheDocument()
     expect(getStatus).toHaveBeenCalledWith({ period: 'all' })
+    openTab('Reports')
     expect(screen.getByText('On TICKBRON since')).toBeInTheDocument()
     expect(screen.getByText('Jan 15, 2025')).toBeInTheDocument()
     expect(screen.getByText('Guests via TICKBRON')).toBeInTheDocument()
     expect(screen.getByText('1,003')).toBeInTheDocument()
     expect(screen.getByText('1,205')).toBeInTheDocument()
     expect(screen.getByText('€60.00 · $12,530.00')).toBeInTheDocument()
+  })
+
+  it('overview: this month against last month, key numbers and next 7 days', async () => {
+    render(<PartnerStatusTab />)
+
+    expect(await screen.findByRole('tab', { name: 'Overview', selected: true })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /This month: / })).toBeInTheDocument()
+    expect(screen.getByText('Guests in the next 7 days')).toBeInTheDocument()
+    expect(screen.getByText('Booked ahead')).toBeInTheDocument()
+    expect(screen.getByText('12.5 days')).toBeInTheDocument()
+    expect(screen.getByText('Returning guests')).toBeInTheDocument()
+    expect(screen.getByText('20.00%')).toBeInTheDocument()
+  })
+
+  it('rooms tab loads the room types for the chosen period and hotel', async () => {
+    getRooms.mockResolvedValue({
+      data: {
+        period: 'all', period_range: STATUS.period_range,
+        rows: [{
+          room_type_id: 7, name: 'Deluxe Suite', property: { id: 1, name: 'Alpha Hotel' }, property_id: 1, total_rooms: 4,
+          bookings: 9, room_nights: 20, revenue: [{ currency: 'USD', amount: '900.00' }], share_pct: '75.00', occupancy_rate: null,
+        }],
+      },
+      error: null,
+    })
+    render(<PartnerStatusTab />)
+    await screen.findByRole('table', { name: 'Your properties' })
+
+    openTab('Rooms')
+
+    const table = await screen.findByRole('table', { name: 'Room types' })
+    expect(getRooms).toHaveBeenCalledWith({ period: 'all', property: undefined })
+    expect(within(table).getByText('Deluxe Suite')).toBeInTheDocument()
+    expect(within(table).getByText('Most booked')).toBeInTheDocument()
+    expect(within(table).getByText('$900.00')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Hotel'), { target: { value: '2' } })
+    await waitFor(() => expect(getRooms).toHaveBeenLastCalledWith({ period: 'all', property: 2 }))
+  })
+
+  it('rooms tab: empty and error states', async () => {
+    getRooms.mockResolvedValueOnce({ data: { period: 'all', period_range: STATUS.period_range, rows: [] }, error: null })
+    render(<PartnerStatusTab />)
+    await screen.findByRole('table', { name: 'Your properties' })
+
+    openTab('Rooms')
+    expect(await screen.findByText(/No room types yet/)).toBeInTheDocument()
+  })
+
+  it('rooms tab shows a backend error with a retry', async () => {
+    getRooms.mockResolvedValueOnce({ data: null, error: 'Boom' })
+    getRooms.mockResolvedValueOnce({ data: { period: 'all', period_range: STATUS.period_range, rows: [] }, error: null })
+    render(<PartnerStatusTab />)
+    await screen.findByRole('table', { name: 'Your properties' })
+
+    openTab('Rooms')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Boom')
+    fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
+    expect(await screen.findByText(/No room types yet/)).toBeInTheDocument()
   })
 
   it('per-property table', async () => {
@@ -127,6 +190,7 @@ describe('PartnerStatusTab', () => {
     it('leads with stayed, keeps counted and upcoming apart, and shows the may-still-change note', async () => {
       render(<PartnerStatusTab />)
       await screen.findByRole('table', { name: 'Your properties' })
+      openTab('Reports')
 
       const headline = document.querySelector('.status-card--headline') as HTMLElement
       expect(within(headline).getByText('Stayed bookings')).toBeInTheDocument()
@@ -138,6 +202,7 @@ describe('PartnerStatusTab', () => {
     it('shows the series by granularity and the reconciliation block', async () => {
       render(<PartnerStatusTab />)
       await screen.findByRole('table', { name: 'Your properties' })
+      openTab('Reports')
 
       expect(screen.getByRole('img', { name: 'Stayed bookings per month' })).toBeInTheDocument()
       expect(screen.getByRole('table', { name: 'Reconciliation' })).toBeInTheDocument()
@@ -163,6 +228,7 @@ describe('PartnerStatusTab', () => {
       exportCsv.mockResolvedValue({ data: { blob: new Blob(['x']), filename: 'partner_reconciliation.csv' }, error: null })
       render(<PartnerStatusTab />)
       await screen.findByRole('table', { name: 'Your properties' })
+      openTab('Reports')
 
       fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
 
@@ -174,6 +240,7 @@ describe('PartnerStatusTab', () => {
       exportCsv.mockResolvedValue({ data: { blob: new Blob(['x']), filename: 'partner_reconciliation.xlsx' }, error: null })
       render(<PartnerStatusTab />)
       await screen.findByRole('table', { name: 'Your properties' })
+      openTab('Reports')
 
       fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }))
 
@@ -184,6 +251,8 @@ describe('PartnerStatusTab', () => {
     it('lists today and tomorrow arrivals of all hotels', async () => {
       render(<PartnerStatusTab />)
       await screen.findByRole('table', { name: 'Your properties' })
+
+      openTab('Arrivals')
 
       await waitFor(() => expect(getArrivals).toHaveBeenCalledWith({ day: 'today', page: 1 }))
       expect(screen.getByRole('button', { name: 'Tomorrow' })).toBeInTheDocument()

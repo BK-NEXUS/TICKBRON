@@ -146,7 +146,7 @@ class TestReconciliationCsv:
             for j in range(i):
                 make_booking(status_world['guests'][0], status_world['hotels']['beta'],
                              business_today() - timedelta(days=j + 1), '10.00', status='completed')
-            with django_assert_max_num_queries(21):
+            with django_assert_max_num_queries(24):  # +3 for the month comparison, lead days and repeat guests (Status v2)
                 assert get_as(owner1, f'{P}/').status_code == 200
 
 
@@ -160,7 +160,8 @@ class TestInsights:
         detail = get_as(owner1, f'{P}/hotels/{beta.id}/', period='2026').data['insights']
         for insights in (summary, detail):
             assert set(insights) == {'cancellation_rate', 'average_booking_value', 'average_stay_nights',
-                                     'occupancy_rate', 'previous_period', 'change_pct'}
+                                     'occupancy_rate', 'previous_period', 'change_pct', 'average_lead_days',
+                                     'repeat_guest_pct'}
             assert insights['previous_period']['range'] == {'from': '2025-01-01', 'to': '2025-12-31'}
         assert summary['occupancy_rate'] is None
 

@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 from bookings.views_noshow import (
     partner_no_show_report_create, partner_no_show_report_withdraw, partner_no_show_reports,
 )
-from partner.status import partner_status, partner_status_arrivals, partner_status_hotel
+from partner.status import partner_status, partner_status_arrivals, partner_status_hotel, partner_status_rooms
 from partner.views import (
     PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
     PartnerRatePlanViewSet, PartnerDateInventoryViewSet, PartnerRoomInventoryViewSet,
@@ -29,6 +29,7 @@ urlpatterns = [
     path('status/', partner_status, name='partner-status'),
     path('status/hotels/<int:property_id>/', partner_status_hotel, name='partner-status-hotel'),
     path('status/arrivals/', partner_status_arrivals, name='partner-status-arrivals'),
+    path('status/rooms/', partner_status_rooms, name='partner-status-rooms'),
     path('', include(router.urls)),
     path('properties/<int:property_id>/photos/', partner_property_photos, name='partner-property-photos'),
     path('properties/<int:property_id>/photos/<int:photo_id>/', partner_property_photo_detail,

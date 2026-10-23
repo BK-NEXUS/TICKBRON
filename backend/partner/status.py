@@ -29,7 +29,7 @@ from bookings.models import Booking, BookingItem
 from common.csv_export import export_response, wants_export
 from common.dates import business_today
 from partner.views import IsHotelOwner
-from properties.models import Property
+from properties.models import Property, RoomType
 from properties.regions import hotel_name_expression, region_expression
 
 RECONCILIATION_CSV_HEADER = ['hotel_id', 'hotel', 'window', 'from', 'to', 'counted_bookings', 'counted_guests',
@@ -77,6 +77,7 @@ def _numbers(scope, period, date_range, year, granularity, properties):
         'granularity': granularity,
         'series': series,
         'reconciliation': metrics.reconciliation(scope),
+        'months': metrics.month_comparison(scope),
         'year': year,
         'available_years': metrics.available_years(scope),
         'monthly': metrics.monthly_series(scope, year),
@@ -219,3 +220,27 @@ def partner_status_arrivals(request):
     response = paginator.get_paginated_response(results)
     response.data.update({'day': day_param, 'date': day.isoformat()})
     return response
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([IsHotelOwner])
+def partner_status_rooms(request):
+    """Room types of the owner's hotels (?property= one hotel) ranked by counted bookings in ?period=."""
+    try:
+        period, date_range = period_from_request(request)
+    except InvalidPeriod as error:
+        return bad_request('period', error)
+    own = own_properties(request.user)
+    property_param = (request.query_params.get('property') or '').strip()
+    if property_param:
+        if not property_param.isdigit():
+            return bad_request('property', 'property must be a hotel id.')
+        own = own.filter(pk=get_object_or_404(own, pk=int(property_param)).pk)
+    room_types = RoomType.objects.filter(property__in=own, is_deleted=False)
+    names = dict(own.annotate(name=hotel_name_expression()).values_list('id', 'name'))
+    rows = metrics.room_type_stats(metrics.all_bookings().filter(property__in=own), date_range, room_types)
+    for row in rows:
+        row['property'] = {'id': row['property_id'], 'name': names.get(row['property_id'])}
+        del row['property_id']
+    return Response({'period': period, 'period_range': range_json(date_range), 'rows': rows})
