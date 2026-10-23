@@ -15,7 +15,8 @@ from admin_panel.views import IsSuperAdmin, IsSuperAdminOrStaff
 from common.dates import business_today
 from promotions import service
 from promotions.admin_serializers import (
-    CancelSerializer, PromotionCreateSerializer, PromotionSerializer, PromotionUpdateSerializer)
+    CancelSerializer, PromotionCreateSerializer, PromotionPhotoSerializer, PromotionPhotoUploadSerializer,
+    PromotionSerializer, PromotionUpdateSerializer)
 from promotions.models import Promotion, PromotionDailyStat
 from promotions.service import PromotionError
 from properties.models import Property, PropertyTranslation
@@ -55,7 +56,7 @@ def _date_param(request, name):
 def _queryset():
     return (Promotion.objects.filter(is_deleted=False)
             .select_related('property')
-            .prefetch_related('property__translations')
+            .prefetch_related('property__translations', 'photos')
             .annotate(sum_impressions=Coalesce(Sum('daily_stats__impressions'), 0),
                       sum_clicks=Coalesce(Sum('daily_stats__clicks'), 0)))
 
@@ -94,6 +95,11 @@ def _filtered(request):
         promotions = promotions.filter(end_date__gte=first)
     if last:
         promotions = promotions.filter(start_date__lte=last)
+    region = request.query_params.get('region')
+    if region:
+        if not (region.isascii() and region.isdigit()) or int(region) < 1:
+            return None, _bad('region must be a positive integer')
+        promotions = promotions.filter(property__region_ref_id=int(region))
     name = (request.query_params.get('q') or '').strip()
     if name:
         # A subquery, not a join: a join per translation would multiply the Sum() totals
@@ -243,3 +249,47 @@ def promotion_hotels(request):
     return Response({'results': [
         {'id': hotel.pk, 'name': hotel.display_name(), 'city': hotel.city, 'status': hotel.status,
          'has_running_promotion': hotel.has_running} for hotel in hotels]})
+
+
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([StaffReadsSuperAdminWrites])
+def promotion_regions(request):
+    """Every region with the ads running and waiting in it and the hotels running them (advertising panel)."""
+    return Response(service.regions_panel())
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=PromotionPhotoSerializer(many=True))
+@api_view(['GET', 'POST'])
+@permission_classes([StaffReadsSuperAdminWrites])
+def promotion_photos(request, promotion_id):
+    """GET: the live photos of one ad. POST (multipart `photo`): add one (at most 10)."""
+    promotion = _find(promotion_id)
+    if promotion is None:
+        return _not_found()
+    if request.method == 'GET':
+        live = [photo for photo in promotion.photos.all() if not photo.is_deleted and photo.is_active]
+        return Response(PromotionPhotoSerializer(live, many=True).data)
+    upload = PromotionPhotoUploadSerializer(data=request.data)
+    if not upload.is_valid():
+        return Response({'error': 'Send a picture as the field "photo"', 'code': 'bad_image', 'details': upload.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+    try:
+        row = service.add_photo(actor=request.user, promotion=promotion, photo=upload.validated_data['photo'])
+    except PromotionError as exc:
+        return _error(exc)
+    return Response(PromotionPhotoSerializer(row).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(request=None, responses={204: None})
+@api_view(['DELETE'])
+@permission_classes([StaffReadsSuperAdminWrites])
+def promotion_photo_detail(request, promotion_id, photo_id):
+    promotion = _find(promotion_id)
+    if promotion is None:
+        return _not_found()
+    try:
+        service.remove_photo(actor=request.user, promotion=promotion, photo_id=photo_id)
+    except PromotionError as exc:
+        return _error(exc)
+    return Response(status=status.HTTP_204_NO_CONTENT)

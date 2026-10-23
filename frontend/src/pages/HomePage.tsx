@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
+import { geographyName, type GeographyCountry } from '../adapters/geographyAdapter'
 import { HomeHotelSection } from '../components/HomeHotelSection'
 import { HomePropertyTypes } from '../components/HomePropertyTypes'
 import { HomeWhereTo } from '../components/HomeWhereTo'
@@ -15,18 +16,21 @@ const HOTELS_PER_LIST = 8
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const heroRef = useTilt<HTMLElement>(6)
   // null until the answer arrives, so the banner space is reserved once and then kept or removed
   const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
+  // The country the guest opened under "Where to?": the banner then shows the ads of hotels in it
+  const [country, setCountry] = useState<GeographyCountry | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    promotionAdapter.getHomePromotions()
+    const request = country ? promotionAdapter.getHomePromotions(country.id) : promotionAdapter.getHomePromotions()
+    request
       .then(result => { if (!cancelled) setPromoted(result.data ?? []) })
       .catch(() => { if (!cancelled) setPromoted([]) })
     return () => { cancelled = true }
-  }, [])
+  }, [country])
 
   return (
     <div className="home-page">
@@ -42,10 +46,14 @@ export function HomePage() {
         </div>
       </section>
 
-      <HomeWhereTo />
+      <HomeWhereTo onCountryChange={setCountry} />
 
       <div className="container home-promo">
-        <PromoCarousel items={promoted ?? []} loading={promoted === null} />
+        <PromoCarousel
+          items={promoted ?? []}
+          loading={promoted === null}
+          placeName={country ? geographyName(country, language) : undefined}
+        />
       </div>
 
       <HomePropertyTypes />

@@ -91,6 +91,8 @@ class AdminAccessLog(models.Model):
         ('promotion_resume', 'Resumed a hotel promotion'),
         ('promotion_cancel', 'Cancelled a hotel promotion'),
         ('promotion_mark_paid', 'Recorded the payment of a hotel promotion'),
+        ('promotion_photo_add', 'Added a photo to a hotel promotion'),
+        ('promotion_photo_remove', 'Removed a photo from a hotel promotion'),
         ('property_approve', 'Approved a property'),
         ('property_reject', 'Rejected a property'),
         ('property_suspend', 'Suspended a property'),
