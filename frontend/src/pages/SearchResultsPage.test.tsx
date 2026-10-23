@@ -346,7 +346,7 @@ describe('SearchResultsPage', () => {
       await renderSearch()
       fireEvent.click(screen.getByLabelText('Map view'))
       expect(await screen.findByRole('region', { name: 'Map of properties' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Charming Paris Apartment, €150/ })).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: /Charming Paris Apartment, €150/ })).toBeInTheDocument()
     })
 
     it('a card above the filters opens the map view', async () => {
