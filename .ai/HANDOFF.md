@@ -3077,3 +3077,10 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - New `deploy/env.production.example` (backend, filled for tickbron.com; secrets are `CHANGE_ME`) and `deploy/frontend.env.production.example` (`VITE_API_BASE_URL=https://tickbron.com`, written out because an empty value falls back to localhost). `deploy/nginx.conf.example` now says tickbron.com and redirects www. The default `DEFAULT_FROM_EMAIL` is `no-reply@tickbron.com` (was tickbron.uz; `.env.example`, `settings.py`, RELEASE_CHECKLIST and `frontend/.env.example` follow).
 - Checked: the production example, with a random SECRET_KEY, starts the app (`manage.py check` and `check --deploy` pass on Django 6.1.2); with an `http://` CORS origin it is refused, as the production rules say.
 - No real secret is in the repository and the server's real `.env` is not created here. Still the owner's: hosting, the A records at ahost.uz, the TLS certificate, the SMTP account for `no-reply@tickbron.com`, the real SECRET_KEY and database password.
+
+## Status v2: owner side (2026-10-23)
+- Owner Status is now four tabs (Overview, Rooms, Arrivals, Reports); the old long page is the Reports tab, nothing was removed. New numbers: this month against last month (revenue, guests, bookings), guests arriving in the next 7 days, booked-ahead days, returning guests %, and a room type ranking (`GET /partner/status/rooms/`). Contract in API_CONTRACT.md, plan in PLAN_STATUS_V2.md.
+- New texts `ownerStatus.*` exist in uz, ru and en.
+- Next: admin Status v2 (overview tab, admin language switch for buttons, filters and types).
+- Found, not fixed: `tsc -b` reports `Property 'includes' does not exist on type 'string'` in `frontend/vite.config.ts` (the `build` and `lint` scripts pass).
+

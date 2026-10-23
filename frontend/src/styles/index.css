@@ -8470,6 +8470,58 @@ button.property-gallery-image {
   color: var(--color-text-tertiary);
 }
 
+.status-card-caption.status-change--up { color: var(--color-success); font-weight: var(--font-weight-bold); }
+.status-card-caption.status-change--down { color: var(--color-error); font-weight: var(--font-weight-bold); }
+
+.status-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.status-badge {
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  padding: 0 var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.status-share {
+  display: inline-block;
+  width: 80px;
+  height: 8px;
+  margin-right: var(--spacing-sm);
+  vertical-align: middle;
+  border-radius: var(--radius-lg);
+  background: var(--color-background-alt);
+  overflow: hidden;
+}
+
+.status-share-bar {
+  display: block;
+  height: 100%;
+  background: var(--color-gold);
+}
+
+.status-share-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.partner-status > .segmented {
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 480px) {
+  .partner-status > .segmented {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
 .status-changes {
   margin-bottom: var(--spacing-xl);
 }

@@ -10,6 +10,8 @@ export const INSIGHTS: StatusInsights = {
   occupancy_rate: null,
   average_booking_value: [{ currency: 'USD', amount: '120.00' }],
   average_stay_nights: '3.60',
+  average_lead_days: '12.5',
+  repeat_guest_pct: '20.00',
   previous_period: null,
   change_pct: null,
 }
@@ -88,6 +90,12 @@ export const PARTNER_STATUS: PartnerStatus = {
   granularity: 'month',
   series: SERIES,
   reconciliation: RECONCILIATION,
+  months: {
+    current: { month: '2026-10', range: { from: '2026-10-01', to: '2026-10-31' }, bookings: 12, guests: 30, revenue: [{ currency: 'USD', amount: '1500.00' }] },
+    previous: { month: '2026-09', range: { from: '2026-09-01', to: '2026-09-30' }, bookings: 10, guests: 24, revenue: [{ currency: 'USD', amount: '1200.00' }] },
+    change_pct: { bookings: '20.0', guests: '25.0', revenue: [{ currency: 'USD', pct: '25.0' }] },
+    next_7_days: { bookings: 3, guests: 7 },
+  },
   year: 2026,
   available_years: [2025, 2026],
   monthly: HOTEL_DETAIL.monthly,

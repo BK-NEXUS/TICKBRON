@@ -135,6 +135,10 @@ export interface StatusInsights {
   occupancy_rate: string | null
   average_booking_value: Money[]
   average_stay_nights: string | null
+  /** Days between making a booking and its check-in, on average (Status v2) */
+  average_lead_days: string | null
+  /** Percent of the guests who booked more than once (Status v2) */
+  repeat_guest_pct: string | null
   previous_period: {
     range: PeriodRange
     totals: { bookings: number; guests: number; nights: number; stayed: number; revenue: Money[] }
@@ -281,6 +285,45 @@ export interface PartnerStatusProperty extends StatusTotals {
   status: string
 }
 
+/** One calendar month of the owner's numbers (Status v2) */
+export interface MonthBlock {
+  /** YYYY-MM */
+  month: string
+  range: { from: string; to: string }
+  bookings: number
+  guests: number
+  revenue: Money[]
+}
+
+/** This month against last month and the next 7 days, whatever period the page shows (Status v2) */
+export interface MonthComparison {
+  current: MonthBlock
+  previous: MonthBlock
+  change_pct: { bookings: string | null; guests: string | null; revenue: { currency: string; pct: string | null }[] }
+  next_7_days: { bookings: number; guests: number }
+}
+
+/** One room type of GET /partner/status/rooms/ (Status v2) */
+export interface RoomStatusRow {
+  room_type_id: number
+  name: string
+  property: { id: number; name: string | null }
+  total_rooms: number
+  bookings: number
+  room_nights: number
+  revenue: Money[]
+  /** Percent of all the counted room-type bookings; null when there are none */
+  share_pct: string | null
+  /** Percent; null for all time or without rooms */
+  occupancy_rate: string | null
+}
+
+export interface PartnerRoomsStatus {
+  period: StatusPeriod
+  period_range: PeriodRange
+  rows: RoomStatusRow[]
+}
+
 /** GET /api/v1/partner/status/ (the owner's own properties only). Contract: S4 */
 export interface PartnerStatus {
   /** YYYY-MM-DD: when the owner's account was created */
@@ -293,6 +336,7 @@ export interface PartnerStatus {
   granularity: StatusGranularity
   series: StatusSeriesRow[]
   reconciliation: StatusReconciliation
+  months: MonthComparison
   year: number
   available_years: number[]
   monthly: StatusMonth[]
@@ -529,6 +573,12 @@ export const statusAdapter = {
   getPartnerHotel(hotelId: number, params: StatusDetailParams) {
     return request<PartnerHotelStatus>(
       `${PARTNER_URL}/hotels/${hotelId}/${detailQuery(params)}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
+  },
+
+  getPartnerRooms(params: StatusPeriodParams & { property?: number }) {
+    const { property, ...period } = params
+    return request<PartnerRoomsStatus>(
+      `${PARTNER_URL}/rooms/${query({ ...periodValues(period), property })}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
   getPartnerArrivals({ day, property, page }: { day?: ArrivalsDay; property?: number; page?: number }) {
