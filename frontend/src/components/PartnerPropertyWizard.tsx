@@ -506,7 +506,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       </div>
 
       {error && (
-        <div className="wizard-error" role="alert" aria-live="polite">
+        <div className="profile-form-error" role="alert" aria-live="polite">
           {error}
         </div>
       )}

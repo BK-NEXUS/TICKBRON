@@ -53,6 +53,12 @@ class TestWritePrices:
         assert response.status_code == 400
         assert 'prices' in str(response.data)
 
+    @pytest.mark.parametrize('prices', ['65.00', ['USD', '65.00'], 65])
+    def test_a_price_map_that_is_not_an_object_is_a_400_with_an_example(self, owner, inventory, prices):
+        response = client_for(owner).post(f'{P}/rates/', new_plan(inventory, prices=prices), format='json')
+        assert response.status_code == 400
+        assert 'Send an object like' in str(response.data)
+
     def test_base_price_must_agree_with_the_main_price(self, owner, inventory):
         response = client_for(owner).post(f'{P}/rates/', new_plan(inventory, prices=FULL, base_price='70.00'),
                                           format='json')

@@ -262,7 +262,7 @@ class PriceMapField(serializers.Field):
     and the owner's own price in each other currency. Read: what the owner entered. Write: a map
     whose keys are supported currencies and whose amounts fit the currency's smallest unit.
     """
-    default_error_messages = {'not_a_map': 'Send an object like {"USD": "65.00", "UZS": "800000"}.'}
+    default_error_messages = {'not_a_map': 'Send an object like {{"USD": "65.00", "UZS": "800000"}}.'}
 
     def get_attribute(self, instance):
         return instance
