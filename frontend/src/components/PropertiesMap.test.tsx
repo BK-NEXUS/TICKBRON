@@ -140,6 +140,24 @@ describe('PropertiesMap', () => {
       expect(screen.getByRole('button', { name: 'Beta Hotel, $55' })).toBeInTheDocument()
     })
 
+    it('a small group has the plain bubble, a group of ten or more a bigger one, fifty or more the biggest', () => {
+      const crowd = (count: number) => Array.from({ length: count }, (_, i) =>
+        property(100 + i, `Crowd ${i}`, { latitude: `41.3110${String(i % 10)}`, longitude: `69.2797${String(Math.floor(i / 10))}` }))
+
+      const small = renderMap([alpha, alphaTwin])
+      const bubble = small.container.querySelector('.map-cluster') as HTMLElement
+      expect(bubble.classList.contains('map-cluster--md')).toBe(false)
+      expect(bubble.classList.contains('map-cluster--lg')).toBe(false)
+      small.unmount()
+
+      const medium = renderMap(crowd(12))
+      expect(medium.container.querySelector('.map-cluster')).toHaveClass('map-cluster--md')
+      medium.unmount()
+
+      const large = renderMap(crowd(55))
+      expect(large.container.querySelector('.map-cluster')).toHaveClass('map-cluster--lg')
+    })
+
     it('a lone pin is not grouped', () => {
       const { container } = renderMap([alpha, beta])
       expect(container.querySelector('.map-cluster')).toBeNull()
