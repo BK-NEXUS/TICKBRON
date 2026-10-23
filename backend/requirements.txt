@@ -1,5 +1,5 @@
-# Core Django (5.2 LTS: 4.2 reached end of life; upgraded in the R4 security review)
-Django==5.2.17
+# Core Django (6.1; 4.2 reached end of life, 5.2 was the LTS used until 2026-10-23)
+Django==6.1.2
 djangorestframework==3.18.2
 django-cors-headers==4.9.0
 
@@ -11,7 +11,7 @@ Pillow==13.0.0
 
 # Redis & Celery
 redis==5.0.1
-celery==5.3.4
+celery==5.6.3
 django-redis==6.0.0
 
 # Phone number validation (E.164)

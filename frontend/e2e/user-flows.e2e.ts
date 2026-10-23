@@ -129,6 +129,13 @@ test('A guest books a room and it is confirmed at once (cash at the hotel)', asy
   await page.addInitScript(() => localStorage.setItem('tickbron.currency', 'USD'))
   await step(audit, 'A0 login-as-guest', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
+    // One account holds at most two upcoming bookings and never two for the same nights, so an earlier run's
+    // bookings would block this one: start from a guest with none
+    const own = await (await api(page, 'GET', '/api/v1/bookings/?status=confirmed')).json()
+    for (const booking of own.results.filter((row: { check_in: string }) => row.check_in > localDate(0))) {
+      // a stay that has started cannot be cancelled online, and it does not overlap the weekend this flow books
+      expect((await api(page, 'POST', `/api/v1/bookings/${booking.id}/cancel/`, {})).ok()).toBe(true)
+    }
   })
 
   await step(audit, 'A1 home', async () => {
