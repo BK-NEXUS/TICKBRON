@@ -1170,3 +1170,12 @@ All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own prope
 - `GET /api/v1/partner/rooms/` and `/rooms/{id}/` gain read-only `photos_count` (live photos) and `cover_url` (the cover, else the first photo, else `null`).
 - The guest page already lists `photos` per room type (`properties` detail); owner uploads now fill it.
 
+### Ads: pictures, banner pictures and the regions panel (2026-10-23)
+- `GET /api/v1/admin-panel/promotions/{id}/photos/` (staff or super-admin): `[ {id, photo_url, display_order} ]`, live photos in upload order.
+- `POST` the same URL (super-admin only; multipart field `photo`): adds one picture. The file is decoded as an image first (a renamed text file → 400 `bad_image`), then the upload rules (JPG, PNG, WebP or GIF, 10 MB, 40 megapixels). At most **10** per ad (400 `too_many_photos`); only an ad that can still change (scheduled, active or paused; else 400 `bad_status`). The stored name is a random uuid under `promotions/{id}/`. Writes an audit row `promotion_photo_add` (ids only).
+- `DELETE /api/v1/admin-panel/promotions/{id}/photos/{photo_id}/` (super-admin): soft delete (204; unknown or another ad's photo → 404 `not_found`); audit row `promotion_photo_remove`.
+- Promotion rows (`GET /admin-panel/promotions/` and `/{id}/`) gain `photos: [{id, photo_url, display_order}]` and `photos_count`.
+- `GET /api/v1/admin-panel/promotions/?region={id}`: only ads of hotels in that region (not a positive integer → 400 `invalid_query`).
+- `GET /api/v1/admin-panel/promotions/regions/` (staff or super-admin): every active region `{id, country_code, name_uz, name_ru, name_en, running, waiting, hotels: [{id, name}]}`. `running` = ads shown right now, `hotels` = the hotels running them, `waiting` = paused, unpaid or not started yet (cancelled and ended ads are not counted). Regions with the most running ads first, empty regions included.
+- Banner items (`GET /api/v1/promotions/home/` and `promoted` in the search response) gain `promo_photos`: up to 10 picture addresses, the ad's own pictures, else the hotel's own photos with the cover first, `[]` when there are none.
+

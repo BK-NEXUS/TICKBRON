@@ -8,12 +8,28 @@ import { priceIn } from '../utils/price'
 import { StarIcon } from './StarIcon'
 
 const ROTATE_MS = 5000
+// An ad can hold up to 10 pictures: each is shown for this long, and the banner stays long enough to show them all
+const PHOTO_MS = 1800
+const MAX_SLIDE_MS = 12000
 // A pointer movement shorter than this is a tap on the banner, not a swipe
 const SWIPE_MIN_PX = 40
 
 interface PromoCarouselProps {
   items: PromotedProperty[]
   loading?: boolean
+  /** The place the ads are for (a country, a region); shown above the banner when known */
+  placeName?: string
+}
+
+/** The pictures of a banner: the ad's own, else the hotel's cover */
+function photosOf(item: PromotedProperty): string[] {
+  if (item.promo_photos && item.promo_photos.length > 0) return item.promo_photos
+  return item.primary_photo?.photo ? [item.primary_photo.photo] : []
+}
+
+/** How long a banner stays: at least ROTATE_MS, more when it has many pictures, never more than MAX_SLIDE_MS */
+function stayMs(item: PromotedProperty): number {
+  return Math.min(MAX_SLIDE_MS, Math.max(ROTATE_MS, photosOf(item).length * PHOTO_MS))
 }
 
 function prefersReducedMotion(): boolean {
@@ -25,7 +41,7 @@ function prefersReducedMotion(): boolean {
  * It pauses on hover, keyboard focus, a hidden tab and the pause button, and never rotates
  * for visitors who prefer reduced motion. With nothing to show it renders nothing.
  */
-export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
+export function PromoCarousel({ items, loading = false, placeName }: PromoCarouselProps) {
   const { t } = useI18n()
   const [index, setIndex] = useState(0)
   const [hovered, setHovered] = useState(false)
@@ -38,7 +54,8 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
 
   const count = items.length
   const current = count === 0 ? 0 : Math.min(index, count - 1)
-  const canRotate = count > 1 && !reducedMotion && !hovered && !focused && !userPaused && !tabHidden
+  const idle = !reducedMotion && !hovered && !focused && !userPaused && !tabHidden
+  const canRotate = count > 1 && idle
 
   const show = useCallback((next: number) => setIndex(((next % count) + count) % count), [count])
 
@@ -51,9 +68,9 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
   // The timer restarts after every change of banner, so a manual move gets a full 5 seconds
   useEffect(() => {
     if (!canRotate) return
-    const timer = setTimeout(() => show(current + 1), ROTATE_MS)
+    const timer = setTimeout(() => show(current + 1), stayMs(items[current]))
     return () => clearTimeout(timer)
-  }, [canRotate, current, show])
+  }, [canRotate, current, show, items])
 
   if (loading && count === 0) {
     return (
@@ -81,6 +98,8 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
   }
 
   return (
+    <>
+    {placeName && <h2 className="promo-carousel-place">{t('promo.inPlace', { place: placeName })}</h2>}
     <section
       className="promo-carousel"
       role="region"
@@ -103,6 +122,7 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
             key={item.promotion_id}
             item={item}
             active={position === current}
+            moving={idle}
             position={position + 1}
             total={count}
             onOpen={(event) => {
@@ -164,25 +184,37 @@ export function PromoCarousel({ items, loading = false }: PromoCarouselProps) {
         </>
       )}
     </section>
+    </>
   )
 }
 
 interface PromoSlideProps {
   item: PromotedProperty
   active: boolean
+  /** The pictures may move (not hovered, not paused, motion allowed) */
+  moving: boolean
   position: number
   total: number
   onOpen: (event: React.MouseEvent) => void
 }
 
-function PromoSlide({ item, active, position, total, onOpen }: PromoSlideProps) {
+function PromoSlide({ item, active, moving, position, total, onOpen }: PromoSlideProps) {
   const { t, formatMoney, currency } = useI18n()
   // The "from" price in the chosen currency (≈ for a conversion); the hotel's own price when the backend has none
   const shown = priceIn(item, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
   const name = item.translations[0]?.name || t('card.unknown')
   const rating = item.average_rating ?? item.rating ?? 0
-  const photo = item.primary_photo?.photo
+  const photos = photosOf(item)
+  const [photoIndex, setPhotoIndex] = useState(0)
+
+  // A banner that is not on show starts over, so it opens on its first picture the next time
+  useEffect(() => {
+    if (!active) { setPhotoIndex(0); return }
+    if (!moving || photos.length < 2) return
+    const timer = setTimeout(() => setPhotoIndex(index => (index + 1) % photos.length), PHOTO_MS)
+    return () => clearTimeout(timer)
+  }, [active, moving, photos.length, photoIndex])
 
   return (
     <div
@@ -193,14 +225,29 @@ function PromoSlide({ item, active, position, total, onOpen }: PromoSlideProps) 
       aria-hidden={!active}
     >
       <Link to={`/property/${item.id}`} className="promo-slide-link" tabIndex={active ? 0 : -1} onClick={onOpen}>
-        {photo ? (
-          <img className="promo-slide-photo" src={photo} alt="" loading={position === 1 ? 'eager' : 'lazy'} />
+        {photos.length > 0 ? (
+          photos.map((photo, number) => (
+            <img
+              key={photo}
+              className={`promo-slide-photo${number === photoIndex ? ' promo-slide-photo--on' : ''}`}
+              src={photo}
+              alt=""
+              loading={position === 1 && number === 0 ? 'eager' : 'lazy'}
+            />
+          ))
         ) : (
           <div className="promo-slide-placeholder" data-testid="promo-image-placeholder">
             <House size={72} aria-hidden="true" />
           </div>
         )}
         <span className="promo-slide-badge">{t('promo.label')}</span>
+        {photos.length > 1 && (
+          <span className="promo-slide-photodots" aria-hidden="true">
+            {photos.map((photo, number) => (
+              <span key={photo} className={`promo-slide-photodot${number === photoIndex ? ' promo-slide-photodot--on' : ''}`} />
+            ))}
+          </span>
+        )}
         <span className="promo-slide-info">
           <span className="promo-slide-name">{name}</span>
           <span className="promo-slide-meta">

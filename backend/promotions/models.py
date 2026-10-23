@@ -4,6 +4,9 @@ Paid placement of hotels in the banner carousel (R10).
 One `Promotion` row is one paid period of one hotel. The price is only the agreed amount
 typed by the super-admin for the books; nothing in booking or payment reads it.
 """
+import os
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -71,3 +74,22 @@ class PromotionDailyStat(models.Model):
         db_table = 'promotion_daily_stats'
         constraints = [models.UniqueConstraint(fields=['promotion', 'date'], name='promo_stat_unique_day')]
         ordering = ['-date']
+
+
+def promotion_photo_path(instance, filename):
+    """The client's file name is never used: stored paths are public and must not be guessable."""
+    return f'promotions/{instance.promotion_id}/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}'
+
+
+class PromotionPhoto(BaseModel):
+    """A picture the super-admin put on one ad; the banner shows these instead of the hotel's own photos."""
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='photos')
+    photo = models.ImageField(upload_to=promotion_photo_path)
+    display_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = 'promotion_photos'
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return f'PromotionPhoto {self.pk} promotion:{self.promotion_id}'

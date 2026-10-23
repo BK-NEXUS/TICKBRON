@@ -185,7 +185,7 @@ export function SearchResultsPage() {
         <div className="container">
           {/* Paid banners: above the filters and the list, only hotels that match this search */}
           <div className="search-results-promo">
-            <PromoCarousel items={promoted ?? []} />
+            <PromoCarousel items={promoted ?? []} placeName={searchParams.get('destination') || undefined} />
           </div>
           <div className="search-results-layout">
             {/* Filters Sidebar */}
