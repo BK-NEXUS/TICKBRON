@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCount, formatMoney, formatMoneyList, monthLabel, periodLabel } from './statusFormat'
+import { formatCount, formatMoney, formatMoneyCompact, formatMoneyList, monthLabel, periodLabel } from './statusFormat'
 
 describe('statusFormat', () => {
   it('formats counts with thousand separators', () => {
@@ -28,5 +28,13 @@ describe('statusFormat', () => {
     expect(periodLabel('all')).toBe('All time')
     expect(periodLabel('2026')).toBe('2026')
     expect(periodLabel('2026-04')).toBe('April 2026')
+  })
+
+  it('formatMoneyCompact: a short amount for chart labels', () => {
+    expect(formatMoneyCompact({ currency: 'USD', amount: '54201950.00' })).toBe('$54.2M')
+    expect(formatMoneyCompact({ currency: 'USD', amount: '1500.00' })).toBe('$1.5K')
+    expect(formatMoneyCompact({ currency: 'USD', amount: '350.00' })).toBe('$350')
+    expect(formatMoneyCompact({ currency: 'UZS', amount: '54201950.00' })).toMatch(/^UZS\s?54\.2M$/)
+    expect(formatMoneyCompact({ currency: 'XYZ?', amount: '2500000' })).toBe('XYZ? 2.5M')
   })
 })

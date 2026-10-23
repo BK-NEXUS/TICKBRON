@@ -360,6 +360,7 @@ export function PartnerDashboardPage() {
           <PartnerRoomsManagement
             propertyId={selectedProperty.id}
             propertyName={propertyName(selectedProperty)}
+            currency={selectedProperty.currency}
             onManageRates={handleRoomTypeSelect}
             onManageCalendar={handleCalendarSelect}
           />

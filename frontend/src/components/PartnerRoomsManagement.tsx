@@ -1,11 +1,16 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
+import { House } from 'lucide-react'
 import { VipBadge } from './VipBadge'
+import { PartnerRoomPhotos, MAX_ROOM_PHOTOS } from './PartnerRoomPhotos'
+import { RoomPhotoQueue } from './RoomPhotoQueue'
 import { partnerAdapter, PartnerRoomType, CreateRoomTypeRequest, UpdateRoomTypeRequest } from '../adapters/partnerAdapter'
 
 interface PartnerRoomsManagementProps {
   propertyId: number
   propertyName: string
+  /** The hotel's currency: room types are priced in it (the server refuses any other) */
+  currency?: string
   /** Open the rate plans (and from there availability) of a room type */
   onManageRates?: (roomType: { id: number; name: string; currency: string }) => void
   /** Open the calendar (RoomInventory + external-booking blocks) of a room type */
@@ -14,7 +19,10 @@ interface PartnerRoomsManagementProps {
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates, onManageCalendar }: PartnerRoomsManagementProps) {
+/** A web address made from a name: lower case letters and digits joined by dashes */
+const slugify = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+export function PartnerRoomsManagement({ propertyId, propertyName, currency, onManageRates, onManageCalendar }: PartnerRoomsManagementProps) {
   const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [roomTypes, setRoomTypes] = useState<PartnerRoomType[]>([])
@@ -22,6 +30,9 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [queuedPhotos, setQueuedPhotos] = useState<File[]>([])
+  // The web address follows the name until the owner types one
+  const [slugTouched, setSlugTouched] = useState(false)
 
   const [formData, setFormData] = useState<CreateRoomTypeRequest>({
     property: propertyId,
@@ -31,7 +42,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
     base_occupancy: 1,
     max_occupancy: 2,
     base_price: 100,
-    currency: 'USD',
+    currency: currency ?? 'USD',
     total_rooms: 1,
     bed_configuration: '',
     room_size: undefined,
@@ -73,21 +84,35 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
 
     try {
       const response = await partnerAdapter.createRoomType(formData)
-      
-      if (response.error) {
-        setError(response.error)
+
+      if (response.error || !response.data) {
+        setError(response.error ?? t('partner.failedToCreateRoom'))
         setLoading(false)
         return
       }
 
+      const created = response.data
+      const failures: string[] = []
+      for (const file of queuedPhotos) {
+        const { error: uploadError } = await partnerAdapter.uploadRoomPhoto(created.id, { photo: file, photo_type: 'other' })
+        if (uploadError) failures.push(t('photos.uploadFailed', { name: file.name, error: uploadError }))
+      }
+      setQueuedPhotos([])
+      loadRoomTypes()
+      if (failures.length > 0) {
+        // The room type exists: stay on it so the owner can add the missing photos
+        setSelectedRoomType(created)
+        setViewMode('edit')
+        setError([t('roomForm.photosFailed'), ...failures].join(' '))
+        return
+      }
       setSuccessMessage(t('partner.roomTypeCreatedSuccessfully'))
       setViewMode('list')
       resetForm()
-      loadRoomTypes()
-      
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
       setError(t('partner.failedToCreateRoom'))
+    } finally {
       setLoading(false)
     }
   }
@@ -175,6 +200,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
       room_size: roomType.room_size,
       is_vip: roomType.is_vip,
     })
+    setSlugTouched(true)
     setViewMode('edit')
   }
 
@@ -215,16 +241,23 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
       base_occupancy: 1,
       max_occupancy: 2,
       base_price: 100,
-      currency: 'USD',
+      currency: currency ?? 'USD',
       total_rooms: 1,
       bed_configuration: '',
       room_size: undefined,
       is_vip: false,
     })
+    setQueuedPhotos([])
+    setSlugTouched(false)
   }
 
   const handleInputChange = <K extends keyof CreateRoomTypeRequest>(field: K, value: CreateRoomTypeRequest[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    setError(null)
+  }
+
+  const handleNameChange = (name: string) => {
+    setFormData(prev => ({ ...prev, name, slug: slugTouched ? prev.slug : slugify(name) }))
     setError(null)
   }
 
@@ -269,6 +302,23 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         <div className="room-types-grid">
           {roomTypes.map(roomType => (
             <div key={roomType.id} className="room-type-card">
+              <div className="room-type-card-media">
+                {roomType.cover_url
+                  ? <img src={roomType.cover_url} alt="" loading="lazy" />
+                  : <House size={40} aria-hidden="true" />}
+                {roomType.photos_count > 0
+                  ? <span className="room-type-photo-count">{t('roomList.photos', { count: roomType.photos_count })}</span>
+                  : (
+                    <button
+                      type="button"
+                      className="room-type-no-photos"
+                      aria-label={t('roomList.addPhotosFor', { name: roomType.name })}
+                      onClick={() => handleEdit(roomType)}
+                    >
+                      {t('roomList.noPhotos')}
+                    </button>
+                  )}
+              </div>
               <div className="room-type-card-header">
                 <h3 className="room-type-name">{roomType.name} {roomType.is_vip && <VipBadge />}</h3>
                 <span className="room-type-slug">{roomType.slug}</span>
@@ -278,7 +328,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
                 <div className="room-type-details">
                   <div className="room-type-detail">
                     <span className="detail-label">{t('partner.occupancy')}</span>
-                    <span className="detail-value">{roomType.base_occupancy} - {roomType.max_occupancy} guests</span>
+                    <span className="detail-value">{t('roomList.guestsRange', { from: roomType.base_occupancy, to: roomType.max_occupancy })}</span>
                   </div>
                   <div className="room-type-detail">
                     <span className="detail-label">{t('partner.totalRooms')}</span>
@@ -291,7 +341,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
                   {roomType.room_size && (
                     <div className="room-type-detail">
                       <span className="detail-label">{t('partner.roomSize')}</span>
-                      <span className="detail-value">{roomType.room_size} sq m</span>
+                      <span className="detail-value">{t('roomList.sqm', { size: roomType.room_size })}</span>
                     </div>
                   )}
                   <div className="room-type-detail">
@@ -352,6 +402,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
             setViewMode('list')
             resetForm()
             setSelectedRoomType(null)
+            setError(null)
           }}
           className="btn btn-tertiary"
           aria-label={t('partner.cancelAndReturnTo')}
@@ -370,53 +421,15 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
         e.preventDefault()
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
-        <div className="form-group">
-          <label htmlFor="room_name">{t('partner.roomName')}</label>
-          <input
-            id="room_name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            className="form-input"
-            required
-            aria-required="true"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="room_slug">{t('partner.slug')}</label>
-          <input
-            id="room_slug"
-            type="text"
-            value={formData.slug}
-            onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-            className="form-input"
-            required
-            aria-required="true"
-          />
-          <small className="form-hint">{t('partner.urlFriendlyIdentifierE')}</small>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="room_description">{t('partner.description')}</label>
-          <textarea
-            id="room_description"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            className="form-input"
-            rows={3}
-          />
-        </div>
-
-        <div className="form-row">
+        <fieldset className="rooms-form-section">
+          <legend>{t('roomForm.basics')}</legend>
           <div className="form-group">
-            <label htmlFor="base_occupancy">{t('partner.baseOccupancy')}</label>
+            <label htmlFor="room_name">{t('partner.roomName')}</label>
             <input
-              id="base_occupancy"
-              type="number"
-              min="1"
-              value={formData.base_occupancy}
-              onChange={(e) => handleInputChange('base_occupancy', parseInt(e.target.value) || 0)}
+              id="room_name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleNameChange(e.target.value)}
               className="form-input"
               required
               aria-required="true"
@@ -424,107 +437,171 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           </div>
 
           <div className="form-group">
-            <label htmlFor="max_occupancy">{t('partner.maxOccupancy')}</label>
-            <input
-              id="max_occupancy"
-              type="number"
-              min="1"
-              value={formData.max_occupancy}
-              onChange={(e) => handleInputChange('max_occupancy', parseInt(e.target.value) || 0)}
+            <label htmlFor="room_description">{t('partner.description')}</label>
+            <textarea
+              id="room_description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
               className="form-input"
-              required
-              aria-required="true"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="total_rooms">{t('partner.totalRooms2')}</label>
-            <input
-              id="total_rooms"
-              type="number"
-              min="1"
-              value={formData.total_rooms}
-              onChange={(e) => handleInputChange('total_rooms', parseInt(e.target.value) || 0)}
-              className="form-input"
-              required
-              aria-required="true"
+              rows={3}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="room_size">{t('partner.roomSizeSqM')}</label>
+            <label htmlFor="room_slug">{t('partner.slug')}</label>
             <input
-              id="room_size"
-              type="number"
-              min="0"
-              value={formData.room_size || ''}
-              onChange={(e) => handleInputChange('room_size', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="form-input"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="base_price">{t('partner.basePrice2')}</label>
-            <input
-              id="base_price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.base_price}
-              onChange={(e) => handleInputChange('base_price', parseFloat(e.target.value) || 0)}
+              id="room_slug"
+              type="text"
+              value={formData.slug}
+              onChange={(e) => { setSlugTouched(true); handleInputChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-')) }}
               className="form-input"
               required
               aria-required="true"
             />
+            <small className="form-hint">{t('roomForm.slugHint')}</small>
+          </div>
+        </fieldset>
+
+        <fieldset className="rooms-form-section">
+          <legend>{t('roomForm.capacity')}</legend>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="base_occupancy">{t('partner.baseOccupancy')}</label>
+              <input
+                id="base_occupancy"
+                type="number"
+                min="1"
+                value={formData.base_occupancy}
+                onChange={(e) => handleInputChange('base_occupancy', parseInt(e.target.value) || 0)}
+                className="form-input"
+                required
+                aria-required="true"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="max_occupancy">{t('partner.maxOccupancy')}</label>
+              <input
+                id="max_occupancy"
+                type="number"
+                min="1"
+                value={formData.max_occupancy}
+                onChange={(e) => handleInputChange('max_occupancy', parseInt(e.target.value) || 0)}
+                className="form-input"
+                required
+                aria-required="true"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="total_rooms">{t('partner.totalRooms2')}</label>
+              <input
+                id="total_rooms"
+                type="number"
+                min="1"
+                value={formData.total_rooms}
+                onChange={(e) => handleInputChange('total_rooms', parseInt(e.target.value) || 0)}
+                className="form-input"
+                required
+                aria-required="true"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="room_size">{t('partner.roomSizeSqM')}</label>
+              <input
+                id="room_size"
+                type="number"
+                min="0"
+                value={formData.room_size || ''}
+                onChange={(e) => handleInputChange('room_size', e.target.value ? parseInt(e.target.value) : undefined)}
+                className="form-input"
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="currency">{t('partner.currency')}</label>
-            <select
-              id="currency"
-              value={formData.currency}
-              onChange={(e) => handleInputChange('currency', e.target.value)}
+            <label htmlFor="bed_configuration">{t('partner.bedConfiguration2')}</label>
+            <input
+              id="bed_configuration"
+              type="text"
+              value={formData.bed_configuration}
+              onChange={(e) => handleInputChange('bed_configuration', e.target.value)}
               className="form-input"
+              placeholder={t('partner.eG1King')}
               required
               aria-required="true"
-            >
-              <option value="USD">{t('partner.usdUsDollar')}</option>
-              <option value="EUR">{t('partner.eurEuro')}</option>
-              <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="bed_configuration">{t('partner.bedConfiguration2')}</label>
-          <input
-            id="bed_configuration"
-            type="text"
-            value={formData.bed_configuration}
-            onChange={(e) => handleInputChange('bed_configuration', e.target.value)}
-            className="form-input"
-            placeholder={t('partner.eG1King')}
-            required
-            aria-required="true"
-          />
-        </div>
-
-        <div className="form-group checkbox-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.is_vip}
-              onChange={(e) => handleInputChange('is_vip', e.target.checked)}
-              aria-describedby="is_vip_help"
             />
-            <span>{t('vip.switch')}</span>
-          </label>
-          <small id="is_vip_help">{t('vip.help')}</small>
-        </div>
+          </div>
+        </fieldset>
+
+        <fieldset className="rooms-form-section">
+          <legend>{t('roomForm.price')}</legend>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="base_price">{t('partner.basePrice2')}</label>
+              <input
+                id="base_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.base_price}
+                onChange={(e) => handleInputChange('base_price', parseFloat(e.target.value) || 0)}
+                className="form-input"
+                required
+                aria-required="true"
+              />
+            </div>
+
+            <div className="form-group">
+              {currency ? (
+                <>
+                  <span className="detail-label">{t('partner.currency')}</span>
+                  <p className="rooms-form-currency">{currency}</p>
+                  <small className="form-hint">{t('roomForm.currencyFixed')}</small>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="currency">{t('partner.currency')}</label>
+                  <select
+                    id="currency"
+                    value={formData.currency}
+                    onChange={(e) => handleInputChange('currency', e.target.value)}
+                    className="form-input"
+                    required
+                    aria-required="true"
+                  >
+                    <option value="USD">{t('partner.usdUsDollar')}</option>
+                    <option value="EUR">{t('partner.eurEuro')}</option>
+                    <option value="UZS">{t('partner.uzsUzbekistaniSom')}</option>
+                  </select>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={formData.is_vip}
+                onChange={(e) => handleInputChange('is_vip', e.target.checked)}
+                aria-describedby="is_vip_help"
+              />
+              <span>{t('vip.switch')}</span>
+            </label>
+            <small id="is_vip_help">{t('vip.help')}</small>
+          </div>
+        </fieldset>
+
+        {viewMode === 'create' && (
+          <fieldset className="rooms-form-section">
+            <legend>{t('roomForm.photos')}</legend>
+            <RoomPhotoQueue files={queuedPhotos} onChange={setQueuedPhotos} max={MAX_ROOM_PHOTOS} disabled={loading} />
+          </fieldset>
+        )}
 
         <div className="form-actions">
           <button
@@ -536,6 +613,12 @@ export function PartnerRoomsManagement({ propertyId, propertyName, onManageRates
           </button>
         </div>
       </form>
+
+      {viewMode === 'edit' && selectedRoomType && (
+        <div className="rooms-form-section rooms-form-photos">
+          <PartnerRoomPhotos key={selectedRoomType.id} roomTypeId={selectedRoomType.id} />
+        </div>
+      )}
     </div>
   )
 
