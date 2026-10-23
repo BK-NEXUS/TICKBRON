@@ -7,6 +7,7 @@ import { partnerAdapter } from '../adapters/partnerAdapter'
 import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
 import { StatusPagination } from './StatusPagination'
 import { formatCount, formatDate } from '../utils/statusFormat'
+import { phoneLink } from '../utils/contactLinks'
 
 interface PartnerArrivalsProps {
   /** Limit to one of the owner's hotels */
@@ -29,7 +30,12 @@ const TEXT_KEYS = textKeys({
 
 })
 
-/** Owner Status: confirmed bookings checking in today or tomorrow. The phone is only its last 4 digits. */
+function PhoneCell({ phone }: { phone: string }) {
+  const href = phoneLink(phone)
+  return href ? <a href={href}>{phone}</a> : <>{phone}</>
+}
+
+/** Owner Status: confirmed bookings checking in today or tomorrow. The whole phone number, as a call link, so a late guest can be called. */
 export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
   const i18n = useI18n()
   const TEXT = useTexts(TEXT_KEYS)
@@ -123,7 +129,7 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
                     <td className="status-cell--numeric">{formatCount(arrival.guests)}</td>
                     <td>{formatDate(arrival.check_in, i18n)}</td>
                     <td>{formatDate(arrival.check_out, i18n)}</td>
-                    <td>{`•••• ${arrival.phone_last4}`}</td>
+                    <td><PhoneCell phone={arrival.phone} /></td>
                     <td>{arrival.expected_arrival_time ? formatArrivalTime(arrival.expected_arrival_time) : '—'}</td>
                     <td>
                       {arrival.arrived_at || markedIds.includes(arrival.id) ? (

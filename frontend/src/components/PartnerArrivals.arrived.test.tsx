@@ -17,7 +17,7 @@ const markArrived = vi.mocked(partnerAdapter.markGuestArrived)
 const arrival = (over: object) => ({
   id: 1, reference: 'TB-1', property: { id: 7, name: 'Hotel A' }, guest_name: 'Aziz K.', room_types: ['Double'],
   rooms: 1, nights: 2, guests: 2, check_in: '2026-10-07', check_out: '2026-10-09', special_requests: '',
-  phone_last4: '1234', expected_arrival_time: '10:30', arrived_at: null, ...over,
+  phone: '+998 90 333-12-34', expected_arrival_time: '10:30', arrived_at: null, ...over,
 })
 
 const page = (results: unknown[]) => ({

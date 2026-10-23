@@ -553,6 +553,8 @@ export const en = {
   'booking.errorInfo': "Missing booking information",
   'booking.errorCreate': "Failed to create booking",
   'booking.rateUnavailable': "Booking is temporarily unavailable, please try again later.",
+  'booking.tooManyUpcoming': "Too many upcoming bookings: you can hold 2 at a time. Cancel one or wait until you have stayed.",
+  'booking.overlapping': "You already have a booking on these dates. Choose dates that start after it ends.",
   'fxAdmin.nav': "Exchange rates",
   'fxAdmin.title': "Exchange rates",
   'fxAdmin.subtitle': "Rates of the Central Bank of Uzbekistan (cbu.uz). Guests are charged in so'm at the rate of the booking day.",

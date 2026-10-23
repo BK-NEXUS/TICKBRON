@@ -5,7 +5,7 @@ import { BookingPage } from './BookingPage'
 import { bookingAdapter } from '../adapters/bookingAdapter'
 import { propertyAdapter } from '../adapters/propertyAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
-import { settle } from '../test/utils'
+import { settle, pageOf } from '../test/utils'
 
 // Mock adapters
 vi.mock('../adapters/bookingAdapter')
@@ -179,6 +179,7 @@ describe('BookingPage', () => {
       data: mockBooking,
       error: null,
     })
+    mockBookingAdapter.getBookings.mockResolvedValue({ data: pageOf([]), error: null })
   })
 
   describe('Loading state', () => {
@@ -753,6 +754,47 @@ describe('BookingPage', () => {
       fireEvent.click(screen.getByText('Confirm booking'))
       expect(await screen.findByRole('alert')).toHaveTextContent('Booking is temporarily unavailable, please try again later')
       expect(screen.queryByText('Booking Confirmed!')).not.toBeInTheDocument()
+    })
+
+    it.each([
+      ['overlapping_booking', 'You already have a booking on these dates. Choose dates that start after it ends.'],
+      ['too_many_upcoming_bookings', 'Too many upcoming bookings: you can hold 2 at a time.'],
+    ])('shows a text in the page language, not the server text, for %s', async (code, text) => {
+      mockBookingAdapter.createBooking.mockResolvedValue({ data: null, error: 'SERVER TEXT', code })
+      await ready()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(await screen.findByRole('alert')).toHaveTextContent(text)
+      expect(screen.queryByText('SERVER TEXT')).not.toBeInTheDocument()
+    })
+
+    it('warns before sending when the dates overlap a booking the guest already has, and does not send', async () => {
+      mockBookingAdapter.getBookings.mockResolvedValue({
+        data: pageOf([{ id: 9, status: 'confirmed', check_in: '2025-01-23', check_out: '2025-01-28' }]), error: null,
+      })
+      renderWithRouter(<BookingPage />) // the button never becomes enabled here, so not `ready()`
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+      expect(await screen.findByText('You already have a booking on these dates. Choose dates that start after it ends.')).toBeInTheDocument()
+      expect(screen.getByText('Confirm booking')).toBeDisabled()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(mockBookingAdapter.createBooking).not.toHaveBeenCalled()
+      expect(mockBookingAdapter.getBookings).toHaveBeenCalledWith({ status: 'confirmed' })
+    })
+
+    it('lets a stay start the day the guest\'s other booking ends', async () => {
+      mockBookingAdapter.getBookings.mockResolvedValue({
+        data: pageOf([{ id: 9, status: 'confirmed', check_in: '2025-01-15', check_out: '2025-01-20' }]), error: null,
+      })
+      await ready()
+      await settle()
+      expect(screen.queryByText(/You already have a booking on these dates/)).not.toBeInTheDocument()
+      expect(screen.getByText('Confirm booking')).toBeEnabled()
+    })
+
+    it('still lets the guest try when the own bookings cannot be loaded (the server decides)', async () => {
+      mockBookingAdapter.getBookings.mockResolvedValue({ data: null, error: 'Network error occurred' })
+      await ready()
+      await settle()
+      expect(screen.getByText('Confirm booking')).toBeEnabled()
     })
 
     it('shows the reason when the booking is refused (for example too many upcoming bookings)', async () => {

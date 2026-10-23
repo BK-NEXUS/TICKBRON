@@ -10,6 +10,7 @@ import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../ada
 import { useAuth } from '../contexts/AuthContext'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
+import { overlapsOwnStay, type StayDates } from '../utils/stays'
 import { propertyDisplayName } from '../utils/propertyName'
 import { useI18n } from '../i18n/I18nContext'
 import { VipBadge } from '../components/VipBadge'
@@ -42,6 +43,12 @@ interface GuestDetails {
  */
 /** A backend message (text) or one of ours (key): ours are translated when shown, also when set inside an effect */
 type Message = { text: string } | { key: MessageKey }
+// Refusals the backend names with a code: shown in the page language instead of the server's English text
+const REFUSAL_KEYS: Partial<Record<string, MessageKey>> = {
+  exchange_rate_unavailable: 'booking.rateUnavailable', // 503: a hotel priced in dollars and no rate yet; nothing was reserved
+  too_many_upcoming_bookings: 'booking.tooManyUpcoming',
+  overlapping_booking: 'booking.overlapping',
+}
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
 export function BookingPage() {
@@ -67,6 +74,8 @@ export function BookingPage() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  // The guest's own upcoming stays, to say before sending that the dates overlap one (the server decides)
+  const [ownStays, setOwnStays] = useState<StayDates[]>([])
   const [booking, setBooking] = useState<Booking | null>(null)
 
   // Home › City › Hotel › Booking
@@ -84,6 +93,15 @@ export function BookingPage() {
   const [quoteError, setQuoteError] = useState<Message | null>(null)
   const quoteRequestId = useRef(0)
   const roomsForQuote = Math.max(1, guestDetails.number_of_rooms || 1)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let current = true
+    void bookingAdapter.getBookings({ status: 'confirmed' }).then(({ data }) => {
+      if (current && data) setOwnStays(data.results)
+    })
+    return () => { current = false }
+  }, [isAuthenticated])
 
   const calculateNumberOfNights = (): number => {
     if (!bookingState) return 0
@@ -208,6 +226,8 @@ export function BookingPage() {
 
   const messageText = (message: Message | null) => (message ? ('text' in message ? message.text : t(message.key)) : null)
   const errorText = messageText(error)
+  const overlapsOwn = bookingState !== undefined && bookingState !== null
+    && overlapsOwnStay(ownStays, bookingState.checkIn, bookingState.checkOut)
   const quoteErrorText = messageText(quoteError)
 
   // Redirect if not authenticated
@@ -330,10 +350,8 @@ export function BookingPage() {
       const response = await bookingAdapter.createBooking(bookingRequest)
       
       if (response.error || !response.data) {
-        // 503: a hotel priced in dollars and no exchange rate has ever been fetched; nothing was reserved
-        setError(response.code === 'exchange_rate_unavailable'
-          ? { key: 'booking.rateUnavailable' }
-          : failure(response.error, 'booking.errorCreate'))
+        const refusal = response.code ? REFUSAL_KEYS[response.code] : undefined
+        setError(refusal ? { key: refusal } : failure(response.error, 'booking.errorCreate'))
         setSubmitting(false)
         return
       }
@@ -692,10 +710,16 @@ export function BookingPage() {
                 </div>
               )}
 
+              {overlapsOwn && (
+                <div className="booking-form-error" role="alert">
+                  {t('booking.overlapping')}
+                </div>
+              )}
+
               <button 
                 type="submit" 
                 className="btn btn-primary btn-large booking-form-submit"
-                disabled={submitting || !quote}
+                disabled={submitting || !quote || overlapsOwn}
                 aria-busy={submitting}
               >
                 {submitting ? t('booking.processing') : t('booking.continue')}
