@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useI18n } from '../i18n/I18nContext'
 import { ContactLink } from '../components/ContactLink'
 import { telegramLink, whatsappLink } from '../utils/contactLinks'
+import { bookingStatusLabel } from '../utils/statusLabels'
 
 export function SupportLookupPage() {
   const { user, isAuthenticated } = useAuth()
@@ -156,7 +157,7 @@ export function SupportLookupPage() {
             <div className="booking-details-header">
               <h2>{t('pay.bookingTitle')}</h2>
               <span className={`status-badge ${getStatusClass(booking.status)}`}>
-                {booking.status}
+                {bookingStatusLabel(booking.status, t)}
               </span>
             </div>
 
@@ -174,7 +175,7 @@ export function SupportLookupPage() {
                   </div>
                   <div className="detail-item">
                     <dt>{t('partner.status')}</dt>
-                    <dd>{booking.status}</dd>
+                    <dd>{bookingStatusLabel(booking.status, t)}</dd>
                   </div>
                   <div className="detail-item">
                     <dt>{t('admin.paymentStatus')}</dt>
@@ -250,7 +251,7 @@ export function SupportLookupPage() {
                   </div>
                   <div className="detail-item">
                     <dt>{t('admin.room')}</dt>
-                    <dd>{booking.room ? `${booking.room.name} (${booking.room.rate_plan})` : 'N/A'}</dd>
+                    <dd>{booking.room ? `${booking.room.name} (${booking.room.rate_plan})` : t('admin.na')}</dd>
                   </div>
                 </dl>
               </div>

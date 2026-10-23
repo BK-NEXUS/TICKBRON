@@ -95,9 +95,9 @@ describe('StatusUserDetail', () => {
     const first = within(table).getByText('TB-901').closest('tr') as HTMLElement
     expect(within(first).getByText('Apr 10, 2026')).toBeInTheDocument()
     expect(within(first).getByText('$300.00')).toBeInTheDocument()
-    expect(within(first).getByText('completed')).toBeInTheDocument()
+    expect(within(first).getByText('Completed')).toBeInTheDocument()
     const second = within(table).getByText('TB-902').closest('tr') as HTMLElement
-    expect(within(second).getByText('cancelled')).toBeInTheDocument()
+    expect(within(second).getByText('Cancelled')).toBeInTheDocument()
   })
 
   it('paginates the history on the server and starts over when the period changes', async () => {

@@ -8,6 +8,7 @@ import { StatusMonthlyChart } from './StatusMonthlyChart'
 import { StatusReport } from './StatusReport'
 import { chartCurrencies, formatDate } from '../utils/statusFormat'
 import type { DateRange } from '../utils/statusPeriod'
+import { propertyStatusLabel } from '../utils/statusLabels'
 
 interface StatusHotelDetailProps {
   hotelId: number
@@ -86,7 +87,7 @@ export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRa
 
           <dl className="status-hotel-info">
             <div><dt>{TEXT.location}</dt><dd>{hotel.city}, {hotel.region}, {hotel.country}</dd></div>
-            <div><dt>{TEXT.status}</dt><dd>{hotel.status}</dd></div>
+            <div><dt>{TEXT.status}</dt><dd>{propertyStatusLabel(hotel.status, t)}</dd></div>
             <div><dt>{TEXT.registered}</dt><dd>{formatDate(hotel.registered_at, i18n)}</dd></div>
             <div><dt>{TEXT.owner}</dt><dd>{hotel.owner.name}</dd></div>
             <div><dt>{TEXT.ownerPhone}</dt><dd>{hotel.owner.phone || '—'}</dd></div>

@@ -8,6 +8,8 @@ import { StatusRankedTable, StatusColumn } from './StatusRankedTable'
 import { StatusHotelDetail } from './StatusHotelDetail'
 import { AdminStatusHotels } from './AdminStatusHotels'
 import { StatusUserDetail } from './StatusUserDetail'
+import { AdminStatusOverview } from './AdminStatusOverview'
+import { StatusPeriodSelector } from './StatusPeriodSelector'
 import { useStatusPeriod } from '../hooks/useStatusPeriod'
 import { formatCount, formatDate, formatMoneyList } from '../utils/statusFormat'
 import { countryPlace, placeLabel, regionPlace, type StatusPlace } from '../utils/statusPlaces'
@@ -47,7 +49,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const { t, language } = i18n
   const label = (place: StatusPlace) => placeLabel(place, language, t('status.unspecified'))
   const [level, setLevel] = useState<Level>({ kind: 'home' })
-  const { period, range, setPeriod, setRange } = useStatusPeriod()
+  const { params, period, range, setPeriod, setRange } = useStatusPeriod()
   const navigate = useNavigate()
   // Every list and detail takes the period and the custom range together
   const periodProps = { period, range, onPeriodChange: setPeriod, onRangeChange: setRange }
@@ -89,6 +91,11 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
             {t('status.bookingsGuestsAndRevenue')}
           </p>
         </div>
+        <div className="status-controls">
+          <StatusPeriodSelector value={period} range={range} onChange={setPeriod} onRangeChange={setRange} />
+        </div>
+        <AdminStatusOverview params={params} />
+        <h3 className="status-chart-title">{t('adminStatus.browse')}</h3>
         <div className="status-tiles">
           <button type="button" className="status-tile" onClick={goCountries}>
             <span className="status-tile-title">{t('home.stat.countries')}</span>

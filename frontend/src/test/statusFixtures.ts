@@ -1,7 +1,7 @@
 // Mocks shaped like the real R12a Status responses (.ai/API_CONTRACT.md "R12 phase 2").
 
 import type {
-  PartnerHotelStatus, PartnerStatus, StatusFullTotals, StatusHotelDetail, StatusInsights, StatusReconciliation, StatusSeriesRow,
+  AdminOverview, PartnerHotelStatus, PartnerStatus, StatusFullTotals, StatusHotelDetail, StatusInsights, StatusReconciliation, StatusSeriesRow,
 } from '../adapters/statusAdapter'
 
 /** All time: nothing to compare with, no rooms to measure occupancy against */
@@ -113,5 +113,27 @@ export const PARTNER_HOTEL: PartnerHotelStatus = {
   reconciliation: RECONCILIATION,
   year: 2026,
   available_years: [2026],
+  monthly: HOTEL_DETAIL.monthly,
+}
+
+export const ADMIN_OVERVIEW: AdminOverview = {
+  period: 'all',
+  period_range: { from: null, to: null },
+  months: PARTNER_STATUS.months,
+  totals: { ...TOTALS, bookings: 800, counted: 800, stayed: 700, guests: 1500, revenue: [{ currency: 'USD', amount: '99000.00' }] },
+  insights: INSIGHTS,
+  no_show_rate: '4.50',
+  new_users: { current_month: 21, previous_month: 15, in_period: null },
+  hotels: { total: 12, active: 9 },
+  top_regions: [
+    { id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotels: 5, bookings: 500, guests: 900 },
+    { id: null, name_uz: 'Unspecified', name_ru: 'Unspecified', name_en: 'Unspecified', hotels: 1, bookings: 0, guests: 0 },
+  ],
+  top_room_types: [
+    { room_type_id: 7, name: 'Deluxe Suite', property: { id: 1, name: 'Alpha Hotel' }, total_rooms: 4, bookings: 90, room_nights: 200,
+      revenue: [{ currency: 'USD', amount: '9000.00' }], share_pct: '30.00', occupancy_rate: null },
+  ],
+  year: 2026,
+  available_years: [2025, 2026],
   monthly: HOTEL_DETAIL.monthly,
 }

@@ -9,6 +9,7 @@ import { StatusPagination } from './StatusPagination'
 import { StatusCsvButton } from './StatusCsvButton'
 import { formatCount, formatDate, formatMoney, formatMoneyList, periodLabel } from '../utils/statusFormat'
 import type { DateRange } from '../utils/statusPeriod'
+import { bookingStatusLabel } from '../utils/statusLabels'
 
 interface StatusUserDetailProps {
   userId: number
@@ -47,8 +48,6 @@ const TEXT_KEYS = textKeys({
 
 const NUMERIC_HOTEL_COLUMNS = new Set([2, 3, 4, 5, 6])
 const NUMERIC_HISTORY_COLUMNS = new Set([4, 5, 6, 8])
-
-const statusText = (status: string) => status.replace(/_/g, ' ')
 
 function periodParams(period: string, range: DateRange | null | undefined): StatusPeriodParams {
   return period === 'custom' && range ? { period, from: range.from, to: range.to } : { period }
@@ -171,7 +170,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
                         <td className="status-cell--numeric">{formatCount(booking.nights)}</td>
                         <td className="status-cell--numeric">{formatCount(booking.rooms)}</td>
                         <td className="status-cell--numeric">{formatCount(booking.guests)}</td>
-                        <td>{statusText(booking.status)}</td>
+                        <td>{bookingStatusLabel(booking.status, i18n.t)}</td>
                         <td className="status-cell--numeric">
                           {formatMoney({ currency: booking.currency, amount: booking.total_price })}
                           {booking.charge_amount && booking.charge_currency && booking.charge_currency !== booking.currency && (

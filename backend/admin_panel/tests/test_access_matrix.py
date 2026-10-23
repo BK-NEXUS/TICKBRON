@@ -43,6 +43,7 @@ ADMIN_ENDPOINTS = [
     ('patch', f'{A}/amenities/1/'),
     ('delete', f'{A}/amenities/1/'),
     ('get', f'{A}/bookings/lookup/?reference_code=ABCDEF'),
+    ('get', f'{A}/status/overview/'),
     ('get', f'{A}/status/countries/'),
     ('get', f'{A}/status/countries/UZ/regions/'),
     ('get', f'{A}/status/countries/UZ/regions/1/hotels/'),

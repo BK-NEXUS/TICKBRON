@@ -109,15 +109,15 @@ export function AdminUserManagement() {
                 <div className="user-details-grid">
                   <div className="user-detail">
                     <span className="detail-label">{t('admin.firstName')}</span>
-                    <span className="detail-value">{user.first_name || 'N/A'}</span>
+                    <span className="detail-value">{user.first_name || t('admin.na')}</span>
                   </div>
                   <div className="user-detail">
                     <span className="detail-label">{t('admin.lastName')}</span>
-                    <span className="detail-value">{user.last_name || 'N/A'}</span>
+                    <span className="detail-value">{user.last_name || t('admin.na')}</span>
                   </div>
                   <div className="user-detail">
                     <span className="detail-label">{t('admin.phone')}</span>
-                    <span className="detail-value">{user.phone_number || 'N/A'}</span>
+                    <span className="detail-value">{user.phone_number || t('admin.na')}</span>
                   </div>
                   <div className="user-detail">
                     <span className="detail-label">{t('admin.memberSince')}</span>
@@ -125,7 +125,7 @@ export function AdminUserManagement() {
                   </div>
                   <div className="user-detail">
                     <span className="detail-label">{t('admin.lastLogin')}</span>
-                    <span className="detail-value">{user.last_login ? formatDateTime(user.last_login) : 'Never'}</span>
+                    <span className="detail-value">{user.last_login ? formatDateTime(user.last_login) : t('profile.never')}</span>
                   </div>
                 </div>
               </div>

@@ -247,8 +247,8 @@ export function AdminCustomersList() {
                     </td>
                     <td className="customer-phone">{customer.phone}</td>
                     <td className="customer-email">{customer.email}</td>
-                    <td className="customer-whatsapp">{customer.whatsapp || 'N/A'}</td>
-                    <td className="customer-telegram">{customer.telegram || 'N/A'}</td>
+                    <td className="customer-whatsapp">{customer.whatsapp || t('admin.na')}</td>
+                    <td className="customer-telegram">{customer.telegram || t('admin.na')}</td>
                     <td className="customer-preferred-contact">{getContactMethodLabel(customer.preferred_contact_method)}</td>
                     <td className="customer-booking-count">{customer.total_booking_count}</td>
                     <td className="customer-last-booking-date">{formatDate(customer.last_booking_date)}</td>

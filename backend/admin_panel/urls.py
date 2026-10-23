@@ -13,8 +13,8 @@ from promotions import admin_views as promotion_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
-    status_countries, status_hotel_detail, status_hotels, status_hotels_flat, status_regions, status_user_detail,
-    status_users,
+    status_countries, status_hotel_detail, status_hotels, status_hotels_flat, status_overview, status_regions,
+    status_user_detail, status_users,
 )
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
@@ -51,6 +51,7 @@ urlpatterns = [
     path('customers/<int:customer_id>/notes/<int:note_id>/', admin_internal_note_detail, name='admin-internal-note-detail'),
     path('statistics/registrations/', admin_registration_statistics, name='admin-registration-statistics'),
     path('statistics/top-bookers/', admin_top_bookers_leaderboard, name='admin-top-bookers-leaderboard'),
+    path('status/overview/', status_overview, name='admin-status-overview'),
     path('status/countries/', status_countries, name='admin-status-countries'),
     path('status/countries/<str:country>/regions/', status_regions, name='admin-status-regions'),
     path('status/countries/<str:country>/regions/<str:region>/hotels/', status_hotels, name='admin-status-hotels'),

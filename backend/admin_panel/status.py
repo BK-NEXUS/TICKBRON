@@ -28,7 +28,7 @@ from bookings import metrics
 from bookings.metrics import InvalidPeriod, counted_q, metric_annotations, period_from_request, range_json
 from common.csv_export import export_response, money_cell, wants_export
 from geography.models import Country, Region
-from properties.models import Property, PropertyTranslation
+from properties.models import Property, PropertyTranslation, RoomType
 from properties.regions import UNSPECIFIED_REGION, hotel_name_expression
 from users.models import User
 
@@ -36,6 +36,7 @@ TOP_COUNTRIES = 100
 TOP_REGIONS = 100
 TOP_HOTELS = 1000
 TOP_USERS = 1000
+TOP_OVERVIEW = 5   # busiest regions and room types on the overview
 
 
 class StatusPagination(PageNumberPagination):
@@ -350,6 +351,90 @@ def status_hotel_detail(request, property_id):
         'granularity': granularity,
         'series': series,
         'reconciliation': metrics.reconciliation(scope),
+        'year': year,
+        'available_years': metrics.available_years(scope),
+        'monthly': metrics.monthly_series(scope, year),
+    })
+
+
+def _no_show_rate(totals):
+    """No-shows of all bookings that were not left unpaid (same base as the cancellation rate), in percent."""
+    status = totals['booking_status']
+    return metrics._percent(totals['no_show'], status['cancelled'] + totals['bookings'] + totals['no_show'])
+
+
+def _new_users(first, after):
+    """Guests (not staff) who registered in [first, after)."""
+    return User.objects.filter(is_staff=False, date_joined__date__gte=first, date_joined__date__lt=after).count()
+
+
+def _new_user_counts(date_range, today):
+    this_first = today.replace(day=1)
+    last_first = metrics._previous_month(this_first)
+    counts = {'current_month': _new_users(this_first, metrics._next_month(this_first)),
+              'previous_month': _new_users(last_first, this_first), 'in_period': None}
+    if date_range is not None:
+        counts['in_period'] = _new_users(*date_range)
+    return counts
+
+
+def _busiest_regions(date_range):
+    rows = (
+        Property.objects.filter(is_deleted=False).annotate(region_key=region_key())
+        .values('region_key', 'region_ref__name_uz', 'region_ref__name_ru', 'region_ref__name_en')
+        .annotate(hotels_count=Count('id', distinct=True), **metric_annotations('bookings__', date_range))
+        .order_by('-bookings_count', '-guests_count', 'region_ref__name_en', 'region_key')[:TOP_OVERVIEW]
+    )
+    result = []
+    for item in rows:
+        name = names(item, 'region_ref__')
+        result.append({'id': None if item['region_key'] == UNSPECIFIED else int(item['region_key']),
+                       'name_uz': name['uz'], 'name_ru': name['ru'], 'name_en': name['en'],
+                       'hotels': item['hotels_count'], 'bookings': item['bookings_count'], 'guests': item['guests_count']})
+    return result
+
+
+def _busiest_room_types(scope, date_range):
+    room_types = RoomType.objects.filter(is_deleted=False, property__is_deleted=False).select_related('property')
+    rows = metrics.room_type_stats(scope, date_range, room_types)[:TOP_OVERVIEW]
+    hotels = dict(Property.objects.filter(id__in={row['property_id'] for row in rows}).annotate(
+        label=hotel_name_expression()).values_list('id', 'label'))
+    return [{**row, 'property': {'id': row['property_id'], 'name': hotels.get(row['property_id'], '')}} for row in rows]
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT, operation_id='admin_status_overview')
+@api_view(['GET'])
+@permission_classes([IsSuperAdminOrStaff])
+def status_overview(request):
+    """
+    The whole platform at a glance for ?period= (and ?year= for the monthly chart): this month against last
+    month, guests arriving in the next 7 days, totals and insights (cancellation, no-show, booked-ahead days,
+    returning guests), new guests, active hotels, the 5 busiest regions and room types, and the yearly series.
+    """
+    try:
+        period, date_range = period_from_request(request)
+    except InvalidPeriod as error:
+        return bad_request('period', error)
+    try:
+        year = metrics.parse_year(request.query_params.get('year'), business_today().year)
+    except InvalidPeriod as error:
+        return bad_request('year', error)
+
+    today = business_today()
+    scope = status_scope(property__is_deleted=False)
+    totals = metrics.metric_totals(scope, date_range)
+    hotels = Property.objects.filter(is_deleted=False)
+    active = hotels.filter(status='active')
+    return Response({
+        **period_extra(period, date_range),
+        'months': metrics.month_comparison(scope),
+        'totals': totals,
+        'insights': metrics.insights(scope, date_range, totals, metrics.rooms_offered(active)),
+        'no_show_rate': _no_show_rate(totals),
+        'new_users': _new_user_counts(date_range, today),
+        'hotels': {'total': hotels.count(), 'active': active.count()},
+        'top_regions': _busiest_regions(date_range),
+        'top_room_types': _busiest_room_types(scope, date_range),
         'year': year,
         'available_years': metrics.available_years(scope),
         'monthly': metrics.monthly_series(scope, year),

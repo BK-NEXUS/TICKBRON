@@ -15,6 +15,7 @@ import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
+import { propertyStatusLabel } from '../utils/statusLabels'
 
 type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
 
@@ -293,7 +294,7 @@ export function PartnerDashboardPage() {
               <div className="property-card-header">
                 <h3 className="property-card-title">{propertyName(property)}</h3>
                 <span className={`property-status property-status--${property.status}`}>
-                  {property.status}
+                  {propertyStatusLabel(property.status, t)}
                 </span>
               </div>
               <div className="property-card-body">

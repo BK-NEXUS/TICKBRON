@@ -324,6 +324,33 @@ export interface PartnerRoomsStatus {
   rows: RoomStatusRow[]
 }
 
+/** One of the busiest regions on the admin overview */
+export interface OverviewRegion extends PlaceNames {
+  id: number | null
+  hotels: number
+  bookings: number
+  guests: number
+}
+
+/** GET /api/v1/admin-panel/status/overview/ (the whole platform; Status v2) */
+export interface AdminOverview {
+  period: StatusPeriod
+  period_range: PeriodRange
+  months: MonthComparison
+  totals: StatusFullTotals
+  insights: StatusInsights
+  /** Percent of the bookings that were no-shows; null without bookings */
+  no_show_rate: string | null
+  /** Guests (not staff) who registered this month, last month and in the period (null for all time) */
+  new_users: { current_month: number; previous_month: number; in_period: number | null }
+  hotels: { total: number; active: number }
+  top_regions: OverviewRegion[]
+  top_room_types: RoomStatusRow[]
+  year: number
+  available_years: number[]
+  monthly: StatusMonth[]
+}
+
 /** GET /api/v1/partner/status/ (the owner's own properties only). Contract: S4 */
 export interface PartnerStatus {
   /** YYYY-MM-DD: when the owner's account was created */
@@ -558,6 +585,11 @@ export const statusAdapter = {
     return requestCsv(
       `${STATUS_URL}/users/${userId}/${query({ ...periodValues(period), export: format })}`,
       `status_user_${userId}_history.${format}`)
+  },
+
+  getAdminOverview(params: StatusPeriodParams & { year?: number }) {
+    const { year, ...period } = params
+    return request<AdminOverview>(`${STATUS_URL}/overview/${query({ ...periodValues(period), year })}`, { method: 'GET' }, ERROR_MESSAGES)
   },
 
   getPartnerStatus(params: StatusDetailParams) {

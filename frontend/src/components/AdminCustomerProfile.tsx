@@ -6,6 +6,7 @@ import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, Cr
 import { useI18n } from '../i18n/I18nContext'
 import { ContactLink } from './ContactLink'
 import { telegramLink, whatsappLink } from '../utils/contactLinks'
+import { bookingStatusLabel, paymentStatusLabel } from '../utils/statusLabels'
 
 type TabType = 'bookings' | 'notes'
 type BookingFilterType = 'all' | 'upcoming' | 'completed' | 'cancelled'
@@ -382,12 +383,12 @@ export function AdminCustomerProfile() {
                         <td className="booking-total">{formatCurrency(booking.total_price, booking.currency)}</td>
                         <td className="booking-status">
                           <span className={`status-badge ${getBookingStatusClass(booking.status)}`}>
-                            {booking.status}
+                            {bookingStatusLabel(booking.status, t)}
                           </span>
                         </td>
                         <td className="booking-payment-status">
                           <span className={`status-badge ${getPaymentStatusClass(booking.payment_status)}`}>
-                            {booking.payment_status}
+                            {paymentStatusLabel(booking.payment_status, t)}
                           </span>
                         </td>
                         <td className="booking-created">{formatDate(booking.created_at)}</td>

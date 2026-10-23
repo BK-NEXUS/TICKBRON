@@ -7,5 +7,5 @@ Why: the owner found the Status screen confusing (one long page) and wants more 
 - New numbers: booked ahead (average days between booking and check-in), returning guests (%), month comparison, room type ranking.
 - One module for the rules: `bookings/metrics.py` (`month_comparison`, `room_type_stats`, `average_lead_days`, `repeat_guest_pct`); views stay thin.
 
-## Admin Status (next PR)
+## Admin Status (done)
 - An Overview tab (platform-wide, same helpers) plus the existing Countries / Hotels / Users; admin language switch must translate every button, filter and type label (verified by switching languages).
