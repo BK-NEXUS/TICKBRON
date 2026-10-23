@@ -397,7 +397,12 @@ describe('SearchResultsPage', () => {
       await renderSearch()
       fireEvent.click(screen.getByLabelText('Map view'))
       await screen.findByRole('region', { name: 'Map of properties' })
-      fireEvent.click(document.querySelector('.leaflet-control-zoom-in') as HTMLElement)
+      const zoomIn = await waitFor(() => {
+        const control = document.querySelector('.leaflet-control-zoom-in')
+        expect(control).not.toBeNull()
+        return control as HTMLElement
+      })
+      fireEvent.click(zoomIn)
       fireEvent.click(await screen.findByRole('button', { name: 'Search this area' }))
       await screen.findByText('Properties in the map area')
       const request = vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mock.calls.at(-1)![0]
