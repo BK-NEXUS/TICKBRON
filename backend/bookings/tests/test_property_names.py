@@ -19,7 +19,7 @@ class TestPropertyNameInBookings(BookingLogicTestBase):
         response = self.client.get('/api/v1/bookings/')
 
         assert response.status_code == 200
-        assert response.data[0]['property_name'] == 'Test Hotel'
+        assert response.data['results'][0]['property_name'] == 'Test Hotel'
 
     def test_support_lookup_shows_the_hotel_name(self):
         staff = User.objects.create_user(email='staff@example.com', password='x', is_staff=True)

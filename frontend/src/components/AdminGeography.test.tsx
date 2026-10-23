@@ -57,6 +57,14 @@ describe('AdminGeography', () => {
     expect(api.list).toHaveBeenCalledWith('countries', { search: '' })
   })
 
+  it('labels every cell with its column name, so a phone can show each row as a card', async () => {
+    renderScreen()
+    const row = (await screen.findByText('Uzbekistan')).closest('tr')!
+    const labels = Array.from(row.querySelectorAll('td')).map(cell => cell.getAttribute('data-label'))
+    const headers = Array.from(row.closest('table')!.querySelectorAll('th')).map(cell => cell.textContent)
+    expect(labels).toEqual(headers)
+  })
+
   it('opens a country to see its regions, then a region to see its cities, with a way back', async () => {
     renderScreen()
     fireEvent.click(await screen.findByRole('button', { name: 'Open Uzbekistan' }))

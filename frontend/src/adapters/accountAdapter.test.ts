@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { accountAdapter } from './accountAdapter'
+import { pageOf } from '../test/utils'
 
 // Mock fetch
 const mockFetch = vi.fn()
@@ -420,12 +421,12 @@ describe('accountAdapter', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockBookings,
+        json: async () => pageOf(mockBookings),
       })
 
       const result = await accountAdapter.getBookings()
 
-      expect(result.data).toEqual(mockBookings)
+      expect(result.data).toEqual(pageOf(mockBookings))
       expect(result.error).toBeNull()
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/bookings/'),
@@ -461,12 +462,12 @@ describe('accountAdapter', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockBookings,
+        json: async () => pageOf(mockBookings),
       })
 
       const result = await accountAdapter.getBookings('confirmed')
 
-      expect(result.data).toEqual(mockBookings)
+      expect(result.data).toEqual(pageOf(mockBookings))
       expect(result.error).toBeNull()
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/bookings/?status=confirmed'),
@@ -502,12 +503,12 @@ describe('accountAdapter', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockBookings,
+        json: async () => pageOf(mockBookings),
       })
 
       const result = await accountAdapter.getBookings(undefined, 'paid')
 
-      expect(result.data).toEqual(mockBookings)
+      expect(result.data).toEqual(pageOf(mockBookings))
       expect(result.error).toBeNull()
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/bookings/?payment_status=paid'),
@@ -543,12 +544,12 @@ describe('accountAdapter', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockBookings,
+        json: async () => pageOf(mockBookings),
       })
 
       const result = await accountAdapter.getBookings('confirmed', 'paid')
 
-      expect(result.data).toEqual(mockBookings)
+      expect(result.data).toEqual(pageOf(mockBookings))
       expect(result.error).toBeNull()
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/bookings/?status=confirmed&payment_status=paid'),
@@ -557,6 +558,19 @@ describe('accountAdapter', () => {
           credentials: 'include',
         })
       )
+    })
+
+    it('asks for a later page only when one is wanted', async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: async () => pageOf([]) })
+
+      await accountAdapter.getBookings()
+      await accountAdapter.getBookings('confirmed', undefined, 1)
+      await accountAdapter.getBookings('confirmed', undefined, 3)
+
+      const urls = mockFetch.mock.calls.map(call => call[0] as string)
+      expect(urls[0]).not.toContain('page=')
+      expect(urls[1]).not.toContain('page=')
+      expect(urls[2]).toContain('/api/v1/bookings/?status=confirmed&page=3')
     })
 
     it('should handle 401 unauthorized error', async () => {

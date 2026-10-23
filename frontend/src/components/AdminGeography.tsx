@@ -144,7 +144,7 @@ export function AdminGeography() {
 
       {list.length > 0 && (
         <div className="customers-table-container table-scroll">
-          <table className="customers-table">
+          <table className="customers-table geography-table">
             <thead>
               <tr>
                 {kind !== 'cities' && <th>{t('geoAdmin.col.picture')}</th>}
@@ -163,22 +163,22 @@ export function AdminGeography() {
                 return (
                   <tr key={row.id}>
                     {kind !== 'cities' && (
-                      <td>
+                      <td data-label={t('geoAdmin.col.picture')}>
                         {'image_url' in row && row.image_url
                           ? <img className="geography-thumb" src={row.image_url} alt={t('geoAdmin.imageOf', { name })} loading="lazy" />
                           : <span className="geography-thumb geography-thumb--empty" aria-label={t('geoAdmin.noImage')} />}
                       </td>
                     )}
-                    <td>{name}</td>
-                    {kind === 'countries' && <td>{'code' in row ? row.code : ''}</td>}
-                    {kind !== 'cities' && <td>{children}</td>}
-                    <td>{row.hotel_count}</td>
-                    <td>
+                    <td data-label={t('geoAdmin.col.name')}>{name}</td>
+                    {kind === 'countries' && <td data-label={t('geoAdmin.col.code')}>{'code' in row ? row.code : ''}</td>}
+                    {kind !== 'cities' && <td data-label={t('geoAdmin.col.children')}>{children}</td>}
+                    <td data-label={t('geoAdmin.col.hotels')}>{row.hotel_count}</td>
+                    <td data-label={t('geoAdmin.col.status')}>
                       <span className={`status-badge status-badge--${row.is_active ? 'active' : 'cancelled'}`}>
                         {row.is_active ? t('geoAdmin.active') : t('geoAdmin.hidden')}
                       </span>
                     </td>
-                    <td>
+                    <td data-label={t('geoAdmin.col.actions')}>
                       <div className="table-actions">
                         {kind !== 'cities' && (
                           <button type="button" className="btn btn-secondary btn-sm" aria-label={t('geoAdmin.openRow', { name })}

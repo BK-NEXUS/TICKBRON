@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { BookingsPage } from './BookingsPage'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { useAuth } from '../contexts/AuthContext'
+import { pageOf } from '../test/utils'
 import { addDays, businessToday } from '../utils/dates'
 
 vi.mock('../adapters/accountAdapter')
@@ -27,7 +28,7 @@ const booking = (over: object) => ({
 })
 
 function show(rows: object[]) {
-  mockAccountAdapter.getBookings.mockResolvedValue({ data: rows, error: null })
+  mockAccountAdapter.getBookings.mockResolvedValue({ data: pageOf(rows), error: null })
   vi.mocked(useAuth).mockReturnValue({
     user: { id: 1, email: 'test@example.com' }, isAuthenticated: true, isLoading: false,
     login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),

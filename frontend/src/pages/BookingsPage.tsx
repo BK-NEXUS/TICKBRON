@@ -1,7 +1,7 @@
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { useI18n } from '../i18n/I18nContext'
 import { statusText } from '../utils/statusText'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { Lock, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -141,10 +141,19 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
 
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
+const statusOfFilter = (filter: BookingFilter): string | undefined =>
+  ({ all: undefined, upcoming: 'confirmed', completed: 'completed', cancelled: 'cancelled' })[filter]
+
 export function BookingsPage() {
   const { t } = useI18n()
   const { isAuthenticated } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [total, setTotal] = useState(0)
+  const [nextPage, setNextPage] = useState<number | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState(false)
+  // The filter the list on screen was loaded for: a page that arrives for another filter is dropped
+  const shownFilter = useRef<BookingFilter>('all')
   const [filter, setFilter] = useState<BookingFilter>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -159,28 +168,42 @@ export function BookingsPage() {
     const loadBookings = async () => {
       setLoading(true)
       setError(null)
+      shownFilter.current = filter
+      setLoadingMore(false)
       
-      let statusFilter: string | undefined
-      if (filter === 'upcoming') {
-        statusFilter = 'confirmed'
-      } else if (filter === 'completed') {
-        statusFilter = 'completed'
-      } else if (filter === 'cancelled') {
-        statusFilter = 'cancelled'
-      }
-      
-      const result = await accountAdapter.getBookings(statusFilter)
+      const result = await accountAdapter.getBookings(statusOfFilter(filter))
       
       if (result.error) {
         setError(result.error)
       } else {
-        setBookings(result.data || [])
+        setBookings(result.data?.results ?? [])
+        setTotal(result.data?.count ?? 0)
+        setNextPage(result.data?.next ? 2 : null)
+        setLoadMoreError(false)
       }
       setLoading(false)
     }
 
     loadBookings()
   }, [isAuthenticated, filter])
+
+  const handleLoadMore = async () => {
+    if (nextPage === null) return
+    setLoadingMore(true)
+    setLoadMoreError(false)
+    const result = await accountAdapter.getBookings(statusOfFilter(filter), undefined, nextPage)
+    if (shownFilter.current !== filter) return
+    if (result.error || !result.data) {
+      setLoadMoreError(true)
+    } else {
+      const more = result.data
+      // A booking can move between pages while the guest reads; the id keeps each one once
+      setBookings(current => [...current, ...more.results.filter(row => !current.some(seen => seen.id === row.id))])
+      setTotal(more.count)
+      setNextPage(more.next ? nextPage + 1 : null)
+    }
+    setLoadingMore(false)
+  }
 
   const handleCancelled = (cancelled: CancelledBooking) => {
     setBookings(current => current.map(booking => (booking.id === cancelled.id ? { ...booking, status: 'cancelled' } : booking)))
@@ -309,6 +332,16 @@ export function BookingsPage() {
           {filteredBookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} onCancelled={handleCancelled} />
           ))}
+        </div>
+
+        <div className="bookings-more">
+          <p className="bookings-shown">{t('bookings.shown', { shown: bookings.length, total })}</p>
+          {loadMoreError && <p role="alert" className="alert alert-error">{t('bookings.loadMoreFailed')}</p>}
+          {nextPage !== null && (
+            <button type="button" className="btn btn-secondary" onClick={handleLoadMore} disabled={loadingMore}>
+              {loadingMore ? t('bookings.loadingMore') : t('bookings.loadMore')}
+            </button>
+          )}
         </div>
       </div>
     </div>

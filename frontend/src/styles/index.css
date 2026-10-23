@@ -9749,3 +9749,73 @@ button.property-gallery-image {
 .partner-property-edit .btn {
   align-self: flex-start;
 }
+
+/* "Show more bookings" under the guest's list */
+.bookings-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.bookings-shown {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Geography table on phones: each row is a card with the column name before every value, so nothing is off-screen */
+@media (max-width: 767px) {
+  .customers-table.geography-table {
+    min-width: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .geography-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .geography-table,
+  .geography-table tbody,
+  .geography-table tr,
+  .geography-table td {
+    display: block;
+  }
+
+  .geography-table tbody tr {
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-background);
+  }
+
+  .geography-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .geography-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .geography-table .table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--spacing-xs);
+  }
+}
