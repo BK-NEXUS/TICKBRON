@@ -62,7 +62,7 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
 
     // The numbers on screen are the API's numbers
     const hotels = await (await page.request.get(
-      `${API}/api/v1/admin-panel/status/countries/Uzbekistan/regions/Tashkent/hotels/?search=Silk`)).json()
+      `${API}/api/v1/admin-panel/status/hotels/?search=Silk`)).json()
     const detail = await (await page.request.get(
       `${API}/api/v1/admin-panel/status/hotels/${hotels.results[0].id}/`)).json()
     // R12a renamed the summary cards: "Counted" = confirmed and completed bookings, "Stayed bookings" = completed
