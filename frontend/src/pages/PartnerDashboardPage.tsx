@@ -1,11 +1,12 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images } from 'lucide-react'
+import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images, Pencil } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
 import { PartnerRoomsManagement } from '../components/PartnerRoomsManagement'
 import { PartnerPhotosManagement } from '../components/PartnerPhotosManagement'
+import { PartnerPropertyEdit } from '../components/PartnerPropertyEdit'
 import { PartnerRatesManagement } from '../components/PartnerRatesManagement'
 import { PartnerAvailabilityManagement } from '../components/PartnerAvailabilityManagement'
 import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
@@ -15,7 +16,7 @@ import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 
-type DashboardView = 'properties' | 'rooms' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -100,6 +101,11 @@ export function PartnerDashboardPage() {
     setCurrentView('rooms')
   }
 
+  const handlePropertySaved = (saved: PartnerProperty) => {
+    setSelectedProperty(saved)
+    setProperties(prev => prev.map(property => (property.id === saved.id ? saved : property)))
+  }
+
   const handleBackToRates = () => {
     setSelectedRatePlan(null)
     setCurrentView('rates')
@@ -113,8 +119,8 @@ export function PartnerDashboardPage() {
   if (currentView === 'bookings') trail.push({ label: t('partner.bookings') })
   if (currentView === 'no-show-reports') trail.push({ label: t('noShow.myReports') })
   if (currentView === 'status') trail.push({ label: t('partner.status') })
-  if (selectedProperty && ['rooms', 'photos', 'rates', 'availability', 'calendar'].includes(currentView)) {
-    trail.push(currentView === 'rooms' || currentView === 'photos'
+  if (selectedProperty && ['rooms', 'details', 'photos', 'rates', 'availability', 'calendar'].includes(currentView)) {
+    trail.push(currentView === 'rooms' || currentView === 'details' || currentView === 'photos'
       ? { label: propertyName(selectedProperty) }
       : { label: propertyName(selectedProperty), onClick: handleBackToRooms })
     if (selectedRoomType && currentView !== 'rooms' && currentView !== 'calendar') {
@@ -124,6 +130,7 @@ export function PartnerDashboardPage() {
     }
     if (selectedRatePlan && currentView === 'availability') trail.push({ label: selectedRatePlan.name })
     if (calendarRoomType && currentView === 'calendar') trail.push({ label: calendarRoomType.name })
+    if (currentView === 'details') trail.push({ label: t('hotelEdit.title') })
     if (currentView === 'photos') trail.push({ label: t('photos.title') })
   }
   usePageTrail(trail)
@@ -194,6 +201,14 @@ export function PartnerDashboardPage() {
           >
             <span className="nav-icon"><BedDouble size={18} /></span>
             <span className="nav-label">{t('searchForm.rooms')}</span>
+          </button>
+          <button
+            onClick={() => setCurrentView('details')}
+            className={`nav-item ${currentView === 'details' ? 'nav-item--active' : ''}`}
+            aria-current={currentView === 'details' ? 'page' : undefined}
+          >
+            <span className="nav-icon"><Pencil size={18} /></span>
+            <span className="nav-label">{t('hotelEdit.nav')}</span>
           </button>
           <button
             onClick={() => setCurrentView('photos')}
@@ -347,6 +362,10 @@ export function PartnerDashboardPage() {
             onManageRates={handleRoomTypeSelect}
             onManageCalendar={handleCalendarSelect}
           />
+        ) : null
+      case 'details':
+        return selectedProperty ? (
+          <PartnerPropertyEdit key={selectedProperty.id} property={selectedProperty} onSaved={handlePropertySaved} />
         ) : null
       case 'photos':
         return selectedProperty ? <PartnerPhotosManagement propertyId={selectedProperty.id} /> : null

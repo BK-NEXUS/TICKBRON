@@ -16,10 +16,11 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import image_upload_error
+from common.validators import validate_free_text
 from geography.serializers import GeographyRefsMixin
 from partner.models import OwnerPlace
 from properties.models import (
-    Property, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
+    Property, PropertyTranslation, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
 )
 
 
@@ -100,6 +101,62 @@ class AssignedPlaceMixin:
         return attrs
 
 
+HOTEL_TEXT_LANGUAGES = ('uz', 'ru', 'en')
+
+
+@extend_schema_field({'type': 'object', 'additionalProperties': {
+    'type': 'object', 'properties': {'name': {'type': 'string'}, 'description': {'type': 'string'}}}})
+class HotelTextsField(serializers.Field):
+    """
+    {language: {name, description}} of a hotel (uz / ru / en). Read: the saved texts. Write: the
+    languages sent are replaced, the others stay; every language sent needs a name.
+    """
+    default_error_messages = {
+        'not_a_map': 'Send an object like {{"en": {{"name": "Hotel", "description": "..."}}}}.',
+        'empty': 'Give the hotel a name in at least one language.',
+    }
+    name_field = serializers.CharField(max_length=255, validators=[validate_free_text])
+    description_field = serializers.CharField(max_length=2000, allow_blank=True, default='', validators=[validate_free_text])
+
+    def get_attribute(self, instance):
+        return instance
+
+    def to_representation(self, prop):
+        return {
+            t.language: {'name': t.name, 'description': t.description}
+            for t in prop.translations.all() if not t.is_deleted
+        }
+
+    def to_internal_value(self, data):
+        if not isinstance(data, dict):
+            self.fail('not_a_map')
+        errors, texts = {}, {}
+        for language, row in data.items():
+            if language not in HOTEL_TEXT_LANGUAGES:
+                errors[language] = f"Unsupported language. Use: {', '.join(HOTEL_TEXT_LANGUAGES)}."
+            elif not isinstance(row, dict):
+                errors[language] = 'Send {"name": "...", "description": "..."}.'
+            else:
+                try:
+                    texts[language] = {
+                        'name': self.name_field.run_validation(row.get('name')),
+                        'description': self.description_field.run_validation(row.get('description', '')),
+                    }
+                except serializers.ValidationError as exc:
+                    errors[language] = exc.detail
+        if errors:
+            raise serializers.ValidationError(errors)
+        if not texts:
+            self.fail('empty')
+        return texts
+
+
+def save_hotel_texts(prop, texts):
+    for language, text in texts.items():
+        PropertyTranslation.objects.update_or_create(
+            property=prop, language=language, defaults={**text, 'is_deleted': False})
+
+
 class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
@@ -109,11 +166,12 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
     full_address = serializers.SerializerMethodField()
     # Hotel name for the partner cards: English translation, else any, else the address
     name = serializers.SerializerMethodField()
+    translations = HotelTextsField(required=False)
     
     class Meta:
         model = Property
         fields = [
-            'id', 'name', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
+            'id', 'name', 'translations', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'country_ref', 'region_ref', 'city_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
@@ -131,6 +189,14 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
     def get_name(self, obj) -> str:
         return obj.display_name()
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        texts = validated_data.pop('translations', None)
+        instance = super().update(instance, validated_data)
+        if texts:
+            save_hotel_texts(instance, texts)
+        return instance
+
 
 class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
@@ -138,20 +204,26 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
     
     Owner is automatically set to the authenticated user.
     """
+    translations = HotelTextsField()
+
     class Meta:
         model = Property
         fields = [
-            'property_type', 'max_guests', 'bedrooms', 'bathrooms',
+            'id', 'translations', 'property_type', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'postal_code',
             'country_ref', 'region_ref', 'city_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]
     
+    @transaction.atomic
     def create(self, validated_data):
         """Create property with owner set to authenticated user."""
+        texts = validated_data.pop('translations')
         validated_data['owner'] = self.context['request'].user
-        return super().create(validated_data)
+        prop = super().create(validated_data)
+        save_hotel_texts(prop, texts)
+        return prop
 
 
 class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer):

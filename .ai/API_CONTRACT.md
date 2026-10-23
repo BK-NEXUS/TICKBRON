@@ -176,6 +176,7 @@ Common query parameters: `period` = `all` (default) | `YYYY` | `YYYY-MM` (400 `{
 
 ## 2026-09-28 partner property name (Phase 2 item 4)
 - `GET /partner/properties/` and `GET/PATCH /partner/properties/{id}/` items have a read-only `name`: the English translation, else any translation, else the full address (`Property.display_name()`). Sending `name` is ignored. Additive only
+- **Hotel name and description (2026-10-23).** `POST /partner/properties/` requires `translations`: `{ "uz"|"ru"|"en": { "name": string (1-255), "description": string (0-2000, optional) } }`, with at least one language and a non-blank `name` in every language sent; the response now includes `id` and `translations`. `GET/PATCH /partner/properties/{id}/` return `translations` (saved languages only); `PATCH` with `translations` replaces the languages sent and keeps the others (a deleted language row is revived); an empty object is 400. Text rules: no `<` or `>`, no control characters, digits and punctuation allowed. 400 errors sit under `error.details.translations.<language>`. Name, description and address change at once on an active hotel (no new approval); `status` and the assigned place stay locked as before. Other owners' hotels are 404, guests 403. `name` stays read-only (the display name).
 
 ## 2026-09-28 search filters (Phase 2 item 2)
 - `GET /properties/search/` new query params (all optional, combine with the existing ones):

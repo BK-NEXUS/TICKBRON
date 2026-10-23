@@ -7,10 +7,14 @@ import { apiFetch, fetchAllPages } from '../utils/api'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Property types from backend contract
+/** Hotel name and description per language (uz, ru, en) */
+export type PropertyTexts = Partial<Record<'uz' | 'ru' | 'en', { name: string; description: string }>>
+
 export interface PartnerProperty {
   id: number
   /** Hotel name (English translation, else any, else the address); read-only */
   name?: string
+  translations?: PropertyTexts
   owner: number
   property_type: number
   status: string
@@ -41,6 +45,8 @@ export interface PartnerProperty {
 }
 
 export interface CreatePropertyRequest {
+  /** At least one language with a name */
+  translations: PropertyTexts
   property_type: number
   max_guests: number
   bedrooms: number
@@ -66,6 +72,8 @@ export interface CreatePropertyRequest {
 }
 
 export interface UpdatePropertyRequest {
+  /** The languages sent are replaced, the others stay */
+  translations?: PropertyTexts
   property_type?: number
   max_guests?: number
   bedrooms?: number

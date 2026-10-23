@@ -57,7 +57,7 @@ def world(db):
 def payload(hotel_type, world, **overrides):
     data = {
         'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1,
-        'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD',
+        'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD', 'translations': {'en': {'name': 'Test Hotel'}},
         'country_ref': world['xland'].id, 'region_ref': world['east'].id, 'city_ref': world['capital'].id,
     }
     data.update(overrides)
@@ -181,7 +181,7 @@ class TestTextLocationIsNoLongerInput:
     def payload(self, hotel_type, **extra):
         data = {
             'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1,
-            'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD',
+            'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD', 'translations': {'en': {'name': 'Test Hotel'}},
         }
         data.update(extra)
         return data

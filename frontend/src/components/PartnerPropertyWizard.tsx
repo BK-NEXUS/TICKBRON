@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
 import { LocationPicker } from './LocationPicker'
 import { toCoordinates } from '../utils/coordinates'
+import { emptyHotelTexts, hasHotelName, hotelTextsToApi, type HotelTextsForm } from '../utils/hotelTexts'
+import { HotelTextsFields } from './HotelTextsFields'
 import { GeographyPicker, type GeographyLabels, type GeographyValue } from './GeographyPicker'
 
 interface PartnerPropertyWizardProps {
@@ -10,7 +12,7 @@ interface PartnerPropertyWizardProps {
   onCancel?: () => void
 }
 
-type PropertyForm = Omit<CreatePropertyRequest, 'country_ref' | 'region_ref' | 'city_ref'>
+type PropertyForm = Omit<CreatePropertyRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'translations'>
 
 type WizardStep = 'basic' | 'location' | 'amenities' | 'pricing' | 'confirm'
 
@@ -35,6 +37,8 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     })
     return () => { current = false }
   }, [])
+
+  const [texts, setTexts] = useState<HotelTextsForm>(emptyHotelTexts)
 
   const [formData, setFormData] = useState<PropertyForm>({
     property_type: 1, // Default property type (should be selected from a list)
@@ -83,6 +87,10 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
   const validateStep = (step: WizardStep): boolean => {
     switch (step) {
       case 'basic':
+        if (!hasHotelName(texts)) {
+          setError(t('hotelTexts.nameRequired'))
+          return false
+        }
         if (!formData.max_guests || formData.max_guests < 1) {
           setError(t('partner.maxGuestsMustBe'))
           return false
@@ -157,6 +165,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     try {
       const response = await partnerAdapter.createProperty({
         ...formData,
+        translations: hotelTextsToApi(texts),
         country_ref: location.country_ref as number,
         region_ref: location.region_ref as number,
         city_ref: location.city_ref as number,
@@ -184,6 +193,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <div className="wizard-step">
             <h2 className="wizard-step-title">{t('partner.basicInformation')}</h2>
             <div className="wizard-form">
+              <HotelTextsFields idPrefix="wizard" value={texts} onChange={(next) => { setTexts(next); setError(null) }} />
               <div className="form-group">
                 <label htmlFor="max_guests">{t('partner.maxGuests')}</label>
                 <input
@@ -425,6 +435,9 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
             <div className="wizard-summary">
               <div className="summary-section">
                 <h3>{t('partner.basicInformation')}</h3>
+                {(['uz', 'ru', 'en'] as const).filter(language => texts[language].name.trim()).map(language => (
+                  <p key={language}><strong>{language.toUpperCase()}</strong> {texts[language].name.trim()}</p>
+                ))}
                 <p><strong>{t('partner.maxGuests2')}</strong> {formData.max_guests}</p>
                 <p><strong>{t('partner.bedrooms')}</strong> {formData.bedrooms}</p>
                 <p><strong>{t('partner.bathrooms')}</strong> {formData.bathrooms}</p>
