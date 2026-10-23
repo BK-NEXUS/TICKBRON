@@ -9,16 +9,19 @@ What a promotion is: one paid period during which one hotel may appear in the ba
 """
 import hashlib
 import re
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Max, Q
 from django.utils import timezone
 
 from admin_panel.models import AdminAccessLog
 from common.dates import business_today
-from promotions.models import Promotion
+from common.storage import image_upload_error
+from geography.models import Region
+from promotions.models import Promotion, PromotionPhoto
 from properties.models import Property
 
 MAX_DAYS = 365                # longest single promotion
@@ -26,6 +29,7 @@ MAX_START_AHEAD_DAYS = 730    # catches typos such as the year 2062; a real book
 MAX_PRIORITY = 100            # 0 = normal, higher = shown earlier in the carousel
 MAX_NOTE = 500                # internal note length (the admin must not paste contact data here)
 MAX_PRICE = Decimal('999999999999.99')  # fits the DecimalField(14, 2) column
+MAX_PHOTOS = 10               # pictures on one ad (the banner shows the same number of the hotel's own photos)
 # States in which a promotion can still be changed; ended and cancelled ones are history
 EDITABLE_STATUSES = (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE, Promotion.STATUS_PAUSED)
 CURRENCY_RE = re.compile(r'^[A-Z]{3}$')
@@ -280,3 +284,64 @@ def tidy_statuses(today: date | None = None):
         status=Promotion.STATUS_SCHEDULED, paid_at__isnull=False, start_date__lte=today, end_date__gte=today,
     ).update(status=Promotion.STATUS_ACTIVE)
     return {'ended': ended, 'activated': activated}
+
+
+def _audit_photo(actor, action, promotion, photo):
+    """Ids only, like every audit row."""
+    AdminAccessLog.record(actor, action, details={
+        'promotion_id': promotion.pk, 'property_id': promotion.property_id, 'object_id': photo.pk})
+
+
+def add_photo(*, actor, promotion, photo):
+    """Put one picture on an ad that can still change: at most MAX_PHOTOS, a real image, shown in upload order."""
+    error = image_upload_error(photo)
+    if error:
+        raise PromotionError('bad_image', error)
+    with transaction.atomic():
+        _lock_promotion(promotion)
+        if promotion.status not in EDITABLE_STATUSES:
+            raise PromotionError('bad_status', 'This promotion can no longer be changed')
+        live = PromotionPhoto.objects.filter(promotion=promotion, is_deleted=False)
+        if live.count() >= MAX_PHOTOS:
+            raise PromotionError('too_many_photos', f'An ad can have at most {MAX_PHOTOS} photos')
+        order = (live.aggregate(top=Max('display_order'))['top'] or 0) + 1
+        row = PromotionPhoto.objects.create(promotion=promotion, photo=photo, display_order=order)
+        _audit_photo(actor, 'promotion_photo_add', promotion, row)
+    return row
+
+
+def remove_photo(*, actor, promotion, photo_id):
+    """Take one picture off an ad (a soft delete; the file stays on disk)."""
+    with transaction.atomic():
+        row = PromotionPhoto.objects.select_for_update().filter(
+            pk=photo_id, promotion=promotion, is_deleted=False).first()
+        if row is None:
+            raise PromotionError('not_found', 'Photo not found')
+        row.soft_delete()
+        _audit_photo(actor, 'promotion_photo_remove', promotion, row)
+
+
+def regions_panel(today: date | None = None):
+    """
+    Every active region with how many ads run in it now (`running`, with the hotels) and how many are still to
+    run or wait for payment (`waiting`). Regions with the most running ads first, so the admin also sees
+    the empty ones: that is where ads can still be sold.
+    """
+    today = today or business_today()
+    holding = Promotion.objects.filter(
+        is_deleted=False, status__in=Promotion.HOLDING_STATUSES, end_date__gte=today,
+        property__is_deleted=False, property__region_ref__isnull=False).select_related('property')
+    running, waiting = defaultdict(list), defaultdict(int)
+    for promotion in holding:
+        region_id = promotion.property.region_ref_id
+        if is_shown_now(promotion, today):
+            running[region_id].append({'id': promotion.property_id, 'name': promotion.property.display_name()})
+        else:
+            waiting[region_id] += 1
+    regions = Region.objects.filter(is_deleted=False, is_active=True, country__is_deleted=False).select_related('country')
+    rows = [{
+        'id': region.pk, 'country_code': region.country.code,
+        'name_uz': region.name_uz, 'name_ru': region.name_ru, 'name_en': region.name_en,
+        'running': len(running[region.pk]), 'waiting': waiting[region.pk], 'hotels': running[region.pk],
+    } for region in regions]
+    return sorted(rows, key=lambda row: (-row['running'], -row['waiting'], row['country_code'], row['name_en']))

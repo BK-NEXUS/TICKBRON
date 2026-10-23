@@ -13,7 +13,7 @@ interface HotelRef {
 
 interface CreatePromotionDialogProps {
   hotel: HotelRef
-  onCreated: () => void
+  onCreated: (promotion: AdminPromotion) => void
   onClose: () => void
 }
 
@@ -47,7 +47,7 @@ export function CreatePromotionDialog({ hotel, onCreated, onClose }: CreatePromo
       setErrorKey(promotionErrorKey(result.code))
       return
     }
-    onCreated()
+    onCreated(result.data)
   }
 
   return (

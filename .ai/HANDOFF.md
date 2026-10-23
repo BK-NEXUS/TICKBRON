@@ -3082,6 +3082,12 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Checked: the production example, with a random SECRET_KEY, starts the app (`manage.py check` and `check --deploy` pass on Django 6.1.2); with an `http://` CORS origin it is refused, as the production rules say.
 - No real secret is in the repository and the server's real `.env` is not created here. Still the owner's: hosting, the A records at ahost.uz, the TLS certificate, the SMTP account for `no-reply@tickbron.com`, the real SECRET_KEY and database password.
 
+## Ads with photos and ads by region (2026-10-23)
+- Plan, decisions and what is not done: `.ai/PLAN_AD_REGIONS.md`; contract: API_CONTRACT.md "Ads: pictures, banner pictures and the regions panel".
+- New: `PromotionPhoto` (migration `promotions/0002`, audit actions `promotion_photo_add` / `promotion_photo_remove`, migration `admin_panel/0012`). The banner shows the ad's pictures (up to 10), else the hotel's photos, one after another (`PromoCarousel`).
+- Home banner follows the country opened under "Where to?"; both banners say "Ads in {place}". The admin advertising panel has a card per region (`PromotionRegionPanel`) and a photo dialog per ad (`PromotionPhotosDialog`, opened right after an ad is created); the size rules are written next to the upload (`promoAdmin.photosHelp`; `photos.help` for hotel and room photos).
+- Not verified: real pictures on the banner in a browser (the dev server cannot show uploaded files), so the cross-fade and the dots were checked by tests only.
+
 ## Room photos and the owner panel (2026-10-23)
 - Answer to the owner's question: before this change adding a room type did **not** ask for photos and owners had no way to upload room photos at all (the `RoomPhoto` model and the guest page existed, there was no owner API or screen). Now: `GET/POST /partner/rooms/{id}/photos/`, `PATCH/DELETE .../{photo_id}/` (see API_CONTRACT.md), max 20 per room type.
 - Room form (owner panel > Rooms): sections (basic information, guests and rooms, price, photos); the web address (slug) is made from the name until the owner types one; the price currency is the hotel's (it was a choice the server refused when it differed); the create form has a photo picker (uploaded right after the room type is saved, the first is the cover; if a photo fails the saved room type stays open with the reason); editing shows the photo manager. The room list shows the cover, the photo count and a dashed "No photos yet" flag that opens the room type.

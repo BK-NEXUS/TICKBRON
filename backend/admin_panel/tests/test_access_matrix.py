@@ -63,12 +63,16 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/chat/conversations/'),
     ('get', f'{A}/chat/conversations/1/'),
     ('get', f'{A}/chat/unread/'),
+    ('get', f'{A}/promotions/regions/'),
+    ('get', f'{A}/promotions/1/photos/'),
     ('get', f'{A}/promotion-hotels/?q=ab'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
 # R10 promotions: every change is super-admin only, staff get 403 too
 PROMOTION_WRITES = [
     ('post', f'{A}/promotions/'),
+    ('post', f'{A}/promotions/1/photos/'),
+    ('delete', f'{A}/promotions/1/photos/1/'),
     ('patch', f'{A}/promotions/1/'),
     ('post', f'{A}/promotions/1/pause/'),
     ('post', f'{A}/promotions/1/resume/'),

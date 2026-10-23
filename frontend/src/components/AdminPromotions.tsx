@@ -6,6 +6,8 @@ import {
 import { promotionErrorKey } from '../utils/promotionErrors'
 import { CancelPromotionDialog, CreatePromotionDialog, PromotionStatsDialog } from './PromotionDialogs'
 import { PromotionHotelFinder } from './PromotionHotelFinder'
+import { PromotionPhotosDialog } from './PromotionPhotosDialog'
+import { PromotionRegionPanel } from './PromotionRegionPanel'
 import { StatusPagination } from './StatusPagination'
 
 const PAGE_SIZE = 20
@@ -35,6 +37,10 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
   const [hotelToPromote, setHotelToPromote] = useState<HotelSearchRow | null>(null)
   const [toCancel, setToCancel] = useState<AdminPromotion | null>(null)
   const [statsFor, setStatsFor] = useState<AdminPromotion | null>(null)
+  const [regionId, setRegionId] = useState<number | null>(null)
+  const [photosFor, setPhotosFor] = useState<{ promotion: AdminPromotion; justCreated: boolean } | null>(null)
+  // Counts of the region panel are read again whenever the ads changed
+  const [changes, setChanges] = useState(0)
 
   // The hotel name filter waits for a pause in typing; the other filters apply at once
   useEffect(() => {
@@ -49,11 +55,11 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)
-    const result = await promotionAdapter.listPromotions({ q: name, status, paid, page })
+    const result = await promotionAdapter.listPromotions({ q: name, status, paid, page, region: regionId ?? undefined })
     if (result.data) setData(result.data)
     else setLoadFailed(true)
     setLoading(false)
-  }, [name, status, paid, page])
+  }, [name, status, paid, page, regionId])
 
   useEffect(() => {
     void load()
@@ -74,7 +80,14 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
   const closeAndReload = () => {
     setHotelToPromote(null)
     setToCancel(null)
+    setChanges(count => count + 1)
     void load()
+  }
+
+  // A new ad asks for its photos at once
+  const created = (promotion: AdminPromotion) => {
+    closeAndReload()
+    setPhotosFor({ promotion, justCreated: true })
   }
 
   const visibility = (promotion: AdminPromotion) => {
@@ -97,6 +110,12 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
       ) : (
         <p className="admin-view-subtitle">{t('promoAdmin.readOnly')}</p>
       )}
+
+      <PromotionRegionPanel
+        selected={regionId}
+        onSelect={id => { setRegionId(id); setPage(1) }}
+        refreshKey={changes}
+      />
 
       <h3 className="admin-section-title">{t('promoAdmin.listTitle')}</h3>
       <div className="customers-controls">
@@ -182,6 +201,11 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
                       <div className="promotion-actions">
                         <button type="button" className="btn btn-secondary btn-sm" disabled={busy}
                           onClick={() => setStatsFor(promotion)}>{t('promoAdmin.stats')}</button>
+                        <button type="button" className="btn btn-secondary btn-sm" disabled={busy}
+                          aria-label={`${t('promoAdmin.photosButton', { count: promotion.photos_count })}: ${promotion.property.name}`}
+                          onClick={() => setPhotosFor({ promotion, justCreated: false })}>
+                          {t('promoAdmin.photosButton', { count: promotion.photos_count })}
+                        </button>
                         {isSuperAdmin && open && !promotion.paid && (
                           <button type="button" className="btn btn-primary btn-sm" disabled={busy}
                             onClick={() => runAction(promotion.id, () => promotionAdapter.markPromotionPaid(promotion.id))}>
@@ -222,12 +246,22 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
       )}
 
       {hotelToPromote && (
-        <CreatePromotionDialog hotel={hotelToPromote} onCreated={closeAndReload} onClose={() => setHotelToPromote(null)} />
+        <CreatePromotionDialog hotel={hotelToPromote} onCreated={created} onClose={() => setHotelToPromote(null)} />
       )}
       {toCancel && (
         <CancelPromotionDialog promotion={toCancel} onCancelled={closeAndReload} onClose={() => setToCancel(null)} />
       )}
       {statsFor && <PromotionStatsDialog promotion={statsFor} onClose={() => setStatsFor(null)} />}
+      {photosFor && (
+        <PromotionPhotosDialog
+          key={photosFor.promotion.id}
+          promotion={photosFor.promotion}
+          canEdit={isSuperAdmin && ['scheduled', 'active', 'paused'].includes(photosFor.promotion.status)}
+          justCreated={photosFor.justCreated}
+          onClose={() => setPhotosFor(null)}
+          onChanged={() => { setChanges(count => count + 1); void load() }}
+        />
+      )}
     </div>
   )
 }

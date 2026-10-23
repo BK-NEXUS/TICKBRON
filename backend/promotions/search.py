@@ -1,5 +1,9 @@
 """Banner carousel entries for the search page: promoted hotels inside the guest's own result set."""
+from collections import defaultdict
+
 from promotions import service
+from promotions.models import PromotionPhoto
+from properties.models import PropertyPhoto
 from properties.search import PropertySearchService
 from properties.serializers import PropertySearchResultSerializer
 
@@ -21,11 +25,30 @@ def promoted_for_search(search_service, search_params, limit=SEARCH_SLOTS):
             if promotion.property_id in properties]
 
 
+def _banner_photos(entries):
+    """
+    `{promotion_id: [url, ...]}`, at most service.MAX_PHOTOS each: the pictures put on the ad, else the hotel's own
+    photos with the cover first. Two queries for the whole carousel.
+    """
+    own = defaultdict(list)
+    for row in PromotionPhoto.objects.filter(
+            promotion_id__in=[promotion.pk for promotion, _ in entries], is_deleted=False, is_active=True):
+        own[row.promotion_id].append(row.photo.url)
+    hotel = defaultdict(list)
+    for row in PropertyPhoto.objects.filter(
+            property_id__in=[prop.pk for _, prop in entries], is_deleted=False, is_active=True,
+    ).order_by('-is_primary', 'display_order', 'id'):
+        hotel[row.property_id].append(row.photo.url)
+    return {promotion.pk: (own[promotion.pk] or hotel[prop.pk])[:service.MAX_PHOTOS] for promotion, prop in entries}
+
+
 def serialize_banners(request, entries):
-    """Card fields of the hotel plus the `promotion_id` the frontend sends back on click."""
+    """Card fields of the hotel, the `promotion_id` the frontend sends back on click and the `promo_photos`."""
     items = PropertySearchResultSerializer(
         [prop for _, prop in entries], many=True, context={'rate_request': request}).data
-    return [{**item, 'promotion_id': promotion.pk} for item, (promotion, _) in zip(items, entries)]
+    photos = _banner_photos(entries)
+    return [{**item, 'promotion_id': promotion.pk, 'promo_photos': photos[promotion.pk]}
+            for item, (promotion, _) in zip(items, entries)]
 
 
 def promoted_for_home(country_id=None, limit=HOME_SLOTS):

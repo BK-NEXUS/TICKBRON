@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from geography.models import City, Country, Region
 from promotions import service
-from promotions.models import Promotion
+from promotions.models import Promotion, PromotionPhoto
 from properties.models import Property
 
 
@@ -43,8 +43,28 @@ class CancelSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, default='')
 
 
+class PromotionPhotoUploadSerializer(serializers.Serializer):
+    """The upload field: an ImageField decodes the file, so a renamed text file is refused, not stored."""
+    photo = serializers.ImageField()
+
+
+class PromotionPhotoSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PromotionPhoto
+        fields = ['id', 'photo_url', 'display_order']
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_photo_url(self, obj):
+        return obj.photo.url if obj.photo else None
+
+
 class PromotionSerializer(serializers.ModelSerializer):
     property = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
+    photos_count = serializers.SerializerMethodField()
     paid = serializers.SerializerMethodField()
     is_shown_now = serializers.SerializerMethodField()
     blocked_reason = serializers.SerializerMethodField()
@@ -56,7 +76,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'property', 'start_date', 'end_date', 'priority', 'country_ref', 'region_ref', 'city_ref',
             'price_amount', 'price_currency', 'note', 'paid', 'paid_at', 'status', 'cancelled_reason',
-            'is_shown_now', 'blocked_reason', 'total_impressions', 'total_clicks', 'created_at',
+            'is_shown_now', 'blocked_reason', 'total_impressions', 'total_clicks', 'photos', 'photos_count', 'created_at',
         ]
         read_only_fields = fields
 
@@ -64,6 +84,18 @@ class PromotionSerializer(serializers.ModelSerializer):
     def get_property(self, obj):
         prop = obj.property
         return {'id': prop.pk, 'name': prop.display_name(), 'city': prop.city, 'status': prop.status}
+
+    def _live_photos(self, obj):
+        # The admin list prefetches `photos`; filtering here keeps that one query for all rows
+        return [photo for photo in obj.photos.all() if not photo.is_deleted and photo.is_active]
+
+    @extend_schema_field(PromotionPhotoSerializer(many=True))
+    def get_photos(self, obj):
+        return PromotionPhotoSerializer(self._live_photos(obj), many=True).data
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_photos_count(self, obj):
+        return len(self._live_photos(obj))
 
     @extend_schema_field(serializers.BooleanField())
     def get_paid(self, obj):

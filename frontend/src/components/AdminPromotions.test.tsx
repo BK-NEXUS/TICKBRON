@@ -15,6 +15,10 @@ vi.mock('../adapters/promotionAdapter', () => ({
     markPromotionPaid: vi.fn(),
     cancelPromotion: vi.fn(),
     getPromotionStats: vi.fn(),
+    getRegionPanel: vi.fn(),
+    getPromotionPhotos: vi.fn(),
+    uploadPromotionPhoto: vi.fn(),
+    deletePromotionPhoto: vi.fn(),
   },
 }))
 
@@ -41,6 +45,8 @@ function promo(id: number, extra: Partial<AdminPromotion> = {}): AdminPromotion 
     blocked_reason: null,
     total_impressions: 400,
     total_clicks: 12,
+    photos: [],
+    photos_count: 0,
     created_at: '2026-10-09T09:00:00Z',
     ...extra,
   }
@@ -62,6 +68,7 @@ describe('AdminPromotions', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     adapter.listPromotions.mockResolvedValue(list([promo(1)]))
+    adapter.getRegionPanel.mockResolvedValue({ data: [], error: null, code: null })
   })
 
   describe('list', () => {
@@ -350,6 +357,11 @@ describe('AdminPromotions', () => {
         property: 7, start_date: '2026-10-10', end_date: '2026-10-16', priority: 40,
         price_amount: '2500000', price_currency: 'UZS', note: 'Invoice 7',
       }))
+      // The form closes and the new ad asks for its photos at once
+      const photos = await screen.findByRole('dialog', { name: 'Photos of the ad: Hotel 5' })
+      expect(within(photos).getByText('The ad is saved. Add its photos now (up to 10).')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Create promotion' })).toBeNull()
+      fireEvent.click(within(photos).getByRole('button', { name: 'Close' }))
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
       await waitFor(() => expect(adapter.listPromotions).toHaveBeenCalledTimes(2))
       await settle()

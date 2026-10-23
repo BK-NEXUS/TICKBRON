@@ -33,7 +33,12 @@ function PlaceCard({ place, children }: { place: Place; children: (body: ReactEl
  * regions, and a region opens the search for that place. The names come from the Geography dictionary
  * the super admin keeps. Nothing is shown while there is no active country.
  */
-export function HomeWhereTo() {
+interface HomeWhereToProps {
+  /** Called with the country the guest opened, or null when they went back to all countries */
+  onCountryChange?: (country: GeographyCountry | null) => void
+}
+
+export function HomeWhereTo({ onCountryChange }: HomeWhereToProps) {
   const { t, language } = useI18n()
   const [countries, setCountries] = useState<GeographyCountry[] | null>(null)
   const [countriesFailed, setCountriesFailed] = useState(false)
@@ -64,6 +69,13 @@ export function HomeWhereTo() {
   const choose = (chosen: GeographyCountry) => {
     setCountry(chosen)
     loadRegions(chosen)
+    onCountryChange?.(chosen)
+  }
+
+  const back = () => {
+    setCountry(null)
+    setRegions(null)
+    onCountryChange?.(null)
   }
 
   const retry = () => (country ? loadRegions(country) : loadCountries())
@@ -77,7 +89,7 @@ export function HomeWhereTo() {
     <section className="where-to container" aria-labelledby="where-to-title">
       {country ? (
         <div className="where-to-header">
-          <button type="button" className="btn btn-tertiary btn-sm" onClick={() => { setCountry(null); setRegions(null) }}>
+          <button type="button" className="btn btn-tertiary btn-sm" onClick={back}>
             {t('home.allCountries')}
           </button>
           <h2 id="where-to-title" className="where-to-title">{geographyName(country, language)}</h2>
