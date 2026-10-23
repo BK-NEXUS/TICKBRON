@@ -5,10 +5,11 @@ import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
 import { I18nProvider } from '../i18n/I18nContext'
 import { statusAdapter } from '../adapters/statusAdapter'
-import { HOTEL_DETAIL, INSIGHTS, TOTALS } from '../test/statusFixtures'
+import { ADMIN_OVERVIEW, HOTEL_DETAIL, INSIGHTS, TOTALS } from '../test/statusFixtures'
 
 vi.mock('../adapters/statusAdapter', () => ({
   statusAdapter: {
+    getAdminOverview: vi.fn(),
     getCountries: vi.fn(),
     getRegions: vi.fn(),
     getHotels: vi.fn(),
@@ -87,14 +88,54 @@ async function openCountries() {
 describe('AdminStatusSection', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    mocked.getAdminOverview.mockResolvedValue({ data: ADMIN_OVERVIEW, error: null })
     mocked.getCountries.mockResolvedValue(pageOf(COUNTRIES))
     mocked.getRegions.mockResolvedValue(pageOf(REGIONS, { country: 'Uzbekistan' }))
     mocked.getHotels.mockResolvedValue(pageOf(HOTELS, { country: 'Uzbekistan', region: 'Tashkent' }))
     mocked.getHotelDetail.mockResolvedValue({ data: DETAIL, error: null })
   })
 
-  it('opens on the Countries tile', () => {
+  it('home: this month, key numbers, busiest regions and room types of the whole platform', async () => {
     renderSection()
+
+    expect(await screen.findByRole('heading', { name: /This month: / })).toBeInTheDocument()
+    expect(mocked.getAdminOverview).toHaveBeenCalledWith({ period: 'all', year: undefined })
+    expect(screen.getByText('New guests')).toBeInTheDocument()
+    expect(screen.getByText('21')).toBeInTheDocument()
+    expect(screen.getByText('last month: 15')).toBeInTheDocument()
+    expect(screen.getByText('Active hotels')).toBeInTheDocument()
+    expect(screen.getByText('of 12 hotels')).toBeInTheDocument()
+    expect(screen.getByText('4.50%')).toBeInTheDocument()
+    const regions = screen.getByRole('table', { name: 'Busiest regions' })
+    expect(within(regions).getByText('Tashkent')).toBeInTheDocument()
+    expect(within(regions).getByText('Unspecified')).toBeInTheDocument()
+    const rooms = screen.getByRole('table', { name: 'Busiest room types' })
+    expect(within(rooms).getByText('Deluxe Suite')).toBeInTheDocument()
+    expect(within(rooms).getByText('$9,000.00')).toBeInTheDocument()
+  })
+
+  it('home: the period and the chart year are sent to the overview', async () => {
+    renderSection()
+    await screen.findByRole('heading', { name: /This month: / })
+
+    fireEvent.change(screen.getByLabelText('Period'), { target: { value: 'last_30_days' } })
+    await waitFor(() => expect(mocked.getAdminOverview).toHaveBeenLastCalledWith({ period: 'last_30_days', year: undefined }))
+    fireEvent.change(screen.getByLabelText('Chart year'), { target: { value: '2025' } })
+    await waitFor(() => expect(mocked.getAdminOverview).toHaveBeenLastCalledWith({ period: 'last_30_days', year: 2025 }))
+  })
+
+  it('home: shows an error with a retry', async () => {
+    mocked.getAdminOverview.mockResolvedValueOnce({ data: null, error: 'Admin or staff role required' })
+    renderSection()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Admin or staff role required')
+    fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
+    expect(await screen.findByRole('heading', { name: /This month: / })).toBeInTheDocument()
+  })
+
+  it('opens on the Countries tile', async () => {
+    renderSection()
+    await screen.findByRole('heading', { name: /This month: / })
 
     expect(screen.getByRole('heading', { name: 'Status' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Countries/ })).toBeInTheDocument()
@@ -146,8 +187,9 @@ describe('AdminStatusSection', () => {
     expect(await screen.findByRole('button', { name: 'Uzbekistan' })).toBeInTheDocument()
   })
 
-  it('Back from the tiles leaves the Status section', () => {
+  it('Back from the tiles leaves the Status section', async () => {
     const { onExit } = renderSection()
+    await screen.findByRole('heading', { name: /This month: / })
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onExit).toHaveBeenCalled()
   })
@@ -252,8 +294,9 @@ describe('AdminStatusSection', () => {
       mocked.getUsers.mockResolvedValue(pageOf(USERS))
     })
 
-    it('the home screen has a Users tile next to Countries', () => {
+    it('the home screen has a Users tile next to Countries', async () => {
       renderSection()
+      await screen.findByRole('heading', { name: /This month: / })
       expect(screen.getByRole('button', { name: /Countries/ })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Users/ })).toBeInTheDocument()
     })
@@ -392,6 +435,29 @@ describe('AdminStatusSection places', () => {
     expect(mocked.getRegions).toHaveBeenCalledWith('UZ', expect.anything())
     expect(mocked.getHotels).toHaveBeenCalledWith('UZ', '10', expect.anything())
     expect(screen.getAllByRole('navigation').map(nav => nav.textContent).join('|')).toContain('Узбекистан›Ташкент')
+  })
+
+  it.each([
+    ['ru', 'Новые гости', 'Самые загруженные регионы', 'Подробнее'],
+    ['uz', 'Yangi mehmonlar', 'Eng gavjum viloyatlar', 'Batafsil'],
+  ])('home overview follows the page language (%s)', async (language, newGuests, regions, browse) => {
+    localStorage.setItem('tickbron.language', language)
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/admin']}>
+          <BreadcrumbProvider>
+            <AdminStatusSection onExit={vi.fn()} />
+          </BreadcrumbProvider>
+        </MemoryRouter>
+      </I18nProvider>,
+    )
+
+    expect(await screen.findByText(newGuests)).toBeInTheDocument()
+    expect(screen.getByText(regions)).toBeInTheDocument()
+    expect(screen.getByText(browse)).toBeInTheDocument()
+    for (const english of ['New guests', 'Busiest regions', 'Browse the details', 'Active hotels', 'No-show rate', 'Booked ahead']) {
+      expect(screen.queryByText(english)).toBeNull()
+    }
   })
 
   it('the hotels without a region are opened with the "unspecified" key', async () => {

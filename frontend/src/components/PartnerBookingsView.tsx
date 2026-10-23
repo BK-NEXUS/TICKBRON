@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerBooking } from '../adapters/partnerAdapter'
 import { useI18n } from '../i18n/I18nContext'
 import { NoShowReportDialog } from './NoShowReportDialog'
+import { bookingStatusLabel, paymentStatusLabel } from '../utils/statusLabels'
 
 export function PartnerBookingsView() {
   const [bookings, setBookings] = useState<PartnerBooking[]>([])
@@ -173,10 +174,10 @@ export function PartnerBookingsView() {
                 </div>
                 <div className="booking-status-badges">
                   <span className={`booking-status ${getStatusClass(booking.status)}`}>
-                    {booking.status.replace('_', ' ').toUpperCase()}
+                    {bookingStatusLabel(booking.status, t)}
                   </span>
                   <span className={`payment-status ${getPaymentStatusClass(booking.payment_status)}`}>
-                    {booking.payment_status.replace('_', ' ').toUpperCase()}
+                    {paymentStatusLabel(booking.payment_status, t)}
                   </span>
                 </div>
               </div>

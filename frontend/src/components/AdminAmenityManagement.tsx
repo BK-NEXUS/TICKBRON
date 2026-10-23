@@ -541,7 +541,7 @@ export function AdminAmenityManagement() {
                   <p className="item-description">{amenity.description}</p>
                   <div className="item-details">
                     <span className="detail-label">{t('admin.icon')}</span>
-                    <span className="detail-value">{amenity.icon || 'None'}</span>
+                    <span className="detail-value">{amenity.icon || t('admin.none')}</span>
                     <span className="detail-label">{t('admin.sortOrder')}</span>
                     <span className="detail-value">{amenity.sort_order}</span>
                   </div>
@@ -579,7 +579,7 @@ export function AdminAmenityManagement() {
                   <p className="item-description">{category.description}</p>
                   <div className="item-details">
                     <span className="detail-label">{t('admin.icon')}</span>
-                    <span className="detail-value">{category.icon || 'None'}</span>
+                    <span className="detail-value">{category.icon || t('admin.none')}</span>
                     <span className="detail-label">{t('admin.sortOrder')}</span>
                     <span className="detail-value">{category.sort_order}</span>
                   </div>

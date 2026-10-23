@@ -3084,3 +3084,9 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Next: admin Status v2 (overview tab, admin language switch for buttons, filters and types).
 - Found, not fixed: `tsc -b` reports `Property 'includes' does not exist on type 'string'` in `frontend/vite.config.ts` (the `build` and `lint` scripts pass).
 
+## Admin Status v2 and statuses in the page language (2026-10-23)
+- Admin Status home now opens on an overview (this month against last month, guests in the next 7 days, new guests, key numbers of the chosen period incl. active hotels, no-show rate, booked-ahead days, returning guests, the 5 busiest regions and room types, yearly charts) with the period selector; the Countries / Hotels / Users tiles stay below it ("Browse the details"). Backend: `GET /admin-panel/status/overview/`.
+- Language fix: statuses sent as codes were printed raw (English) in admin and owner screens. They now go through `utils/statusLabels.ts` (booking, payment and property status; `propertyStatus.*` texts are new): admin customer profile, Status user detail and hotel detail, owner bookings and dashboard, support lookup. Hard-coded `N/A`, `Never` and `None` in admin lists use `admin.na`, `profile.never`, `admin.none`.
+- Shared parts: `StatusMetricCard` and `StatusYearCharts` are used by both overviews.
+- Not verified: I did not find other English leftovers by search; if the owner still sees an untranslated admin spot, ask for the screen name.
+
