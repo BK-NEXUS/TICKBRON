@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { ReactNode } from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { PartnerDashboardPage } from './PartnerDashboardPage'
 import { AuthProvider } from '../contexts/AuthContext'
+import { authAdapter } from '../adapters/authAdapter'
+
+vi.mock('../adapters/authAdapter', () => ({
+  authAdapter: { getCurrentUser: vi.fn().mockResolvedValue({ success: false }) },
+}))
 
 // Mock the partner adapter
 vi.mock('../adapters/partnerAdapter', () => ({
@@ -46,13 +51,17 @@ vi.mock('../components/EmptyState', () => ({
 }))
 
 describe('PartnerDashboardPage', () => {
-  it('should show authentication required when not authenticated', () => {
-    render(
-      <AuthProvider>
-        <PartnerDashboardPage />
-      </AuthProvider>
-    )
+  it('should show authentication required when not authenticated', async () => {
+    // the session check must finish inside the test, or its state update lands after the test environment is gone
+    await act(async () => {
+      render(
+        <AuthProvider>
+          <PartnerDashboardPage />
+        </AuthProvider>
+      )
+    })
 
+    expect(authAdapter.getCurrentUser).toHaveBeenCalled()
     expect(screen.getByText('Authentication required')).toBeInTheDocument()
     expect(screen.getByText('Please sign in to access the partner dashboard.')).toBeInTheDocument()
   })
