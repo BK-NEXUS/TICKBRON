@@ -60,6 +60,9 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/promotions/'),  # R10 reads: staff may look
     ('get', f'{A}/promotions/1/'),
     ('get', f'{A}/promotions/1/stats/'),
+    ('get', f'{A}/chat/conversations/'),
+    ('get', f'{A}/chat/conversations/1/'),
+    ('get', f'{A}/chat/unread/'),
     ('get', f'{A}/promotion-hotels/?q=ab'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]

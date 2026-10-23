@@ -9,6 +9,7 @@ from bookings.views_noshow import (
     admin_no_show_report_approve, admin_no_show_report_detail, admin_no_show_report_reject,
     admin_no_show_report_reverse, admin_no_show_reports,
 )
+from chat import admin_views as chat_views
 from promotions import admin_views as promotion_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
@@ -78,6 +79,10 @@ urlpatterns = [
     path('properties/<int:property_id>/region/', admin_property_region, name='admin-property-region'),
     path('bookings/lookup/', admin_booking_lookup_by_reference, name='admin-booking-lookup'),
     path('promotion-hotels/', promotion_views.promotion_hotels, name='admin-promotion-hotels'),
+    path('chat/conversations/', chat_views.Inbox.as_view(), name='admin-chat-inbox'),
+    path('chat/conversations/<int:conversation_id>/', chat_views.Thread.as_view(), name='admin-chat-thread'),
+    path('chat/conversations/<int:conversation_id>/read/', chat_views.ThreadRead.as_view(), name='admin-chat-read'),
+    path('chat/unread/', chat_views.StaffUnread.as_view(), name='admin-chat-unread'),
     path('promotions/', promotion_views.promotions, name='admin-promotions'),
     path('promotions/<int:promotion_id>/', promotion_views.promotion_detail, name='admin-promotion-detail'),
     path('promotions/<int:promotion_id>/pause/', promotion_views.promotion_pause, name='admin-promotion-pause'),

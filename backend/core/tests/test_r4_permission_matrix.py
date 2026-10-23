@@ -37,6 +37,7 @@ ACCESS = [
     (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
     (r'^/api/v1/me/reviews/property_scores/$', None, PUBLIC),
     (r'^/api/v1/me/', None, AUTHENTICATED),
+    (r'^/api/v1/chat/', None, AUTHENTICATED),  # support chat: the account's own thread
     (r'^/api/v1/bookings/', None, AUTHENTICATED),
     (r'^/api/v1/$', None, AUTHENTICATED),  # bookings router root
     (r'^/api/v1/partner/', None, OWNER),
@@ -46,7 +47,7 @@ ACCESS = [
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
     (r'^/api/v1/admin-panel/$', None, STAFF),
-    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|customers|exchange-rates|no-show-reports'
+    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|customers|exchange-rates|no-show-reports'
      r'|promotion-hotels|promotions|properties|statistics|status|users)/', None, STAFF),
 ]
 

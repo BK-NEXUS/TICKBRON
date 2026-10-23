@@ -92,6 +92,11 @@ export function InfoPage({ slug }: { slug: InfoPageSlug }) {
           <p>{t(section.body)}</p>
         </section>
       ))}
+      {slug === 'contact' && (
+        <p className="info-page-footer">
+          <Link to="/support" className="btn btn-secondary">{t('info.contact.chat')}</Link>
+        </p>
+      )}
       <p className="info-page-footer">
         <Link to="/search" className="btn btn-primary">{t('info.browse')}</Link>
       </p>

@@ -11,6 +11,7 @@ import './styles/index.css'
 import './styles/surfaces.css'
 import './styles/refresh.css'
 import './styles/panels.css'
+import './styles/chat.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

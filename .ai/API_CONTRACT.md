@@ -1170,3 +1170,19 @@ All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own prope
 - `GET /api/v1/partner/rooms/` and `/rooms/{id}/` gain read-only `photos_count` (live photos) and `cover_url` (the cover, else the first photo, else `null`).
 - The guest page already lists `photos` per room type (`properties` detail); owner uploads now fill it.
 
+
+## Support chat (guests and owners with the TICKBRON team)
+
+One thread per account (`Conversation`), newest messages by polling (no WebSocket). Text 1–2000 characters, control characters refused. Error codes: `empty`, `too_long`, `bad_text`, `invalid_query`. Throttles: send 20/min, poll 90/min.
+
+Account (login required, `/api/v1/chat/`):
+- `GET messages/?after=<id>` → `{messages: [{id, text, from_staff, created_at}], unread}`; without `after` the last 100.
+- `POST messages/` `{text}` → 201 message.
+- `POST read/` → 204 (marks the team's messages as read). `GET unread/` → `{unread}`.
+
+Team (staff and super-admin, `/api/v1/admin-panel/chat/`):
+- `GET conversations/?q=&unread=true&page=` → paginated `{id, user{id,name,email,role}, last_message{text≤120,from_staff,created_at}, unread, last_message_at}`.
+- `GET conversations/{id}/?after=` → `{user, messages}`; `POST conversations/{id}/` `{text}` = staff reply (201); `POST conversations/{id}/read/` → 204.
+- `GET unread/` → `{unread_threads}`.
+
+Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertising request for owners), admin tab "Messages" with badge, user menu link with badge, Contact page button.
