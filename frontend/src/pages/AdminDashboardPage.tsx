@@ -240,10 +240,12 @@ export function AdminDashboardPage() {
           </p>
         </div>
 
-        {renderNavigation()}
+        <div className="dashboard-layout">
+          {renderNavigation()}
 
-        <div className="dashboard-content">
-          {renderCurrentView()}
+          <div className="dashboard-content">
+            {renderCurrentView()}
+          </div>
         </div>
       </div>
     </div>

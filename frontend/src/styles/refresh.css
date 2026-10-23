@@ -1,0 +1,214 @@
+/* Design refresh (2026-10-23): panel layout with a side menu, a calmer search form, a layered 3D hero and
+   tilting cards. Loaded last; every colour comes from tokens.css. All motion is off for users who asked for
+   reduced motion, and the pointer effects only run with a real mouse (never on touch screens). */
+
+/* --- Admin and owner panels: side menu on desktop, one scrolling row on phones ---------------------- */
+
+.dashboard-layout {
+  display: block;
+}
+
+.dashboard-layout > .dashboard-content {
+  min-width: 0;
+}
+
+.dashboard-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-title {
+  font-size: var(--font-size-2xl);
+}
+
+@media (max-width: 1099px) {
+  .dashboard-layout .admin-dashboard-nav,
+  .dashboard-layout .partner-dashboard-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: var(--spacing-xs);
+    scrollbar-width: thin;
+  }
+
+  .dashboard-layout .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+}
+
+@media (min-width: 1100px) {
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    gap: var(--spacing-xl);
+    align-items: start;
+  }
+
+  .dashboard-layout .admin-dashboard-nav,
+  .dashboard-layout .partner-dashboard-nav {
+    position: sticky;
+    top: 104px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--spacing-xs);
+    margin: 0;
+    padding: var(--spacing-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dashboard-layout .nav-item {
+    width: 100%;
+    justify-content: flex-start;
+    border-color: transparent;
+    border-radius: var(--radius-lg);
+    background: transparent;
+  }
+
+  .dashboard-layout .nav-item:hover {
+    background: var(--color-tint);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .dashboard-layout .nav-item--active,
+  .dashboard-layout .nav-item--active:hover {
+    background: var(--color-gold-dark);
+    border-color: transparent;
+  }
+}
+
+/* --- Search form: the button takes the free slot instead of a full row ---------------------------- */
+
+.hero .search-form-label {
+  text-align: left;
+}
+
+@media (max-width: 767px) {
+  .search-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-12);
+  }
+
+  .search-form-grid > :first-child,
+  .search-form-grid > .search-form-calendar,
+  .search-form-grid > .search-form-submit {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-form-grid > .search-form-submit {
+    grid-column: 4;
+    align-self: end;
+  }
+}
+
+/* --- Home hero: a lattice and three arches at different depths --------------------------------------- */
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(220, 185, 105, 0.07) 0 1px, transparent 1px 36px),
+    repeating-linear-gradient(-45deg, rgba(220, 185, 105, 0.07) 0 1px, transparent 1px 36px);
+  mask-image: radial-gradient(ellipse at 50% 35%, black 25%, transparent 78%);
+  pointer-events: none;
+}
+
+.hero-scene {
+  display: none;
+  position: absolute;
+  inset: 0;
+  perspective: 1200px;
+  pointer-events: none;
+}
+
+@media (min-width: 1100px) {
+  .hero-scene {
+    display: block;
+  }
+}
+
+.hero-scene-stage {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.hero-arch {
+  position: absolute;
+  bottom: -1px;
+  border: 2px solid rgba(220, 185, 105, 0.34);
+  border-bottom: 0;
+  border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+  background: linear-gradient(to top, rgba(220, 185, 105, 0.12), transparent 70%);
+}
+
+.hero-arch--back {
+  left: 3%;
+  width: 200px;
+  height: 340px;
+  transform: translateZ(-60px);
+}
+
+.hero-arch--middle {
+  right: 5%;
+  width: 260px;
+  height: 420px;
+}
+
+.hero-arch--front {
+  right: 17%;
+  width: 150px;
+  height: 250px;
+  transform: translateZ(70px);
+}
+
+/* --- Cards: image zoom, lift and tilt (mouse only, motion allowed) ---------------------------------- */
+
+.property-card-image {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-scene-stage {
+    transition: transform var(--transition-base);
+  }
+
+  .property-card-image img {
+    transition: transform 0.5s ease;
+  }
+
+  .where-to-card {
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .property-card:hover .property-card-image img {
+    transform: scale(1.05);
+  }
+
+  .tilt-card {
+    transition: transform var(--transition-fast), box-shadow var(--transition-base);
+  }
+
+  .tilt-card:hover {
+    transform: perspective(900px) translateY(-4px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    box-shadow: var(--shadow-lg);
+  }
+
+  .where-to-card:hover {
+    transform: perspective(800px) translateY(-4px) rotateX(2deg);
+    box-shadow: var(--shadow-md);
+  }
+}

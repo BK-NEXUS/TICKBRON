@@ -3090,3 +3090,8 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Shared parts: `StatusMetricCard` and `StatusYearCharts` are used by both overviews.
 - Not verified: I did not find other English leftovers by search; if the owner still sees an untranslated admin spot, ask for the screen name.
 
+## Design refresh, round 1 (2026-10-23)
+- New `frontend/src/styles/refresh.css` (after `surfaces.css`, tokens only, tested in `refresh.test.ts`): panel side menu, compact search form, hero lattice and 3D arches, card tilt and zoom. Plan, sources and what is still open: `.ai/PLAN_DESIGN_REFRESH.md`.
+- New `hooks/useTilt.ts` (pointer tilt, off for touch and reduced motion) and `components/HeroScene.tsx` (decoration only). `AdminDashboardPage` and `PartnerDashboardPage` wrap menu and content in `.dashboard-layout`.
+- Checked by screenshots at 1440 and 390 px (home, search, admin). Not checked: dark theme and the other pages by eye.
+

@@ -413,10 +413,12 @@ export function PartnerDashboardPage() {
           <p className="dashboard-subtitle">{t('admin.welcome', { name: user.first_name || user.email })}</p>
         </div>
 
-        {renderNavigation()}
+        <div className="dashboard-layout">
+          {renderNavigation()}
 
-        <div className="dashboard-content">
-          {renderCurrentView()}
+          <div className="dashboard-content">
+            {renderCurrentView()}
+          </div>
         </div>
       </div>
     </div>
