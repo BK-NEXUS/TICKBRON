@@ -66,6 +66,8 @@ describe('GeographyPicker', () => {
   it('loads the cities of the chosen region and reports the city', async () => {
     const onChange = setup({ country_ref: 1, region_ref: 10, city_ref: null }, 'en')
     await screen.findByRole('option', { name: 'Chilanzar' })
+    // the region list loads in its own request; the reported region name needs it
+    await screen.findByRole('option', { name: 'Tashkent' })
     expect(geographyAdapter.getCities).toHaveBeenCalledWith(10)
     fireEvent.change(screen.getByLabelText('City'), { target: { value: '100' } })
     expect(onChange).toHaveBeenCalledWith({ country_ref: 1, region_ref: 10, city_ref: 100 }, { country: 'Uzbekistan', region: 'Tashkent', city: 'Chilanzar' })
