@@ -4,10 +4,8 @@ Tests for partner API endpoints.
 This module contains tests for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
-import pytest
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, PropertyPhoto

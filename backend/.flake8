@@ -1,0 +1,7 @@
+[flake8]
+exclude = venv,migrations,staticfiles,media,__pycache__
+max-line-length = 130
+per-file-ignores =
+    # a test imports a fixture from another test module and then names it as an argument
+    */tests/*.py:F811
+    scripts/*.py:F811

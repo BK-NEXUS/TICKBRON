@@ -4,15 +4,12 @@ Tests for admin API endpoints.
 This module contains tests for property moderation, user management,
 and amenity management.
 """
-import pytest
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from partner.tests.geography_helpers import uzbek_location
 from properties.models import Property, PropertyType, Amenity, AmenityCategory, RoomType, RatePlan
-from permissions.models import Role
 from bookings.models import Booking, BookingItem
 from admin_panel.models import InternalNote
 from decimal import Decimal

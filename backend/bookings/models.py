@@ -220,8 +220,9 @@ class Booking(BaseModel):
     )
 
     @classmethod
-    def from_db(cls, db, field_names, values):
-        instance = super().from_db(db, field_names, values)
+    def from_db(cls, db, field_names, values, **kwargs):
+        # Django 6.1 adds `fetch_mode`; the pinned 5.2 passes nothing, so the keywords go on untouched
+        instance = super().from_db(db, field_names, values, **kwargs)
         instance._loaded_snapshot = {
             name: getattr(instance, name) for name in cls.SNAPSHOT_FIELDS if name in instance.__dict__
         }

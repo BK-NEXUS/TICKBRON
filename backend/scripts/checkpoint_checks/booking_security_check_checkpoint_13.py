@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 from decimal import Decimal
 from datetime import date, timedelta
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 
 User = get_user_model()
 
@@ -213,7 +213,7 @@ class BookingSecurityCheck(TestCase):
     def test_08_transaction_safety_for_double_booking_prevention(self):
         """Test that transactions prevent double booking."""
         # Create first booking
-        first_booking = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,
@@ -232,7 +232,7 @@ class BookingSecurityCheck(TestCase):
         
         # Try to create second booking (should fail)
         try:
-            second_booking = Booking.create_booking(
+            Booking.create_booking(
                 guest=self.user,
                 property_obj=self.property,
                 room_type=self.room_type,
@@ -260,7 +260,7 @@ class BookingSecurityCheck(TestCase):
         # Try to create booking with forced rollback
         try:
             with transaction.atomic():
-                booking = Booking.create_booking(
+                Booking.create_booking(
                     guest=self.user,
                     property_obj=self.property,
                     room_type=self.room_type,
@@ -431,7 +431,7 @@ class BookingSecurityCheck(TestCase):
         ).first().booked_rooms
         
         # Create booking
-        booking = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,
@@ -711,14 +711,13 @@ class BookingSecurityCheck(TestCase):
 
     def test_28_concurrent_booking_safety(self):
         """Test that concurrent booking requests are handled safely."""
-        from django.db import transaction
         import threading
         
         results = []
         
         def create_booking():
             try:
-                booking = Booking.create_booking(
+                Booking.create_booking(
                     guest=self.user,
                     property_obj=self.property,
                     room_type=self.room_type,
@@ -728,7 +727,7 @@ class BookingSecurityCheck(TestCase):
                     guest_count=2
                 )
                 results.append(True)
-            except Exception as e:
+            except Exception:
                 results.append(False)
         
         # Set limited inventory
@@ -739,7 +738,7 @@ class BookingSecurityCheck(TestCase):
         ).update(available_rooms=1)
         
         # Create first booking
-        first_booking = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,

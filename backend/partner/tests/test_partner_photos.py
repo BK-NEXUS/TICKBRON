@@ -1,5 +1,4 @@
 """Owner photo management: list, change, delete, cover rules, random file names."""
-import re
 import shutil
 import tempfile
 

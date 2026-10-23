@@ -1,15 +1,13 @@
 """
 Tests for TICKBRON booking views and API endpoints.
 """
-from django.test import TestCase
-from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from decimal import Decimal
 from datetime import date, timedelta
 from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 from currency.testing import make_usd_rate
 
 
@@ -300,7 +298,7 @@ class BookingViewTests(APITestCase):
             )
             current_date += timedelta(days=1)
         
-        booking2 = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,

@@ -10,10 +10,8 @@ Money rules (R6). The only place that knows which currencies exist and how they 
 - Converting a stay to UZS rounds the stay total once, never night by night.
 - Decimal only: a float anywhere in money code is a bug, so it raises.
 """
-import re
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.core.exceptions import ImproperlyConfigured
 
 # code -> number of decimals of its smallest price unit
 CURRENCIES = {'UZS': 0, 'USD': 2, 'KZT': 0, 'RUB': 0}

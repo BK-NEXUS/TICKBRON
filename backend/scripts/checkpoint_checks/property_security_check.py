@@ -7,7 +7,6 @@ and related infrastructure.
 import os
 import sys
 import uuid
-from django.conf import settings
 from django.core.exceptions import ValidationError
 
 # Setup Django

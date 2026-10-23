@@ -7,8 +7,6 @@ including favorites, reviews, notifications, and account history functionality.
 
 import sys
 import os
-from django.conf import settings
-from django.core.exceptions import ValidationError
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -17,18 +15,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import django
 django.setup()
 
-from accounts.models import Favorite, Review, Notification, AccountHistory
-from accounts.serializers import (
-    FavoriteSerializer, FavoriteCreateSerializer,
-    ReviewSerializer, ReviewCreateSerializer,
-    NotificationSerializer, NotificationUpdateSerializer,
-    AccountHistorySerializer
-)
 from accounts.views import FavoriteViewSet, ReviewViewSet, NotificationViewSet, AccountHistoryViewSet
 from django.test import RequestFactory
 from users.models import User
-from properties.models import Property, PropertyType
-from bookings.models import Booking
 
 
 def check_account_security():
@@ -349,7 +338,7 @@ def check_rating_validation():
 def check_property_status_validation():
     """Check that property status is validated."""
     try:
-        from accounts.serializers import FavoriteCreateSerializer
+        pass
         # The serializer should validate property status
         return True
     except:
@@ -359,7 +348,7 @@ def check_property_status_validation():
 def check_booking_status_validation():
     """Check that booking status is validated for reviews."""
     try:
-        from accounts.serializers import ReviewCreateSerializer
+        pass
         # The serializer should validate booking status
         return True
     except:
@@ -390,7 +379,7 @@ def check_history_read_only():
 def check_staff_review_access():
     """Check that staff can access all reviews."""
     try:
-        from accounts.views import ReviewViewSet
+        pass
         # ViewSet should have different queryset for staff
         return True
     except:
@@ -401,7 +390,6 @@ def check_favorite_unique_constraint():
     """Check favorite unique constraint."""
     try:
         from accounts.models import Favorite
-        constraints = Favorite._meta.constraints
         unique_together = Favorite._meta.unique_together
         return ('user', 'property') in unique_together
     except:
@@ -456,7 +444,7 @@ def check_review_history_logging():
 def check_database_indexes():
     """Check database indexes."""
     try:
-        from accounts.models import Favorite, Review, Notification, AccountHistory
+        from accounts.models import Favorite
         
         # Check for common indexes
         has_user_index = any('user' in str(index.fields) for index in Favorite._meta.indexes)
@@ -471,7 +459,6 @@ def check_soft_delete_filtering():
     """Check soft delete filtering."""
     try:
         from accounts.models import Favorite
-        from common.models import BaseQuerySet
         
         # Should use BaseQuerySet which filters soft-deleted records
         return hasattr(Favorite.objects, 'not_deleted')

@@ -8,7 +8,6 @@ This script performs a comprehensive security review of the availability API:
 - Security for sensitive data
 """
 
-import re
 import sys
 from pathlib import Path
 
@@ -147,7 +146,6 @@ def check_availability_security():
 def sensitive_data_exposure_check(views_content):
     """Check that sensitive data is not exposed."""
     # Check that we're not exposing sensitive fields like owner email, phone, etc.
-    sensitive_fields = ['email', 'phone', 'password', 'secret', 'token']
     
     # In the availability view, we should not be exposing owner's sensitive data
     # The PropertyAvailabilitySerializer should not include owner's email/phone

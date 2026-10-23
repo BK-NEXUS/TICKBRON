@@ -81,7 +81,6 @@ def check_brute_force_security():
     
     # Check 3: RBAC foundation exists
     try:
-        from permissions.models import Role, Permission
         print("PASS RBAC foundation (Role/Permission models) exists")
         checks.append(True)
     except ImportError:

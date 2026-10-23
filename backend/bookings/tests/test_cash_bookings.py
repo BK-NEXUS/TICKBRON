@@ -4,7 +4,6 @@ when they will arrive, the hotel marks "guest arrived", and a confirmed booking 
 arrived 2 hours after the given time is cancelled and the room is released.
 """
 from datetime import date, datetime, time, timedelta
-from decimal import Decimal
 import zoneinfo
 
 from django.conf import settings

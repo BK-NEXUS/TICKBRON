@@ -27,6 +27,6 @@ Everything is merged into master (2026-10-22): input rules, phone number, cash b
 - Cancelling is free for the guest at any time before the stay starts; nothing is charged or refunded online.
 
 ## 4. Known, not fixed (none blocks launch)
-Hotel owners cannot rename or edit a hotel after it is created; guest bookings list not paginated; geography table scrolls sideways on phones; the payment tables and `PaymentAuditLog` stay in the database as history (the booking status history is written there); Dependabot PRs #33-#41 unreviewed; Redis result cache and thumbnails deliberately skipped (R14: 200 users, 0 failures, p95 search 163 ms).
+Hotel owners cannot rename or edit a hotel after it is created; guest bookings list not paginated; geography table scrolls sideways on phones; the payment tables and `PaymentAuditLog` stay in the database as history (the booking status history is written there); six Dependabot bumps (#29 Django 6.1, #31 Celery 5.6, #33 isort, #35 flake8, #36 black, #38 Playwright) were tested and are safe but not merged, and #65 (Pillow 13) and #71 (the old cash-only stage 3, replaced by #72) are still open; Redis result cache and thumbnails deliberately skipped (R14: 200 users, 0 failures, p95 search 163 ms).
 
 Last full runs before the last merge (cash, pictures and prices together): backend 2901 passed, frontend 1902 passed.

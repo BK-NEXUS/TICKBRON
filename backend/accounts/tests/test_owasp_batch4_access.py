@@ -15,7 +15,7 @@ from rest_framework.test import APIClient
 from accounts.models import Favorite
 from bookings.models import Booking
 from common.dates import business_today
-from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
+from properties.models import DateInventory, Property, RatePlan, RoomType
 from properties.tests.test_perf_queries import PropertyFixtureMixin
 from users.models import User
 

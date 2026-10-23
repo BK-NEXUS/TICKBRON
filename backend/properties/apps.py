@@ -7,4 +7,4 @@ class PropertiesConfig(AppConfig):
 
     def ready(self):
         """Import signal handlers when the app is ready."""
-        import properties.signals
+        import properties.signals  # noqa: F401  (connects the signal handlers)

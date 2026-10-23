@@ -1,7 +1,6 @@
 """
 Tests for property models.
 """
-import pytest
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -1954,7 +1953,7 @@ class RoomAmenityModelTest(TestCase):
     
     def test_room_amenity_str(self):
         """Test RoomAmenity string representation."""
-        expected = f"Standard Room - Microwave (Available)"
+        expected = "Standard Room - Microwave (Available)"
         self.assertEqual(str(self.room_amenity), expected)
     
     def test_room_amenity_unique_constraint(self):

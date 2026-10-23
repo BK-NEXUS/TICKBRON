@@ -6,12 +6,12 @@ from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 from rest_framework.test import APIClient
 from rest_framework import status
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyAmenity,
-    Amenity, AmenityCategory, PropertyPhoto
+    Amenity, AmenityCategory
 )
 from properties.search import PropertySearchService
 

@@ -9,6 +9,6 @@ class CommonConfig(AppConfig):
     def ready(self):
         """Import signal handlers when the app is ready."""
         try:
-            import common.signals
+            import common.signals  # noqa: F401  (connects the signal handlers)
         except ImportError:
             pass
