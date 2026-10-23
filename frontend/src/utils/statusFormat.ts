@@ -21,6 +21,16 @@ export function formatMoney({ currency, amount }: Money): string {
   }
 }
 
+/** A short amount for a chart label: "$54.2M", "UZS 1.2K" (the full amount stays in the bar's title) */
+export function formatMoneyCompact({ currency, amount }: Money): string {
+  const value = Number(amount)
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value)
+  } catch {
+    return `${currency} ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`
+  }
+}
+
 /** "€60.00 · $530.00", or a dash when there is none */
 export function formatMoneyList(list: Money[]): string {
   return list.length ? list.map(formatMoney).join(' · ') : '—'

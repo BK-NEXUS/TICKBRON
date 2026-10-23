@@ -21,11 +21,13 @@ from geography.serializers import GeographyRefsMixin
 from partner.models import OwnerPlace
 from properties.models import (
     Property, PropertyTranslation, RoomType, RatePlan, RatePlanPrice, DateInventory, RoomInventory, RoomBlock, PropertyPhoto,
+    RoomPhoto,
 )
 
 
-# Upload limits: 40 megapixels per photo, 50 photos per property
+# Upload limits: 40 megapixels per photo, 50 photos per property, 20 per room type
 MAX_PHOTOS_PER_PROPERTY = 50
+MAX_PHOTOS_PER_ROOM_TYPE = 20
 
 
 def _check_price_unit(currency, amount, field):
@@ -232,14 +234,34 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
     
     Limited to room types in properties owned by the authenticated hotel-owner.
     """
+    photos_count = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
+
     class Meta:
         model = RoomType
         fields = [
             'id', 'property', 'name', 'slug', 'description', 'base_occupancy', 'max_occupancy',
-            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'is_vip'
+            'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'is_vip',
+            'photos_count', 'cover_url',
         ]
         read_only_fields = ['id']
         extra_kwargs = {'description': {'max_length': 2000}}
+
+    def _photos(self, obj):
+        # The list view prefetches `live_photos`; a single room type reads them here
+        if hasattr(obj, 'live_photos'):
+            return obj.live_photos
+        return list(obj.photos.filter(is_deleted=False, is_active=True).order_by('display_order', 'id'))
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_photos_count(self, obj):
+        return len(self._photos(obj))
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_cover_url(self, obj):
+        photos = self._photos(obj)
+        cover = next((photo for photo in photos if photo.is_primary), photos[0] if photos else None)
+        return cover.photo.url if cover and cover.photo else None
 
     def property_of(self, attrs):
         return attrs.get('property') or getattr(self.instance, 'property', None)
@@ -546,22 +568,15 @@ class PartnerBlockSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(exc.message_dict)
 
 
-class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
+class PartnerPhotoSerializer(serializers.ModelSerializer):
     """
-    Serializer for property photo management by hotel-owners.
-    
-    Limited to photos in properties owned by the authenticated hotel-owner.
+    What property photos and room photos share, for hotel-owners: the file rules, the cover rules, the end of the
+    line for a new photo and the random stored file name. A subclass names the model and, in `parent_field`, the
+    field that points at the hotel or room type the photo belongs to.
     """
+    parent_field = None
     photo_url = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = PropertyPhoto
-        fields = [
-            'id', 'photo', 'photo_url', 'photo_type', 'caption', 'is_primary',
-            'display_order', 'alt_text'
-        ]
-        read_only_fields = ['id']
-    
+
     def get_photo_url(self, obj):
         """Get the absolute URL for the photo."""
         if obj.photo:
@@ -569,14 +584,13 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
         return None
 
     def validate_is_primary(self, value):
-        # A property always keeps one cover; it moves by making another photo the cover.
+        # A hotel or room type always keeps one cover; it moves by making another photo the cover.
         if self.instance is not None and not value:
             raise serializers.ValidationError('Make another photo the cover instead.')
         return value
 
     def create(self, validated_data):
-        prop = validated_data['property']
-        photos = PropertyPhoto.objects.filter(property=prop, is_deleted=False)
+        photos = self.Meta.model.objects.filter(**{self.parent_field: validated_data[self.parent_field]}, is_deleted=False)
         validated_data['display_order'] = (photos.aggregate(top=Max('display_order'))['top'] or 0) + 1
         if not photos.filter(is_primary=True).exists():
             validated_data['is_primary'] = True
@@ -600,6 +614,19 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(error_message)
         return value
 
+
+class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
+    """Serializer for property photo management by hotel-owners (only photos of their own properties)."""
+    parent_field = 'property'
+
+    class Meta:
+        model = PropertyPhoto
+        fields = [
+            'id', 'photo', 'photo_url', 'photo_type', 'caption', 'is_primary',
+            'display_order', 'alt_text'
+        ]
+        read_only_fields = ['id']
+
     def validate_property(self, value):
         """Ensure the property belongs to the authenticated hotel-owner."""
         request = self.context.get('request')
@@ -609,6 +636,19 @@ class PartnerPropertyPhotoSerializer(serializers.ModelSerializer):
                     "You can only manage photos for your own properties."
                 )
         return value
+
+
+class PartnerRoomPhotoSerializer(PartnerPhotoSerializer):
+    """Serializer for room photo management by hotel-owners (the view only hands over their own room types)."""
+    parent_field = 'room_type'
+
+    class Meta:
+        model = RoomPhoto
+        fields = [
+            'id', 'photo', 'photo_url', 'photo_type', 'caption', 'is_primary',
+            'display_order', 'alt_text'
+        ]
+        read_only_fields = ['id']
 
 
 class PartnerBookingSerializer(serializers.Serializer):

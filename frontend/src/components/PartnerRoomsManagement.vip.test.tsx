@@ -7,12 +7,12 @@ import { PartnerRoomsManagement } from './PartnerRoomsManagement'
 import { partnerAdapter } from '../adapters/partnerAdapter'
 
 vi.mock('../adapters/partnerAdapter', () => ({
-  partnerAdapter: { getRoomTypes: vi.fn(), createRoomType: vi.fn(), updateRoomType: vi.fn() },
+  partnerAdapter: { getRoomTypes: vi.fn(), createRoomType: vi.fn(), updateRoomType: vi.fn(), getRoomPhotos: vi.fn() },
 }))
 
 const room = (over: object) => ({
   id: 7, property: 3, name: 'Deluxe King', slug: 'deluxe-king', description: 'Big', base_occupancy: 2, max_occupancy: 3,
-  base_price: 95, currency: 'USD', total_rooms: 4, bed_configuration: '1 King Bed', ...over,
+  base_price: 95, currency: 'USD', total_rooms: 4, bed_configuration: '1 King Bed', photos_count: 0, cover_url: null, ...over,
 }) as never
 
 describe('PartnerRoomsManagement VIP switch', () => {
@@ -23,6 +23,7 @@ describe('PartnerRoomsManagement VIP switch', () => {
     })
     vi.mocked(partnerAdapter.updateRoomType).mockResolvedValue({ data: room({}), error: null })
     vi.mocked(partnerAdapter.createRoomType).mockResolvedValue({ data: room({}), error: null })
+    vi.mocked(partnerAdapter.getRoomPhotos).mockResolvedValue({ data: [], error: null })
   })
 
   it('marks only the VIP room type on the owner list', async () => {

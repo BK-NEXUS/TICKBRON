@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { StatusMonth } from '../adapters/statusAdapter'
-import { formatCount, formatMoney, monthLabel } from '../utils/statusFormat'
+import { formatCount, formatMoney, formatMoneyCompact, monthLabel } from '../utils/statusFormat'
 
 interface StatusMonthlyChartProps {
   months: StatusMonth[]
@@ -17,9 +17,10 @@ export function StatusMonthlyChart({ months, year, metric, currency }: StatusMon
   const valueOf = (month: StatusMonth) => metric === 'guests'
     ? month.guests
     : Number(month.revenue.find(item => item.currency === currency)?.amount ?? 0)
-  const labelOf = (month: StatusMonth) => metric === 'guests'
-    ? formatCount(month.guests)
-    : formatMoney({ currency: currency ?? '', amount: String(valueOf(month)) })
+  const moneyOf = (month: StatusMonth) => ({ currency: currency ?? '', amount: String(valueOf(month)) })
+  const labelOf = (month: StatusMonth) => metric === 'guests' ? formatCount(month.guests) : formatMoney(moneyOf(month))
+  // Twelve full amounts side by side overlap: the bar shows a short one, its title the whole amount
+  const shortLabelOf = (month: StatusMonth) => metric === 'guests' ? formatCount(month.guests) : formatMoneyCompact(moneyOf(month))
 
   const max = Math.max(0, ...months.map(valueOf))
   const title = metric === 'guests'
@@ -41,7 +42,7 @@ export function StatusMonthlyChart({ months, year, metric, currency }: StatusMon
                     style={{ height: `${max > 0 ? (value / max) * 100 : 0}%` }}
                     title={labelOf(month)}
                   >
-                    {value > 0 && <span className="bar-label">{labelOf(month)}</span>}
+                    {value > 0 && <span className="bar-label">{shortLabelOf(month)}</span>}
                   </div>
                 </div>
                 <div className="bar-period">{monthLabel(month.month, i18n)}</div>

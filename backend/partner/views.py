@@ -14,19 +14,22 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from properties.models import Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto
+from django.db.models import Prefetch
+from properties.models import (
+    Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto, RoomPhoto,
+)
 from bookings.arrival import mark_arrived
 from bookings.models import Booking
 from partner.models import OwnerPlace
 from bookings.noshow import report_deadline, reportable_bookings
 from common.dates import business_today
 from partner.serializers import (
-    MAX_PHOTOS_PER_PROPERTY,
+    MAX_PHOTOS_PER_PROPERTY, MAX_PHOTOS_PER_ROOM_TYPE,
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
     PartnerRoomTypeSerializer, PartnerRatePlanSerializer,
     PartnerDateInventorySerializer, PartnerRoomInventorySerializer,
     PartnerRoomInventoryBulkSerializer, PartnerDateInventoryBulkPriceSerializer,
-    PartnerBlockSerializer, PartnerPropertyPhotoSerializer
+    PartnerBlockSerializer, PartnerPropertyPhotoSerializer, PartnerRoomPhotoSerializer
 )
 
 
@@ -97,10 +100,13 @@ class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
         """Filter queryset to room types in properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
             return self.get_serializer_class().Meta.model.objects.none()
+        live_photos = Prefetch(
+            'photos', queryset=RoomPhoto.objects.filter(is_deleted=False, is_active=True).order_by('display_order', 'id'),
+            to_attr='live_photos')
         return RoomType.objects.filter(
             property__owner=self.request.user,
             is_deleted=False
-        ).select_related('property')
+        ).select_related('property').prefetch_related(live_photos)
 
 
 class PartnerRatePlanViewSet(viewsets.ModelViewSet):
@@ -376,6 +382,61 @@ def partner_property_photo_detail(request, property_id, photo_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     serializer = PartnerPropertyPhotoSerializer(photo, data=request.data, partial=True, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.save()
+    return Response(serializer.data)
+
+
+def _owned_room_type(request, room_type_id):
+    return get_object_or_404(RoomType, id=room_type_id, property__owner=request.user, is_deleted=False)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['GET', 'POST'])
+@permission_classes([IsHotelOwner])
+def partner_room_photos(request, room_type_id):
+    """
+    GET: the photos of one of the owner's room types, cover and order as stored.
+    POST: upload a photo (multipart: photo, photo_type, caption, alt_text). The first photo becomes the cover; new
+    photos go to the end; the stored file name is random; at most MAX_PHOTOS_PER_ROOM_TYPE per room type.
+    """
+    room_type = _owned_room_type(request, room_type_id)
+    photos = RoomPhoto.objects.filter(room_type=room_type, is_deleted=False)
+
+    if request.method == 'GET':
+        return Response(PartnerRoomPhotoSerializer(
+            photos.order_by('display_order', 'id'), many=True, context={'request': request}).data)
+
+    if photos.count() >= MAX_PHOTOS_PER_ROOM_TYPE:
+        return Response(
+            {'photo': [f'A room type can have at most {MAX_PHOTOS_PER_ROOM_TYPE} photos.']},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    serializer = PartnerRoomPhotoSerializer(data=request.data, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.save(room_type=room_type)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsHotelOwner])
+def partner_room_photo_detail(request, room_type_id, photo_id):
+    """
+    PATCH: caption, alt_text, photo_type, is_primary=true (makes it the cover).
+    DELETE: remove the photo; a removed cover passes to the first remaining photo.
+    """
+    room_type = _owned_room_type(request, room_type_id)
+    photo = get_object_or_404(RoomPhoto, id=photo_id, room_type=room_type, is_deleted=False)
+
+    if request.method == 'DELETE':
+        photo.remove()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    serializer = PartnerRoomPhotoSerializer(photo, data=request.data, partial=True, context={'request': request})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     serializer.save()

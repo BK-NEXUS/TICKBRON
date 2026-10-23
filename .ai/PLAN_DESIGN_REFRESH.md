@@ -20,6 +20,12 @@ The brand palette (gold, cream, ink) is the client's and stays.
 - Admin lists and detail screens inside the panel (tables, cards with gold outline), owner panel inner screens.
 - Dark theme check of the new parts by eye; empty/failed photo placeholders (a gradient with the logo instead of a broken image icon).
 
+## Round 4 (2026-10-23): owner panel, rooms and room photos
+- (styles in `frontend/src/styles/panels.css`) The room list, the room form and the hotel details/tags of the owner dashboard had no styles; now styled (cards with a photo area, form in sections, 2 columns that become 1 on phones).
+- New: room photos (see HANDOFF.md).
+- Statistics screens (same file `panels.css`): long amounts wrap inside their card without splitting digits, sections keep their distance, chart bars carry short labels ("$54.2M", full amount in the title; `formatMoneyCompact`), the tallest bar's label is no longer cut, cards are 2 by 2 on phones, and the small Status tables fit a phone (they shared the 800 px minimum width of the customers table).
+- Button audit: see HANDOFF.md.
+
 ## Round 2 (2026-10-23, same file `refresh.css`)
 - Admin screens: shorter page header (badge on the same line), smaller view titles, the "Total users: N" bands are small pills, tighter table cells.
 - Statistics chart: a month with one data point is a bar of at most 96 px (it was a full-width wall).

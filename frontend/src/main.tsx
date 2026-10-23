@@ -10,6 +10,7 @@ import '@fontsource/pt-serif/700.css'
 import './styles/index.css'
 import './styles/surfaces.css'
 import './styles/refresh.css'
+import './styles/panels.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

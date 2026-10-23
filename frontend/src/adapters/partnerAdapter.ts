@@ -112,6 +112,9 @@ export interface PartnerRoomType {
   bed_configuration: string
   room_size?: number
   is_vip: boolean
+  /** Live photos of the room type, and the cover's address (null without photos) */
+  photos_count: number
+  cover_url: string | null
   created_at: string
   updated_at: string
 }
@@ -334,6 +337,14 @@ export interface UpdatePhotoRequest {
   alt_text?: string
   photo_type?: string
   is_primary?: true
+}
+
+/** The calls the photo manager needs for one hotel or one room type */
+export interface PhotoApi {
+  list(): Promise<ApiResponse<PropertyPhoto[]>>
+  upload(data: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>>
+  update(photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>>
+  remove(photoId: number): Promise<ApiResponse<null>>
 }
 
 export interface AssignedPlace {
@@ -712,11 +723,8 @@ class PartnerAdapter {
 
   // Photo Upload Methods
 
-  /**
-   * Upload property photo
-   * Integrates with POST /api/v1/partner/properties/{id}/photos/ endpoint
-   */
-  async uploadPropertyPhoto(propertyId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+  /** The multipart POST both kinds of photo use */
+  private async postPhoto(url: string, photoData: UploadPhotoRequest, notFound: string): Promise<ApiResponse<PropertyPhoto>> {
     const formData = new FormData()
     formData.append('photo', photoData.photo)
     formData.append('photo_type', photoData.photo_type)
@@ -725,17 +733,15 @@ class PartnerAdapter {
     if (photoData.display_order !== undefined) formData.append('display_order', photoData.display_order.toString())
     if (photoData.alt_text) formData.append('alt_text', photoData.alt_text)
 
-    const url = `${this.baseUrl}/api/v1/partner/properties/${propertyId}/photos/`
-    
     try {
-      const response = await apiFetch(url, {
+      const response = await apiFetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Property not found' })
+        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: notFound })
         return { data: null, error: apiError.message }
       }
 
@@ -747,6 +753,14 @@ class PartnerAdapter {
         error: error instanceof Error ? error.message : 'Network error occurred',
       }
     }
+  }
+
+  /**
+   * Upload property photo
+   * Integrates with POST /api/v1/partner/properties/{id}/photos/ endpoint
+   */
+  async uploadPropertyPhoto(propertyId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+    return this.postPhoto(`/api/v1/partner/properties/${propertyId}/photos/`, photoData, 'Property not found')
   }
 
   /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */
@@ -772,6 +786,29 @@ class PartnerAdapter {
     return this.request<null>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
       method: 'DELETE',
     })
+  }
+
+  /** GET /api/v1/partner/rooms/{id}/photos/ (a plain list, cover and order as stored) */
+  async getRoomPhotos(roomTypeId: number): Promise<ApiResponse<PropertyPhoto[]>> {
+    return this.request<PropertyPhoto[]>(`/api/v1/partner/rooms/${roomTypeId}/photos/`)
+  }
+
+  /** POST /api/v1/partner/rooms/{id}/photos/ (multipart; the first photo becomes the cover) */
+  async uploadRoomPhoto(roomTypeId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+    return this.postPhoto(`/api/v1/partner/rooms/${roomTypeId}/photos/`, photoData, 'Room type not found')
+  }
+
+  /** PATCH /api/v1/partner/rooms/{id}/photos/{photoId}/ (is_primary can only be set to true) */
+  async updateRoomPhoto(roomTypeId: number, photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
+    return this.request<PropertyPhoto>(`/api/v1/partner/rooms/${roomTypeId}/photos/${photoId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /** DELETE /api/v1/partner/rooms/{id}/photos/{photoId}/ */
+  async deleteRoomPhoto(roomTypeId: number, photoId: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/partner/rooms/${roomTypeId}/photos/${photoId}/`, { method: 'DELETE' })
   }
 
   // Partner Bookings Methods

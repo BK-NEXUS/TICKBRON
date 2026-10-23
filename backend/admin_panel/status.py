@@ -11,9 +11,9 @@ custom with ?from=&to=, YYYY, YYYY-MM), ?search= (inside the current list only) 
 guests, nights, stays and revenue: bookings/metrics.py.
 """
 from django.db.models import Avg, CharField, Count, DecimalField, F, Max, OuterRef, Q, Subquery, Sum, Value
-from django.db.models.functions import Cast, Coalesce
+from django.db.models.functions import Cast, Coalesce, TruncDate
 from django.shortcuts import get_object_or_404
-from common.dates import business_today
+from common.dates import business_time_zone, business_today
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -364,8 +364,9 @@ def _no_show_rate(totals):
 
 
 def _new_users(first, after):
-    """Guests (not staff) who registered in [first, after)."""
-    return User.objects.filter(is_staff=False, date_joined__date__gte=first, date_joined__date__lt=after).count()
+    """Guests (not staff) who registered in [first, after), by business date like every other Status number."""
+    day = TruncDate('date_joined', tzinfo=business_time_zone())
+    return User.objects.filter(is_staff=False).annotate(day=day).filter(day__gte=first, day__lt=after).count()
 
 
 def _new_user_counts(date_range, today):
