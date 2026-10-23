@@ -6,6 +6,7 @@ import { StarIcon } from './StarIcon'
 import { PriceApprox } from './PriceApprox'
 import { priceIn } from '../utils/price'
 import { useI18n } from '../i18n/I18nContext'
+import { useTilt } from '../hooks/useTilt'
 
 interface PropertyCardProps {
   property: Property
@@ -19,6 +20,7 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const navigate = useNavigate()
   const { t, tp, formatMoney, currency } = useI18n()
+  const tiltRef = useTilt<HTMLElement>(4)
   const translation = property.translations[0] || { name: t('card.unknown'), description: '' }
   const rating = property.rating || property.average_rating || 0
   const reviewCount = property.review_count || 0
@@ -41,8 +43,9 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
   }
 
   return (
-    <article 
-      className="property-card"
+    <article
+      ref={tiltRef}
+      className="property-card tilt-card"
       onClick={handleClick}
       role="button"
       tabIndex={0}
