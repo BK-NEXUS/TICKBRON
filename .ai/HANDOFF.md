@@ -3095,3 +3095,6 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - New `hooks/useTilt.ts` (pointer tilt, off for touch and reduced motion) and `components/HeroScene.tsx` (decoration only). `AdminDashboardPage` and `PartnerDashboardPage` wrap menu and content in `.dashboard-layout`.
 - Checked by screenshots at 1440 and 390 px (home, search, admin). Not checked: dark theme and the other pages by eye.
 
+## Design refresh, round 2 (2026-10-23)
+- More rules in `frontend/src/styles/refresh.css` (admin headers and count pills, one-point chart bar, property page spacing and phone meta grid, lattice for empty photos), tested in `refresh.test.ts`. Details and the open items: `.ai/PLAN_DESIGN_REFRESH.md`. No component logic changed.
+

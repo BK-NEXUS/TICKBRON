@@ -32,3 +32,18 @@ describe('design refresh styles', () => {
     expect(refresh).toMatch(/@media \(min-width: 1100px\) \{\s*\.hero-scene \{\s*display: block/)
   })
 })
+
+describe('design refresh round 2', () => {
+  it('shows a one-point statistics chart as a bar of limited width', () => {
+    expect(refresh).toMatch(/\.bar-chart-item \{\s*max-width: 96px/)
+  })
+
+  it('turns the count bars into pills and stacks the property meta two by two on phones', () => {
+    expect(refresh).toMatch(/\.users-count,\s*\.customers-count \{[^}]*border-radius: var\(--radius-pill\)/)
+    expect(refresh).toMatch(/@media \(max-width: 767px\) \{\s*\.property-detail-header-meta \{\s*display: grid;\s*grid-template-columns: repeat\(2/)
+  })
+
+  it('gives empty photo placeholders the lattice', () => {
+    expect(refresh).toMatch(/\.property-card-image-placeholder,[\s\S]*?repeating-linear-gradient\(45deg/)
+  })
+})
