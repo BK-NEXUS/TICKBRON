@@ -3030,3 +3030,8 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Tests: `PartnerPhotosManagement.test.tsx` (10), `PartnerDashboardPage.photos.test.tsx` (2). Full frontend: 172 files, 1966 tests passed; eslint, tsc and build exit 0.
 - Real browser (Chromium against the dev stack, owner demo account): upload of 3 files, make cover, delete, cover count always 1, no horizontal overflow at 1440 and 390 px. Images show as broken in dev only because Django does not serve /media there (production: nginx, RELEASE_CHECKLIST).
 
+
+## Full browser pass on master after the cash, picture, price and tooling merges (2026-10-23)
+- Chromium against the dev stack (`seed_demo`, `seed_demo_stats`, throttles off): 28 flows; 25 passed at once, 3 failed because the tests were stale, not the app: F1 (the owner form now needs a phone number and a place), S4 (`status/countries/<name>/regions/<name>/hotels/` no longer takes names; now uses `status/hotels/?search=`), C2 (price is shown in so'm, and hotels saved by earlier runs changed the "N properties saved" count). The tests are fixed; after the fix all 28 flows pass (checked as 25 in one run plus the 4 flows A, C, F, STATUS in a second run).
+- Master frontend CI had two timing failures after the Vitest 5 / React 19 merges (#79 and #80), both in tests, not in the app.
+- Found, not fixed: other test files render `AuthProvider` without mocking `authAdapter` (PropertyCard, ProfilePage, SupportLookupPage, BookingPage, FavoritesPage, BookingsPage, PropertyDetailPage tests); they can show the same "window is not defined" error as #80 if a test ends before the session check.

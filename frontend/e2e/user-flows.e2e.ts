@@ -226,6 +226,9 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
   let propertyId = 0
   await step(audit, 'C1 add-from-property-page', async () => {
     await loginWithPassword(page, DEMO.guest.email, DEMO.guest.password)
+    // Hotels saved by earlier runs would change the "N properties saved" count checked below
+    const saved = await (await api(page, 'GET', '/api/v1/me/favorites/')).json()
+    for (const favorite of saved.results ?? saved) await api(page, 'DELETE', `/api/v1/me/favorites/${favorite.id}/`)
     ;({ propertyId } = await tashkentIds(page))
     await page.goto(`/property/${propertyId}`)
     await expect(page.getByRole('heading', { level: 1, name: TASHKENT })).toBeVisible()
@@ -249,7 +252,7 @@ test('C favorites: add, list, remove', async ({ page, audit }) => {
     await expect(page.getByRole('heading', { name: 'My Favorites' })).toBeVisible()
     await expect(page.getByText('1 property saved')).toBeVisible()
     await expect.soft(page.getByRole('link', { name: TASHKENT }), 'favorite card shows the property name').toBeVisible()
-    await expect.soft(page.getByText(/\$60/), 'favorite card shows the price').not.toHaveCount(0)
+    await expect.soft(page.getByText(/UZS.*night/), 'favorite card shows the price in the chosen currency').not.toHaveCount(0)
   })
 
   await step(audit, 'C3 remove', async () => {
@@ -336,6 +339,10 @@ test('F super-admin: create owner, customers, note, support lookup, statistics',
     await page.getByLabel('Email Address:').fill(newOwner.email)
     await page.getByLabel('First Name:').fill('E2E')
     await page.getByLabel('Last Name:').fill('Owner')
+    await page.getByLabel('Phone number').fill(`+99890${String(stamp).slice(-7)}`)
+    await page.getByLabel('Country').selectOption({ label: 'Uzbekistan' })
+    await page.getByLabel('Region').selectOption({ label: 'Tashkent' })
+    await page.getByLabel('City').selectOption({ index: 1 })
     await page.getByLabel('Password:', { exact: true }).fill(newOwner.password)
     await page.getByLabel('Confirm Password:').fill(newOwner.password)
     await page.getByRole('button', { name: 'Create Account' }).click()
