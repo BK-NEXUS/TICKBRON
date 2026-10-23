@@ -9715,3 +9715,37 @@ button.property-gallery-image {
   color: var(--color-text-tertiary);
   text-align: center;
 }
+
+/* Hotel name and description in three languages, and the owner's "Hotel details" screen */
+.partner-property-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 720px;
+}
+
+.hotel-texts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.hotel-texts-language {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  margin: 0;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.hotel-texts-language legend {
+  padding: 0 var(--spacing-xs);
+  font-weight: 600;
+}
+
+.partner-property-edit .btn {
+  align-self: flex-start;
+}

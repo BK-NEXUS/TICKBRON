@@ -86,6 +86,7 @@ def create_requests(inv):
         ('/api/v1/partner/properties/', {
             'property_type': inv['property_type'].id, 'max_guests': 2, 'bedrooms': 1,
             'bathrooms': 1, 'address_line1': '2 Navoi', **uzbek_location('Tashkent'),
+            'translations': {'en': {'name': 'Test Hotel'}},
             'base_price': '70.00', 'currency': 'USD',
         }, 'json'),
         ('/api/v1/partner/rooms/', {

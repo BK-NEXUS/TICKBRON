@@ -1606,6 +1606,17 @@ export const en = {
   'photos.uploadFailed': "{name}: {error}",
   'photos.alt': "Photo {number}",
   'photos.nav': "Photos",
+  'hotelTexts.hint': "Give the hotel a name in at least one language. Guests see it in their language, otherwise in another one you filled.",
+  'hotelTexts.name': "Hotel name ({language})",
+  'hotelTexts.description': "Description ({language})",
+  'hotelTexts.nameRequired': "Give the hotel a name in at least one language.",
+  'hotelEdit.nav': "Hotel details",
+  'hotelEdit.title': "Hotel details",
+  'hotelEdit.placeNote': "The place of the hotel is set by the administrator and cannot be changed here.",
+  'hotelEdit.save': "Save changes",
+  'hotelEdit.saving': "Saving...",
+  'hotelEdit.saved': "Changes saved. Guests see them now.",
+  'hotelEdit.failed': "The changes could not be saved. Try again.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

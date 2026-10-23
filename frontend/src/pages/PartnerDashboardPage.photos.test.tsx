@@ -20,6 +20,9 @@ vi.mock('../components/PartnerPhotosManagement', () => ({
     <div data-testid="photos-management">photos of property {propertyId}</div>
   ),
 }))
+vi.mock('../components/PartnerPropertyEdit', () => ({
+  PartnerPropertyEdit: ({ property }: { property: { id: number } }) => <div data-testid="property-edit">edit of property {property.id}</div>,
+}))
 vi.mock('../components/PartnerPropertyWizard', () => ({ PartnerPropertyWizard: () => null }))
 vi.mock('../components/PartnerBookingsView', () => ({ PartnerBookingsView: () => null }))
 vi.mock('../components/PartnerStatusTab', () => ({ PartnerStatusTab: () => null }))
@@ -54,5 +57,14 @@ describe('PartnerDashboardPage photos', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Photos' }))
     expect(screen.getByTestId('photos-management')).toHaveTextContent('photos of property 3')
     expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toHaveTextContent('Photos')
+  })
+
+  it('opens the hotel details screen of the selected hotel and shows it in the breadcrumb', async () => {
+    renderDashboard()
+    expect(screen.queryByRole('button', { name: 'Hotel details' })).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: /Manage/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Hotel details' }))
+    expect(screen.getByTestId('property-edit')).toHaveTextContent('edit of property 3')
+    expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toHaveTextContent('Hotel details')
   })
 })

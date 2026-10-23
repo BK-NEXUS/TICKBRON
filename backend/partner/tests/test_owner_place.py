@@ -81,7 +81,7 @@ def hotel_type(db):
 
 def property_body(hotel_type, **location):
     return {'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Main St',
-            'base_price': '70.00', 'currency': 'USD', **location}
+            'translations': {'en': {'name': 'Test Hotel'}}, 'base_price': '70.00', 'currency': 'USD', **location}
 
 
 @pytest.mark.django_db

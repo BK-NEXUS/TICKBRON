@@ -113,6 +113,7 @@ class PartnerPropertyTests(TestCase):
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'property_type': self.property_type.id,
+            'translations': {'en': {'name': 'Pine Hotel'}},
             'max_guests': 6,
             'bedrooms': 3,
             'bathrooms': 2,
@@ -121,7 +122,7 @@ class PartnerPropertyTests(TestCase):
             'base_price': 150.00,
             'currency': 'USD'
         }
-        response = self.client.post('/api/v1/partner/properties/', data)
+        response = self.client.post('/api/v1/partner/properties/', data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Property.objects.count(), 3)
@@ -179,7 +180,7 @@ class PartnerPropertyTests(TestCase):
         data = {
             'property_type': self.property.property_type_id, 'status': 'active', 'max_guests': 2,
             'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Status Test St', **uzbek_location('Samarkand'),
-            'base_price': '80.00', 'currency': 'USD'
+            'base_price': '80.00', 'currency': 'USD', 'translations': {'en': {'name': 'Status Test Hotel'}},
         }
         
         response = self.client.post('/api/v1/partner/properties/', data, format='json')
