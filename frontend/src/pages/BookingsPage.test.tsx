@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { BookingsPage } from './BookingsPage'
 import { accountAdapter } from '../adapters/accountAdapter'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
-import { settle } from '../test/utils'
+import { settle, pageOf } from '../test/utils'
 import { bookingAdapter } from '../adapters/bookingAdapter'
 import { addDays, businessToday } from '../utils/dates'
 
@@ -193,7 +193,7 @@ describe('BookingsPage', () => {
       })
 
       mockAccountAdapter.getBookings.mockResolvedValue({
-        data: [],
+        data: pageOf([]),
         error: null,
       })
 
@@ -220,7 +220,7 @@ describe('BookingsPage', () => {
       })
 
       mockAccountAdapter.getBookings.mockResolvedValue({
-        data: mockBookings,
+        data: pageOf(mockBookings),
         error: null,
       })
     })
@@ -238,10 +238,10 @@ describe('BookingsPage', () => {
 
     it('shows what was charged in so\'m on a booking priced in dollars, with the hotel price after a ≈', async () => {
       mockAccountAdapter.getBookings.mockResolvedValue({
-        data: [{
+        data: pageOf([{
           ...mockBookings[0], total_price: 200, currency: 'USD', charge_amount: '2354590.00', charge_currency: 'UZS',
           exchange_rate: { rate: '11772.950000', date: '2025-01-15', source: 'cbu.uz', stale: false },
-        }, mockBookings[1]],
+        }, mockBookings[1]]),
         error: null,
       })
       renderWithRouter(<BookingsPage />)
@@ -354,7 +354,7 @@ describe('BookingsPage', () => {
       })
 
       mockAccountAdapter.getBookings.mockResolvedValue({
-        data: mockBookings,
+        data: pageOf(mockBookings),
         error: null,
       })
     })
@@ -440,7 +440,7 @@ describe('BookingsPage', () => {
         user: { id: 1, email: 'test@example.com' }, isAuthenticated: true, isLoading: false,
         login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),
       })
-      mockAccountAdapter.getBookings.mockResolvedValue({ data: bookings, error: null })
+      mockAccountAdapter.getBookings.mockResolvedValue({ data: pageOf(bookings), error: null })
       renderWithRouter(<BookingsPage />)
       await screen.findAllByText(/Future Hotel|Test Property|Pending Hotel/)
     }
@@ -486,5 +486,105 @@ describe('BookingsPage', () => {
       expect(api.cancelBooking).not.toHaveBeenCalled()
       expect(screen.getByRole('button', { name: 'Cancel booking' })).toBeInTheDocument()
     })
+  })
+})
+
+describe('BookingsPage pages', () => {
+  const booking = (id: number, status = 'confirmed') => ({
+    id, guest: 1, guest_name: 'John Doe', property: 1, property_name: `Hotel ${id}`, status, payment_status: 'paid',
+    check_in: addDays(businessToday(), 10), check_out: addDays(businessToday(), 12), number_of_nights: 2, guest_count: 2,
+    total_price: 100, currency: 'USD', confirmation_code: `REF${id}`, booking_items: [],
+    created_at: '2025-01-15T10:00:00Z', updated_at: '2025-01-15T10:00:00Z',
+  })
+  const firstPage = [booking(1), booking(2)]
+  const secondPage = [booking(3)]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, email: 'guest@example.com' }, isAuthenticated: true, isLoading: false,
+      login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),
+    })
+  })
+
+  it('has no "Show more" button when everything fits on one page', async () => {
+    mockAccountAdapter.getBookings.mockResolvedValue({ data: pageOf(firstPage), error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+    expect(screen.queryByRole('button', { name: 'Show more bookings' })).not.toBeInTheDocument()
+    expect(screen.getByText('Showing 2 of 2')).toBeInTheDocument()
+  })
+
+  it('shows the first page, then adds the next one under it', async () => {
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: { count: 3, next: 'http://x/?page=2', previous: null, results: firstPage }, error: null })
+      .mockResolvedValueOnce({ data: { count: 3, next: null, previous: 'http://x/', results: secondPage }, error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+    expect(screen.getByText('Showing 2 of 3')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show more bookings' }))
+
+    await screen.findByText('Hotel 3')
+    expect(screen.getByText('Hotel 1')).toBeInTheDocument()
+    expect(mockAccountAdapter.getBookings).toHaveBeenLastCalledWith(undefined, undefined, 2)
+    expect(screen.getByText('Showing 3 of 3')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Show more bookings' })).not.toBeInTheDocument()
+  })
+
+  it('shows a booking that moved to the next page only once', async () => {
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: { count: 3, next: 'http://x/?page=2', previous: null, results: firstPage }, error: null })
+      .mockResolvedValueOnce({ data: { count: 3, next: null, previous: null, results: [booking(2), booking(3)] }, error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+    fireEvent.click(screen.getByRole('button', { name: 'Show more bookings' }))
+    await screen.findByText('Hotel 3')
+    expect(screen.getAllByText('Hotel 2')).toHaveLength(1)
+  })
+
+  it('disables the button while the next page loads', async () => {
+    let finish: (value: unknown) => void = () => {}
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: { count: 3, next: 'http://x/?page=2', previous: null, results: firstPage }, error: null })
+      .mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+    fireEvent.click(screen.getByRole('button', { name: 'Show more bookings' }))
+    expect(await screen.findByRole('button', { name: 'Loading...' })).toBeDisabled()
+    finish({ data: pageOf(secondPage), error: null })
+    await screen.findByText('Hotel 3')
+  })
+
+  it('keeps the list and offers a retry when the next page fails', async () => {
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: { count: 3, next: 'http://x/?page=2', previous: null, results: firstPage }, error: null })
+      .mockResolvedValueOnce({ data: null, error: 'Network error occurred' })
+      .mockResolvedValueOnce({ data: pageOf(secondPage), error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+    fireEvent.click(screen.getByRole('button', { name: 'Show more bookings' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('More bookings could not be loaded')
+    expect(screen.getByText('Hotel 1')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show more bookings' }))
+    await screen.findByText('Hotel 3')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('starts again from the first page when the filter changes', async () => {
+    mockAccountAdapter.getBookings
+      .mockResolvedValueOnce({ data: { count: 3, next: 'http://x/?page=2', previous: null, results: firstPage }, error: null })
+      .mockResolvedValueOnce({ data: pageOf([booking(9, 'completed')]), error: null })
+    renderWithRouter(<BookingsPage />)
+    await screen.findByText('Hotel 1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed bookings' }))
+
+    await screen.findByText('Hotel 9')
+    expect(mockAccountAdapter.getBookings).toHaveBeenLastCalledWith('completed')
+    expect(screen.queryByText('Hotel 1')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Show more bookings' })).not.toBeInTheDocument()
   })
 })

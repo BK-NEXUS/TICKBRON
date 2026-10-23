@@ -174,28 +174,29 @@ class BookingViewSet(mixins.CreateModelMixin,
     
     def list(self, request, *args, **kwargs):
         """
-        List all bookings for the current user.
-        
+        List the current user's bookings, newest first, 20 per page.
+
         Query parameters:
             status: Filter by status (optional)
             payment_status: Filter by payment status (optional)
-        
+            page: Page number (optional)
+
         Returns:
-            List of bookings
+            { count, next, previous, results }
         """
-        queryset = self.get_queryset()
-        
-        # Apply filters
+        queryset = self.get_queryset().order_by('-created_at', '-id')
+
         status_filter = request.query_params.get('status')
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-        
+
         payment_status_filter = request.query_params.get('payment_status')
         if payment_status_filter:
             queryset = queryset.filter(payment_status=payment_status_filter)
-        
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

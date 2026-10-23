@@ -156,6 +156,14 @@ export interface BookingItem {
 }
 
 // API Response types
+/** GET /api/v1/bookings/: one page of the guest's own bookings, newest first, 20 per page */
+export interface BookingPage {
+  count: number
+  next: string | null
+  previous: string | null
+  results: Booking[]
+}
+
 export interface ApiResponse<T> {
   data: T | null
   error: string | null
@@ -295,11 +303,12 @@ export const accountAdapter = {
   },
 
   // Booking History API methods (using booking endpoint from checkpoint 13-14)
-  async getBookings(status?: string, paymentStatus?: string): Promise<ApiResponse<Booking[]>> {
+  async getBookings(status?: string, paymentStatus?: string, page = 1): Promise<ApiResponse<BookingPage>> {
     try {
       const params = new URLSearchParams()
       if (status) params.append('status', status)
       if (paymentStatus) params.append('payment_status', paymentStatus)
+      if (page > 1) params.append('page', String(page))
 
       const response = await apiFetch(`${API_BASE_URL}/api/v1/bookings/?${params.toString()}`, {
         method: 'GET',

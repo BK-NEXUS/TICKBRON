@@ -42,11 +42,11 @@ class GuestBookingListQueryCountTests(APITestCase):
     def test_the_list_costs_the_same_for_one_booking_and_for_many(self):
         add_bookings(self, 1)
         few, response = queries_of(self.client, '/api/v1/bookings/')
-        assert len(response.data) == 1
+        assert len(response.data['results']) == 1
 
         add_bookings(self, 11)
         many, response = queries_of(self.client, '/api/v1/bookings/')
-        assert len(response.data) == 12
+        assert len(response.data['results']) == 12
 
         assert many == few, f'{few} queries for 1 booking, {many} for 12'
 

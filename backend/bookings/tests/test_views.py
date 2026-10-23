@@ -140,8 +140,8 @@ class BookingViewTests(APITestCase):
         response = self.client.get('/api/v1/bookings/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['confirmation_code'], booking.confirmation_code)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['confirmation_code'], booking.confirmation_code)
     
     def test_list_bookings_unauthenticated(self):
         """Test listing bookings as unauthenticated user."""
@@ -319,8 +319,8 @@ class BookingViewTests(APITestCase):
         response = self.client.get('/api/v1/bookings/?status=cancelled')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['status'], 'cancelled')
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['status'], 'cancelled')
 
     def _create_booking_via_api(self):
         self.client.force_authenticate(user=self.user)

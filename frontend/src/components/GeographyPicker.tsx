@@ -37,6 +37,20 @@ interface LoadedList<T> {
   reload: () => void
 }
 
+let countriesRequest: ReturnType<typeof geographyAdapter.getCountries> | null = null
+
+/**
+ * Pickers that mount in the same moment (one per moderation card) share one request for the countries.
+ * Only that moment: a picker mounted later asks again, so a slow or hung request never blocks it.
+ */
+function loadCountries() {
+  if (countriesRequest === null) {
+    countriesRequest = geographyAdapter.getCountries()
+    setTimeout(() => { countriesRequest = null }, 0)
+  }
+  return countriesRequest
+}
+
 /** Loads one list; `load` null means "nothing to load yet" (the parent is not chosen). */
 function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | null }>) | null, key: string): LoadedList<T> {
   const [state, setState] = useState<{ key: string; items: T[]; failed: boolean } | null>(null)
@@ -67,7 +81,7 @@ export function GeographyPicker({ value, onChange, onLabels, disabled = false, r
   const { t, language } = useI18n()
   const id = useId()
 
-  const countries = useList<GeographyCountry>(geographyAdapter.getCountries.bind(geographyAdapter), 'countries')
+  const countries = useList<GeographyCountry>(loadCountries, 'countries')
   const countryCode = countries.items.find(c => c.id === value.country_ref)?.code ?? null
   const regions = useList<GeographyRegion>(
     countryCode ? () => geographyAdapter.getRegions(countryCode) : null,

@@ -13,3 +13,8 @@ export async function settle() {
 export function nameTheHotel(name = 'Test Hotel') {
   fireEvent.change(screen.getByLabelText('Hotel name (English)'), { target: { value: name } })
 }
+
+/** The shape of a paginated list response ({count, next, previous, results}); `next` set means more pages. */
+export function pageOf<T>(results: T[], next: string | null = null) {
+  return { count: results.length, next, previous: null, results }
+}

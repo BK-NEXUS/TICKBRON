@@ -73,6 +73,24 @@ describe('GeographyPicker', () => {
     expect(onChange).toHaveBeenCalledWith({ country_ref: 1, region_ref: 10, city_ref: 100 }, { country: 'Uzbekistan', region: 'Tashkent', city: 'Chilanzar' })
   })
 
+  it('pickers mounted together share one request for the countries', async () => {
+    localStorage.setItem('tickbron.language', 'en')
+    render(
+      <I18nProvider>
+        {[1, 2, 3].map(key => <GeographyPicker key={key} value={empty} onChange={vi.fn()} />)}
+      </I18nProvider>
+    )
+    expect(await screen.findAllByRole('option', { name: 'Uzbekistan' })).toHaveLength(3)
+    expect(geographyAdapter.getCountries).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks again for the countries when a picker is mounted later', async () => {
+    setup(empty, 'en')
+    await screen.findByRole('option', { name: 'Uzbekistan' })
+    setup(empty, 'en')
+    await waitFor(() => expect(geographyAdapter.getCountries).toHaveBeenCalledTimes(2))
+  })
+
   it('shows an error with a retry button when the countries cannot be loaded', async () => {
     vi.mocked(geographyAdapter.getCountries).mockResolvedValueOnce({ data: null, error: 'boom' })
     setup(empty, 'en')
