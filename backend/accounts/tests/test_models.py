@@ -2,7 +2,6 @@
 Tests for accounts models.
 """
 from django.test import TestCase
-from django.utils import timezone
 from django.core.exceptions import ValidationError
 from users.models import User
 from properties.models import Property, PropertyType

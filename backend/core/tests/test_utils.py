@@ -1,7 +1,6 @@
 """
 Tests for core utility functions.
 """
-import pytest
 from core.utils import generate_unique_id, get_current_timestamp, sanitize_string, validate_email_format
 
 

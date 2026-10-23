@@ -15,11 +15,8 @@ django.setup()
 
 from properties.models import (
     AmenityCategory, AmenityCategoryTranslation, 
-    Amenity, AmenityTranslation, PropertyAmenity
+    Amenity, PropertyAmenity
 )
-from properties.models import Property, PropertyType
-from users.models import User
-from decimal import Decimal
 
 
 def print_security_check(title, passed, details=""):
@@ -180,7 +177,7 @@ def run_security_checks():
             slug='translation-uniqueness-test'
         )
         
-        translation1 = AmenityCategoryTranslation.objects.create(
+        AmenityCategoryTranslation.objects.create(
             category=category,
             language='en',
             name='Translation Test'
@@ -307,7 +304,7 @@ def run_security_checks():
     print("-" * 40)
     try:
         # Check that models have proper indexes
-        from django.db import connection
+        pass
         
         # Check AmenityCategory indexes
         category_indexes = AmenityCategory._meta.indexes

@@ -1,7 +1,6 @@
 """
 Tests for rate limiting on authentication endpoints.
 """
-import pytest
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -103,7 +102,6 @@ class RegisterRateLimitingTest(TestCase):
     def test_register_rate_limiting_decorator_present(self):
         """Test that registration has rate limiting configured."""
         # Import the view to check throttle_classes
-        from users.views import register
         from rest_framework.throttling import AnonRateThrottle
 
         # Check that the view has throttle_classes decorator

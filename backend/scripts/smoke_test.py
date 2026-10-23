@@ -18,11 +18,9 @@ django.setup()
 from django.test import Client
 from django.contrib.auth import get_user_model
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
-from bookings.models import Booking, BookingItem
-from admin_panel.models import InternalNote
+from bookings.models import Booking
 from decimal import Decimal
 from datetime import date, timedelta
-from django.utils import timezone
 
 User = get_user_model()
 
@@ -173,12 +171,12 @@ class APISmokeTestV2:
             'password_confirm': test_password
         }
         
-        print(f"\nREQUEST: POST /api/v1/auth/register/")
+        print("\nREQUEST: POST /api/v1/auth/register/")
         print(f"Payload: {data}")
         
         response = self.client.post('/api/v1/auth/register/', data, content_type='application/json')
         
-        print(f"\nRESPONSE:")
+        print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
         
@@ -195,7 +193,7 @@ class APISmokeTestV2:
                 self.test_user_password = test_password
                 return True
             else:
-                print(f"\nFAIL: User not found in database despite 201 response")
+                print("\nFAIL: User not found in database despite 201 response")
                 return False
         else:
             print(f"\nFAIL: Registration failed with status {response.status_code}")
@@ -217,24 +215,24 @@ class APISmokeTestV2:
             'password': self.test_user_password
         }
         
-        print(f"\nREQUEST: POST /api/v1/auth/login/")
+        print("\nREQUEST: POST /api/v1/auth/login/")
         print(f"Payload: {data}")
         
         response = self.client.post('/api/v1/auth/login/', data, content_type='application/json')
         
-        print(f"\nRESPONSE:")
+        print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
         
         if response.status_code == 200:
-            print(f"\nSUCCESS: Login successful")
+            print("\nSUCCESS: Login successful")
             # Update test_user reference to the authenticated user
             self.test_user = User.objects.get(email=self.test_user_email)
             return True
         else:
             print(f"\nFAIL: Login failed with status {response.status_code}")
             # Investigate why
-            print(f"\nINVESTIGATION:")
+            print("\nINVESTIGATION:")
             user = User.objects.filter(email=self.test_user_email).first()
             if user:
                 print(f"User exists in DB: {user.email}")
@@ -282,18 +280,18 @@ class APISmokeTestV2:
             'special_requests': 'Smoke test booking'
         }
         
-        print(f"\nREQUEST: POST /api/v1/bookings/")
+        print("\nREQUEST: POST /api/v1/bookings/")
         print(f"Payload: {data}")
         print(f"Authenticated as: {self.test_user.email}")
         
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
         
-        print(f"\nRESPONSE:")
+        print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
         
         if response.status_code == 201:
-            print(f"\nSUCCESS: Booking creation successful")
+            print("\nSUCCESS: Booking creation successful")
             try:
                 import json
                 booking_data = json.loads(response.content)
@@ -324,18 +322,18 @@ class APISmokeTestV2:
         
         data = {'property': self.test_property.id}
         
-        print(f"\nREQUEST: POST /api/v1/me/favorites/")
+        print("\nREQUEST: POST /api/v1/me/favorites/")
         print(f"Payload: {data}")
         print(f"Authenticated as: {self.test_user.email}")
         
         response = self.client.post('/api/v1/me/favorites/', data, content_type='application/json')
         
-        print(f"\nRESPONSE:")
+        print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
         
         if response.status_code == 201:
-            print(f"\nSUCCESS: Added to favorites")
+            print("\nSUCCESS: Added to favorites")
             return True
         else:
             print(f"\nFAIL: Add to favorites failed with status {response.status_code}")

@@ -21,7 +21,7 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import date, timedelta
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 
 User = get_user_model()
 

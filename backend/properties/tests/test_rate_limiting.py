@@ -1,7 +1,6 @@
 """
 Tests for rate limiting on search endpoint.
 """
-import pytest
 from django.test import TestCase, Client
 from rest_framework import status
 from unittest.mock import patch

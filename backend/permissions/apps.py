@@ -11,6 +11,6 @@ class PermissionsConfig(AppConfig):
         Import signal handlers when the app is ready.
         """
         try:
-            import permissions.signals
+            import permissions.signals  # noqa: F401  (connects the signal handlers)
         except ImportError:
             pass

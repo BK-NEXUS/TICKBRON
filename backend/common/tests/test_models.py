@@ -1,11 +1,9 @@
 """
 Tests for common models and mixins.
 """
-import pytest
 from django.test import TestCase
 from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.exceptions import ValidationError
 from core.models import SystemSettings
 from common.storage import get_media_upload_path, validate_image_file
 

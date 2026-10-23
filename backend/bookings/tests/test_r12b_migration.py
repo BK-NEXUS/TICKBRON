@@ -2,7 +2,6 @@
 R12 phase 3: bookings/0010 adds Booking.no_show_refund_percent (existing rows get 0 = nothing
 promised) and the NoShowReport table; it reverses cleanly.
 """
-from datetime import timedelta
 from decimal import Decimal
 
 from django.db import connection

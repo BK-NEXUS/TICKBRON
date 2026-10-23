@@ -1,7 +1,6 @@
 """
 Tests for user security features (login throttling, account lockout, etc.).
 """
-import pytest
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta

@@ -3,7 +3,6 @@ Security review script for Checkpoint 18 - Partner APIs and Admin Moderation.
 
 This script performs a comprehensive security review of the new partner and admin endpoints.
 """
-import re
 
 
 def check_partner_security():

@@ -2,17 +2,15 @@
 Tests for TICKBRON booking engine with transaction-safe inventory locking.
 """
 from django.test import TestCase
-from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from decimal import Decimal
 from datetime import date, timedelta
 from users.models import User
 from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory
-from bookings.models import Booking, BookingItem
+from bookings.models import Booking
 from bookings.serializers import BookingCreateSerializer, BookingCancelSerializer, BookingSerializer
 from rest_framework.test import APIRequestFactory
-from unittest.mock import Mock
 
 
 class BookingModelTests(TestCase):
@@ -225,7 +223,7 @@ class BookingModelTests(TestCase):
     def test_double_booking_prevention(self):
         """Test that double booking is prevented with concurrent requests."""
         # Create first booking
-        first_booking = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,
@@ -1097,7 +1095,7 @@ class TransactionSafetyTests(TestCase):
         try:
             with transaction.atomic():
                 # Create booking
-                booking = Booking.create_booking(
+                Booking.create_booking(
                     guest=self.user,
                     property_obj=self.property,
                     room_type=self.room_type,
@@ -1131,7 +1129,7 @@ class TransactionSafetyTests(TestCase):
         ))
         
         # Create booking
-        booking = Booking.create_booking(
+        Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
             room_type=self.room_type,

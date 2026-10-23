@@ -2,12 +2,11 @@
 Tests for TICKBRON booking models.
 """
 from django.test import TestCase
-from django.utils import timezone
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from datetime import date, timedelta
 from users.models import User
-from properties.models import Property, PropertyType, RoomType, RatePlan, DateInventory
+from properties.models import Property, PropertyType, RoomType, RatePlan
 from bookings.models import Booking, BookingItem
 
 
@@ -216,7 +215,7 @@ class BookingModelBasicTests(TestCase):
         self.assertEqual(found_upper.id, booking.id)
         
         # Look up using lowercase
-        found_lower = Booking.objects.filter(confirmation_code=booking.confirmation_code.lower()).first()
+        Booking.objects.filter(confirmation_code=booking.confirmation_code.lower()).first()
         # This might not find it unless we use exact match, but the code itself is uppercase
         self.assertIsNotNone(found_upper)
     

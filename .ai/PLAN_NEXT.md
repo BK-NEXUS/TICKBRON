@@ -30,11 +30,11 @@ Why: today an owner cannot give a hotel a name (the cards show the address inste
 - Admin Geography table: stop sideways scrolling at 390 px (stack the row as a card) and load the country list once for all moderation cards (15 cards = 15 requests today).
 
 ## Step 5: technical debt that does not block launch (pick as time allows, each is its own small PR)
-- `Booking.from_db()` must accept the `fetch_mode` argument before Django 2028 (seen as `RemovedInDjango2028Warning` in the Django 6 run; no break today).
+- ~~`Booking.from_db()` must accept the `fetch_mode` argument~~ done (2026-10-23): it takes `**kwargs` and passes them on; no more warning on Django 6.1.
 - Rename or drop the payment tables and `PaymentAuditLog` (needs a backup and a reversible migration; do it only after the owner is sure there is no online payment coming back).
 - `charge_*` booking fields are really "the price in so'm"; rename in a migration, together with the previous item.
 - Repo-wide `black`, `isort`, `flake8` pass (a pure formatting PR; they are not run in CI today).
-- Remaining flake8 `F` findings in tests and `scripts/checkpoint_checks/`.
+- ~~Remaining flake8 `F` findings in tests and `scripts/checkpoint_checks/`~~ done (2026-10-23): `flake8 --select=F` is clean, `backend/.flake8` added.
 
 ## Not in this plan (outside the code)
 Hosting, domain, TLS, SMTP, Telegram, logos, lawyer review of the arrival rule, native uz/ru review: see `LAUNCH_DAY.md`.

@@ -8,7 +8,6 @@ This script performs a comprehensive security review of the search API improveme
 - Improved error handling and validation
 """
 
-import re
 import sys
 from pathlib import Path
 

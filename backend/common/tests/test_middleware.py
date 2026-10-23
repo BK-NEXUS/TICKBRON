@@ -1,9 +1,7 @@
 """
 Tests for custom middleware.
 """
-import pytest
 from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from common.middleware import (
     SecurityHeadersMiddleware,

@@ -8,7 +8,7 @@ from rest_framework import status
 from properties.models import (
     Property, PropertyType, PropertyTranslation, PropertyAmenity,
     Amenity, AmenityCategory, PropertyPhoto, PropertyPolicy,
-    RoomType, RoomPhoto, RoomAmenity, RatePlan, DateInventory
+    RoomType, RoomAmenity, RatePlan, DateInventory
 )
 
 User = get_user_model()

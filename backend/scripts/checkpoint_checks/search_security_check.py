@@ -3,7 +3,6 @@ Security review script for Checkpoint 09 - Search backend foundation.
 
 This script performs a comprehensive security review of the search functionality.
 """
-import re
 
 
 def check_search_service_security():

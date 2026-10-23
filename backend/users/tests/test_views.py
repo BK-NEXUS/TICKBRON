@@ -1,8 +1,7 @@
 """
 Tests for user authentication views.
 """
-import pytest
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -61,7 +60,7 @@ class TestAuthViews(TestCase):
     def test_login_valid_credentials(self):
         """Test login with valid credentials."""
         # Create user with old format (first_name/last_name)
-        user = User.objects.create_user(
+        User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
             first_name='Test',
@@ -174,7 +173,7 @@ class TestAuthViews(TestCase):
     def test_account_lockout_after_failed_attempts(self):
         """Test account lockout after multiple failed login attempts."""
         # Create user
-        user = User.objects.create_user(
+        User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
             full_name='Test User'

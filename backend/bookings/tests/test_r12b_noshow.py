@@ -15,8 +15,8 @@ from accounts.models import Notification
 from admin_panel.models import AdminAccessLog
 from bookings.completion import complete_finished_stays, finished_stays
 from bookings.models import Booking, NoShowReport
-from bookings.tests.r12b_helpers import (
-    A, COMMENT, DECISION, P, client_for, make_stay, past_stay, report_url, world,  # noqa: F401
+from bookings.tests.r12b_helpers import (  # noqa: F401  (`world` is a fixture, used by name)
+    A, COMMENT, DECISION, P, client_for, make_stay, past_stay, report_url, world,
 )
 from payments.models import PaymentAuditLog
 from properties.models import RoomInventory
