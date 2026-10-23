@@ -89,7 +89,7 @@
 ### Critical Security Variables (MUST BE SET)
 - `SECRET_KEY` - Django secret key (generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
 - `DEBUG` - Set to `False` in production
-- `ALLOWED_HOSTS` - Comma-separated list of allowed hostnames (e.g., `api.tickbron.uz,www.tickbron.uz`)
+- `ALLOWED_HOSTS` - Comma-separated list of allowed hostnames (e.g., `tickbron.com`)
 
 ### Database Configuration
 - `DB_NAME` - Database name

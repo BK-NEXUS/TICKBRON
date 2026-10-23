@@ -14,7 +14,7 @@ Everything is merged into master (2026-10-22): input rules, phone number, cash b
 
 ## 2. Deploy order (each step has a rollback)
 1. `pg_dump -Fc` backup, kept off the server (new migrations below).
-2. Set the production `.env` (checklist section "Production settings"); `DEBUG=False`. There are no payment settings any more. `ARRIVAL_GRACE_HOURS` defaults to 2.
+2. Set the production `.env`: copy `deploy/env.production.example` (already filled for **tickbron.com**: one host, site at `/`, API at `/api/`, photos at `/media/`) to `backend/.env` and replace every `CHANGE_ME` (SECRET_KEY, database password, SMTP); the frontend build needs `deploy/frontend.env.production.example` as `frontend/.env.production`. Domain: registered at ahost.uz, point its A record (and `www`) to the server, then issue the TLS certificate for `tickbron.com` and `www.tickbron.com` and use `deploy/nginx.conf.example` (www redirects to the bare name). Checklist section "Production settings"; `DEBUG=False`. There are no payment settings any more. `ARRIVAL_GRACE_HOURS` defaults to 2.
 3. Persistent `MEDIA_ROOT` and nginx `/media/` (owner photos, country and region pictures; checklist "safe `/media/` serving").
 4. `python manage.py migrate` (new: `bookings/0012_cash_arrival` with a data step that confirms bookings still in their window, `geography/0004`, `partner/0002`, `properties/0016` for the per-currency prices), then `python manage.py check --deploy` (must print "no issues").
 5. `python manage.py fetch_exchange_rates` (USD, KZT, RUB from cbu.uz); confirm beat runs it at 09:00 and 18:00. Confirm beat also runs the arrival check every 10 minutes (`cancel_unarrived_bookings`): without beat, guests who do not arrive are never cancelled.
