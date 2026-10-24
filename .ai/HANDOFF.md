@@ -118,6 +118,11 @@ Status: READY
 - The "Booking confirmed" card (and the loading and error cards of the booking page) sat at the left of the page on desktop instead of the middle, and on phones its inner space was so wide that the labels broke ("Check-in:" on two lines). Now centred, with phone-sized spacing. CSS only (`panels.css`). Checked by eye with a real booking at 1440 and 390 px; the test bookings were cancelled afterwards through the model's own `cancel_booking`.
 - Found, not fixed: the booking error text for dates without inventory shows the date as 2027-05-12 (server text, English); dark theme of this screen not checked by eye.
 
+## Support chat: e-mail notices
+- A reply from the team now mails the user (a link to `/support`); a message from a user mails the address in `SUPPORT_NOTIFY_EMAIL` (empty = off). One mail per unread run; the mails carry no message text. Contract: API_CONTRACT "Support chat: e-mail notices".
+- Owner to do: set `SUPPORT_NOTIFY_EMAIL` in the server `.env` and make sure SMTP works (`EMAIL_HOST`, same as for password reset); a Celery worker must run (the mail is sent by the worker).
+- Found, not fixed: no push notice and no notice by Telegram; users cannot turn the e-mails off (there is at most one mail per unread run).
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

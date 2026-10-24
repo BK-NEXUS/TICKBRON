@@ -1,0 +1,8 @@
+{% autoescape off %}TICKBRON
+
+Uz: Sizga TICKBRON jamoasidan yangi xabar keldi. Javobni shu yerda o'qing:
+Ru: Вам пришло новое сообщение от команды TICKBRON. Прочитать ответ:
+En: You have a new message from the TICKBRON team. Read it here:
+
+{{ link }}
+{% endautoescape %}
