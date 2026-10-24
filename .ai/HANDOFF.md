@@ -109,6 +109,10 @@ Status: READY
 - Booking page: phones had no side gutter (the price card and Confirm button touched the screen edges, the heading started at the edge); the form fields had no space between them (a label touched the field above); the "Back to property" link sat in the middle of the header. Fixed in CSS only (`panels.css`). Checked by eye at 1440 and 390 px, light and dark.
 - Found, not fixed: the owner's availability screen and the booking confirmation (success) screen were not looked at; the price summary sits above the form on phones (left as is).
 
+## Design round 7: owner's date inventory
+- The date inventory list (rate plan, "Availability") had no styles: raw text table, "null - null nights", dates as 10/16/2026. Now a styled table with status badges, dates in the page language, "—" where no stay limit is set (the type allows `null`), and sideways scrolling inside the card on phones. Editing a date with no limits starts from 1 and 30 nights (the form's own defaults) instead of null.
+- Found, not fixed: the list shows every date at once (about 460 rows for a year and a half); it needs paging or a month filter. The booking confirmation (success) screen was still not looked at.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

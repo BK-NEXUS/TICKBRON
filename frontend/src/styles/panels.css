@@ -662,3 +662,90 @@
     padding: var(--spacing-lg);
   }
 }
+
+/* Owner's date inventory: the table and its header had no styles of their own */
+.partner-availability-list .availability-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.partner-availability-list .availability-list-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}
+
+.partner-availability-list .availability-list-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-availability-list .date-inventory-table {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+}
+
+.partner-availability-list .date-inventory-table table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.partner-availability-list .date-inventory-table th,
+.partner-availability-list .date-inventory-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.partner-availability-list .date-inventory-table th {
+  position: sticky;
+  top: 0;
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.partner-availability-list .date-inventory-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.partner-availability-list .date-inventory-table td:last-child {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.partner-availability-list .availability-status {
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.partner-availability-list .availability-status--available {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.partner-availability-list .availability-status--limited {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.partner-availability-list .availability-status--fully-booked,
+.partner-availability-list .availability-status--unavailable {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
