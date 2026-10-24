@@ -1,5 +1,8 @@
 import { useI18n } from '../i18n/I18nContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { businessToday } from '../utils/dates'
+import { monthsOf, openingMonth } from '../utils/inventoryMonths'
 import { partnerAdapter, PartnerDateInventory, CreateDateInventoryRequest, UpdateDateInventoryRequest, BulkPriceRequest } from '../adapters/partnerAdapter'
 
 interface PartnerAvailabilityManagementProps {
@@ -13,6 +16,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
   const { t, formatDate } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [dateInventory, setDateInventory] = useState<PartnerDateInventory[]>([])
+  const [pickedMonth, setPickedMonth] = useState<string | null>(null)
   const [selectedInventory, setSelectedInventory] = useState<PartnerDateInventory | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -240,6 +244,11 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     setError(null)
   }
 
+  const months = useMemo(() => monthsOf(dateInventory.map(inventory => inventory.date)), [dateInventory])
+  const month = pickedMonth && months.includes(pickedMonth) ? pickedMonth : months.length ? openingMonth(months, businessToday()) : ''
+  const monthIndex = months.indexOf(month)
+  const monthRows = dateInventory.filter(inventory => inventory.date.startsWith(month))
+
   const stayLimits = ({ minimum_stay: min, maximum_stay: max }: PartnerDateInventory) =>
     min === null && max === null ? '—' : t('partner.minMaxNightsValue', { min: min ?? '—', max: max ?? '—' })
 
@@ -308,6 +317,30 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
           <p>{t('partner.clickAddDateInventory')}</p>
         </div>
       ) : (
+        <>
+        <div className="date-inventory-month" role="group" aria-label={t('partner.dateInventoryFor', { name: ratePlanName })}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setPickedMonth(months[monthIndex - 1])}
+            disabled={monthIndex <= 0}
+            aria-label={t('calendar.previousMonth')}
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <span className="date-inventory-month-name" aria-live="polite">
+            {formatDate(`${month}-01`, { month: 'long', year: 'numeric' })}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setPickedMonth(months[monthIndex + 1])}
+            disabled={monthIndex >= months.length - 1}
+            aria-label={t('calendar.nextMonth')}
+          >
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
         <div className="date-inventory-table">
           <table>
             <thead>
@@ -322,7 +355,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
               </tr>
             </thead>
             <tbody>
-              {dateInventory.map(inventory => (
+              {monthRows.map(inventory => (
                 <tr key={inventory.id}>
                   <td>{formatDate(inventory.date)}</td>
                   <td>
@@ -355,6 +388,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   )

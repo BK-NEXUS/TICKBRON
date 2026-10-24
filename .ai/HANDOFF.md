@@ -111,7 +111,8 @@ Status: READY
 
 ## Design round 7: owner's date inventory
 - The date inventory list (rate plan, "Availability") had no styles: raw text table, "null - null nights", dates as 10/16/2026. Now a styled table with status badges, dates in the page language, "—" where no stay limit is set (the type allows `null`), and sideways scrolling inside the card on phones. Editing a date with no limits starts from 1 and 30 nights (the form's own defaults) instead of null.
-- Found, not fixed: the list shows every date at once (about 460 rows for a year and a half); it needs paging or a month filter. The booking confirmation (success) screen was still not looked at.
+- The list now shows one month at a time with previous/next month buttons (opens on the first month that is not over; the buttons stop at the first and last month with dates). Done in the browser from the dates already loaded (`utils/inventoryMonths.ts`), no new endpoint.
+- Found, not fixed: the booking confirmation (success) screen was still not looked at.
 
 ## Notes
 - All auth uses session-based authentication with secure cookies

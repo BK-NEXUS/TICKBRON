@@ -721,9 +721,8 @@
   border-bottom: none;
 }
 
-.partner-availability-list .date-inventory-table td:last-child {
-  display: flex;
-  gap: var(--spacing-xs);
+.partner-availability-list .date-inventory-table td .btn + .btn {
+  margin-left: var(--spacing-xs);
 }
 
 .partner-availability-list .availability-status {
@@ -748,4 +747,18 @@
 .partner-availability-list .availability-status--unavailable {
   border-color: var(--color-error);
   color: var(--color-error);
+}
+
+.partner-availability-list .date-inventory-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.partner-availability-list .date-inventory-month-name {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
 }
