@@ -99,6 +99,12 @@ Status: READY
 - Checked by eye (light and dark, 1440 and 390 px) with a real guest message and an admin reply; test messages were deleted afterwards.
 - Found, not fixed: booking page and the owner's rates and calendar screens were not part of this round.
 
+## Design round 5: owner's rate plans, rooms and calendar
+- Owner's rate plan list had no styles of its own (badges ran together as "Activenon_refundableSet prices..."): now a two-column card grid with readable labels, status badges and aligned values. The plan type shows its translated name (`utils/rateType.ts`, shared with the guest rate card); an unknown type shows its code as words.
+- Owner and admin screens keep space above the footer; the calendar title uses the same heading font as the other owner screens.
+- Checked by eye (1440 and 390 px): rooms, calendar, rates. The hotel page was also looked at; its photos and map tiles cannot load in the sandbox.
+- Found, not fixed: the booking form itself (after choosing room and dates) and the owner's availability screen were not looked at; dark theme of the owner's rates screen not checked by eye.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
