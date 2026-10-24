@@ -1,4 +1,6 @@
 """All chat rules live here; views only call these functions."""
+import logging
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Exists, F, OuterRef, Q
@@ -6,6 +8,8 @@ from django.utils import timezone
 
 from chat.models import Conversation, Message
 from common.validators import validate_free_text
+
+logger = logging.getLogger(__name__)
 
 MAX_TEXT = 2000
 PAGE = 100  # messages in one answer; a thread is read from the end
@@ -46,7 +50,18 @@ def post(*, conversation, sender, text, from_staff):
         read_field = 'staff_read_id' if from_staff else 'user_read_id'
         Conversation.objects.filter(pk=conversation.pk).update(
             last_message_at=message.created_at, **{read_field: message.pk})
+        transaction.on_commit(lambda: _queue_notice(message))
     return message
+
+
+def _queue_notice(message):
+    """Hand the e-mail notice to the worker; a broken queue must not lose or fail the message."""
+    from chat.tasks import send_chat_notice
+
+    try:
+        send_chat_notice.delay(message.pk)
+    except Exception:
+        logger.exception('Could not queue the chat notice for message %s', message.pk)
 
 
 def post_from_user(user, text):

@@ -396,6 +396,8 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'TICKBRON <no-reply@tickbron.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+# Where the team hears of a new chat message (empty = the team is not mailed; the admin tab still shows the badge)
+SUPPORT_NOTIFY_EMAIL = os.getenv('SUPPORT_NOTIFY_EMAIL', '')
 PASSWORD_RESET_TIMEOUT = 60 * 60  # a reset link works for one hour
 
 # Alerts to a Telegram chat (common/alerts.py). Both empty = alerts off. Create the bot with

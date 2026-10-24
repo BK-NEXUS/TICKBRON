@@ -1,0 +1,7 @@
+{% autoescape off %}New message in the support chat.
+
+From: {{ name }} <{{ email }}> ({{ role }})
+
+Open the Messages tab of the admin panel:
+{{ link }}
+{% endautoescape %}

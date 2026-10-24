@@ -1194,3 +1194,9 @@ Team (staff and super-admin, `/api/v1/admin-panel/chat/`):
 - `GET unread/` → `{unread_threads}`.
 
 Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertising request for owners), admin tab "Messages" with badge, user menu link with badge, Contact page button.
+
+### Support chat: e-mail notices (2026-10-24)
+- No new endpoint and no change to the answers. When a message is saved, a Celery task `chat.tasks.send_chat_notice(message_id)` is queued after the commit; a broken queue or mail server never fails or loses the message.
+- A staff reply mails the account's address (subject in Uzbek, Russian and English, link `FRONTEND_URL/support`), only for the first unread message of the run: more replies while the first is unread send nothing; after the user reads the thread, the next reply mails again. Deactivated accounts and accounts without an address get nothing.
+- A user message mails `SUPPORT_NOTIFY_EMAIL` (env var, empty = off) with name, address, role and the link `FRONTEND_URL/admin`, by the same one-per-unread-run rule (the run ends when the team reads the thread).
+- The e-mails never contain the text of the message, only the link.
