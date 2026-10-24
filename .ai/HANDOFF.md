@@ -105,6 +105,10 @@ Status: READY
 - Checked by eye (1440 and 390 px): rooms, calendar, rates. The hotel page was also looked at; its photos and map tiles cannot load in the sandbox.
 - Found, not fixed: the booking form itself (after choosing room and dates) and the owner's availability screen were not looked at; dark theme of the owner's rates screen not checked by eye.
 
+## Design round 6: booking form
+- Booking page: phones had no side gutter (the price card and Confirm button touched the screen edges, the heading started at the edge); the form fields had no space between them (a label touched the field above); the "Back to property" link sat in the middle of the header. Fixed in CSS only (`panels.css`). Checked by eye at 1440 and 390 px, light and dark.
+- Found, not fixed: the owner's availability screen and the booking confirmation (success) screen were not looked at; the price summary sits above the form on phones (left as is).
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
