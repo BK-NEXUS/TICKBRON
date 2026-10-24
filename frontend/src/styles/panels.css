@@ -638,3 +638,27 @@
   font-family: var(--font-family-heading);
   font-size: var(--font-size-2xl);
 }
+
+/* Booking page: side gutter on phones, room between the form fields, back link on the left */
+.booking-page-container {
+  padding-inline: var(--spacing-lg);
+}
+
+.booking-form-section {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.booking-form-section .booking-form-section-title {
+  margin: 0;
+}
+
+.booking-page-back {
+  align-self: flex-start;
+}
+
+@media (max-width: 767px) {
+  .booking-form-section {
+    padding: var(--spacing-lg);
+  }
+}
