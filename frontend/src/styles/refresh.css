@@ -301,3 +301,194 @@
     repeating-linear-gradient(-45deg, var(--color-tint) 0 1px, transparent 1px 28px),
     linear-gradient(135deg, var(--color-background-alt), var(--color-cream-deep));
 }
+
+/* --- Round 3: the map ------------------------------------------------------------------------------- */
+
+.properties-map-canvas,
+.property-location-map-canvas {
+  border-color: var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.leaflet-container {
+  background: var(--color-background-alt);
+}
+
+.leaflet-container .leaflet-bar {
+  border: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.leaflet-container .leaflet-bar a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-border);
+}
+
+.leaflet-container .leaflet-bar a:hover {
+  background: var(--color-tint);
+}
+
+.leaflet-container .leaflet-control-attribution {
+  background: var(--color-float-bg);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md) 0 0 0;
+  font-size: 11px;
+}
+
+.properties-map-search-area {
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+}
+
+/* A price pin points at the place with a small tail */
+.map-pin {
+  position: relative;
+  margin-top: -6px;
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+}
+
+.map-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0 0 3px 0;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* A group of hotels: a gold bubble with a soft ring, bigger the more hotels it holds */
+.map-cluster {
+  box-shadow: 0 0 0 6px var(--color-tint-strong), var(--shadow-md);
+}
+
+.map-cluster--md {
+  min-width: 52px;
+  min-height: 52px;
+  font-size: var(--font-size-lg);
+}
+
+.map-cluster--lg {
+  min-width: 62px;
+  min-height: 62px;
+  font-size: var(--font-size-xl);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .map-pin,
+  .map-cluster {
+    transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .map-pin:hover,
+  .map-pin.map-pin--hover,
+  .map-pin.map-pin--active {
+    transform: translate(-50%, -100%) scale(1.08);
+  }
+
+  .map-cluster:hover {
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+/* The map follows the dark theme: the tiles are inverted and softened */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.7);
+  }
+}
+
+:root[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.7);
+}
+
+/* The "see where the hotels are" teaser */
+.show-on-map-card {
+  border-color: var(--color-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-surface), var(--color-background-alt));
+  box-shadow: var(--shadow-xs);
+}
+
+/* The public hotel card: the photo reaches the card edge and the price and the button sit on one row
+   (a later rule for the owner dashboard card, same class name, had added padding and a right-aligned footer) */
+.property-card.tilt-card {
+  padding: 0;
+  gap: 0;
+}
+
+.property-card.tilt-card .property-card-footer {
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+/* Cards next to the map are compact rows: a thumbnail and the essentials, so more hotels fit on screen */
+.properties-map-list .property-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.properties-map-list .property-card-image {
+  height: 100%;
+  min-height: 120px;
+  border-radius: 0;
+}
+
+.properties-map-list .property-card-content {
+  padding: var(--spacing-12);
+  gap: var(--spacing-xs);
+}
+
+.properties-map-list .property-card-name {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-tight);
+}
+
+.properties-map-list .property-card-details,
+.properties-map-list .property-card-amenities {
+  display: none;
+}
+
+.properties-map-list .property-card-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.properties-map-list .property-card-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+}
+
+.properties-map-list .property-card-price-value {
+  font-size: var(--font-size-base);
+}
+
+.properties-map-list .property-card-cta {
+  display: none;
+}
+
+/* One hotel per row on phones: two columns left no room for the price */
+@media (max-width: 599px) {
+  .search-results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
