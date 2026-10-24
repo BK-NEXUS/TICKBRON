@@ -42,12 +42,20 @@ interface GuestDetails {
  * Includes guest details form, price summary, validation, and confirmation states
  */
 /** A backend message (text) or one of ours (key): ours are translated when shown, also when set inside an effect */
-type Message = { text: string } | { key: MessageKey }
+type Message = { text: string } | { key: MessageKey; params?: Record<string, string | number> }
 // Refusals the backend names with a code: shown in the page language instead of the server's English text
 const REFUSAL_KEYS: Partial<Record<string, MessageKey>> = {
   exchange_rate_unavailable: 'booking.rateUnavailable', // 503: a hotel priced in dollars and no rate yet; nothing was reserved
   too_many_upcoming_bookings: 'booking.tooManyUpcoming',
   overlapping_booking: 'booking.overlapping',
+}
+// Why a stay cannot be booked (the quote answers with a code and the values), said in the page language
+const AVAILABILITY_KEYS: Partial<Record<string, MessageKey>> = {
+  night_unavailable: 'booking.nightUnavailable',
+  night_min_stay: 'booking.nightMinStay',
+  night_max_stay: 'booking.nightMaxStay',
+  no_rooms_left: 'booking.noRoomsLeft',
+  few_rooms_left: 'booking.fewRoomsLeft',
 }
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
@@ -159,7 +167,10 @@ export function BookingPage() {
       if (response?.data) {
         setQuote(response.data)
       } else {
-        setQuoteError(failure(response?.error, 'booking.errorQuote'))
+        const key = response?.reason ? AVAILABILITY_KEYS[response.reason.code] : undefined
+        setQuoteError(key && response?.reason
+          ? { key, params: response.reason.params }
+          : failure(response?.error, 'booking.errorQuote'))
       }
     }
     loadQuote()
@@ -224,7 +235,13 @@ export function BookingPage() {
     return roomsForQuote > 1 ? t('booking.times', { text: nightsText, rooms: tp('booking.roomsCount', roomsForQuote) }) : nightsText
   }
 
-  const messageText = (message: Message | null) => (message ? ('text' in message ? message.text : t(message.key)) : null)
+  // A date among the values (YYYY-MM-DD) is written out in the page language when the message is shown
+  const messageValues = (params: Record<string, string | number> | undefined) => params && {
+    ...params,
+    ...(typeof params.date === 'string' ? { date: formatDate(params.date) } : {}),
+  }
+  const messageText = (message: Message | null) => (
+    message ? ('text' in message ? message.text : t(message.key, messageValues(message.params))) : null)
   const errorText = messageText(error)
   const overlapsOwn = bookingState !== undefined && bookingState !== null
     && overlapsOwnStay(ownStays, bookingState.checkIn, bookingState.checkOut)

@@ -1200,3 +1200,8 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - A staff reply mails the account's address (subject in Uzbek, Russian and English, link `FRONTEND_URL/support`), only for the first unread message of the run: more replies while the first is unread send nothing; after the user reads the thread, the next reply mails again. Deactivated accounts and accounts without an address get nothing.
 - A user message mails `SUPPORT_NOTIFY_EMAIL` (env var, empty = off) with name, address, role and the link `FRONTEND_URL/admin`, by the same one-per-unread-run rule (the run ends when the team reads the thread).
 - The e-mails never contain the text of the message, only the link.
+
+### Stay quote: refusals with a code (2026-10-24)
+- `GET /api/v1/properties/{id}/quote/` answers 400 as before (`error`, `details`, the English text under `details.availability`). When the refusal is about a night, the body also has `reason: {code, params}` so the site can say it in the user's language and format the date itself. Without a code (other refusals) there is no `reason`.
+- Codes and params: `night_unavailable {date}`, `night_min_stay {date, nights}`, `night_max_stay {date, nights}`, `no_rooms_left {date}`, `few_rooms_left {date, rooms}`; `date` is `YYYY-MM-DD`. Code: `bookings/pricing.py` (`availability_reason`).
+- The booking create endpoint still returns only the English text (the quote refuses first, so the guest sees the translated text on the price card).

@@ -215,6 +215,19 @@ def _room_inventory_rows(room_type, nights, lock=False):
     return rows
 
 
+def _refusal(code, message, night, **params):
+    """An availability refusal: the English text stays, and the code with its values lets the site say it in the user's language."""
+    return ValidationError({'availability': ValidationError(message, code=code, params={'date': night.isoformat(), **params})})
+
+
+def availability_reason(error):
+    """{'code', 'params'} of an availability refusal, or None for any other kind of refusal."""
+    first = (getattr(error, 'error_dict', {}).get('availability') or [None])[0]
+    if first is None or not first.code:
+        return None
+    return {'code': first.code, 'params': first.params}
+
+
 def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     """
     Price a stay: each night costs its own inventory price, or the rate plan's
@@ -261,21 +274,27 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     for night in nights:
         row = by_date.get(night)
         if row is None or not row.is_available:
-            raise ValidationError({'availability': f'{night.isoformat()} is not available.'})
+            raise _refusal('night_unavailable', f'{night.isoformat()} is not available.', night)
         if row.minimum_stay and number_of_nights < row.minimum_stay:
-            raise ValidationError({'availability': (
-                f'A stay including {night.isoformat()} must be at least {row.minimum_stay} nights.')})
+            raise _refusal(
+                'night_min_stay',
+                f'A stay including {night.isoformat()} must be at least {row.minimum_stay} nights.',
+                night, nights=row.minimum_stay)
         if row.maximum_stay and number_of_nights > row.maximum_stay:
-            raise ValidationError({'availability': (
-                f'A stay including {night.isoformat()} can be at most {row.maximum_stay} nights.')})
+            raise _refusal(
+                'night_max_stay',
+                f'A stay including {night.isoformat()} can be at most {row.maximum_stay} nights.',
+                night, nights=row.maximum_stay)
 
         room_row = room_rows[night]
         if not room_row.is_available:
-            raise ValidationError({'availability': f'{night.isoformat()} is not available.'})
+            raise _refusal('night_unavailable', f'{night.isoformat()} is not available.', night)
         if room_row.remaining_rooms < number_of_rooms:
-            raise ValidationError({'availability': f'No rooms left on {night.isoformat()}.'
-                                   if room_row.remaining_rooms == 0 else
-                                   f'Only {room_row.remaining_rooms} rooms left on {night.isoformat()}.'})
+            if room_row.remaining_rooms == 0:
+                raise _refusal('no_rooms_left', f'No rooms left on {night.isoformat()}.', night)
+            raise _refusal(
+                'few_rooms_left', f'Only {room_row.remaining_rooms} rooms left on {night.isoformat()}.',
+                night, rooms=room_row.remaining_rooms)
 
         price = row.price if row.price is not None else rate_plan.base_price
         quote.nights.append((night, price))
