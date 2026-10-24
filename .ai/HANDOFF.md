@@ -123,6 +123,10 @@ Status: READY
 - Owner to do: set `SUPPORT_NOTIFY_EMAIL` in the server `.env` and make sure SMTP works (`EMAIL_HOST`, same as for password reset); a Celery worker must run (the mail is sent by the worker).
 - Found, not fixed: no push notice and no notice by Telegram; users cannot turn the e-mails off (there is at most one mail per unread run).
 
+## Booking: unavailable dates in the guest's language
+- The price card used to show the server's English text with a raw date ("2027-05-12 is not available."). The quote now sends a code and values (`reason`), and the booking page says it in uz, ru or en with the date written out. Contract: API_CONTRACT "Stay quote: refusals with a code".
+- Found, not fixed: the booking create endpoint (a race after the quote) still returns the English text; the other quote refusals (rate plan minimum and maximum stay, bad parameters) are still English.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

@@ -352,7 +352,7 @@ def property_quote(request, property_id):
     """
     from django.core.exceptions import ValidationError as DjangoValidationError
     from properties.models import RatePlan
-    from bookings.pricing import quote_stay
+    from bookings.pricing import availability_reason, quote_stay
 
     params = QuoteParamsSerializer(data=request.query_params)
     if not params.is_valid():
@@ -383,10 +383,11 @@ def property_quote(request, property_id):
     try:
         quote = quote_stay(rate_plan, data['check_in'], data['check_out'], data['rooms'])
     except DjangoValidationError as exc:
-        return Response(
-            {'error': 'This stay cannot be booked', 'details': exc.message_dict},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        body = {'error': 'This stay cannot be booked', 'details': exc.message_dict}
+        reason = availability_reason(exc)
+        if reason:
+            body['reason'] = reason
+        return Response(body, status=status.HTTP_400_BAD_REQUEST)
 
     def rate_of(code):
         return getattr(rate_for_request(request, code), 'rate', None)

@@ -531,6 +531,43 @@ describe('BookingPage', () => {
         expect(screen.getByText('5 nights')).toBeInTheDocument()
       })
 
+      describe('a stay that cannot be booked is explained with the date in the page language', () => {
+        const refused = (code: string, params: Record<string, string | number>, error = 'server text') =>
+          mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error, reason: { code, params } })
+
+        it('a night that is not available', async () => {
+          refused('night_unavailable', { date: '2027-05-12' }, '2027-05-12 is not available.')
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('May 12, 2027 is not available.')).toBeInTheDocument()
+        })
+
+        it('a stay that is too short or too long for a night', async () => {
+          refused('night_min_stay', { date: '2027-05-12', nights: 3 })
+          const { unmount } = renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('A stay including May 12, 2027 must be at least 3 nights.')).toBeInTheDocument()
+          unmount()
+          refused('night_max_stay', { date: '2027-05-12', nights: 2 })
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('A stay including May 12, 2027 can be at most 2 nights.')).toBeInTheDocument()
+        })
+
+        it('no rooms left, and only a few left', async () => {
+          refused('no_rooms_left', { date: '2027-05-12' })
+          const { unmount } = renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('No rooms left on May 12, 2027.')).toBeInTheDocument()
+          unmount()
+          refused('few_rooms_left', { date: '2027-05-12', rooms: 2 })
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('Only 2 rooms left on May 12, 2027.')).toBeInTheDocument()
+        })
+
+        it('an unknown code shows the server text', async () => {
+          refused('something_new', {}, 'Server says no.')
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('Server says no.')).toBeInTheDocument()
+        })
+      })
+
       it('shows ≈ before a total that is a conversion and "You pay" for the owner\'s so\'m price (R16)', async () => {
         mockPropertyAdapter.getQuote.mockResolvedValue({
           ...quote('515.00'),
