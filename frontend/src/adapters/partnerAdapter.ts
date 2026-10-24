@@ -214,8 +214,8 @@ export interface PartnerDateInventory {
   price: number
   currency: string
   is_available: boolean
-  minimum_stay: number
-  maximum_stay: number
+  minimum_stay: number | null // null: no limit set for this date
+  maximum_stay: number | null
   notes?: string
   created_at: string
   updated_at: string

@@ -10,7 +10,7 @@ interface PartnerAvailabilityManagementProps {
 type ViewMode = 'list' | 'create' | 'edit' | 'bulk-price'
 
 export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: PartnerAvailabilityManagementProps) {
-  const { t } = useI18n()
+  const { t, formatDate } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [dateInventory, setDateInventory] = useState<PartnerDateInventory[]>([])
   const [selectedInventory, setSelectedInventory] = useState<PartnerDateInventory | null>(null)
@@ -190,8 +190,8 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       price: inventory.price,
       currency: inventory.currency,
       is_available: inventory.is_available,
-      minimum_stay: inventory.minimum_stay,
-      maximum_stay: inventory.maximum_stay,
+      minimum_stay: inventory.minimum_stay ?? 1,
+      maximum_stay: inventory.maximum_stay ?? 30,
       notes: inventory.notes || '',
     })
     setViewMode('edit')
@@ -239,6 +239,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
   }
+
+  const stayLimits = ({ minimum_stay: min, maximum_stay: max }: PartnerDateInventory) =>
+    min === null && max === null ? '—' : t('partner.minMaxNightsValue', { min: min ?? '—', max: max ?? '—' })
 
   const getAvailabilityStatus = (inventory: PartnerDateInventory) => {
     if (!inventory.is_available) return t('partner.unavailable')
@@ -321,7 +324,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             <tbody>
               {dateInventory.map(inventory => (
                 <tr key={inventory.id}>
-                  <td>{new Date(inventory.date).toLocaleDateString()}</td>
+                  <td>{formatDate(inventory.date)}</td>
                   <td>
                     <span className={`availability-status ${getAvailabilityClass(inventory)}`}>
                       {getAvailabilityStatus(inventory)}
@@ -330,7 +333,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
                   <td>{inventory.available_rooms}</td>
                   <td>{inventory.booked_rooms}</td>
                   <td>{inventory.price} {inventory.currency}</td>
-                  <td>{t('partner.minMaxNightsValue', { min: inventory.minimum_stay, max: inventory.maximum_stay })}</td>
+                  <td>{stayLimits(inventory)}</td>
                   <td>
                     <button
                       onClick={() => handleEdit(inventory)}
