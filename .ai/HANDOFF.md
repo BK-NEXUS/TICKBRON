@@ -93,6 +93,12 @@ Status: READY
 - Guests and owners write to the team at `/support` (user menu, Contact page); owners get a shortcut that fills an advertising request (`?topic=ads`). Team answers in the admin panel tab "Messages" (inbox, search, unread filter, badge). Polling every 4 s while the tab is visible, back-off to 30 s on errors, badges refresh every 30 s. Contract: API_CONTRACT "Support chat". Plan: PLAN_SUPPORT_CHAT.md.
 - Found, not fixed: no e-mail or push when a message arrives (the badge only shows while the site is open); no attachments; real WebSocket not used (polling is enough for the expected volume).
 
+## Design round 4: customers table and the messages tab
+- Customers directory: all 11 columns now fit the admin layout at 1280, 1440 and 1920 px without sideways scrolling (compact cells, no-wrap ID, phone, dates and status); phones still scroll inside the card. CSS only, in `panels.css`.
+- Messages tab: uses the admin header, panels and search field like the other tabs; the hint no longer says "on the left" (the list is above on phones). The support chat page has a breadcrumb and on phones the Send button sits beside the box, clear of the bottom navigation.
+- Checked by eye (light and dark, 1440 and 390 px) with a real guest message and an admin reply; test messages were deleted afterwards.
+- Found, not fixed: booking page and the owner's rates and calendar screens were not part of this round.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

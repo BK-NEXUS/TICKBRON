@@ -53,6 +53,12 @@ describe('Breadcrumbs', () => {
     expect(trail().getByText('My Bookings')).toHaveAttribute('aria-current', 'page')
   })
 
+  it('the support chat page has a trail back home', () => {
+    renderAt(['/support'])
+    expect(trail().getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(trail().getByText('Chat with us')).toHaveAttribute('aria-current', 'page')
+  })
+
   it('the login page has a trail back home', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
