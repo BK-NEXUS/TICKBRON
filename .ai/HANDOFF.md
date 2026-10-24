@@ -114,6 +114,10 @@ Status: READY
 - The list now shows one month at a time with previous/next month buttons (opens on the first month that is not over; the buttons stop at the first and last month with dates). Done in the browser from the dates already loaded (`utils/inventoryMonths.ts`), no new endpoint.
 - Found, not fixed: the booking confirmation (success) screen was still not looked at.
 
+## Design round 8: booking confirmation screen
+- The "Booking confirmed" card (and the loading and error cards of the booking page) sat at the left of the page on desktop instead of the middle, and on phones its inner space was so wide that the labels broke ("Check-in:" on two lines). Now centred, with phone-sized spacing. CSS only (`panels.css`). Checked by eye with a real booking at 1440 and 390 px; the test bookings were cancelled afterwards through the model's own `cancel_booking`.
+- Found, not fixed: the booking error text for dates without inventory shows the date as 2027-05-12 (server text, English); dark theme of this screen not checked by eye.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

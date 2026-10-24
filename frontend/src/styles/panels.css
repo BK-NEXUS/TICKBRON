@@ -762,3 +762,23 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
+
+/* Booking result screens (loading, error, confirmed): the card sits in the middle of the page */
+.booking-page--loading > .container,
+.booking-page--error > .container,
+.booking-page--success > .container {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .booking-page--loading,
+  .booking-page--error,
+  .booking-page--success {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .booking-page--success .success-state {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
