@@ -58,13 +58,17 @@ export function AdminSupportChat({ onSeen }: AdminSupportChatProps) {
 
   return (
     <section className="admin-chat">
-      <h2>{t('chat.admin.title')}</h2>
+      <div className="admin-view-header">
+        <h2 className="admin-view-title">{t('chat.admin.title')}</h2>
+        <p className="admin-view-subtitle">{t('chat.admin.subtitle')}</p>
+      </div>
       <div className="admin-chat__layout">
-        <div className="admin-chat__inbox">
+        <div className="admin-chat__inbox admin-chat__panel">
           <form className="admin-chat__filters" onSubmit={submitSearch} role="search">
             <label className="sr-only" htmlFor="admin-chat-search">{t('chat.admin.search')}</label>
             <input
               id="admin-chat-search"
+              className="search-input"
               type="search"
               value={search}
               placeholder={t('chat.admin.search')}
@@ -111,7 +115,7 @@ export function AdminSupportChat({ onSeen }: AdminSupportChatProps) {
             </div>
           )}
         </div>
-        <div className="admin-chat__thread">
+        <div className="admin-chat__thread admin-chat__panel">
           {open && api ? (
             <>
               <h3>{open.user.name || open.user.email}</h3>

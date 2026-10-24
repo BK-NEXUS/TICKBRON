@@ -25,6 +25,7 @@ const ROUTE_TRAILS: Array<[RegExp, TrailEntry[]]> = [
   [/^\/bookings$/, [{ labelKey: 'header.myBookings' }]],
   [/^\/booking$/, [{ labelKey: 'crumb.booking' }]],
   [/^\/favorites$/, [{ labelKey: 'crumb.myFavorites' }]],
+  [/^\/support$/, [{ labelKey: 'chat.open' }]],
   [/^\/profile$/, [{ labelKey: 'crumb.profile' }]],
   [/^\/partner$/, [{ labelKey: 'header.partnerDashboard' }]],
   [/^\/admin$/, [{ labelKey: 'header.adminDashboard' }]],

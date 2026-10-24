@@ -497,3 +497,35 @@
   object-fit: cover;
   border-radius: var(--radius-md);
 }
+
+/* Customers directory: 11 columns have to fit the 1440px admin layout without sideways scrolling */
+@media (min-width: 1200px) {
+  .admin-customers-list .customers-table th,
+  .admin-customers-list .customers-table td {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-customers-list .customers-table {
+    min-width: 0;
+  }
+
+  .admin-customers-list .customers-table th {
+    overflow-wrap: normal;
+    font-size: var(--font-size-xs);
+  }
+
+  .admin-customers-list .customers-table .customer-id,
+  .admin-customers-list .customers-table .customer-phone,
+  .admin-customers-list .customers-table .customer-status,
+  .admin-customers-list .customers-table .customer-registration-date,
+  .admin-customers-list .customers-table .customer-last-booking-date {
+    white-space: nowrap;
+  }
+
+  .admin-customers-list .customers-table .status-badge {
+    padding-inline: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+}
