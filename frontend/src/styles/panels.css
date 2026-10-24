@@ -529,3 +529,112 @@
     font-size: var(--font-size-xs);
   }
 }
+
+/* Owner and admin screens end with room before the footer */
+.dashboard-layout {
+  padding-bottom: var(--spacing-2xl);
+}
+
+/* Owner's rate plans: the list reused the guest card but had no styles of its own */
+.partner-rates-list .rates-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.partner-rates-list .rates-list-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}
+
+.partner-rates-list .rate-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: var(--spacing-lg);
+}
+
+.partner-rates-list .rate-plan-card {
+  cursor: default;
+}
+
+.partner-rates-list .rate-plan-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.partner-rates-list .rate-plan-name {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+}
+
+.partner-rates-list .rate-plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.partner-rates-list .rate-plan-badge {
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+}
+
+.partner-rates-list .rate-plan-badge--active {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.partner-rates-list .rate-plan-badge--inactive {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.partner-rates-list .rate-plan-description {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.partner-rates-list .rate-plan-details {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.partner-rates-list .rate-plan-detail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-md);
+}
+
+.partner-rates-list .detail-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.partner-rates-list .detail-value {
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+}
+
+.partner-rates-list .rate-plan-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-calendar-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}

@@ -2,6 +2,7 @@ import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanRequest } from '../adapters/partnerAdapter'
 import { CURRENCIES } from '../i18n/options'
+import { rateTypeLabel } from '../utils/rateType'
 
 interface PartnerRatesManagementProps {
   roomTypeId: number
@@ -310,7 +311,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
                     {ratePlan.is_active ? t('profile.active') : t('profile.inactive')}
                   </span>
                   <span className="rate-plan-badge rate-plan-badge--type">
-                    {ratePlan.rate_type}
+                    {rateTypeLabel(ratePlan.rate_type, t)}
                   </span>
                   {!hasAllPrices(ratePlan) && (
                     <span className="rate-plan-badge rate-plan-badge--inactive">{t('partner.pricesIncompleteBadge')}</span>
