@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, UserX, MapPin, Coins } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, MessageSquare, UserX, MapPin, Coins } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -10,18 +10,21 @@ import { AdminCustomersList } from '../components/AdminCustomersList'
 import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard'
 import { AdminStatusSection } from '../components/AdminStatusSection'
 import { AdminPromotions } from '../components/AdminPromotions'
+import { AdminSupportChat } from '../components/AdminSupportChat'
+import { useChatUnread } from '../hooks/useChatUnread'
 import { AdminNoShowReports } from '../components/AdminNoShowReports'
 import { AdminGeography } from '../components/AdminGeography'
 import { AdminExchangeRates } from '../components/AdminExchangeRates'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'no-show' | 'geography' | 'rates' | 'create-owner'
+type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'messages' | 'no-show' | 'geography' | 'rates' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
+  const waiting = useChatUnread(Boolean(user?.is_staff || user?.is_superuser), true)
   const [currentView, setCurrentView] = useState<AdminView>('properties')
   const [showCreateOwner, setShowCreateOwner] = useState(false)
 
@@ -145,6 +148,15 @@ export function AdminDashboardPage() {
         <span className="nav-label">{t('promoAdmin.nav')}</span>
       </button>
       <button
+        onClick={() => setCurrentView('messages')}
+        className={`nav-item ${currentView === 'messages' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'messages' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><MessageSquare size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('chat.admin.nav')}</span>
+        {waiting.count > 0 && <span className="chat-badge" aria-label={t('chat.admin.unreadCount', { count: waiting.count })}>{waiting.count}</span>}
+      </button>
+      <button
         onClick={() => setCurrentView('no-show')}
         className={`nav-item ${currentView === 'no-show' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'no-show' ? 'page' : undefined}
@@ -223,6 +235,8 @@ export function AdminDashboardPage() {
         return <AdminExchangeRates isSuperAdmin={Boolean(user.is_superuser)} />
       case 'promotions':
         return <AdminPromotions isSuperAdmin={Boolean(user.is_superuser)} />
+      case 'messages':
+        return <AdminSupportChat onSeen={waiting.refresh} />
       default:
         return <AdminPropertyModeration />
     }

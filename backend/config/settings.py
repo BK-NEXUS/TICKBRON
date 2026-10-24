@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'geography',
     'currency',
     'promotions',
+    'chat',
     
     # Third-party apps
     'rest_framework',
@@ -314,6 +315,9 @@ REST_FRAMEWORK = {
         'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
         # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
+        # Support chat: writing, and reading (the page polls while the chat is open)
+        'chat_send': os.getenv('THROTTLE_CHAT_SEND_RATE', '20/min'),
+        'chat_poll': os.getenv('THROTTLE_CHAT_POLL_RATE', '90/min'),
     },
 }
 

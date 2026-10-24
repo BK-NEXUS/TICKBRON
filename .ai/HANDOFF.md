@@ -89,6 +89,10 @@ Status: READY
 - Account lockout protection applies (inherited from password login)
 - **Added (Checkpoint 21):** Phone-based OTP authentication
 
+## Support chat (frontend and backend)
+- Guests and owners write to the team at `/support` (user menu, Contact page); owners get a shortcut that fills an advertising request (`?topic=ads`). Team answers in the admin panel tab "Messages" (inbox, search, unread filter, badge). Polling every 4 s while the tab is visible, back-off to 30 s on errors, badges refresh every 30 s. Contract: API_CONTRACT "Support chat". Plan: PLAN_SUPPORT_CHAT.md.
+- Found, not fixed: no e-mail or push when a message arrives (the badge only shows while the site is open); no attachments; real WebSocket not used (polling is enough for the expected volume).
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

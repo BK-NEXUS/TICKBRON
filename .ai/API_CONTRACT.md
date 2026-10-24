@@ -1179,3 +1179,18 @@ All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own prope
 - `GET /api/v1/admin-panel/promotions/regions/` (staff or super-admin): every active region `{id, country_code, name_uz, name_ru, name_en, running, waiting, hotels: [{id, name}]}`. `running` = ads shown right now, `hotels` = the hotels running them, `waiting` = paused, unpaid or not started yet (cancelled and ended ads are not counted). Regions with the most running ads first, empty regions included.
 - Banner items (`GET /api/v1/promotions/home/` and `promoted` in the search response) gain `promo_photos`: up to 10 picture addresses, the ad's own pictures, else the hotel's own photos with the cover first, `[]` when there are none.
 
+## Support chat (guests and owners with the TICKBRON team)
+
+One thread per account (`Conversation`), newest messages by polling (no WebSocket). Text 1–2000 characters, control characters refused. Error codes: `empty`, `too_long`, `bad_text`, `invalid_query`. Throttles: send 20/min, poll 90/min.
+
+Account (login required, `/api/v1/chat/`):
+- `GET messages/?after=<id>` → `{messages: [{id, text, from_staff, created_at}], unread}`; without `after` the last 100.
+- `POST messages/` `{text}` → 201 message.
+- `POST read/` → 204 (marks the team's messages as read). `GET unread/` → `{unread}`.
+
+Team (staff and super-admin, `/api/v1/admin-panel/chat/`):
+- `GET conversations/?q=&unread=true&page=` → paginated `{id, user{id,name,email,role}, last_message{text≤120,from_staff,created_at}, unread, last_message_at}`.
+- `GET conversations/{id}/?after=` → `{user, messages}`; `POST conversations/{id}/` `{text}` = staff reply (201); `POST conversations/{id}/read/` → 204.
+- `GET unread/` → `{unread_threads}`.
+
+Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertising request for owners), admin tab "Messages" with badge, user menu link with badge, Contact page button.
