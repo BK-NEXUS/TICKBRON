@@ -132,6 +132,10 @@ Status: READY
 - A new message from a user is also told to the team on Telegram when the alert bot is set up (the same chat as the security alerts; name and role only). Browser push was not built: it needs a service worker, VAPID keys and HTTPS, and the team already gets Telegram and e-mail.
 - The booking confirmation screen was looked at in the dark theme at 1440 px (no change needed); the phone size in the dark theme was not.
 
+## QA run 2026-10-26 (guest, owner and admin used by hand and by script)
+- Full list with steps and suggested fixes: `.ai/QA_REPORT_2026-10-26.md`. Nothing was fixed in that run.
+- Found, not fixed (most important first): the nginx example CSP blocks the map tiles (all maps empty in production); e-mail addresses are case sensitive (duplicate accounts, sign-in fails with capitals); an approved hotel with no room, rate or photo is public; children of a booking are not validated; owner forms miss sanity rules (min nights above max nights, 0 rooms, past dates); the E2E suite is not in CI and three tests have gone stale.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
