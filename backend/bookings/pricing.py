@@ -215,17 +215,23 @@ def _room_inventory_rows(room_type, nights, lock=False):
     return rows
 
 
+def _refused(field, code, message, **params):
+    """A refusal: the English text stays, and the code with its values lets the site say it in the user's language."""
+    return ValidationError({field: ValidationError(message, code=code, params=params)})
+
+
 def _refusal(code, message, night, **params):
-    """An availability refusal: the English text stays, and the code with its values lets the site say it in the user's language."""
-    return ValidationError({'availability': ValidationError(message, code=code, params={'date': night.isoformat(), **params})})
+    """A refusal about one night of the stay."""
+    return _refused('availability', code, message, date=night.isoformat(), **params)
 
 
-def availability_reason(error):
-    """{'code', 'params'} of an availability refusal, or None for any other kind of refusal."""
-    first = (getattr(error, 'error_dict', {}).get('availability') or [None])[0]
-    if first is None or not first.code:
-        return None
-    return {'code': first.code, 'params': first.params}
+def refusal_reason(error):
+    """{'code', 'params'} of the first refusal that has a code, or None when the refusal has none."""
+    for messages in getattr(error, 'error_dict', {}).values():
+        for message in messages:
+            if getattr(message, 'code', None):
+                return {'code': message.code, 'params': message.params}
+    return None
 
 
 def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
@@ -248,13 +254,11 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     if number_of_nights > MAX_STAY_NIGHTS:
         raise ValidationError({'check_out': f'A stay can be at most {MAX_STAY_NIGHTS} nights.'})
     if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
-        raise ValidationError({
-            'check_in': f'Minimum stay is {rate_plan.min_nights} nights for this rate.'
-        })
+        raise _refused('check_in', 'plan_min_stay', f'Minimum stay is {rate_plan.min_nights} nights for this rate.',
+                       nights=rate_plan.min_nights)
     if rate_plan.max_nights and number_of_nights > rate_plan.max_nights:
-        raise ValidationError({
-            'check_in': f'Maximum stay is {rate_plan.max_nights} nights for this rate.'
-        })
+        raise _refused('check_in', 'plan_max_stay', f'Maximum stay is {rate_plan.max_nights} nights for this rate.',
+                       nights=rate_plan.max_nights)
 
     rows = DateInventory.objects.filter(
         rate_plan=rate_plan, date__gte=check_in, date__lt=check_out, is_deleted=False,

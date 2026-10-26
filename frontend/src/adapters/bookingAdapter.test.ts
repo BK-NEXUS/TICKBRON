@@ -121,6 +121,25 @@ describe('BookingAdapter', () => {
       expect(result.code).toBe('exchange_rate_unavailable')
     })
 
+    it('passes the code and values of a refusal on, so the site can translate it', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          error: 'Booking validation failed', details: { availability: ['2025-01-22 is not available.'] },
+          reason: { code: 'night_unavailable', params: { date: '2025-01-22' } },
+        }),
+        clone() { return this },
+      })
+
+      const result = await adapter.createBooking({
+        property_id: 1, room_type_id: 1, rate_plan_id: 1, check_in: '2025-01-20', check_out: '2025-01-25', guest_count: 2,
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.reason).toEqual({ code: 'night_unavailable', params: { date: '2025-01-22' } })
+    })
+
     it('should handle booking creation errors', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,

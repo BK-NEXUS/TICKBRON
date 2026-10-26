@@ -121,3 +121,43 @@ def test_a_failing_mail_server_does_not_break_the_api(guest, django_capture_on_c
 
 def test_a_missing_message_is_ignored():
     assert send_chat_notice.run(999999) is None
+
+
+TELEGRAM = {'TELEGRAM_BOT_TOKEN': 'token', 'TELEGRAM_ALERT_CHAT_ID': '42'}
+
+
+@pytest.fixture
+def telegram():
+    with mock.patch('common.tasks.send_telegram_message.delay') as sent:
+        yield sent
+
+
+@override_settings(**TELEGRAM)
+def test_a_user_message_is_told_to_the_team_on_telegram_without_the_text_or_the_address(
+        guest, telegram, django_capture_on_commit_callbacks):
+    write(guest, SECRET, django_capture_on_commit_callbacks)
+    telegram.assert_called_once()
+    text = telegram.call_args.args[0]
+    assert 'Aziz Karimov' in text and '/admin' in text
+    assert SECRET not in text and 'guest@example.com' not in text
+
+
+@override_settings(**TELEGRAM)
+def test_telegram_gets_one_notice_per_unread_run_and_none_for_replies(
+        guest, staff, telegram, django_capture_on_commit_callbacks):
+    write(guest, 'one', django_capture_on_commit_callbacks)
+    write(guest, 'two', django_capture_on_commit_callbacks)
+    reply(Conversation.objects.get(user=guest), staff, 'answer', django_capture_on_commit_callbacks)
+    assert telegram.call_count == 1
+
+
+def test_without_telegram_settings_nothing_is_sent_there(guest, telegram, django_capture_on_commit_callbacks):
+    write(guest, 'Hello', django_capture_on_commit_callbacks)
+    telegram.assert_not_called()
+
+
+@override_settings(SUPPORT_NOTIFY_EMAIL=TEAM_INBOX, **TELEGRAM)
+def test_a_broken_telegram_queue_does_not_stop_the_e_mail(guest, django_capture_on_commit_callbacks):
+    with mock.patch('common.tasks.send_telegram_message.delay', side_effect=ConnectionError('no broker')):
+        write(guest, 'Hello', django_capture_on_commit_callbacks)
+    assert [m.to for m in mail.outbox] == [[TEAM_INBOX]]

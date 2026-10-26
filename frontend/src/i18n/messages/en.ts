@@ -576,6 +576,8 @@ export const en = {
   'booking.nightMaxStay': "A stay including {date} can be at most {nights} nights.",
   'booking.noRoomsLeft': "No rooms left on {date}.",
   'booking.fewRoomsLeft': "Only {rooms} rooms left on {date}.",
+  'booking.planMinStay': "The minimum stay for this rate is {nights} nights.",
+  'booking.planMaxStay': "The maximum stay for this rate is {nights} nights.",
   'booking.errorProperty': "Failed to load property details",
   'booking.errorRoom': "Room or rate plan not found",
   'booking.errorLoad': "Failed to load booking information",

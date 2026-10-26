@@ -17,7 +17,7 @@ from bookings.models import Booking
 from bookings.tests import test_views
 from bookings.tests.stays import stay
 from permissions.models import Role
-from properties.models import RoomInventory
+from properties.models import DateInventory, RoomInventory
 from users.models import User
 
 TASHKENT = zoneinfo.ZoneInfo('Asia/Tashkent')
@@ -66,6 +66,13 @@ class CreateTests(CashFixture):
         booking = Booking.objects.get()
         self.assertEqual((booking.status, booking.payment_status), ('confirmed', 'pending'))
         self.assertIsNone(booking.expires_at)  # no payment window any more
+
+    def test_a_closed_night_is_refused_with_a_code_for_translation(self):
+        DateInventory.objects.filter(rate_plan=self.rate_plan, date=self.check_in).update(is_available=False)
+        response = self.book()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['reason'], {'code': 'night_unavailable', 'params': {'date': self.check_in.isoformat()}})
+        self.assertFalse(Booking.objects.exists())
 
     def test_the_room_is_taken_at_once(self):
         self.book()

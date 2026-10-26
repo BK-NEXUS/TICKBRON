@@ -127,6 +127,11 @@ Status: READY
 - The price card used to show the server's English text with a raw date ("2027-05-12 is not available."). The quote now sends a code and values (`reason`), and the booking page says it in uz, ru or en with the date written out. Contract: API_CONTRACT "Stay quote: refusals with a code".
 - Found, not fixed: the booking create endpoint (a race after the quote) still returns the English text; the other quote refusals (rate plan minimum and maximum stay, bad parameters) are still English.
 
+## Small leftovers: refusals in the user's language, Telegram for the chat, dark confirmation screen
+- The booking create endpoint and the rate plan's minimum and maximum stay now send a code too, so the site says them in uz, ru or en (see API_CONTRACT "Refusals with a code"). Not translated yet: the serializer's own plan limit check before pricing (the quote refuses first, so a guest does not reach it) and the other free-text refusals of the booking serializer.
+- A new message from a user is also told to the team on Telegram when the alert bot is set up (the same chat as the security alerts; name and role only). Browser push was not built: it needs a service worker, VAPID keys and HTTPS, and the team already gets Telegram and e-mail.
+- The booking confirmation screen was looked at in the dark theme at 1440 px (no change needed); the phone size in the dark theme was not.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)

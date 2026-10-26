@@ -1,10 +1,14 @@
-"""E-mail notices of the support chat. They carry a link, never the text of the message."""
+"""Notices of the support chat (e-mail to the user or the team, Telegram to the team). They carry a link, never the text of the message."""
+import logging
+
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db.models import F
 from django.template.loader import render_to_string
 
 from chat.models import Message
+from common.alerts import alerts_configured
+
+logger = logging.getLogger(__name__)
 
 USER_SUBJECT = 'TICKBRON: yangi xabar / новое сообщение / new message'
 TEAM_SUBJECT = 'TICKBRON support: new message'
@@ -40,7 +44,24 @@ def notice_for(message):
     return TEAM_SUBJECT, body, settings.SUPPORT_NOTIFY_EMAIL
 
 
+def telegram_text_for(message):
+    """The Telegram text for the team when a user writes (name and role, no address and no message text), else None."""
+    if message.from_staff or not alerts_configured() or not _first_unread(message):
+        return None
+    user = message.conversation.user
+    role = user.role.name if user.role else 'guest'
+    return f'TICKBRON support: new message from {user.full_name or "a user"} ({role})\n{settings.FRONTEND_URL}/admin'
+
+
 def send_notice(message):
+    """Tell the team on Telegram, then mail: a broken Telegram queue must not stop the e-mail."""
+    text = telegram_text_for(message)
+    if text:
+        try:
+            from common.tasks import send_telegram_message
+            send_telegram_message.delay(text)
+        except Exception:
+            logger.exception('Could not queue the Telegram notice for message %s', message.pk)
     notice = notice_for(message)
     if notice:
         subject, body, recipient = notice

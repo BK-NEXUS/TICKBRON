@@ -157,17 +157,22 @@ class TestQuote:
 
     def test_few_rooms_left_says_how_many(self, stay):
         from django.core.exceptions import ValidationError
-        from bookings.pricing import availability_reason, quote_stay
+        from bookings.pricing import refusal_reason, quote_stay
         night = stay['start'] + timedelta(days=2)
         RoomInventory.objects.create(room_type=stay['room'], date=night, available_rooms=3, booked_rooms=1)
         with pytest.raises(ValidationError) as error:
             quote_stay(stay['rate'], stay['start'] + timedelta(days=1), stay['start'] + timedelta(days=4), number_of_rooms=3)
-        assert availability_reason(error.value) == {'code': 'few_rooms_left', 'params': {'date': night.isoformat(), 'rooms': 2}}
+        assert refusal_reason(error.value) == {'code': 'few_rooms_left', 'params': {'date': night.isoformat(), 'rooms': 2}}
+
+    def test_rate_plan_min_and_max_stay_have_codes(self, stay):
+        stay['rate'].min_nights = 2
+        stay['rate'].max_nights = 7
+        stay['rate'].save()
+        assert quote(stay, 1, 2).data['reason'] == {'code': 'plan_min_stay', 'params': {'nights': 2}}
+        assert quote(stay, 0, 9).data['reason'] == {'code': 'plan_max_stay', 'params': {'nights': 7}}
 
     def test_a_refusal_without_a_code_has_no_reason(self, stay):
-        stay['rate'].min_nights = 2
-        stay['rate'].save()
-        assert 'reason' not in quote(stay, 1, 2).data
+        assert 'reason' not in quote(stay, 3, 3).data
 
     def test_bad_parameters(self, stay):
         assert quote(stay, 3, 3).status_code == 400

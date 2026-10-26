@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { overlapsOwnStay, type StayDates } from '../utils/stays'
+import type { Refusal } from '../utils/refusal'
 import { propertyDisplayName } from '../utils/propertyName'
 import { useI18n } from '../i18n/I18nContext'
 import { VipBadge } from '../components/VipBadge'
@@ -56,6 +57,12 @@ const AVAILABILITY_KEYS: Partial<Record<string, MessageKey>> = {
   night_max_stay: 'booking.nightMaxStay',
   no_rooms_left: 'booking.noRoomsLeft',
   few_rooms_left: 'booking.fewRoomsLeft',
+  plan_min_stay: 'booking.planMinStay',
+  plan_max_stay: 'booking.planMaxStay',
+}
+const refusalMessage = (reason: Refusal | undefined): Message | undefined => {
+  const key = reason ? AVAILABILITY_KEYS[reason.code] : undefined
+  return key && reason ? { key, params: reason.params } : undefined
 }
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
@@ -167,10 +174,7 @@ export function BookingPage() {
       if (response?.data) {
         setQuote(response.data)
       } else {
-        const key = response?.reason ? AVAILABILITY_KEYS[response.reason.code] : undefined
-        setQuoteError(key && response?.reason
-          ? { key, params: response.reason.params }
-          : failure(response?.error, 'booking.errorQuote'))
+        setQuoteError(refusalMessage(response?.reason) ?? failure(response?.error, 'booking.errorQuote'))
       }
     }
     loadQuote()
@@ -368,7 +372,7 @@ export function BookingPage() {
       
       if (response.error || !response.data) {
         const refusal = response.code ? REFUSAL_KEYS[response.code] : undefined
-        setError(refusal ? { key: refusal } : failure(response.error, 'booking.errorCreate'))
+        setError(refusal ? { key: refusal } : refusalMessage(response.reason) ?? failure(response.error, 'booking.errorCreate'))
         setSubmitting(false)
         return
       }
