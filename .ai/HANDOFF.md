@@ -132,6 +132,11 @@ Status: READY
 - A new message from a user is also told to the team on Telegram when the alert bot is set up (the same chat as the security alerts; name and role only). Browser push was not built: it needs a service worker, VAPID keys and HTTPS, and the team already gets Telegram and e-mail.
 - The booking confirmation screen was looked at in the dark theme at 1440 px (no change needed); the phone size in the dark theme was not.
 
+## Fix: e-mail addresses ignore capitals (QA finding F2)
+- Before: `GUEST@x.com` made a second account next to `guest@x.com`, and `Guest@x.com` could not sign in (phone keyboards capitalise the first letter). Now one account per mailbox: addresses are lower-cased on sign-up, admin owner creation, sign-in and password reset, and the database has a unique constraint on `lower(email)`. Contract: API_CONTRACT "E-mail addresses ignore capitals".
+- Owner before deploy: migration `users.0010_email_case_insensitive` stops with a message naming the addresses if two real accounts differ only by capitals (the demo and dev databases have none). In that case merge or delete the extra account, then run `migrate` again. As always: `pg_dump -Fc` first.
+- Not changed: addresses saved inside old bookings (`guest_email`) and notes keep the capitals typed.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
