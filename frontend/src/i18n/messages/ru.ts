@@ -604,6 +604,8 @@ export const ru: Catalog = {
   'booking.nightMaxStay': "Проживание, включающее {date}, не может быть дольше {nights} ноч.",
   'booking.noRoomsLeft': "На {date} свободных номеров не осталось.",
   'booking.fewRoomsLeft': "На {date} осталось номеров: {rooms}.",
+  'booking.planMinStay': "Минимальный срок проживания по этому тарифу: {nights} ноч.",
+  'booking.planMaxStay': "Максимальный срок проживания по этому тарифу: {nights} ноч.",
   'booking.errorProperty': "Не удалось загрузить данные объекта",
   'booking.errorRoom': "Номер или тариф не найден",
   'booking.errorLoad': "Не удалось загрузить данные бронирования",

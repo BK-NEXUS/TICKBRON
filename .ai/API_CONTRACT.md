@@ -1205,3 +1205,10 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - `GET /api/v1/properties/{id}/quote/` answers 400 as before (`error`, `details`, the English text under `details.availability`). When the refusal is about a night, the body also has `reason: {code, params}` so the site can say it in the user's language and format the date itself. Without a code (other refusals) there is no `reason`.
 - Codes and params: `night_unavailable {date}`, `night_min_stay {date, nights}`, `night_max_stay {date, nights}`, `no_rooms_left {date}`, `few_rooms_left {date, rooms}`; `date` is `YYYY-MM-DD`. Code: `bookings/pricing.py` (`availability_reason`).
 - The booking create endpoint still returns only the English text (the quote refuses first, so the guest sees the translated text on the price card).
+
+### Refusals with a code: booking create and rate plan limits (2026-10-24)
+- `POST /api/v1/bookings/` answers a refusal about a night (400, `error`, `details`) with the same `reason: {code, params}` as the quote when the refusal has a code; the English text stays in `details`.
+- New codes (quote and create): `plan_min_stay {nights}` and `plan_max_stay {nights}` (the rate plan's own limits, under `details.check_in`). Full list: `night_unavailable`, `night_min_stay`, `night_max_stay`, `no_rooms_left`, `few_rooms_left`, `plan_min_stay`, `plan_max_stay`. Code: `bookings/pricing.py` (`refusal_reason`).
+
+### Support chat: Telegram notice to the team (2026-10-24)
+- When a user writes and the Telegram alert settings are on (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`, the same chat as the security alerts), the chat notice task also queues one Telegram message: the user's name and role and a link to `FRONTEND_URL/admin`. No message text and no e-mail address or phone. Same one-per-unread-run rule as the e-mails; replies from the team send none. A broken Telegram queue does not stop the e-mail.

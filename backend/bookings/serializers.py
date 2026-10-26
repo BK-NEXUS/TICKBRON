@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from common.dates import business_today
 from bookings.arrival import arrival_deadline, arrival_time_error
+from bookings.pricing import refusal_reason
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
@@ -234,7 +235,9 @@ class BookingCreateSerializer(serializers.Serializer):
         except ValidationError as e:
             # Convert Django ValidationError to DRF ValidationError
             if hasattr(e, 'message_dict'):
-                raise serializers.ValidationError(e.message_dict)
+                refused = serializers.ValidationError(e.message_dict)
+                refused.reason = refusal_reason(e)  # the view sends it on, so the site can translate the refusal
+                raise refused
             else:
                 raise serializers.ValidationError({'non_field_errors': str(e)})
         except DatabaseError:

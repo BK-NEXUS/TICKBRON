@@ -578,6 +578,8 @@ export const uz: Catalog = {
   'booking.nightMaxStay': "{date} sanasini o'z ichiga olgan turish ko'pi bilan {nights} kecha bo'lishi mumkin.",
   'booking.noRoomsLeft': "{date} sanasida bo'sh xona qolmagan.",
   'booking.fewRoomsLeft': "{date} sanasida faqat {rooms} ta xona qolgan.",
+  'booking.planMinStay': "Bu tarif bo'yicha eng kam turish muddati {nights} kecha.",
+  'booking.planMaxStay': "Bu tarif bo'yicha eng ko'p turish muddati {nights} kecha.",
   'booking.errorProperty': "Obyekt ma'lumotlarini yuklab bo'lmadi",
   'booking.errorRoom': "Xona yoki tarif topilmadi",
   'booking.errorLoad': "Bron ma'lumotlarini yuklab bo'lmadi",

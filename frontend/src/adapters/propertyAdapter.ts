@@ -1,7 +1,8 @@
 // Property API adapter for search and property detail endpoints
 // Integrates with backend property endpoints from Checkpoint 10-11
 
-import { readApiError } from '../utils/errorHandler'
+import { parseApiError, readApiError } from '../utils/errorHandler'
+import { refusalOf, type Refusal } from '../utils/refusal'
 import { apiFetch } from '../utils/api'
 import type { ExchangeRateInfo } from './bookingAdapter'
 
@@ -186,21 +187,6 @@ export interface QuoteParams {
 }
 
 // GET /api/v1/properties/{id}/quote/: the same pricing Booking.create_booking charges
-/** Why a stay cannot be booked, as a code with its values, so the site can say it in the page language */
-export interface QuoteRefusal {
-  code: string
-  params: Record<string, string | number>
-}
-
-async function readRefusal(response: Response): Promise<QuoteRefusal | undefined> {
-  const body: unknown = await response.json().catch(() => undefined)
-  const reason = typeof body === 'object' && body !== null ? (body as { reason?: unknown }).reason : undefined
-  if (typeof reason !== 'object' || reason === null) return undefined
-  const { code, params } = reason as { code?: unknown; params?: unknown }
-  if (typeof code !== 'string' || typeof params !== 'object' || params === null) return undefined
-  return { code, params: params as Record<string, string | number> }
-}
-
 export interface StayQuote {
   check_in: string
   check_out: string
@@ -448,7 +434,7 @@ class PropertyAdapter {
   async getQuote(
     propertyId: number,
     params: QuoteParams
-  ): Promise<{ data: StayQuote | null; error: string | null; reason?: QuoteRefusal }> {
+  ): Promise<{ data: StayQuote | null; error: string | null; reason?: Refusal }> {
     const query = new URLSearchParams({
       room_type_id: String(params.roomTypeId),
       rate_plan_id: String(params.ratePlanId),
@@ -462,11 +448,11 @@ class PropertyAdapter {
         credentials: 'include',
       })
       if (!response.ok) {
-        const refusal = readRefusal(response.clone())
-        const apiError = await readApiError(response)
+        const body: unknown = await response.json().catch(() => undefined)
+        const apiError = parseApiError(response, body)
         // The field message ("... is not available.") is clearer than the envelope text
         const reason = apiError.fieldErrors ? Object.values(apiError.fieldErrors).flat()[0] : undefined
-        return { data: null, error: reason || apiError.message, reason: await refusal }
+        return { data: null, error: reason || apiError.message, reason: refusalOf(body) }
       }
       return { data: await response.json(), error: null }
     } catch (error) {

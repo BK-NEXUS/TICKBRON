@@ -741,6 +741,26 @@ describe('BookingPage', () => {
       expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
     })
 
+    it('a refusal at booking time is explained in the page language, with the date written out', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: null, error: '2025-01-22 is not available.', code: undefined,
+        reason: { code: 'night_unavailable', params: { date: '2025-01-22' } },
+      })
+      await ready()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(await screen.findByText('Jan 22, 2025 is not available.')).toBeInTheDocument()
+    })
+
+    it('the plan\'s own minimum and maximum stay are explained too', async () => {
+      mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error: 'x', reason: { code: 'plan_min_stay', params: { nights: 2 } } })
+      const { unmount } = renderWithRouter(<BookingPage />)
+      expect(await screen.findByText('The minimum stay for this rate is 2 nights.')).toBeInTheDocument()
+      unmount()
+      mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error: 'x', reason: { code: 'plan_max_stay', params: { nights: 7 } } })
+      renderWithRouter(<BookingPage />)
+      expect(await screen.findByText('The maximum stay for this rate is 7 nights.')).toBeInTheDocument()
+    })
+
     it('confirms the booking at once: a confirmed page with the arrival rule', async () => {
       mockBookingAdapter.createBooking.mockResolvedValue({
         data: { ...mockBooking, status: 'confirmed', expected_arrival_time: '10:30:00', arrival_deadline: '2025-01-20T12:30:00+05:00' },

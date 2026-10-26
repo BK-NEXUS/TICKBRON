@@ -1,7 +1,8 @@
 // Booking API adapter for booking endpoints
 // Integrates with backend booking endpoints from Checkpoint 13-14
 
-import { readApiError } from '../utils/errorHandler'
+import { parseApiError } from '../utils/errorHandler'
+import { refusalOf, type Refusal } from '../utils/refusal'
 import { apiFetch } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -112,7 +113,7 @@ class BookingAdapter {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<{ data: T | null; error: string | null; code?: string }> {
+  ): Promise<{ data: T | null; error: string | null; code?: string; reason?: Refusal }> {
     const url = `${this.baseUrl}${endpoint}`
     
     const defaultOptions: RequestInit = {
@@ -127,8 +128,9 @@ class BookingAdapter {
       const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
-        const apiError = await readApiError(response)
-        return { data: null, error: apiError.message, code: apiError.code }
+        const body: unknown = await response.json().catch(() => undefined)
+        const apiError = parseApiError(response, body)
+        return { data: null, error: apiError.message, code: apiError.code, reason: refusalOf(body) }
       }
 
       const data = await response.json()
@@ -146,7 +148,9 @@ class BookingAdapter {
    * Integrates with POST /api/v1/bookings/ endpoint
    */
   /** `code` is the backend's machine code of a failure (for example `exchange_rate_unavailable`) */
-  async createBooking(request: BookingCreateRequest): Promise<{ data: Booking | null; error: string | null; code?: string }> {
+  async createBooking(
+    request: BookingCreateRequest,
+  ): Promise<{ data: Booking | null; error: string | null; code?: string; reason?: Refusal }> {
     return this.request<Booking>('/api/v1/bookings/', {
       method: 'POST',
       body: JSON.stringify(request),

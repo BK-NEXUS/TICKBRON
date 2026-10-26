@@ -173,10 +173,10 @@ class BookingViewSet(mixins.CreateModelMixin,
             # BookingCreateSerializer.create() raises this for both business-rule
             # violations and unexpected internal errors; either way e.detail is
             # already a safe, non-leaking message by the time it gets here.
-            return Response(
-                {'error': 'Booking validation failed', 'details': e.detail},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            body = {'error': 'Booking validation failed', 'details': e.detail}
+            if getattr(e, 'reason', None):
+                body['reason'] = e.reason
+            return Response(body, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             # Truly unexpected error: never echo str(e) to the client.
             logger.exception('Unexpected error creating booking')
