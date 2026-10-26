@@ -7,7 +7,6 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { PartnerRoomCalendar } from './PartnerRoomCalendar'
 import { partnerAdapter, type PartnerRatePlan, type PartnerRoomInventory } from '../adapters/partnerAdapter'
 import { I18nProvider } from '../i18n/I18nContext'
-import { settle } from '../test/utils'
 
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
@@ -251,6 +250,9 @@ describe('PartnerRoomCalendar upgrade', () => {
     it('does not accept an empty, zero-less or negative price', async () => {
       const { container } = renderCalendar()
       await screen.findByText('3 / 5')
+      // The prices are asked for once the rate plans have arrived; if that has not happened yet, the click below
+      // would send the request and its answer would land after the test, outside act()
+      await waitFor(() => expect(adapter.getDateInventory).toHaveBeenCalled())
       fireEvent.click(cell(container, day(20)))
       const input = screen.getByLabelText('Price per night for these days (UZS)')
       const save = screen.getByRole('button', { name: 'Set price' })
@@ -260,7 +262,6 @@ describe('PartnerRoomCalendar upgrade', () => {
       }
       fireEvent.change(input, { target: { value: '0' } })
       expect(save).toBeEnabled()
-      await settle() // the data a click loads arrives inside act(), not after the test has ended
     })
 
     it('shows the backend message when the price is refused', async () => {
