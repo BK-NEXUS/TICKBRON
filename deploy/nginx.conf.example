@@ -34,12 +34,12 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 
-    # The SPA (static build of frontend/). Add the map tile host when the map is built and the
-    # payment provider hosts when Payme/Click are integrated.
+    # The SPA (static build of frontend/). The map tile host is in img-src (frontend/src/deployCsp.test.ts
+    # keeps it in step with mapTiles.ts); add payment provider hosts if online payments are ever added.
     location / {
         root /var/www/tickbron/frontend/dist;
         try_files $uri /index.html;
-        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;

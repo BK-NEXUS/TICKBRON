@@ -132,6 +132,10 @@ Status: READY
 - A new message from a user is also told to the team on Telegram when the alert bot is set up (the same chat as the security alerts; name and role only). Browser push was not built: it needs a service worker, VAPID keys and HTTPS, and the team already gets Telegram and e-mail.
 - The booking confirmation screen was looked at in the dark theme at 1440 px (no change needed); the phone size in the dark theme was not.
 
+## Fix: nginx example let no map tiles through (QA finding F1)
+- `deploy/nginx.conf.example` had `img-src 'self' data: blob:`, so with that file every map (hotel page, search map, place picker) would show no tiles in production. The tile host `https://tile.openstreetmap.org` is now in `img-src`, like the release checklist already said. `frontend/src/deployCsp.test.ts` fails if either file stops allowing the host of `mapTiles.ts`.
+- Checked in a browser: the built site served with that exact header no longer refuses the tile requests, and still refuses images from other hosts.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
