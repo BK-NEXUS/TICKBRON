@@ -1,0 +1,12 @@
+# Never inside an image: secrets, uploaded photos, logs, caches
+.env
+.env.*
+media
+logs
+staticfiles
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+venv
+.git

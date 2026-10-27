@@ -348,3 +348,4 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - [ ] Hotels are told to press "Guest arrived" in Status > arrivals; otherwise guests who did come are cancelled.
 - [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (2, `bookings/views.py`, decided 2026-10-23) and the no-overlap rule are the only brake on one account taking rooms without paying.
 
+- [ ] Deploying with Docker: follow `.ai/DEPLOY_DOCKER.md` (compose file, Caddyfile with automatic HTTPS, nightly `deploy/backup.sh` and a copy of the backups to another machine).

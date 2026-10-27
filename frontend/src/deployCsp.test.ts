@@ -24,6 +24,12 @@ describe('the Content-Security-Policy of the deploy files', () => {
     expect(imageSources('deploy/nginx.conf.example', /add_header Content-Security-Policy "default-src 'self'/)).toContain(satelliteOrigin)
   })
 
+  it('the Caddyfile of the Docker setup lets the map tiles and the satellite pictures through', () => {
+    const sources = imageSources('deploy/Caddyfile', /Content-Security-Policy "default-src 'self'/)
+    expect(sources).toContain(tileOrigin)
+    expect(sources).toContain(satelliteOrigin)
+  })
+
   it('the release checklist starting point lists the satellite host too', () => {
     expect(imageSources('.ai/RELEASE_CHECKLIST.md', /^\s*`default-src 'self'; script-src 'self'/)).toContain(satelliteOrigin)
   })
