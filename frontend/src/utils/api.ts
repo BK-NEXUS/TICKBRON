@@ -7,6 +7,7 @@
 
 import { readApiError } from './errorHandler'
 import { getActiveLanguage } from '../i18n/languageChoice'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -172,7 +173,7 @@ export async function fetchAllPages<T>(url: string, options: FetchAllPagesOption
       }
     }
   } catch (error) {
-    const message = networkErrorMessage ?? (error instanceof Error ? error.message : 'Network error occurred')
+    const message = networkErrorMessage ?? (error instanceof Error ? error.message : translateNow('apiError.networkOccurred'))
     return { data: null, error: message, truncated: false }
   }
 

@@ -3,6 +3,7 @@
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Property } from './propertyAdapter'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -114,7 +115,12 @@ export interface PromotionResult<T> {
 }
 
 const ADMIN = '/api/v1/admin-panel'
-const STATUS_MESSAGES = { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Promotion not found' }
+// Getters: the text is chosen when an error happens, in the language the page is in then
+const STATUS_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  get 403() { return translateNow('apiError.adminRequired') },
+  404: 'Promotion not found',
+}
 
 function withQuery(path: string, params: Record<string, string | number | undefined>): string {
   const query = new URLSearchParams()
@@ -146,7 +152,7 @@ export class PromotionAdapter {
       if (response.status === 204) return { data: null, error: null, code: null }
       return { data: (await response.json()) as T, error: null, code: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred', code: null }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null }
     }
   }
 
@@ -229,7 +235,7 @@ export class PromotionAdapter {
       }
       return { data: (await response.json()) as AdPhoto, error: null, code: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred', code: null }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null }
     }
   }
 

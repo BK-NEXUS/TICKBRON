@@ -1,19 +1,15 @@
 /* eslint-disable react-refresh/only-export-components -- the provider, its hooks and helpers belong together */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { en, type Catalog, type MessageKey, type PluralKey } from './messages/en'
-import { uz } from './messages/uz'
-import { ru } from './messages/ru'
+import type { MessageKey, PluralKey } from './messages/en'
+import { CATALOGS, translate, type Params } from './translateNow'
 import { formatMoney as formatMoneyFor, type MoneyOptions } from './format'
 import {
   DEFAULT_CURRENCY, isCurrency, type Currency, type Language,
 } from './options'
 import { LANGUAGE_KEY, initialLanguage, readStored, setActiveLanguage, writeStored } from './languageChoice'
 
-const CATALOGS: Record<Language, Catalog> = { uz, ru, en }
 const LOCALES: Record<Language, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' }
 const CURRENCY_KEY = 'tickbron.currency'
-
-type Params = Record<string, string | number>
 
 interface I18nValue {
   language: Language
@@ -36,13 +32,6 @@ interface I18nValue {
 function initialCurrency(): Currency {
   const stored = readStored(CURRENCY_KEY)
   return isCurrency(stored) ? stored : DEFAULT_CURRENCY
-}
-
-function translate(language: Language, key: string, params?: Params): string {
-  // A key missing in one catalog falls back to English, then to the key itself
-  const text = CATALOGS[language][key] ?? (en as Catalog)[key] ?? key
-  if (!params) return text
-  return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
 }
 
 function translatePlural(language: Language, base: string, count: number, params?: Params): string {
