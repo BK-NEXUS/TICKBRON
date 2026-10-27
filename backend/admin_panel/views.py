@@ -26,7 +26,7 @@ from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog, InternalNote
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
-    AdminUserSerializer, AdminUserCreateSerializer,
+    AdminUserSerializer, AdminUserCreateSerializer, AdminStaffCreateSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
     AdminCustomerSerializer,
@@ -265,6 +265,23 @@ def admin_create_hotel_owner(request):
         )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsSuperAdmin])
+def admin_create_admin(request):
+    """
+    Add another administrator (super-admin only). The new account is staff and never a super-admin;
+    the request cannot change that. Body: email, first_name, last_name, phone_number, password,
+    password_confirm. Written to the admin access log.
+    """
+    serializer = AdminStaffCreateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    user = serializer.save()
+    AdminAccessLog.record(request.user, 'admin_create', target_user_id=user.id)
+    return Response(AdminUserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):

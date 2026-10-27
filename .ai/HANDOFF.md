@@ -3222,8 +3222,14 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 ## QA round 2 fixes (2026-10-27)
 - Report: `.ai/QA_ROUND2.md`. Fixed: the owner's date list showed 0 booked rooms (it read the rate plan's own counter; now the room type's pool), room type / rate plan texts accepted `<script>`, room photos went to `properties/temp/`, local development showed no photos, a new server had no property types (the owner's form sent a fixed id 1; now a list from `partner/property-types/` plus `manage.py seed_property_types`), no notice after a booking (in-app lines and mails for the guest and the owner). Contract: API_CONTRACT "QA round 2 fixes".
 - Not changed on purpose: two error shapes (the frontend reads both, documented); demo data (the demo seeds already refuse without DEBUG and the checklist says so).
-- Needs the owner's approval first (security plan gate): adding another admin from the site, see `.ai/PLAN_ADMIN_ACCOUNTS.md`.
+- Adding another admin from the site: built later the same day with the plan's defaults (see below).
 - Found, not fixed: the site has no page for the in-app notification list yet (the lines are stored and the API returns them; the mails carry the news until a bell is built); old room photos stay in `properties/temp/` (only new uploads use the hotel's folder).
 - Found, not fixed: 5 frontend tests fail on an unchanged master in the 2026-10-27 sandbox (`GeographyPicker.test.tsx` call counts 7 instead of 1 and 9 instead of 2, `HomePage.country.test.tsx` "reading 'then'"); they passed in the earlier run of the same day's session, cause not looked at.
 - Fixed on the way: the owner tests' hotel fixture (`partner/tests/test_property_create_access.py`) dated its night with the server's UTC date, so `test_a_night_cannot_be_moved_into_the_past` failed between 00:00 and 05:00 Tashkent time; it now uses `business_today()`.
 - Found, not fixed: in the 59-minute full backend run `properties/tests/test_r6_uzs_prices.py::TestSearch::test_no_rate_yet` and `::test_stale_rate_is_flagged` failed once but pass alone (twice); cause not found (suspected leftover search cache from earlier tests).
+
+## Add an administrator from the site; notifications page (2026-10-27)
+- The owner asked to finish the remaining work, so `.ai/PLAN_ADMIN_ACCOUNTS.md` was carried out with its proposed defaults: only a super-admin can add an administrator, the new account is staff (never super-admin), written to the access log, `createsuperuser` stays the only way to a super-admin. The create-owner form is reused (`kind="admin"`, no place). Migration `admin_panel/0013_admin_create_action` only changes the choices of the log's action field.
+- `/notifications` page and the unread badge in the user menu; the 10 notice codes have uz/ru/en text. Contract: API_CONTRACT "Add an administrator from the panel; notifications page".
+- Found, not fixed: the notifications page shows the newest 20 only (no "older" button); opening a notice does not jump to the booking.
+- Owner to do on the server: `manage.py seed_property_types` (deploy guide step 6).

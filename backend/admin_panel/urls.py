@@ -21,7 +21,7 @@ from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
     admin_property_approve, admin_property_suspend, admin_property_region,
-    admin_create_hotel_owner,
+    admin_create_hotel_owner, admin_create_admin,
     admin_booking_lookup_by_reference,
     admin_customers_directory,
     admin_customer_detail,
@@ -44,6 +44,7 @@ router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 
 urlpatterns = [
+    path('users/create-admin/', admin_create_admin, name='admin-create-admin'),
     path('users/create-hotel-owner/', admin_create_hotel_owner, name='admin-create-hotel-owner'),
     path('users/', AdminUserViewSet.as_view({'get': 'list'}), name='admin-user-list'),
     path('customers/', admin_customers_directory, name='admin-customers-directory'),

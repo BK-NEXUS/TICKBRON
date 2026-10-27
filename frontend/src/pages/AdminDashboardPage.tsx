@@ -26,7 +26,8 @@ export function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth()
   const waiting = useChatUnread(Boolean(user?.is_staff || user?.is_superuser), true)
   const [currentView, setCurrentView] = useState<AdminView>('properties')
-  const [showCreateOwner, setShowCreateOwner] = useState(false)
+  // The account form in the main area: a hotel owner, an administrator, or none
+  const [creating, setCreating] = useState<'owner' | 'admin' | null>(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -39,12 +40,12 @@ export function AdminDashboardPage() {
   }, [isAuthenticated, user])
 
   const handleCreateOwnerSuccess = () => {
-    setShowCreateOwner(false)
+    setCreating(null)
     setCurrentView('users')
   }
 
   const handleCreateOwnerCancel = () => {
-    setShowCreateOwner(false)
+    setCreating(null)
   }
 
   if (!isAuthenticated || !user) {
@@ -189,24 +190,26 @@ export function AdminDashboardPage() {
         <span className="nav-icon"><Search size={18} /></span>
         <span className="nav-label">{t('crumb.supportLookup')}</span>
       </button>
-      {user.is_superuser && (
+      {user.is_superuser && (['owner', 'admin'] as const).map(kind => (
         <button
-          onClick={() => setShowCreateOwner(true)}
-          className={`nav-item ${showCreateOwner ? 'nav-item--active' : ''}`}
-          aria-current={showCreateOwner ? 'page' : undefined}
+          key={kind}
+          onClick={() => setCreating(kind)}
+          className={`nav-item ${creating === kind ? 'nav-item--active' : ''}`}
+          aria-current={creating === kind ? 'page' : undefined}
         >
           <span className="nav-icon"><Plus size={18} /></span>
-          <span className="nav-label">{t('admin.createOwner')}</span>
+          <span className="nav-label">{t(kind === 'owner' ? 'admin.createOwner' : 'admin.createAdmin')}</span>
         </button>
-      )}
+      ))}
     </nav>
   )
 
   const renderCurrentView = () => {
-    if (showCreateOwner) {
+    if (creating) {
       return (
         <div className="admin-create-owner-view">
           <CreateHotelOwnerAccount
+            kind={creating}
             onSuccess={handleCreateOwnerSuccess}
             onCancel={handleCreateOwnerCancel}
           />

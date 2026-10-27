@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 import type { MessageKey } from '../i18n/messages/en'
 import { useI18n } from '../i18n/I18nContext'
 import { useChatUnread } from '../hooks/useChatUnread'
+import { useNotificationCount } from '../hooks/useNotificationCount'
 import { canUseAdminPanel, canUsePartnerPanel } from '../utils/roles'
 
 interface NavLink {
@@ -29,6 +30,7 @@ export function Header() {
   
   const { user, isAuthenticated, logout } = useAuth()
   const chat = useChatUnread(isAuthenticated)
+  const notices = useNotificationCount(isAuthenticated)
   const { t, language, setLanguage, currency, setCurrency } = useI18n()
   // Most profiles only have full_name since checkpoint 21
   const displayName =
@@ -117,6 +119,10 @@ export function Header() {
                       </Link>
                       <Link to="/favorites" className="header-user-dropdown-item">
                         {t('header.favorites')}
+                      </Link>
+                      <Link to="/notifications" className="header-user-dropdown-item">
+                        {t('header.notifications')}
+                        {notices.count > 0 && <span className="chat-badge" aria-label={t('notifications.unreadLabel', { count: notices.count })}>{notices.count}</span>}
                       </Link>
                       <Link to="/support" className="header-user-dropdown-item">
                         {t('chat.open')}

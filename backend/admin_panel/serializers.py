@@ -117,25 +117,16 @@ class AdminUserSerializer(serializers.ModelSerializer):
         return obj.role.name if obj.role else None
 
 
-class AdminUserCreateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating hotel-owner accounts by super-admins.
-    
-    Super-admin only endpoint for direct hotel-owner account creation.
-    """
+class AccountCreateSerializer(serializers.ModelSerializer):
+    """The fields every account a super-admin creates by hand needs: who, how to reach them, the first password."""
     email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code
-    # Where the owner's hotels will appear: all three are required and must fit together
-    country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), write_only=True)
-    region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
-    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'phone_number', 'password', 'password_confirm',
-                  'country_ref', 'region_ref', 'city_ref']
+        fields = ['email', 'first_name', 'last_name', 'phone_number', 'password', 'password_confirm']
         extra_kwargs = {
             'first_name': {'validators': [validate_person_name]},
             'last_name': {'validators': [validate_person_name]},
@@ -151,6 +142,41 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
                 'password_confirm': _('Passwords do not match')
             })
         validate_new_password(data)
+        return data
+
+
+class AdminStaffCreateSerializer(AccountCreateSerializer):
+    """
+    An administrator added by a super-admin: staff (can use the panel), never a super-admin.
+    The rights are fixed here; nothing in the request can change them.
+    """
+
+    @transaction.atomic
+    def create(self, validated_data):
+        validated_data.pop('password_confirm')
+        return User.objects.create_user(
+            email=validated_data['email'], password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''), last_name=validated_data.get('last_name', ''),
+            phone_number=validated_data['phone_number'], is_staff=True, is_superuser=False,
+        )
+
+
+class AdminUserCreateSerializer(AccountCreateSerializer):
+    """
+    Serializer for creating hotel-owner accounts by super-admins.
+    
+    Super-admin only endpoint for direct hotel-owner account creation.
+    """
+    # Where the owner's hotels will appear: all three are required and must fit together
+    country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), write_only=True)
+    region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
+    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
+
+    class Meta(AccountCreateSerializer.Meta):
+        fields = AccountCreateSerializer.Meta.fields + ['country_ref', 'region_ref', 'city_ref']
+
+    def validate(self, data):
+        data = super().validate(data)
         errors = check_geography(data)
         if errors:
             raise serializers.ValidationError(errors)
