@@ -13,7 +13,7 @@ from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
-from users.serializers import validate_new_password, validate_phone_number_format
+from users.serializers import unique_email_field, validate_new_password, validate_phone_number_format
 from admin_panel.models import InternalNote
 
 
@@ -122,6 +122,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     
     Super-admin only endpoint for direct hotel-owner account creation.
     """
+    email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code

@@ -1212,3 +1212,8 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 
 ### Support chat: Telegram notice to the team (2026-10-24)
 - When a user writes and the Telegram alert settings are on (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`, the same chat as the security alerts), the chat notice task also queues one Telegram message: the user's name and role and a link to `FRONTEND_URL/admin`. No message text and no e-mail address or phone. Same one-per-unread-run rule as the e-mails; replies from the team send none. A broken Telegram queue does not stop the e-mail.
+
+### E-mail addresses ignore capitals (2026-10-26)
+- An address is the same address whatever its capitals. It is trimmed and stored in lower case when an account is made (sign-up `POST /auth/register/`, admin `POST /admin-panel/users/create-hotel-owner/`, `createsuperuser`), and compared in lower case at sign-in (`POST /auth/login/`) and password reset (`POST /auth/password-reset/request/`). The answers show the lower-case address.
+- `ali@mail.com`, `Ali@Mail.com` and `ALI@MAIL.COM` are one account: signing up with another spelling of an existing address answers 400 `{"email": ["User with this email already exists."]}` as before; signing in works with any spelling.
+- The database keeps it: unique constraint on `lower(email)` (`users_email_lower_unique`). Migration `users.0010_email_case_insensitive` lower-cases the stored addresses first and stops, changing nothing, with a message naming the addresses when two accounts differ only by capitals.
