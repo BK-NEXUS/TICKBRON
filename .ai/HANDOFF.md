@@ -136,6 +136,9 @@ Status: READY
 - Before: `GUEST@x.com` made a second account next to `guest@x.com`, and `Guest@x.com` could not sign in (phone keyboards capitalise the first letter). Now one account per mailbox: addresses are lower-cased on sign-up, admin owner creation, sign-in and password reset, and the database has a unique constraint on `lower(email)`. Contract: API_CONTRACT "E-mail addresses ignore capitals".
 - Owner before deploy: migration `users.0010_email_case_insensitive` stops with a message naming the addresses if two real accounts differ only by capitals (the demo and dev databases have none). In that case merge or delete the extra account, then run `migrate` again. As always: `pg_dump -Fc` first.
 - Not changed: addresses saved inside old bookings (`guest_email`) and notes keep the capitals typed.
+## Fix: nginx example let no map tiles through (QA finding F1)
+- `deploy/nginx.conf.example` had `img-src 'self' data: blob:`, so with that file every map (hotel page, search map, place picker) would show no tiles in production. The tile host `https://tile.openstreetmap.org` is now in `img-src`, like the release checklist already said. `frontend/src/deployCsp.test.ts` fails if either file stops allowing the host of `mapTiles.ts`.
+- Checked in a browser: the built site served with that exact header no longer refuses the tile requests, and still refuses images from other hosts.
 
 ## Notes
 - All auth uses session-based authentication with secure cookies
