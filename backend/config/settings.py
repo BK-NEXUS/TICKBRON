@@ -501,7 +501,12 @@ def _production_config_errors():
         errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
     if not USE_REDIS_CACHE:
         errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
-    if (os.getenv('DB_HOST', '') not in ('', 'localhost', '127.0.0.1', '::1')
+    # docker-compose.yml names its database container `db` and reaches it over Docker's own network on the
+    # same machine: DB_NETWORK_IS_PRIVATE=True says so, and only a bare service name (no dot, no IP) counts
+    db_host = os.getenv('DB_HOST', '')
+    db_on_private_network = (os.getenv('DB_NETWORK_IS_PRIVATE', 'False').lower() == 'true'
+                             and '.' not in db_host and ':' not in db_host)
+    if (db_host not in ('', 'localhost', '127.0.0.1', '::1') and not db_on_private_network
             and os.getenv('DB_SSLMODE', 'prefer') in ('disable', 'allow', 'prefer')):
         errors.append('DB_SSLMODE must be require, verify-ca or verify-full for a remote database')
     for name in ('CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS'):

@@ -1,0 +1,78 @@
+# The web server of the Docker setup (docker-compose.yml): serves the site, hands /api/ to the app,
+# serves the uploaded photos and gets the HTTPS certificate by itself (Let's Encrypt).
+# It does what deploy/nginx.conf.example does for a server without Docker; keep the two in step.
+# The map tile hosts are in img-src (frontend/src/deployCsp.test.ts keeps them in step with mapTiles.ts);
+# add payment provider hosts if online payments are ever added.
+#
+# DOMAIN (for example tickbron.com) and ACME_EMAIL come from the .env file next to docker-compose.yml.
+
+{
+	# Let's Encrypt writes to this address before a certificate expires
+	email {$ACME_EMAIL}
+}
+
+# www goes to the bare name (Django only knows the bare name)
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Headers for every response, the site and the photos included
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		-Server
+	}
+
+	# Photo upload (a form with a file): a 10 MB image plus form overhead; Django also refuses bodies over 12 MB
+	@upload {
+		path /api/*
+		header Content-Type multipart/form-data*
+	}
+	handle @upload {
+		request_body {
+			max_size 12MB
+		}
+		reverse_proxy web:8000 {
+			# Caddy puts the real client address in X-Forwarded-For, whatever the client sent (NUM_PROXIES=1)
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	# The API: small JSON bodies only
+	handle /api/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy web:8000 {
+			header_up X-Forwarded-For {remote_host}
+			transport http {
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	# Uploaded photos: images only, never executed or sniffed, no listing
+	handle /media/* {
+		uri strip_prefix /media
+		root * /srv/media
+		header {
+			Content-Disposition "inline"
+			Content-Security-Policy "default-src 'none'; sandbox"
+		}
+		file_server
+	}
+
+	# The site (the static build of frontend/); any other address is a page of the app
+	handle {
+		root * /srv/www
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		try_files {path} /index.html
+		file_server
+	}
+}

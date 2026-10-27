@@ -85,6 +85,26 @@ def test_remote_database_with_required_tls_starts():
     assert result.returncode == 0, result.stderr
 
 
+def test_docker_database_container_on_the_private_network_starts_without_tls():
+    # docker-compose.yml: the database is the container called `db`, reached over Docker's own network
+    result = _start(DB_HOST='db', DB_SSLMODE='prefer', DB_NETWORK_IS_PRIVATE='True')
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize('host', ['db.example.com', '10.0.0.5', 'db.internal'])
+def test_the_private_network_declaration_does_not_cover_a_real_address(host):
+    # a dotted name or an IP address is never a Docker service name: TLS stays required
+    result = _start(DB_HOST=host, DB_SSLMODE='prefer', DB_NETWORK_IS_PRIVATE='True')
+    assert result.returncode != 0
+    assert 'DB_SSLMODE' in result.stderr
+
+
+def test_a_service_name_without_the_declaration_still_needs_tls():
+    result = _start(DB_HOST='db', DB_SSLMODE='prefer')
+    assert result.returncode != 0
+    assert 'DB_SSLMODE' in result.stderr
+
+
 def test_debug_still_allows_local_development_values():
     result = _start(
         DEBUG='True', SECRET_KEY=None, ALLOWED_HOSTS=None, CORS_ALLOWED_ORIGINS=None,

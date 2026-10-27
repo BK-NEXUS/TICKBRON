@@ -1,0 +1,8 @@
+# Never inside an image: secrets, installed packages, build output, test results
+.env
+.env.*
+node_modules
+dist
+e2e
+coverage
+.git

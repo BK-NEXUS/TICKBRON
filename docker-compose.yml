@@ -1,0 +1,120 @@
+# TICKBRON on one server: the database, Redis, the API, the background worker, the daily scheduler and the
+# web server (Caddy, with automatic HTTPS). Fill in .env (copy deploy/docker.env.example), then:
+#   docker compose up -d --build
+# Step by step with checks: .ai/DEPLOY_DOCKER.md. Only Caddy is open to the internet (ports 80 and 443).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Kept on disk, so the waiting background tasks survive a restart
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Runs once at every start, before the app: applies new database changes
+  migrate:
+    build: ./backend
+    image: tickbron-backend
+    env_file: .env
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: tickbron-backend
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - media:/app/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Asks the way the proxy does: the site's own name as Host (ALLOWED_HOSTS) and "came over https" (no redirect)
+      test: ["CMD", "python", "-c", "import os, urllib.request as r; r.urlopen(r.Request('http://localhost:8000/healthz/', headers={'Host': os.environ['DOMAIN'], 'X-Forwarded-Proto': 'https'}), timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Background tasks: e-mails, Telegram notices, exchange rates
+  worker:
+    image: tickbron-backend
+    restart: unless-stopped
+    env_file: .env
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    volumes:
+      - media:/app/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # The scheduler (exchange rates twice a day, ...): exactly ONE copy must run, never scale this service
+  beat:
+    image: tickbron-backend
+    restart: unless-stopped
+    env_file: .env
+    command: ["celery", "-A", "config", "beat", "--loglevel=info", "--schedule", "/tmp/celerybeat-schedule"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  caddy:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: https://${DOMAIN}
+        VITE_SATELLITE_TILE_URL: ${VITE_SATELLITE_TILE_URL:-}
+        VITE_SATELLITE_ATTRIBUTION: ${VITE_SATELLITE_ATTRIBUTION:-}
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - media:/srv/media:ro
+      # The HTTPS certificates: losing this volume means asking for new ones
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:
+  media:
+  caddy_data:
+  caddy_config:
