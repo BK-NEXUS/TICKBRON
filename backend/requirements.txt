@@ -1,6 +1,6 @@
 # Core Django (6.1; 4.2 reached end of life, 5.2 was the LTS used until 2026-10-23)
 Django==6.1.2
-djangorestframework==3.18.2
+djangorestframework==3.18.3
 django-cors-headers==4.9.0
 
 # Database (PostgreSQL; 2.9.10+ ships Python 3.13 wheels for Windows)
