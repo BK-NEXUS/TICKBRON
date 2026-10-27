@@ -24,6 +24,8 @@ import { useI18n } from '../i18n/I18nContext'
  * PropertyDetailPage component for displaying detailed property information
  * Includes gallery, header, and responsive interaction patterns
  */
+const NOT_FOUND_TEXT = 'Property not found'
+
 export function PropertyDetailPage() {
   const { t, tp, formatMoney, currency } = useI18n()
   const { id } = useParams<{ id: string }>()
@@ -53,7 +55,8 @@ export function PropertyDetailPage() {
         const response = await propertyAdapter.getPropertyById(propertyId)
         
         if (response.error) {
-          setError({ text: response.error })
+          // The adapter's plain 404 text repeats the title, so the explanation replaces it
+          setError(response.error === NOT_FOUND_TEXT ? { key: 'property.notFoundText' } : { text: response.error })
           setLoading(false)
         } else if (response.data) {
           setProperty(response.data)
@@ -114,7 +117,7 @@ export function PropertyDetailPage() {
       <div className="property-detail-page property-detail-page--error">
         <div className="container">
           <div className="error-state" role="alert" aria-live="assertive">
-            <h2>{t('property.notFoundTitle')}</h2>
+            <h1>{t('property.notFoundTitle')}</h1>
             <p>{error ? ('text' in error ? error.text : t(error.key)) : t('property.notFoundText')}</p>
             <button 
               className="btn btn-primary"

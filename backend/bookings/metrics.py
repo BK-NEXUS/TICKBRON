@@ -145,7 +145,10 @@ def parse_period(value, date_from=None, date_to=None, today=None):
 def period_from_request(request):
     """(label, date_range) from ?period=, ?from=, ?to=. Raises InvalidPeriod."""
     params = request.query_params
-    return parse_period(params.get('period'), params.get('from'), params.get('to'))
+    period = (params.get('period') or '').strip()
+    if (params.get('from') or params.get('to')) and period != 'custom':
+        raise InvalidPeriod('from and to are used only with period=custom.')
+    return parse_period(period, params.get('from'), params.get('to'))
 
 
 def range_json(date_range):

@@ -19,9 +19,6 @@ interface PartnerRoomsManagementProps {
 
 type ViewMode = 'list' | 'create' | 'edit'
 
-/** A web address made from a name: lower case letters and digits joined by dashes */
-const slugify = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-
 export function PartnerRoomsManagement({ propertyId, propertyName, currency, onManageRates, onManageCalendar }: PartnerRoomsManagementProps) {
   const { t } = useI18n()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -31,13 +28,10 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [queuedPhotos, setQueuedPhotos] = useState<File[]>([])
-  // The web address follows the name until the owner types one
-  const [slugTouched, setSlugTouched] = useState(false)
 
   const [formData, setFormData] = useState<CreateRoomTypeRequest>({
     property: propertyId,
     name: '',
-    slug: '',
     description: '',
     base_occupancy: 1,
     max_occupancy: 2,
@@ -126,7 +120,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
     try {
       const updateData: UpdateRoomTypeRequest = {
         name: formData.name,
-        slug: formData.slug,
         description: formData.description,
         base_occupancy: formData.base_occupancy,
         max_occupancy: formData.max_occupancy,
@@ -189,7 +182,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
     setFormData({
       property: propertyId,
       name: roomType.name,
-      slug: roomType.slug,
       description: roomType.description,
       base_occupancy: roomType.base_occupancy,
       max_occupancy: roomType.max_occupancy,
@@ -200,17 +192,12 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       room_size: roomType.room_size,
       is_vip: roomType.is_vip,
     })
-    setSlugTouched(true)
     setViewMode('edit')
   }
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
       setError(t('partner.roomNameIsRequired'))
-      return false
-    }
-    if (!formData.slug.trim()) {
-      setError(t('partner.slugIsRequired'))
       return false
     }
     if (formData.base_occupancy < 1) {
@@ -236,7 +223,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
     setFormData({
       property: propertyId,
       name: '',
-      slug: '',
       description: '',
       base_occupancy: 1,
       max_occupancy: 2,
@@ -248,7 +234,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       is_vip: false,
     })
     setQueuedPhotos([])
-    setSlugTouched(false)
   }
 
   const handleInputChange = <K extends keyof CreateRoomTypeRequest>(field: K, value: CreateRoomTypeRequest[K]) => {
@@ -257,7 +242,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
   }
 
   const handleNameChange = (name: string) => {
-    setFormData(prev => ({ ...prev, name, slug: slugTouched ? prev.slug : slugify(name) }))
+    setFormData(prev => ({ ...prev, name }))
     setError(null)
   }
 
@@ -321,7 +306,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
               </div>
               <div className="room-type-card-header">
                 <h3 className="room-type-name">{roomType.name} {roomType.is_vip && <VipBadge />}</h3>
-                <span className="room-type-slug">{roomType.slug}</span>
               </div>
               <div className="room-type-card-body">
                 <p className="room-type-description">{roomType.description}</p>
@@ -445,20 +429,6 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
               className="form-input"
               rows={3}
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="room_slug">{t('partner.slug')}</label>
-            <input
-              id="room_slug"
-              type="text"
-              value={formData.slug}
-              onChange={(e) => { setSlugTouched(true); handleInputChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-')) }}
-              className="form-input"
-              required
-              aria-required="true"
-            />
-            <small className="form-hint">{t('roomForm.slugHint')}</small>
           </div>
         </fieldset>
 

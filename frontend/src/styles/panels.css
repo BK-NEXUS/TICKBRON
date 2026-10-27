@@ -151,11 +151,6 @@
   font-family: var(--font-family-heading);
 }
 
-.room-type-slug {
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-xs);
-}
-
 .room-type-card-body {
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);

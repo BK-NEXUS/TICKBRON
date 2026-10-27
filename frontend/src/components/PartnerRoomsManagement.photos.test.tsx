@@ -74,16 +74,11 @@ describe('PartnerRoomsManagement photos', () => {
     expect(screen.getByText('UZS')).toBeInTheDocument()
   })
 
-  it('the web address follows the name until the owner types one', async () => {
+  it('does not ask for a web address: the server makes it from the name', async () => {
     await openCreateForm()
-    const slug = document.getElementById('room_slug') as HTMLInputElement
 
-    fireEvent.change(document.getElementById('room_name') as HTMLInputElement, { target: { value: 'Deluxe Sea View' } })
-    expect(slug.value).toBe('deluxe-sea-view')
-
-    fireEvent.change(slug, { target: { value: 'my-own' } })
-    fireEvent.change(document.getElementById('room_name') as HTMLInputElement, { target: { value: 'Another name' } })
-    expect(slug.value).toBe('my-own')
+    expect(document.getElementById('room_slug')).toBeNull()
+    expect(screen.queryByText(/slug/i)).toBeNull()
   })
 
   it('uploads the chosen photos right after the room type is created, in the order chosen', async () => {
@@ -95,7 +90,8 @@ describe('PartnerRoomsManagement photos', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Room Type' }))
 
     await waitFor(() => expect(adapter.uploadRoomPhoto).toHaveBeenCalledTimes(2))
-    expect(adapter.createRoomType).toHaveBeenCalledWith(expect.objectContaining({ name: 'Suite', slug: 'suite', currency: 'UZS' }))
+    expect(adapter.createRoomType).toHaveBeenCalledWith(expect.objectContaining({ name: 'Suite', currency: 'UZS' }))
+    expect(adapter.createRoomType.mock.calls[0][0]).not.toHaveProperty('slug')
     expect(adapter.uploadRoomPhoto.mock.calls.map(call => [call[0], call[1].photo.name])).toEqual([[21, 'bed.png'], [21, 'bath.png']])
     expect(await screen.findByText('Room type created successfully')).toBeInTheDocument()
   })

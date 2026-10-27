@@ -12,8 +12,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Max
+from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from common.dates import business_today
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import image_upload_error
 from common.validators import validate_free_text
@@ -28,6 +30,19 @@ from properties.models import (
 # Upload limits: 40 megapixels per photo, 50 photos per property, 20 per room type
 MAX_PHOTOS_PER_PROPERTY = 50
 MAX_PHOTOS_PER_ROOM_TYPE = 20
+
+# Sanity limits for the owner forms (a typing slip must not make a room that can never be booked)
+MIN_PRICE = Decimal('0.01')
+MAX_BEDROOMS = 50
+MAX_BATHROOMS = 20
+MAX_OCCUPANCY = 20
+MAX_ROOMS_PER_TYPE = 1000
+MAX_STAY_NIGHTS = 365
+PROPERTY_LIMITS = {
+    'base_price': {'min_value': MIN_PRICE},
+    'bedrooms': {'max_value': MAX_BEDROOMS},
+    'bathrooms': {'max_value': MAX_BATHROOMS},
+}
 
 
 def _check_price_unit(currency, amount, field):
@@ -84,6 +99,36 @@ class ChildCurrencyMixin:
             attrs['currency'] = prop.currency
             _check_price_unit(prop.currency, attrs.get(self.price_field), self.price_field)
         return attrs
+
+
+class SlugFromNameMixin:
+    """
+    The owner types a name only. A missing slug is made from the name and kept unique inside
+    the parent (hotel for a room type, room type for a rate plan): deluxe-suite, deluxe-suite-2.
+    A slug the client sends is used as it is.
+    """
+    slug_parent_field = None
+    slug_fallback = 'item'
+
+    def to_internal_value(self, data):
+        if self.instance is None and not str(data.get('slug') or '').strip():
+            data = data.copy()
+            data['slug'] = self._free_slug(data)
+        return super().to_internal_value(data)
+
+    def _free_slug(self, data):
+        base = slugify(str(data.get('name') or ''))[:90] or self.slug_fallback
+        try:
+            parent_id = int(data.get(self.slug_parent_field))
+        except (TypeError, ValueError):
+            return base
+        taken = set(self.Meta.model.objects.filter(**{f'{self.slug_parent_field}_id': parent_id})
+                    .values_list('slug', flat=True))
+        slug, number = base, 1
+        while slug in taken:
+            number += 1
+            slug = f'{base}-{number}'
+        return slug
 
 
 class AssignedPlaceMixin:
@@ -183,6 +228,7 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
         # status is set by admin moderation (approve/suspend), never by the owner. The text location
         # (city / state / country) is derived from the Geography refs (English names) and read-only.
         read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
+        extra_kwargs = PROPERTY_LIMITS
     
     def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
@@ -217,6 +263,7 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]
+        extra_kwargs = PROPERTY_LIMITS
     
     @transaction.atomic
     def create(self, validated_data):
@@ -228,12 +275,14 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
         return prop
 
 
-class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer):
+class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for room type management by hotel-owners.
     
     Limited to room types in properties owned by the authenticated hotel-owner.
     """
+    slug_parent_field = 'property'
+    slug_fallback = 'room'
     photos_count = serializers.SerializerMethodField()
     cover_url = serializers.SerializerMethodField()
 
@@ -245,7 +294,14 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
             'photos_count', 'cover_url',
         ]
         read_only_fields = ['id']
-        extra_kwargs = {'description': {'max_length': 2000}}
+        extra_kwargs = {
+            'description': {'max_length': 2000},
+            'slug': {'required': False},
+            'base_price': {'min_value': MIN_PRICE},
+            'base_occupancy': {'max_value': MAX_OCCUPANCY},
+            'max_occupancy': {'max_value': MAX_OCCUPANCY},
+            'total_rooms': {'min_value': 1, 'max_value': MAX_ROOMS_PER_TYPE},
+        }
 
     def _photos(self, obj):
         # The list view prefetches `live_photos`; a single room type reads them here
@@ -265,6 +321,15 @@ class PartnerRoomTypeSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
 
     def property_of(self, attrs):
         return attrs.get('property') or getattr(self.instance, 'property', None)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        usual = attrs.get('base_occupancy', self.instance.base_occupancy if self.instance else 1)
+        most = attrs.get('max_occupancy', self.instance.max_occupancy if self.instance else 1)
+        if most < usual:
+            raise serializers.ValidationError(
+                {'max_occupancy': 'Cannot be less than the usual number of guests.'})
+        return attrs
     
     def validate_property(self, value):
         """Ensure the property belongs to the authenticated hotel-owner."""
@@ -319,12 +384,14 @@ class PriceMapField(serializers.Field):
         return prices
 
 
-class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer):
+class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for rate plan management by hotel-owners.
     
     Limited to rate plans in properties owned by the authenticated hotel-owner.
     """
+    slug_parent_field = 'room_type'
+    slug_fallback = 'rate'
     prices = PriceMapField(required=False)
 
     class Meta:
@@ -337,8 +404,11 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
         read_only_fields = ['id']
         extra_kwargs = {
             'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000},
+            'slug': {'required': False},
             # Optional when `prices` carries the main price
-            'base_price': {'required': False},
+            'base_price': {'required': False, 'min_value': MIN_PRICE},
+            'min_nights': {'max_value': MAX_STAY_NIGHTS},
+            'max_nights': {'max_value': MAX_STAY_NIGHTS},
         }
 
     def property_of(self, attrs):
@@ -357,6 +427,7 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
+        self._check_nights(attrs)
         prop = self.property_of(attrs)
         if prop is None:
             return attrs
@@ -375,6 +446,12 @@ class PartnerRatePlanSerializer(ChildCurrencyMixin, serializers.ModelSerializer)
                 {'base_price': f'Must equal the price in {prop.currency} ({prices[prop.currency]}).'})
         attrs['base_price'] = prices[prop.currency]
         return attrs
+
+    def _check_nights(self, attrs):
+        fewest = attrs.get('min_nights', self.instance.min_nights if self.instance else 1)
+        most = attrs.get('max_nights', self.instance.max_nights if self.instance else None)
+        if most is not None and most < fewest:
+            raise serializers.ValidationError({'max_nights': 'Cannot be less than the minimum nights.'})
 
     def _check_prices_present_when_required(self, prop):
         """With RATE_PLAN_PRICES_REQUIRED a plan is never saved without the owner's price in every currency."""
@@ -441,6 +518,27 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
                     "You can only manage inventory for your own properties."
                 )
         return value
+
+    def validate_date(self, value):
+        """A new or moved night cannot be in the past; a past night keeps being editable where it is."""
+        moved = self.instance is None or value != self.instance.date
+        if moved and value < business_today():
+            raise serializers.ValidationError('The date cannot be in the past.')
+        return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        rate_plan = attrs.get('rate_plan') or getattr(self.instance, 'rate_plan', None)
+        rooms = attrs.get('available_rooms', getattr(self.instance, 'available_rooms', None))
+        if rate_plan is not None and rooms is not None and rooms > rate_plan.room_type.total_rooms:
+            raise serializers.ValidationError({
+                'available_rooms': f'Cannot be more than the {rate_plan.room_type.total_rooms} rooms of this room type.'
+            })
+        least = attrs.get('minimum_stay', getattr(self.instance, 'minimum_stay', None))
+        most = attrs.get('maximum_stay', getattr(self.instance, 'maximum_stay', None))
+        if least and most and most < least:
+            raise serializers.ValidationError({'maximum_stay': 'Cannot be less than the minimum stay.'})
+        return attrs
 
 
 class PartnerRoomInventorySerializer(serializers.ModelSerializer):

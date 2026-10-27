@@ -4,6 +4,7 @@ import { authAdapter } from '../adapters/authAdapter'
 import { BrandLogo } from '../components/BrandLogo'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
+import { authFormProblem } from '../utils/authForm'
 import { useI18n } from '../i18n/I18nContext'
 
 export function ForgotPasswordPage() {
@@ -16,6 +17,11 @@ export function ForgotPasswordPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
+    const problem = authFormProblem([email], email)
+    if (problem) {
+      setError(t(problem === 'required' ? 'auth.errRequired' : 'auth.errEmail'))
+      return
+    }
     setIsLoading(true)
 
     const response = await authAdapter.requestPasswordReset(email)
@@ -50,7 +56,7 @@ export function ForgotPasswordPage() {
               {t('auth.resetLinkSent')}
             </div>
           ) : (
-            <form className="auth-form" onSubmit={handleSubmit}>
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
               <div className="auth-field">
                 <label htmlFor="email" className="auth-label">
                   {t('auth.email')}

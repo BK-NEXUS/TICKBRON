@@ -3169,3 +3169,13 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Decided rule: children are counted inside `guest_count` (the stats already count persons that way) and at least one guest is an adult; see `API_CONTRACT.md`. Rule in `Booking.create_booking`; booking page disables "Add child" at `guest_count - 1`, hint `booking.childrenIncluded` (en/ru/uz).
 - Two older tests (`test_booking_create_with_children`) sent 2 guests with 2 children, and `test_booking_serializer_includes_new_fields` did the same; their `guest_count` is now 3, assertions unchanged.
 - Not covered: the owner and admin screens only show the list; existing bookings with too many children are not changed.
+
+## Fixes: QA findings F5 to F13 (2026-10-27)
+- F5 owner form limits, F7 slug made from the name + readable error `message`, F9 blank sign-up name, F10 booking cap 409, F12 status dates: see `API_CONTRACT.md` ("Owner form limits, slugs, error text and small QA fixes").
+- F8 was not a bug: a hotel is limited to 50 photos (`MAX_PHOTOS_PER_PROPERTY`, test in `partner/tests/test_partner_api.py`); the QA run uploaded 44. No change.
+- F9 booking: an empty `guest_full_name` still falls back to the account's name on purpose (same as the phone); only sign-up was lax.
+- F11 sign-in, sign-up and forgot-password forms have `noValidate` and show site-worded messages (`auth.errRequired`, `auth.errEmail`) in the page language. The other forms (owner forms, booking, profile) still use the browser's own messages.
+- F13 booking error screen has one h1 and leads back to search when no hotel is known; owner's empty "My Bookings" explains these are the stays booked as a guest and has an h1; hotel-not-found has one h1 and the text no longer repeats the title.
+- F6 browser tests: S7 now opens the Reports tab for "On TICKBRON since" and the totals cards (checked against the running stack); `seed_demo_stats` moves its demo ads to today on a re-run, so J1 keeps working; E1 failed only because the QA run left hotels in the database (no code change). Not done: running the browser suite nightly in CI (needs the owner's decision: it costs CI minutes and the crawl tests take 6 to 11 minutes each).
+- Tests changed on purpose: three booking-cap tests expect 409; `bookingScreen.test.tsx` expects the new "back to search" button; the tests that typed a Slug now check that no Slug field exists and none is sent.
+- Not covered: DRF's own refusal texts ("Ensure this value is greater than or equal to 0.01.") are still English on the owner forms; the owner, booking and profile forms still show the browser's own required-field messages.

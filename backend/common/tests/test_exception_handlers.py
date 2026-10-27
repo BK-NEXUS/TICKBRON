@@ -53,3 +53,28 @@ class CustomExceptionHandlerTest(TestCase):
         self.assertIn('error', response.data)
         self.assertIn('First problem.', response.data['error']['message'])
         self.assertIn('Second problem.', response.data['error']['message'])
+
+    def test_field_errors_make_a_readable_message(self):
+        """QA F7: the message was a Python dump ({'category': [ErrorDetail(string=...)]}); details stay as they were."""
+        exc = ValidationError({'category': ['This field is required.'], 'name': ['Too long.', 'Bad.']})
+
+        response = custom_exception_handler(exc, self._context())
+
+        message = response.data['error']['message']
+        self.assertEqual(message, 'category: This field is required. name: Too long. Bad.')
+        self.assertNotIn('ErrorDetail', message)
+        self.assertEqual(response.data['error']['details']['category'], ['This field is required.'])
+
+    def test_non_field_errors_have_no_field_prefix(self):
+        exc = ValidationError({'non_field_errors': ['Something is wrong.']})
+
+        response = custom_exception_handler(exc, self._context())
+
+        self.assertEqual(response.data['error']['message'], 'Something is wrong.')
+
+    def test_nested_errors_are_flattened(self):
+        exc = ValidationError({'translations': {'en': {'name': ['Required.']}}})
+
+        response = custom_exception_handler(exc, self._context())
+
+        self.assertEqual(response.data['error']['message'], 'translations: en: name: Required.')

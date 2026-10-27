@@ -207,6 +207,32 @@ describe('BookingsPage', () => {
     })
   })
 
+  describe('Empty screen wording', () => {
+    const signedIn = (user: object) => mockUseAuth.mockReturnValue({
+      user, isAuthenticated: true, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn(), refreshUser: vi.fn(),
+    })
+
+    it('is the page heading (one h1) for a guest with no bookings', async () => {
+      signedIn({ id: 1, email: 'guest@example.com' })
+      mockAccountAdapter.getBookings.mockResolvedValue({ data: pageOf([]), error: null })
+
+      renderWithRouter(<BookingsPage />)
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'No bookings yet' })).toBeInTheDocument()
+    })
+
+    it('tells an owner these are the stays booked as a guest, and where the hotel bookings are', async () => {
+      signedIn({ id: 2, email: 'owner@example.com', role: 'hotel-owner' })
+      mockAccountAdapter.getBookings.mockResolvedValue({ data: pageOf([]), error: null })
+
+      renderWithRouter(<BookingsPage />)
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'No bookings yet' })).toBeInTheDocument()
+      expect(screen.getByText('These are the stays you booked yourself as a guest. Bookings at your hotels are in the owner panel.')).toBeInTheDocument()
+      expect(screen.queryByText(/book your first stay/)).toBeNull()
+    })
+  })
+
   describe('Bookings list', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({

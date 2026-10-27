@@ -122,7 +122,8 @@ export interface PartnerRoomType {
 export interface CreateRoomTypeRequest {
   property: number
   name: string
-  slug: string
+  /** Left out by the forms: the server makes it from the name */
+  slug?: string
   description: string
   base_occupancy: number
   max_occupancy: number
@@ -174,7 +175,8 @@ export interface PartnerRatePlan {
 export interface CreateRatePlanRequest {
   room_type: number
   name: string
-  slug: string
+  /** Left out by the forms: the server makes it from the name */
+  slug?: string
   rate_type: string
   description: string
   /** R16: the price in every currency; the backend takes the main price (the hotel's currency) from it */

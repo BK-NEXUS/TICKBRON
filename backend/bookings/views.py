@@ -80,7 +80,8 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Response(
             {'error': 'Too many upcoming bookings. Cancel one or wait until you have stayed.',
              'code': 'too_many_upcoming_bookings'},
-            status=status.HTTP_429_TOO_MANY_REQUESTS
+            # A business rule, not throttling: 429 would look like a rate limit to clients and monitoring
+            status=status.HTTP_409_CONFLICT
         )
 
     @staticmethod

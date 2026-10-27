@@ -346,6 +346,14 @@ describe('BookingPage', () => {
       })
     })
 
+    it('without a selected room it has one h1 and leads back to search, not to a hotel that is not known', async () => {
+      renderWithRouter(<BookingPage />, null)
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Booking Error' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Return to search results' })).toHaveTextContent('Back to Search')
+      expect(screen.queryByText('Back to Property')).toBeNull()
+    })
+
     it('should render children section with add button', async () => {
       renderWithRouter(<BookingPage />)
 
