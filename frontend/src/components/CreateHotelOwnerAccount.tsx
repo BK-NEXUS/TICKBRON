@@ -7,14 +7,17 @@ import { generatePassword as randomPassword } from '../utils/generatePassword'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
 interface CreateHotelOwnerAccountProps {
+  /** `owner` (default) picks the place of the hotels; `admin` adds an administrator, which has no place */
+  kind?: 'owner' | 'admin'
   onSuccess?: () => void
   onCancel?: () => void
 }
 
 const NO_PLACE: GeographyValue = { country_ref: null, region_ref: null, city_ref: null }
 
-export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwnerAccountProps) {
+export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }: CreateHotelOwnerAccountProps) {
   const { t } = useI18n()
+  const isAdmin = kind === 'admin'
   const [place, setPlace] = useState<GeographyValue>(NO_PLACE)
   const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>>({
     email: '',
@@ -39,7 +42,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   }
 
   const validateForm = (): string | null => {
-    if (place.country_ref === null || place.region_ref === null || place.city_ref === null) return t('admin.errPlace')
+    if (!isAdmin && (place.country_ref === null || place.region_ref === null || place.city_ref === null)) return t('admin.errPlace')
     if (!formData.email.trim()) return t('admin.errEmail')
     if (!formData.first_name.trim()) return t('admin.errFirstName')
     if (!isPhoneValid(formData.phone_number)) return t('auth.errPhone')
@@ -68,12 +71,14 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     setLoading(true)
 
     try {
-      const response = await adminAdapter.createHotelOwner({
-        ...formData,
-        country_ref: place.country_ref as number,
-        region_ref: place.region_ref as number,
-        city_ref: place.city_ref as number,
-      })
+      const response = isAdmin
+        ? await adminAdapter.createAdmin(formData)
+        : await adminAdapter.createHotelOwner({
+          ...formData,
+          country_ref: place.country_ref as number,
+          region_ref: place.region_ref as number,
+          city_ref: place.city_ref as number,
+        })
       
       if (response.error) {
         setError(response.error)
@@ -84,7 +89,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
         }
       }
     } catch (err) {
-      setError(t('admin.failedToCreateHotel'))
+      setError(t(isAdmin ? 'admin.failedToCreateAdmin' : 'admin.failedToCreateHotel'))
     } finally {
       setLoading(false)
     }
@@ -115,7 +120,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
       <div className="create-hotel-owner-account">
         <div className="success-panel">
           <div className="success-icon">✓</div>
-          <h2 className="success-title">{t('admin.hotelOwnerAccountCreated')}</h2>
+          <h2 className="success-title">{t(isAdmin ? 'admin.adminAccountCreated' : 'admin.hotelOwnerAccountCreated')}</h2>
           <p className="success-subtitle">{t('admin.pleaseShareTheseCredentials')}</p>
           
           <div className="credentials-display">
@@ -142,7 +147,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
             <ul className="notice-list">
               <li>{t('admin.theseCredentialsAreShown')}</li>
               <li>{t('admin.pleaseSaveThemSecurely')}</li>
-              <li>{t('admin.theHotelOwnerShould')}</li>
+              <li>{t(isAdmin ? 'admin.theAdminShould' : 'admin.theHotelOwnerShould')}</li>
               <li>{t('admin.doNotShareThese')}</li>
             </ul>
           </div>
@@ -163,7 +168,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
   return (
     <div className="create-hotel-owner-account">
       <div className="form-panel">
-        <h2 className="form-panel-title">{t('admin.createHotelOwnerAccount')}</h2>
+        <h2 className="form-panel-title">{t(isAdmin ? 'admin.createAdminAccount' : 'admin.createHotelOwnerAccount')}</h2>
         <p className="form-panel-subtitle">{t('admin.superAdminOnlyCreate')}</p>
 
         {error && (
@@ -277,11 +282,13 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
             />
           </div>
 
-          <fieldset className="form-group create-owner-place">
-            <legend>{t('admin.whereHotelAppears')}</legend>
-            <GeographyPicker value={place} required disabled={loading}
-              onChange={next => { setPlace(next); setError(null) }} />
-          </fieldset>
+          {!isAdmin && (
+            <fieldset className="form-group create-owner-place">
+              <legend>{t('admin.whereHotelAppears')}</legend>
+              <GeographyPicker value={place} required disabled={loading}
+                onChange={next => { setPlace(next); setError(null) }} />
+            </fieldset>
+          )}
 
           <div className="form-actions">
             <button

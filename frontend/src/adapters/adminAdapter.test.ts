@@ -219,6 +219,22 @@ describe('AdminAdapter', () => {
       )
     })
 
+    it('posts a new administrator to the administrator endpoint', async () => {
+      const adminData = {
+        email: 'new.admin@example.com', first_name: 'Aziza', last_name: 'Karimova', phone_number: '+998901234567',
+        password: 'Long-Enough-Pass#2026', password_confirm: 'Long-Enough-Pass#2026',
+      }
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ id: 9 }) })
+
+      const result = await adapter.createAdmin(adminData)
+
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/users/create-admin/',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify(adminData) })
+      )
+    })
+
     it('should handle 403 error for non-super-admin when creating hotel owner', async () => {
       const ownerData = {
         email: 'owner@example.com',

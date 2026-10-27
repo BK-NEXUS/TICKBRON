@@ -122,6 +122,16 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByText('Create Owner')).toBeInTheDocument()
   })
 
+  it('super-admin can open the form that adds an administrator, which has no place to pick', () => {
+    (useAuth as never).mockReturnValue({ user: mockUser, isAuthenticated: true })
+    render(<MemoryRouter><AdminDashboardPage /></MemoryRouter>)
+
+    fireEvent.click(screen.getByText('Add Administrator'))
+
+    expect(screen.getByRole('heading', { name: 'Create Administrator Account' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
+  })
+
   it('should not show create owner button for staff users', () => {
     (useAuth as never).mockReturnValue({
       user: { ...mockUser, is_staff: true, is_superuser: false },
@@ -135,6 +145,7 @@ describe('AdminDashboardPage', () => {
     )
 
     expect(screen.queryByText('Create Owner')).not.toBeInTheDocument()
+    expect(screen.queryByText('Add Administrator')).not.toBeInTheDocument()
   })
 
   it('should render navigation tabs', () => {

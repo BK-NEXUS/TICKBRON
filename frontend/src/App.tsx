@@ -21,6 +21,7 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const BookingsPage = lazy(() => import('./pages/BookingsPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
@@ -54,6 +55,7 @@ function App() {
                     <Route path="booking" element={<BookingPage />} />
                     <Route path="bookings" element={<BookingsPage />} />
                     <Route path="favorites" element={<FavoritesPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route element={<RequireAccess allow={canUsePartnerPanel} area="partner" />}>
                       <Route path="partner" element={<PartnerDashboardPage />} />

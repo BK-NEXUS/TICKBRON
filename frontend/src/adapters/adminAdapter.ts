@@ -77,6 +77,9 @@ export interface CreateHotelOwnerRequest {
   city_ref: number
 }
 
+/** The body of a new administrator: no place, the rights are fixed by the server */
+export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>
+
 export interface CreateHotelOwnerResponse {
   id: number
   email: string
@@ -472,6 +475,17 @@ class AdminAdapter {
     return this.request<CreateHotelOwnerResponse>('/api/v1/admin-panel/users/create-hotel-owner/', {
       method: 'POST',
       body: JSON.stringify(ownerData),
+    })
+  }
+
+  /**
+   * Add another administrator (super-admin only; the account is staff, never a super-admin)
+   * Integrates with POST /api/v1/admin-panel/users/create-admin/ endpoint
+   */
+  async createAdmin(adminData: CreateAdminRequest): Promise<ApiResponse<CreateHotelOwnerResponse>> {
+    return this.request<CreateHotelOwnerResponse>('/api/v1/admin-panel/users/create-admin/', {
+      method: 'POST',
+      body: JSON.stringify(adminData),
     })
   }
 
