@@ -86,7 +86,7 @@ describe('AdminAdapter', () => {
     })
 
     it('returns the missing parts when approval is refused', async () => {
-      ;(global.fetch as never).mockResolvedValueOnce({
+      (global.fetch as never).mockResolvedValueOnce({
         ok: false,
         status: 400,
         json: async () => ({ error: 'Property is not ready to be listed', code: 'property_incomplete', missing: ['room', 'photo'] }),
