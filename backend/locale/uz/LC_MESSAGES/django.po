@@ -281,3 +281,302 @@ msgstr "Fayl turi %(type)s to'g'ri rasm emas"
 
 msgid "Image dimensions are too large."
 msgstr "Rasm o'lchamlari juda katta."
+
+# Messages of the bookings, accounts, users, properties, geography, currency and admin code.
+
+msgid "Check-out date must be after check-in date"
+msgstr "Chiqish sanasi kirish sanasidan keyin bo'lishi kerak"
+
+msgid "Number of nights must match the date range"
+msgstr "Kechalar soni sanalar oralig'iga mos kelishi kerak"
+
+msgid "Children are part of the guest count; at least one guest must be an adult"
+msgstr "Bolalar mehmonlar sonining ichiga kiradi; kamida bitta mehmon kattalar bo'lishi kerak"
+
+msgid "Property not found or not available"
+msgstr "Mehmonxona topilmadi yoki mavjud emas"
+
+msgid "At least one room must be booked"
+msgstr "Kamida bitta xona band qilinishi kerak"
+
+msgid "Check-in date cannot be in the past"
+msgstr "Kirish sanasi o'tmishda bo'lishi mumkin emas"
+
+msgid "Guest count exceeds the capacity of the booked rooms"
+msgstr "Mehmonlar soni band qilingan xonalar sig'imidan oshib ketdi"
+
+msgid "Children ages must be integers between 0 and 17"
+msgstr "Bolalar yoshi 0 dan 17 gacha butun son bo'lishi kerak"
+
+msgid "HTML is not allowed."
+msgstr "HTML ishlatish mumkin emas."
+
+msgid "A stay can be at most %(nights)s nights."
+msgstr "Turish muddati ko'pi bilan %(nights)s kecha bo'lishi mumkin."
+
+msgid "A phone number is required."
+msgstr "Telefon raqami kiritilishi shart."
+
+msgid "Booking cannot be cancelled in current status"
+msgstr "Bronni hozirgi holatida bekor qilib bo'lmaydi"
+
+msgid "A stay that has started cannot be cancelled online. Please contact the hotel."
+msgstr "Boshlangan turish muddatini onlayn bekor qilib bo'lmaydi. Mehmonxona bilan bog'laning."
+
+msgid "Room type not found or does not belong to this property"
+msgstr "Xona turi topilmadi yoki bu mehmonxonaga tegishli emas"
+
+msgid "Rate plan not found or does not belong to this room type"
+msgstr "Tarif topilmadi yoki bu xona turiga tegishli emas"
+
+msgid "Guest count exceeds maximum occupancy of %(capacity)s for the booked rooms"
+msgstr "Mehmonlar soni band qilingan xonalar uchun ruxsat etilgan %(capacity)s kishidan oshib ketdi"
+
+msgid "Booking duration is less than minimum nights requirement (%(nights)s)"
+msgstr "Bron muddati eng kam kechalar sonidan (%(nights)s) kam"
+
+msgid "Booking duration exceeds maximum nights requirement (%(nights)s)"
+msgstr "Bron muddati eng ko'p kechalar sonidan (%(nights)s) oshib ketdi"
+
+msgid "Failed to create booking. Please try again."
+msgstr "Bronni yaratib bo'lmadi. Qayta urinib ko'ring."
+
+msgid "Failed to cancel booking. Please try again."
+msgstr "Bronni bekor qilib bo'lmadi. Qayta urinib ko'ring."
+
+msgid "Too many upcoming bookings. Cancel one or wait until you have stayed."
+msgstr "Kutilayotgan bronlar juda ko'p. Bittasini bekor qiling yoki turib bo'lgunga qadar kuting."
+
+msgid "You already have a booking for these dates. Choose dates that start after it ends."
+msgstr "Bu sanalarga broningiz bor. U tugagandan keyin boshlanadigan sanalarni tanlang."
+
+msgid "Invalid cancellation parameters"
+msgstr "Bekor qilish parametrlari noto'g'ri"
+
+msgid "Invalid booking parameters"
+msgstr "Bron parametrlari noto'g'ri"
+
+msgid "Failed to cancel booking"
+msgstr "Bronni bekor qilib bo'lmadi"
+
+msgid "Exchange rate unavailable"
+msgstr "Valyuta kursi mavjud emas"
+
+msgid "Booking validation failed"
+msgstr "Bronni tekshirishda xatolik"
+
+msgid "Failed to create booking"
+msgstr "Bronni yaratib bo'lmadi"
+
+msgid "Report not found"
+msgstr "Xabar topilmadi"
+
+msgid "Date must be YYYY-MM-DD."
+msgstr "Sana YYYY-MM-DD ko'rinishida bo'lishi kerak."
+
+msgid "Password fields didn't match."
+msgstr "Parollar mos kelmadi."
+
+msgid "Password must be at least %(min_length)d characters long."
+msgstr "Parol kamida %(min_length)d ta belgidan iborat bo'lishi kerak."
+
+msgid "Password must contain at least one uppercase letter."
+msgstr "Parolda kamida bitta katta harf bo'lishi kerak."
+
+msgid "Password must contain at least one lowercase letter."
+msgstr "Parolda kamida bitta kichik harf bo'lishi kerak."
+
+msgid "Password must contain at least one digit."
+msgstr "Parolda kamida bitta raqam bo'lishi kerak."
+
+msgid "Password must contain at least one special character."
+msgstr "Parolda kamida bitta maxsus belgi bo'lishi kerak."
+
+msgid "Password contains sequential characters and is not secure."
+msgstr "Parolda ketma-ket belgilar bor, u xavfsiz emas."
+
+msgid "Email address is required."
+msgstr "Elektron pochta manzili kiritilishi shart."
+
+msgid "Invalid email format."
+msgstr "Elektron pochta formati noto'g'ri."
+
+msgid "Disposable email addresses are not allowed."
+msgstr "Bir martalik elektron pochta manzillariga ruxsat yo'q."
+
+msgid "Password contains common patterns and is not secure."
+msgstr "Parolda keng tarqalgan andozalar bor, u xavfsiz emas."
+
+msgid "Successfully logged out."
+msgstr "Tizimdan chiqdingiz."
+
+msgid "The current password is incorrect."
+msgstr "Joriy parol noto'g'ri."
+
+msgid "The new password must be different from the current one."
+msgstr "Yangi parol joriy paroldan farq qilishi kerak."
+
+msgid "No active session found."
+msgstr "Faol seans topilmadi."
+
+msgid "Property is not available for favorites."
+msgstr "Bu mehmonxonani sevimlilarga qo'shib bo'lmaydi."
+
+msgid "Overall rating must be between 1 and 5."
+msgstr "Umumiy baho 1 dan 5 gacha bo'lishi kerak."
+
+msgid "You can only review completed bookings."
+msgstr "Faqat yakunlangan bronlarga sharh yozish mumkin."
+
+msgid "This booking has already been reviewed."
+msgstr "Bu bronga allaqachon sharh yozilgan."
+
+msgid "Property is not available for review."
+msgstr "Bu mehmonxonaga sharh yozib bo'lmaydi."
+
+msgid "The review must be for the property of the booking."
+msgstr "Sharh bron qilingan mehmonxona uchun bo'lishi kerak."
+
+msgid "Notifications cannot be created directly through API."
+msgstr "Bildirishnomalarni API orqali to'g'ridan-to'g'ri yaratib bo'lmaydi."
+
+msgid "This property is already in your favorites."
+msgstr "Bu mehmonxona allaqachon sevimlilaringizda."
+
+msgid "Maximum occupancy cannot be less than base occupancy"
+msgstr "Eng ko'p sig'im odatdagi sig'imdan kam bo'lishi mumkin emas"
+
+msgid "Maximum nights cannot be less than minimum nights"
+msgstr "Eng ko'p kecha soni eng kam kecha sonidan kam bo'lishi mumkin emas"
+
+msgid "Deposit percentage is required when deposit is required"
+msgstr "Oldindan to'lov talab qilinsa, uning foizi kiritilishi shart"
+
+msgid "Deposit percentage should not be set when deposit is not required"
+msgstr "Oldindan to'lov talab qilinmasa, uning foizini kiritmang"
+
+msgid "The range can be at most %(days)d days"
+msgstr "Oraliq ko'pi bilan %(days)d kun bo'lishi mumkin"
+
+msgid "Booked rooms cannot exceed available rooms"
+msgstr "Band qilingan xonalar mavjud xonalardan ko'p bo'lishi mumkin emas"
+
+msgid "Maximum stay cannot be less than minimum stay"
+msgstr "Eng ko'p turish muddati eng kam muddatdan kam bo'lishi mumkin emas"
+
+msgid "Must be after date_from"
+msgstr "Boshlanish sanasidan keyin bo'lishi kerak"
+
+msgid "Must not be negative"
+msgstr "Manfiy bo'lishi mumkin emas"
+
+msgid "Nothing to update"
+msgstr "Yangilanadigan narsa yo'q"
+
+msgid "Must be at least 1"
+msgstr "Kamida 1 bo'lishi kerak"
+
+msgid "Cannot be more than the %(total)s rooms of this room type"
+msgstr "Bu xona turidagi %(total)s ta xonadan ko'p bo'lishi mumkin emas"
+
+msgid "Only one primary photo is allowed per property"
+msgstr "Mehmonxonada faqat bitta asosiy rasm bo'lishi mumkin"
+
+msgid "Only one primary photo is allowed per room type"
+msgstr "Xona turida faqat bitta asosiy rasm bo'lishi mumkin"
+
+msgid "Blocking %(rooms)s room(s) on %(date)s would leave fewer than the %(booked)s already booked on TICKBRON."
+msgstr "%(date)s kuni %(rooms)s ta xonani to'sish TICKBRON da allaqachon band qilingan %(booked)s tadan kam qoldiradi."
+
+msgid "Cannot set %(date)s below the %(booked)s room(s) already booked on TICKBRON."
+msgstr "%(date)s kunini TICKBRON da allaqachon band qilingan %(booked)s ta xonadan kam qilib bo'lmaydi."
+
+msgid "Both lat and lng are required for geographic search"
+msgstr "Geografik qidiruv uchun lat va lng ikkalasi ham kerak"
+
+msgid "Invalid search parameters"
+msgstr "Qidiruv parametrlari noto'g'ri"
+
+msgid "Invalid availability parameters"
+msgstr "Mavjudlik parametrlari noto'g'ri"
+
+msgid "Invalid quote parameters"
+msgstr "Narx hisoblash parametrlari noto'g'ri"
+
+msgid "One or more search parameters are invalid."
+msgstr "Qidiruv parametrlaridan biri yoki bir nechtasi noto'g'ri."
+
+msgid "An unexpected error occurred during search"
+msgstr "Qidiruv vaqtida kutilmagan xatolik yuz berdi"
+
+msgid "Failed to get suggestions"
+msgstr "Takliflarni olib bo'lmadi"
+
+msgid "No exchange rate for %(currency)s yet."
+msgstr "%(currency)s uchun valyuta kursi hali yo'q."
+
+msgid "Invalid amenities parameter format"
+msgstr "Qulayliklar parametri formati noto'g'ri"
+
+msgid "Amenities must be comma-separated integers"
+msgstr "Qulayliklar vergul bilan ajratilgan butun sonlar bo'lishi kerak"
+
+msgid "Rate plan not found for this room and property."
+msgstr "Bu xona va mehmonxona uchun tarif topilmadi."
+
+msgid "Promotion not found"
+msgstr "Reklama topilmadi"
+
+msgid "Send a picture as the field \"photo\""
+msgstr "Rasmni \"photo\" maydonida yuboring"
+
+msgid "Passwords do not match"
+msgstr "Parollar mos kelmadi"
+
+msgid "Booking not found with this reference code"
+msgstr "Bu kod bo'yicha bron topilmadi"
+
+msgid "Property is not ready to be listed"
+msgstr "Mehmonxonani e'lon qilishga hali tayyor emas"
+
+msgid "Use the two-letter ISO 3166-1 code, e.g. UZ."
+msgstr "Ikki harfli ISO 3166-1 kodidan foydalaning, masalan UZ."
+
+msgid "A country with this code already exists."
+msgstr "Bu kodli davlat allaqachon mavjud."
+
+msgid "Use the three-letter ISO 4217 code, e.g. UZS."
+msgstr "Uch harfli ISO 4217 kodidan foydalaning, masalan UZS."
+
+msgid "A picture is required."
+msgstr "Rasm kerak."
+
+msgid "The parent cannot be changed."
+msgstr "Yuqori darajani o'zgartirib bo'lmaydi."
+
+msgid "This country already has a region with this name."
+msgstr "Bu davlatda shu nomli viloyat allaqachon bor."
+
+msgid "This region already has a city with this name."
+msgstr "Bu viloyatda shu nomli shahar allaqachon bor."
+
+msgid "This row is in use (it has regions, cities or properties). Hide it instead."
+msgstr "Bu yozuv ishlatilmoqda (viloyatlar, shaharlar yoki mehmonxonalari bor). Uni o'chirish o'rniga yashiring."
+
+msgid "Exchange rate not found"
+msgstr "Valyuta kursi topilmadi"
+
+msgid "Only a rejected rate can be accepted"
+msgstr "Faqat rad etilgan kursni qabul qilish mumkin"
+
+msgid "A rate for this date is already accepted"
+msgstr "Bu sana uchun kurs allaqachon qabul qilingan"
+
+msgid "A property can have at most %(count)s photos."
+msgstr "Mehmonxonada ko'pi bilan %(count)s ta rasm bo'lishi mumkin."
+
+msgid "A room type can have at most %(count)s photos."
+msgstr "Xona turida ko'pi bilan %(count)s ta rasm bo'lishi mumkin."
+
+msgid "Must be a room type id."
+msgstr "Xona turi identifikatori bo'lishi kerak."

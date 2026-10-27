@@ -10,6 +10,7 @@ from bookings.fields import OwnBookingField
 from bookings.pricing import property_price_list, rate_lookup
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
+from django.utils.translation import gettext as _
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -66,7 +67,7 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
     def validate_property(self, value):
         """Validate that the property is published."""
         if not value.is_active or value.is_deleted or value.status != 'active':
-            raise serializers.ValidationError("Property is not available for favorites.")
+            raise serializers.ValidationError(_("Property is not available for favorites."))
         return value
 
 
@@ -92,7 +93,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate_overall_rating(self, value):
         """Validate overall rating is between 1 and 5."""
         if not 1 <= value <= 5:
-            raise serializers.ValidationError("Overall rating must be between 1 and 5.")
+            raise serializers.ValidationError(_("Overall rating must be between 1 and 5."))
         return value
     
     def validate(self, attrs):
@@ -133,25 +134,25 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
     def validate_booking(self, value):
         """Validate that the booking is completed and is not reviewed yet (OwnBookingField checks the owner)."""
         if value.status != 'completed':
-            raise serializers.ValidationError("You can only review completed bookings.")
+            raise serializers.ValidationError(_("You can only review completed bookings."))
 
         # Soft-deleted reviews count too: they still hold the unique (user, booking) row
         if Review.objects.filter(booking=value).exists():
-            raise serializers.ValidationError("This booking has already been reviewed.")
+            raise serializers.ValidationError(_("This booking has already been reviewed."))
 
         return value
 
     def validate_property(self, value):
         """Validate that the property exists and is active."""
         if not value.is_active or value.is_deleted:
-            raise serializers.ValidationError("Property is not available for review.")
+            raise serializers.ValidationError(_("Property is not available for review."))
         return value
 
     def validate(self, attrs):
         """Validate that the review is for the booked property."""
         if attrs['property'].id != attrs['booking'].property_id:
             raise serializers.ValidationError(
-                {'property': "The review must be for the property of the booking."}
+                {'property': _("The review must be for the property of the booking.")}
             )
         return attrs
 

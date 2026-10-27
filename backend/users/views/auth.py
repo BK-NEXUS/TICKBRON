@@ -20,6 +20,7 @@ from users.models import User
 from users.serializers import UserLoginSerializer, UserRegistrationSerializer, UserSerializer
 from users.sessions import start_session
 from users.throttles import LoginRateThrottle, RegisterRateThrottle
+from django.utils.translation import gettext as _
 
 # One message for every failed login, so responses do not reveal whether an
 # email exists or an account is locked
@@ -96,7 +97,7 @@ def logout_view(request):
         log_security_event('logout', request, user=account, level=logging.INFO)
         record_history(account, 'logout', request)
     logout(request)
-    return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+    return Response({'detail': _('Successfully logged out.')}, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

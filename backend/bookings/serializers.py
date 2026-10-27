@@ -14,6 +14,7 @@ from bookings.pricing import refusal_reason
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
+from django.utils.translation import gettext as _
 
 logger = logging.getLogger('tickbron')
 
@@ -118,17 +119,17 @@ class BookingCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({'expected_arrival_time': arrival_error})
 
         if not (data.get('guest_phone') or self.context['request'].user.phone_number):
-            raise serializers.ValidationError({'guest_phone': 'A phone number is required.'})
+            raise serializers.ValidationError({'guest_phone': _('A phone number is required.')})
         
         # Validate date range
         if data['check_out'] <= data['check_in']:
             raise ValidationError({
-                'check_out': 'Check-out date must be after check-in date'
+                'check_out': _('Check-out date must be after check-in date')
             })
         
         if data['check_in'] < business_today():
             raise ValidationError({
-                'check_in': 'Check-in date cannot be in the past'
+                'check_in': _('Check-in date cannot be in the past')
             })
         
         # Validate property exists and is active
@@ -142,7 +143,7 @@ class BookingCreateSerializer(serializers.Serializer):
             )
         except Property.DoesNotExist:
             raise ValidationError({
-                'property_id': 'Property not found or not available'
+                'property_id': _('Property not found or not available')
             })
         
         # Validate room type exists and belongs to property
@@ -154,7 +155,7 @@ class BookingCreateSerializer(serializers.Serializer):
             )
         except RoomType.DoesNotExist:
             raise ValidationError({
-                'room_type_id': 'Room type not found or does not belong to this property'
+                'room_type_id': _('Room type not found or does not belong to this property')
             })
         
         # Validate rate plan exists and belongs to room type
@@ -167,14 +168,14 @@ class BookingCreateSerializer(serializers.Serializer):
             )
         except RatePlan.DoesNotExist:
             raise ValidationError({
-                'rate_plan_id': 'Rate plan not found or does not belong to this room type'
+                'rate_plan_id': _('Rate plan not found or does not belong to this room type')
             })
         
         # Validate guest count against the capacity of all booked rooms
         capacity = room_type.max_occupancy * data.get('number_of_rooms', 1)
         if data['guest_count'] > capacity:
             raise ValidationError({
-                'guest_count': f'Guest count exceeds maximum occupancy of {capacity} for the booked rooms'
+                'guest_count': _('Guest count exceeds maximum occupancy of %(capacity)s for the booked rooms') % {'capacity': capacity}
             })
         
         # Validate rate plan constraints
@@ -182,12 +183,12 @@ class BookingCreateSerializer(serializers.Serializer):
         
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
             raise ValidationError({
-                'check_in': f'Booking duration is less than minimum nights requirement ({rate_plan.min_nights})'
+                'check_in': _('Booking duration is less than minimum nights requirement (%(nights)s)') % {'nights': rate_plan.min_nights}
             })
         
         if rate_plan.max_nights and number_of_nights > rate_plan.max_nights:
             raise ValidationError({
-                'check_in': f'Booking duration exceeds maximum nights requirement ({rate_plan.max_nights})'
+                'check_in': _('Booking duration exceeds maximum nights requirement (%(nights)s)') % {'nights': rate_plan.max_nights}
             })
         
         # Store validated objects for later use
@@ -247,7 +248,7 @@ class BookingCreateSerializer(serializers.Serializer):
             # Unexpected/internal error: never echo str(e) to the client, only log it server-side.
             logger.exception('Unexpected error creating booking')
             raise serializers.ValidationError({
-                'non_field_errors': 'Failed to create booking. Please try again.'
+                'non_field_errors': _('Failed to create booking. Please try again.')
             })
 
 
@@ -262,14 +263,14 @@ class BookingCancelSerializer(serializers.Serializer):
         
         if booking.status in ['cancelled', 'completed', 'no_show']:
             raise ValidationError({
-                'status': 'Booking cannot be cancelled in current status'
+                'status': _('Booking cannot be cancelled in current status')
             })
 
         # Once the stay has started, cancelling would free rooms the guest used and leave the money
         # captured; the hotel and support handle that case by hand
         if booking.status == 'confirmed' and booking.check_in <= business_today():
             raise ValidationError({
-                'status': 'A stay that has started cannot be cancelled online. Please contact the hotel.'
+                'status': _('A stay that has started cannot be cancelled online. Please contact the hotel.')
             })
 
         return data
@@ -286,5 +287,5 @@ class BookingCancelSerializer(serializers.Serializer):
         except Exception:
             logger.exception('Unexpected error cancelling booking')
             raise serializers.ValidationError({
-                'non_field_errors': 'Failed to cancel booking. Please try again.'
+                'non_field_errors': _('Failed to cancel booking. Please try again.')
             })

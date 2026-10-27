@@ -3184,5 +3184,10 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Backend: `RequestLanguageMiddleware` reads `Accept-Language`; catalogs in `backend/locale/{uz,ru}` (`.po` + committed `.mo`, rebuilt with `python scripts/compile_po.py`; test `common/tests/test_locale_files.py` keeps them in step). The owner-form messages, shared validators and picture checks are wrapped in `gettext`. Contract: `API_CONTRACT.md` ("Refusal texts follow the page language").
 - Frontend: `apiFetch` sends `Accept-Language` (not for English); the language the page uses is kept in `i18n/languageChoice.ts` (the provider sets it). `utils/formProblem.ts` words the problems the inputs declare (required, type, min, max, length, pattern) in the page language; the forms listed in the contract use it with `noValidate`.
 - Uzbek texts for the DRF messages are mine, not reviewed by a native speaker: please have them read together with the rest of the uz catalog.
-- Not covered: English error texts written in other backend modules (booking, admin, users, status); the forms in the site that have no required/typed inputs were not touched.
+- Not covered at that time: English error texts in other backend modules; they are done in the next note.
+
+## Texts in the page language: the rest of the API (2026-10-27)
+- 99 more refusal texts (bookings, accounts, users, properties, geography, currency, promotions, admin) are wrapped in `gettext` and translated in `locale/uz` and `locale/ru`. `common/tests/test_api_texts_translated.py` keeps it so: a plain English sentence in a refusal, or one without a translation, fails the test.
+- Still English on purpose: the hotel not-found text (the hotel page has its own), the `reason` texts that travel with booking refusal codes, status views, generic server fallbacks, payments (dropped tables).
+- The new uz/ru texts are mine, not reviewed by a native speaker.
 - Tests changed on purpose: none of the existing assertions; new tests for the middleware, the catalogs, `apiFetch`, `formProblem` and one per form.

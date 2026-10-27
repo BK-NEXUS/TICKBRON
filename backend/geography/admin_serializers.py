@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from common.storage import image_upload_error
 from geography.models import City, Country, Region
+from django.utils.translation import gettext as _
 
 
 class _NamesMixin:
@@ -13,7 +14,7 @@ class _NamesMixin:
             if field in attrs:
                 attrs[field] = attrs[field].strip()
                 if not attrs[field]:
-                    raise serializers.ValidationError({field: 'This field may not be blank.'})
+                    raise serializers.ValidationError({field: _('This field may not be blank.')})
         return super().validate(attrs)
 
 
@@ -31,7 +32,7 @@ class _ImageMixin:
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get('image'):
-            raise serializers.ValidationError({'image': 'A picture is required.'})
+            raise serializers.ValidationError({'image': _('A picture is required.')})
         return super().validate(attrs)
 
     def update(self, instance, validated_data):
@@ -49,7 +50,7 @@ class _ParentImmutableMixin:
     def validate(self, attrs):
         if self.instance is not None and self.parent_field in attrs \
                 and attrs[self.parent_field] != getattr(self.instance, self.parent_field):
-            raise serializers.ValidationError({self.parent_field: 'The parent cannot be changed.'})
+            raise serializers.ValidationError({self.parent_field: _('The parent cannot be changed.')})
         return super().validate(attrs)
 
 
@@ -70,15 +71,15 @@ class AdminCountrySerializer(_ImageMixin, _NamesMixin, serializers.ModelSerializ
     def validate_code(self, value):
         value = value.strip().upper()
         if len(value) != 2 or not value.isascii() or not value.isalpha():
-            raise serializers.ValidationError('Use the two-letter ISO 3166-1 code, e.g. UZ.')
+            raise serializers.ValidationError(_('Use the two-letter ISO 3166-1 code, e.g. UZ.'))
         if Country.objects.filter(code=value).exclude(pk=getattr(self.instance, 'pk', None)).exists():
-            raise serializers.ValidationError('A country with this code already exists.')
+            raise serializers.ValidationError(_('A country with this code already exists.'))
         return value
 
     def validate_currency(self, value):
         value = value.strip().upper()
         if len(value) != 3 or not value.isascii() or not value.isalpha():
-            raise serializers.ValidationError('Use the three-letter ISO 4217 code, e.g. UZS.')
+            raise serializers.ValidationError(_('Use the three-letter ISO 4217 code, e.g. UZS.'))
         return value
 
 
@@ -106,7 +107,7 @@ class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, ser
         if self.instance is not None:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
-            raise serializers.ValidationError({'name_en': 'This country already has a region with this name.'})
+            raise serializers.ValidationError({'name_en': _('This country already has a region with this name.')})
         return attrs
 
 
@@ -129,7 +130,7 @@ class AdminCitySerializer(_ParentImmutableMixin, _NamesMixin, serializers.ModelS
         if self.instance is not None:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
-            raise serializers.ValidationError({'name_en': 'This region already has a city with this name.'})
+            raise serializers.ValidationError({'name_en': _('This region already has a city with this name.')})
         return attrs
 
 

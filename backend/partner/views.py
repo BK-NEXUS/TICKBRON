@@ -31,6 +31,7 @@ from partner.serializers import (
     PartnerRoomInventoryBulkSerializer, PartnerDateInventoryBulkPriceSerializer,
     PartnerBlockSerializer, PartnerPropertyPhotoSerializer, PartnerRoomPhotoSerializer
 )
+from django.utils.translation import gettext as _
 
 
 class IsHotelOwner(IsAuthenticated):
@@ -325,7 +326,7 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
                 if room_type.isdigit():
                     queryset = queryset.filter(room_type_id=int(room_type))
                 else:
-                    raise ValidationError({'room_type': ['Must be a room type id.']})
+                    raise ValidationError({'room_type': [_('Must be a room type id.')]})
         return queryset
 
     def perform_destroy(self, instance):
@@ -355,7 +356,7 @@ def partner_property_photos(request, property_id):
 
     if PropertyPhoto.objects.filter(property=property, is_deleted=False).count() >= MAX_PHOTOS_PER_PROPERTY:
         return Response(
-            {'photo': [f'A property can have at most {MAX_PHOTOS_PER_PROPERTY} photos.']},
+            {'photo': [_('A property can have at most %(count)s photos.') % {'count': MAX_PHOTOS_PER_PROPERTY}]},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -410,7 +411,7 @@ def partner_room_photos(request, room_type_id):
 
     if photos.count() >= MAX_PHOTOS_PER_ROOM_TYPE:
         return Response(
-            {'photo': [f'A room type can have at most {MAX_PHOTOS_PER_ROOM_TYPE} photos.']},
+            {'photo': [_('A room type can have at most %(count)s photos.') % {'count': MAX_PHOTOS_PER_ROOM_TYPE}]},
             status=status.HTTP_400_BAD_REQUEST
         )
 

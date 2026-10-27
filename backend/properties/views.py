@@ -20,6 +20,7 @@ from properties.serializers import (
     PropertyDetailSerializer, PropertyAvailabilitySerializer,
     AvailabilityParamsSerializer, QuoteParamsSerializer
 )
+from django.utils.translation import gettext as _
 
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
@@ -86,7 +87,7 @@ def property_search(request):
     
     if not params_serializer.is_valid():
         return Response(
-            {'error': 'Invalid search parameters', 'details': params_serializer.errors},
+            {'error': _('Invalid search parameters'), 'details': params_serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -99,7 +100,7 @@ def property_search(request):
             search_params['amenities'] = [int(amenity_id) for amenity_id in amenities_param.split(',')]
         except (ValueError, AttributeError):
             return Response(
-                {'error': 'Invalid amenities parameter format', 'details': 'Amenities must be comma-separated integers'},
+                {'error': _('Invalid amenities parameter format'), 'details': _('Amenities must be comma-separated integers')},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -110,14 +111,14 @@ def property_search(request):
         # Handle validation errors from search service
         logger.warning(f"Invalid search parameters: {e}")
         return Response(
-            {'error': 'Invalid search parameters', 'details': 'One or more search parameters are invalid.'},
+            {'error': _('Invalid search parameters'), 'details': _('One or more search parameters are invalid.')},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception:
         # Handle unexpected errors
         logger.exception('Unexpected error during property search')
         return Response(
-            {'error': 'Search failed', 'details': 'An unexpected error occurred during search'},
+            {'error': 'Search failed', 'details': _('An unexpected error occurred during search')},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
@@ -228,7 +229,7 @@ def property_search_suggestions(request):
     except Exception:
         logger.exception('Unexpected error getting search suggestions')
         return Response(
-            {'error': 'Failed to get suggestions'},
+            {'error': _('Failed to get suggestions')},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
@@ -305,7 +306,7 @@ def property_availability(request, property_id):
     
     if not params_serializer.is_valid():
         return Response(
-            {'error': 'Invalid availability parameters', 'details': params_serializer.errors},
+            {'error': _('Invalid availability parameters'), 'details': params_serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -357,7 +358,7 @@ def property_quote(request, property_id):
     params = QuoteParamsSerializer(data=request.query_params)
     if not params.is_valid():
         return Response(
-            {'error': 'Invalid quote parameters', 'details': params.errors},
+            {'error': _('Invalid quote parameters'), 'details': params.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
     data = params.validated_data
@@ -375,8 +376,8 @@ def property_quote(request, property_id):
     ).first()
     if rate_plan is None:
         return Response(
-            {'error': 'Invalid quote parameters',
-             'details': {'rate_plan_id': ['Rate plan not found for this room and property.']}},
+            {'error': _('Invalid quote parameters'),
+             'details': {'rate_plan_id': [_('Rate plan not found for this room and property.')]}},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -397,8 +398,8 @@ def property_quote(request, property_id):
     nights = quote.nights_in(shown, rate_of)
     if total is None or nights is None:
         return Response(
-            {'error': 'Exchange rate unavailable', 'code': 'exchange_rate_unavailable',
-             'details': f'No exchange rate for {shown} yet.'},
+            {'error': _('Exchange rate unavailable'), 'code': 'exchange_rate_unavailable',
+             'details': _('No exchange rate for %(currency)s yet.') % {'currency': shown}},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
     # What the guest pays is in so'm (Payme and Click): the owner's own so'm price when there is one

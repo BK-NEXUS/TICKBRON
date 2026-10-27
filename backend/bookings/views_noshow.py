@@ -33,6 +33,7 @@ from bookings.noshow_serializers import (
 )
 from common.dates import business_time_zone
 from partner.views import IsHotelOwner
+from django.utils.translation import gettext as _
 
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
@@ -63,7 +64,7 @@ def _int_param(request, name):
     try:
         return int(value), None
     except ValueError:
-        return None, Response({name: ['A valid integer is required.']}, status=status.HTTP_400_BAD_REQUEST)
+        return None, Response({name: [_('A valid integer is required.')]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def _status_param(request):
@@ -145,7 +146,7 @@ def _date_param(request, name):
     try:
         return datetime.strptime(value, '%Y-%m-%d').date(), None
     except ValueError:
-        return None, Response({name: ['Date must be YYYY-MM-DD.']}, status=status.HTTP_400_BAD_REQUEST)
+        return None, Response({name: [_('Date must be YYYY-MM-DD.')]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(responses=StaffReportSerializer(many=True))
@@ -189,7 +190,7 @@ def admin_no_show_reports(request):
 def admin_no_show_report_detail(request, report_id):
     report = _owner_queryset().filter(pk=report_id).first()
     if report is None:
-        return Response({'error': 'Report not found', 'code': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': _('Report not found'), 'code': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
     return Response(_staff_data(report, many=False))
 
 

@@ -117,3 +117,302 @@ msgstr "Тип содержимого файла %(type)s не является 
 
 msgid "Image dimensions are too large."
 msgstr "Размеры изображения слишком велики."
+
+# Messages of the bookings, accounts, users, properties, geography, currency and admin code.
+
+msgid "Check-out date must be after check-in date"
+msgstr "Дата выезда должна быть позже даты заезда"
+
+msgid "Number of nights must match the date range"
+msgstr "Количество ночей должно соответствовать диапазону дат"
+
+msgid "Children are part of the guest count; at least one guest must be an adult"
+msgstr "Дети входят в число гостей; хотя бы один гость должен быть взрослым"
+
+msgid "Property not found or not available"
+msgstr "Объект не найден или недоступен"
+
+msgid "At least one room must be booked"
+msgstr "Нужно забронировать хотя бы один номер"
+
+msgid "Check-in date cannot be in the past"
+msgstr "Дата заезда не может быть в прошлом"
+
+msgid "Guest count exceeds the capacity of the booked rooms"
+msgstr "Число гостей превышает вместимость забронированных номеров"
+
+msgid "Children ages must be integers between 0 and 17"
+msgstr "Возраст детей должен быть целым числом от 0 до 17"
+
+msgid "HTML is not allowed."
+msgstr "HTML использовать нельзя."
+
+msgid "A stay can be at most %(nights)s nights."
+msgstr "Срок проживания не может быть больше %(nights)s ночей."
+
+msgid "A phone number is required."
+msgstr "Нужно указать номер телефона."
+
+msgid "Booking cannot be cancelled in current status"
+msgstr "Бронирование нельзя отменить в текущем статусе"
+
+msgid "A stay that has started cannot be cancelled online. Please contact the hotel."
+msgstr "Начавшееся проживание нельзя отменить онлайн. Свяжитесь с отелем."
+
+msgid "Room type not found or does not belong to this property"
+msgstr "Тип номера не найден или не относится к этому объекту"
+
+msgid "Rate plan not found or does not belong to this room type"
+msgstr "Тариф не найден или не относится к этому типу номера"
+
+msgid "Guest count exceeds maximum occupancy of %(capacity)s for the booked rooms"
+msgstr "Число гостей превышает допустимые %(capacity)s для забронированных номеров"
+
+msgid "Booking duration is less than minimum nights requirement (%(nights)s)"
+msgstr "Срок брони меньше минимального числа ночей (%(nights)s)"
+
+msgid "Booking duration exceeds maximum nights requirement (%(nights)s)"
+msgstr "Срок брони превышает максимальное число ночей (%(nights)s)"
+
+msgid "Failed to create booking. Please try again."
+msgstr "Не удалось создать бронирование. Попробуйте ещё раз."
+
+msgid "Failed to cancel booking. Please try again."
+msgstr "Не удалось отменить бронирование. Попробуйте ещё раз."
+
+msgid "Too many upcoming bookings. Cancel one or wait until you have stayed."
+msgstr "Слишком много предстоящих бронирований. Отмените одно или дождитесь окончания проживания."
+
+msgid "You already have a booking for these dates. Choose dates that start after it ends."
+msgstr "На эти даты у вас уже есть бронирование. Выберите даты, которые начинаются после его окончания."
+
+msgid "Invalid cancellation parameters"
+msgstr "Неверные параметры отмены"
+
+msgid "Invalid booking parameters"
+msgstr "Неверные параметры бронирования"
+
+msgid "Failed to cancel booking"
+msgstr "Не удалось отменить бронирование"
+
+msgid "Exchange rate unavailable"
+msgstr "Курс валюты недоступен"
+
+msgid "Booking validation failed"
+msgstr "Проверка бронирования не пройдена"
+
+msgid "Failed to create booking"
+msgstr "Не удалось создать бронирование"
+
+msgid "Report not found"
+msgstr "Сообщение не найдено"
+
+msgid "Date must be YYYY-MM-DD."
+msgstr "Дата должна быть в формате ГГГГ-ММ-ДД."
+
+msgid "Password fields didn't match."
+msgstr "Пароли не совпадают."
+
+msgid "Password must be at least %(min_length)d characters long."
+msgstr "Пароль должен содержать не менее %(min_length)d символов."
+
+msgid "Password must contain at least one uppercase letter."
+msgstr "Пароль должен содержать хотя бы одну заглавную букву."
+
+msgid "Password must contain at least one lowercase letter."
+msgstr "Пароль должен содержать хотя бы одну строчную букву."
+
+msgid "Password must contain at least one digit."
+msgstr "Пароль должен содержать хотя бы одну цифру."
+
+msgid "Password must contain at least one special character."
+msgstr "Пароль должен содержать хотя бы один специальный символ."
+
+msgid "Password contains sequential characters and is not secure."
+msgstr "Пароль содержит последовательные символы и небезопасен."
+
+msgid "Email address is required."
+msgstr "Нужно указать адрес электронной почты."
+
+msgid "Invalid email format."
+msgstr "Неверный формат адреса электронной почты."
+
+msgid "Disposable email addresses are not allowed."
+msgstr "Одноразовые адреса электронной почты не допускаются."
+
+msgid "Password contains common patterns and is not secure."
+msgstr "Пароль содержит распространённые шаблоны и небезопасен."
+
+msgid "Successfully logged out."
+msgstr "Вы вышли из системы."
+
+msgid "The current password is incorrect."
+msgstr "Текущий пароль неверный."
+
+msgid "The new password must be different from the current one."
+msgstr "Новый пароль должен отличаться от текущего."
+
+msgid "No active session found."
+msgstr "Активная сессия не найдена."
+
+msgid "Property is not available for favorites."
+msgstr "Этот объект нельзя добавить в избранное."
+
+msgid "Overall rating must be between 1 and 5."
+msgstr "Общая оценка должна быть от 1 до 5."
+
+msgid "You can only review completed bookings."
+msgstr "Отзыв можно оставить только к завершённым бронированиям."
+
+msgid "This booking has already been reviewed."
+msgstr "На это бронирование уже оставлен отзыв."
+
+msgid "Property is not available for review."
+msgstr "Для этого объекта нельзя оставить отзыв."
+
+msgid "The review must be for the property of the booking."
+msgstr "Отзыв должен относиться к объекту бронирования."
+
+msgid "Notifications cannot be created directly through API."
+msgstr "Уведомления нельзя создавать напрямую через API."
+
+msgid "This property is already in your favorites."
+msgstr "Этот объект уже в вашем избранном."
+
+msgid "Maximum occupancy cannot be less than base occupancy"
+msgstr "Максимальная вместимость не может быть меньше обычной"
+
+msgid "Maximum nights cannot be less than minimum nights"
+msgstr "Максимум ночей не может быть меньше минимума"
+
+msgid "Deposit percentage is required when deposit is required"
+msgstr "Если нужен депозит, укажите его процент"
+
+msgid "Deposit percentage should not be set when deposit is not required"
+msgstr "Если депозит не нужен, не указывайте его процент"
+
+msgid "The range can be at most %(days)d days"
+msgstr "Диапазон не может быть больше %(days)d дней"
+
+msgid "Booked rooms cannot exceed available rooms"
+msgstr "Забронированных номеров не может быть больше доступных"
+
+msgid "Maximum stay cannot be less than minimum stay"
+msgstr "Максимальный срок проживания не может быть меньше минимального"
+
+msgid "Must be after date_from"
+msgstr "Должна быть позже даты начала"
+
+msgid "Must not be negative"
+msgstr "Не может быть отрицательным"
+
+msgid "Nothing to update"
+msgstr "Нечего обновлять"
+
+msgid "Must be at least 1"
+msgstr "Должно быть не меньше 1"
+
+msgid "Cannot be more than the %(total)s rooms of this room type"
+msgstr "Не может быть больше, чем %(total)s номеров этого типа"
+
+msgid "Only one primary photo is allowed per property"
+msgstr "У объекта может быть только одно основное фото"
+
+msgid "Only one primary photo is allowed per room type"
+msgstr "У типа номера может быть только одно основное фото"
+
+msgid "Blocking %(rooms)s room(s) on %(date)s would leave fewer than the %(booked)s already booked on TICKBRON."
+msgstr "Блокировка %(rooms)s номеров на %(date)s оставит меньше, чем уже забронировано на TICKBRON (%(booked)s)."
+
+msgid "Cannot set %(date)s below the %(booked)s room(s) already booked on TICKBRON."
+msgstr "Нельзя установить на %(date)s меньше, чем уже забронировано на TICKBRON (%(booked)s)."
+
+msgid "Both lat and lng are required for geographic search"
+msgstr "Для географического поиска нужны и lat, и lng"
+
+msgid "Invalid search parameters"
+msgstr "Неверные параметры поиска"
+
+msgid "Invalid availability parameters"
+msgstr "Неверные параметры наличия"
+
+msgid "Invalid quote parameters"
+msgstr "Неверные параметры расчёта цены"
+
+msgid "One or more search parameters are invalid."
+msgstr "Один или несколько параметров поиска неверны."
+
+msgid "An unexpected error occurred during search"
+msgstr "При поиске произошла непредвиденная ошибка"
+
+msgid "Failed to get suggestions"
+msgstr "Не удалось получить подсказки"
+
+msgid "No exchange rate for %(currency)s yet."
+msgstr "Курса для %(currency)s пока нет."
+
+msgid "Invalid amenities parameter format"
+msgstr "Неверный формат параметра удобств"
+
+msgid "Amenities must be comma-separated integers"
+msgstr "Удобства должны быть целыми числами через запятую"
+
+msgid "Rate plan not found for this room and property."
+msgstr "Для этого номера и объекта тариф не найден."
+
+msgid "Promotion not found"
+msgstr "Реклама не найдена"
+
+msgid "Send a picture as the field \"photo\""
+msgstr "Отправьте картинку в поле \"photo\""
+
+msgid "Passwords do not match"
+msgstr "Пароли не совпадают"
+
+msgid "Booking not found with this reference code"
+msgstr "Бронирование с этим кодом не найдено"
+
+msgid "Property is not ready to be listed"
+msgstr "Объект ещё не готов к публикации"
+
+msgid "Use the two-letter ISO 3166-1 code, e.g. UZ."
+msgstr "Используйте двухбуквенный код ISO 3166-1, например UZ."
+
+msgid "A country with this code already exists."
+msgstr "Страна с таким кодом уже существует."
+
+msgid "Use the three-letter ISO 4217 code, e.g. UZS."
+msgstr "Используйте трёхбуквенный код ISO 4217, например UZS."
+
+msgid "A picture is required."
+msgstr "Нужна картинка."
+
+msgid "The parent cannot be changed."
+msgstr "Родительский элемент изменить нельзя."
+
+msgid "This country already has a region with this name."
+msgstr "В этой стране уже есть регион с таким названием."
+
+msgid "This region already has a city with this name."
+msgstr "В этом регионе уже есть город с таким названием."
+
+msgid "This row is in use (it has regions, cities or properties). Hide it instead."
+msgstr "Эта запись используется (у неё есть регионы, города или объекты). Скройте её вместо удаления."
+
+msgid "Exchange rate not found"
+msgstr "Курс валюты не найден"
+
+msgid "Only a rejected rate can be accepted"
+msgstr "Принять можно только отклонённый курс"
+
+msgid "A rate for this date is already accepted"
+msgstr "Курс на эту дату уже принят"
+
+msgid "A property can have at most %(count)s photos."
+msgstr "У объекта может быть не больше %(count)s фото."
+
+msgid "A room type can have at most %(count)s photos."
+msgstr "У типа номера может быть не больше %(count)s фото."
+
+msgid "Must be a room type id."
+msgstr "Должен быть идентификатор типа номера."

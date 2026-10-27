@@ -15,6 +15,7 @@ from properties.serializers import PropertyTypeSerializer, AmenityCategorySerial
 from users.models import User
 from users.serializers import unique_email_field, validate_new_password, validate_phone_number_format
 from admin_panel.models import InternalNote
+from django.utils.translation import gettext as _
 
 
 class AdminPropertySerializer(serializers.ModelSerializer):
@@ -79,7 +80,7 @@ class AdminPropertyRegionSerializer(serializers.Serializer):
     def validate(self, attrs):
         sent_refs = any(field in attrs for field in REF_FIELDS)
         if not sent_refs and 'state' not in attrs:
-            raise serializers.ValidationError({'state': 'This field is required.'})
+            raise serializers.ValidationError({'state': _('This field is required.')})
         if sent_refs:
             errors = check_geography(attrs, current=self.context.get('property'), nullable=True)
             if errors:
@@ -147,7 +148,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
         """Validate password confirmation."""
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError({
-                'password_confirm': 'Passwords do not match'
+                'password_confirm': _('Passwords do not match')
             })
         validate_new_password(data)
         errors = check_geography(data)

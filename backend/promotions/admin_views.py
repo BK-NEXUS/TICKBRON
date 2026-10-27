@@ -20,6 +20,7 @@ from promotions.admin_serializers import (
 from promotions.models import Promotion, PromotionDailyStat
 from promotions.service import PromotionError
 from properties.models import Property, PropertyTranslation
+from django.utils.translation import gettext as _
 
 HOTEL_SEARCH_LIMIT = 20
 ORDERING = {
@@ -66,7 +67,7 @@ def _find(promotion_id):
 
 
 def _not_found():
-    return Response({'error': 'Promotion not found', 'code': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'error': _('Promotion not found'), 'code': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 def _one(promotion_id):
@@ -272,7 +273,7 @@ def promotion_photos(request, promotion_id):
         return Response(PromotionPhotoSerializer(live, many=True).data)
     upload = PromotionPhotoUploadSerializer(data=request.data)
     if not upload.is_valid():
-        return Response({'error': 'Send a picture as the field "photo"', 'code': 'bad_image', 'details': upload.errors},
+        return Response({'error': _('Send a picture as the field "photo"'), 'code': 'bad_image', 'details': upload.errors},
                         status=status.HTTP_400_BAD_REQUEST)
     try:
         row = service.add_photo(actor=request.user, promotion=promotion, photo=upload.validated_data['photo'])
