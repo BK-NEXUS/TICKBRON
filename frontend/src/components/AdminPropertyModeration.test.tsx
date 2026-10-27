@@ -219,6 +219,22 @@ describe('AdminPropertyModeration', () => {
     })
   })
 
+  it('tells the admin which parts are missing when approval is refused', async () => {
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({ data: mockProperties, error: null })
+    ;(adminAdapter.approveProperty as never).mockResolvedValueOnce({
+      data: null,
+      error: 'Property is not ready to be listed',
+      missing: ['room', 'photo'],
+    })
+
+    render(<AdminPropertyModeration />)
+    fireEvent.click((await screen.findAllByText('Approve'))[0])
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Cannot approve yet. Still missing: a room, a photo.')
+    await settle()
+  })
+
   it('should call approveProperty with rejection reason when reject is submitted', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
       data: mockProperties,

@@ -18,6 +18,7 @@ from django.db.models import (
 )
 from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat, Lower, NullIf, Trim
 from datetime import timedelta
+from properties.listing import missing_for_listing
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
 from bookings.models import Booking
@@ -124,7 +125,12 @@ def admin_property_approve(request, property_id):
             property.approved_by = None
             property.approved_at = None
         else:
-            # Approve property
+            missing = missing_for_listing(property)
+            if missing:
+                return Response(
+                    {'error': 'Property is not ready to be listed', 'missing': missing},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             property.status = 'active'
             property.rejection_reason = ''
             property.approved_by = request.user
