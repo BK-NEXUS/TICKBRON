@@ -355,6 +355,23 @@ describe('BookingPage', () => {
       })
     })
 
+    it('keeps at least one adult: children stop one short of the guest count', async () => {
+      renderWithRouter(<BookingPage />)
+
+      expect(await screen.findByText('Counted within the number of guests; at least one guest must be an adult.')).toBeInTheDocument()
+      const add = screen.getByRole('button', { name: '+ Add Child' })
+      expect(add).toBeEnabled()
+      fireEvent.click(add)
+      expect(screen.getByLabelText('Child 1')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '+ Add Child' })).toBeDisabled()
+    })
+
+    it('does not offer children when only one guest is booked', async () => {
+      renderWithRouter(<BookingPage />, { ...bookingState, guestCount: 1 })
+
+      expect(await screen.findByRole('button', { name: '+ Add Child' })).toBeDisabled()
+    })
+
     it('should validate number of rooms minimum value', async () => {
       renderWithRouter(<BookingPage />)
 

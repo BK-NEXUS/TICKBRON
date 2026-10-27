@@ -668,6 +668,7 @@ export const ru: Catalog = {
   'booking.emailInvalid': "Введите корректный адрес email",
   'booking.roomsMin': "Количество номеров должно быть не менее 1",
   'booking.childrenRange': "Возраст детей должен быть от 0 до 17 лет",
+  'booking.childrenIncluded': "Входят в число гостей; хотя бы один гость должен быть взрослым.",
   'booking.loading': "Загрузка данных бронирования...",
   'booking.errorTitle': "Ошибка бронирования",
   'booking.confirmedTitle': "Бронирование подтверждено!",

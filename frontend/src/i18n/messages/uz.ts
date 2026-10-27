@@ -640,6 +640,7 @@ export const uz: Catalog = {
   'booking.emailInvalid': "To'g'ri email manzilini kiriting",
   'booking.roomsMin': "Xonalar soni kamida 1 bo'lishi kerak",
   'booking.childrenRange': "Bolalar yoshi 0 dan 17 gacha bo'lishi kerak",
+  'booking.childrenIncluded': "Mehmonlar soniga kiradi; kamida bitta mehmon kattalar bo'lishi kerak.",
   'booking.loading': "Bron ma'lumotlari yuklanmoqda...",
   'booking.errorTitle': "Bron xatosi",
   'booking.confirmedTitle': "Bron tasdiqlandi!",
