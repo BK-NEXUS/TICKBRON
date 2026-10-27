@@ -39,7 +39,7 @@ class GuestBookingRulesTests(APITestCase):
         assert self.book(stay(self, 0)).status_code == status.HTTP_201_CREATED
         assert self.book(stay(self, 1)).status_code == status.HTTP_201_CREATED
         response = self.book(stay(self, 2))
-        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+        assert response.status_code == status.HTTP_409_CONFLICT
         assert response.data['code'] == 'too_many_upcoming_bookings'
         assert Booking.objects.filter(guest=self.user).count() == 2
 

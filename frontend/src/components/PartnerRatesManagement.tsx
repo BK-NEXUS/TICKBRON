@@ -39,7 +39,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
   const [formData, setFormData] = useState<CreateRatePlanRequest>({
     room_type: roomTypeId,
     name: '',
-    slug: '',
     rate_type: 'standard',
     description: '',
     prices: {},
@@ -115,7 +114,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     try {
       const updateData: UpdateRatePlanRequest = {
         name: formData.name,
-        slug: formData.slug,
         rate_type: formData.rate_type,
         description: formData.description,
         prices: formData.prices,
@@ -179,7 +177,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     setFormData({
       room_type: roomTypeId,
       name: ratePlan.name,
-      slug: ratePlan.slug,
       rate_type: ratePlan.rate_type,
       description: ratePlan.description,
       prices: pricesOf(ratePlan),
@@ -216,10 +213,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       setError(t('partner.ratePlanNameIs'))
       return false
     }
-    if (!formData.slug.trim()) {
-      setError(t('partner.slugIsRequired'))
-      return false
-    }
     if (formData.min_nights < 1) {
       setError(t('partner.minimumNightsMustBe'))
       return false
@@ -244,7 +237,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     setFormData({
       room_type: roomTypeId,
       name: '',
-      slug: '',
       rate_type: 'standard',
       description: '',
       prices: {},
@@ -428,20 +420,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
             required
             aria-required="true"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="rate_slug">{t('partner.slug')}</label>
-          <input
-            id="rate_slug"
-            type="text"
-            value={formData.slug}
-            onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-            className="form-input"
-            required
-            aria-required="true"
-          />
-          <small className="form-hint">{t('partner.urlFriendlyIdentifierE2')}</small>
         </div>
 
         <div className="form-group">

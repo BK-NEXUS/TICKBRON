@@ -172,3 +172,20 @@ class TestSeedDemoPromotions:
         run_seed()
 
         assert Promotion.objects.count() == 7
+
+    def test_rerun_after_the_demo_ads_ended_makes_them_run_again(self):
+        """QA F6: ads seeded weeks ago had ended, a re-run kept them ended and the banner test failed."""
+        from promotions import service
+        from promotions.models import Promotion
+
+        run_seed()
+        weeks_ago = timedelta(days=30)
+        for promotion in Promotion.objects.all():
+            Promotion.objects.filter(pk=promotion.pk).update(
+                start_date=promotion.start_date - weeks_ago, end_date=promotion.end_date - weeks_ago)
+        assert service.shown_now().count() == 0
+
+        run_seed()
+
+        assert service.shown_now().count() == 5
+        assert Promotion.objects.count() == 7

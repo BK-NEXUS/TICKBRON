@@ -15,6 +15,19 @@ from .security_log import log_security_event
 logger = logging.getLogger('tickbron')
 
 
+def readable_text(detail):
+    """Plain text of a DRF error body ('field: text'), never a Python dump."""
+    if isinstance(detail, dict):
+        parts = []
+        for field, value in detail.items():
+            text = readable_text(value)
+            parts.append(text if field == 'non_field_errors' else f'{field}: {text}')
+        return ' '.join(parts)
+    if isinstance(detail, (list, tuple)):
+        return ' '.join(readable_text(item) for item in detail)
+    return str(detail)
+
+
 def _log_refusal(exc, context, event):
     """Security event for a refused request; the exception text is not logged (it can echo input)."""
     view = context.get('view')
@@ -132,7 +145,7 @@ def custom_exception_handler(exc, context):
         if not isinstance(original_data, dict) or 'error' not in original_data:
             if isinstance(original_data, dict):
                 code = original_data.get('code', 'error')
-                message = original_data.get('detail', str(original_data))
+                message = original_data.get('detail') or readable_text(original_data)
                 details = original_data
             else:
                 # A ValidationError raised with a plain string/list (e.g.

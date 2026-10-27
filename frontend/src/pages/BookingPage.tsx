@@ -418,14 +418,14 @@ export function BookingPage() {
       <div className="booking-page booking-page--error">
         <div className="container">
           <div className="error-state" role="alert" aria-live="assertive">
-            <h2>{t('booking.errorTitle')}</h2>
+            <h1>{t('booking.errorTitle')}</h1>
             <p>{errorText}</p>
             <button 
               className="btn btn-primary"
               onClick={handleBackToProperty}
-              aria-label={t('booking.backToPropertyLabel')}
+              aria-label={t(property ? 'booking.backToPropertyLabel' : 'booking.backToSearchLabel')}
             >
-              {t('booking.backToProperty')}
+              {t(property ? 'booking.backToProperty' : 'booking.backToSearch')}
             </button>
           </div>
         </div>

@@ -99,7 +99,7 @@ class CreateTests(CashFixture):
         for index in range(MAX_UPCOMING_BOOKINGS_PER_GUEST):
             self.assertEqual(self.book(**stay(self, index)).status_code, status.HTTP_201_CREATED)
         response = self.book(**stay(self, MAX_UPCOMING_BOOKINGS_PER_GUEST))
-        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data['code'], 'too_many_upcoming_bookings')
 
     def test_cancelled_and_arrived_bookings_do_not_count_against_the_limit(self):

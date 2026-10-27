@@ -7,6 +7,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { authFormProblem } from '../utils/authForm'
 import { useI18n } from '../i18n/I18nContext'
 
 export function LoginPage() {
@@ -28,6 +29,11 @@ export function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    const problem = authFormProblem([email, password], email)
+    if (problem) {
+      setError(t(problem === 'required' ? 'auth.errRequired' : 'auth.errEmail'))
+      return
+    }
     setIsLoading(true)
 
     const response = await login(email, password)
@@ -61,7 +67,7 @@ export function LoginPage() {
             </div>
           )}
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
               <label htmlFor="email" className="auth-label">
                 {t('auth.email')}

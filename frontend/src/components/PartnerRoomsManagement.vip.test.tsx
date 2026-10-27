@@ -47,7 +47,6 @@ describe('PartnerRoomsManagement VIP switch', () => {
     render(<PartnerRoomsManagement propertyId={3} propertyName="Tashkent" />)
     fireEvent.click(await screen.findByRole('button', { name: /room type/i }))
     fireEvent.change(document.getElementById('room_name') as HTMLInputElement, { target: { value: 'Suite' } })
-    fireEvent.change(document.getElementById('room_slug') as HTMLInputElement, { target: { value: 'suite' } })
     fireEvent.change(document.getElementById('bed_configuration') as HTMLInputElement, { target: { value: '1 King' } })
     const box = screen.getByRole('checkbox', { name: /VIP/ })
     expect(box).not.toBeChecked()

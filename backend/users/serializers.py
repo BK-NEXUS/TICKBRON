@@ -87,7 +87,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {'full_name': {'required': True, 'validators': [validate_person_name]}}
+        extra_kwargs = {'full_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]}}
     
     def validate_email(self, value):
         """Validate email format."""

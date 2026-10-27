@@ -101,11 +101,14 @@ test('STATUS admin drill-down, users search, owner sees only own numbers', async
     await expect(table.getByRole('row')).toHaveCount(2) // header + the owner's one hotel
     await expect(table.getByText(OWN_HOTEL)).toBeVisible()
     await expect(page.getByText(OTHER_HOTEL)).toHaveCount(0)
-    await expect(page.getByText('On TICKBRON since')).toBeVisible()
     await expect(page.getByRole('img', { name: /Guests per month in \d{4}/ })).toBeVisible()
 
     const own = await (await page.request.get(`${API}/api/v1/partner/status/`)).json()
     expect(own.properties.map((p: { name: string }) => p.name)).toEqual([OWN_HOTEL])
+
+    // The totals cards and since when the owner is on TICKBRON are in the Reports tab (Owner Status v2)
+    await page.getByRole('tab', { name: 'Reports' }).click()
+    await expect(page.getByText('On TICKBRON since')).toBeVisible()
     await expect(cardValue(page, 'Counted')).toHaveText(count(own.totals.counted))
 
     // The admin Status API is closed to hotel owners
