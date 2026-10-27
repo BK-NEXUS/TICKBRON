@@ -85,6 +85,19 @@ describe('AdminAdapter', () => {
       )
     })
 
+    it('returns the missing parts when approval is refused', async () => {
+      (global.fetch as never).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'Property is not ready to be listed', code: 'property_incomplete', missing: ['room', 'photo'] }),
+      })
+
+      const result = await adapter.approveProperty(1, {})
+
+      expect(result.data).toBeNull()
+      expect(result.missing).toEqual(['room', 'photo'])
+    })
+
     it('should reject property with reason', async () => {
       const mockProperty = {
         id: 1,

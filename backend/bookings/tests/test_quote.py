@@ -130,6 +130,50 @@ class TestQuote:
         assert response.status_code == 400
         assert 'must be at least 3 nights' in str(response.data['details']['availability'])
 
+    def test_refusals_come_with_a_code_and_the_date_for_translation(self, stay):
+        stay['days'][3].is_available = False
+        stay['days'][3].save()
+        closed = (stay['start'] + timedelta(days=3)).isoformat()
+        response = quote(stay, 1, 5)
+        assert response.data['reason'] == {'code': 'night_unavailable', 'params': {'date': closed}}
+
+        stay['days'][3].is_available = True
+        stay['days'][3].minimum_stay = 3
+        stay['days'][3].save()
+        short = quote(stay, 3, 4)
+        assert short.data['reason'] == {'code': 'night_min_stay', 'params': {'date': closed, 'nights': 3}}
+
+        stay['days'][3].minimum_stay = None
+        stay['days'][3].maximum_stay = 2
+        stay['days'][3].save()
+        long = quote(stay, 2, 6)
+        assert long.data['reason'] == {'code': 'night_max_stay', 'params': {'date': closed, 'nights': 2}}
+
+    def test_sold_out_and_few_rooms_have_codes(self, stay):
+        night = stay['start'] + timedelta(days=2)
+        RoomInventory.objects.create(room_type=stay['room'], date=night, available_rooms=3, booked_rooms=3)
+        sold_out = quote(stay, 1, 4)
+        assert sold_out.data['reason'] == {'code': 'no_rooms_left', 'params': {'date': night.isoformat()}}
+
+    def test_few_rooms_left_says_how_many(self, stay):
+        from django.core.exceptions import ValidationError
+        from bookings.pricing import refusal_reason, quote_stay
+        night = stay['start'] + timedelta(days=2)
+        RoomInventory.objects.create(room_type=stay['room'], date=night, available_rooms=3, booked_rooms=1)
+        with pytest.raises(ValidationError) as error:
+            quote_stay(stay['rate'], stay['start'] + timedelta(days=1), stay['start'] + timedelta(days=4), number_of_rooms=3)
+        assert refusal_reason(error.value) == {'code': 'few_rooms_left', 'params': {'date': night.isoformat(), 'rooms': 2}}
+
+    def test_rate_plan_min_and_max_stay_have_codes(self, stay):
+        stay['rate'].min_nights = 2
+        stay['rate'].max_nights = 7
+        stay['rate'].save()
+        assert quote(stay, 1, 2).data['reason'] == {'code': 'plan_min_stay', 'params': {'nights': 2}}
+        assert quote(stay, 0, 9).data['reason'] == {'code': 'plan_max_stay', 'params': {'nights': 7}}
+
+    def test_a_refusal_without_a_code_has_no_reason(self, stay):
+        assert 'reason' not in quote(stay, 3, 3).data
+
     def test_bad_parameters(self, stay):
         assert quote(stay, 3, 3).status_code == 400
         other_rate = APIClient().get(f"/api/v1/properties/{stay['property'].id}/quote/", {

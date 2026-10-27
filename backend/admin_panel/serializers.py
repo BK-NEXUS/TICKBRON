@@ -13,8 +13,9 @@ from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
-from users.serializers import validate_new_password, validate_phone_number_format
+from users.serializers import unique_email_field, validate_new_password, validate_phone_number_format
 from admin_panel.models import InternalNote
+from django.utils.translation import gettext as _
 
 
 class AdminPropertySerializer(serializers.ModelSerializer):
@@ -79,7 +80,7 @@ class AdminPropertyRegionSerializer(serializers.Serializer):
     def validate(self, attrs):
         sent_refs = any(field in attrs for field in REF_FIELDS)
         if not sent_refs and 'state' not in attrs:
-            raise serializers.ValidationError({'state': 'This field is required.'})
+            raise serializers.ValidationError({'state': _('This field is required.')})
         if sent_refs:
             errors = check_geography(attrs, current=self.context.get('property'), nullable=True)
             if errors:
@@ -122,6 +123,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
     
     Super-admin only endpoint for direct hotel-owner account creation.
     """
+    email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code
@@ -146,7 +148,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
         """Validate password confirmation."""
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError({
-                'password_confirm': 'Passwords do not match'
+                'password_confirm': _('Passwords do not match')
             })
         validate_new_password(data)
         errors = check_geography(data)

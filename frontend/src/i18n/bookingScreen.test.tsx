@@ -17,6 +17,6 @@ describe('booking page in Russian', () => {
     await act(async () => {})
     expect(screen.getByRole('heading', { name: 'Ошибка бронирования' })).toBeInTheDocument()
     expect(screen.getByText('Не хватает данных бронирования. Выберите номер и попробуйте ещё раз.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Вернуться на страницу объекта' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Вернуться к результатам поиска' })).toBeInTheDocument()
   })
 })

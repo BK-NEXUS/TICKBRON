@@ -49,6 +49,8 @@ describe('StatusCsvButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
     await waitFor(() => expect(onExport).toHaveBeenLastCalledWith('csv'))
+    // The buttons are off while an export runs: the second click comes after the first one is saved
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export Excel' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }))
     await waitFor(() => expect(onExport).toHaveBeenLastCalledWith('xlsx'))
     expect(saveBlob).toHaveBeenCalledTimes(2)

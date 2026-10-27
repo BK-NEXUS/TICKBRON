@@ -3,6 +3,7 @@
 import { apiFetch, type Paginated } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { GeographyNames } from './geographyAdapter'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -81,7 +82,7 @@ export class AdminGeographyAdapter {
       if (!response.ok) return { data: null, error: (await readApiError(response)).message }
       return { data: response.status === 204 ? null : await response.json(), error: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
     }
   }
 
@@ -109,7 +110,7 @@ export class AdminGeographyAdapter {
       if (response.ok) return { error: null, inUse: false }
       return { error: (await readApiError(response)).message, inUse: response.status === 409 }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Network error occurred', inUse: false }
+      return { error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), inUse: false }
     }
   }
 

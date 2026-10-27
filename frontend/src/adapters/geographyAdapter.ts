@@ -3,6 +3,7 @@
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Language } from '../i18n/options'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -49,7 +50,7 @@ export class GeographyAdapter {
       }
       return { data: await response.json(), error: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
     }
   }
 

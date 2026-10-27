@@ -21,6 +21,7 @@ P = '/api/v1/partner'
 # (method, url) for every partner endpoint. Ids do not need to exist:
 # permissions are checked before the object is looked up.
 PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/'),
+                     ('get', f'{P}/rooms/1/photos/'), ('post', f'{P}/rooms/1/photos/'), ('delete', f'{P}/rooms/1/photos/1/'),
                      ('get', f'{P}/status/'), ('get', f'{P}/status/hotels/1/'),  # R12
                      ('get', f'{P}/status/arrivals/'),
                      ('post', f'{P}/bookings/1/no-show-report/'), ('get', f'{P}/no-show-reports/'),  # R12b

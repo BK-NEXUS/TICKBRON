@@ -261,9 +261,14 @@ class Command(BaseCommand):
         plan = [(0, 10, True, 'active')] * 5 + [(0, 10, False, 'scheduled'), (-20, 10, True, 'ended')]
         for index, (start, days, paid, state) in enumerate(plan):
             prop = hotels[index]['property']
+            first = today + timedelta(days=start)
+            earlier = Promotion.objects.filter(property=prop, note='DEMO')
+            if earlier.exists():
+                # A re-run moves the demo ads to today, so the banners keep showing
+                earlier.update(start_date=first, end_date=first + timedelta(days=days - 1))
+                continue
             if Promotion.objects.filter(property=prop).exists():
                 continue
-            first = today + timedelta(days=start)
             promotion = Promotion.objects.create(
                 property=prop, start_date=first, end_date=first + timedelta(days=days - 1), priority=index % 3 * 10,
                 price_amount=Decimal('1500000'), price_currency='UZS', status=state,

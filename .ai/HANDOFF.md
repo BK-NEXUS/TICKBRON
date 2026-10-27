@@ -89,6 +89,54 @@ Status: READY
 - Account lockout protection applies (inherited from password login)
 - **Added (Checkpoint 21):** Phone-based OTP authentication
 
+## Support chat (frontend and backend)
+- Guests and owners write to the team at `/support` (user menu, Contact page); owners get a shortcut that fills an advertising request (`?topic=ads`). Team answers in the admin panel tab "Messages" (inbox, search, unread filter, badge). Polling every 4 s while the tab is visible, back-off to 30 s on errors, badges refresh every 30 s. Contract: API_CONTRACT "Support chat". Plan: PLAN_SUPPORT_CHAT.md.
+- Found, not fixed: no e-mail or push when a message arrives (the badge only shows while the site is open); no attachments; real WebSocket not used (polling is enough for the expected volume).
+
+## Design round 4: customers table and the messages tab
+- Customers directory: all 11 columns now fit the admin layout at 1280, 1440 and 1920 px without sideways scrolling (compact cells, no-wrap ID, phone, dates and status); phones still scroll inside the card. CSS only, in `panels.css`.
+- Messages tab: uses the admin header, panels and search field like the other tabs; the hint no longer says "on the left" (the list is above on phones). The support chat page has a breadcrumb and on phones the Send button sits beside the box, clear of the bottom navigation.
+- Checked by eye (light and dark, 1440 and 390 px) with a real guest message and an admin reply; test messages were deleted afterwards.
+- Found, not fixed: booking page and the owner's rates and calendar screens were not part of this round.
+
+## Design round 5: owner's rate plans, rooms and calendar
+- Owner's rate plan list had no styles of its own (badges ran together as "Activenon_refundableSet prices..."): now a two-column card grid with readable labels, status badges and aligned values. The plan type shows its translated name (`utils/rateType.ts`, shared with the guest rate card); an unknown type shows its code as words.
+- Owner and admin screens keep space above the footer; the calendar title uses the same heading font as the other owner screens.
+- Checked by eye (1440 and 390 px): rooms, calendar, rates. The hotel page was also looked at; its photos and map tiles cannot load in the sandbox.
+- Found, not fixed: the booking form itself (after choosing room and dates) and the owner's availability screen were not looked at; dark theme of the owner's rates screen not checked by eye.
+
+## Design round 6: booking form
+- Booking page: phones had no side gutter (the price card and Confirm button touched the screen edges, the heading started at the edge); the form fields had no space between them (a label touched the field above); the "Back to property" link sat in the middle of the header. Fixed in CSS only (`panels.css`). Checked by eye at 1440 and 390 px, light and dark.
+- Found, not fixed: the owner's availability screen and the booking confirmation (success) screen were not looked at; the price summary sits above the form on phones (left as is).
+
+## Design round 7: owner's date inventory
+- The date inventory list (rate plan, "Availability") had no styles: raw text table, "null - null nights", dates as 10/16/2026. Now a styled table with status badges, dates in the page language, "—" where no stay limit is set (the type allows `null`), and sideways scrolling inside the card on phones. Editing a date with no limits starts from 1 and 30 nights (the form's own defaults) instead of null.
+- The list now shows one month at a time with previous/next month buttons (opens on the first month that is not over; the buttons stop at the first and last month with dates). Done in the browser from the dates already loaded (`utils/inventoryMonths.ts`), no new endpoint.
+- Found, not fixed: the booking confirmation (success) screen was still not looked at.
+
+## Design round 8: booking confirmation screen
+- The "Booking confirmed" card (and the loading and error cards of the booking page) sat at the left of the page on desktop instead of the middle, and on phones its inner space was so wide that the labels broke ("Check-in:" on two lines). Now centred, with phone-sized spacing. CSS only (`panels.css`). Checked by eye with a real booking at 1440 and 390 px; the test bookings were cancelled afterwards through the model's own `cancel_booking`.
+- Found, not fixed: the booking error text for dates without inventory shows the date as 2027-05-12 (server text, English); dark theme of this screen not checked by eye.
+
+## Support chat: e-mail notices
+- A reply from the team now mails the user (a link to `/support`); a message from a user mails the address in `SUPPORT_NOTIFY_EMAIL` (empty = off). One mail per unread run; the mails carry no message text. Contract: API_CONTRACT "Support chat: e-mail notices".
+- Owner to do: set `SUPPORT_NOTIFY_EMAIL` in the server `.env` and make sure SMTP works (`EMAIL_HOST`, same as for password reset); a Celery worker must run (the mail is sent by the worker).
+- Found, not fixed: no push notice and no notice by Telegram; users cannot turn the e-mails off (there is at most one mail per unread run).
+
+## Booking: unavailable dates in the guest's language
+- The price card used to show the server's English text with a raw date ("2027-05-12 is not available."). The quote now sends a code and values (`reason`), and the booking page says it in uz, ru or en with the date written out. Contract: API_CONTRACT "Stay quote: refusals with a code".
+- Found, not fixed: the booking create endpoint (a race after the quote) still returns the English text; the other quote refusals (rate plan minimum and maximum stay, bad parameters) are still English.
+
+## Small leftovers: refusals in the user's language, Telegram for the chat, dark confirmation screen
+- The booking create endpoint and the rate plan's minimum and maximum stay now send a code too, so the site says them in uz, ru or en (see API_CONTRACT "Refusals with a code"). Not translated yet: the serializer's own plan limit check before pricing (the quote refuses first, so a guest does not reach it) and the other free-text refusals of the booking serializer.
+- A new message from a user is also told to the team on Telegram when the alert bot is set up (the same chat as the security alerts; name and role only). Browser push was not built: it needs a service worker, VAPID keys and HTTPS, and the team already gets Telegram and e-mail.
+- The booking confirmation screen was looked at in the dark theme at 1440 px (no change needed); the phone size in the dark theme was not.
+
+## Fix: e-mail addresses ignore capitals (QA finding F2)
+- Before: `GUEST@x.com` made a second account next to `guest@x.com`, and `Guest@x.com` could not sign in (phone keyboards capitalise the first letter). Now one account per mailbox: addresses are lower-cased on sign-up, admin owner creation, sign-in and password reset, and the database has a unique constraint on `lower(email)`. Contract: API_CONTRACT "E-mail addresses ignore capitals".
+- Owner before deploy: migration `users.0010_email_case_insensitive` stops with a message naming the addresses if two real accounts differ only by capitals (the demo and dev databases have none). In that case merge or delete the extra account, then run `migrate` again. As always: `pg_dump -Fc` first.
+- Not changed: addresses saved inside old bookings (`guest_email`) and notes keep the capitals typed.
+
 ## Notes
 - All auth uses session-based authentication with secure cookies
 - JWT is NOT used (per auth contract)
@@ -3078,6 +3126,20 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Checked: the production example, with a random SECRET_KEY, starts the app (`manage.py check` and `check --deploy` pass on Django 6.1.2); with an `http://` CORS origin it is refused, as the production rules say.
 - No real secret is in the repository and the server's real `.env` is not created here. Still the owner's: hosting, the A records at ahost.uz, the TLS certificate, the SMTP account for `no-reply@tickbron.com`, the real SECRET_KEY and database password.
 
+## Ads with photos and ads by region (2026-10-23)
+- Plan, decisions and what is not done: `.ai/PLAN_AD_REGIONS.md`; contract: API_CONTRACT.md "Ads: pictures, banner pictures and the regions panel".
+- New: `PromotionPhoto` (migration `promotions/0002`, audit actions `promotion_photo_add` / `promotion_photo_remove`, migration `admin_panel/0012`). The banner shows the ad's pictures (up to 10), else the hotel's photos, one after another (`PromoCarousel`).
+- Home banner follows the country opened under "Where to?"; both banners say "Ads in {place}". The admin advertising panel has a card per region (`PromotionRegionPanel`) and a photo dialog per ad (`PromotionPhotosDialog`, opened right after an ad is created); the size rules are written next to the upload (`promoAdmin.photosHelp`; `photos.help` for hotel and room photos).
+- Not verified: real pictures on the banner in a browser (the dev server cannot show uploaded files), so the cross-fade and the dots were checked by tests only.
+
+## Room photos and the owner panel (2026-10-23)
+- Answer to the owner's question: before this change adding a room type did **not** ask for photos and owners had no way to upload room photos at all (the `RoomPhoto` model and the guest page existed, there was no owner API or screen). Now: `GET/POST /partner/rooms/{id}/photos/`, `PATCH/DELETE .../{photo_id}/` (see API_CONTRACT.md), max 20 per room type.
+- Room form (owner panel > Rooms): sections (basic information, guests and rooms, price, photos); the web address (slug) is made from the name until the owner types one; the price currency is the hotel's (it was a choice the server refused when it differed); the create form has a photo picker (uploaded right after the room type is saved, the first is the cover; if a photo fails the saved room type stays open with the reason); editing shows the photo manager. The room list shows the cover, the photo count and a dashed "No photos yet" flag that opens the room type.
+- One photo manager for both: `PartnerPhotoManager` (hotel photos = `PartnerPhotosManagement`, room photos = `PartnerRoomPhotos`); backend `PartnerPhotoSerializer` is shared by `PartnerPropertyPhotoSerializer` and `PartnerRoomPhotoSerializer`.
+- The room list and room form had **no CSS at all** (class names without rules); the owner hotel cards had none for their details and tags. All styled in `panels.css`, checked at 1440 and 390 px.
+- Button audit (2026-10-23, a crawler in a real browser on the dev build, not committed): it opened 12 screens as guest, customer, owner and admin (home, search, destinations, login, register, about, help, bookings, favorites, profile, owner dashboard, admin dashboard), clicked up to 60 buttons, tabs and links on each and recorded page errors, console errors, 5xx or API 404 responses, not-found pages and clicks that changed nothing. Result: 293 clicks fine, **0 errors**, 12 "nothing happened" that are all by design (a link to the page you are on, the already selected banner, tab or filter, a form button the browser blocks while required fields are empty). Not clicked on purpose: delete, remove, log out, cancel booking, suspend, reject, approve, block, save, send, submit, upload and similar. Only the first level of each screen was covered; deeper screens (for example the owner's Rooms, Rates and Calendar, the admin Status drill-downs) are covered by the unit tests and the E2E flows only.
+- Found, not fixed: `.form-group` is a column flex box, so any flex container that also has `form-group` needs an explicit `flex-direction: row`; the owner Bookings and Rates screens were not reviewed by eye.
+
 ## Status v2: owner side (2026-10-23)
 - Owner Status is now four tabs (Overview, Rooms, Arrivals, Reports); the old long page is the Reports tab, nothing was removed. New numbers: this month against last month (revenue, guests, bookings), guests arriving in the next 7 days, booked-ahead days, returning guests %, and a room type ranking (`GET /partner/status/rooms/`). Contract in API_CONTRACT.md, plan in PLAN_STATUS_V2.md.
 - New texts `ownerStatus.*` exist in uz, ru and en.
@@ -3102,3 +3164,40 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Map and hotel card styles in `refresh.css` (see `.ai/PLAN_DESIGN_REFRESH.md`, "Round 3"); `PropertiesMap.tsx` adds the cluster size classes (test added). Found and fixed a class-name collision that gave public hotel cards the owner card's padding.
 - Found, not fixed: owner dashboard card and public hotel card both use `.property-card` in `index.css`.
 
+## Fix: approval needs a room, a rate and a photo (QA finding F3, 2026-10-27)
+- `approve` refuses (400, `missing: [room|rate|photo]`) until the hotel has a room, an active rate and a photo; see `API_CONTRACT.md` and `properties/listing.py`. The admin moderation screen shows what is missing (keys `admin.cannotApproveYet`, `admin.missing.*`, en/ru/uz).
+- Three older tests approved an empty hotel; their fixtures now add the parts (`admin_panel/tests/listing_helpers.py`), assertions unchanged.
+- Not covered: hotels already public without these parts stay public; only new approvals are checked. A hotel that loses its last room or photo after approval also stays public.
+
+## Fix: children of a booking (QA finding F4, 2026-10-27)
+- Decided rule: children are counted inside `guest_count` (the stats already count persons that way) and at least one guest is an adult; see `API_CONTRACT.md`. Rule in `Booking.create_booking`; booking page disables "Add child" at `guest_count - 1`, hint `booking.childrenIncluded` (en/ru/uz).
+- Two older tests (`test_booking_create_with_children`) sent 2 guests with 2 children, and `test_booking_serializer_includes_new_fields` did the same; their `guest_count` is now 3, assertions unchanged.
+- Not covered: the owner and admin screens only show the list; existing bookings with too many children are not changed.
+
+## Fixes: QA findings F5 to F13 (2026-10-27)
+- F5 owner form limits, F7 slug made from the name + readable error `message`, F9 blank sign-up name, F10 booking cap 409, F12 status dates: see `API_CONTRACT.md` ("Owner form limits, slugs, error text and small QA fixes").
+- F8 was not a bug: a hotel is limited to 50 photos (`MAX_PHOTOS_PER_PROPERTY`, test in `partner/tests/test_partner_api.py`); the QA run uploaded 44. No change.
+- F9 booking: an empty `guest_full_name` still falls back to the account's name on purpose (same as the phone); only sign-up was lax.
+- F11 sign-in, sign-up and forgot-password forms have `noValidate` and show site-worded messages (`auth.errRequired`, `auth.errEmail`) in the page language. The other forms (owner forms, booking, profile) still use the browser's own messages.
+- F13 booking error screen has one h1 and leads back to search when no hotel is known; owner's empty "My Bookings" explains these are the stays booked as a guest and has an h1; hotel-not-found has one h1 and the text no longer repeats the title.
+- F6 browser tests: S7 now opens the Reports tab for "On TICKBRON since" and the totals cards (checked against the running stack); `seed_demo_stats` moves its demo ads to today on a re-run, so J1 keeps working; E1 failed only because the QA run left hotels in the database (no code change). Not done: running the browser suite nightly in CI (needs the owner's decision: it costs CI minutes and the crawl tests take 6 to 11 minutes each).
+- Tests changed on purpose: three booking-cap tests expect 409; `bookingScreen.test.tsx` expects the new "back to search" button; the tests that typed a Slug now check that no Slug field exists and none is sent.
+- Not covered: DRF's own refusal texts ("Ensure this value is greater than or equal to 0.01.") are still English on the owner forms; the owner, booking and profile forms still show the browser's own required-field messages.
+
+## Texts in the page language: API refusals and form messages (2026-10-27)
+- Backend: `RequestLanguageMiddleware` reads `Accept-Language`; catalogs in `backend/locale/{uz,ru}` (`.po` + committed `.mo`, rebuilt with `python scripts/compile_po.py`; test `common/tests/test_locale_files.py` keeps them in step). The owner-form messages, shared validators and picture checks are wrapped in `gettext`. Contract: `API_CONTRACT.md` ("Refusal texts follow the page language").
+- Frontend: `apiFetch` sends `Accept-Language` (not for English); the language the page uses is kept in `i18n/languageChoice.ts` (the provider sets it). `utils/formProblem.ts` words the problems the inputs declare (required, type, min, max, length, pattern) in the page language; the forms listed in the contract use it with `noValidate`.
+- Uzbek texts for the DRF messages are mine, not reviewed by a native speaker: please have them read together with the rest of the uz catalog.
+- Not covered at that time: English error texts in other backend modules; they are done in the next note.
+
+## Texts in the page language: the rest of the API (2026-10-27)
+- 99 more refusal texts (bookings, accounts, users, properties, geography, currency, promotions, admin) are wrapped in `gettext` and translated in `locale/uz` and `locale/ru`. `common/tests/test_api_texts_translated.py` keeps it so: a plain English sentence in a refusal, or one without a translation, fails the test.
+- Still English on purpose: the hotel not-found text (the hotel page has its own), the `reason` texts that travel with booking refusal codes, status views, generic server fallbacks, payments (dropped tables).
+- The new uz/ru texts are mine, not reviewed by a native speaker.
+- Tests changed on purpose: none of the existing assertions; new tests for the middleware, the catalogs, `apiFetch`, `formProblem` and one per form.
+
+## Texts the site writes itself, in the page language (2026-10-27)
+- The generic error texts of the client (status fallbacks 400 to 503, "Network error occurred", timeout, expired session, "Too many requests, try again in N seconds", the "Admin or staff role required" / "Authentication required" / "Resource not found" overrides of the adapters) were English in every language. They are now catalog keys `apiError.*` in en/uz/ru, read with `translateNow(key)` (`i18n/translateNow.ts`: text in the language the page is in at that moment, for code with no React context). The adapters' status-message tables use getters, so the text is chosen when the error happens, not when the app loads.
+- `I18nContext` now takes `translate` and the catalogs from `translateNow.ts` (no behaviour change).
+- Not covered: the adapters' own domain texts that are still English ("Property not found", "Booking not found", "Favorite not found", "Failed to ..." and similar, about 60), and the chat and no-show adapters' 403/404 texts. They show only when the server sends nothing readable.
+- The uz and ru texts are mine, not reviewed by a native speaker.

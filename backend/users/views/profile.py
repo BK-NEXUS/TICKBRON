@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from users.serializers import UserSerializer, UserUpdateSerializer
+from django.utils.translation import gettext as _
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -17,7 +18,7 @@ def me(request):
     if request.user.is_authenticated:
         return Response(UserSerializer(request.user).data)
     return Response(
-        {'detail': 'Authentication credentials were not provided.'},
+        {'detail': _('Authentication credentials were not provided.')},
         status=status.HTTP_401_UNAUTHORIZED
     )
 
@@ -41,4 +42,4 @@ def refresh_session(request):
     """Tell the SPA whether the current session is still valid, and who it belongs to."""
     if request.user.is_authenticated:
         return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
-    return Response({'detail': 'No active session found.'}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response({'detail': _('No active session found.')}, status=status.HTTP_401_UNAUTHORIZED)

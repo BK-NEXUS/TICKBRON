@@ -20,6 +20,7 @@ from common.dates import business_today
 from currency.rates import ExchangeRateUnavailable
 from .models import Booking, BookingItem
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingCancelSerializer
+from django.utils.translation import gettext as _
 
 logger = logging.getLogger('tickbron')
 
@@ -78,9 +79,10 @@ class BookingViewSet(mixins.CreateModelMixin,
     @staticmethod
     def _pending_cap_response():
         return Response(
-            {'error': 'Too many upcoming bookings. Cancel one or wait until you have stayed.',
+            {'error': _('Too many upcoming bookings. Cancel one or wait until you have stayed.'),
              'code': 'too_many_upcoming_bookings'},
-            status=status.HTTP_429_TOO_MANY_REQUESTS
+            # A business rule, not throttling: 429 would look like a rate limit to clients and monitoring
+            status=status.HTTP_409_CONFLICT
         )
 
     @staticmethod
@@ -94,7 +96,7 @@ class BookingViewSet(mixins.CreateModelMixin,
     @staticmethod
     def _overlap_response():
         return Response(
-            {'error': 'You already have a booking for these dates. Choose dates that start after it ends.',
+            {'error': _('You already have a booking for these dates. Choose dates that start after it ends.'),
              'code': 'overlapping_booking'},
             status=status.HTTP_409_CONFLICT
         )
@@ -135,7 +137,7 @@ class BookingViewSet(mixins.CreateModelMixin,
         
         if not serializer.is_valid():
             return Response(
-                {'error': 'Invalid booking parameters', 'details': serializer.errors},
+                {'error': _('Invalid booking parameters'), 'details': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -160,28 +162,28 @@ class BookingViewSet(mixins.CreateModelMixin,
         except ExchangeRateUnavailable as e:
             # USD-priced hotel and no rate yet: nothing was reserved (R6 decision A)
             return Response(
-                {'error': 'Exchange rate unavailable', 'code': e.default_code, 'details': str(e.detail)},
+                {'error': _('Exchange rate unavailable'), 'code': e.default_code, 'details': str(e.detail)},
                 status=e.status_code
             )
         except ValidationError as e:
             # Handle Django ValidationError
             return Response(
-                {'error': 'Booking validation failed', 'details': e.message_dict},
+                {'error': _('Booking validation failed'), 'details': e.message_dict},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except DRFValidationError as e:
             # BookingCreateSerializer.create() raises this for both business-rule
             # violations and unexpected internal errors; either way e.detail is
             # already a safe, non-leaking message by the time it gets here.
-            return Response(
-                {'error': 'Booking validation failed', 'details': e.detail},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            body = {'error': 'Booking validation failed', 'details': e.detail}
+            if getattr(e, 'reason', None):
+                body['reason'] = e.reason
+            return Response(body, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             # Truly unexpected error: never echo str(e) to the client.
             logger.exception('Unexpected error creating booking')
             return Response(
-                {'error': 'Failed to create booking'},
+                {'error': _('Failed to create booking')},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -258,7 +260,7 @@ def booking_cancel(request, booking_id):
     
     if not serializer.is_valid():
         return Response(
-            {'error': 'Invalid cancellation parameters', 'details': serializer.errors},
+            {'error': _('Invalid cancellation parameters'), 'details': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -269,12 +271,12 @@ def booking_cancel(request, booking_id):
         # BookingCancelSerializer.update() raises this for both business-rule
         # violations and unexpected internal errors; e.detail is already safe.
         return Response(
-            {'error': 'Failed to cancel booking', 'details': e.detail},
+            {'error': _('Failed to cancel booking'), 'details': e.detail},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception:
         logger.exception('Unexpected error cancelling booking')
         return Response(
-            {'error': 'Failed to cancel booking'},
+            {'error': _('Failed to cancel booking')},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

@@ -772,6 +772,17 @@ class RoomPhoto(BaseModel):
         
         super().save(*args, **kwargs)
     
+    def remove(self):
+        """Soft-delete this photo; if it was the cover, the first remaining photo becomes the cover."""
+        was_cover = self.is_primary
+        self.is_primary = False
+        self.soft_delete()
+        if was_cover:
+            successor = RoomPhoto.objects.filter(room_type=self.room_type, is_deleted=False).first()
+            if successor is not None:
+                successor.is_primary = True
+                successor.save()
+
     def get_absolute_url(self):
         """Get the absolute URL for the photo."""
         return self.photo.url if self.photo else None

@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
 from common.money import quantize
+from django.utils.translation import gettext as _
 
 # Longest stay anyone can quote or book, whatever the rate plan allows. Without it a
 # far-away check_out made quote_stay build (and lock) one row per night (R4 security review).
@@ -215,6 +216,25 @@ def _room_inventory_rows(room_type, nights, lock=False):
     return rows
 
 
+def _refused(field, code, message, **params):
+    """A refusal: the English text stays, and the code with its values lets the site say it in the user's language."""
+    return ValidationError({field: ValidationError(message, code=code, params=params)})
+
+
+def _refusal(code, message, night, **params):
+    """A refusal about one night of the stay."""
+    return _refused('availability', code, message, date=night.isoformat(), **params)
+
+
+def refusal_reason(error):
+    """{'code', 'params'} of the first refusal that has a code, or None when the refusal has none."""
+    for messages in getattr(error, 'error_dict', {}).values():
+        for message in messages:
+            if getattr(message, 'code', None):
+                return {'code': message.code, 'params': message.params}
+    return None
+
+
 def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     """
     Price a stay: each night costs its own inventory price, or the rate plan's
@@ -229,19 +249,17 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     from properties.models import DateInventory
 
     if check_out <= check_in:
-        raise ValidationError({'check_out': 'Check-out date must be after check-in date'})
+        raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
 
     number_of_nights = (check_out - check_in).days
     if number_of_nights > MAX_STAY_NIGHTS:
-        raise ValidationError({'check_out': f'A stay can be at most {MAX_STAY_NIGHTS} nights.'})
+        raise ValidationError({'check_out': _('A stay can be at most %(nights)s nights.') % {'nights': MAX_STAY_NIGHTS}})
     if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
-        raise ValidationError({
-            'check_in': f'Minimum stay is {rate_plan.min_nights} nights for this rate.'
-        })
+        raise _refused('check_in', 'plan_min_stay', f'Minimum stay is {rate_plan.min_nights} nights for this rate.',
+                       nights=rate_plan.min_nights)
     if rate_plan.max_nights and number_of_nights > rate_plan.max_nights:
-        raise ValidationError({
-            'check_in': f'Maximum stay is {rate_plan.max_nights} nights for this rate.'
-        })
+        raise _refused('check_in', 'plan_max_stay', f'Maximum stay is {rate_plan.max_nights} nights for this rate.',
+                       nights=rate_plan.max_nights)
 
     rows = DateInventory.objects.filter(
         rate_plan=rate_plan, date__gte=check_in, date__lt=check_out, is_deleted=False,
@@ -261,21 +279,27 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     for night in nights:
         row = by_date.get(night)
         if row is None or not row.is_available:
-            raise ValidationError({'availability': f'{night.isoformat()} is not available.'})
+            raise _refusal('night_unavailable', f'{night.isoformat()} is not available.', night)
         if row.minimum_stay and number_of_nights < row.minimum_stay:
-            raise ValidationError({'availability': (
-                f'A stay including {night.isoformat()} must be at least {row.minimum_stay} nights.')})
+            raise _refusal(
+                'night_min_stay',
+                f'A stay including {night.isoformat()} must be at least {row.minimum_stay} nights.',
+                night, nights=row.minimum_stay)
         if row.maximum_stay and number_of_nights > row.maximum_stay:
-            raise ValidationError({'availability': (
-                f'A stay including {night.isoformat()} can be at most {row.maximum_stay} nights.')})
+            raise _refusal(
+                'night_max_stay',
+                f'A stay including {night.isoformat()} can be at most {row.maximum_stay} nights.',
+                night, nights=row.maximum_stay)
 
         room_row = room_rows[night]
         if not room_row.is_available:
-            raise ValidationError({'availability': f'{night.isoformat()} is not available.'})
+            raise _refusal('night_unavailable', f'{night.isoformat()} is not available.', night)
         if room_row.remaining_rooms < number_of_rooms:
-            raise ValidationError({'availability': f'No rooms left on {night.isoformat()}.'
-                                   if room_row.remaining_rooms == 0 else
-                                   f'Only {room_row.remaining_rooms} rooms left on {night.isoformat()}.'})
+            if room_row.remaining_rooms == 0:
+                raise _refusal('no_rooms_left', f'No rooms left on {night.isoformat()}.', night)
+            raise _refusal(
+                'few_rooms_left', f'Only {room_row.remaining_rooms} rooms left on {night.isoformat()}.',
+                night, rooms=room_row.remaining_rooms)
 
         price = row.price if row.price is not None else rate_plan.base_price
         quote.nights.append((night, price))

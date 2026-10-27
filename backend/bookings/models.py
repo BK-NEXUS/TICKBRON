@@ -325,7 +325,7 @@ class Booking(BaseModel):
             guest_phone: Optional guest phone (defaults to user's phone)
             guest_email: Optional guest email (defaults to user's email)
             number_of_rooms: Number of rooms (defaults to 1)
-            children: List of children ages (defaults to empty list)
+            children: List of children ages, counted inside guest_count (defaults to empty list)
         
         Returns:
             Booking object if successful
@@ -349,6 +349,9 @@ class Booking(BaseModel):
         for age in children:
             if not isinstance(age, int) or age < 0 or age > 17:
                 raise ValidationError({'children': _('Children ages must be integers between 0 and 17')})
+        # Children are part of guest_count (persons), and the booker is an adult
+        if len(children) >= guest_count:
+            raise ValidationError({'children': _('Children are part of the guest count; at least one guest must be an adult')})
         
         if property_obj.status != 'active' or not property_obj.is_active or property_obj.is_deleted:
             raise ValidationError({'property_id': _('Property not found or not available')})

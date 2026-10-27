@@ -346,6 +346,14 @@ describe('BookingPage', () => {
       })
     })
 
+    it('without a selected room it has one h1 and leads back to search, not to a hotel that is not known', async () => {
+      renderWithRouter(<BookingPage />, null)
+
+      expect(await screen.findByRole('heading', { level: 1, name: 'Booking Error' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Return to search results' })).toHaveTextContent('Back to Search')
+      expect(screen.queryByText('Back to Property')).toBeNull()
+    })
+
     it('should render children section with add button', async () => {
       renderWithRouter(<BookingPage />)
 
@@ -353,6 +361,36 @@ describe('BookingPage', () => {
         expect(screen.getByText('Children (Ages 0-17)')).toBeInTheDocument()
         expect(screen.getByText('+ Add Child')).toBeInTheDocument()
       })
+    })
+
+    it('keeps at least one adult: children stop one short of the guest count', async () => {
+      renderWithRouter(<BookingPage />)
+
+      expect(await screen.findByText('Counted within the number of guests; at least one guest must be an adult.')).toBeInTheDocument()
+      const add = screen.getByRole('button', { name: '+ Add Child' })
+      expect(add).toBeEnabled()
+      fireEvent.click(add)
+      expect(screen.getByLabelText('Child 1')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '+ Add Child' })).toBeDisabled()
+    })
+
+    it('does not offer children when only one guest is booked', async () => {
+      renderWithRouter(<BookingPage />, { ...bookingState, guestCount: 1 })
+
+      expect(await screen.findByRole('button', { name: '+ Add Child' })).toBeDisabled()
+    })
+
+    it('leaves checking to the site, which words each problem under its field in the page language', async () => {
+      const { container } = renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+
+      const form = container.querySelector('form.booking-form') as HTMLFormElement
+      expect(form).toHaveAttribute('novalidate')
+      fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: '' } })
+      fireEvent.submit(form)
+
+      expect(await screen.findByText('First name is required')).toBeInTheDocument()
+      expect(bookingAdapter.createBooking).not.toHaveBeenCalled()
     })
 
     it('should validate number of rooms minimum value', async () => {
@@ -531,6 +569,43 @@ describe('BookingPage', () => {
         expect(screen.getByText('5 nights')).toBeInTheDocument()
       })
 
+      describe('a stay that cannot be booked is explained with the date in the page language', () => {
+        const refused = (code: string, params: Record<string, string | number>, error = 'server text') =>
+          mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error, reason: { code, params } })
+
+        it('a night that is not available', async () => {
+          refused('night_unavailable', { date: '2027-05-12' }, '2027-05-12 is not available.')
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('May 12, 2027 is not available.')).toBeInTheDocument()
+        })
+
+        it('a stay that is too short or too long for a night', async () => {
+          refused('night_min_stay', { date: '2027-05-12', nights: 3 })
+          const { unmount } = renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('A stay including May 12, 2027 must be at least 3 nights.')).toBeInTheDocument()
+          unmount()
+          refused('night_max_stay', { date: '2027-05-12', nights: 2 })
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('A stay including May 12, 2027 can be at most 2 nights.')).toBeInTheDocument()
+        })
+
+        it('no rooms left, and only a few left', async () => {
+          refused('no_rooms_left', { date: '2027-05-12' })
+          const { unmount } = renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('No rooms left on May 12, 2027.')).toBeInTheDocument()
+          unmount()
+          refused('few_rooms_left', { date: '2027-05-12', rooms: 2 })
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('Only 2 rooms left on May 12, 2027.')).toBeInTheDocument()
+        })
+
+        it('an unknown code shows the server text', async () => {
+          refused('something_new', {}, 'Server says no.')
+          renderWithRouter(<BookingPage />)
+          expect(await screen.findByText('Server says no.')).toBeInTheDocument()
+        })
+      })
+
       it('shows ≈ before a total that is a conversion and "You pay" for the owner\'s so\'m price (R16)', async () => {
         mockPropertyAdapter.getQuote.mockResolvedValue({
           ...quote('515.00'),
@@ -702,6 +777,26 @@ describe('BookingPage', () => {
       expect(screen.getByText(/If you do not arrive at 14:00, we wait 2 more hours\. If you still do not come, the booking is cancelled\./)).toBeInTheDocument()
       fireEvent.change(box, { target: { value: '10:30' } })
       expect(screen.getByText(/If you do not arrive at 10:30, we wait 2 more hours/)).toBeInTheDocument()
+    })
+
+    it('a refusal at booking time is explained in the page language, with the date written out', async () => {
+      mockBookingAdapter.createBooking.mockResolvedValue({
+        data: null, error: '2025-01-22 is not available.', code: undefined,
+        reason: { code: 'night_unavailable', params: { date: '2025-01-22' } },
+      })
+      await ready()
+      fireEvent.click(screen.getByText('Confirm booking'))
+      expect(await screen.findByText('Jan 22, 2025 is not available.')).toBeInTheDocument()
+    })
+
+    it('the plan\'s own minimum and maximum stay are explained too', async () => {
+      mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error: 'x', reason: { code: 'plan_min_stay', params: { nights: 2 } } })
+      const { unmount } = renderWithRouter(<BookingPage />)
+      expect(await screen.findByText('The minimum stay for this rate is 2 nights.')).toBeInTheDocument()
+      unmount()
+      mockPropertyAdapter.getQuote.mockResolvedValue({ data: null, error: 'x', reason: { code: 'plan_max_stay', params: { nights: 7 } } })
+      renderWithRouter(<BookingPage />)
+      expect(await screen.findByText('The maximum stay for this rate is 7 nights.')).toBeInTheDocument()
     })
 
     it('confirms the booking at once: a confirmed page with the arrival rule', async () => {

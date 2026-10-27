@@ -7,8 +7,23 @@ from common.validators import validate_person_name
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from users.models import User
 from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
+from django.utils.translation import gettext as _
+
+
+class LowercaseEmailField(serializers.EmailField):
+    """An address typed with any capitals is the same address: it is lower-cased before it is checked and stored."""
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(data).strip().lower()
+
+
+def unique_email_field():
+    """The e-mail field of a form that makes an account: lower case, and not taken by another account."""
+    return LowercaseEmailField(validators=[UniqueValidator(
+        queryset=User.objects.all(), message='User with this email already exists.')])
 
 
 def validate_new_password(attrs):
@@ -63,6 +78,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration.
     """
+    email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     # Stored only (no SMS, no code); several accounts may share a number
@@ -72,7 +88,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
-        extra_kwargs = {'full_name': {'required': True, 'validators': [validate_person_name]}}
+        extra_kwargs = {'full_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]}}
     
     def validate_email(self, value):
         """Validate email format."""
@@ -85,7 +101,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError({"password": _("Password fields didn't match.")})
         validate_new_password(attrs)
         return attrs
     
@@ -102,7 +118,7 @@ class UserLoginSerializer(serializers.Serializer):
     """
     Serializer for user login.
     """
-    email = serializers.EmailField()
+    email = LowercaseEmailField()
     password = serializers.CharField()
     
     def validate_email(self, value):
@@ -114,7 +130,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     """The address a reset link is requested for."""
-    email = serializers.EmailField()
+    email = LowercaseEmailField()
 
 
 class NewPasswordSerializer(serializers.Serializer):
@@ -124,7 +140,7 @@ class NewPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({'password': "Password fields didn't match."})
+            raise serializers.ValidationError({'password': _("Password fields didn't match.")})
         return attrs
 
 

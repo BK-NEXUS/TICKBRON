@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'geography',
     'currency',
     'promotions',
+    'chat',
     
     # Third-party apps
     'rest_framework',
@@ -85,6 +86,8 @@ MIDDLEWARE = [
     'common.middleware.RequestBodyLimitMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # The site sends Accept-Language (uz, ru, en); validation errors come back in that language
+    'common.middleware.RequestLanguageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -184,6 +187,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+LANGUAGES = [('en', 'English'), ('ru', 'Русский'), ('uz', 'Oʻzbekcha')]
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 TIME_ZONE = 'UTC'
 
@@ -314,6 +319,9 @@ REST_FRAMEWORK = {
         'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
         # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
+        # Support chat: writing, and reading (the page polls while the chat is open)
+        'chat_send': os.getenv('THROTTLE_CHAT_SEND_RATE', '20/min'),
+        'chat_poll': os.getenv('THROTTLE_CHAT_POLL_RATE', '90/min'),
     },
 }
 
@@ -392,6 +400,8 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'TICKBRON <no-reply@tickbron.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+# Where the team hears of a new chat message (empty = the team is not mailed; the admin tab still shows the badge)
+SUPPORT_NOTIFY_EMAIL = os.getenv('SUPPORT_NOTIFY_EMAIL', '')
 PASSWORD_RESET_TIMEOUT = 60 * 60  # a reset link works for one hour
 
 # Alerts to a Telegram chat (common/alerts.py). Both empty = alerts off. Create the bot with

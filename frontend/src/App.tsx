@@ -27,6 +27,7 @@ const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminCustomerProfile = lazy(() => import('./components/AdminCustomerProfile'))
 const SupportLookupPage = lazy(() => import('./pages/SupportLookupPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const SupportChatPage = lazy(() => import('./pages/SupportChatPage'))
 const InfoPage = lazy(() => import('./pages/InfoPage'))
 const DestinationsPage = lazy(() => import('./pages/DestinationsPage'))
 
@@ -62,6 +63,7 @@ function App() {
                       <Route path="admin/customers/:customerId" element={<AdminCustomerProfile />} />
                       <Route path="admin/support" element={<SupportLookupPage />} />
                     </Route>
+                    <Route path="support" element={<SupportChatPage />} />
                     <Route path="destinations" element={<DestinationsPage />} />
                     {(['about', 'help', 'contact', 'safety', 'terms', 'privacy', 'cookies'] as const).map(slug => (
                       <Route key={slug} path={slug} element={<InfoPage slug={slug} />} />

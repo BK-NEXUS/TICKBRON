@@ -6,6 +6,8 @@
 // Django rotates the token on login and logout, so authAdapter clears the cache then.
 
 import { readApiError } from './errorHandler'
+import { getActiveLanguage } from '../i18n/languageChoice'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -70,6 +72,14 @@ function withCsrfHeader(init: RequestInit, token: string | null): RequestInit {
   return { ...init, headers: { ...headersToObject(init.headers), 'X-CSRFToken': token } }
 }
 
+/** The API words its refusals in the page language; English is what it sends without the header */
+function withLanguageHeader(init: RequestInit): RequestInit {
+  const language = getActiveLanguage()
+  const headers = headersToObject(init.headers)
+  if (language === 'en' || Object.keys(headers).some((name) => name.toLowerCase() === 'accept-language')) return init
+  return { ...init, headers: { ...headers, 'Accept-Language': language } }
+}
+
 async function isCsrfFailure(response: Response): Promise<boolean> {
   if (response.status !== 403 || typeof response.clone !== 'function') return false
   const body = await response.clone().text().catch(() => '')
@@ -82,7 +92,7 @@ async function isCsrfFailure(response: Response): Promise<boolean> {
  * Django rejects those before the view runs, so the retry cannot duplicate a write.
  */
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
-  const options: RequestInit = { credentials: 'include', ...init }
+  const options: RequestInit = withLanguageHeader({ credentials: 'include', ...init })
   const method = (options.method || 'GET').toUpperCase()
   if (!UNSAFE_METHODS.has(method)) {
     return fetch(url, options)
@@ -163,7 +173,7 @@ export async function fetchAllPages<T>(url: string, options: FetchAllPagesOption
       }
     }
   } catch (error) {
-    const message = networkErrorMessage ?? (error instanceof Error ? error.message : 'Network error occurred')
+    const message = networkErrorMessage ?? (error instanceof Error ? error.message : translateNow('apiError.networkOccurred'))
     return { data: null, error: message, truncated: false }
   }
 

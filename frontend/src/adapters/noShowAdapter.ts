@@ -2,6 +2,7 @@
 // Contract: .ai/API_CONTRACT.md, sections "R12b: no-show reports" and "Cash only".
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -56,7 +57,12 @@ export interface NoShowResult<T> {
 
 const OWNER = '/api/v1/partner'
 const STAFF = '/api/v1/admin-panel/no-show-reports'
-const STATUS_MESSAGES = { 401: 'Authentication required', 403: 'Access denied', 404: 'Report not found' }
+// A getter: the text is chosen when an error happens, in the language the page is in then
+const STATUS_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  403: 'Access denied',
+  404: 'Report not found',
+}
 
 function withQuery(path: string, params: Record<string, string | number | undefined>): string {
   const query = new URLSearchParams()
@@ -87,7 +93,7 @@ export class NoShowAdapter {
       }
       return { data: (await response.json()) as T, error: null, code: null, fieldErrors: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred', code: null, fieldErrors: null }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null, fieldErrors: null }
     }
   }
 

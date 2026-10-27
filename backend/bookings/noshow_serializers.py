@@ -10,6 +10,7 @@ import re
 from rest_framework import serializers
 
 from bookings.models import NoShowReport
+from django.utils.translation import gettext as _
 
 MIN_LENGTH, MAX_LENGTH = 10, 500
 _HTML_TAG = re.compile(r'<\s*/?\s*[A-Za-z!][^>]*>')
@@ -29,7 +30,7 @@ class PlainTextComment(serializers.CharField):
             self.fail('invalid')
         value = super().to_internal_value(data)
         if _HTML_TAG.search(value):
-            raise serializers.ValidationError('HTML is not allowed.')
+            raise serializers.ValidationError(_('HTML is not allowed.'))
         return value
 
 

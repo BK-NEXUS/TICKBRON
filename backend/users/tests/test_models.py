@@ -52,8 +52,8 @@ class TestUserModel(TestCase):
             password='testpass123'
         )
         
-        # Django's normalize_email only lowercases the domain part
-        assert user.email == 'Test@example.com'
+        # The whole address is lowercased (see users/tests/test_email_case.py)
+        assert user.email == 'test@example.com'
     
     def test_user_without_email_raises_error(self):
         """Test that creating user without email raises ValueError."""

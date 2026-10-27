@@ -1,9 +1,11 @@
 // Property API adapter for search and property detail endpoints
 // Integrates with backend property endpoints from Checkpoint 10-11
 
-import { readApiError } from '../utils/errorHandler'
+import { parseApiError, readApiError } from '../utils/errorHandler'
+import { refusalOf, type Refusal } from '../utils/refusal'
 import { apiFetch } from '../utils/api'
 import type { ExchangeRateInfo } from './bookingAdapter'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -344,7 +346,7 @@ class PropertyAdapter {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Network error occurred',
+        error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
   }
@@ -433,7 +435,7 @@ class PropertyAdapter {
   async getQuote(
     propertyId: number,
     params: QuoteParams
-  ): Promise<{ data: StayQuote | null; error: string | null }> {
+  ): Promise<{ data: StayQuote | null; error: string | null; reason?: Refusal }> {
     const query = new URLSearchParams({
       room_type_id: String(params.roomTypeId),
       rate_plan_id: String(params.ratePlanId),
@@ -447,14 +449,15 @@ class PropertyAdapter {
         credentials: 'include',
       })
       if (!response.ok) {
-        const apiError = await readApiError(response)
+        const body: unknown = await response.json().catch(() => undefined)
+        const apiError = parseApiError(response, body)
         // The field message ("... is not available.") is clearer than the envelope text
         const reason = apiError.fieldErrors ? Object.values(apiError.fieldErrors).flat()[0] : undefined
-        return { data: null, error: reason || apiError.message }
+        return { data: null, error: reason || apiError.message, reason: refusalOf(body) }
       }
       return { data: await response.json(), error: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
     }
   }
 }

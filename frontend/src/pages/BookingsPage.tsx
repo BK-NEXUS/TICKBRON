@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { CancelBookingDialog } from '../components/CancelBookingDialog'
 import type { Booking as CancelledBooking } from '../adapters/bookingAdapter'
 import { businessToday } from '../utils/dates'
+import { canUsePartnerPanel } from '../utils/roles'
 import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
 
 interface BookingCardProps {
@@ -146,7 +147,7 @@ const statusOfFilter = (filter: BookingFilter): string | undefined =>
 
 export function BookingsPage() {
   const { t } = useI18n()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [total, setTotal] = useState(0)
   const [nextPage, setNextPage] = useState<number | null>(null)
@@ -282,9 +283,10 @@ export function BookingsPage() {
           <EmptyState
             icon={<Calendar size={40} />}
             title={t('bookings.emptyTitle')}
-            message={t('bookings.emptyText')}
+            message={t(canUsePartnerPanel(user) ? 'bookings.emptyTextOwner' : 'bookings.emptyText')}
             ctaText={t('bookings.emptyCta')}
             ctaLink="/"
+            headingLevel={1}
           />
         </div>
       </div>

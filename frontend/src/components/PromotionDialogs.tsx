@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { DialogModal as Modal } from './DialogModal'
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { promotionAdapter, type AdminPromotion, type PromotionStats } from '../adapters/promotionAdapter'
 import { promotionErrorKey } from '../utils/promotionErrors'
 
@@ -13,7 +14,7 @@ interface HotelRef {
 
 interface CreatePromotionDialogProps {
   hotel: HotelRef
-  onCreated: () => void
+  onCreated: (promotion: AdminPromotion) => void
   onClose: () => void
 }
 
@@ -28,9 +29,12 @@ export function CreatePromotionDialog({ hotel, onCreated, onClose }: CreatePromo
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [errorKey, setErrorKey] = useState<ReturnType<typeof promotionErrorKey> | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
 
-  const submit = async (event: FormEvent) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setProblem(null)
+    if (!formAccepts(event.currentTarget, t, setProblem)) return
     setSaving(true)
     setErrorKey(null)
     const result = await promotionAdapter.createPromotion({
@@ -47,13 +51,14 @@ export function CreatePromotionDialog({ hotel, onCreated, onClose }: CreatePromo
       setErrorKey(promotionErrorKey(result.code))
       return
     }
-    onCreated()
+    onCreated(result.data)
   }
 
   return (
     <Modal titleId="promotion-create-title" title={t('promoAdmin.promoteHotel', { hotel: hotel.name })} onClose={onClose}>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} noValidate>
         {hotel.status !== 'active' && <p className="alert alert-warning">{t('promoAdmin.hotelNotActive')}</p>}
+        {problem && <p className="alert alert-error" role="alert">{problem}</p>}
         {errorKey && <p className="alert alert-error" role="alert">{t(errorKey)}</p>}
         <div className="form-group">
           <label htmlFor="promo-start">{t('promoAdmin.form.startDate')}</label>

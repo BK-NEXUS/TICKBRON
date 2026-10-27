@@ -271,6 +271,16 @@ describe('PropertyDetailPage', () => {
     })
   })
 
+  it('not found: the title is the page heading and the text does not repeat it', async () => {
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: null, error: 'Property not found' })
+
+    renderWithProviders(<PropertyDetailPage />)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Property Not Found' })).toBeInTheDocument()
+    expect(screen.getByText('The property you are looking for does not exist.')).toBeInTheDocument()
+    expect(screen.queryByText('Property not found')).toBeNull()
+  })
+
   it('renders error state when API call fails', async () => {
     vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
       data: null,

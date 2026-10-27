@@ -3,11 +3,12 @@
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Property } from './propertyAdapter'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
-/** A search card plus the id the click counter needs. */
-export type PromotedProperty = Property & { promotion_id: number }
+/** A search card plus the id the click counter needs and the pictures of the banner (at most 10; may be empty) */
+export type PromotedProperty = Property & { promotion_id: number; promo_photos?: string[] }
 
 export type PromotionStatus = 'scheduled' | 'active' | 'paused' | 'ended' | 'cancelled'
 export type PromotionBlockedReason = 'hotel_not_active' | 'outside_scope' | null
@@ -18,6 +19,25 @@ export interface HotelSearchRow {
   city: string
   status: string
   has_running_promotion: boolean
+}
+
+/** One picture put on an ad */
+export interface AdPhoto {
+  id: number
+  photo_url: string | null
+  display_order: number
+}
+
+/** One region of the advertising panel: ads running and waiting in it, and the hotels running them */
+export interface PromotionRegion {
+  id: number
+  country_code: string
+  name_uz: string
+  name_ru: string
+  name_en: string
+  running: number
+  waiting: number
+  hotels: { id: number; name: string }[]
 }
 
 export interface AdminPromotion {
@@ -40,11 +60,14 @@ export interface AdminPromotion {
   blocked_reason: PromotionBlockedReason
   total_impressions: number
   total_clicks: number
+  photos: AdPhoto[]
+  photos_count: number
   created_at: string
 }
 
 export interface PromotionListParams {
   q?: string
+  region?: number
   status?: string
   paid?: string
   from?: string
@@ -92,7 +115,12 @@ export interface PromotionResult<T> {
 }
 
 const ADMIN = '/api/v1/admin-panel'
-const STATUS_MESSAGES = { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Promotion not found' }
+// Getters: the text is chosen when an error happens, in the language the page is in then
+const STATUS_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  get 403() { return translateNow('apiError.adminRequired') },
+  404: 'Promotion not found',
+}
 
 function withQuery(path: string, params: Record<string, string | number | undefined>): string {
   const query = new URLSearchParams()
@@ -124,7 +152,7 @@ export class PromotionAdapter {
       if (response.status === 204) return { data: null, error: null, code: null }
       return { data: (await response.json()) as T, error: null, code: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred', code: null }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null }
     }
   }
 
@@ -182,6 +210,37 @@ export class PromotionAdapter {
 
   cancelPromotion(id: number, reason: string): Promise<PromotionResult<AdminPromotion>> {
     return this.send(`${ADMIN}/promotions/${id}/cancel/`, 'POST', { reason })
+  }
+
+  /** Every region with the ads running and waiting in it (the advertising panel by region) */
+  getRegionPanel(): Promise<PromotionResult<PromotionRegion[]>> {
+    return this.request<PromotionRegion[]>(`${ADMIN}/promotions/regions/`)
+  }
+
+  getPromotionPhotos(id: number): Promise<PromotionResult<AdPhoto[]>> {
+    return this.request<AdPhoto[]>(`${ADMIN}/promotions/${id}/photos/`)
+  }
+
+  /** Multipart upload of one picture; the server refuses an eleventh and anything that is not an image */
+  async uploadPromotionPhoto(id: number, file: File): Promise<PromotionResult<AdPhoto>> {
+    const body = new FormData()
+    body.append('photo', file)
+    try {
+      const response = await apiFetch(`${this.baseUrl}${ADMIN}/promotions/${id}/photos/`, {
+        method: 'POST', credentials: 'include', body,
+      })
+      if (!response.ok) {
+        const apiError = await readApiError(response, STATUS_MESSAGES)
+        return { data: null, error: apiError.message, code: apiError.code ?? null }
+      }
+      return { data: (await response.json()) as AdPhoto, error: null, code: null }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null }
+    }
+  }
+
+  deletePromotionPhoto(id: number, photoId: number): Promise<PromotionResult<null>> {
+    return this.request<null>(`${ADMIN}/promotions/${id}/photos/${photoId}/`, { method: 'DELETE' })
   }
 
   getPromotionStats(id: number, range: { from?: string; to?: string } = {}): Promise<PromotionResult<PromotionStats>> {

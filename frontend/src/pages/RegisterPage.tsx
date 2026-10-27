@@ -8,6 +8,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { authFormProblem } from '../utils/authForm'
 import { useI18n } from '../i18n/I18nContext'
 
 export function RegisterPage() {
@@ -43,6 +44,12 @@ export function RegisterPage() {
     setError('')
 
     // Basic validation
+    const problem = authFormProblem([formData.full_name, formData.email, formData.phone_number, formData.password, formData.password_confirm], formData.email)
+    if (problem) {
+      setError(t(problem === 'required' ? 'auth.errRequired' : 'auth.errEmail'))
+      return
+    }
+
     if (!isPhoneValid(formData.phone_number)) {
       setError(t('auth.errPhone'))
       return
@@ -91,7 +98,7 @@ export function RegisterPage() {
             </div>
           )}
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
               <label htmlFor="full_name" className="auth-label">
                 {t('auth.fullName')}

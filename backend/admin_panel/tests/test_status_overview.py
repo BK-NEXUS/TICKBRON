@@ -2,7 +2,7 @@
 Admin Status overview: GET /admin-panel/status/overview/ (.ai/PLAN_STATUS_V2.md). Access: test_access_matrix.py.
 Data: the status_world fixture (status_fixtures.py).
 """
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
 import pytest
@@ -115,3 +115,12 @@ def test_monthly_series_and_years(get, status_world):
 @pytest.mark.parametrize('params', [{'period': 'nope'}, {'year': 'abc'}])
 def test_bad_input_is_a_400(get, params):
     assert get(**params).status_code == 400
+
+
+def test_new_users_are_counted_by_business_date_not_by_utc_date(get):
+    # 20:00 UTC on 31 March is already 1 April 01:00 in Tashkent: it belongs to April
+    late = User.objects.create_user(email='late@example.com', password='GuestPassword#123')
+    User.objects.filter(pk=late.pk).update(date_joined=datetime(2026, 3, 31, 20, 0, tzinfo=dt_timezone.utc))
+
+    assert get(period='2026-04').data['new_users']['in_period'] == 1
+    assert get(period='2026-03').data['new_users']['in_period'] == 0

@@ -22,6 +22,7 @@ from properties.models import PropertyPhoto, PropertyTranslation
 from properties.search import card_prices_prefetch
 from bookings.models import Booking
 from common.request import get_client_ip
+from django.utils.translation import gettext as _
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
@@ -69,7 +70,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
         if existing is not None:
             if not existing.is_deleted:
-                raise ValidationError({'non_field_errors': 'This property is already in your favorites.'})
+                raise ValidationError({'non_field_errors': _('This property is already in your favorites.')})
             existing.is_deleted = False
             existing.deleted_at = None
             existing.notes = serializer.validated_data.get('notes', existing.notes)
@@ -151,7 +152,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 serializer.save(user=self.request.user, status='pending')
         except IntegrityError:
             # A concurrent request reviewed the same booking after validation
-            raise ValidationError({'booking': ["This booking has already been reviewed."]})
+            raise ValidationError({'booking': [_("This booking has already been reviewed.")]})
 
         # Log account history
         property_obj = serializer.validated_data.get('property')
@@ -285,7 +286,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Prevent direct creation of notifications through API."""
         return Response(
-            {'detail': 'Notifications cannot be created directly through API.'},
+            {'detail': _('Notifications cannot be created directly through API.')},
             status=status.HTTP_403_FORBIDDEN
         )
     

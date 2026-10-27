@@ -6,6 +6,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { NewPasswordFields } from '../components/NewPasswordFields'
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { newPasswordProblem } from '../utils/passwordRules'
 
 const INVALID_LINK_CODE = 'invalid_reset_link'
@@ -24,9 +25,10 @@ export function ResetPasswordPage() {
   const [done, setDone] = useState(false)
   const [linkRejected, setLinkRejected] = useState(false)
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
+    if (!formAccepts(event.currentTarget, t, setError)) return
 
     const problem = newPasswordProblem(password, confirmation)
     if (problem) {
@@ -85,7 +87,7 @@ export function ResetPasswordPage() {
                   {error}
                 </div>
               )}
-              <form className="auth-form" onSubmit={handleSubmit}>
+              <form className="auth-form" onSubmit={handleSubmit} noValidate>
                 <NewPasswordFields
                   password={password}
                   confirmation={confirmation}

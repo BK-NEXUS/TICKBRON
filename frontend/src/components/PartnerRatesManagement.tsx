@@ -1,7 +1,9 @@
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanRequest } from '../adapters/partnerAdapter'
 import { CURRENCIES } from '../i18n/options'
+import { rateTypeLabel } from '../utils/rateType'
 
 interface PartnerRatesManagementProps {
   roomTypeId: number
@@ -38,7 +40,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
   const [formData, setFormData] = useState<CreateRatePlanRequest>({
     room_type: roomTypeId,
     name: '',
-    slug: '',
     rate_type: 'standard',
     description: '',
     prices: {},
@@ -114,7 +115,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     try {
       const updateData: UpdateRatePlanRequest = {
         name: formData.name,
-        slug: formData.slug,
         rate_type: formData.rate_type,
         description: formData.description,
         prices: formData.prices,
@@ -178,7 +178,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     setFormData({
       room_type: roomTypeId,
       name: ratePlan.name,
-      slug: ratePlan.slug,
       rate_type: ratePlan.rate_type,
       description: ratePlan.description,
       prices: pricesOf(ratePlan),
@@ -215,10 +214,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       setError(t('partner.ratePlanNameIs'))
       return false
     }
-    if (!formData.slug.trim()) {
-      setError(t('partner.slugIsRequired'))
-      return false
-    }
     if (formData.min_nights < 1) {
       setError(t('partner.minimumNightsMustBe'))
       return false
@@ -243,7 +238,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     setFormData({
       room_type: roomTypeId,
       name: '',
-      slug: '',
       rate_type: 'standard',
       description: '',
       prices: {},
@@ -310,7 +304,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
                     {ratePlan.is_active ? t('profile.active') : t('profile.inactive')}
                   </span>
                   <span className="rate-plan-badge rate-plan-badge--type">
-                    {ratePlan.rate_type}
+                    {rateTypeLabel(ratePlan.rate_type, t)}
                   </span>
                   {!hasAllPrices(ratePlan) && (
                     <span className="rate-plan-badge rate-plan-badge--inactive">{t('partner.pricesIncompleteBadge')}</span>
@@ -412,8 +406,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
         </div>
       )}
 
-      <form className="rates-form" onSubmit={(e) => {
+      <form className="rates-form" noValidate onSubmit={(e) => {
         e.preventDefault()
+        if (!formAccepts(e.currentTarget, t, setError)) return
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">
@@ -427,20 +422,6 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
             required
             aria-required="true"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="rate_slug">{t('partner.slug')}</label>
-          <input
-            id="rate_slug"
-            type="text"
-            value={formData.slug}
-            onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-            className="form-input"
-            required
-            aria-required="true"
-          />
-          <small className="form-hint">{t('partner.urlFriendlyIdentifierE2')}</small>
         </div>
 
         <div className="form-group">

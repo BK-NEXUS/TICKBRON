@@ -1,0 +1,779 @@
+/* Design refresh, panels (2026-10-23): the owner panel (hotel and room lists, room form, photos) and the statistics screens.
+   Loaded after refresh.css; every colour comes from tokens.css. */
+
+/* --- Owner panel (hotel list, room list, room form, photos) -------------------------------- */
+
+.partner-dashboard-page .properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--spacing-lg);
+}
+
+.partner-dashboard-page .property-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.partner-dashboard-page .property-card-header {
+  align-items: center;
+}
+
+.partner-dashboard-page .property-card-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-family: var(--font-family-heading);
+}
+
+.partner-dashboard-page .property-address {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.partner-dashboard-page .property-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+}
+
+.partner-dashboard-page .property-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.partner-dashboard-page .property-amenities {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-dashboard-page .amenity-tag {
+  padding: 2px var(--spacing-12);
+  border-radius: var(--radius-pill);
+  background: var(--color-tint);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.rooms-list-header,
+.rooms-form-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.rooms-list-title,
+.rooms-form-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-heading);
+}
+
+.room-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--spacing-lg);
+}
+
+.room-type-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.room-type-card-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  color: var(--color-gold-dark);
+  background:
+    repeating-linear-gradient(45deg, var(--color-tint) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(-45deg, var(--color-tint) 0 1px, transparent 1px 28px),
+    linear-gradient(135deg, var(--color-background-alt), var(--color-cream-deep));
+}
+
+.room-type-card-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-type-photo-count,
+.room-type-no-photos {
+  position: absolute;
+  right: var(--spacing-sm);
+  bottom: var(--spacing-sm);
+  padding: 2px var(--spacing-12);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.room-type-photo-count {
+  background: var(--color-float-bg);
+  color: var(--color-text-primary);
+}
+
+/* A room type without photos asks for them: it is a button that opens the room type */
+.room-type-no-photos {
+  min-height: 32px;
+  border: 1px dashed var(--color-warning);
+  background: var(--color-surface);
+  color: var(--color-warning);
+  cursor: pointer;
+}
+
+.room-type-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-md) 0;
+}
+
+.room-type-name {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-family: var(--font-family-heading);
+}
+
+.room-type-card-body {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+}
+
+.room-type-description {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.room-type-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.room-type-detail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.room-type-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.rooms-form {
+  display: grid;
+  gap: var(--spacing-lg);
+  max-width: 760px;
+}
+
+.rooms-form-section {
+  display: grid;
+  gap: var(--spacing-md);
+  min-width: 0;
+  margin: 0;
+  padding: var(--spacing-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.rooms-form-section legend {
+  padding: 0 var(--spacing-sm);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.rooms-form-photos {
+  max-width: 760px;
+  margin-top: var(--spacing-lg);
+}
+
+.rooms-form .form-input {
+  width: 100%;
+  padding: var(--spacing-12) var(--spacing-md);
+}
+
+.rooms-form .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.rooms-form .checkbox-group {
+  text-align: left;
+}
+
+.rooms-form-currency {
+  margin: var(--spacing-xs) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.partner-photos-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.room-photo-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  gap: var(--spacing-md);
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room-photo-queue-item {
+  position: relative;
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.room-photo-queue-item img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 599px) {
+  .rooms-form .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rooms-form-section {
+    padding: var(--spacing-md);
+  }
+}
+
+.properties-view-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.properties-view-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-heading);
+}
+
+.partner-dashboard-page .amenity-tag {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* The VIP switch: box and text on one line, left aligned, the help text under it */
+.rooms-form .checkbox-group {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.rooms-form .checkbox-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.rooms-form .checkbox-group small {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+}
+
+/* --- Statistics screens -------------------------------------------------------------------- */
+
+/* Long amounts ("$23,468.15 · UZS 388,503,400.00") wrap inside their card instead of running out of it */
+.status-card {
+  min-width: 0;
+}
+
+.status-card {
+  padding: var(--spacing-md);
+}
+
+/* Breaks only when a single amount is wider than the card (an amount never splits inside its digits otherwise) */
+.status-card-value {
+  overflow-wrap: break-word;
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+}
+
+/* A heading that follows a table or a chart keeps its distance from it */
+.partner-status [role="tabpanel"] > section + section,
+.admin-status-overview section + section {
+  margin-top: var(--spacing-xl);
+}
+
+/* The chart is as tall as its bars, not as its old fixed box; the room above keeps the tallest bar's label in view */
+.status-chart .bar-chart {
+  height: auto;
+  padding-top: var(--spacing-lg);
+}
+
+@media (max-width: 599px) {
+  /* Two numbers side by side: ten cards in one column was a very long page */
+  .status-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-sm);
+  }
+
+  .status-card {
+    padding: var(--spacing-12);
+  }
+
+  .status-table th,
+  .status-table td {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  .status-table .status-cell--numeric {
+    white-space: nowrap;
+  }
+
+  .status-chart .bar-chart {
+    min-width: 480px;
+    gap: var(--spacing-sm);
+  }
+
+  .status-chart .bar-chart-item {
+    min-width: 32px;
+  }
+}
+
+/* The small Status tables share the class of the 12-column customers table, which is 800 px wide on phones */
+@media (max-width: 767px) {
+  .customers-table.status-table {
+    min-width: 0;
+  }
+}
+
+/* --- Ads: several pictures per banner, the advertising panel by region --------------------------------- */
+
+/* The pictures of a banner lie on top of each other and fade into one another */
+.promo-slide-photo {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.promo-slide-photo--on {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .promo-slide-photo {
+    transition: opacity 600ms ease-in-out;
+  }
+}
+
+.promo-slide-photodots {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  display: flex;
+  gap: 6px;
+  padding: 6px var(--spacing-12);
+  border-radius: var(--radius-pill);
+  background: var(--color-float-bg);
+}
+
+.promo-slide-photodot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border-control);
+}
+
+.promo-slide-photodot--on {
+  background: var(--color-gold-dark);
+}
+
+.promo-carousel-place {
+  margin: 0 0 var(--spacing-sm);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+}
+
+.promotion-region-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0 var(--spacing-lg);
+  padding: 0;
+  list-style: none;
+}
+
+.promotion-region {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-12) var(--spacing-md);
+  text-align: left;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+.promotion-region--selected {
+  border: 2px solid var(--color-gold-dark);
+  background: var(--color-tint);
+}
+
+.promotion-region-name {
+  font-weight: var(--font-weight-bold);
+}
+
+.promotion-region-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.promotion-region-empty,
+.promotion-region-hotels {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.promotion-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promotion-photo-item {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.promotion-photo-item img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+/* Customers directory: 11 columns have to fit the 1440px admin layout without sideways scrolling */
+@media (min-width: 1200px) {
+  .admin-customers-list .customers-table th,
+  .admin-customers-list .customers-table td {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-customers-list .customers-table {
+    min-width: 0;
+  }
+
+  .admin-customers-list .customers-table th {
+    overflow-wrap: normal;
+    font-size: var(--font-size-xs);
+  }
+
+  .admin-customers-list .customers-table .customer-id,
+  .admin-customers-list .customers-table .customer-phone,
+  .admin-customers-list .customers-table .customer-status,
+  .admin-customers-list .customers-table .customer-registration-date,
+  .admin-customers-list .customers-table .customer-last-booking-date {
+    white-space: nowrap;
+  }
+
+  .admin-customers-list .customers-table .status-badge {
+    padding-inline: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Owner and admin screens end with room before the footer */
+.dashboard-layout {
+  padding-bottom: var(--spacing-2xl);
+}
+
+/* Owner's rate plans: the list reused the guest card but had no styles of its own */
+.partner-rates-list .rates-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.partner-rates-list .rates-list-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}
+
+.partner-rates-list .rate-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: var(--spacing-lg);
+}
+
+.partner-rates-list .rate-plan-card {
+  cursor: default;
+}
+
+.partner-rates-list .rate-plan-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.partner-rates-list .rate-plan-name {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+}
+
+.partner-rates-list .rate-plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.partner-rates-list .rate-plan-badge {
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+}
+
+.partner-rates-list .rate-plan-badge--active {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.partner-rates-list .rate-plan-badge--inactive {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.partner-rates-list .rate-plan-description {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.partner-rates-list .rate-plan-details {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.partner-rates-list .rate-plan-detail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-md);
+}
+
+.partner-rates-list .detail-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.partner-rates-list .detail-value {
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+}
+
+.partner-rates-list .rate-plan-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-calendar-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}
+
+/* Booking page: side gutter on phones, room between the form fields, back link on the left */
+.booking-page-container {
+  padding-inline: var(--spacing-lg);
+}
+
+.booking-form-section {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.booking-form-section .booking-form-section-title {
+  margin: 0;
+}
+
+.booking-page-back {
+  align-self: flex-start;
+}
+
+@media (max-width: 767px) {
+  .booking-form-section {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* Owner's date inventory: the table and its header had no styles of their own */
+.partner-availability-list .availability-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.partner-availability-list .availability-list-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+}
+
+.partner-availability-list .availability-list-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.partner-availability-list .date-inventory-table {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+}
+
+.partner-availability-list .date-inventory-table table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.partner-availability-list .date-inventory-table th,
+.partner-availability-list .date-inventory-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.partner-availability-list .date-inventory-table th {
+  position: sticky;
+  top: 0;
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.partner-availability-list .date-inventory-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.partner-availability-list .date-inventory-table td .btn + .btn {
+  margin-left: var(--spacing-xs);
+}
+
+.partner-availability-list .availability-status {
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.partner-availability-list .availability-status--available {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.partner-availability-list .availability-status--limited {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.partner-availability-list .availability-status--fully-booked,
+.partner-availability-list .availability-status--unavailable {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.partner-availability-list .date-inventory-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.partner-availability-list .date-inventory-month-name {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Booking result screens (loading, error, confirmed): the card sits in the middle of the page */
+.booking-page--loading > .container,
+.booking-page--error > .container,
+.booking-page--success > .container {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .booking-page--loading,
+  .booking-page--error,
+  .booking-page--success {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .booking-page--success .success-state {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}

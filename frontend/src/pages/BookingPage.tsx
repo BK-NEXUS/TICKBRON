@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePageTrail } from '../components/Breadcrumbs'
 import { searchUrlForCity } from '../utils/searchFilters'
 import { overlapsOwnStay, type StayDates } from '../utils/stays'
+import type { Refusal } from '../utils/refusal'
 import { propertyDisplayName } from '../utils/propertyName'
 import { useI18n } from '../i18n/I18nContext'
 import { VipBadge } from '../components/VipBadge'
@@ -42,12 +43,26 @@ interface GuestDetails {
  * Includes guest details form, price summary, validation, and confirmation states
  */
 /** A backend message (text) or one of ours (key): ours are translated when shown, also when set inside an effect */
-type Message = { text: string } | { key: MessageKey }
+type Message = { text: string } | { key: MessageKey; params?: Record<string, string | number> }
 // Refusals the backend names with a code: shown in the page language instead of the server's English text
 const REFUSAL_KEYS: Partial<Record<string, MessageKey>> = {
   exchange_rate_unavailable: 'booking.rateUnavailable', // 503: a hotel priced in dollars and no rate yet; nothing was reserved
   too_many_upcoming_bookings: 'booking.tooManyUpcoming',
   overlapping_booking: 'booking.overlapping',
+}
+// Why a stay cannot be booked (the quote answers with a code and the values), said in the page language
+const AVAILABILITY_KEYS: Partial<Record<string, MessageKey>> = {
+  night_unavailable: 'booking.nightUnavailable',
+  night_min_stay: 'booking.nightMinStay',
+  night_max_stay: 'booking.nightMaxStay',
+  no_rooms_left: 'booking.noRoomsLeft',
+  few_rooms_left: 'booking.fewRoomsLeft',
+  plan_min_stay: 'booking.planMinStay',
+  plan_max_stay: 'booking.planMaxStay',
+}
+const refusalMessage = (reason: Refusal | undefined): Message | undefined => {
+  const key = reason ? AVAILABILITY_KEYS[reason.code] : undefined
+  return key && reason ? { key, params: reason.params } : undefined
 }
 const failure = (text: string | null | undefined, key: MessageKey): Message => (text ? { text } : { key })
 
@@ -159,7 +174,7 @@ export function BookingPage() {
       if (response?.data) {
         setQuote(response.data)
       } else {
-        setQuoteError(failure(response?.error, 'booking.errorQuote'))
+        setQuoteError(refusalMessage(response?.reason) ?? failure(response?.error, 'booking.errorQuote'))
       }
     }
     loadQuote()
@@ -224,7 +239,13 @@ export function BookingPage() {
     return roomsForQuote > 1 ? t('booking.times', { text: nightsText, rooms: tp('booking.roomsCount', roomsForQuote) }) : nightsText
   }
 
-  const messageText = (message: Message | null) => (message ? ('text' in message ? message.text : t(message.key)) : null)
+  // A date among the values (YYYY-MM-DD) is written out in the page language when the message is shown
+  const messageValues = (params: Record<string, string | number> | undefined) => params && {
+    ...params,
+    ...(typeof params.date === 'string' ? { date: formatDate(params.date) } : {}),
+  }
+  const messageText = (message: Message | null) => (
+    message ? ('text' in message ? message.text : t(message.key, messageValues(message.params))) : null)
   const errorText = messageText(error)
   const overlapsOwn = bookingState !== undefined && bookingState !== null
     && overlapsOwnStay(ownStays, bookingState.checkIn, bookingState.checkOut)
@@ -253,6 +274,9 @@ export function BookingPage() {
       })
     }
   }
+
+  // Children are part of the guest count and one guest is always an adult
+  const maxChildren = Math.max(0, (bookingState?.guestCount ?? 1) - 1)
 
   const addChild = () => {
     setGuestDetails(prev => ({ ...prev, children: [...prev.children, 0] }))
@@ -309,6 +333,8 @@ export function BookingPage() {
 
     if (guestDetails.children.some(age => age < 0 || age > 17)) {
       errors.children = t('booking.childrenRange')
+    } else if (guestDetails.children.length > maxChildren) {
+      errors.children = t('booking.childrenIncluded')
     }
 
     setValidationErrors(errors)
@@ -351,7 +377,7 @@ export function BookingPage() {
       
       if (response.error || !response.data) {
         const refusal = response.code ? REFUSAL_KEYS[response.code] : undefined
-        setError(refusal ? { key: refusal } : failure(response.error, 'booking.errorCreate'))
+        setError(refusal ? { key: refusal } : refusalMessage(response.reason) ?? failure(response.error, 'booking.errorCreate'))
         setSubmitting(false)
         return
       }
@@ -392,14 +418,14 @@ export function BookingPage() {
       <div className="booking-page booking-page--error">
         <div className="container">
           <div className="error-state" role="alert" aria-live="assertive">
-            <h2>{t('booking.errorTitle')}</h2>
+            <h1>{t('booking.errorTitle')}</h1>
             <p>{errorText}</p>
             <button 
               className="btn btn-primary"
               onClick={handleBackToProperty}
-              aria-label={t('booking.backToPropertyLabel')}
+              aria-label={t(property ? 'booking.backToPropertyLabel' : 'booking.backToSearchLabel')}
             >
-              {t('booking.backToProperty')}
+              {t(property ? 'booking.backToProperty' : 'booking.backToSearch')}
             </button>
           </div>
         </div>
@@ -495,7 +521,7 @@ export function BookingPage() {
           </div>
 
           {step === 'details' && (
-            <form onSubmit={handleSubmit} className="booking-form">
+            <form onSubmit={handleSubmit} className="booking-form" noValidate>
               <div className="booking-form-section">
                 <h2 className="booking-form-section-title">{t('booking.guestDetails')}</h2>
                 
@@ -677,10 +703,13 @@ export function BookingPage() {
                       type="button"
                       className="btn btn-secondary booking-form-child-add"
                       onClick={addChild}
+                      disabled={guestDetails.children.length >= maxChildren}
+                      aria-describedby="children-hint"
                     >
                       + {t('booking.addChild')}
                     </button>
                   </div>
+                  <span id="children-hint" className="booking-form-hint">{t('booking.childrenIncluded')}</span>
                   {validationErrors.children && (
                     <span className="booking-form-error" role="alert">
                       {validationErrors.children}

@@ -85,6 +85,16 @@ describe('SearchResultsPage promoted banner and layout', () => {
     expect(layout.contains(carousel)).toBe(false)
   })
 
+  it('says the banner shows the ads of the place the guest searched for', async () => {
+    vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue(
+      response({ promoted: [{ ...hotel(9, 'Sponsored Palace'), promotion_id: 90 }] }) as never,
+    )
+    renderPage()
+    await screen.findByText('Organic One')
+
+    expect(screen.getByRole('heading', { name: 'Ads in Samarkand' })).toBeInTheDocument()
+  })
+
   it('shows no banner block when nothing is promoted', async () => {
     vi.mocked(propertyAdapter.propertyAdapter.searchProperties).mockResolvedValue(response({ promoted: [] }) as never)
     renderPage()

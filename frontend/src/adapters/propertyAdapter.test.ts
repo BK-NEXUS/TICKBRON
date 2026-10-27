@@ -289,6 +289,27 @@ describe('PropertyAdapter', () => {
       await adapter.getQuote(7, params)
       expect(askedUrl().searchParams.has('currency')).toBe(false)
     })
+
+    const refused = (body: unknown) => mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 400 }))
+
+    it('hands on the code and values of a refusal, with the server text as before', async () => {
+      refused({
+        error: 'This stay cannot be booked',
+        details: { availability: ['2027-05-12 is not available.'] },
+        reason: { code: 'night_unavailable', params: { date: '2027-05-12' } },
+      })
+      const result = await adapter.getQuote(7, params)
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('2027-05-12 is not available.')
+      expect(result.reason).toEqual({ code: 'night_unavailable', params: { date: '2027-05-12' } })
+    })
+
+    it('has no reason when the server gives none or a malformed one', async () => {
+      refused({ error: 'This stay cannot be booked', details: { check_in: ['Minimum stay is 2 nights.'] } })
+      expect((await adapter.getQuote(7, params)).reason).toBeUndefined()
+      refused({ error: 'x', reason: { code: 5, params: 'no' } })
+      expect((await adapter.getQuote(7, params)).reason).toBeUndefined()
+    })
   })
 
   describe('singleton instance', () => {

@@ -21,7 +21,7 @@ vi.mock('../adapters/adminGeographyAdapter', () => ({
 }))
 // Only the Advertising screen uses this adapter
 vi.mock('../adapters/promotionAdapter', () => ({
-  promotionAdapter: { listPromotions: vi.fn(), searchHotels: vi.fn() },
+  promotionAdapter: { listPromotions: vi.fn(), searchHotels: vi.fn(), getRegionPanel: vi.fn() },
 }))
 
 describe('AdminDashboardPage', () => {
@@ -189,6 +189,7 @@ describe('AdminDashboardPage', () => {
       vi.mocked(promotionAdapter.listPromotions).mockResolvedValue({
         data: { count: 0, next: null, previous: null, results: [] }, error: null, code: null,
       })
+      vi.mocked(promotionAdapter.getRegionPanel).mockResolvedValue({ data: [], error: null, code: null })
       render(
         <MemoryRouter>
           <AdminDashboardPage />

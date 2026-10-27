@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { RatePlan } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
 import { priceIn } from '../utils/price'
+import { rateTypeLabel } from '../utils/rateType'
 
 interface RatePlanCardProps {
   ratePlan: RatePlan
@@ -18,25 +19,6 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
   // The price in the chosen currency: the owner's own, or a conversion marked with ≈
   const shown = priceIn(ratePlan, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
-
-  const formatRateType = (rateType: string) => {
-    switch (rateType) {
-      case 'standard':
-      case 'non_refundable':
-      case 'early_bird':
-      case 'last_minute':
-      case 'long_stay':
-      case 'seasonal':
-      case 'corporate':
-      case 'promo':
-        return t(`rate.${rateType}`)
-      default:
-        return rateType
-          .split('_')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')
-    }
-  }
 
   return (
     <div 
@@ -55,7 +37,7 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
       <div className="rate-plan-card-header">
         <div className="rate-plan-card-title-group">
           <h3 className="rate-plan-card-name">{ratePlan.name}</h3>
-          <span className="rate-plan-card-type">{formatRateType(ratePlan.rate_type)}</span>
+          <span className="rate-plan-card-type">{rateTypeLabel(ratePlan.rate_type, t)}</span>
         </div>
         <div className="rate-plan-card-price">
           <span className="rate-plan-card-price-value">

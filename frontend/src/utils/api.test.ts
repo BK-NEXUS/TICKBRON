@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { apiFetch, clearCsrfToken, getCsrfToken, setCsrfToken, fetchAllPages } from './api'
 import { AuthAdapter } from '../adapters/authAdapter'
+import { setActiveLanguage } from '../i18n/languageChoice'
 
 const CSRF_URL = 'http://localhost:8000/api/v1/auth/csrf/'
 
@@ -62,6 +63,47 @@ describe('apiFetch', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1)
     expect(headersOf(0)).toEqual({ 'Content-Type': 'application/json' })
     expect(mockFetch.mock.calls[0][1].credentials).toBe('include')
+  })
+
+  describe('page language', () => {
+    afterEach(() => setActiveLanguage('en'))
+
+    it.each(['uz', 'ru'] as const)('asks the API for %s refusal texts on GET', async (language) => {
+      setActiveLanguage(language)
+      mockFetch.mockResolvedValueOnce(jsonResponse([]))
+
+      await apiFetch('http://api/x/')
+
+      expect(headersOf(0)).toEqual({ 'Accept-Language': language })
+    })
+
+    it('sends it together with the CSRF token on POST', async () => {
+      setActiveLanguage('uz')
+      setCsrfToken('tok')
+      mockFetch.mockResolvedValueOnce(jsonResponse({}, 201))
+
+      await apiFetch('http://api/x/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+
+      expect(headersOf(0)).toEqual({ 'Content-Type': 'application/json', 'X-CSRFToken': 'tok', 'Accept-Language': 'uz' })
+    })
+
+    it('sends nothing for English: no header already means English', async () => {
+      setActiveLanguage('en')
+      mockFetch.mockResolvedValueOnce(jsonResponse([]))
+
+      await apiFetch('http://api/x/')
+
+      expect(mockFetch.mock.calls[0][1].headers).toBeUndefined()
+    })
+
+    it('keeps a language header the caller set', async () => {
+      setActiveLanguage('uz')
+      mockFetch.mockResolvedValueOnce(jsonResponse([]))
+
+      await apiFetch('http://api/x/', { headers: { 'Accept-Language': 'ru' } })
+
+      expect(headersOf(0)['Accept-Language']).toBe('ru')
+    })
   })
 
   it('reuses the cached token and shares one lookup between concurrent requests', async () => {

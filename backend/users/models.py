@@ -6,6 +6,7 @@ This module contains the custom User model and related user management models.
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 from common.models import BaseModel
 
@@ -13,8 +14,17 @@ from common.models import BaseModel
 class UserManager(BaseUserManager):
     """
     Custom user manager for email-based authentication.
+
+    An address is the same address whatever its capitals: it is stored in lower case and looked up the same way.
     """
-    
+
+    @classmethod
+    def normalize_email(cls, email):
+        return (email or '').strip().lower()
+
+    def get_by_natural_key(self, username):
+        return self.get(**{self.model.USERNAME_FIELD: self.normalize_email(username)})
+
     def create_user(self, email, password=None, **extra_fields):
         """
         Create and save a regular user with the given email and password.
@@ -109,7 +119,11 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
-    
+        constraints = [
+            # One account per mailbox, whatever the capitals (the stored value is already lower case)
+            models.UniqueConstraint(Lower('email'), name='users_email_lower_unique'),
+        ]
+
     def __str__(self):
         return self.email
     

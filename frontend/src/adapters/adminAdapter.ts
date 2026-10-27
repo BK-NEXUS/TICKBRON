@@ -1,8 +1,9 @@
 // Admin API adapter for admin moderation and management
 // Integrates with backend admin endpoints from Checkpoint 18
 
-import { readApiError } from '../utils/errorHandler'
+import { parseApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -356,6 +357,16 @@ export interface ApiResponse<T> {
   error: string | null
 }
 
+export interface ApprovePropertyResult extends ApiResponse<AdminProperty> {
+  /** Parts a hotel still lacks (room, rate, photo) when approval is refused */
+  missing?: string[]
+}
+
+function missingParts(body: unknown): string[] | undefined {
+  const missing = (body as { missing?: unknown } | null)?.missing
+  return Array.isArray(missing) && missing.every((part) => typeof part === 'string') ? missing : undefined
+}
+
 class AdminAdapter {
   private baseUrl: string
 
@@ -366,7 +377,7 @@ class AdminAdapter {
   /** GET a paginated list endpoint and return the items of every page */
   private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
     const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
-      errorMessages: { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Resource not found' },
+      errorMessages: { 401: translateNow('apiError.authRequired'), 403: translateNow('apiError.adminRequired'), 404: translateNow('apiError.notFound') },
     })
     return { data, error }
   }
@@ -374,7 +385,7 @@ class AdminAdapter {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<{ data: T | null; error: string | null }> {
+  ): Promise<{ data: T | null; error: string | null; errorBody?: unknown }> {
     const url = `${this.baseUrl}${endpoint}`
     
     const defaultOptions: RequestInit = {
@@ -389,8 +400,9 @@ class AdminAdapter {
       const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Resource not found' })
-        return { data: null, error: apiError.message }
+        const errorBody: unknown = await response.json().catch(() => undefined)
+        const apiError = parseApiError(response, errorBody, { 401: translateNow('apiError.authRequired'), 403: translateNow('apiError.adminRequired'), 404: translateNow('apiError.notFound') })
+        return { data: null, error: apiError.message, errorBody }
       }
 
       // Handle 204 No Content (DELETE operations)
@@ -403,7 +415,7 @@ class AdminAdapter {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Network error occurred',
+        error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
   }
@@ -422,11 +434,12 @@ class AdminAdapter {
    * Approve or reject property
    * Integrates with POST /api/v1/admin-panel/properties/{id}/approve/ endpoint
    */
-  async approveProperty(id: number, requestData: ApprovePropertyRequest): Promise<ApiResponse<AdminProperty>> {
-    return this.request<AdminProperty>(`/api/v1/admin-panel/properties/${id}/approve/`, {
+  async approveProperty(id: number, requestData: ApprovePropertyRequest): Promise<ApprovePropertyResult> {
+    const { data, error, errorBody } = await this.request<AdminProperty>(`/api/v1/admin-panel/properties/${id}/approve/`, {
       method: 'POST',
       body: JSON.stringify(requestData),
     })
+    return { data, error, missing: missingParts(errorBody) }
   }
 
   /**

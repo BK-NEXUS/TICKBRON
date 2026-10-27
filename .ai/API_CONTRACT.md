@@ -1109,13 +1109,13 @@ No SMS, no code, no verification, no uniqueness rule (several accounts may share
 - `POST /admin-panel/users/create-hotel-owner/`: `phone_number` REQUIRED.
 - `POST /bookings/`: the booking needs a phone: `guest_phone`, else the account's `phone_number`; neither = 400 `{guest_phone: "A phone number is required."}`.
 - `GET /auth/me/` and the admin Status/customer screens already return `phone_number` / `phone` and the e-mail; the owner's arrivals list still shows only `phone_last4` (open question for stage 2: a hotel taking cash bookings needs the full number).
-- **Booking rules and the arrivals phone (2026-10-23, owner decision).** (1) `POST /bookings/`: a guest holds at most **2** upcoming bookings (429 `too_many_upcoming_bookings`, as before with another number) and a new stay may not **overlap** a live (pending or confirmed) booking of the same guest: 409 `{error, code: "overlapping_booking"}`; a stay that starts the day another ends, or ends the day another starts, is allowed; cancelled bookings and other guests' bookings do not count. Both rules are checked again under the guest's row lock. A guest with invalid data now gets the 400 before the 429/409. (2) `GET /partner/status/arrivals/` rows carry `phone` (the whole number) instead of `phone_last4`; the arrivals list only covers today and tomorrow of the owner's own hotels, and no other partner list shows a phone.
+- **Booking rules and the arrivals phone (2026-10-23, owner decision).** (1) `POST /bookings/`: a guest holds at most **2** upcoming bookings (409 `too_many_upcoming_bookings`, as before with another number) and a new stay may not **overlap** a live (pending or confirmed) booking of the same guest: 409 `{error, code: "overlapping_booking"}`; a stay that starts the day another ends, or ends the day another starts, is allowed; cancelled bookings and other guests' bookings do not count. Both rules are checked again under the guest's row lock. A guest with invalid data now gets the 400 before the 429/409. (2) `GET /partner/status/arrivals/` rows carry `phone` (the whole number) instead of `phone_last4`; the arrivals list only covers today and tomorrow of the owner's own hotels, and no other partner list shows a phone.
 - The OTP / phone-verification endpoints stay removed (404).
 
 ## Cash at the hotel: confirmed at once, arrival time, "guest arrived" (2026-10-22, plan PLAN_CASH_ONLY.md stage 2)
 - `POST /bookings/`: `expected_arrival_time` ("HH:MM", REQUIRED) is the time the guest will arrive on the check-in day. 400 `{expected_arrival_time}` when it is missing, malformed, or today's time has already passed (business time, Asia/Tashkent). The booking is created `confirmed` at once (`payment_status` stays `pending` = "pay at the hotel"), the rooms are taken at once, there is no 15-minute hold (`expires_at` is null).
 - Booking output (guest and admin serializers) has `expected_arrival_time` ("10:30:00" or null on old bookings), `arrived_at` (datetime or null) and `arrival_deadline` (ISO datetime in business time = arrival time + `ARRIVAL_GRACE_HOURS`, null on old bookings).
-- Limit: a guest can hold at most 2 upcoming bookings (not cancelled, not arrived, check-out not past): 429 `{code: "too_many_upcoming_bookings"}` (was `too_many_pending_bookings`, 3 unpaid holds). Needed because nothing is paid up front any more.
+- Limit: a guest can hold at most 2 upcoming bookings (not cancelled, not arrived, check-out not past): 409 `{code: "too_many_upcoming_bookings"}` (was 429 until 2026-10-27; 429 now means throttling only) (was `too_many_pending_bookings`, 3 unpaid holds). Needed because nothing is paid up front any more.
 - `POST /partner/bookings/{id}/arrived/` (hotel owner, own hotels only): the hotel says the guest arrived. 200 `{id, arrived_at}`; idempotent (the first time stays); 400 `{error}` unless the booking is `confirmed` and the check-in day has come; another owner's booking 404; guest 403.
 - `GET /partner/bookings/` rows and `GET /partner/status/arrivals/` rows carry `expected_arrival_time` and `arrived_at` (arrivals: "HH:MM" or null).
 - Auto-cancel: Celery task `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a `confirmed` booking with an arrival time, no `arrived_at`, and arrival time + `ARRIVAL_GRACE_HOURS` (default 2) passed: `status=cancelled`, `cancellation_reason="no_arrival"`, rooms released, notifications `booking_not_arrived` (guest) and `guest_not_arrived` (owner, no personal data). Bookings made before this existed have no arrival time and are never auto-cancelled.
@@ -1163,3 +1163,89 @@ All under `/api/v1/partner/properties/{id}/photos/`, role hotel-owner, own prope
 - NEW `GET /api/v1/admin-panel/status/overview/?period=&year=` (staff and super-admin; same period values as the other Status lists; bad `period` or `year` → 400): the whole platform. `{ period, period_range, business_date, no_show_report_window_days, months, totals, insights, no_show_rate, new_users: { current_month, previous_month, in_period }, hotels: { total, active }, top_regions: [{ id, name_uz, name_ru, name_en, hotels, bookings, guests }] (5 busiest by counted bookings; id null = "Unspecified"), top_room_types: [same row as /partner/status/rooms/ plus property {id, name}] (5 busiest), year, available_years, monthly }`.
 - `months`, `totals`, `insights`, `monthly` have the same shape and definitions as on `/partner/status/`, over every not-deleted hotel. `no_show_rate` is no-shows of all bookings that were not left unpaid, percent string or `null`. `new_users` counts guests (not staff) by registration date; `in_period` is `null` for `period=all`. `insights.occupancy_rate` uses the rooms of active hotels.
 
+### Owner: room type photos (2026-10-23)
+- `GET /api/v1/partner/rooms/{room_type_id}/photos/` (hotel owner; own room types only, another owner's → 404, guest 403): a plain list of the room type's photos `{ id, photo, photo_url, photo_type, caption, is_primary, display_order, alt_text }`, ordered by `display_order, id`; deleted photos are not listed.
+- `POST` the same URL (multipart: `photo`, optional `photo_type`, `caption`, `alt_text`): the first photo becomes the cover (`is_primary`), new photos go to the end (`display_order` = highest + 1), the stored file name is a random uuid, the file rules are the hotel photo rules (type, size, 40 megapixels). At most **20** photos per room type (400 `{photo: [...]}`).
+- `PATCH /api/v1/partner/rooms/{room_type_id}/photos/{photo_id}/`: `caption`, `alt_text`, `photo_type`, `is_primary: true` (makes it the cover; `false` is refused, the image file cannot be replaced). `DELETE` soft-deletes; a deleted cover passes to the first remaining photo.
+- `GET /api/v1/partner/rooms/` and `/rooms/{id}/` gain read-only `photos_count` (live photos) and `cover_url` (the cover, else the first photo, else `null`).
+- The guest page already lists `photos` per room type (`properties` detail); owner uploads now fill it.
+
+### Ads: pictures, banner pictures and the regions panel (2026-10-23)
+- `GET /api/v1/admin-panel/promotions/{id}/photos/` (staff or super-admin): `[ {id, photo_url, display_order} ]`, live photos in upload order.
+- `POST` the same URL (super-admin only; multipart field `photo`): adds one picture. The file is decoded as an image first (a renamed text file → 400 `bad_image`), then the upload rules (JPG, PNG, WebP or GIF, 10 MB, 40 megapixels). At most **10** per ad (400 `too_many_photos`); only an ad that can still change (scheduled, active or paused; else 400 `bad_status`). The stored name is a random uuid under `promotions/{id}/`. Writes an audit row `promotion_photo_add` (ids only).
+- `DELETE /api/v1/admin-panel/promotions/{id}/photos/{photo_id}/` (super-admin): soft delete (204; unknown or another ad's photo → 404 `not_found`); audit row `promotion_photo_remove`.
+- Promotion rows (`GET /admin-panel/promotions/` and `/{id}/`) gain `photos: [{id, photo_url, display_order}]` and `photos_count`.
+- `GET /api/v1/admin-panel/promotions/?region={id}`: only ads of hotels in that region (not a positive integer → 400 `invalid_query`).
+- `GET /api/v1/admin-panel/promotions/regions/` (staff or super-admin): every active region `{id, country_code, name_uz, name_ru, name_en, running, waiting, hotels: [{id, name}]}`. `running` = ads shown right now, `hotels` = the hotels running them, `waiting` = paused, unpaid or not started yet (cancelled and ended ads are not counted). Regions with the most running ads first, empty regions included.
+- Banner items (`GET /api/v1/promotions/home/` and `promoted` in the search response) gain `promo_photos`: up to 10 picture addresses, the ad's own pictures, else the hotel's own photos with the cover first, `[]` when there are none.
+
+## Support chat (guests and owners with the TICKBRON team)
+
+One thread per account (`Conversation`), newest messages by polling (no WebSocket). Text 1–2000 characters, control characters refused. Error codes: `empty`, `too_long`, `bad_text`, `invalid_query`. Throttles: send 20/min, poll 90/min.
+
+Account (login required, `/api/v1/chat/`):
+- `GET messages/?after=<id>` → `{messages: [{id, text, from_staff, created_at}], unread}`; without `after` the last 100.
+- `POST messages/` `{text}` → 201 message.
+- `POST read/` → 204 (marks the team's messages as read). `GET unread/` → `{unread}`.
+
+Team (staff and super-admin, `/api/v1/admin-panel/chat/`):
+- `GET conversations/?q=&unread=true&page=` → paginated `{id, user{id,name,email,role}, last_message{text≤120,from_staff,created_at}, unread, last_message_at}`.
+- `GET conversations/{id}/?after=` → `{user, messages}`; `POST conversations/{id}/` `{text}` = staff reply (201); `POST conversations/{id}/read/` → 204.
+- `GET unread/` → `{unread_threads}`.
+
+Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertising request for owners), admin tab "Messages" with badge, user menu link with badge, Contact page button.
+
+### Support chat: e-mail notices (2026-10-24)
+- No new endpoint and no change to the answers. When a message is saved, a Celery task `chat.tasks.send_chat_notice(message_id)` is queued after the commit; a broken queue or mail server never fails or loses the message.
+- A staff reply mails the account's address (subject in Uzbek, Russian and English, link `FRONTEND_URL/support`), only for the first unread message of the run: more replies while the first is unread send nothing; after the user reads the thread, the next reply mails again. Deactivated accounts and accounts without an address get nothing.
+- A user message mails `SUPPORT_NOTIFY_EMAIL` (env var, empty = off) with name, address, role and the link `FRONTEND_URL/admin`, by the same one-per-unread-run rule (the run ends when the team reads the thread).
+- The e-mails never contain the text of the message, only the link.
+
+### Stay quote: refusals with a code (2026-10-24)
+- `GET /api/v1/properties/{id}/quote/` answers 400 as before (`error`, `details`, the English text under `details.availability`). When the refusal is about a night, the body also has `reason: {code, params}` so the site can say it in the user's language and format the date itself. Without a code (other refusals) there is no `reason`.
+- Codes and params: `night_unavailable {date}`, `night_min_stay {date, nights}`, `night_max_stay {date, nights}`, `no_rooms_left {date}`, `few_rooms_left {date, rooms}`; `date` is `YYYY-MM-DD`. Code: `bookings/pricing.py` (`availability_reason`).
+- The booking create endpoint still returns only the English text (the quote refuses first, so the guest sees the translated text on the price card).
+
+### Refusals with a code: booking create and rate plan limits (2026-10-24)
+- `POST /api/v1/bookings/` answers a refusal about a night (400, `error`, `details`) with the same `reason: {code, params}` as the quote when the refusal has a code; the English text stays in `details`.
+- New codes (quote and create): `plan_min_stay {nights}` and `plan_max_stay {nights}` (the rate plan's own limits, under `details.check_in`). Full list: `night_unavailable`, `night_min_stay`, `night_max_stay`, `no_rooms_left`, `few_rooms_left`, `plan_min_stay`, `plan_max_stay`. Code: `bookings/pricing.py` (`refusal_reason`).
+
+### Support chat: Telegram notice to the team (2026-10-24)
+- When a user writes and the Telegram alert settings are on (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`, the same chat as the security alerts), the chat notice task also queues one Telegram message: the user's name and role and a link to `FRONTEND_URL/admin`. No message text and no e-mail address or phone. Same one-per-unread-run rule as the e-mails; replies from the team send none. A broken Telegram queue does not stop the e-mail.
+
+### E-mail addresses ignore capitals (2026-10-26)
+- An address is the same address whatever its capitals. It is trimmed and stored in lower case when an account is made (sign-up `POST /auth/register/`, admin `POST /admin-panel/users/create-hotel-owner/`, `createsuperuser`), and compared in lower case at sign-in (`POST /auth/login/`) and password reset (`POST /auth/password-reset/request/`). The answers show the lower-case address.
+- `ali@mail.com`, `Ali@Mail.com` and `ALI@MAIL.COM` are one account: signing up with another spelling of an existing address answers 400 `{"email": ["User with this email already exists."]}` as before; signing in works with any spelling.
+- The database keeps it: unique constraint on `lower(email)` (`users_email_lower_unique`). Migration `users.0010_email_case_insensitive` lower-cases the stored addresses first and stops, changing nothing, with a message naming the addresses when two accounts differ only by capitals.
+
+## Approving a hotel needs a room, a rate and a photo (2026-10-27)
+- `POST /api/v1/admin-panel/properties/{id}/approve/` without `rejection_reason` (approve) now returns `400 {"error": "Property is not ready to be listed", "missing": [...]}` when the hotel lacks any of: `room` (a room type not deleted), `rate` (an active, not deleted rate plan on such a room), `photo` (a property photo not deleted). `missing` lists every absent part, in the order `room`, `rate`, `photo`. Nothing is changed on a refusal.
+- Rejecting (`rejection_reason` sent) is never blocked. Suspend and reactivate are unchanged.
+- Rule lives in `properties/listing.py` (`missing_for_listing`). The admin screen shows the missing parts in the page language.
+
+## Children on a booking (2026-10-27)
+- `POST /api/v1/bookings/`: `children` (ages 0-17) are part of `guest_count`, never extra people, and one guest is always an adult. So `len(children) <= guest_count - 1`; otherwise `400 {"children": [...]}` and nothing is saved. `guest_count` is still limited by the room capacity, which also bounds the list (a list of 100 ages is refused).
+- Before, any number of ages was saved. `guest_count: 2` with `children: [5, 8]` (no adult) is now refused.
+- Rule in `Booking.create_booking`. The booking page stops adding children at `guest_count - 1` and says why.
+
+## Owner form limits, slugs, error text and small QA fixes (2026-10-27, QA findings F5, F7, F9, F10, F12)
+- **Limits (400 naming the field)** on the partner endpoints, create and update (an update is checked together with the saved values):
+  - hotel: `base_price` >= 0.01, `bedrooms` <= 50, `bathrooms` <= 20 (`max_guests` <= 50 as before);
+  - room type: `base_price` >= 0.01, `base_occupancy` and `max_occupancy` <= 20, `max_occupancy` >= `base_occupancy`, `total_rooms` 1..1000;
+  - rate plan: `base_price` >= 0.01, `min_nights` and `max_nights` <= 365, `max_nights` >= `min_nights` (null = unlimited);
+  - nightly inventory (`/partner/inventory/`): `date` not before today in Asia/Tashkent when it is created or moved (a past night stays editable where it is), `available_rooms` <= the room type's `total_rooms`, `maximum_stay` >= `minimum_stay`.
+  Constants are at the top of `partner/serializers.py`.
+- **Slug is optional** on `POST /partner/rooms/` and `POST /partner/rates/`: when missing or blank it is made from `name` (`deluxe-suite`, `deluxe-suite-2`; `room` / `rate` when the name has no Latin letters) and kept unique inside the hotel / room type. A slug that is sent is used as sent; a taken one is still a 400. An update never changes the slug. The owner forms no longer show a Slug field.
+- **Error `message`**: in `{"error": {"code", "message", "details"}}` the `message` is plain text (`field: text` per field, no field prefix for `non_field_errors`), never a Python dump. `details` is unchanged.
+- **Sign-up**: `full_name` cannot be blank or only spaces (400 `full_name`).
+- **Booking cap**: `too_many_upcoming_bookings` is now **409** (was 429, which now means throttling only).
+- **Status dates**: on every owner and admin status endpoint, `from` / `to` are only valid with `period=custom`; sent with another period (or alone) they are a 400 like other bad dates.
+
+## Refusal texts follow the page language (2026-10-27)
+- Every request may carry `Accept-Language: uz`, `ru` or `en` (quality values such as `uz-UZ,uz;q=0.9,en;q=0.8` work; anything else, or no header, means English). The site sends it from the language the visitor chose, except for English, where it sends nothing. The response has `Content-Language` and `Vary: Accept-Language`.
+- Validation errors, in `details` and in `message`, come in that language: Django REST framework's own texts (`This field is required.`, `Ensure this value is greater than or equal to 0.01.`, `Not found.`, ...), Django's validators, and the messages of the owner forms (`partner/serializers.py`), the shared validators (`common/validators.py`) and the picture upload checks (`common/storage.py`).
+- DRF ships Russian but no Uzbek, so the project has its own catalogs: `backend/locale/uz/LC_MESSAGES/django.po` (DRF texts + project texts) and `locale/ru/LC_MESSAGES/django.po` (project texts). The compiled `django.mo` files are committed; after editing a `.po` run `python scripts/compile_po.py` (the build machines have no GNU gettext). A test fails when a `.mo` is not the compiled `.po`.
+- The language is active for the request only (`common.middleware.RequestLanguageMiddleware`); tasks and other code outside a request stay in English.
+- Also in the catalogs (2026-10-27): the refusal texts of bookings, accounts (favorites, reviews), users (password, session), properties (search, quote, availability), geography, currency, promotions and the admin views. A test (`common/tests/test_api_texts_translated.py`) fails when one of these modules sends a plain English sentence that is not wrapped in `gettext` or has no uz/ru translation.
+- Still English: the hotel not-found answer (`properties/views.py`; the hotel page shows its own translated text), the readable texts that travel with a refusal `reason` code (booking quote and create; the site words those from the code), the status views, the generic server fallbacks (`common/exception_handlers.py`, `middleware.py`, `decorators.py`) and the dropped payments tables.
+- Forms in the site (owner rooms, rates and availability, booking, profile, change and reset password, admin create-owner, promotions, sign-in, sign-up, forgot password; the booking and profile forms keep their own per-field messages) use `noValidate` and word their required/format problems from the page language (`utils/formProblem.ts`, keys `form.*`), not the browser's.

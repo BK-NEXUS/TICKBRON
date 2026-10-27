@@ -2,6 +2,7 @@
 // Contract: .ai/API_CONTRACT.md, section "Currency: UZS charge, CBU rate, booking snapshot (R6)".
 import { apiFetch, type Paginated } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const PAGE_SIZE = 20
@@ -47,7 +48,7 @@ export class ExchangeRateAdapter {
       }
       return { data: await response.json(), error: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
     }
   }
 

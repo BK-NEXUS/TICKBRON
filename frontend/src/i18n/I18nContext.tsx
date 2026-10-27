@@ -1,19 +1,15 @@
 /* eslint-disable react-refresh/only-export-components -- the provider, its hooks and helpers belong together */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { en, type Catalog, type MessageKey, type PluralKey } from './messages/en'
-import { uz } from './messages/uz'
-import { ru } from './messages/ru'
+import type { MessageKey, PluralKey } from './messages/en'
+import { CATALOGS, translate, type Params } from './translateNow'
 import { formatMoney as formatMoneyFor, type MoneyOptions } from './format'
 import {
-  DEFAULT_CURRENCY, DEFAULT_LANGUAGE, isCurrency, isLanguage, type Currency, type Language,
+  DEFAULT_CURRENCY, isCurrency, type Currency, type Language,
 } from './options'
+import { LANGUAGE_KEY, initialLanguage, readStored, setActiveLanguage, writeStored } from './languageChoice'
 
-const CATALOGS: Record<Language, Catalog> = { uz, ru, en }
 const LOCALES: Record<Language, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' }
-const LANGUAGE_KEY = 'tickbron.language'
 const CURRENCY_KEY = 'tickbron.currency'
-
-type Params = Record<string, string | number>
 
 interface I18nValue {
   language: Language
@@ -33,31 +29,9 @@ interface I18nValue {
   formatMoney: (amount: number | string, currency?: string, options?: MoneyOptions) => string
 }
 
-// Browser storage can be blocked (private window, site data off): the app must work without it
-const readStored = (key: string): string | null => {
-  try { return localStorage.getItem(key) } catch { return null }
-}
-const writeStored = (key: string, value: string) => {
-  try { localStorage.setItem(key, value) } catch { /* the choice just is not remembered */ }
-}
-
-function initialLanguage(): Language {
-  const stored = readStored(LANGUAGE_KEY)
-  if (isLanguage(stored)) return stored
-  const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2).toLowerCase()
-  return isLanguage(browser) ? browser : DEFAULT_LANGUAGE
-}
-
 function initialCurrency(): Currency {
   const stored = readStored(CURRENCY_KEY)
   return isCurrency(stored) ? stored : DEFAULT_CURRENCY
-}
-
-function translate(language: Language, key: string, params?: Params): string {
-  // A key missing in one catalog falls back to English, then to the key itself
-  const text = CATALOGS[language][key] ?? (en as Catalog)[key] ?? key
-  if (!params) return text
-  return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
 }
 
 function translatePlural(language: Language, base: string, count: number, params?: Params): string {
@@ -121,6 +95,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = language
+    setActiveLanguage(language)
   }, [language])
 
   const setLanguage = useCallback((next: Language) => {

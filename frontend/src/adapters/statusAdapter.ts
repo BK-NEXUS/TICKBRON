@@ -4,6 +4,7 @@
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch } from '../utils/api'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const STATUS_URL = `${API_BASE_URL}/api/v1/admin-panel/status`
@@ -451,8 +452,17 @@ export interface StatusResponse<T> {
   status?: number
 }
 
-const ERROR_MESSAGES = { 401: 'Authentication required', 403: 'Admin or staff role required', 404: 'Not found' }
-const PARTNER_ERROR_MESSAGES = { ...ERROR_MESSAGES, 403: 'Hotel owner role required' }
+// Getters: the text is chosen when an error happens, in the language the page is in then
+const ERROR_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  get 403() { return translateNow('apiError.adminRequired') },
+  404: 'Not found',
+}
+const PARTNER_ERROR_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  403: 'Hotel owner role required',
+  404: 'Not found',
+}
 
 function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams()
@@ -488,7 +498,7 @@ async function send(
     }
     return { response, error: null }
   } catch (error) {
-    return { response: null, error: error instanceof Error ? error.message : 'Network error occurred' }
+    return { response: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
   }
 }
 
@@ -502,7 +512,7 @@ async function request<T>(
   try {
     return { data: (await response.json()) as T, error: null }
   } catch (parseError) {
-    return { data: null, error: parseError instanceof Error ? parseError.message : 'Network error occurred' }
+    return { data: null, error: parseError instanceof Error ? parseError.message : translateNow('apiError.networkOccurred') }
   }
 }
 
@@ -522,7 +532,7 @@ async function requestCsv(
   try {
     return { data: { blob: await response.blob(), filename: filenameFrom(response, fallbackName) }, error: null }
   } catch (readError) {
-    return { data: null, error: readError instanceof Error ? readError.message : 'Network error occurred' }
+    return { data: null, error: readError instanceof Error ? readError.message : translateNow('apiError.networkOccurred') }
   }
 }
 

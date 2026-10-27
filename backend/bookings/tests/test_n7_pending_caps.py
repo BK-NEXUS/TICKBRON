@@ -39,7 +39,7 @@ class PendingBookingCapTests(APITestCase):
 
         response = self._book(**stay(self, MAX_UPCOMING_BOOKINGS_PER_GUEST))
 
-        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+        assert response.status_code == status.HTTP_409_CONFLICT
         assert response.data['code'] == 'too_many_upcoming_bookings'
         upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bookings are confirmed at once now
         assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST
