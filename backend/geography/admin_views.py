@@ -21,6 +21,7 @@ from geography.admin_serializers import (
     AdminCitySerializer, AdminCountrySerializer, AdminRegionSerializer, search_filter,
 )
 from geography.models import City, Country, Region
+from django.utils.translation import gettext as _
 
 PUBLIC_PROPERTY = Q(properties__is_active=True, properties__is_deleted=False, properties__status='active')
 
@@ -63,7 +64,7 @@ class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
                 instance.delete()
         except ProtectedError:
             return Response(
-                {'error': 'This row is in use (it has regions, cities or properties). Hide it instead.'},
+                {'error': _('This row is in use (it has regions, cities or properties). Hide it instead.')},
                 status=status.HTTP_409_CONFLICT,
             )
         if image_name:

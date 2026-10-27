@@ -22,6 +22,7 @@ from users.serializers import (
 )
 from users.tasks import send_password_reset_email
 from users.throttles import PasswordChangeThrottle, PasswordResetConfirmThrottle, PasswordResetRequestThrottle
+from django.utils.translation import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -130,11 +131,11 @@ def change_password(request):
     if lockout.is_locked(user, client_ip) or not user.check_password(serializer.validated_data['current_password']):
         lockout.record_failure(user, client_ip)
         log_security_event('password_change_failed', request, reason='wrong_current_password')
-        return Response({'current_password': ['The current password is incorrect.']},
+        return Response({'current_password': [_('The current password is incorrect.')]},
                         status=status.HTTP_400_BAD_REQUEST)
     new_password = serializer.validated_data['password']
     if new_password == serializer.validated_data['current_password']:
-        return Response({'password': ['The new password must be different from the current one.']},
+        return Response({'password': [_('The new password must be different from the current one.')]},
                         status=status.HTTP_400_BAD_REQUEST)
     violation = _password_rule_violation(user, new_password)
     if violation is not None:

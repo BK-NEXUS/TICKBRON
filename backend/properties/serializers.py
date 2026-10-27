@@ -17,6 +17,7 @@ from bookings.pricing import owner_prices_of, price_list, property_price_list, r
 from common.money import SUPPORTED_BASE_CURRENCIES
 from currency.rates import current_rate, rate_for_request, uzs_amount
 from django.utils.dateparse import parse_date
+from django.utils.translation import gettext as _
 
 MAX_AVAILABILITY_DAYS = 366
 
@@ -502,7 +503,7 @@ class SearchParamsSerializer(serializers.Serializer):
         """Validate search parameters with comprehensive checks."""
         # Validate geographic search parameters
         if (data.get('lat') and not data.get('lng')) or (data.get('lng') and not data.get('lat')):
-            raise serializers.ValidationError("Both lat and lng are required for geographic search")
+            raise serializers.ValidationError(_("Both lat and lng are required for geographic search"))
         
         # Validate date range
         check_in = data.get('check_in')
@@ -753,7 +754,7 @@ class QuoteParamsSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data['check_out'] <= data['check_in']:
-            raise serializers.ValidationError({'check_out': 'Check-out date must be after check-in date'})
+            raise serializers.ValidationError({'check_out': _('Check-out date must be after check-in date')})
         if data['check_in'] < business_today():
-            raise serializers.ValidationError({'check_in': 'Check-in date cannot be in the past'})
+            raise serializers.ValidationError({'check_in': _('Check-in date cannot be in the past')})
         return data

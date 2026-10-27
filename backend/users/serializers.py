@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from users.models import User
 from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
+from django.utils.translation import gettext as _
 
 
 class LowercaseEmailField(serializers.EmailField):
@@ -100,7 +101,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError({"password": _("Password fields didn't match.")})
         validate_new_password(attrs)
         return attrs
     
@@ -139,7 +140,7 @@ class NewPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({'password': "Password fields didn't match."})
+            raise serializers.ValidationError({'password': _("Password fields didn't match.")})
         return attrs
 
 

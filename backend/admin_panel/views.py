@@ -35,6 +35,7 @@ from admin_panel.serializers import (
     AdminInternalNoteSerializer,
     AdminInternalNoteCreateSerializer
 )
+from django.utils.translation import gettext as _
 
 
 class IsSuperAdminOrStaff(IsAuthenticated):
@@ -128,7 +129,7 @@ def admin_property_approve(request, property_id):
             missing = missing_for_listing(property)
             if missing:
                 return Response(
-                    {'error': 'Property is not ready to be listed', 'missing': missing},
+                    {'error': _('Property is not ready to be listed'), 'missing': missing},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             property.status = 'active'
@@ -342,7 +343,7 @@ def admin_booking_lookup_by_reference(request):
         )
     except Booking.DoesNotExist:
         return Response(
-            {'error': 'Booking not found with this reference code'},
+            {'error': _('Booking not found with this reference code')},
             status=status.HTTP_404_NOT_FOUND
         )
     

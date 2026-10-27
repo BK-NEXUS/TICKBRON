@@ -20,6 +20,7 @@ from admin_panel.views import IsSuperAdmin, IsSuperAdminOrStaff
 from currency.cbu import FETCHED_CURRENCIES
 from currency.models import ExchangeRate, ExchangeRateFetch
 from currency.rates import current_rate
+from django.utils.translation import gettext as _
 
 
 class ExchangeRateSerializer(serializers.ModelSerializer):
@@ -90,9 +91,9 @@ def exchange_rate_accept(request, rate_id):
     """
     rejected = ExchangeRate.objects.filter(pk=rate_id).first()
     if rejected is None:
-        return Response({'error': 'Exchange rate not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': _('Exchange rate not found')}, status=status.HTTP_404_NOT_FOUND)
     if rejected.status != 'rejected':
-        return Response({'error': 'Only a rejected rate can be accepted'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Only a rejected rate can be accepted')}, status=status.HTTP_400_BAD_REQUEST)
 
     old = current_rate(rejected.currency)
     try:
@@ -108,5 +109,5 @@ def exchange_rate_accept(request, rate_id):
                 'rejected_id': rejected.pk, 'accepted_id': accepted.pk,
             })
     except IntegrityError:
-        return Response({'error': 'A rate for this date is already accepted'}, status=status.HTTP_409_CONFLICT)
+        return Response({'error': _('A rate for this date is already accepted')}, status=status.HTTP_409_CONFLICT)
     return Response(ExchangeRateSerializer(accepted).data, status=status.HTTP_201_CREATED)
