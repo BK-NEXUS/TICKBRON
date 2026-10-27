@@ -1,0 +1,119 @@
+# TICKBRON: texts the API shows in the page language. Edit, then run: python scripts/compile_po.py
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+# Messages written in this project.
+
+msgid "UZS prices must be whole so'm."
+msgstr "Цены в UZS должны быть в целых сумах."
+
+msgid "Currency must be one of: %(codes)s."
+msgstr "Валюта должна быть одной из: %(codes)s."
+
+msgid "The currency cannot change after room types exist; their prices use it."
+msgstr "Валюту нельзя изменить после создания типов номеров: их цены заданы в ней."
+
+msgid "Must be the property currency (%(currency)s)."
+msgstr "Должна быть валюта объекта (%(currency)s)."
+
+msgid "Your hotels are placed by the administrator and cannot be moved."
+msgstr "Расположение ваших отелей задаёт администратор, его нельзя изменить."
+
+msgid "Send an object like {{\"en\": {{\"name\": \"Hotel\", \"description\": \"...\"}}}}."
+msgstr "Отправьте объект вида {{\"en\": {{\"name\": \"Hotel\", \"description\": \"...\"}}}}."
+
+msgid "Give the hotel a name in at least one language."
+msgstr "Укажите название отеля хотя бы на одном языке."
+
+msgid "Unsupported language. Use: %(languages)s."
+msgstr "Язык не поддерживается. Используйте: %(languages)s."
+
+msgid "Send {\"name\": \"...\", \"description\": \"...\"}."
+msgstr "Отправьте {\"name\": \"...\", \"description\": \"...\"}."
+
+msgid "Cannot be less than the usual number of guests."
+msgstr "Не может быть меньше обычного числа гостей."
+
+msgid "You can only manage room types for your own properties."
+msgstr "Вы можете управлять типами номеров только в своих отелях."
+
+msgid "Send an object like {{\"USD\": \"65.00\", \"UZS\": \"800000\"}}."
+msgstr "Отправьте объект вида {{\"USD\": \"65.00\", \"UZS\": \"800000\"}}."
+
+msgid "Unsupported currency. Use: %(codes)s."
+msgstr "Валюта не поддерживается. Используйте: %(codes)s."
+
+msgid "Enter a number."
+msgstr "Введите число."
+
+msgid "Enter a price of zero or more."
+msgstr "Введите цену не меньше нуля."
+
+msgid "Too many decimals for this currency."
+msgstr "Слишком много знаков после запятой для этой валюты."
+
+msgid "Whole amounts only."
+msgstr "Только целые суммы."
+
+msgid "You can only manage rate plans for your own properties."
+msgstr "Вы можете управлять тарифами только в своих отелях."
+
+msgid "Enter the price in: %(codes)s."
+msgstr "Укажите цену в: %(codes)s."
+
+msgid "Must equal the price in %(currency)s (%(amount)s)."
+msgstr "Должна равняться цене в %(currency)s (%(amount)s)."
+
+msgid "Cannot be less than the minimum nights."
+msgstr "Максимум ночей не может быть меньше минимума."
+
+msgid "Enter the price in every currency before saving: %(codes)s."
+msgstr "Перед сохранением укажите цену в каждой валюте: %(codes)s."
+
+msgid "You can only manage inventory for your own properties."
+msgstr "Вы можете управлять наличием только в своих отелях."
+
+msgid "The date cannot be in the past."
+msgstr "Дата не может быть в прошлом."
+
+msgid "Cannot be more than the %(count)s rooms of this room type."
+msgstr "Не может быть больше, чем %(count)s номеров этого типа."
+
+msgid "Cannot be less than the minimum stay."
+msgstr "Не может быть меньше минимального срока проживания."
+
+msgid "You can only manage room inventory for your own properties."
+msgstr "Вы можете управлять наличием номеров только в своих отелях."
+
+msgid "You can only block room inventory for your own properties."
+msgstr "Вы можете блокировать номера только в своих отелях."
+
+msgid "Make another photo the cover instead."
+msgstr "Вместо этого сделайте обложкой другое фото."
+
+msgid "You can only manage photos for your own properties."
+msgstr "Вы можете управлять фото только своих отелей."
+
+msgid "Names can contain letters, spaces, hyphens, dots and apostrophes only."
+msgstr "Имя может содержать только буквы, пробелы, дефисы, точки и апострофы."
+
+msgid "Use plain text without < or >."
+msgstr "Используйте обычный текст без < и >."
+
+msgid "Remove the control characters."
+msgstr "Уберите управляющие символы."
+
+msgid "File size exceeds maximum allowed size of %(size)sMB"
+msgstr "Размер файла превышает допустимые %(size)s МБ"
+
+msgid "File type %(ext)s is not allowed. Allowed types: %(types)s"
+msgstr "Тип файла %(ext)s не разрешён. Разрешённые типы: %(types)s"
+
+msgid "File content type %(type)s is not a valid image"
+msgstr "Тип содержимого файла %(type)s не является изображением"
+
+msgid "Image dimensions are too large."
+msgstr "Размеры изображения слишком велики."

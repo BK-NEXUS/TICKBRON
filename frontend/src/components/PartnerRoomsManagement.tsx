@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { useState, useEffect } from 'react'
 import { House } from 'lucide-react'
 import { VipBadge } from './VipBadge'
@@ -401,8 +402,9 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
         </div>
       )}
 
-      <form className="rooms-form" onSubmit={(e) => {
+      <form className="rooms-form" noValidate onSubmit={(e) => {
         e.preventDefault()
+        if (!formAccepts(e.currentTarget, t, setError)) return
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <fieldset className="rooms-form-section">

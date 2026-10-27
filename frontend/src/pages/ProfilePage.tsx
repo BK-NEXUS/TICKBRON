@@ -174,7 +174,7 @@ export function ProfilePage() {
             {isEditing && (
               <div className="profile-section">
                 <h2 className="profile-section-title">{t('profile.edit')}</h2>
-                <form onSubmit={handleSave} className="profile-edit-form">
+                <form onSubmit={handleSave} className="profile-edit-form" noValidate>
                   {error && (
                     <div className="profile-form-error" role="alert" aria-live="assertive">
                       {error}

@@ -29,6 +29,16 @@ describe('PartnerAvailabilityManagement bulk price edit (3.7)', () => {
     expect(screen.getByRole('button', { name: 'Add new date inventory' })).toHaveClass('btn-primary')
   })
 
+  it('an empty date range is reported by the site in the page language, and nothing is sent', async () => {
+    render(<PartnerAvailabilityManagement ratePlanId={11} ratePlanName="Standard Rate" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /bulk price edit/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('From is required.')
+    expect(partnerAdapter.bulkSetPrice).not.toHaveBeenCalled()
+  })
+
   it('applies a bulk price over a date range and returns to the list', async () => {
     vi.mocked(partnerAdapter.bulkSetPrice).mockResolvedValue({ data: [], error: null })
     render(<PartnerAvailabilityManagement ratePlanId={11} ratePlanName="Standard Rate" />)

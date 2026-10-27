@@ -4,6 +4,7 @@ import { Button } from './Button'
 import { NewPasswordFields } from './NewPasswordFields'
 import { PasswordField } from './PasswordField'
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { newPasswordProblem } from '../utils/passwordRules'
 
 /** Change the password of the signed-in account. The current password is asked for again. */
@@ -16,10 +17,11 @@ export function ChangePasswordForm() {
   const [changed, setChanged] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
     setChanged(false)
+    if (!formAccepts(event.currentTarget, t, setError)) return
 
     const problem = newPasswordProblem(password, confirmation)
     if (problem) {
@@ -48,7 +50,7 @@ export function ChangePasswordForm() {
   return (
     <div className="profile-section">
       <h2 className="profile-section-title">{t('profile.changePassword')}</h2>
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {error && (
           <div className="auth-error" role="alert">
             {error}

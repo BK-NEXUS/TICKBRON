@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { useState } from 'react'
 import { GeographyPicker, type GeographyValue } from './GeographyPicker'
 import { cleanField, isPhoneValid } from '../utils/inputFilters'
@@ -53,9 +54,10 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
     return null
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
+    if (!formAccepts(e.currentTarget, t, setError)) return
 
     const validationError = validateForm()
     if (validationError) {
@@ -170,7 +172,7 @@ export function CreateHotelOwnerAccount({ onSuccess, onCancel }: CreateHotelOwne
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="form-fields">
+        <form onSubmit={handleSubmit} className="form-fields" noValidate>
           <div className="form-group">
             <label htmlFor="email">{t('admin.emailAddress')}</label>
             <input

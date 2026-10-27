@@ -41,6 +41,16 @@ const fillAll = () => Object.entries(FULL).forEach(([code, value]) => type(code,
 const create = () => fireEvent.click(screen.getByRole('button', { name: 'Create Rate Plan' }))
 const update = () => fireEvent.click(screen.getByRole('button', { name: 'Update Rate Plan' }))
 
+describe('a rate plan form words its problems in the page language', () => {
+  it('an empty name is reported by the site, and nothing is sent', async () => {
+    await openCreate()
+    fireEvent.change(screen.getByLabelText(/Rate Plan Name/), { target: { value: '' } })
+    create()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Rate Plan Name is required\./)
+    expect(api.createRatePlan).not.toHaveBeenCalled()
+  })
+})
+
 describe('a rate plan has no web address to type', () => {
   it('does not show a slug field and does not send one when creating', async () => {
     await openCreate()

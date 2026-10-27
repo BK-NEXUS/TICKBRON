@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerRatePlan, CreateRatePlanRequest, UpdateRatePlanRequest } from '../adapters/partnerAdapter'
 import { CURRENCIES } from '../i18n/options'
@@ -405,8 +406,9 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
         </div>
       )}
 
-      <form className="rates-form" onSubmit={(e) => {
+      <form className="rates-form" noValidate onSubmit={(e) => {
         e.preventDefault()
+        if (!formAccepts(e.currentTarget, t, setError)) return
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">

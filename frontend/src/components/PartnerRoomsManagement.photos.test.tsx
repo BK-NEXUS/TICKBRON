@@ -74,6 +74,16 @@ describe('PartnerRoomsManagement photos', () => {
     expect(screen.getByText('UZS')).toBeInTheDocument()
   })
 
+  it('reports an empty room name in the page language, not in the browser\'s', async () => {
+    await openCreateForm()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Room Type' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Room Name is required.')
+    expect(document.getElementById('room_name')).toHaveFocus()
+    expect(adapter.createRoomType).not.toHaveBeenCalled()
+  })
+
   it('does not ask for a web address: the server makes it from the name', async () => {
     await openCreateForm()
 

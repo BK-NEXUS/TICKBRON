@@ -9,6 +9,7 @@ import os
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.utils.deconstruct import deconstructible
+from django.utils.translation import gettext as _
 
 
 @deconstructible
@@ -238,17 +239,18 @@ def validate_image_file(file):
     # Check file size (max 10MB)
     max_size = 10 * 1024 * 1024  # 10MB
     if file.size > max_size:
-        return False, f"File size exceeds maximum allowed size of {max_size / (1024*1024)}MB"
+        return False, _('File size exceeds maximum allowed size of %(size)sMB') % {'size': max_size / (1024*1024)}
     
     # Check file extension
     allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     file_ext = os.path.splitext(file.name)[1].lower()
     if file_ext not in allowed_extensions:
-        return False, f"File type {file_ext} is not allowed. Allowed types: {', '.join(allowed_extensions)}"
+        return False, _('File type %(ext)s is not allowed. Allowed types: %(types)s') % {
+            'ext': file_ext, 'types': ', '.join(allowed_extensions)}
     
     # Check if file is actually an image (basic check)
     if not file.content_type.startswith('image/'):
-        return False, f"File content type {file.content_type} is not a valid image"
+        return False, _('File content type %(type)s is not a valid image') % {'type': file.content_type}
     
     return True, None
 
@@ -266,6 +268,6 @@ def image_upload_error(file):
         return error_message
     width, height = file.image.size
     if width * height > MAX_IMAGE_PIXELS:
-        return 'Image dimensions are too large.'
+        return _('Image dimensions are too large.')
     return None
 
