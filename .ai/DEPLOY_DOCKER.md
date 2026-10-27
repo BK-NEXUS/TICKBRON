@@ -79,6 +79,12 @@ The first start builds the images (a few minutes). Then open `https://your-domai
 docker compose exec -e DJANGO_SUPERUSER_PASSWORD='a-long-password' web python manage.py createsuperuser --noinput --email you@your-domain
 ```
 
+Then add the property types (hotel, hostel, guest house, apartment, resort). A new server has none, and an owner cannot add a hotel without one. Safe to run again:
+
+```
+docker compose exec web python manage.py seed_property_types
+```
+
 Sign in at `https://your-domain/login` with that e-mail. Hotel owner accounts are created by this administrator in the admin panel. Do NOT run `seed_demo` on the real server (it is for development and refuses to run without DEBUG).
 
 ## Update to a new version

@@ -350,6 +350,12 @@ export interface PhotoApi {
   remove(photoId: number): Promise<ApiResponse<null>>
 }
 
+export interface PartnerPropertyType {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface AssignedPlace {
   country_ref: number | null
   region_ref: number | null
@@ -764,6 +770,11 @@ class PartnerAdapter {
    */
   async uploadPropertyPhoto(propertyId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
     return this.postPhoto(`/api/v1/partner/properties/${propertyId}/photos/`, photoData, 'Property not found')
+  }
+
+  /** GET /api/v1/partner/property-types/: every property type, also those no hotel uses yet */
+  async getPropertyTypes(): Promise<ApiResponse<PartnerPropertyType[]>> {
+    return this.request<PartnerPropertyType[]>('/api/v1/partner/property-types/')
   }
 
   /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */

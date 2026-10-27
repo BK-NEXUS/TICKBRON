@@ -7,6 +7,7 @@ import { nameTheHotel, settle } from '../test/utils'
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     createProperty: vi.fn(),
+    getPropertyTypes: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Hotel', slug: 'hotel' }], error: null }),
     getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null }),
   },
 }))

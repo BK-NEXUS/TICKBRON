@@ -127,6 +127,24 @@ NOTIFICATION_CODES = {
         'title': 'Booking {booking_reference} cancelled: guest did not arrive',
         'message': 'The guest of booking {booking_reference} did not arrive in time; the booking was cancelled and the room is free again.',
     },
+    'booking_confirmed': {
+        'type': 'booking',
+        'params': ('booking_id', 'booking_reference', 'check_in', 'check_out'),
+        'title': 'Booking {booking_reference} confirmed',
+        'message': 'Your booking {booking_reference} is confirmed for {check_in} - {check_out}.',
+    },
+    'new_booking': {
+        'type': 'booking',
+        'params': ('booking_id', 'booking_reference', 'check_in', 'check_out'),
+        'title': 'New booking {booking_reference}',
+        'message': 'A guest booked {check_in} - {check_out} (booking {booking_reference}).',
+    },
+    'booking_cancelled_by_guest': {
+        'type': 'booking',
+        'params': ('booking_id', 'booking_reference', 'check_in', 'check_out'),
+        'title': 'Booking {booking_reference} cancelled by the guest',
+        'message': 'The guest cancelled booking {booking_reference} ({check_in} - {check_out}); the room is free again.',
+    },
     'refund_succeeded': {
         'type': 'payment',
         'params': ('refund_id', 'booking_id', 'booking_reference', 'amount', 'currency'),

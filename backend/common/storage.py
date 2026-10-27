@@ -217,6 +217,8 @@ def get_media_upload_path(instance, filename):
     """
     if hasattr(instance, 'property'):
         property_id = instance.property.id
+    elif hasattr(instance, 'room_type'):
+        property_id = instance.room_type.property_id
     else:
         # Fallback if property is not set yet
         property_id = 'temp'

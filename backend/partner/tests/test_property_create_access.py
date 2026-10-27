@@ -4,12 +4,13 @@ change properties. A regular registered user gets 403 on every endpoint that
 writes a Property or anything under it, and cannot give themselves the
 hotel-owner role.
 """
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
+from common.dates import business_today
 from partner.tests.geography_helpers import uzbek_location
 from permissions.models import Role
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
@@ -66,7 +67,7 @@ def inventory(owner):
         base_price=60, currency='USD', min_nights=1, is_active=True,
     )
     day = DateInventory.objects.create(
-        rate_plan=rate, date=date.today(), available_rooms=3, booked_rooms=0,
+        rate_plan=rate, date=business_today(), available_rooms=3, booked_rooms=0,
         price=60, currency='USD', is_available=True,
     )
     return {'property_type': property_type, 'property': prop, 'room': room, 'rate': rate, 'day': day}
@@ -81,7 +82,7 @@ def client_for(user):
 
 def create_requests(inv):
     """(url, payload, format) for every partner endpoint that creates something."""
-    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    tomorrow = (business_today() + timedelta(days=1)).isoformat()
     return [
         ('/api/v1/partner/properties/', {
             'property_type': inv['property_type'].id, 'max_guests': 2, 'bedrooms': 1,

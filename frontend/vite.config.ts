@@ -10,6 +10,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      // Hotel photos come as /media/... paths; the API server serves them in development
+      '/media': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
   build: {

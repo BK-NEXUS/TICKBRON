@@ -14,9 +14,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from django.db.models import Prefetch
+from django.db.models import OuterRef, Prefetch, Subquery
+from django.db.models.functions import Coalesce
 from properties.models import (
-    Property, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto, RoomPhoto,
+    Property, PropertyType, RoomType, RatePlan, DateInventory, RoomInventory, RoomBlock, PropertyPhoto, RoomPhoto,
 )
 from bookings.arrival import mark_arrived
 from bookings.models import Booking
@@ -145,7 +146,10 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
         queryset = DateInventory.objects.filter(
             rate_plan__room_type__property__owner=self.request.user,
             is_deleted=False
-        ).select_related('rate_plan__room_type__property')
+        ).select_related('rate_plan__room_type__property').annotate(room_booked=Coalesce(Subquery(
+            RoomInventory.objects.filter(
+                room_type=OuterRef('rate_plan__room_type'), date=OuterRef('date'), is_deleted=False,
+            ).values('booked_rooms')[:1]), 0))
         if self.action == 'list':
             queryset = self._filter_list(queryset).order_by('date', 'id')
         return queryset
@@ -471,6 +475,15 @@ def partner_assigned_place(request):
         'region_ref': place.region_id if place else None,
         'city_ref': place.city_id if place else None,
     })
+
+
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
+@api_view(['GET'])
+@permission_classes([IsHotelOwner])
+def partner_property_types(request):
+    """Every property type for the "add a hotel" form: [{id, name, slug}], also the types no hotel uses yet."""
+    types = PropertyType.objects.filter(is_deleted=False).order_by('name')
+    return Response([{'id': kind.id, 'name': kind.name, 'slug': kind.slug} for kind in types])
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

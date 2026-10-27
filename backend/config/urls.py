@@ -2,6 +2,8 @@
 URL configuration for TICKBRON Backend
 """
 from common.health import healthz, readyz
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path, include
 from common.permissions import StaffOrDebug
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -27,3 +29,6 @@ urlpatterns = [
     path('api/v1/promotions/', include('promotions.urls')),
     path('api/v1/chat/', include('chat.urls')),
 ]
+
+# Local development only: with DEBUG off `static()` adds nothing and the web server serves /media/
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

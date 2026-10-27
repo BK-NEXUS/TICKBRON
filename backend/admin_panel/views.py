@@ -246,7 +246,8 @@ def admin_create_hotel_owner(request):
         email: Hotel owner email (required)
         first_name: First name (required)
         last_name: Last name (required)
-        phone_number: Phone number (optional)
+        phone_number: Phone number (required)
+        country_ref, region_ref, city_ref: the place of the owner's hotels (required, must fit together)
         password: Initial password (required, min 12 characters)
         password_confirm: Password confirmation (required)
     

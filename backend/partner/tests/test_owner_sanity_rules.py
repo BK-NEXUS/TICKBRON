@@ -41,6 +41,12 @@ REFUSED = [
     (RATE, {'min_nights': 999}, 'min_nights'),
     (NIGHT, {'available_rooms': 9999}, 'available_rooms'),
     (NIGHT, {'minimum_stay': 5, 'maximum_stay': 2}, 'maximum_stay'),
+    (ROOM, {'name': '<script>alert(1)</script>'}, 'name'),
+    (ROOM, {'description': 'a <b>b</b>'}, 'description'),
+    (ROOM, {'bed_configuration': '<i>2 beds</i>'}, 'bed_configuration'),
+    (RATE, {'name': '<script>x</script>'}, 'name'),
+    (RATE, {'description': '<b>x</b>'}, 'description'),
+    (RATE, {'cancellation_policy': '<b>x</b>'}, 'cancellation_policy'),
 ]
 
 
