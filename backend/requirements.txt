@@ -15,7 +15,7 @@ celery==5.6.3
 django-redis==6.0.0
 
 # Phone number validation (E.164)
-phonenumbers==9.0.40
+phonenumbers==9.0.41
 
 # Time zones (Asia/Tashkent for the CBU rate date; Windows has no system tz database)
 tzdata==2026.4
