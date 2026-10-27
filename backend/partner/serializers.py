@@ -516,6 +516,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
 
     price_field = 'price'
 
+    @extend_schema_field(serializers.IntegerField())
     def get_booked_rooms(self, obj):
         annotated = getattr(obj, 'room_booked', None)
         if annotated is not None:
@@ -523,6 +524,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         row = RoomInventory.objects.filter(room_type_id=obj.rate_plan.room_type_id, date=obj.date).first()
         return row.booked_rooms if row else 0
 
+    @extend_schema_field(serializers.IntegerField())
     def get_remaining_rooms(self, obj):
         return max(0, obj.available_rooms - self.get_booked_rooms(obj))
 
