@@ -47,3 +47,38 @@ describe('design refresh round 2', () => {
     expect(refresh).toMatch(/\.property-card-image-placeholder,[\s\S]*?repeating-linear-gradient\(45deg/)
   })
 })
+
+describe('design refresh round 3 (map)', () => {
+  it('draws the price pin with a tail and the cluster in three sizes', () => {
+    expect(refresh).toMatch(/\.map-pin::after \{[^}]*rotate\(45deg\)/)
+    expect(refresh).toMatch(/\.map-cluster--md \{/)
+    expect(refresh).toMatch(/\.map-cluster--lg \{/)
+  })
+
+  it('darkens the tiles in the dark theme, by the system setting and by the chosen theme', () => {
+    expect(refresh).toMatch(/prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme="light"\]\) \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
+    expect(refresh).toMatch(/:root\[data-theme="dark"\] \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
+  })
+
+  it('keeps the pin scale effect to a real mouse and allowed motion', () => {
+    expect(refresh).toMatch(/@media \(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\) \{\s*\.map-pin:hover/)
+  })
+})
+
+describe('design refresh round 3 (hotel card)', () => {
+  it('keeps the public hotel card flush and its price row on one line, apart from the owner card', () => {
+    expect(refresh).toMatch(/\.property-card\.tilt-card \{\s*padding: 0;\s*gap: 0;/)
+    expect(refresh).toMatch(/\.property-card\.tilt-card \.property-card-footer \{\s*justify-content: space-between/)
+  })
+
+  it('shows compact rows next to the map without the details and the button', () => {
+    expect(refresh).toMatch(/\.properties-map-list \.property-card \{\s*display: grid;\s*grid-template-columns: 112px/)
+    expect(refresh).toMatch(/\.properties-map-list \.property-card-cta \{\s*display: none/)
+  })
+})
+
+describe('design refresh round 3 (phones)', () => {
+  it('lists one hotel per row on phones', () => {
+    expect(refresh).toMatch(/@media \(max-width: 599px\) \{\s*\.search-results-grid \{\s*grid-template-columns: minmax\(0, 1fr\)/)
+  })
+})

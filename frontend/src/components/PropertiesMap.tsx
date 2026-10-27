@@ -13,6 +13,9 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_ATTRIBUTION, TILE_URL } from './mapT
 
 // Pins close together overlap; the hovered or focused pin comes to the front, the chosen one stays there
 const ACTIVE_Z_OFFSET = 10_000
+/** Groups of this many pins or more get a bigger bubble */
+const CLUSTER_MEDIUM = 10
+const CLUSTER_LARGE = 50
 const RAISED_Z_OFFSET = 20_000
 
 /** The visible part of the map as the backend's search takes it: a centre and a radius in whole kilometres (1-100). */
@@ -106,7 +109,7 @@ export function PropertiesMap({
         const count = cluster.getChildCount()
         const badge = document.createElement('button')
         badge.type = 'button'
-        badge.className = 'map-cluster'
+        badge.className = `map-cluster${count >= CLUSTER_LARGE ? ' map-cluster--lg' : count >= CLUSTER_MEDIUM ? ' map-cluster--md' : ''}`
         badge.textContent = String(count)
         badge.setAttribute('aria-label', tp('map.clusterLabel', count))
         return L.divIcon({ html: badge, className: 'map-pin-icon', iconSize: undefined })

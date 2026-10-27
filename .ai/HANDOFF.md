@@ -3160,6 +3160,10 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 ## Design refresh, round 2 (2026-10-23)
 - More rules in `frontend/src/styles/refresh.css` (admin headers and count pills, one-point chart bar, property page spacing and phone meta grid, lattice for empty photos), tested in `refresh.test.ts`. Details and the open items: `.ai/PLAN_DESIGN_REFRESH.md`. No component logic changed.
 
+## Design refresh, round 3: map and hotel card (2026-10-23)
+- Map and hotel card styles in `refresh.css` (see `.ai/PLAN_DESIGN_REFRESH.md`, "Round 3"); `PropertiesMap.tsx` adds the cluster size classes (test added). Found and fixed a class-name collision that gave public hotel cards the owner card's padding.
+- Found, not fixed: owner dashboard card and public hotel card both use `.property-card` in `index.css`.
+
 ## Fix: approval needs a room, a rate and a photo (QA finding F3, 2026-10-27)
 - `approve` refuses (400, `missing: [room|rate|photo]`) until the hotel has a room, an active rate and a photo; see `API_CONTRACT.md` and `properties/listing.py`. The admin moderation screen shows what is missing (keys `admin.cannotApproveYet`, `admin.missing.*`, en/ru/uz).
 - Three older tests approved an empty hotel; their fixtures now add the parts (`admin_panel/tests/listing_helpers.py`), assertions unchanged.

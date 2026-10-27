@@ -33,3 +33,9 @@ The brand palette (gold, cream, ink) is the client's and stays.
 - Empty photos (hotel card, gallery, destination card) show a soft panel with the lattice instead of a flat beige box.
 - Checked by screenshots at 1440 and 390 px in the light and the dark theme (property page, admin users, customers, statistics).
 - Still open: the customers table has 12 columns and scrolls sideways inside its card on 1440 px (Status and actions are at the far right); booking page and owner inner screens not reviewed by eye.
+
+## Round 3 (2026-10-23): the map and the hotel card
+- Map: rounded frame with a shadow, pill-style zoom buttons and attribution, price pins with a pointer tail and a lift on hover, cluster bubbles with a soft ring that grow at 10 and 50 hotels (`map-cluster--md` / `--lg`, set in `PropertiesMap.tsx`), the "Search this area" button as a pill, the "See where the hotels are" teaser with a soft gradient, and in the dark theme the tiles are inverted and softened (CSS filter, no new tile source, so the CSP is unchanged).
+- Hotel card bug found and fixed: a later rule for the owner dashboard card (same class `property-card`) gave every public card 24 px padding (photo inset) and a right-aligned footer (price squeezed against the button). The public card (`.property-card.tilt-card`) is flush again with the price and the button on one row.
+- Next to the map the hotels are compact rows (thumbnail, name, place, price) so about 5 fit on screen instead of 1; on phones the hotel list is one column (two columns left no room for the price).
+- Not checked: the real map tiles (the sandbox cannot load them), so pins on a real map were not seen; the pins and clusters were checked on the grey background only. The two class names `property-card` (public) and `property-card` (owner dashboard) still collide in `index.css`; renaming the owner one would remove the need for the override.
