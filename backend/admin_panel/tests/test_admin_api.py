@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from partner.tests.geography_helpers import uzbek_location
+from admin_panel.tests.listing_helpers import make_listable
 from properties.models import Property, PropertyType, Amenity, AmenityCategory, RoomType, RatePlan
 from bookings.models import Booking, BookingItem
 from admin_panel.models import InternalNote
@@ -71,6 +72,7 @@ class AdminPropertyTests(TestCase):
             base_price=100.00,
             currency='USD'
         )
+        make_listable(self.property)
     
     def test_super_admin_can_list_all_properties(self):
         """Test that super-admin can list all properties."""

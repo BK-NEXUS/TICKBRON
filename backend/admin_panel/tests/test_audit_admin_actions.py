@@ -13,6 +13,7 @@ from partner.tests.geography_helpers import uzbek_location
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
+from admin_panel.tests.listing_helpers import make_listable
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -54,6 +55,7 @@ def _only_row(action):
 @pytest.mark.django_db
 class TestPropertyModeration:
     def test_approve_is_logged_with_the_property_id(self, staff, hotel):
+        make_listable(hotel)
         response = _as(staff).post(f'{A}/properties/{hotel.id}/approve/', {}, format='json')
 
         assert response.status_code == 200

@@ -3,6 +3,13 @@ import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
 import { PropertyLocationField } from './PropertyLocationField'
 import { useI18n } from '../i18n/I18nContext'
+import type { MessageKey } from '../i18n/messages/en'
+
+const MISSING_PART_KEYS: Record<string, MessageKey> = {
+  room: 'admin.missing.room',
+  rate: 'admin.missing.rate',
+  photo: 'admin.missing.photo',
+}
 
 export function AdminPropertyModeration() {
   const [properties, setProperties] = useState<AdminProperty[]>([])
@@ -48,7 +55,10 @@ export function AdminPropertyModeration() {
     try {
       const response = await adminAdapter.approveProperty(propertyId, {})
       
-      if (response.error) {
+      if (response.missing) {
+        const parts = response.missing.flatMap((part) => MISSING_PART_KEYS[part] ?? []).map((key) => t(key)).join(', ')
+        setError(t('admin.cannotApproveYet', { parts }))
+      } else if (response.error) {
         setError(response.error)
       } else {
         // Refresh the list

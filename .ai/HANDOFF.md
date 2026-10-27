@@ -3160,3 +3160,7 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 ## Design refresh, round 2 (2026-10-23)
 - More rules in `frontend/src/styles/refresh.css` (admin headers and count pills, one-point chart bar, property page spacing and phone meta grid, lattice for empty photos), tested in `refresh.test.ts`. Details and the open items: `.ai/PLAN_DESIGN_REFRESH.md`. No component logic changed.
 
+## Fix: approval needs a room, a rate and a photo (QA finding F3, 2026-10-27)
+- `approve` refuses (400, `missing: [room|rate|photo]`) until the hotel has a room, an active rate and a photo; see `API_CONTRACT.md` and `properties/listing.py`. The admin moderation screen shows what is missing (keys `admin.cannotApproveYet`, `admin.missing.*`, en/ru/uz).
+- Three older tests approved an empty hotel; their fixtures now add the parts (`admin_panel/tests/listing_helpers.py`), assertions unchanged.
+- Not covered: hotels already public without these parts stay public; only new approvals are checked. A hotel that loses its last room or photo after approval also stays public.

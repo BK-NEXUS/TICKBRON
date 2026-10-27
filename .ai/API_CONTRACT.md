@@ -1217,3 +1217,8 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - An address is the same address whatever its capitals. It is trimmed and stored in lower case when an account is made (sign-up `POST /auth/register/`, admin `POST /admin-panel/users/create-hotel-owner/`, `createsuperuser`), and compared in lower case at sign-in (`POST /auth/login/`) and password reset (`POST /auth/password-reset/request/`). The answers show the lower-case address.
 - `ali@mail.com`, `Ali@Mail.com` and `ALI@MAIL.COM` are one account: signing up with another spelling of an existing address answers 400 `{"email": ["User with this email already exists."]}` as before; signing in works with any spelling.
 - The database keeps it: unique constraint on `lower(email)` (`users_email_lower_unique`). Migration `users.0010_email_case_insensitive` lower-cases the stored addresses first and stops, changing nothing, with a message naming the addresses when two accounts differ only by capitals.
+
+## Approving a hotel needs a room, a rate and a photo (2026-10-27)
+- `POST /api/v1/admin-panel/properties/{id}/approve/` without `rejection_reason` (approve) now returns `400 {"error": "Property is not ready to be listed", "missing": [...]}` when the hotel lacks any of: `room` (a room type not deleted), `rate` (an active, not deleted rate plan on such a room), `photo` (a property photo not deleted). `missing` lists every absent part, in the order `room`, `rate`, `photo`. Nothing is changed on a refusal.
+- Rejecting (`rejection_reason` sent) is never blocked. Suspend and reactivate are unchanged.
+- Rule lives in `properties/listing.py` (`missing_for_listing`). The admin screen shows the missing parts in the page language.
