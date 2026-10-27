@@ -342,6 +342,38 @@
   font-size: 11px;
 }
 
+/* The street map / satellite switch: two buttons in one pill, the chosen one filled */
+.leaflet-container .map-layer-switch {
+  display: flex;
+  border-radius: var(--radius-pill);
+}
+
+.map-layer-switch__button {
+  min-height: 40px;
+  padding: 0 var(--spacing-md);
+  border: 0;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-layer-switch__button:hover {
+  background: var(--color-tint);
+}
+
+.map-layer-switch__button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.map-layer-switch__button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
 .properties-map-search-area {
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-md);
@@ -408,12 +440,12 @@
 
 /* The map follows the dark theme: the tiles are inverted and softened */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .leaflet-tile-pane {
+  :root:not([data-theme="light"]) .leaflet-container:not(.map--satellite) .leaflet-tile-pane {
     filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.7);
   }
 }
 
-:root[data-theme="dark"] .leaflet-tile-pane {
+:root[data-theme="dark"] .leaflet-container:not(.map--satellite) .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.7);
 }
 

@@ -184,7 +184,7 @@ proxy_set_header Host              $host;
 
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response (add `preload` only after submitting the domain to hstspreload.org); redirect all `http://` to `https://` (or set `SECURE_SSL_REDIRECT=True` in Django and `SECURE_PROXY_SSL_HEADER` for the proxy).
 - `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; the map tile host `tile.openstreetmap.org` is listed below since the search map and the location picker, and add payment provider hosts when Payme/Click are integrated):
-  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
 - Map privacy: the browser loads map tiles straight from OpenStreetMap, so OSM sees the visitor's IP address and the area viewed; the privacy policy (legal texts) must say so. The OSM tile policy needs the visible attribution (set in `components/mapTiles.ts`) and is meant for light use; plan a tile provider or own tile server before heavy traffic.
 - Clickjacking: `frame-ancestors 'none'` in the CSP above, plus `X-Frame-Options: DENY` for older browsers (SPA responses).
 - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on SPA and `/media/` responses.
@@ -320,6 +320,7 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - [ ] New library **XlsxWriter 3.2.9** (Excel export, `requirements.txt`); `pip install -r requirements.txt` on the server.
 - [ ] CBU exchange rates are loaded (R6 section above); a hotel priced in USD or EUR refuses bookings with 503 `exchange_rate_unavailable` until a rate exists.
 - [ ] Map tiles come from `tile.openstreetmap.org` (CSP `img-src`, privacy note above): the guest's browser contacts OpenStreetMap on pages with a map. Decide whether the OSM usage policy fits the expected traffic or a paid tile provider is needed.
+- [ ] Satellite pictures come from Esri's World Imagery (`server.arcgisonline.com`, also in the CSP `img-src`, and the credit is shown on the map). Esri's terms cover light use: before real traffic, take a satellite provider with a key (for example MapTiler or Mapbox) and set `VITE_SATELLITE_TILE_URL` and `VITE_SATELLITE_ATTRIBUTION` in the frontend build, then put that provider's host in the CSP. Google's pictures cannot be used outside Google's own map.
 - [ ] Size the server from the load test: 4 shared cores gave about 86 requests/s; plan more workers/cores and run the same Locust file (`backend/scripts/loadtest/README.md`) on the real server before launch.
 - [ ] Lawyer review of the refund wording (cancellation and no-show) and the "Reklama" label, as listed above.
 

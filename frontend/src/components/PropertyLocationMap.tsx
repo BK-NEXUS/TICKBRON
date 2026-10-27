@@ -3,7 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useI18n } from '../i18n/I18nContext'
 import { toCoordinates } from '../utils/coordinates'
-import { TILE_ATTRIBUTION, TILE_URL } from './mapTiles'
+import { addBaseLayers } from './mapLayers'
 
 interface PropertyLocationMapProps {
   /** As the API sends them: decimal strings, or null when the owner has not set a location */
@@ -26,7 +26,7 @@ export function PropertyLocationMap({ latitude, longitude, name }: PropertyLocat
     if (lat === undefined || lng === undefined || !containerRef.current) return
     const map = L.map(containerRef.current, { center: [lat, lng], zoom: ZOOM, zoomControl: false, scrollWheelZoom: false })
     L.control.zoom({ zoomInTitle: t('map.zoomIn'), zoomOutTitle: t('map.zoomOut') }).addTo(map)
-    L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map)
+    addBaseLayers(map, { group: t('map.layerGroup'), street: t('map.layerStreet'), satellite: t('map.layerSatellite') })
     L.marker([lat, lng], { title: name, alt: name, keyboard: false }).addTo(map)
     return () => { map.remove() }
     // Titles follow the language the next time the map is drawn; the pin and tiles do not depend on it

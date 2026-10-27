@@ -45,6 +45,16 @@ describe('PropertiesMap', () => {
     delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight
   })
 
+  it('offers the street map and the satellite pictures, like a map site', () => {
+    renderMap([alpha, beta])
+
+    const group = screen.getByRole('group', { name: 'Map type' })
+    expect(within(group).getByRole('button', { name: 'Map' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(within(group).getByRole('button', { name: 'Satellite' }))
+    expect(within(group).getByRole('button', { name: 'Satellite' })).toHaveAttribute('aria-pressed', 'true')
+    expect(document.querySelector('.properties-map-canvas')).toHaveClass('map--satellite')
+  })
+
   it('puts a price pin on the map for every property that has a location', () => {
     const { container } = renderMap([alpha, beta, gamma])
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(2)
