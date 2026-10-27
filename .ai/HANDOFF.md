@@ -3164,3 +3164,8 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - `approve` refuses (400, `missing: [room|rate|photo]`) until the hotel has a room, an active rate and a photo; see `API_CONTRACT.md` and `properties/listing.py`. The admin moderation screen shows what is missing (keys `admin.cannotApproveYet`, `admin.missing.*`, en/ru/uz).
 - Three older tests approved an empty hotel; their fixtures now add the parts (`admin_panel/tests/listing_helpers.py`), assertions unchanged.
 - Not covered: hotels already public without these parts stay public; only new approvals are checked. A hotel that loses its last room or photo after approval also stays public.
+
+## Fix: children of a booking (QA finding F4, 2026-10-27)
+- Decided rule: children are counted inside `guest_count` (the stats already count persons that way) and at least one guest is an adult; see `API_CONTRACT.md`. Rule in `Booking.create_booking`; booking page disables "Add child" at `guest_count - 1`, hint `booking.childrenIncluded` (en/ru/uz).
+- Two older tests (`test_booking_create_with_children`) sent 2 guests with 2 children, and `test_booking_serializer_includes_new_fields` did the same; their `guest_count` is now 3, assertions unchanged.
+- Not covered: the owner and admin screens only show the list; existing bookings with too many children are not changed.

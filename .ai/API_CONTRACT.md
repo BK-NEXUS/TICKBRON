@@ -1222,3 +1222,8 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - `POST /api/v1/admin-panel/properties/{id}/approve/` without `rejection_reason` (approve) now returns `400 {"error": "Property is not ready to be listed", "missing": [...]}` when the hotel lacks any of: `room` (a room type not deleted), `rate` (an active, not deleted rate plan on such a room), `photo` (a property photo not deleted). `missing` lists every absent part, in the order `room`, `rate`, `photo`. Nothing is changed on a refusal.
 - Rejecting (`rejection_reason` sent) is never blocked. Suspend and reactivate are unchanged.
 - Rule lives in `properties/listing.py` (`missing_for_listing`). The admin screen shows the missing parts in the page language.
+
+## Children on a booking (2026-10-27)
+- `POST /api/v1/bookings/`: `children` (ages 0-17) are part of `guest_count`, never extra people, and one guest is always an adult. So `len(children) <= guest_count - 1`; otherwise `400 {"children": [...]}` and nothing is saved. `guest_count` is still limited by the room capacity, which also bounds the list (a list of 100 ages is refused).
+- Before, any number of ages was saved. `guest_count: 2` with `children: [5, 8]` (no adult) is now refused.
+- Rule in `Booking.create_booking`. The booking page stops adding children at `guest_count - 1` and says why.

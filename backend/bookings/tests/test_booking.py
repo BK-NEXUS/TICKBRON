@@ -11,6 +11,7 @@ from properties.models import Property, PropertyType, RoomType, RatePlan, DateIn
 from bookings.models import Booking
 from bookings.serializers import BookingCreateSerializer, BookingCancelSerializer, BookingSerializer
 from rest_framework.test import APIRequestFactory
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 
 class BookingModelTests(TestCase):
@@ -572,7 +573,7 @@ class BookingSerializerTests(TestCase):
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 2, 'expected_arrival_time': '14:00',
+            'guest_count': 3, 'expected_arrival_time': '14:00',
             'children': [5, 8]
         }
         
@@ -581,6 +582,36 @@ class BookingSerializerTests(TestCase):
         
         booking = serializer.save()
         self.assertEqual(booking.children, [5, 8])
+
+    def _book_with_children(self, guest_count, children, number_of_rooms=1):
+        data = {
+            'property_id': self.property.id,
+            'room_type_id': self.room_type.id,
+            'rate_plan_id': self.rate_plan.id,
+            'check_in': self.check_in.strftime('%Y-%m-%d'),
+            'check_out': self.check_out.strftime('%Y-%m-%d'),
+            'guest_count': guest_count, 'expected_arrival_time': '14:00',
+            'number_of_rooms': number_of_rooms,
+            'children': children,
+        }
+        serializer = BookingCreateSerializer(data=data, context={'request': self.request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        return serializer.save()
+
+    def test_children_are_part_of_the_guest_count_and_one_adult_is_needed(self):
+        for guest_count, children in [(1, [5]), (2, [5, 8]), (3, [1, 2, 3]), (4, [5] * 100)]:
+            with self.subTest(guest_count=guest_count, children=len(children)):
+                with self.assertRaises(DRFValidationError) as refused:
+                    self._book_with_children(guest_count, children)
+                self.assertIn('children', refused.exception.detail)
+        self.assertEqual(Booking.objects.count(), 0)
+
+    def test_children_up_to_guest_count_minus_one_are_accepted(self):
+        booking = self._book_with_children(4, [3, 6, 9])
+        self.assertEqual(booking.children, [3, 6, 9])
+
+    def test_no_children_still_works(self):
+        self.assertEqual(self._book_with_children(1, []).children, [])
     
     def test_booking_create_with_invalid_children_age(self):
         """Test booking creation with invalid children age (negative)."""
@@ -682,7 +713,7 @@ class BookingSerializerTests(TestCase):
             rate_plan=self.rate_plan,
             check_in=self.check_in,
             check_out=self.check_out,
-            guest_count=2,
+            guest_count=3,
             guest_full_name='Test Guest',
             guest_phone='+998901234567',
             guest_email='guest@example.com',

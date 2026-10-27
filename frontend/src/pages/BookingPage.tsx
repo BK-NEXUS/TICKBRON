@@ -275,6 +275,9 @@ export function BookingPage() {
     }
   }
 
+  // Children are part of the guest count and one guest is always an adult
+  const maxChildren = Math.max(0, (bookingState?.guestCount ?? 1) - 1)
+
   const addChild = () => {
     setGuestDetails(prev => ({ ...prev, children: [...prev.children, 0] }))
   }
@@ -330,6 +333,8 @@ export function BookingPage() {
 
     if (guestDetails.children.some(age => age < 0 || age > 17)) {
       errors.children = t('booking.childrenRange')
+    } else if (guestDetails.children.length > maxChildren) {
+      errors.children = t('booking.childrenIncluded')
     }
 
     setValidationErrors(errors)
@@ -698,10 +703,13 @@ export function BookingPage() {
                       type="button"
                       className="btn btn-secondary booking-form-child-add"
                       onClick={addChild}
+                      disabled={guestDetails.children.length >= maxChildren}
+                      aria-describedby="children-hint"
                     >
                       + {t('booking.addChild')}
                     </button>
                   </div>
+                  <span id="children-hint" className="booking-form-hint">{t('booking.childrenIncluded')}</span>
                   {validationErrors.children && (
                     <span className="booking-form-error" role="alert">
                       {validationErrors.children}

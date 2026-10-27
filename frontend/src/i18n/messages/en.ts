@@ -640,6 +640,7 @@ export const en = {
   'booking.emailInvalid': "Please enter a valid email address",
   'booking.roomsMin': "Number of rooms must be at least 1",
   'booking.childrenRange': "Children ages must be between 0 and 17",
+  'booking.childrenIncluded': "Counted within the number of guests; at least one guest must be an adult.",
   'booking.loading': "Loading booking information...",
   'booking.errorTitle': "Booking Error",
   'booking.confirmedTitle': "Booking Confirmed!",
