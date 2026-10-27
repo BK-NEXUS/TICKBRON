@@ -56,8 +56,13 @@ describe('design refresh round 3 (map)', () => {
   })
 
   it('darkens the tiles in the dark theme, by the system setting and by the chosen theme', () => {
-    expect(refresh).toMatch(/prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme="light"\]\) \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
-    expect(refresh).toMatch(/:root\[data-theme="dark"\] \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
+    expect(refresh).toMatch(/prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme="light"\]\) \.leaflet-container:not\(\.map--satellite\) \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
+    expect(refresh).toMatch(/:root\[data-theme="dark"\] \.leaflet-container:not\(\.map--satellite\) \.leaflet-tile-pane \{\s*filter: invert\(1\)/)
+  })
+
+  it('styles the street map / satellite switch as one pill with the chosen button filled', () => {
+    expect(refresh).toMatch(/\.map-layer-switch__button\[aria-pressed="true"\] \{[^}]*background: var\(--color-primary\)/)
+    expect(refresh).toMatch(/\.map-layer-switch__button:focus-visible \{/)
   })
 
   it('keeps the pin scale effect to a real mouse and allowed motion', () => {

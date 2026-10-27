@@ -9,7 +9,8 @@ import { priceIn } from '../utils/price'
 import type { Property } from '../adapters/propertyAdapter'
 import { toCoordinates } from '../utils/coordinates'
 import { PropertyCard } from './PropertyCard'
-import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_ATTRIBUTION, TILE_URL } from './mapTiles'
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from './mapTiles'
+import { addBaseLayers } from './mapLayers'
 
 // Pins close together overlap; the hovered or focused pin comes to the front, the chosen one stays there
 const ACTIVE_Z_OFFSET = 10_000
@@ -100,7 +101,7 @@ export function PropertiesMap({
       center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, zoomControl: false, attributionControl: true,
     })
     L.control.zoom({ zoomInTitle: t('map.zoomIn'), zoomOutTitle: t('map.zoomOut') }).addTo(map)
-    L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map)
+    addBaseLayers(map, { group: t('map.layerGroup'), street: t('map.layerStreet'), satellite: t('map.layerSatellite') })
     // Pins that would cover each other become one numbered group; clicking it zooms in
     const group = L.markerClusterGroup({
       showCoverageOnHover: false,

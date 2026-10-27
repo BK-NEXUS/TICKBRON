@@ -3204,3 +3204,9 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - `I18nContext` now takes `translate` and the catalogs from `translateNow.ts` (no behaviour change).
 - Not covered: the adapters' own domain texts that are still English ("Property not found", "Booking not found", "Favorite not found", "Failed to ..." and similar, about 60), and the chat and no-show adapters' 403/404 texts. They show only when the server sends nothing readable.
 - The uz and ru texts are mine, not reviewed by a native speaker.
+
+## Satellite pictures on the maps (2026-10-27)
+- All three maps (search results `PropertiesMap`, hotel page `PropertyLocationMap`, admin/owner `LocationPicker`) have a two-button switch "Map | Satellite" in the top right corner (`components/mapLayers.ts`, `addBaseLayers`; keys `map.layerGroup/Street/Satellite`). The choice is remembered in the browser (`tickbron.mapLayer`, per visitor, works without storage). A `map--satellite` class on the map keeps the dark-theme tile filter off the pictures.
+- Source: Esri World Imagery (`mapTiles.ts`, credit shown on the map). Esri's terms cover light use only, and Google's pictures cannot be used outside Google's own map. Before real traffic: pick a provider with a key (MapTiler, Mapbox, ...) and set `VITE_SATELLITE_TILE_URL` and `VITE_SATELLITE_ATTRIBUTION` in the frontend build (`frontend/.env.example`); put its host in the CSP.
+- CSP: `https://server.arcgisonline.com` added to `img-src` in `deploy/nginx.conf.example` and `.ai/RELEASE_CHECKLIST.md` (item added there); `frontend/src/deployCsp.test.ts` keeps both in step with `mapTiles.ts`.
+- Not checked: the satellite pictures themselves (the sandbox cannot reach Esri; requests to `World_Imagery/MapServer/tile/{z}/{y}/{x}` are made, the map shows grey). Please look once on the live site, in light and dark theme. Place labels (roads, names) are not on the satellite layer; a "hybrid" layer would need a second tile source.
