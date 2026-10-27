@@ -214,6 +214,9 @@ proxy_set_header Host              $host;
 - [ ] `SMS_TEST_MODE=False`* (True returns OTP codes in responses)
 - [ ] `scripts/checkpoint_checks/*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
 
+### Property types
+- [ ] `python manage.py seed_property_types` was run on the new server (without it the owner's "add a hotel" form has no type to choose)
+
 ### Demo data
 - [ ] Never run `seed_demo` / `seed_demo_stats` in production (they refuse when DEBUG is off)
 - [ ] If the production database was ever copied from a dev database, delete every `*@tickbron.demo` account and the demo hotels before launch: `User.objects.filter(email__endswith='@tickbron.demo')`

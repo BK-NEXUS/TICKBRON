@@ -5,10 +5,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PartnerPropertyWizard } from './PartnerPropertyWizard'
 import { partnerAdapter } from '../adapters/partnerAdapter'
-import { nameTheHotel } from '../test/utils'
+import { nameTheHotel, settle } from '../test/utils'
 
 vi.mock('../adapters/partnerAdapter', () => ({
-  partnerAdapter: { createProperty: vi.fn(), getAssignedPlace: vi.fn() },
+  partnerAdapter: {
+    createProperty: vi.fn(),
+    getAssignedPlace: vi.fn(),
+    getPropertyTypes: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Hotel', slug: 'hotel' }], error: null }),
+  },
 }))
 vi.mock('../adapters/geographyAdapter', async importOriginal => ({
   ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
@@ -38,6 +42,7 @@ describe('PartnerPropertyWizard assigned place', () => {
   it('shows the assigned place, locked, with a note', async () => {
     api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null })
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
     await toLocationStep()
     expect(await screen.findByText('The place of your hotels is set by the administrator.')).toBeInTheDocument()
@@ -50,6 +55,7 @@ describe('PartnerPropertyWizard assigned place', () => {
   it('creates the hotel in the assigned place without picking anything', async () => {
     api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null })
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
     await toLocationStep()
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
@@ -68,6 +74,7 @@ describe('PartnerPropertyWizard assigned place', () => {
   it('an owner without an assigned place still picks the place', async () => {
     api.getAssignedPlace.mockResolvedValue({ data: { country_ref: null, region_ref: null, city_ref: null }, error: null })
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
     await toLocationStep()
     await screen.findByRole('option', { name: 'Uzbekistan' })

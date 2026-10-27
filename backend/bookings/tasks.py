@@ -4,6 +4,7 @@ Celery tasks for bookings.
 from celery import shared_task
 
 from bookings.models import Booking
+from bookings.notices import send_notice
 
 
 @shared_task
@@ -49,3 +50,11 @@ def cancel_unarrived_bookings():
         raise ArrivalCancellationError(f"{result['failed']} unarrived booking(s) could not be cancelled")
     return result
 
+
+
+@shared_task
+def send_booking_notice(booking_id, kind):
+    """Mail one booking notice. The booking was saved before this runs, so a slow mail server shows nothing."""
+    booking = Booking.objects.select_related('guest', 'property__owner').filter(pk=booking_id).first()
+    if booking is not None:
+        send_notice(booking, kind)

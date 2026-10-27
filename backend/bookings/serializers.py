@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from common.dates import business_today
 from bookings.arrival import arrival_deadline, arrival_time_error
+from bookings.notices import tell_booked, tell_cancelled_by_guest
 from bookings.pricing import refusal_reason
 from users.serializers import validate_phone_number_format
 from currency.rates import ExchangeRateUnavailable
@@ -230,6 +231,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 expected_arrival_time=validated_data['expected_arrival_time'],
                 confirmed=True,
             )
+            tell_booked(booking)
             return booking
         except ExchangeRateUnavailable:
             raise
@@ -279,6 +281,7 @@ class BookingCancelSerializer(serializers.Serializer):
         """Cancel booking and restore inventory."""
         try:
             instance.cancel_booking(validated_data.get('cancellation_reason'))
+            tell_cancelled_by_guest(instance)
             return instance
         except ValidationError as e:
             raise serializers.ValidationError(e.message_dict)

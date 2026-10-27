@@ -7,6 +7,7 @@ import { settle, nameTheHotel } from '../test/utils'
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     createProperty: vi.fn(),
+    getPropertyTypes: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Hotel', slug: 'hotel' }], error: null }),
     getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: null, region_ref: null, city_ref: null }, error: null }),
   },
 }))
@@ -36,8 +37,9 @@ async function pickLocation() {
 }
 
 describe('PartnerPropertyWizard', () => {
-  it('should render the wizard with step 1', () => {
+  it('should render the wizard with step 1', async () => {
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
 
     expect(screen.getByText('List Your Property')).toBeInTheDocument()
@@ -47,6 +49,7 @@ describe('PartnerPropertyWizard', () => {
 
   it('should show validation error for invalid form data', async () => {
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
 
     // Check initial state - should be on step 1
@@ -65,6 +68,7 @@ describe('PartnerPropertyWizard', () => {
 
   it('should navigate to next step with valid data', async () => {
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
 
     const maxGuestsInput = screen.getByLabelText('Max Guests *')
@@ -81,6 +85,7 @@ describe('PartnerPropertyWizard', () => {
 
   it('should navigate back to previous step', async () => {
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
 
     // Fill step 1 and go to step 2
@@ -113,6 +118,7 @@ describe('PartnerPropertyWizard', () => {
     })
 
     render(<PartnerPropertyWizard onSuccess={mockOnSuccess} />)
+    await settle()
 
     nameTheHotel()
 
@@ -165,6 +171,7 @@ describe('PartnerPropertyWizard', () => {
 
   it('does not leave the location step until country, region and city are chosen', async () => {
     render(<PartnerPropertyWizard />)
+    await settle()
     nameTheHotel()
     fireEvent.click(screen.getByText('Next'))
     await waitFor(() => expect(screen.getByText('Location Details')).toBeInTheDocument())
@@ -187,6 +194,7 @@ describe('PartnerPropertyWizard', () => {
 
     it('clicking the map fills the latitude and longitude fields', async () => {
       const { container } = render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, { clientX: 200, clientY: 150 })
@@ -197,6 +205,7 @@ describe('PartnerPropertyWizard', () => {
 
     it('typing the coordinates puts the pin on the map', async () => {
       const { container } = render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '39.654823' } })
@@ -206,6 +215,7 @@ describe('PartnerPropertyWizard', () => {
 
     it('Remove location clears both fields', async () => {
       const { container } = render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, { clientX: 200, clientY: 150 })
@@ -218,6 +228,7 @@ describe('PartnerPropertyWizard', () => {
       const { partnerAdapter } = await import('../adapters/partnerAdapter')
       vi.mocked(partnerAdapter.createProperty).mockResolvedValueOnce({ data: { id: 9 } as never, error: null })
       render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
@@ -238,6 +249,7 @@ describe('PartnerPropertyWizard', () => {
 
     it('asks for both coordinates or neither', async () => {
       render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
@@ -250,6 +262,7 @@ describe('PartnerPropertyWizard', () => {
 
     it('refuses coordinates outside the world', async () => {
       render(<PartnerPropertyWizard />)
+      await settle()
       nameTheHotel()
       await goToLocationStep()
       fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
@@ -261,9 +274,10 @@ describe('PartnerPropertyWizard', () => {
     })
   })
 
-  it('should call onCancel when cancel button is clicked', () => {
+  it('should call onCancel when cancel button is clicked', async () => {
     const mockOnCancel = vi.fn()
     render(<PartnerPropertyWizard onCancel={mockOnCancel} />)
+    await settle()
     nameTheHotel()
 
     const cancelButton = screen.getByText('Cancel')
@@ -281,6 +295,7 @@ describe('PartnerPropertyWizard', () => {
     })
 
     render(<PartnerPropertyWizard />)
+    await settle()
 
     nameTheHotel()
 

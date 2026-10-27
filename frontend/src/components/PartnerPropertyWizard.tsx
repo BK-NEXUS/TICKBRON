@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useEffect, useState } from 'react'
-import { partnerAdapter, CreatePropertyRequest, PartnerProperty } from '../adapters/partnerAdapter'
+import { partnerAdapter, CreatePropertyRequest, PartnerProperty, PartnerPropertyType } from '../adapters/partnerAdapter'
 import { LocationPicker } from './LocationPicker'
 import { toCoordinates } from '../utils/coordinates'
 import { emptyHotelTexts, hasHotelName, hotelTextsToApi, type HotelTextsForm } from '../utils/hotelTexts'
@@ -38,10 +38,21 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     return () => { current = false }
   }, [])
 
+  const [propertyTypes, setPropertyTypes] = useState<PartnerPropertyType[]>([])
+  useEffect(() => {
+    let current = true
+    void partnerAdapter.getPropertyTypes().then(({ data }) => {
+      if (!current || !data) return
+      setPropertyTypes(data)
+      setFormData(previous => (previous.property_type === 0 && data.length > 0 ? { ...previous, property_type: data[0].id } : previous))
+    })
+    return () => { current = false }
+  }, [])
+
   const [texts, setTexts] = useState<HotelTextsForm>(emptyHotelTexts)
 
   const [formData, setFormData] = useState<PropertyForm>({
-    property_type: 1, // Default property type (should be selected from a list)
+    property_type: 0,
     max_guests: 2,
     bedrooms: 1,
     bathrooms: 1,
@@ -87,6 +98,10 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
   const validateStep = (step: WizardStep): boolean => {
     switch (step) {
       case 'basic':
+        if (!formData.property_type) {
+          setError(t('partner.propertyTypeRequired'))
+          return false
+        }
         if (!hasHotelName(texts)) {
           setError(t('hotelTexts.nameRequired'))
           return false
@@ -193,6 +208,20 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           <div className="wizard-step">
             <h2 className="wizard-step-title">{t('partner.basicInformation')}</h2>
             <div className="wizard-form">
+              <div className="form-group">
+                <label htmlFor="property_type">{t('partner.propertyType')}</label>
+                <select
+                  id="property_type"
+                  value={formData.property_type}
+                  onChange={(e) => handleInputChange('property_type', parseInt(e.target.value) || 0)}
+                  className="form-input"
+                  aria-required="true"
+                >
+                  {propertyTypes.map((kind) => (
+                    <option key={kind.id} value={kind.id}>{kind.name}</option>
+                  ))}
+                </select>
+              </div>
               <HotelTextsFields idPrefix="wizard" value={texts} onChange={(next) => { setTexts(next); setError(null) }} />
               <div className="form-group">
                 <label htmlFor="max_guests">{t('partner.maxGuests')}</label>

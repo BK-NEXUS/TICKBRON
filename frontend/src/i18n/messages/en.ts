@@ -941,6 +941,8 @@ export const en = {
   'partner.rooms': "Rooms *",
   'partner.note': "Note *",
   'partner.basicInformation': "Basic Information",
+  'partner.propertyType': "Property type",
+  'partner.propertyTypeRequired': "Choose the property type.",
   'partner.maxGuests': "Max Guests *",
   'partner.bedrooms2': "Bedrooms *",
   'partner.bathrooms2': "Bathrooms *",

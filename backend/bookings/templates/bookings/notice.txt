@@ -1,0 +1,8 @@
+{% autoescape off %}TICKBRON
+
+Uz: {{ uz }}
+Ru: {{ ru }}
+En: {{ en }}
+
+{{ link }}
+{% endautoescape %}

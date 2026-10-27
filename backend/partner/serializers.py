@@ -298,7 +298,9 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         ]
         read_only_fields = ['id']
         extra_kwargs = {
-            'description': {'max_length': 2000},
+            'name': {'validators': [validate_free_text]},
+            'description': {'max_length': 2000, 'validators': [validate_free_text]},
+            'bed_configuration': {'validators': [validate_free_text]},
             'slug': {'required': False},
             'base_price': {'min_value': MIN_PRICE},
             'base_occupancy': {'max_value': MAX_OCCUPANCY},
@@ -406,7 +408,9 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         ]
         read_only_fields = ['id']
         extra_kwargs = {
-            'description': {'max_length': 2000}, 'cancellation_policy': {'max_length': 2000},
+            'name': {'validators': [validate_free_text]},
+            'description': {'max_length': 2000, 'validators': [validate_free_text]},
+            'cancellation_policy': {'max_length': 2000, 'validators': [validate_free_text]},
             'slug': {'required': False},
             # Optional when `prices` carries the main price
             'base_price': {'required': False, 'min_value': MIN_PRICE},
@@ -497,8 +501,10 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
     
     Limited to date inventory in properties owned by the authenticated hotel-owner.
     """
-    remaining_rooms = serializers.IntegerField(read_only=True)
-    
+    # Bookings are counted on the room type's shared RoomInventory, not on this rate plan's row
+    booked_rooms = serializers.SerializerMethodField()
+    remaining_rooms = serializers.SerializerMethodField()
+
     class Meta:
         model = DateInventory
         fields = [
@@ -509,6 +515,16 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         extra_kwargs = {'notes': {'max_length': 500}}
 
     price_field = 'price'
+
+    def get_booked_rooms(self, obj):
+        annotated = getattr(obj, 'room_booked', None)
+        if annotated is not None:
+            return annotated
+        row = RoomInventory.objects.filter(room_type_id=obj.rate_plan.room_type_id, date=obj.date).first()
+        return row.booked_rooms if row else 0
+
+    def get_remaining_rooms(self, obj):
+        return max(0, obj.available_rooms - self.get_booked_rooms(obj))
 
     def property_of(self, attrs):
         rate_plan = attrs.get('rate_plan') or getattr(self.instance, 'rate_plan', None)

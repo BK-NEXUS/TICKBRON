@@ -941,6 +941,8 @@ export const uz: Catalog = {
   'partner.rooms': "Xonalar *",
   'partner.note': "Izoh *",
   'partner.basicInformation': "Asosiy ma'lumotlar",
+  'partner.propertyType': "Obyekt turi",
+  'partner.propertyTypeRequired': "Obyekt turini tanlang.",
   'partner.maxGuests': "Eng ko'p mehmon *",
   'partner.bedrooms2': "Yotoqxonalar *",
   'partner.bathrooms2': "Hammomlar *",

@@ -973,6 +973,8 @@ export const ru: Catalog = {
   'partner.rooms': "Номера *",
   'partner.note': "Заметка *",
   'partner.basicInformation': "Основная информация",
+  'partner.propertyType': "Тип объекта",
+  'partner.propertyTypeRequired': "Выберите тип объекта.",
   'partner.maxGuests': "Макс. гостей *",
   'partner.bedrooms2': "Спальни *",
   'partner.bathrooms2': "Ванные комнаты *",

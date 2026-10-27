@@ -64,6 +64,7 @@ vi.mock('../adapters/partnerAdapter', () => ({
     getBookings: vi.fn().mockResolvedValue({ data: [] }),
     getProperties: vi.fn().mockResolvedValue({ data: [] }),
     getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: null, region_ref: null, city_ref: null }, error: null }),
+    getPropertyTypes: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Hotel', slug: 'hotel' }], error: null }),
   },
 }))
 
