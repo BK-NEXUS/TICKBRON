@@ -3,6 +3,7 @@
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -405,7 +406,7 @@ class PartnerAdapter {
   /** GET a paginated list endpoint and return the items of every page */
   private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
     const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
-      errorMessages: { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Resource not found' },
+      errorMessages: { 401: translateNow('apiError.authRequired'), 403: 'Hotel-owner role required', 404: translateNow('apiError.notFound') },
     })
     return { data, error }
   }
@@ -428,7 +429,7 @@ class PartnerAdapter {
       const response = await apiFetch(url, defaultOptions)
       
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: 'Resource not found' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired'), 403: 'Hotel-owner role required', 404: translateNow('apiError.notFound') })
         return { data: null, error: apiError.message }
       }
 
@@ -442,7 +443,7 @@ class PartnerAdapter {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Network error occurred',
+        error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
   }
@@ -743,7 +744,7 @@ class PartnerAdapter {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Hotel-owner role required', 404: notFound })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired'), 403: 'Hotel-owner role required', 404: notFound })
         return { data: null, error: apiError.message }
       }
 
@@ -752,7 +753,7 @@ class PartnerAdapter {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error.message : 'Network error occurred',
+        error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
   }

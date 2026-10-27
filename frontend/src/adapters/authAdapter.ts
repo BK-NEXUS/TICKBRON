@@ -3,6 +3,7 @@
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, clearCsrfToken } from '../utils/api'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -126,7 +127,7 @@ class AuthAdapter {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Network error occurred',
+        error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
   }

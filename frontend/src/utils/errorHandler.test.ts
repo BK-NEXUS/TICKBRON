@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
+import { setActiveLanguage } from '../i18n/languageChoice'
+import { uz } from '../i18n/messages/uz'
+import { ru } from '../i18n/messages/ru'
 import {
   parseApiError,
   readApiError,
@@ -347,6 +350,51 @@ describe('errorHandler', () => {
       const error = new Error('Some error')
       
       expect(isServerError(error)).toBe(false)
+    })
+  })
+
+  describe('texts the client writes itself follow the page language', () => {
+    afterEach(() => setActiveLanguage('en'))
+
+    it.each([
+      [404, 'apiError.404'], [403, 'apiError.403'], [401, 'apiError.401'], [400, 'apiError.400'],
+      [500, 'apiError.500'], [503, 'apiError.503'],
+    ] as const)('status %i without a server text', (status, key) => {
+      setActiveLanguage('uz')
+      expect(parseApiError(new Response('', { status })).message).toBe(uz[key])
+      setActiveLanguage('ru')
+      expect(parseApiError(new Response('', { status })).message).toBe(ru[key])
+    })
+
+    it('keeps the server\'s own text, whatever the language', () => {
+      setActiveLanguage('uz')
+      expect(parseApiError(new Response('', { status: 400 }), { error: 'Bron parametrlari noto\'g\'ri' }).message)
+        .toBe('Bron parametrlari noto\'g\'ri')
+    })
+
+    it('too many requests with the seconds to wait', () => {
+      setActiveLanguage('ru')
+      const response = new Response('', { status: 429, headers: { 'Retry-After': '30' } })
+      expect(parseApiError(response).message).toBe(ru['apiError.retryAfter'].replace('{seconds}', '30'))
+    })
+
+    it('an expired session (CSRF)', () => {
+      setActiveLanguage('uz')
+      const response = new Response('', { status: 403 })
+      expect(parseApiError(response, { detail: 'CSRF Failed: token missing.' }).message).toBe(uz['apiError.csrf'])
+    })
+
+    it('network, timeout and unknown failures', () => {
+      setActiveLanguage('uz')
+      expect(handleNetworkError(new Error('Failed to fetch')).message).toBe(uz['apiError.network'])
+      expect(handleNetworkError(new Error('timeout of 5s')).message).toBe(uz['apiError.timeout'])
+      expect(handleNetworkError('boom').message).toBe(uz['apiError.unexpected'])
+    })
+
+    it('an adapter override stays in the page language when it is a key', () => {
+      setActiveLanguage('uz')
+      const message = parseApiError(new Response('', { status: 403 }), undefined, { 403: uz['apiError.adminRequired'] }).message
+      expect(message).toBe(uz['apiError.adminRequired'])
     })
   })
 })

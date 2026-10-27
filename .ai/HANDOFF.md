@@ -3191,3 +3191,9 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Still English on purpose: the hotel not-found text (the hotel page has its own), the `reason` texts that travel with booking refusal codes, status views, generic server fallbacks, payments (dropped tables).
 - The new uz/ru texts are mine, not reviewed by a native speaker.
 - Tests changed on purpose: none of the existing assertions; new tests for the middleware, the catalogs, `apiFetch`, `formProblem` and one per form.
+
+## Texts the site writes itself, in the page language (2026-10-27)
+- The generic error texts of the client (status fallbacks 400 to 503, "Network error occurred", timeout, expired session, "Too many requests, try again in N seconds", the "Admin or staff role required" / "Authentication required" / "Resource not found" overrides of the adapters) were English in every language. They are now catalog keys `apiError.*` in en/uz/ru, read with `translateNow(key)` (`i18n/translateNow.ts`: text in the language the page is in at that moment, for code with no React context). The adapters' status-message tables use getters, so the text is chosen when the error happens, not when the app loads.
+- `I18nContext` now takes `translate` and the catalogs from `translateNow.ts` (no behaviour change).
+- Not covered: the adapters' own domain texts that are still English ("Property not found", "Booking not found", "Favorite not found", "Failed to ..." and similar, about 60), and the chat and no-show adapters' 403/404 texts. They show only when the server sends nothing readable.
+- The uz and ru texts are mine, not reviewed by a native speaker.

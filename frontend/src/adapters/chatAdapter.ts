@@ -2,6 +2,7 @@
 // Contract: .ai/API_CONTRACT.md, section "Support chat".
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -57,7 +58,13 @@ export interface ChatApi {
 
 const MY = '/api/v1/chat'
 const ADMIN = '/api/v1/admin-panel/chat'
-const STATUS_MESSAGES = { 401: 'Authentication required', 403: 'Not allowed', 404: 'Not found', 429: 'Too many requests' }
+// A getter: the text is chosen when an error happens, in the language the page is in then
+const STATUS_MESSAGES = {
+  get 401() { return translateNow('apiError.authRequired') },
+  403: 'Not allowed',
+  404: 'Not found',
+  429: 'Too many requests',
+}
 
 export class ChatAdapter {
   constructor(private baseUrl: string = API_BASE_URL) {}
@@ -76,7 +83,7 @@ export class ChatAdapter {
       if (response.status === 204) return { data: null, error: null, code: null }
       return { data: (await response.json()) as T, error: null, code: null }
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Network error occurred', code: null }
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'), code: null }
     }
   }
 

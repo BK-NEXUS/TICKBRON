@@ -10,6 +10,9 @@
  * parseApiError reads all of them and always returns a plain string message.
  */
 
+import { translateNow } from '../i18n/translateNow'
+import type { MessageKey } from '../i18n/messages/en'
+
 export interface ApiError {
   message: string
   status?: number
@@ -21,17 +24,15 @@ export interface ApiError {
 /** Per-status fallback messages for an adapter (e.g. 403 on partner endpoints), used when the server gives no specific one. */
 export type StatusMessages = Partial<Record<number, string>>
 
-const STATUS_MESSAGES: Record<number, string> = {
-  400: 'Invalid request. Please check your input.',
-  401: 'Authentication required. Please log in.',
-  403: 'You do not have permission to perform this action.',
-  404: 'The requested resource was not found.',
-  429: 'Too many requests. Please wait a moment and try again.',
-  500: 'Server error. Please try again later.',
-  503: 'Service temporarily unavailable. Please try again later.',
+const STATUS_KEYS: Record<number, MessageKey> = {
+  400: 'apiError.400',
+  401: 'apiError.401',
+  403: 'apiError.403',
+  404: 'apiError.404',
+  429: 'apiError.429',
+  500: 'apiError.500',
+  503: 'apiError.503',
 }
-
-const CSRF_MESSAGE = 'Your session has expired. Please refresh the page and try again.'
 
 // DRF defaults that say nothing useful to a user; the status message is shown instead
 const GENERIC_SERVER_MESSAGES = new Set([
@@ -132,9 +133,9 @@ function extractServerError(errorData: unknown): { message?: string; code?: stri
 }
 
 function statusMessage(status: number): string {
-  if (STATUS_MESSAGES[status]) return STATUS_MESSAGES[status]
-  if (status >= 500) return STATUS_MESSAGES[500]
-  return 'An error occurred'
+  if (STATUS_KEYS[status]) return translateNow(STATUS_KEYS[status])
+  if (status >= 500) return translateNow(STATUS_KEYS[500])
+  return translateNow('apiError.default')
 }
 
 /**
@@ -150,13 +151,13 @@ export function parseApiError(response: Response, errorData?: unknown, overrides
   if (status === 429) {
     const retryAfter = Number(response.headers?.get('Retry-After'))
     message = retryAfter > 0
-      ? `Too many requests. Please try again in ${retryAfter} seconds.`
+      ? translateNow('apiError.retryAfter', { seconds: retryAfter })
       : fallback
   } else if (status >= 500) {
     // Server-side text (exception names, provider errors) is not meant for users
     message = fallback
   } else if (status === 403 && server.message?.startsWith('CSRF Failed')) {
-    message = CSRF_MESSAGE
+    message = translateNow('apiError.csrf')
   } else if (server.message && !isGenericServerMessage(server.message)) {
     message = server.message
   } else {
@@ -189,13 +190,13 @@ export function handleNetworkError(error: unknown): ApiError {
     // Check for specific network error types
     if (error.message.includes('fetch')) {
       return {
-        message: 'Network error. Please check your connection.',
+        message: translateNow('apiError.network'),
         code: 'NETWORK_ERROR',
       }
     }
     if (error.message.includes('timeout')) {
       return {
-        message: 'Request timeout. Please try again.',
+        message: translateNow('apiError.timeout'),
         code: 'TIMEOUT_ERROR',
       }
     }
@@ -206,7 +207,7 @@ export function handleNetworkError(error: unknown): ApiError {
   }
 
   return {
-    message: 'An unexpected error occurred',
+    message: translateNow('apiError.unexpected'),
     code: 'UNKNOWN_ERROR',
   }
 }
@@ -227,7 +228,7 @@ export function getUserErrorMessage(error: ApiError | Error | string): string {
     return error.message
   }
 
-  return 'An unexpected error occurred'
+  return translateNow('apiError.unexpected')
 }
 
 /**

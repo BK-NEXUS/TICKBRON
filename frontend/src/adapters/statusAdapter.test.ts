@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { statusAdapter } from './statusAdapter'
 import { setCsrfToken } from '../utils/api'
+import { setActiveLanguage } from '../i18n/languageChoice'
+import { uz } from '../i18n/messages/uz'
 
 const okJson = (body: unknown) =>
   ({ ok: true, status: 200, json: async () => body, clone() { return this } }) as unknown as Response
@@ -18,6 +20,18 @@ describe('statusAdapter', () => {
   })
 
   const calledUrl = (index = 0) => new URL(fetchMock.mock.calls[index][0] as string)
+
+  it('words a refused request in the language the page is in when it happens, not when the app loaded', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 403, json: async () => ({}), clone() { return this } } as unknown as Response)
+
+    setActiveLanguage('uz')
+    const refused = await statusAdapter.getCountries({ period: 'all' })
+    setActiveLanguage('en')
+    const later = await statusAdapter.getCountries({ period: 'all' })
+
+    expect(refused.error).toBe(uz['apiError.adminRequired'])
+    expect(later.error).toBe('Admin or staff role required')
+  })
 
   it('lists countries with period, search and page', async () => {
     const result = await statusAdapter.getCountries({ period: '2026-04', search: 'uz', page: 2 })

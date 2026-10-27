@@ -2,6 +2,7 @@ import type { ExchangeRateInfo } from './bookingAdapter'
 import type { PriceList } from './propertyAdapter'
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
+import { translateNow } from '../i18n/translateNow'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -170,8 +171,8 @@ export interface ApiResponse<T> {
 }
 
 const ACCOUNT_LIST_OPTIONS = {
-  errorMessages: { 401: 'Authentication required' },
-  networkErrorMessage: 'Network error occurred',
+  errorMessages: { 401: translateNow('apiError.authRequired') },
+  networkErrorMessage: translateNow('apiError.networkOccurred'),
 }
 
 export const accountAdapter = {
@@ -197,14 +198,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Property not found' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired'), 404: 'Property not found' })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -219,13 +220,13 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 404: 'Favorite not found' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired'), 404: 'Favorite not found' })
         return { data: null, error: apiError.message }
       }
 
       return { data: null, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -240,14 +241,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired') })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -269,14 +270,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 400: 'Invalid limit parameter', 401: 'Authentication required' })
+        const apiError = await readApiError(response, { 400: 'Invalid limit parameter', 401: translateNow('apiError.authRequired') })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -291,14 +292,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired') })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -319,14 +320,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required', 403: 'Unauthorized access' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired'), 403: 'Unauthorized access' })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -349,14 +350,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 400: 'Invalid review data', 401: 'Authentication required', 404: 'Property or booking not found' })
+        const apiError = await readApiError(response, { 400: 'Invalid review data', 401: translateNow('apiError.authRequired'), 404: 'Property or booking not found' })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -371,14 +372,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired') })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 
@@ -393,14 +394,14 @@ export const accountAdapter = {
       })
 
       if (!response.ok) {
-        const apiError = await readApiError(response, { 401: 'Authentication required' })
+        const apiError = await readApiError(response, { 401: translateNow('apiError.authRequired') })
         return { data: null, error: apiError.message }
       }
 
       const data = await response.json()
       return { data, error: null }
     } catch (error) {
-      return { data: null, error: 'Network error occurred' }
+      return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
 }
