@@ -521,7 +521,7 @@ export function BookingPage() {
           </div>
 
           {step === 'details' && (
-            <form onSubmit={handleSubmit} className="booking-form">
+            <form onSubmit={handleSubmit} className="booking-form" noValidate>
               <div className="booking-form-section">
                 <h2 className="booking-form-section-title">{t('booking.guestDetails')}</h2>
                 

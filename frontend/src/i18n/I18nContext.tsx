@@ -5,12 +5,12 @@ import { uz } from './messages/uz'
 import { ru } from './messages/ru'
 import { formatMoney as formatMoneyFor, type MoneyOptions } from './format'
 import {
-  DEFAULT_CURRENCY, DEFAULT_LANGUAGE, isCurrency, isLanguage, type Currency, type Language,
+  DEFAULT_CURRENCY, isCurrency, type Currency, type Language,
 } from './options'
+import { LANGUAGE_KEY, initialLanguage, readStored, setActiveLanguage, writeStored } from './languageChoice'
 
 const CATALOGS: Record<Language, Catalog> = { uz, ru, en }
 const LOCALES: Record<Language, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' }
-const LANGUAGE_KEY = 'tickbron.language'
 const CURRENCY_KEY = 'tickbron.currency'
 
 type Params = Record<string, string | number>
@@ -31,21 +31,6 @@ interface I18nValue {
   formatDay: (value: string | Date) => string
   /** In the currency the amount is in; the selected currency only when none is given */
   formatMoney: (amount: number | string, currency?: string, options?: MoneyOptions) => string
-}
-
-// Browser storage can be blocked (private window, site data off): the app must work without it
-const readStored = (key: string): string | null => {
-  try { return localStorage.getItem(key) } catch { return null }
-}
-const writeStored = (key: string, value: string) => {
-  try { localStorage.setItem(key, value) } catch { /* the choice just is not remembered */ }
-}
-
-function initialLanguage(): Language {
-  const stored = readStored(LANGUAGE_KEY)
-  if (isLanguage(stored)) return stored
-  const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2).toLowerCase()
-  return isLanguage(browser) ? browser : DEFAULT_LANGUAGE
 }
 
 function initialCurrency(): Currency {
@@ -121,6 +106,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = language
+    setActiveLanguage(language)
   }, [language])
 
   const setLanguage = useCallback((next: Language) => {

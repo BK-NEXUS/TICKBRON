@@ -37,6 +37,15 @@ describe('ResetPasswordPage', () => {
     expect(screen.getByText('Must be at least 12 characters')).toBeInTheDocument()
   })
 
+  it('an empty password is reported by the site, not by the browser, and nothing is sent', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save password' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('New password is required.')
+    expect(confirmPasswordReset).not.toHaveBeenCalled()
+  })
+
   it.each(['', '?uid=MQ', '?token=abc'])('shows the invalid-link state for "%s"', (query) => {
     renderPage(query)
 

@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Max
 from django.utils.text import slugify
+from django.utils.translation import gettext as _, gettext_lazy as _lazy
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.dates import business_today
@@ -48,7 +49,7 @@ PROPERTY_LIMITS = {
 def _check_price_unit(currency, amount, field):
     """UZS prices are whole so'm (R6)."""
     if currency == 'UZS' and amount is not None and not is_whole_som(amount):
-        raise serializers.ValidationError({field: "UZS prices must be whole so'm."})
+        raise serializers.ValidationError({field: _("UZS prices must be whole so'm.")})
 
 
 class PropertyCurrencyMixin:
@@ -60,7 +61,8 @@ class PropertyCurrencyMixin:
 
     def validate_currency(self, value):
         if value not in SUPPORTED_BASE_CURRENCIES:
-            raise serializers.ValidationError(f"Currency must be one of: {', '.join(SUPPORTED_BASE_CURRENCIES)}.")
+            raise serializers.ValidationError(
+                _('Currency must be one of: %(codes)s.') % {'codes': ', '.join(SUPPORTED_BASE_CURRENCIES)})
         return value
 
     def validate(self, attrs):
@@ -73,7 +75,7 @@ class PropertyCurrencyMixin:
         if (self.instance is not None and currency != self.instance.currency
                 and self.instance.room_types.filter(is_deleted=False).exists()):
             raise serializers.ValidationError(
-                {'currency': 'The currency cannot change after room types exist; their prices use it.'})
+                {'currency': _('The currency cannot change after room types exist; their prices use it.')})
         _check_price_unit(currency, attrs.get('base_price'), 'base_price')
         return attrs
 
@@ -95,7 +97,7 @@ class ChildCurrencyMixin:
             sent = attrs.get('currency')
             if sent is not None and sent != prop.currency:
                 raise serializers.ValidationError(
-                    {'currency': f'Must be the property currency ({prop.currency}).'})
+                    {'currency': _('Must be the property currency (%(currency)s).') % {'currency': prop.currency}})
             attrs['currency'] = prop.currency
             _check_price_unit(prop.currency, attrs.get(self.price_field), self.price_field)
         return attrs
@@ -140,7 +142,7 @@ class AssignedPlaceMixin:
         if place is not None:
             assigned = {'country_ref': place.country_id, 'region_ref': place.region_id, 'city_ref': place.city_id}
             wrong = {
-                field: 'Your hotels are placed by the administrator and cannot be moved.'
+                field: _('Your hotels are placed by the administrator and cannot be moved.')
                 for field, row_id in assigned.items() if field in attrs and attrs[field].pk != row_id
             }
             if wrong:
@@ -159,8 +161,8 @@ class HotelTextsField(serializers.Field):
     languages sent are replaced, the others stay; every language sent needs a name.
     """
     default_error_messages = {
-        'not_a_map': 'Send an object like {{"en": {{"name": "Hotel", "description": "..."}}}}.',
-        'empty': 'Give the hotel a name in at least one language.',
+        'not_a_map': _lazy('Send an object like {{"en": {{"name": "Hotel", "description": "..."}}}}.'),
+        'empty': _lazy('Give the hotel a name in at least one language.'),
     }
     name_field = serializers.CharField(max_length=255, validators=[validate_free_text])
     description_field = serializers.CharField(max_length=2000, allow_blank=True, default='', validators=[validate_free_text])
@@ -180,9 +182,10 @@ class HotelTextsField(serializers.Field):
         errors, texts = {}, {}
         for language, row in data.items():
             if language not in HOTEL_TEXT_LANGUAGES:
-                errors[language] = f"Unsupported language. Use: {', '.join(HOTEL_TEXT_LANGUAGES)}."
+                errors[language] = _('Unsupported language. Use: %(languages)s.') % {
+                    'languages': ', '.join(HOTEL_TEXT_LANGUAGES)}
             elif not isinstance(row, dict):
-                errors[language] = 'Send {"name": "...", "description": "..."}.'
+                errors[language] = _('Send {"name": "...", "description": "..."}.')
             else:
                 try:
                     texts[language] = {
@@ -328,7 +331,7 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         most = attrs.get('max_occupancy', self.instance.max_occupancy if self.instance else 1)
         if most < usual:
             raise serializers.ValidationError(
-                {'max_occupancy': 'Cannot be less than the usual number of guests.'})
+                {'max_occupancy': _('Cannot be less than the usual number of guests.')})
         return attrs
     
     def validate_property(self, value):
@@ -337,7 +340,7 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         if request and hasattr(request, 'user'):
             if value.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage room types for your own properties."
+                    _("You can only manage room types for your own properties.")
                 )
         return value
 
@@ -349,7 +352,7 @@ class PriceMapField(serializers.Field):
     and the owner's own price in each other currency. Read: what the owner entered. Write: a map
     whose keys are supported currencies and whose amounts fit the currency's smallest unit.
     """
-    default_error_messages = {'not_a_map': 'Send an object like {{"USD": "65.00", "UZS": "800000"}}.'}
+    default_error_messages = {'not_a_map': _lazy('Send an object like {{"USD": "65.00", "UZS": "800000"}}.')}
 
     def get_attribute(self, instance):
         return instance
@@ -366,17 +369,17 @@ class PriceMapField(serializers.Field):
         errors, prices = {}, {}
         for code, raw in data.items():
             if code not in SUPPORTED_BASE_CURRENCIES:
-                errors[code] = f"Unsupported currency. Use: {', '.join(SUPPORTED_BASE_CURRENCIES)}."
+                errors[code] = _('Unsupported currency. Use: %(codes)s.') % {'codes': ', '.join(SUPPORTED_BASE_CURRENCIES)}
                 continue
             try:
                 amount = Decimal(str(raw).strip())
             except (InvalidOperation, ValueError):
-                errors[code] = 'Enter a number.'
+                errors[code] = _('Enter a number.')
                 continue
             if not amount.is_finite() or amount < 0:
-                errors[code] = 'Enter a price of zero or more.'
+                errors[code] = _('Enter a price of zero or more.')
             elif not is_valid_unit(amount, code):
-                errors[code] = "Too many decimals for this currency." if code == 'USD' else 'Whole amounts only.'
+                errors[code] = _('Too many decimals for this currency.') if code == 'USD' else _('Whole amounts only.')
             else:
                 prices[code] = amount
         if errors:
@@ -421,7 +424,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage rate plans for your own properties."
+                    _("You can only manage rate plans for your own properties.")
                 )
         return value
 
@@ -434,16 +437,17 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         prices = attrs.get('prices')
         if prices is None:
             if self.instance is None and attrs.get('base_price') is None:
-                raise serializers.ValidationError({'base_price': 'This field is required.'})
+                raise serializers.ValidationError({'base_price': _('This field is required.')})
             self._check_prices_present_when_required(prop)
             return attrs
         missing = [code for code in SUPPORTED_BASE_CURRENCIES if code not in prices]
         if missing:
-            raise serializers.ValidationError({'prices': f"Enter the price in: {', '.join(missing)}."})
+            raise serializers.ValidationError({'prices': _('Enter the price in: %(codes)s.') % {'codes': ', '.join(missing)}})
         sent = attrs.get('base_price')
         if sent is not None and sent != prices[prop.currency]:
             raise serializers.ValidationError(
-                {'base_price': f'Must equal the price in {prop.currency} ({prices[prop.currency]}).'})
+                {'base_price': _('Must equal the price in %(currency)s (%(amount)s).') % {
+                    'currency': prop.currency, 'amount': prices[prop.currency]}})
         attrs['base_price'] = prices[prop.currency]
         return attrs
 
@@ -451,7 +455,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         fewest = attrs.get('min_nights', self.instance.min_nights if self.instance else 1)
         most = attrs.get('max_nights', self.instance.max_nights if self.instance else None)
         if most is not None and most < fewest:
-            raise serializers.ValidationError({'max_nights': 'Cannot be less than the minimum nights.'})
+            raise serializers.ValidationError({'max_nights': _('Cannot be less than the minimum nights.')})
 
     def _check_prices_present_when_required(self, prop):
         """With RATE_PLAN_PRICES_REQUIRED a plan is never saved without the owner's price in every currency."""
@@ -461,7 +465,8 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         missing = [code for code in SUPPORTED_BASE_CURRENCIES if code != prop.currency and code not in known]
         if missing:
             raise serializers.ValidationError(
-                {'prices': f"Enter the price in every currency before saving: {', '.join(SUPPORTED_BASE_CURRENCIES)}."})
+                {'prices': _('Enter the price in every currency before saving: %(codes)s.') % {
+                    'codes': ', '.join(SUPPORTED_BASE_CURRENCIES)}})
 
     @transaction.atomic
     def create(self, validated_data):
@@ -515,7 +520,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         if request and hasattr(request, 'user'):
             if value.room_type.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage inventory for your own properties."
+                    _("You can only manage inventory for your own properties.")
                 )
         return value
 
@@ -523,7 +528,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         """A new or moved night cannot be in the past; a past night keeps being editable where it is."""
         moved = self.instance is None or value != self.instance.date
         if moved and value < business_today():
-            raise serializers.ValidationError('The date cannot be in the past.')
+            raise serializers.ValidationError(_('The date cannot be in the past.'))
         return value
 
     def validate(self, attrs):
@@ -532,12 +537,13 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         rooms = attrs.get('available_rooms', getattr(self.instance, 'available_rooms', None))
         if rate_plan is not None and rooms is not None and rooms > rate_plan.room_type.total_rooms:
             raise serializers.ValidationError({
-                'available_rooms': f'Cannot be more than the {rate_plan.room_type.total_rooms} rooms of this room type.'
+                'available_rooms': _('Cannot be more than the %(count)s rooms of this room type.') % {
+                    'count': rate_plan.room_type.total_rooms}
             })
         least = attrs.get('minimum_stay', getattr(self.instance, 'minimum_stay', None))
         most = attrs.get('maximum_stay', getattr(self.instance, 'maximum_stay', None))
         if least and most and most < least:
-            raise serializers.ValidationError({'maximum_stay': 'Cannot be less than the minimum stay.'})
+            raise serializers.ValidationError({'maximum_stay': _('Cannot be less than the minimum stay.')})
         return attrs
 
 
@@ -562,7 +568,7 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage room inventory for your own properties."
+                    _("You can only manage room inventory for your own properties.")
                 )
         return value
 
@@ -578,7 +584,8 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
         )
         if room_type is not None and available_rooms is not None and available_rooms > room_type.total_rooms:
             raise serializers.ValidationError({
-                'available_rooms': f'Cannot be more than the {room_type.total_rooms} rooms of this room type.'
+                'available_rooms': _('Cannot be more than the %(count)s rooms of this room type.') % {
+                'count': room_type.total_rooms}
             })
         return data
 
@@ -599,7 +606,7 @@ class PartnerRoomInventoryBulkSerializer(serializers.Serializer):
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage room inventory for your own properties."
+                    _("You can only manage room inventory for your own properties.")
                 )
         return value
 
@@ -619,7 +626,7 @@ class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
         if request and hasattr(request, 'user'):
             if value.room_type.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage inventory for your own properties."
+                    _("You can only manage inventory for your own properties.")
                 )
         return value
 
@@ -647,7 +654,7 @@ class PartnerBlockSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only block room inventory for your own properties."
+                    _("You can only block room inventory for your own properties.")
                 )
         return value
 
@@ -684,7 +691,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
     def validate_is_primary(self, value):
         # A hotel or room type always keeps one cover; it moves by making another photo the cover.
         if self.instance is not None and not value:
-            raise serializers.ValidationError('Make another photo the cover instead.')
+            raise serializers.ValidationError(_('Make another photo the cover instead.'))
         return value
 
     def create(self, validated_data):
@@ -731,7 +738,7 @@ class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
         if request and hasattr(request, 'user'):
             if value.owner != request.user:
                 raise serializers.ValidationError(
-                    "You can only manage photos for your own properties."
+                    _("You can only manage photos for your own properties.")
                 )
         return value
 

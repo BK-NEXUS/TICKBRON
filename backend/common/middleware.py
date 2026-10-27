@@ -8,6 +8,8 @@ import time
 import logging
 from django.conf import settings
 from django.http import JsonResponse
+from django.middleware.locale import LocaleMiddleware
+from django.utils import translation
 from common.request import get_client_ip, reset_current_ip, set_current_ip
 
 logger = logging.getLogger('tickbron')
@@ -22,6 +24,16 @@ def printable(value):
 
 MAX_JSON_BODY_BYTES = 4 * 1024 * 1024  # real API bodies are under 100 KB; nginx stops at 1 MB first
 MAX_UPLOAD_BODY_BYTES = 12 * 1024 * 1024  # photo upload: 10 MB image plus form overhead
+
+
+class RequestLanguageMiddleware(LocaleMiddleware):
+    """The language of the request (Accept-Language: uz, ru or en) for its own duration only."""
+
+    def process_response(self, request, response):
+        response = super().process_response(request, response)
+        # The thread is reused: code outside a request (tasks, tests) must not inherit this language
+        translation.deactivate()
+        return response
 
 
 class RequestBodyLimitMiddleware:

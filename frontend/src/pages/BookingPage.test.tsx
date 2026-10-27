@@ -380,6 +380,19 @@ describe('BookingPage', () => {
       expect(await screen.findByRole('button', { name: '+ Add Child' })).toBeDisabled()
     })
 
+    it('leaves checking to the site, which words each problem under its field in the page language', async () => {
+      const { container } = renderWithRouter(<BookingPage />)
+      await waitFor(() => expect(screen.getByLabelText(/first name/i)).toBeInTheDocument())
+
+      const form = container.querySelector('form.booking-form') as HTMLFormElement
+      expect(form).toHaveAttribute('novalidate')
+      fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: '' } })
+      fireEvent.submit(form)
+
+      expect(await screen.findByText('First name is required')).toBeInTheDocument()
+      expect(bookingAdapter.createBooking).not.toHaveBeenCalled()
+    })
+
     it('should validate number of rooms minimum value', async () => {
       renderWithRouter(<BookingPage />)
 

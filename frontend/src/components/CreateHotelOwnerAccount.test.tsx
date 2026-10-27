@@ -76,6 +76,15 @@ describe('CreateHotelOwnerAccount', () => {
     expect(confirmPasswordInput.required).toBe(true)
   })
 
+  it('reports the first empty field in the page language, not in the browser\'s', () => {
+    render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/ is required\.$/)
+    expect(mockOnSuccess).not.toHaveBeenCalled()
+  })
+
   it('should validate email format', async () => {
     render(<CreateHotelOwnerAccount onSuccess={mockOnSuccess} onCancel={mockOnCancel} />)
 

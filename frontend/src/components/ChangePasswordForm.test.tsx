@@ -54,6 +54,16 @@ describe('ChangePasswordForm', () => {
     expect(screen.getByLabelText('New password')).toHaveValue(NEW)
   })
 
+  it('an empty field is reported by the site, not by the browser, and nothing is sent', () => {
+    render(<ChangePasswordForm />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change password' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Current password is required.')
+    expect(screen.getByLabelText('Current password')).toHaveFocus()
+    expect(changePassword).not.toHaveBeenCalled()
+  })
+
   it('does not call the server for a mismatch or a short password', () => {
     render(<ChangePasswordForm />)
 

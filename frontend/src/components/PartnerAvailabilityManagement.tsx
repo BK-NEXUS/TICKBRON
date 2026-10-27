@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
+import { formAccepts } from '../utils/formProblem'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { businessToday } from '../utils/dates'
@@ -418,8 +419,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         </div>
       )}
 
-      <form className="availability-form" onSubmit={(e) => {
+      <form className="availability-form" noValidate onSubmit={(e) => {
         e.preventDefault()
+        if (!formAccepts(e.currentTarget, t, setError)) return
         viewMode === 'create' ? handleCreate() : handleUpdate()
       }}>
         <div className="form-group">
@@ -571,7 +573,11 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         </div>
       )}
 
-      <form className="availability-form" onSubmit={(e) => { e.preventDefault(); handleBulkPriceApply() }}>
+      <form className="availability-form" noValidate onSubmit={(e) => {
+        e.preventDefault()
+        if (!formAccepts(e.currentTarget, t, setError)) return
+        handleBulkPriceApply()
+      }}>
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="bulk_date_from">{t('partner.from')}</label>

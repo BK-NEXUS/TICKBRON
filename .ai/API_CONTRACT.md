@@ -1240,3 +1240,11 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - **Sign-up**: `full_name` cannot be blank or only spaces (400 `full_name`).
 - **Booking cap**: `too_many_upcoming_bookings` is now **409** (was 429, which now means throttling only).
 - **Status dates**: on every owner and admin status endpoint, `from` / `to` are only valid with `period=custom`; sent with another period (or alone) they are a 400 like other bad dates.
+
+## Refusal texts follow the page language (2026-10-27)
+- Every request may carry `Accept-Language: uz`, `ru` or `en` (quality values such as `uz-UZ,uz;q=0.9,en;q=0.8` work; anything else, or no header, means English). The site sends it from the language the visitor chose, except for English, where it sends nothing. The response has `Content-Language` and `Vary: Accept-Language`.
+- Validation errors, in `details` and in `message`, come in that language: Django REST framework's own texts (`This field is required.`, `Ensure this value is greater than or equal to 0.01.`, `Not found.`, ...), Django's validators, and the messages of the owner forms (`partner/serializers.py`), the shared validators (`common/validators.py`) and the picture upload checks (`common/storage.py`).
+- DRF ships Russian but no Uzbek, so the project has its own catalogs: `backend/locale/uz/LC_MESSAGES/django.po` (DRF texts + project texts) and `locale/ru/LC_MESSAGES/django.po` (project texts). The compiled `django.mo` files are committed; after editing a `.po` run `python scripts/compile_po.py` (the build machines have no GNU gettext). A test fails when a `.mo` is not the compiled `.po`.
+- The language is active for the request only (`common.middleware.RequestLanguageMiddleware`); tasks and other code outside a request stay in English.
+- Not covered: error texts written in English elsewhere in the backend (booking, admin, users, status and other views); they stay English until they are wrapped in `gettext` and added to the catalogs.
+- Forms in the site (owner rooms, rates and availability, booking, profile, change and reset password, admin create-owner, promotions, sign-in, sign-up, forgot password; the booking and profile forms keep their own per-field messages) use `noValidate` and word their required/format problems from the page language (`utils/formProblem.ts`, keys `form.*`), not the browser's.
