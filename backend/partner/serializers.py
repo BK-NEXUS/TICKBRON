@@ -19,6 +19,7 @@ from rest_framework import serializers
 from common.dates import business_today
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
 from common.storage import image_upload_error
+from common.images import shrink_upload
 from common.validators import validate_free_text
 from geography.serializers import GeographyRefsMixin
 from partner.models import OwnerPlace
@@ -718,7 +719,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
         if not photos.filter(is_primary=True).exists():
             validated_data['is_primary'] = True
         # The client's file name is never used: stored paths are public and must not be guessable.
-        upload = validated_data['photo']
+        upload = validated_data['photo'] = shrink_upload(validated_data['photo'])
         extension = os.path.splitext(upload.name)[1].lower()
         upload.name = f'{uuid.uuid4().hex}{extension}'
         return super().create(validated_data)

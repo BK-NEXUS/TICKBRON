@@ -22,6 +22,6 @@ USER app
 
 EXPOSE 8000
 
-# 3 workers suit a small server; set GUNICORN_CMD_ARGS to change anything without rebuilding.
-# The proxy in front (Caddy) already limits the size of what reaches the app.
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "30", "--access-logfile", "-"]
+# The size (WEB_WORKERS, WEB_THREADS, WEB_TIMEOUT) is read from the environment by gunicorn.conf.py, so a bigger
+# server only needs a new number in .env. The proxy in front (Caddy) already limits the size of what reaches the app.
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "config.wsgi:application"]
