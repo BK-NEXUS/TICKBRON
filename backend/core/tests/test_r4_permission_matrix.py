@@ -35,7 +35,7 @@ ACCESS = [
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
     (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
-    (r'^/api/v1/me/reviews/property_scores/$', None, PUBLIC),
+    (r'^/api/v1/me/reviews/(property_scores|public)/$', None, PUBLIC),  # approved reviews of a hotel
     (r'^/api/v1/me/', None, AUTHENTICATED),
     (r'^/api/v1/chat/', None, AUTHENTICATED),  # support chat: the account's own thread
     (r'^/api/v1/bookings/', None, AUTHENTICATED),
@@ -49,7 +49,7 @@ ACCESS = [
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
     (r'^/api/v1/admin-panel/$', None, STAFF),
     (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|customers|exchange-rates|no-show-reports'
-     r'|promotion-hotels|promotions|properties|statistics|status|users)/', None, STAFF),
+     r'|promotion-hotels|promotions|properties|reviews|statistics|status|users)/', None, STAFF),
 ]
 
 # Allowed roles that still get 403 by design, not because of a permission check
