@@ -12,7 +12,7 @@ class TestStrongPasswordValidator(TestCase):
     
     def setUp(self):
         """Set up test validator."""
-        self.validator = StrongPasswordValidator(min_length=12)
+        self.validator = StrongPasswordValidator(min_length=8)
     
     def test_valid_strong_password(self):
         """Test validation of a strong password."""
@@ -26,17 +26,18 @@ class TestStrongPasswordValidator(TestCase):
         with pytest.raises(ValidationError):
             self.validator.validate(password)
     
-    def test_password_no_uppercase(self):
-        """Test password without uppercase letter."""
-        password = "lowercase1!@#"
-        with pytest.raises(ValidationError):
-            self.validator.validate(password)
+    def test_password_without_uppercase_is_accepted(self):
+        """Case is not required: one kind of letter is enough."""
+        self.validator.validate("lowercase1!@#")
     
-    def test_password_no_lowercase(self):
-        """Test password without lowercase letter."""
-        password = "UPPERCASE1!@#"
+    def test_password_without_lowercase_is_accepted(self):
+        """Case is not required: one kind of letter is enough."""
+        self.validator.validate("UPPERCASE1!@#")
+    
+    def test_password_no_letter(self):
+        """Test password without any letter."""
         with pytest.raises(ValidationError):
-            self.validator.validate(password)
+            self.validator.validate("1234!@#$")
     
     def test_password_no_digit(self):
         """Test password without digit."""
@@ -65,9 +66,8 @@ class TestStrongPasswordValidator(TestCase):
     def test_get_help_text(self):
         """Test help text generation."""
         help_text = self.validator.get_help_text()
-        assert '12' in help_text
-        assert 'uppercase' in help_text.lower()
-        assert 'lowercase' in help_text.lower()
+        assert '8' in help_text
+        assert 'letter' in help_text.lower()
         assert 'digit' in help_text.lower()
         assert 'special' in help_text.lower()
 

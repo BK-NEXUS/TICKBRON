@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GeographyPicker, type GeographyValue } from './GeographyPicker'
 import { cleanField, isPhoneValid } from '../utils/inputFilters'
 import { generatePassword as randomPassword } from '../utils/generatePassword'
+import { MIN_PASSWORD_LENGTH, passwordFormatProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
 interface CreateHotelOwnerAccountProps {
@@ -48,7 +49,8 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
     if (!isPhoneValid(formData.phone_number)) return t('auth.errPhone')
     if (!formData.last_name.trim()) return t('admin.errLastName')
     if (!formData.password) return t('admin.errPassword')
-    if (formData.password.length < 12) return t('admin.errPasswordShort')
+    const passwordProblem = passwordFormatProblem(formData.password)
+    if (passwordProblem) return t(PASSWORD_PROBLEM_MESSAGE[passwordProblem])
     if (formData.password !== formData.password_confirm) return t('admin.errPasswordMismatch')
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -252,7 +254,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
                 required
                 autoComplete="new-password"
                 placeholder={t('admin.enterPasswordOrGenerate')}
-                minLength={12}
+                minLength={MIN_PASSWORD_LENGTH}
               />
               <button
                 type="button"
@@ -263,7 +265,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
                 {t('admin.generate')}
               </button>
             </div>
-            <small className="form-hint">{t('auth.errorPasswordShort')}</small>
+            <small className="form-hint">{t('auth.passwordHint')}</small>
           </div>
 
           <div className="form-group">
@@ -278,7 +280,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
               required
               autoComplete="new-password"
               placeholder={t('admin.confirmPassword2')}
-              minLength={12}
+              minLength={MIN_PASSWORD_LENGTH}
             />
           </div>
 
@@ -314,7 +316,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
           <ul className="info-list">
             <li>{t('admin.onlySuperAdminsCan')}</li>
             <li>{t('admin.credentialsWillBeShown')}</li>
-            <li>{t('auth.errorPasswordShort')}</li>
+            <li>{t('auth.passwordHint')}</li>
             <li>{t('admin.passwordsAreHashedAnd')}</li>
           </ul>
         </div>

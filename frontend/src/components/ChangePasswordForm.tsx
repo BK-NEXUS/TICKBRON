@@ -5,7 +5,7 @@ import { NewPasswordFields } from './NewPasswordFields'
 import { PasswordField } from './PasswordField'
 import { useI18n } from '../i18n/I18nContext'
 import { formAccepts } from '../utils/formProblem'
-import { newPasswordProblem } from '../utils/passwordRules'
+import { newPasswordProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 
 /** Change the password of the signed-in account. The current password is asked for again. */
 export function ChangePasswordForm() {
@@ -25,7 +25,7 @@ export function ChangePasswordForm() {
 
     const problem = newPasswordProblem(password, confirmation)
     if (problem) {
-      setError(t(problem === 'mismatch' ? 'auth.errorPasswordMismatch' : 'auth.errorPasswordShort'))
+      setError(t(PASSWORD_PROBLEM_MESSAGE[problem]))
       return
     }
 

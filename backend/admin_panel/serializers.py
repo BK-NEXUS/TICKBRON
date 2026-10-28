@@ -120,7 +120,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 class AccountCreateSerializer(serializers.ModelSerializer):
     """The fields every account a super-admin creates by hand needs: who, how to reach them, the first password."""
     email = unique_email_field()
-    password = serializers.CharField(write_only=True, min_length=12)
+    password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code
 

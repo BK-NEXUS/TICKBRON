@@ -74,7 +74,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'password' in serializer.errors
     
     def test_password_too_short(self):
-        """Test registration with short password (less than 12 characters)."""
+        """Test registration with short password (less than 8 characters)."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',

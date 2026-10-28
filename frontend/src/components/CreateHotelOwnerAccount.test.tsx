@@ -117,7 +117,7 @@ describe('CreateHotelOwnerAccount', () => {
     fireEvent.click(submitButton)
 
     // Since form validation prevents submission, we just verify the component structure
-    expect(passwordInput).toHaveAttribute('minlength', '12')
+    expect(passwordInput).toHaveAttribute('minlength', '8')
   })
 
   it('should validate password confirmation', async () => {

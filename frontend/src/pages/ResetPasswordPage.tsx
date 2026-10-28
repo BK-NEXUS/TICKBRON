@@ -7,7 +7,7 @@ import { Button } from '../components/Button'
 import { NewPasswordFields } from '../components/NewPasswordFields'
 import { useI18n } from '../i18n/I18nContext'
 import { formAccepts } from '../utils/formProblem'
-import { newPasswordProblem } from '../utils/passwordRules'
+import { newPasswordProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 
 const INVALID_LINK_CODE = 'invalid_reset_link'
 
@@ -32,7 +32,7 @@ export function ResetPasswordPage() {
 
     const problem = newPasswordProblem(password, confirmation)
     if (problem) {
-      setError(t(problem === 'mismatch' ? 'auth.errorPasswordMismatch' : 'auth.errorPasswordShort'))
+      setError(t(PASSWORD_PROBLEM_MESSAGE[problem]))
       return
     }
 

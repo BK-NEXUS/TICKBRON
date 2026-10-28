@@ -416,7 +416,7 @@ Status: READY
   - Auth: Super-admin required (IsSuperAdmin permission)
   - Request: { email, first_name, last_name, phone_number (optional), password, password_confirm }
   - Response: Created user object with hotel-owner role
-  - Password must be 12+ characters with confirmation
+  - Password must follow the password rule (see 2026-10-28 below) with confirmation
   - Password is hashed and never returned in response
   - Account is immediately usable with provided credentials
   - Staff users cannot access this endpoint
@@ -1261,3 +1261,7 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 ## 2026-10-27 Add an administrator from the panel; notifications page
 - `POST /api/v1/admin-panel/users/create-admin/` (super-admin only; staff, guests and owners get 403). Body: `email, first_name, last_name, phone_number, password` (min 12, same rules as owner accounts), `password_confirm`. 201 -> the user (`is_staff: true`, `is_superuser: false`; a rights field in the body is ignored). 400 names the field. Written to the admin access log as action `admin_create` (new choice, migration `admin_panel/0013`, no table change). The only way to make a super-admin stays `createsuperuser` on the server.
 - Frontend: `/notifications` (any signed-in account) lists the newest notices (first page of `GET /me/notifications/`), writes each one in the page language from `code` + `params` (`notification.<code>.title|message` in uz/ru/en; an unknown code shows the English `title`/`message`), opening one calls `PATCH /me/notifications/{id}/` `{is_read: true}`, "Mark all as read" calls `POST /me/notifications/mark_all_read/`. The user menu has a "Notifications" line with the unread number from `GET /me/notifications/count/` (refreshed every 60 s and when the page marks notices).
+
+## 2026-10-28 password rule
+- One rule for every password the API sets (`POST /auth/register/`, password reset confirm, change password, admin create owner/admin): at least **8** characters (was 12), at least one letter (any case, any alphabet), at least one digit and at least one special character (not a letter, digit or space). Upper and lower case are no longer required separately. Still refused: the common-password list, a password too like the e-mail or name, and the weak patterns of `StrongPasswordValidator` (`123456`, `qwerty`, `password`, `admin`, ...). 400 `{"password": [...]}` with the first broken rule in the request language (uz/ru/en). Error codes: `password_too_short`, `password_no_letter`, `password_no_digit`, `password_no_special`, `password_common_pattern`.
+- Site: the same check runs in the browser first (`utils/passwordRules.ts`), the generated password always holds all three kinds. No endpoint or response shape changed.

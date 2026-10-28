@@ -9,6 +9,16 @@ describe('generatePassword', () => {
     expect(password).toMatch(/^[A-Za-z0-9!@#$%^&*]+$/)
   })
 
+  it('always has a letter, a digit and a special character', () => {
+    for (let run = 0; run < 500; run++) {
+      const password = generatePassword(8)
+
+      expect(password).toMatch(/[A-Za-z]/)
+      expect(password).toMatch(/[0-9]/)
+      expect(password).toMatch(/[!@#$%^&*]/)
+    }
+  })
+
   it('uses the secure random source, never Math.random', () => {
     const secure = vi.spyOn(crypto, 'getRandomValues')
     const insecure = vi.spyOn(Math, 'random')
