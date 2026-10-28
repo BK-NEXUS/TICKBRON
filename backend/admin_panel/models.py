@@ -98,6 +98,8 @@ class AdminAccessLog(models.Model):
         ('property_suspend', 'Suspended a property'),
         ('property_region_update', 'Changed the location of a property'),
         ('hotel_owner_create', 'Created a hotel-owner account'),
+        ('review_approve', 'Approved a guest review'),
+        ('review_reject', 'Rejected a guest review'),
         ('admin_create', 'Created an administrator account'),
         ('amenity_create', 'Created an amenity'),
         ('amenity_update', 'Changed an amenity'),

@@ -577,3 +577,9 @@ msgstr "Xona turida ko'pi bilan %(count)s ta rasm bo'lishi mumkin."
 
 msgid "Must be a room type id."
 msgstr "Xona turi identifikatori bo'lishi kerak."
+
+msgid "Choose one of: pending, approved, rejected."
+msgstr "Quyidagilardan birini tanlang: pending, approved, rejected."
+
+msgid "property_id must be a whole number."
+msgstr "property_id butun son bo'lishi kerak."

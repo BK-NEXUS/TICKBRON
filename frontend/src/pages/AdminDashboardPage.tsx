@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, MessageSquare, UserX, MapPin, Coins } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, MessageSquare, UserX, MapPin, Coins, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -15,10 +15,11 @@ import { useChatUnread } from '../hooks/useChatUnread'
 import { AdminNoShowReports } from '../components/AdminNoShowReports'
 import { AdminGeography } from '../components/AdminGeography'
 import { AdminExchangeRates } from '../components/AdminExchangeRates'
+import { AdminReviewModeration } from '../components/AdminReviewModeration'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'messages' | 'no-show' | 'geography' | 'rates' | 'create-owner'
+type AdminView = 'properties' | 'reviews' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'messages' | 'no-show' | 'geography' | 'rates' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
@@ -149,6 +150,14 @@ export function AdminDashboardPage() {
         <span className="nav-label">{t('promoAdmin.nav')}</span>
       </button>
       <button
+        onClick={() => setCurrentView('reviews')}
+        className={`nav-item ${currentView === 'reviews' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'reviews' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Star size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('reviewAdmin.nav')}</span>
+      </button>
+      <button
         onClick={() => setCurrentView('messages')}
         className={`nav-item ${currentView === 'messages' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'messages' ? 'page' : undefined}
@@ -234,6 +243,8 @@ export function AdminDashboardPage() {
         return <AdminNoShowReports />
       case 'geography':
         return user.is_superuser ? <AdminGeography /> : <AdminPropertyModeration />
+      case 'reviews':
+        return <AdminReviewModeration />
       case 'rates':
         return <AdminExchangeRates isSuperAdmin={Boolean(user.is_superuser)} />
       case 'promotions':

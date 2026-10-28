@@ -132,6 +132,15 @@ describe('AdminDashboardPage', () => {
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
   })
 
+  it('staff can open the review moderation tab', () => {
+    (useAuth as never).mockReturnValue({ user: { ...mockUser, is_staff: true, is_superuser: false }, isAuthenticated: true })
+    render(<MemoryRouter><AdminDashboardPage /></MemoryRouter>)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reviews' }))
+
+    expect(screen.getByRole('heading', { name: 'Guest reviews' })).toBeInTheDocument()
+  })
+
   it('should not show create owner button for staff users', () => {
     (useAuth as never).mockReturnValue({
       user: { ...mockUser, is_staff: true, is_superuser: false },

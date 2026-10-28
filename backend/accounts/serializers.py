@@ -71,6 +71,40 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
         return value
 
 
+def reviewer_label(user):
+    """How a reviewer is shown to the public: the first name and the initial of the last one ("Aziz K."), never an address."""
+    # Not get_full_name(): without any name it falls back to the e-mail address
+    parts = (user.full_name or f'{user.first_name or ""} {user.last_name or ""}').split()
+    if not parts:
+        return ''
+    return f'{parts[0]} {parts[-1][0]}.' if len(parts) > 1 else parts[0]
+
+
+def stay_month(review):
+    """The month of the stay the review is about (YYYY-MM), or None when the booking is gone."""
+    return review.booking.check_out.strftime('%Y-%m') if review.booking_id else None
+
+
+RATING_FIELDS = ['overall_rating', 'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating',
+                 'service_rating']
+
+
+class PublicReviewSerializer(serializers.ModelSerializer):
+    """An approved review as every visitor of the hotel page sees it."""
+    reviewer = serializers.SerializerMethodField()
+    stay_month = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ['id', 'reviewer', 'stay_month', *RATING_FIELDS, 'title', 'comment', 'created_at']
+
+    def get_reviewer(self, review):
+        return reviewer_label(review.user)
+
+    def get_stay_month(self, review):
+        return stay_month(review)
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     """
     Serializer for Review model.

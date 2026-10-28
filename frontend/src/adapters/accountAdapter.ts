@@ -97,6 +97,29 @@ export interface Review {
   updated_at: string
 }
 
+/** An approved review as every visitor sees it (GET /api/v1/me/reviews/public/): the reviewer is "Aziz K.", never an address */
+export interface PublicReview {
+  id: number
+  reviewer: string
+  /** The month of the stay, YYYY-MM, or null when the booking is gone */
+  stay_month?: string | null
+  overall_rating: number
+  cleanliness_rating?: number | null
+  location_rating?: number | null
+  value_rating?: number | null
+  amenities_rating?: number | null
+  service_rating?: number | null
+  title?: string
+  comment?: string
+  created_at: string
+}
+
+export interface PublicReviewsPage {
+  count: number
+  hasMore: boolean
+  results: PublicReview[]
+}
+
 // Mirrors backend ReviewCreateSerializer: flat category ratings, `property` and `booking` ids.
 // The booking must be the user's own completed, not yet reviewed stay at that property.
 export interface CreateReviewRequest {
@@ -377,6 +400,27 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
+    } catch (error) {
+      return { data: null, error: translateNow('apiError.networkOccurred') }
+    }
+  },
+
+  /** One page (20) of the approved reviews of a hotel, newest first; public, no login needed */
+  async getPublicReviews(propertyId: number, page = 1): Promise<ApiResponse<PublicReviewsPage>> {
+    try {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/public/?property_id=${propertyId}&page=${page}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const apiError = await readApiError(response, {})
+        return { data: null, error: apiError.message }
+      }
+
+      const body = await response.json()
+      return { data: { count: body.count, hasMore: Boolean(body.next), results: body.results }, error: null }
     } catch (error) {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }

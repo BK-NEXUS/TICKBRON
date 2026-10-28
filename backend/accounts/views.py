@@ -14,11 +14,11 @@ from django.db.models import Count, Avg, Prefetch
 from .models import Favorite, Review, Notification, AccountHistory
 from .serializers import (
     FavoriteSerializer, FavoriteCreateSerializer,
-    ReviewSerializer, ReviewCreateSerializer, ReviewUpdateSerializer,
+    ReviewSerializer, ReviewCreateSerializer, ReviewUpdateSerializer, PublicReviewSerializer,
     NotificationSerializer, NotificationUpdateSerializer,
     AccountHistorySerializer
 )
-from properties.models import PropertyPhoto, PropertyTranslation
+from properties.models import Property, PropertyPhoto, PropertyTranslation
 from properties.search import card_prices_prefetch
 from bookings.models import Booking
 from common.request import get_client_ip
@@ -203,6 +203,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         return Response({'eligible_properties': eligible_properties})
     
+    # Public and read-only: the approved reviews of a listed hotel, newest first (the reviewer as "Aziz K.")
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public(self, request):
+        """The approved reviews of one hotel, paginated."""
+        raw = request.query_params.get('property_id')
+        if not raw or not raw.isdigit():
+            return Response({'detail': _('property_id must be a whole number.')}, status=status.HTTP_400_BAD_REQUEST)
+        if not Property.objects.filter(pk=int(raw), status='active', is_deleted=False).exists():
+            return Response({'detail': _('Not found.')}, status=status.HTTP_404_NOT_FOUND)
+        reviews = Review.objects.filter(property_id=int(raw), status='approved', is_deleted=False) \
+            .select_related('user', 'booking').order_by('-created_at', '-id')
+        page = self.paginate_queryset(reviews)
+        return self.get_paginated_response(PublicReviewSerializer(page, many=True).data)
+
     # Public and read-only: aggregate scores of approved reviews are shown on every property page
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def property_scores(self, request):

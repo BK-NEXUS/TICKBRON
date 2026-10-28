@@ -143,3 +143,30 @@ describe('ReviewCard', () => {
     expect(screen.getByText(/January 15, 2025/)).toBeInTheDocument()
   })
 })
+
+describe('ReviewCard as a guest review of the hotel page', () => {
+  const guestReview = {
+    id: 7, reviewer: 'Aziz K.', stay_month: '2026-10', overall_rating: 4, title: 'Quiet', comment: 'Clean rooms',
+    created_at: '2026-10-20T10:00:00Z',
+  }
+
+  it('names the reviewer by first name and initial and the month of the stay', () => {
+    render(<ReviewCard review={guestReview} />)
+    expect(screen.getByText('Aziz K.')).toBeInTheDocument()
+    expect(screen.getByText(/October 2026/)).toBeInTheDocument()
+  })
+
+  it('shows no name line for a reviewer without a name', () => {
+    render(<ReviewCard review={{ ...guestReview, reviewer: '' }} />)
+    expect(screen.queryByText('Aziz K.')).not.toBeInTheDocument()
+    expect(screen.getByText('Clean rooms')).toBeInTheDocument()
+  })
+
+  it('says a rejected own review is not shown to others, and says nothing for a guest review', () => {
+    const own = { id: 1, user: 1, property: 5, overall_rating: 3, status: 'rejected' as const, created_at: '2026-10-20T10:00:00Z', updated_at: '2026-10-20T10:00:00Z' }
+    const { rerender } = render(<ReviewCard review={own} />)
+    expect(screen.getByText('Not approved: it is not shown to others.')).toBeInTheDocument()
+    rerender(<ReviewCard review={guestReview} />)
+    expect(screen.queryByText(/not shown/)).not.toBeInTheDocument()
+  })
+})
