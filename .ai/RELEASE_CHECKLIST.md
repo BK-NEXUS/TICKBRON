@@ -324,7 +324,7 @@ How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` a
 - [ ] CBU exchange rates are loaded (R6 section above); a hotel priced in USD or EUR refuses bookings with 503 `exchange_rate_unavailable` until a rate exists.
 - [ ] Map tiles come from `tile.openstreetmap.org` (CSP `img-src`, privacy note above): the guest's browser contacts OpenStreetMap on pages with a map. Decide whether the OSM usage policy fits the expected traffic or a paid tile provider is needed.
 - [ ] Satellite pictures come from Esri's World Imagery (`server.arcgisonline.com`, also in the CSP `img-src`, and the credit is shown on the map). Esri's terms cover light use: before real traffic, take a satellite provider with a key (for example MapTiler or Mapbox) and set `VITE_SATELLITE_TILE_URL` and `VITE_SATELLITE_ATTRIBUTION` in the frontend build, then put that provider's host in the CSP. Google's pictures cannot be used outside Google's own map.
-- [ ] Size the server from the load test: 4 shared cores gave about 86 requests/s; plan more workers/cores and run the same Locust file (`backend/scripts/loadtest/README.md`) on the real server before launch.
+- [ ] Size the server from the load test (`.ai/LOAD_TEST.md`): set `WEB_WORKERS` (about one per core) and `WEB_THREADS` in `.env`, plan at least 4 dedicated cores, and run the same Locust file on the real server before the advertisement.
 - [ ] Lawyer review of the refund wording (cancellation and no-show) and the "Reklama" label, as listed above.
 
 ### Open decisions of the owner

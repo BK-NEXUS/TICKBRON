@@ -3247,3 +3247,10 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - After the general rule went down to 8 (PR #130), administrators and staff keep 12: adding an administrator, changing and resetting a staff or super-admin password (`validate_new_password(..., privileged=True)`, `STAFF_MIN_PASSWORD_LENGTH`). Contract: API_CONTRACT "Administrator and staff passwords stay at 12 characters".
 - Found, not fixed: the change-password and reset forms do not know the account is staff, so a staff user typing 8-11 characters is stopped by the server (its message is shown), not by the form; `scripts/checkpoint_checks/*` still warn "recommended 12+" and `.ai/SECURITY_REVIEW.md` H-2 still describes the old rule (history).
 \n
+
+## Load readiness (2026-10-28)
+- The web server's size is set from `.env`: `WEB_WORKERS` (3), `WEB_THREADS` (4), `WEB_TIMEOUT` (30), `WEB_KEEPALIVE` (125) in `backend/gunicorn.conf.py`; the Dockerfile starts gunicorn with it. Measured on the same machine: 36 requests/s with the old setting, 47 with 3 x 4 threads, 56 with 4 x 4, 0 failures once the keep-alive is longer than the proxy's idle time. Guide and numbers: `.ai/LOAD_TEST.md`.
+- Photos owners upload are shrunk to 1600 px and lose their camera data (`common/images.py`); older photos are unchanged.
+- Checked and left alone: the real client address for the rate limits is already right in Docker (`NUM_PROXIES=1`, Caddy sets `X-Forwarded-For`); search results are not cached (they carry the paid advertisements and count their views; R14 decision).
+- Found, not fixed: photos uploaded before this change are still full size (a one-off command could shrink them); the load numbers come from a 4-core machine that also ran the load generator, so the real server must be measured again.
+
