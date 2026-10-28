@@ -135,13 +135,16 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def validate_phone_number(self, value):
         return validate_phone_number_format(value)
 
+    # An account with these rights keeps the longer password
+    privileged = False
+
     def validate(self, data):
         """Validate password confirmation."""
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError({
                 'password_confirm': _('Passwords do not match')
             })
-        validate_new_password(data)
+        validate_new_password(data, privileged=self.privileged)
         return data
 
 
@@ -150,6 +153,7 @@ class AdminStaffCreateSerializer(AccountCreateSerializer):
     An administrator added by a super-admin: staff (can use the panel), never a super-admin.
     The rights are fixed here; nothing in the request can change them.
     """
+    privileged = True
 
     @transaction.atomic
     def create(self, validated_data):

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { newPasswordProblem, passwordFormatProblem } from './passwordRules'
+import { newPasswordProblem, passwordFormatProblem, STAFF_MIN_PASSWORD_LENGTH } from './passwordRules'
 
 describe('passwordFormatProblem', () => {
   it.each(['sayr5$ol', 'KITOB7#YOZ', 'Fresh9Grape#Tower42', 'Хорошо7!ok', 'bu yol9! ok', 'sayr5_ol'])(
@@ -47,5 +47,16 @@ describe('newPasswordProblem', () => {
 
   it('reports a missing character kind', () => {
     expect(newPasswordProblem('abcdefgh#', 'abcdefgh#')).toBe('noDigit')
+  })
+})
+
+describe('the longer rule for administrators', () => {
+  it('an 11 character password is too short when 12 is the minimum', () => {
+    expect(passwordFormatProblem('kitob7$yoz!', STAFF_MIN_PASSWORD_LENGTH)).toBe('short')
+    expect(passwordFormatProblem('kitob7$yoz!k', STAFF_MIN_PASSWORD_LENGTH)).toBeNull()
+  })
+
+  it('the same 11 characters are fine under the normal minimum', () => {
+    expect(passwordFormatProblem('kitob7$yoz!')).toBeNull()
   })
 })
