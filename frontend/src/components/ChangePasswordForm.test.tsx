@@ -70,8 +70,11 @@ describe('ChangePasswordForm', () => {
     fill(CURRENT, NEW, 'something else')
     expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match')
 
-    fill(CURRENT, 'Short#1abc', 'Short#1abc')
-    expect(screen.getByRole('alert')).toHaveTextContent('at least 12 characters')
+    fill(CURRENT, 'Sh#1abc', 'Sh#1abc')
+    expect(screen.getByRole('alert')).toHaveTextContent('at least 8 characters')
+
+    fill(CURRENT, 'abcdefgh#', 'abcdefgh#')
+    expect(screen.getByRole('alert')).toHaveTextContent('at least one digit')
     expect(changePassword).not.toHaveBeenCalled()
   })
 

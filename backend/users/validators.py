@@ -46,17 +46,16 @@ def normalize_phone_number(value):
 class StrongPasswordValidator:
     """
     Custom password validator for strong password requirements.
-    
+
     Enforces:
-    - Minimum length of 12 characters
-    - At least one uppercase letter
-    - At least one lowercase letter
+    - Minimum length of 8 characters
+    - At least one letter (any case, any alphabet)
     - At least one digit
-    - At least one special character
+    - At least one special character (not a letter, digit or space)
     - No common patterns or sequences
     """
-    
-    def __init__(self, min_length=12, forbid_sequences=True):
+
+    def __init__(self, min_length=8, forbid_sequences=True):
         self.min_length = min_length
         # Off in AUTH_PASSWORD_VALIDATORS: any "abc"/"456" run would also reject
         # long random passphrases, and length + blocklist matter more
@@ -73,25 +72,19 @@ class StrongPasswordValidator:
                 params={'min_length': self.min_length},
             )
         
-        if not re.search(r'[A-Z]', password):
+        if not any(char.isalpha() for char in password):
             raise ValidationError(
-                _("Password must contain at least one uppercase letter."),
-                code='password_no_upper',
+                _("Password must contain at least one letter."),
+                code='password_no_letter',
             )
-        
-        if not re.search(r'[a-z]', password):
-            raise ValidationError(
-                _("Password must contain at least one lowercase letter."),
-                code='password_no_lower',
-            )
-        
-        if not re.search(r'\d', password):
+
+        if not any(char.isdigit() for char in password):
             raise ValidationError(
                 _("Password must contain at least one digit."),
                 code='password_no_digit',
             )
-        
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+
+        if not any(not char.isalnum() and not char.isspace() for char in password):
             raise ValidationError(
                 _("Password must contain at least one special character."),
                 code='password_no_special',
@@ -133,8 +126,7 @@ class StrongPasswordValidator:
         """
         return _(
             "Your password must be at least %(min_length)d characters long, "
-            "contain at least one uppercase letter, one lowercase letter, "
-            "one digit, and one special character. "
+            "contain at least one letter, one digit, and one special character. "
             "Avoid common patterns and sequential characters."
         ) % {'min_length': self.min_length}
 

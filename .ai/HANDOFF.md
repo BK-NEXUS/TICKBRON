@@ -3236,3 +3236,8 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Found, not fixed: `backend/conftest.py` `default_exchange_rate` writes its rate before a test that only gets the database through the `db` fixture (no `django_db` marker) has started its transaction, so the row stays in the test database and breaks `properties/tests/test_r6_uzs_prices.py::TestSearch` later. Seen with a new test file (fixed there by `pytestmark = pytest.mark.django_db`); any new function-style test must carry the marker.
 - Fixed in the CI repair: the booking notice mails were queued with `.delay()`, which waited 20 s for the result store when Redis is down (CI has none); the task now ignores its result and publishes with one quick try (`bookings/notices.py` `FAST_FAIL`).
 
+
+## 2026-10-28 password rule: 8 characters, letter + digit + special
+- Backend: `users/validators.py` `StrongPasswordValidator` (min 8; letter, digit, special; no separate upper/lower), `config/settings.py` validators, `min_length=8` on register and create-owner serializers, uz/ru texts in `locale` (recompiled). Frontend: `utils/passwordRules.ts` (`passwordFormatProblem`), messages `auth.errorPasswordLetter|Digit|Special`, hint text in en/ru/uz, `generatePassword` always includes all three kinds. Existing accounts keep their passwords; the rule applies when a password is set or changed.
+- Tests: `users/tests/test_password_policy.py` (new); old upper/lower-case tests in `test_validators.py` and the `12` texts in the form tests were changed because the owner asked for the new rule.
+- Found, not fixed: `frontend/src/styles/refresh.test.ts` "moves every transform effect behind the reduced-motion and real-pointer queries" fails on master (a `:hover` rule with `transform` in the CSS); not from this change.

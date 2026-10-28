@@ -9,6 +9,7 @@ import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
 import { authFormProblem } from '../utils/authForm'
+import { passwordFormatProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 import { useI18n } from '../i18n/I18nContext'
 
 export function RegisterPage() {
@@ -60,8 +61,9 @@ export function RegisterPage() {
       return
     }
 
-    if (formData.password.length < 12) {
-      setError(t('auth.errorPasswordShort'))
+    const passwordProblem = passwordFormatProblem(formData.password)
+    if (passwordProblem) {
+      setError(t(PASSWORD_PROBLEM_MESSAGE[passwordProblem]))
       return
     }
 

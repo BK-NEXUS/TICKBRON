@@ -380,11 +380,8 @@ msgstr "Parollar mos kelmadi."
 msgid "Password must be at least %(min_length)d characters long."
 msgstr "Parol kamida %(min_length)d ta belgidan iborat bo'lishi kerak."
 
-msgid "Password must contain at least one uppercase letter."
-msgstr "Parolda kamida bitta katta harf bo'lishi kerak."
-
-msgid "Password must contain at least one lowercase letter."
-msgstr "Parolda kamida bitta kichik harf bo'lishi kerak."
+msgid "Password must contain at least one letter."
+msgstr "Parolda kamida bitta harf bo'lishi kerak."
 
 msgid "Password must contain at least one digit."
 msgstr "Parolda kamida bitta raqam bo'lishi kerak."

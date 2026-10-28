@@ -69,7 +69,7 @@ describe('RegisterPage', () => {
     it('shows password hint', async () => {
       await renderWithRouter(<RegisterPage />)
 
-      expect(screen.getByText('Must be at least 12 characters')).toBeInTheDocument()
+      expect(screen.getByText('At least 8 characters, with a letter, a digit and a special character (for example ! @ # $)')).toBeInTheDocument()
     })
   })
 
@@ -169,9 +169,26 @@ describe('RegisterPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Password must be at least 12 characters')).toBeInTheDocument()
+        expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument()
       })
     })
+
+    it.each([['abcdefgh!', 'at least one digit'], ['abcdefgh1', 'at least one special character'], ['1234567!', 'at least one letter']])(
+      'displays the missing kind for %s', async (password, message) => {
+        await renderWithRouter(<RegisterPage />)
+
+        fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } })
+        fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } })
+        fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } })
+        fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } })
+        fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: password } })
+        fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+        await waitFor(() => {
+          expect(screen.getByText(new RegExp(message))).toBeInTheDocument()
+        })
+      },
+    )
 
     it('displays error message on registration failure', async () => {
       const { authAdapter } = await import('../adapters/authAdapter')

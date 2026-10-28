@@ -34,7 +34,7 @@ describe('ResetPasswordPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Choose a new password' })).toBeInTheDocument()
     expect(screen.getByLabelText('New password')).toBeInTheDocument()
-    expect(screen.getByText('Must be at least 12 characters')).toBeInTheDocument()
+    expect(screen.getByText('At least 8 characters, with a letter, a digit and a special character (for example ! @ # $)')).toBeInTheDocument()
   })
 
   it('an empty password is reported by the site, not by the browser, and nothing is sent', () => {
@@ -73,8 +73,8 @@ describe('ResetPasswordPage', () => {
     fill(PASSWORD, 'something else')
     expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match')
 
-    fill('Short#1abc', 'Short#1abc')
-    expect(screen.getByRole('alert')).toHaveTextContent('at least 12 characters')
+    fill('Sh#1abc', 'Sh#1abc')
+    expect(screen.getByRole('alert')).toHaveTextContent('at least 8 characters')
     expect(confirmPasswordReset).not.toHaveBeenCalled()
   })
 

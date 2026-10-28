@@ -79,7 +79,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     Serializer for user registration.
     """
     email = unique_email_field()
-    password = serializers.CharField(write_only=True, min_length=12)
+    password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     # Stored only (no SMS, no code); several accounts may share a number
     phone_number = serializers.CharField(max_length=30)

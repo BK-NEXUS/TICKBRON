@@ -216,11 +216,8 @@ msgstr "Пароли не совпадают."
 msgid "Password must be at least %(min_length)d characters long."
 msgstr "Пароль должен содержать не менее %(min_length)d символов."
 
-msgid "Password must contain at least one uppercase letter."
-msgstr "Пароль должен содержать хотя бы одну заглавную букву."
-
-msgid "Password must contain at least one lowercase letter."
-msgstr "Пароль должен содержать хотя бы одну строчную букву."
+msgid "Password must contain at least one letter."
+msgstr "Пароль должен содержать хотя бы одну букву."
 
 msgid "Password must contain at least one digit."
 msgstr "Пароль должен содержать хотя бы одну цифру."
