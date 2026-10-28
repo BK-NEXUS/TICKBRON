@@ -928,4 +928,35 @@ describe('accountAdapter', () => {
       expect(result.error).toBe('Property ID is required')
     })
   })
+
+  describe('getPublicReviews', () => {
+    it('asks for the approved reviews of one hotel, page by page', async () => {
+      const page = { count: 21, next: 'http://x/api/v1/me/reviews/public/?page=2&property_id=5', previous: null, results: [{ id: 1, reviewer: 'Aziz K.' }] }
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => page })
+
+      const result = await accountAdapter.getPublicReviews(5, 2)
+
+      expect(mockFetch.mock.calls[0][0]).toBe('http://localhost:8000/api/v1/me/reviews/public/?property_id=5&page=2')
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual({ count: 21, hasMore: true, results: page.results })
+    })
+
+    it('reports the last page', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ count: 1, next: null, previous: null, results: [] }) })
+
+      const result = await accountAdapter.getPublicReviews(5)
+
+      expect(result.data?.hasMore).toBe(false)
+      expect(mockFetch.mock.calls[0][0]).toBe('http://localhost:8000/api/v1/me/reviews/public/?property_id=5&page=1')
+    })
+
+    it('hands back the error when the hotel is not found', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({ detail: 'Not found.' }) })
+
+      const result = await accountAdapter.getPublicReviews(5)
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBeTruthy()
+    })
+  })
 })

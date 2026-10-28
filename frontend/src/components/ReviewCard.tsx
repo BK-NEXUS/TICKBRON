@@ -1,9 +1,10 @@
 import { useI18n } from '../i18n/I18nContext'
-import { Review } from '../adapters/accountAdapter'
+import { PublicReview, Review } from '../adapters/accountAdapter'
 import { StarIcon } from './StarIcon'
 
 interface ReviewCardProps {
-  review: Review
+  /** The visitor's own review (with its status) or a guest review of the hotel page (with the reviewer's name) */
+  review: Review | PublicReview
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
@@ -26,8 +27,23 @@ export function ReviewCard({ review }: ReviewCardProps) {
   const formatReviewDate = (dateString: string) =>
     formatDate(dateString, { year: 'numeric', month: 'long', day: 'numeric' })
 
+  // Only the visitor's own reviews carry a status; a guest review of the hotel page is always approved
+  const status = 'status' in review ? review.status : 'approved'
+  const reviewer = 'reviewer' in review ? review.reviewer : ''
+  const stayMonth = 'stay_month' in review ? review.stay_month : null
+
   return (
     <article className="review-card">
+      {(reviewer || stayMonth) && (
+        <p className="review-card-reviewer">
+          {reviewer && <strong>{reviewer}</strong>}
+          {stayMonth && (
+            <span className="review-card-stay">
+              {reviewer ? ' · ' : ''}{t('reviews.stayed', { month: formatDate(`${stayMonth}-01`, { year: 'numeric', month: 'long' }) })}
+            </span>
+          )}
+        </p>
+      )}
       <div className="review-card-header">
         <div className="review-card-rating">
           {renderStars(review.overall_rating)}
@@ -84,9 +100,14 @@ export function ReviewCard({ review }: ReviewCardProps) {
         </div>
       )}
 
-      {review.status === 'pending' && (
+      {status === 'pending' && (
         <div className="review-card-status review-card-status--pending">
           {t('reviews.pending')}
+        </div>
+      )}
+      {status === 'rejected' && (
+        <div className="review-card-status review-card-status--rejected">
+          {t('reviews.statusRejected')}
         </div>
       )}
     </article>

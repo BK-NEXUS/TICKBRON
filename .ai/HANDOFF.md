@@ -3254,3 +3254,8 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Checked and left alone: the real client address for the rate limits is already right in Docker (`NUM_PROXIES=1`, Caddy sets `X-Forwarded-For`); search results are not cached (they carry the paid advertisements and count their views; R14 decision).
 - Found, not fixed: photos uploaded before this change are still full size (a one-off command could shrink them); the load numbers come from a 4-core machine that also ran the load generator, so the real server must be measured again.
 
+## Reviews finished (2026-10-28)
+- Found: reviews were created `pending` and only the Django admin could approve them, and the hotel page showed only the visitor's own reviews, so a guest's review never appeared and never counted. Fixed: staff moderation (API + a "Reviews" tab in the admin panel, audit-logged) and a public list of approved reviews on the hotel page. Contract: API_CONTRACT "Guest reviews: moderation and the public list".
+- Privacy: the public list shows "Aziz K." only. A test caught that `get_full_name()` falls back to the e-mail address for an account without a name; the reviewer label is built from the name fields instead.
+- Found, not fixed: the owner of a hotel cannot see or answer reviews of their hotel; an owner is not told when a review of their hotel is approved; the guest is not notified of the decision (the guest sees the status on their own review); the review comment is not checked for markup (React escapes it on screen).
+

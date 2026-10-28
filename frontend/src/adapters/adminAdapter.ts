@@ -79,6 +79,30 @@ export interface CreateHotelOwnerRequest {
 /** The body of a new administrator: no place, the rights are fixed by the server */
 export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>
 
+export type ReviewStatus = 'pending' | 'approved' | 'rejected'
+
+/** A guest review for the staff: the reviewer's address is shown here and nowhere public */
+export interface AdminReview {
+  id: number
+  property: number
+  property_name: string
+  reviewer: string
+  reviewer_email: string
+  stay_month: string | null
+  overall_rating: number
+  title: string
+  comment: string
+  status: ReviewStatus
+  created_at: string
+  reviewed_at: string | null
+}
+
+export interface AdminReviewsPage {
+  count: number
+  hasMore: boolean
+  results: AdminReview[]
+}
+
 export interface CreateHotelOwnerResponse {
   id: number
   email: string
@@ -420,6 +444,23 @@ class AdminAdapter {
         error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred'),
       }
     }
+  }
+
+  // Guest review moderation
+
+  /** One page of reviews by status (pending is the default on the server), as the staff sees them */
+  async getReviews(status: ReviewStatus, page = 1): Promise<ApiResponse<AdminReviewsPage>> {
+    const { data, error } = await this.request<{ count: number; next: string | null; results: AdminReview[] }>(
+      `/api/v1/admin-panel/reviews/?status=${status}&page=${page}`)
+    return data
+      ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
+      : { data: null, error }
+  }
+
+  /** Approve (shown on the hotel page, counted in its scores) or reject a review */
+  async decideReview(id: number, decision: 'approve' | 'reject'): Promise<ApiResponse<AdminReview>> {
+    const { data, error } = await this.request<AdminReview>(`/api/v1/admin-panel/reviews/${id}/${decision}/`, { method: 'POST' })
+    return { data, error }
   }
 
   // Admin Property Moderation Methods

@@ -1346,6 +1346,39 @@ describe('AdminAdapter', () => {
     })
   })
 
+  describe('Review moderation', () => {
+    it('asks for the reviews of one status, page by page', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ count: 3, next: 'http://x/?page=2', previous: null, results: [{ id: 1 }] }),
+      })
+
+      const result = await adapter.getReviews('pending', 2)
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/reviews/?status=pending&page=2', expect.objectContaining({ credentials: 'include' }))
+      expect(result.data).toEqual({ count: 3, hasMore: true, results: [{ id: 1 }] })
+    })
+
+    it('posts the decision to the review', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 4, status: 'approved' }) })
+
+      const result = await adapter.decideReview(4, 'approve')
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/reviews/4/approve/', expect.objectContaining({ method: 'POST' }))
+      expect(result.data).toEqual({ id: 4, status: 'approved' })
+    })
+
+    it('hands back the error of a refused call', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ detail: 'no' }) })
+
+      const result = await adapter.decideReview(4, 'reject')
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('no')
+    })
+  })
+
   describe('Singleton Instance', () => {
     it('should export singleton instance', () => {
       expect(adminAdapter).toBeInstanceOf(AdminAdapter)

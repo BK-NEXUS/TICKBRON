@@ -9953,3 +9953,84 @@ button.property-gallery-image {
     gap: var(--spacing-xs);
   }
 }
+
+/* Guest reviews on the hotel page and the staff's review moderation */
+.review-card-reviewer {
+  margin: 0 0 var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.review-card-reviewer strong {
+  color: var(--color-text-primary);
+}
+
+.review-card-status--rejected {
+  color: var(--color-error, #b3261e);
+}
+
+.reviews-section-guests {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.reviews-section-note {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.admin-review-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-review-list {
+  list-style: none;
+  margin: 0 0 var(--spacing-lg);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.admin-review-row {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.admin-review-hotel,
+.admin-review-who,
+.admin-review-rating,
+.admin-review-title,
+.admin-review-comment {
+  margin: 0;
+}
+
+.admin-review-who {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.admin-review-title {
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.admin-review-comment {
+  overflow-wrap: anywhere;
+}
+
+.admin-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}

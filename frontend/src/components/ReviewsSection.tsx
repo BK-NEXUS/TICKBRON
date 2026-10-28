@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
-import { useState, useEffect } from 'react'
-import { accountAdapter, Review, PropertyScores, EligiblePropertiesResponse } from '../adapters/accountAdapter'
+import { useState, useEffect, useCallback } from 'react'
+import { accountAdapter, Review, PublicReview, PropertyScores, EligiblePropertiesResponse } from '../adapters/accountAdapter'
 import { ReviewForm } from './ReviewForm'
 import { ReviewCard } from './ReviewCard'
 import { RatingBreakdown } from './RatingBreakdown'
@@ -18,9 +18,34 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [eligibleProperties, setEligibleProperties] = useState<EligiblePropertiesResponse | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
+  // What other guests wrote (approved reviews, public): a page at a time
+  const [guestReviews, setGuestReviews] = useState<PublicReview[]>([])
+  const [guestPage, setGuestPage] = useState(0)
+  const [guestHasMore, setGuestHasMore] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(true)
+  const [guestFailed, setGuestFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   // A backend message (text) or one of ours (key), so ours follow the page language
   const [error, setError] = useState<{ text: string } | { key: MessageKey } | null>(null)
+
+  const loadGuestPage = useCallback(async (page: number) => {
+    setGuestLoading(true)
+    const result = await accountAdapter.getPublicReviews(propertyId, page)
+    if (result.data) {
+      const { results, hasMore } = result.data
+      setGuestReviews(previous => (page === 1 ? results : [...previous, ...results]))
+      setGuestPage(page)
+      setGuestHasMore(hasMore)
+      setGuestFailed(false)
+    } else {
+      setGuestFailed(true)
+    }
+    setGuestLoading(false)
+  }, [propertyId])
+
+  useEffect(() => {
+    void loadGuestPage(1)
+  }, [loadGuestPage])
 
   useEffect(() => {
     const loadReviewsData = async () => {
@@ -168,6 +193,31 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
           </div>
         </div>
       )}
+
+      <div className="reviews-section-list reviews-section-guests">
+        <h3 className="reviews-section-list-title">{t('reviews.guestReviews')}</h3>
+        {guestFailed && <p className="reviews-section-note" role="alert">{t('reviews.errorGuestReviews')}</p>}
+        {!guestFailed && !guestLoading && guestReviews.length === 0 && (
+          <p className="reviews-section-note">{t('reviews.noneYet')}</p>
+        )}
+        {guestReviews.length > 0 && (
+          <div className="reviews-section-cards">
+            {guestReviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </div>
+        )}
+        {guestHasMore && (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={guestLoading}
+            onClick={() => void loadGuestPage(guestPage + 1)}
+          >
+            {t('reviews.showMore')}
+          </button>
+        )}
+      </div>
 
       {!isAuthenticated && (
         <div className="reviews-section-auth-cta">
