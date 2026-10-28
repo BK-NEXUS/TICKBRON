@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from users.models import User
-from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
+from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, StrongPasswordValidator, parse_phone_number
 from django.utils.translation import gettext as _
 
 
@@ -26,9 +26,14 @@ def unique_email_field():
         queryset=User.objects.all(), message='User with this email already exists.')])
 
 
-def validate_new_password(attrs):
+# Administrators and staff keep the longer password (everybody else: AUTH_PASSWORD_VALIDATORS' 8)
+STAFF_MIN_PASSWORD_LENGTH = 12
+
+
+def validate_new_password(attrs, privileged=False):
     """
     Run AUTH_PASSWORD_VALIDATORS on attrs['password'] and raise a 400 under 'password'.
+    privileged: the account is an administrator or staff, so the password must also be STAFF_MIN_PASSWORD_LENGTH long.
 
     The other attrs (email, names) feed the similarity check, through an unsaved user.
     """
@@ -38,6 +43,9 @@ def validate_new_password(attrs):
     })
     try:
         validate_password(attrs['password'], user=user)
+        if privileged:
+            StrongPasswordValidator(min_length=STAFF_MIN_PASSWORD_LENGTH, forbid_sequences=False).validate(
+                attrs['password'], user)
     except DjangoValidationError as e:
         raise serializers.ValidationError({'password': list(e.messages)})
 

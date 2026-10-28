@@ -3241,3 +3241,9 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Backend: `users/validators.py` `StrongPasswordValidator` (min 8; letter, digit, special; no separate upper/lower), `config/settings.py` validators, `min_length=8` on register and create-owner serializers, uz/ru texts in `locale` (recompiled). Frontend: `utils/passwordRules.ts` (`passwordFormatProblem`), messages `auth.errorPasswordLetter|Digit|Special`, hint text in en/ru/uz, `generatePassword` always includes all three kinds. Existing accounts keep their passwords; the rule applies when a password is set or changed.
 - Tests: `users/tests/test_password_policy.py` (new); old upper/lower-case tests in `test_validators.py` and the `12` texts in the form tests were changed because the owner asked for the new rule.
 - Found, not fixed: `frontend/src/styles/refresh.test.ts` "moves every transform effect behind the reduced-motion and real-pointer queries" fails on master (a `:hover` rule with `transform` in the CSS); not from this change.
+
+
+## Administrator and staff passwords stay at 12 characters (2026-10-28)
+- After the general rule went down to 8 (PR #130), administrators and staff keep 12: adding an administrator, changing and resetting a staff or super-admin password (`validate_new_password(..., privileged=True)`, `STAFF_MIN_PASSWORD_LENGTH`). Contract: API_CONTRACT "Administrator and staff passwords stay at 12 characters".
+- Found, not fixed: the change-password and reset forms do not know the account is staff, so a staff user typing 8-11 characters is stopped by the server (its message is shown), not by the form; `scripts/checkpoint_checks/*` still warn "recommended 12+" and `.ai/SECURITY_REVIEW.md` H-2 still describes the old rule (history).
+\n

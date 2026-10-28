@@ -68,7 +68,8 @@ def request_password_reset(request):
 def _password_rule_violation(user, password):
     """A 400 Response when the password breaks a password rule for this user, else None."""
     try:
-        validate_new_password({'password': password, 'email': user.email, 'full_name': user.full_name})
+        validate_new_password({'password': password, 'email': user.email, 'full_name': user.full_name},
+                              privileged=user.is_staff or user.is_superuser)
     except DRFValidationError as error:
         return Response(error.detail, status=status.HTTP_400_BAD_REQUEST)
     return None
