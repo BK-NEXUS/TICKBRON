@@ -5,8 +5,8 @@
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
+import { API_BASE_URL } from '../utils/apiBase'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const STATUS_URL = `${API_BASE_URL}/api/v1/admin-panel/status`
 
 /** 'all' | 'today' | 'last_7_days' | 'last_30_days' | 'this_year' | 'last_5_years' | 'last_10_years' | 'custom' | 'YYYY' | 'YYYY-MM' */

@@ -5,8 +5,7 @@ import { parseApiError } from '../utils/errorHandler'
 import { refusalOf, type Refusal } from '../utils/refusal'
 import { apiFetch } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 export interface BookingItem {
   id: number

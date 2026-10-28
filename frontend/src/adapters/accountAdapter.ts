@@ -3,8 +3,7 @@ import type { PriceList } from './propertyAdapter'
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 // Favorite types from backend contract
 // GET /api/v1/me/favorites/ item (backend FavoriteSerializer). Decimals arrive as strings.
