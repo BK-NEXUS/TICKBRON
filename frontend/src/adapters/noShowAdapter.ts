@@ -3,8 +3,7 @@
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 export type NoShowReportStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn'
 

@@ -3233,3 +3233,6 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - `/notifications` page and the unread badge in the user menu; the 10 notice codes have uz/ru/en text. Contract: API_CONTRACT "Add an administrator from the panel; notifications page".
 - Found, not fixed: the notifications page shows the newest 20 only (no "older" button); opening a notice does not jump to the booking.
 - Owner to do on the server: `manage.py seed_property_types` (deploy guide step 6).
+- Found, not fixed: `backend/conftest.py` `default_exchange_rate` writes its rate before a test that only gets the database through the `db` fixture (no `django_db` marker) has started its transaction, so the row stays in the test database and breaks `properties/tests/test_r6_uzs_prices.py::TestSearch` later. Seen with a new test file (fixed there by `pytestmark = pytest.mark.django_db`); any new function-style test must carry the marker.
+- Fixed in the CI repair: the booking notice mails were queued with `.delay()`, which waited 20 s for the result store when Redis is down (CI has none); the task now ignores its result and publishes with one quick try (`bookings/notices.py` `FAST_FAIL`).
+

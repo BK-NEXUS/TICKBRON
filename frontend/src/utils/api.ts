@@ -8,8 +8,7 @@
 import { readApiError } from './errorHandler'
 import { getActiveLanguage } from '../i18n/languageChoice'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from './apiBase'
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
@@ -145,7 +144,8 @@ function isPaginated<T>(body: unknown): body is Paginated<T> {
  */
 export async function fetchAllPages<T>(url: string, options: FetchAllPagesOptions = {}): Promise<FetchAllPagesResult<T>> {
   const { maxPages = DEFAULT_MAX_PAGES, errorMessages = {}, networkErrorMessage } = options
-  const origin = new URL(url).origin
+  // A relative address (empty API_BASE_URL) is read against the page, so the origin check still works
+  const origin = new URL(url, window.location.href).origin
   const items: T[] = []
   let nextUrl: string | null = url
   let pages = 0
@@ -168,7 +168,7 @@ export async function fetchAllPages<T>(url: string, options: FetchAllPagesOption
       }
       items.push(...body.results)
       nextUrl = body.next
-      if (nextUrl && new URL(nextUrl, url).origin !== origin) {
+      if (nextUrl && new URL(nextUrl, new URL(url, window.location.href)).origin !== origin) {
         return { data: items, error: null, truncated: true }
       }
     }

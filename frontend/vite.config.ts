@@ -1,10 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Tunnels (ngrok) that may open the dev and preview servers; Vite refuses other host names
+const TUNNEL_HOSTS = ['.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.ngrok.dev', '.ngrok.io']
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    allowedHosts: TUNNEL_HOSTS,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -16,6 +20,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  preview: {
+    allowedHosts: TUNNEL_HOSTS,
   },
   build: {
     // Enable source maps for production debugging

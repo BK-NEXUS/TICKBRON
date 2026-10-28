@@ -8,6 +8,10 @@ from users.models import User
 
 URL = '/api/v1/partner/property-types/'
 
+# The marker (not only the `db` fixture) puts the test in its transaction before conftest's default exchange rate is
+# written; without it the rate stays in the database and breaks the "no rate yet" search tests that run later
+pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture
 def owner_client(db):

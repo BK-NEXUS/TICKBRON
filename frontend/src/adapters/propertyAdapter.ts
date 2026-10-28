@@ -6,8 +6,7 @@ import { refusalOf, type Refusal } from '../utils/refusal'
 import { apiFetch } from '../utils/api'
 import type { ExchangeRateInfo } from './bookingAdapter'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 export interface PropertyType {
   id: number

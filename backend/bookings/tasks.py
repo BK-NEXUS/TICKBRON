@@ -52,7 +52,8 @@ def cancel_unarrived_bookings():
 
 
 
-@shared_task
+# ignore_result: nobody reads the answer, and the result store is not touched (with Redis down that cost 20 s a call)
+@shared_task(ignore_result=True)
 def send_booking_notice(booking_id, kind):
     """Mail one booking notice. The booking was saved before this runs, so a slow mail server shows nothing."""
     booking = Booking.objects.select_related('guest', 'property__owner').filter(pk=booking_id).first()

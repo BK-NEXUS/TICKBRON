@@ -4,8 +4,7 @@ import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Property } from './propertyAdapter'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 /** A search card plus the id the click counter needs and the pictures of the banner (at most 10; may be empty) */
 export type PromotedProperty = Property & { promotion_id: number; promo_photos?: string[] }

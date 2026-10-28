@@ -2,8 +2,7 @@
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { API_BASE_URL } from '../utils/apiBase'
 
 /** `title` and `message` are the English fallback; screens write their own text from `code` + `params` */
 export interface AppNotification {

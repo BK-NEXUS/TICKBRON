@@ -11,8 +11,8 @@ from bookings.tests.test_cash_bookings import CashFixture
 
 class BookingNoticeTests(CashFixture):
     def book_and_run_tasks(self):
-        with mock.patch('bookings.tasks.send_booking_notice.delay',
-                        side_effect=lambda booking_id, kind: send_booking_notice.run(booking_id, kind)):
+        with mock.patch('bookings.tasks.send_booking_notice.apply_async',
+                        side_effect=lambda args, retry, connection: send_booking_notice.run(*args)):
             with self.captureOnCommitCallbacks(execute=True):
                 return self.book()
 
@@ -39,8 +39,8 @@ class BookingNoticeTests(CashFixture):
         self.book_and_run_tasks()
         mail.outbox.clear()
         booking = Booking.objects.get()
-        with mock.patch('bookings.tasks.send_booking_notice.delay',
-                        side_effect=lambda booking_id, kind: send_booking_notice.run(booking_id, kind)):
+        with mock.patch('bookings.tasks.send_booking_notice.apply_async',
+                        side_effect=lambda args, retry, connection: send_booking_notice.run(*args)):
             with self.captureOnCommitCallbacks(execute=True):
                 response = self.client.post(f'/api/v1/bookings/{booking.id}/cancel/', {}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -48,11 +48,20 @@ class BookingNoticeTests(CashFixture):
         self.assertEqual([message.to for message in mail.outbox], [[self.owner.email]])
 
     def test_a_broken_queue_does_not_fail_the_booking(self):
-        with mock.patch('bookings.tasks.send_booking_notice.delay', side_effect=ConnectionError('no broker')):
+        with mock.patch('bookings.tasks.send_booking_notice.apply_async', side_effect=ConnectionError('no broker')):
             with self.captureOnCommitCallbacks(execute=True):
                 response = self.book()
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(Booking.objects.count(), 1)
+
+    def test_a_dead_broker_answers_the_booking_at_once(self):
+        import time
+
+        started = time.monotonic()
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.book()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertLess(time.monotonic() - started, 10)  # the default retries take 20 s or more
 
     def test_the_task_ignores_a_booking_that_is_gone(self):
         self.assertIsNone(send_booking_notice.run(999999, 'owner_new'))
