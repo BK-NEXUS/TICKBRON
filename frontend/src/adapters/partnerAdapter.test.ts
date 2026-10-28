@@ -877,4 +877,42 @@ describe('partnerAdapter singleton', () => {
   it('should export a singleton instance', () => {
     expect(partnerAdapter).toBeInstanceOf(PartnerAdapter)
   })
+
+  describe('Review answers', () => {
+    const mockBaseUrl = 'http://test-api.com'
+    const adapter = new PartnerAdapter(mockBaseUrl)
+    beforeEach(() => vi.mocked(fetch).mockClear())
+
+    it('asks for one page of the reviews of the owner hotels, optionally of one hotel', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ count: 30, next: 'http://x/?page=2', previous: null, results: [{ id: 1 }] }),
+      } as Response)
+
+      const result = await adapter.getReviews({ propertyId: 7, page: 2 })
+
+      expect(vi.mocked(fetch).mock.calls[0][0]).toBe(`${mockBaseUrl}/api/v1/partner/reviews/?page=2&property=7`)
+      expect(result.data).toEqual({ count: 30, hasMore: true, results: [{ id: 1 }] })
+    })
+
+    it('posts the answer to the review', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 4, owner_reply: 'Thanks' }) } as Response)
+
+      const result = await adapter.replyToReview(4, 'Thanks')
+
+      const [url, options] = vi.mocked(fetch).mock.calls[0]
+      expect(url).toBe(`${mockBaseUrl}/api/v1/partner/reviews/4/reply/`)
+      expect(options).toMatchObject({ method: 'POST', body: JSON.stringify({ text: 'Thanks' }) })
+      expect(result.data).toEqual({ id: 4, owner_reply: 'Thanks' })
+    })
+
+    it('takes an answer back', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 204, json: async () => ({}) } as Response)
+
+      const result = await adapter.deleteReviewReply(4)
+
+      expect(vi.mocked(fetch).mock.calls[0][1]).toMatchObject({ method: 'DELETE' })
+      expect(result.error).toBeNull()
+    })
+  })
 })
+

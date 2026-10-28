@@ -46,6 +46,11 @@ vi.mock('../components/PartnerAvailabilityManagement', () => ({
 }))
 vi.mock('../components/PartnerPropertyWizard', () => ({ PartnerPropertyWizard: () => null }))
 vi.mock('../components/PartnerBookingsView', () => ({ PartnerBookingsView: () => null }))
+vi.mock('../components/PartnerReviews', () => ({
+  PartnerReviews: ({ properties }: { properties: Array<{ id: number; name: string }> }) => (
+    <div data-testid="partner-reviews">reviews of {properties.map(property => property.name).join(', ')}</div>
+  ),
+}))
 vi.mock('../components/PartnerStatusTab', () => ({
   PartnerStatusTab: () => <div data-testid="partner-status">partner status</div>,
 }))
@@ -126,5 +131,12 @@ describe('PartnerDashboardPage navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.queryByTestId('partner-status')).not.toBeInTheDocument()
+  })
+
+  it('has a Reviews tab that is given the hotels of the owner', async () => {
+    renderDashboard()
+    fireEvent.click(await screen.findByRole('button', { name: 'Reviews' }))
+
+    expect(screen.getByTestId('partner-reviews')).toHaveTextContent('reviews of')
   })
 })

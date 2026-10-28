@@ -3259,3 +3259,7 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 - Privacy: the public list shows "Aziz K." only. A test caught that `get_full_name()` falls back to the e-mail address for an account without a name; the reviewer label is built from the name fields instead.
 - Found, not fixed: the owner of a hotel cannot see or answer reviews of their hotel; an owner is not told when a review of their hotel is approved; the guest is not notified of the decision (the guest sees the status on their own review); the review comment is not checked for markup (React escapes it on screen).
 
+## Reviews part 2 (2026-10-28)
+- The owner sees the approved reviews of their hotels and answers them in public (`Review.owner_reply`); the guest is told about a decision and about the first answer, the owner about a new public review (in-app notices on `/notifications`, no e-mail). Contract: API_CONTRACT "Guest reviews: the owner's answer and the notices".
+- Found, not fixed: the new notices have no e-mail (the notifications page is the only place); the owner's answer cannot be reported to the staff if it is abusive (the staff can only act on guest reviews).
+

@@ -355,6 +355,27 @@ export interface PartnerPropertyType {
   slug: string
 }
 
+/** A public review of one of the owner's hotels (GET /api/v1/partner/reviews/): the reviewer is "Aziz K.", never an address */
+export interface OwnerReview {
+  id: number
+  property: number
+  property_name: string
+  reviewer: string
+  stay_month: string | null
+  overall_rating: number
+  title: string
+  comment: string
+  created_at: string
+  owner_reply: string
+  replied_at: string | null
+}
+
+export interface OwnerReviewsPage {
+  count: number
+  hasMore: boolean
+  results: OwnerReview[]
+}
+
 export interface AssignedPlace {
   country_ref: number | null
   region_ref: number | null
@@ -774,6 +795,27 @@ class PartnerAdapter {
   /** GET /api/v1/partner/property-types/: every property type, also those no hotel uses yet */
   async getPropertyTypes(): Promise<ApiResponse<PartnerPropertyType[]>> {
     return this.request<PartnerPropertyType[]>('/api/v1/partner/property-types/')
+  }
+
+  /** One page of the approved reviews of the owner's hotels (all, or one with `propertyId`), newest first */
+  async getReviews({ propertyId, page = 1 }: { propertyId?: number; page?: number } = {}): Promise<ApiResponse<OwnerReviewsPage>> {
+    const params = new URLSearchParams({ page: String(page) })
+    if (propertyId) params.set('property', String(propertyId))
+    const { data, error } = await this.request<{ count: number; next: string | null; results: OwnerReview[] }>(
+      `/api/v1/partner/reviews/?${params.toString()}`)
+    return data
+      ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
+      : { data: null, error }
+  }
+
+  /** POST /api/v1/partner/reviews/{id}/reply/: write or replace the public answer to a review */
+  async replyToReview(id: number, text: string): Promise<ApiResponse<OwnerReview>> {
+    return this.request<OwnerReview>(`/api/v1/partner/reviews/${id}/reply/`, { method: 'POST', body: JSON.stringify({ text }) })
+  }
+
+  /** DELETE /api/v1/partner/reviews/{id}/reply/: take the answer back */
+  async deleteReviewReply(id: number): Promise<ApiResponse<null>> {
+    return this.request<null>(`/api/v1/partner/reviews/${id}/reply/`, { method: 'DELETE' })
   }
 
   /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */

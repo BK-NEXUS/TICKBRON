@@ -95,6 +95,8 @@ export interface Review {
   reviewed_at?: string
   created_at: string
   updated_at: string
+  owner_reply?: string
+  replied_at?: string | null
 }
 
 /** An approved review as every visitor sees it (GET /api/v1/me/reviews/public/): the reviewer is "Aziz K.", never an address */
@@ -112,6 +114,9 @@ export interface PublicReview {
   title?: string
   comment?: string
   created_at: string
+  /** The hotel owner's public answer (empty: none yet) */
+  owner_reply?: string
+  replied_at?: string | null
 }
 
 export interface PublicReviewsPage {
