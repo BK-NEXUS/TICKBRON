@@ -3,10 +3,11 @@ R6: a property is priced in USD or UZS; its room types, rate plans and nightly
 prices use the property's currency; UZS prices are whole so'm. A new property
 defaults to its country's currency when supported (Uzbekistan -> UZS), else USD.
 """
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 
+from common.dates import business_today
 from geography.models import City
 from partner.tests.geography_helpers import uzbek_location
 from partner.tests.test_property_create_access import client_for, inventory, owner, owner_role  # noqa: F401
@@ -85,7 +86,7 @@ class TestChildrenFollowTheProperty:
         ('rates', lambda inv: {'room_type': inv['room'].id, 'name': 'Flex', 'slug': 'flex', 'rate_type': 'standard',
                                'base_price': '65.00', 'min_nights': 1, 'is_active': True,
                                'prices': {'USD': '65.00', 'UZS': '800000', 'KZT': '29000', 'RUB': '5800'}}),
-        ('inventory', lambda inv: {'rate_plan': inv['rate'].id, 'date': (date.today() + timedelta(days=1)).isoformat(),
+        ('inventory', lambda inv: {'rate_plan': inv['rate'].id, 'date': (business_today() + timedelta(days=1)).isoformat(),
                                    'available_rooms': 3, 'price': '60.00', 'is_available': True}),
     ])
     def test_other_currency_is_rejected_and_default_is_the_propertys(self, owner, inventory, url, payload):
@@ -106,13 +107,13 @@ class TestChildrenFollowTheProperty:
         RatePlan.objects.filter(pk=inventory['rate'].pk).update(currency='UZS')
 
         client = client_for(owner)
-        tomorrow = (date.today() + timedelta(days=2)).isoformat()
+        tomorrow = (business_today() + timedelta(days=2)).isoformat()
         base = {'rate_plan': inventory['rate'].id, 'date': tomorrow, 'available_rooms': 3, 'is_available': True}
         assert client.post(f'{P}/inventory/', {**base, 'price': '700000.50'}, format='json').status_code == 400
         assert client.post(f'{P}/inventory/', {**base, 'price': '700000'}, format='json').status_code == 201
 
         bulk = client.post(f'{P}/inventory/bulk-price/', {
             'rate_plan': inventory['rate'].id, 'date_from': tomorrow,
-            'date_to': (date.today() + timedelta(days=4)).isoformat(), 'price': '650000.25',
+            'date_to': (business_today() + timedelta(days=4)).isoformat(), 'price': '650000.25',
         }, format='json')
         assert bulk.status_code == 400

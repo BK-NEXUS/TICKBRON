@@ -60,13 +60,19 @@ def _params(booking):
     }
 
 
+# With the broker down the booking must still answer at once: one quick try, no waiting out the default retries
+FAST_FAIL = {'max_retries': 1, 'interval_start': 0, 'interval_step': 0.2, 'interval_max': 0.2}
+
+
 def _queue(booking, kinds):
-    """Hand the mails to the worker; a broken queue must not fail the booking that is already saved."""
+    """Hand the mails to the worker; a broken queue must not fail or slow the booking that is already saved."""
     from bookings.tasks import send_booking_notice
+    from config.celery import app
 
     for kind in kinds:
         try:
-            send_booking_notice.delay(booking.pk, kind)
+            with app.connection_for_write(transport_options=FAST_FAIL) as connection:
+                send_booking_notice.apply_async(args=(booking.pk, kind), retry=False, connection=connection)
         except Exception:
             logger.exception('Could not queue the %s notice of booking %s', kind, booking.pk)
 

@@ -43,6 +43,7 @@ ACCESS = [
     (r'^/api/v1/partner/', None, OWNER),
     (r'^/api/v1/admin-panel/geography/', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/create-hotel-owner/$', None, SUPERADMIN),
+    (r'^/api/v1/admin-panel/users/create-admin/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
