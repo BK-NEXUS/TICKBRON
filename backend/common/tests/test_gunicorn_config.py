@@ -8,7 +8,7 @@ CONFIG = Path(__file__).resolve().parents[2] / 'gunicorn.conf.py'
 
 
 def load(monkeypatch, **env):
-    for name in ('WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT'):
+    for name in ('WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE'):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
@@ -18,15 +18,16 @@ def load(monkeypatch, **env):
 def test_defaults_suit_a_small_server(monkeypatch):
     config = load(monkeypatch)
     assert (config['workers'], config['threads'], config['timeout']) == (3, 4, 30)
+    assert config['keepalive'] == 125  # longer than the proxy's 2 minutes of idle upstream connections
     assert config['bind'] == '0.0.0.0:8000'
 
 
 def test_size_comes_from_the_environment(monkeypatch):
-    config = load(monkeypatch, WEB_WORKERS='9', WEB_THREADS='2', WEB_TIMEOUT='45')
-    assert (config['workers'], config['threads'], config['timeout']) == (9, 2, 45)
+    config = load(monkeypatch, WEB_WORKERS='9', WEB_THREADS='2', WEB_TIMEOUT='45', WEB_KEEPALIVE='300')
+    assert (config['workers'], config['threads'], config['timeout'], config['keepalive']) == (9, 2, 45, 300)
 
 
-@pytest.mark.parametrize('name', ['WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT'])
+@pytest.mark.parametrize('name', ['WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE'])
 @pytest.mark.parametrize('bad', ['0', '-1', 'many', ''])
 def test_a_bad_number_stops_the_start_instead_of_running_with_a_wrong_size(monkeypatch, name, bad):
     with pytest.raises(ValueError, match=name):
