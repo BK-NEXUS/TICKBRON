@@ -17,6 +17,7 @@ from admin_panel.status import (
     status_countries, status_hotel_detail, status_hotels, status_hotels_flat, status_overview, status_regions,
     status_user_detail, status_users,
 )
+from admin_panel.reviews import admin_review_approve, admin_review_reject, admin_reviews
 from admin_panel.views import (
     AdminAPIRootView, AdminPropertyViewSet, AdminUserViewSet,
     AdminAmenityCategoryViewSet, AdminAmenityViewSet,
@@ -44,6 +45,9 @@ router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 
 urlpatterns = [
+    path('reviews/', admin_reviews, name='admin-reviews'),
+    path('reviews/<int:review_id>/approve/', admin_review_approve, name='admin-review-approve'),
+    path('reviews/<int:review_id>/reject/', admin_review_reject, name='admin-review-reject'),
     path('users/create-admin/', admin_create_admin, name='admin-create-admin'),
     path('users/create-hotel-owner/', admin_create_hotel_owner, name='admin-create-hotel-owner'),
     path('users/', AdminUserViewSet.as_view({'get': 'list'}), name='admin-user-list'),
