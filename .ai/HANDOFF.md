@@ -3265,3 +3265,6 @@ Contract: `API_CONTRACT.md` "Owner photo management".
 
 
 Browser check (Chromium, 1440 and 390 px, local dev DB): guest list with the hotel answer, the admin Reviews tab (approve), the owner Reviews tab (empty answer is refused, a real answer is saved) and /notifications for the guest and the owner all work; no console errors, no horizontal scroll. Notices seen: "Your review is published", "New guest review", "The hotel answered your review". The first answer notifies, an edited answer does not. Not checked: real e-mail, a phone, dark mode of the new blocks. The full backend suite was too slow in this sandbox to finish; CI runs it.
+
+## Staff passwords back to 8 characters (2026-10-29)
+The owner asked for one password rule for everybody (8 characters, a letter, a digit, a special character). Removed `STAFF_MIN_PASSWORD_LENGTH` and `privileged` (backend and frontend). Deliberate change of expected values in `users/tests/test_staff_password_policy.py` (11/12 characters became 7/8), `passwordRules.test.ts` and `CreateHotelOwnerAccount.admin.test.tsx`; no assertion was weakened, the letter/digit/special-character checks still run for staff. Online card payment is not wanted for now, so it is not planned.

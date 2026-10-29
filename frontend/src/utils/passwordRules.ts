@@ -1,7 +1,5 @@
 /** Shortest password the backend accepts (AUTH_PASSWORD_VALIDATORS); the server checks the rest. */
 export const MIN_PASSWORD_LENGTH = 8
-/** Administrators and staff need more (the backend repeats it: STAFF_MIN_PASSWORD_LENGTH) */
-export const STAFF_MIN_PASSWORD_LENGTH = 12
 
 export type PasswordFormatProblem = 'short' | 'noLetter' | 'noDigit' | 'noSpecial'
 export type NewPasswordProblem = 'mismatch' | PasswordFormatProblem
