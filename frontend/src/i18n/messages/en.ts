@@ -814,6 +814,7 @@ export const en = {
   'notifications.emptyTitle': "No notifications yet",
   'notifications.emptyText': "News about your bookings will appear here.",
   'notifications.markAll': "Mark all as read",
+  'notifications.showMore': "Show more",
   'notifications.unreadLabel': "Unread notifications: {count}",
   'notifications.unread': "Unread",
   'notification.booking_confirmed.title': "Booking {booking_reference} confirmed",

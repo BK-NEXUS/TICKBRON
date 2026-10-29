@@ -3271,3 +3271,9 @@ The owner asked for one password rule for everybody (8 characters, a letter, a d
 
 ## Safe Dependabot bumps in one PR (2026-10-29)
 Merged by hand: djangorestframework 3.18.3 (#115), phonenumbers 9.0.41 (#113), @types/leaflet.markercluster 1.5.6 (#117), pytest-cov 7.1.0 (#109). Checked: `tsc` clean, users/review/password tests pass. Left open on purpose, each is a major jump that needs its own change: eslint 8 -> 10 (#118) with @typescript-eslint 6 -> 8 (#116) and eslint-plugin-react-hooks 4 -> 7 (#114) (lint config), redis 5 -> 8 (#110) together with django-redis 6 -> 7 (#112), jsdom 23 -> 30 (#111).
+
+## conftest: the default rate no longer leaks (2026-10-29)
+`default_exchange_rate` wrote its row outside the test's transaction for tests that get the database through a fixture, so a committed `test-default` rate stayed behind and broke later exchange-rate tests. Now such tests get `db` / `transactional_db` first, so the row is rolled back or flushed. Test: `core/tests/test_conftest_rate_rollback.py` (failed before the change, passes after). `pytestmark = pytest.mark.django_db` is no longer needed for this reason, but is harmless.
+
+## Notifications page: Show more (2026-10-29)
+The page showed only the first 20 notices. `notificationAdapter.list(page)` now returns `{items, hasMore}` and the page has a "Show more" button (uz/ru/en `notifications.showMore`); a failing next page keeps the loaded notices and shows the error under them. No backend change (the list was already paginated); the contract said "Array", now corrected. Tests: `notificationAdapter.test.ts` (new), `NotificationsPage.test.tsx` (3 new; the existing mocks only changed shape).

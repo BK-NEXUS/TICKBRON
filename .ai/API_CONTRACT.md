@@ -719,9 +719,9 @@ Status: READY
   - Category scores: cleanliness, location, value, amenities, service
 
 ### Notifications API
-- GET `/api/v1/me/notifications/` - List user's notifications
+- GET `/api/v1/me/notifications/?page=<n>` - List user's notifications, newest first
   - Auth: Session-based (required)
-  - Response: Array of notification objects
+  - Response: paginated like every list, 20 a page: `{count, next, previous, results: [notification]}`. The notifications page loads the next page with "Show more" while `next` is not null.
   - Filtered by user, ordered by creation date
 - PATCH `/api/v1/me/notifications/{id}/` - Update notification read status
   - Auth: Session-based (required)

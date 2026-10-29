@@ -111,6 +111,9 @@ def default_exchange_rate(request, django_db_blocker):
     )
     if uses_db:
         request.getfixturevalue('django_db_setup')
+        if not is_django_testcase:
+            # The row must be written inside the test's own transaction (or removed by its flush), never committed
+            request.getfixturevalue('transactional_db' if 'transactional_db' in request.fixturenames else 'db')
         with django_db_blocker.unblock():
             from decimal import Decimal
 

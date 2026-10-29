@@ -45,10 +45,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<Noti
 }
 
 export const notificationAdapter = {
-  /** The newest notices (the first page, newest first) */
-  async list(): Promise<NotificationResult<AppNotification[]>> {
-    const result = await request<{ results: AppNotification[] }>('')
-    return { data: result.data ? result.data.results : null, error: result.error }
+  /** One page of the notices, newest first; `hasMore` is true while the server has a next page */
+  async list(page = 1): Promise<NotificationResult<{ items: AppNotification[]; hasMore: boolean }>> {
+    const result = await request<{ results: AppNotification[]; next: string | null }>(`?page=${page}`)
+    if (!result.data) return { data: null, error: result.error }
+    return { data: { items: result.data.results, hasMore: result.data.next !== null }, error: null }
   },
 
   async unreadCount(): Promise<NotificationResult<{ unread: number }>> {

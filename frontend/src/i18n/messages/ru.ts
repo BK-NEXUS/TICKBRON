@@ -844,6 +844,7 @@ export const ru: Catalog = {
   'notifications.emptyTitle': "Уведомлений пока нет",
   'notifications.emptyText': "Новости о ваших бронированиях появятся здесь.",
   'notifications.markAll': "Отметить все как прочитанные",
+  'notifications.showMore': "Показать ещё",
   'notifications.unreadLabel': "Непрочитанные уведомления: {count}",
   'notifications.unread': "Не прочитано",
   'notification.booking_confirmed.title': "Бронь {booking_reference} подтверждена",
