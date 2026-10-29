@@ -100,6 +100,13 @@ export function ReviewCard({ review }: ReviewCardProps) {
         </div>
       )}
 
+      {review.owner_reply && (
+        <div className="review-card-reply">
+          <h5 className="review-card-reply-title">{t('reviews.hotelAnswer')}</h5>
+          <p className="review-card-reply-text">{review.owner_reply}</p>
+        </div>
+      )}
+
       {status === 'pending' && (
         <div className="review-card-status review-card-status--pending">
           {t('reviews.pending')}

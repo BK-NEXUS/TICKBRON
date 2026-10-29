@@ -10034,3 +10034,22 @@ button.property-gallery-image {
   gap: var(--spacing-sm);
   margin-top: var(--spacing-sm);
 }
+
+/* The hotel owner's answer under a guest review */
+.review-card-reply {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--color-primary, currentColor);
+  background: var(--color-surface-muted, transparent);
+}
+
+.review-card-reply-title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.review-card-reply-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

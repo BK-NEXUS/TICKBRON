@@ -91,6 +91,10 @@ class Review(BaseModel):
     # Review status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    # The hotel owner's public answer to the review (empty: no answer yet)
+    owner_reply = models.TextField(blank=True, default='')
+    replied_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'reviews'

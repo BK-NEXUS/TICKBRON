@@ -8,6 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from accounts.models import Review
+from accounts.review_notices import tell_decision
 from accounts.serializers import RATING_FIELDS, reviewer_label, stay_month
 from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdminOrStaff
@@ -36,7 +37,7 @@ class AdminReviewSerializer(serializers.ModelSerializer):
 
 
 def _queryset():
-    return Review.objects.filter(is_deleted=False).select_related('user', 'property', 'booking')
+    return Review.objects.filter(is_deleted=False).select_related('user', 'property__owner', 'booking')
 
 
 @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
@@ -58,9 +59,12 @@ def _decide(request, review_id, decision):
     review = _queryset().filter(pk=review_id).first()
     if review is None:
         return Response({'detail': _('Not found.')}, status=status.HTTP_404_NOT_FOUND)
+    changed = review.status != decision
     review.status = decision
     review.reviewed_at = timezone.now()
     review.save(update_fields=['status', 'reviewed_at', 'updated_at'])
+    if changed:
+        tell_decision(review, approved=decision == 'approved')
     AdminAccessLog.record(request.user, f'review_{"approve" if decision == "approved" else "reject"}',
                           target_user_id=review.user_id, details={'object_id': review.id, 'property_id': review.property_id})
     return Response(AdminReviewSerializer(review).data)

@@ -96,7 +96,7 @@ class PublicReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'reviewer', 'stay_month', *RATING_FIELDS, 'title', 'comment', 'created_at']
+        fields = ['id', 'reviewer', 'stay_month', *RATING_FIELDS, 'title', 'comment', 'created_at', 'owner_reply', 'replied_at']
 
     def get_reviewer(self, review):
         return reviewer_label(review.user)
@@ -120,8 +120,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'user_email', 'user_full_name', 'property', 'property_city', 
                   'property_country', 'booking', 'booking_confirmation_code', 'overall_rating',
                   'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating', 
-                  'service_rating', 'title', 'comment', 'status', 'reviewed_at', 'created_at']
-        read_only_fields = ['id', 'user', 'status', 'reviewed_at', 'created_at']
+                  'service_rating', 'title', 'comment', 'status', 'reviewed_at', 'created_at', 'owner_reply', 'replied_at']
+        read_only_fields = ['id', 'user', 'status', 'reviewed_at', 'created_at', 'owner_reply', 'replied_at']
         extra_kwargs = {'comment': {'max_length': 2000}}
     
     def validate_overall_rating(self, value):

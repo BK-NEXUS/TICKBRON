@@ -170,3 +170,18 @@ describe('ReviewCard as a guest review of the hotel page', () => {
     expect(screen.queryByText(/not shown/)).not.toBeInTheDocument()
   })
 })
+
+describe('ReviewCard with the hotel answer', () => {
+  const base = { id: 7, reviewer: 'Aziz K.', stay_month: '2026-10', overall_rating: 4, comment: 'Clean rooms', created_at: '2026-10-20T10:00:00Z' }
+
+  it('shows the answer of the hotel under the review', () => {
+    render(<ReviewCard review={{ ...base, owner_reply: 'Thank you for staying!', replied_at: '2026-10-21T10:00:00Z' }} />)
+    expect(screen.getByText('Answer from the hotel')).toBeInTheDocument()
+    expect(screen.getByText('Thank you for staying!')).toBeInTheDocument()
+  })
+
+  it('shows nothing when there is no answer', () => {
+    render(<ReviewCard review={{ ...base, owner_reply: '', replied_at: null }} />)
+    expect(screen.queryByText('Answer from the hotel')).not.toBeInTheDocument()
+  })
+})

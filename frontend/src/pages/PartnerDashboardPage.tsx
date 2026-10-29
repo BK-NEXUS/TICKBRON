@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images, Pencil } from 'lucide-react'
+import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images, Pencil, Star } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
@@ -13,11 +13,12 @@ import { PartnerRoomCalendar } from '../components/PartnerRoomCalendar'
 import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
+import { PartnerReviews } from '../components/PartnerReviews'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 import { propertyStatusLabel } from '../utils/statusLabels'
 
-type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'no-show-reports' | 'status' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'reviews' | 'no-show-reports' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -162,6 +163,14 @@ export function PartnerDashboardPage() {
       >
         <span className="nav-icon"><House size={18} /></span>
         <span className="nav-label">{t('nav.properties')}</span>
+      </button>
+      <button
+        onClick={() => setCurrentView('reviews')}
+        className={`nav-item ${currentView === 'reviews' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'reviews' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Star size={18} /></span>
+        <span className="nav-label">{t('ownerReviews.nav')}</span>
       </button>
       <button
         onClick={() => setCurrentView('bookings')}
@@ -395,6 +404,8 @@ export function PartnerDashboardPage() {
             ratePlanName={selectedRatePlan.name}
           />
         ) : null
+      case 'reviews':
+        return <PartnerReviews properties={properties.map(property => ({ id: property.id, name: propertyName(property) }))} />
       case 'bookings':
         return <PartnerBookingsView />
       case 'no-show-reports':
