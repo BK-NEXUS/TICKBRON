@@ -489,6 +489,13 @@ function query(params: Record<string, string | number | undefined>): string {
 
 type QueryValues = Record<string, string | number | undefined>
 
+/** The owner's bookings screen filters; the export carries the same ones */
+export interface PartnerBookingsExportFilters {
+  status?: string
+  paymentStatus?: string
+  reportableOnly?: boolean
+}
+
 /** from and to belong to the custom period only; other periods ignore them */
 function periodValues({ period, from, to, granularity }: StatusPeriodParams): QueryValues {
   const custom = period === 'custom'
@@ -618,6 +625,14 @@ export const statusAdapter = {
 
   getPartnerStatus(params: StatusDetailParams) {
     return request<PartnerStatus>(`${PARTNER_URL}/${detailQuery(params)}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
+  },
+
+  exportPartnerBookings(filters: PartnerBookingsExportFilters, format: ExportFormat = 'csv') {
+    const { status, paymentStatus, reportableOnly } = filters
+    return requestCsv(
+      `${API_BASE_URL}/api/v1/partner/bookings/${query({
+        status, payment_status: paymentStatus, reportable: reportableOnly ? 'true' : undefined, export: format })}`,
+      `partner_bookings.${format}`, PARTNER_ERROR_MESSAGES)
   },
 
   exportPartnerReconciliation(period: StatusPeriodParams, format: ExportFormat = 'csv') {

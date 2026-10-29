@@ -146,7 +146,8 @@ class TestReconciliationCsv:
             for j in range(i):
                 make_booking(status_world['guests'][0], status_world['hotels']['beta'],
                              business_today() - timedelta(days=j + 1), '10.00', status='completed')
-            with django_assert_max_num_queries(24):  # +3 for the month comparison, lead days and repeat guests (Status v2)
+            # +3 for the month comparison, lead days and repeat guests (Status v2); +1 for the guest ratings of all hotels
+            with django_assert_max_num_queries(25):
                 assert get_as(owner1, f'{P}/').status_code == 200
 
 

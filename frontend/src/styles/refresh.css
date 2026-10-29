@@ -590,3 +590,8 @@
 .owner-rating-split-count {
   text-align: right;
 }
+
+/* The export buttons sit between the screen intro and the filters of the owner's bookings */
+.bookings-view-header .status-csv {
+  margin: var(--spacing-sm) 0 var(--spacing-md);
+}

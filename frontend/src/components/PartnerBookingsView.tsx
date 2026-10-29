@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { partnerAdapter, PartnerBooking } from '../adapters/partnerAdapter'
+import { statusAdapter, type ExportFormat } from '../adapters/statusAdapter'
 import { useI18n } from '../i18n/I18nContext'
 import { NoShowReportDialog } from './NoShowReportDialog'
+import { StatusCsvButton } from './StatusCsvButton'
 import { bookingStatusLabel, paymentStatusLabel } from '../utils/statusLabels'
 
 export function PartnerBookingsView() {
@@ -88,11 +90,18 @@ export function PartnerBookingsView() {
 
   const formatDate = (dateString: string) => formatLocalDate(dateString)
 
+  const exportBookings = (format: ExportFormat) => statusAdapter.exportPartnerBookings({
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    paymentStatus: paymentStatusFilter === 'all' ? undefined : paymentStatusFilter,
+    reportableOnly,
+  }, format)
+
   return (
     <div className="partner-bookings-view">
       <div className="bookings-view-header">
         <h2 className="bookings-view-title">{t('partner.partnerBookings')}</h2>
         <p className="bookings-view-subtitle">{t('partner.viewAndManageBookings')}</p>
+        <StatusCsvButton onExport={exportBookings} />
       </div>
 
       <div className="bookings-filters">

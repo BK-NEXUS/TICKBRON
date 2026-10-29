@@ -117,6 +117,10 @@ describe('design refresh: phone spacing', () => {
     expect(refresh).toMatch(/\.renewal-facts--stats \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
   })
 
+  it('keeps the export buttons of the owner bookings clear of the text above and the filters below', () => {
+    expect(refresh).toMatch(/\.bookings-view-header \.status-csv \{\s*margin: var\(--spacing-sm\) 0 var\(--spacing-md\)/)
+  })
+
   it('lays out the star split of an owner hotel as label, bar and count', () => {
     expect(refresh).toMatch(/\.owner-rating-split-row \{\s*display: grid;\s*grid-template-columns: 3rem minmax\(0, 1fr\) 2\.5rem/)
   })

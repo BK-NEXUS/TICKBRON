@@ -188,6 +188,23 @@ describe('statusAdapter R12a', () => {
       expect(calledUrl(1).searchParams.get('export')).toBe('csv')
     })
 
+    it('exports the owner bookings with the chosen filters, as CSV or Excel', async () => {
+      fetchMock.mockResolvedValue(csvResponse(null))
+
+      const csv = await statusAdapter.exportPartnerBookings({ status: 'confirmed', paymentStatus: 'paid', reportableOnly: true })
+      const xlsx = await statusAdapter.exportPartnerBookings({}, 'xlsx')
+
+      expect(calledUrl(0).pathname).toBe('/api/v1/partner/bookings/')
+      expect(calledUrl(0).searchParams.get('export')).toBe('csv')
+      expect(calledUrl(0).searchParams.get('status')).toBe('confirmed')
+      expect(calledUrl(0).searchParams.get('payment_status')).toBe('paid')
+      expect(calledUrl(0).searchParams.get('reportable')).toBe('true')
+      expect(csv.data?.filename).toBe('partner_bookings.csv')
+      expect(calledUrl(1).searchParams.get('export')).toBe('xlsx')
+      expect(calledUrl(1).searchParams.has('status')).toBe(false)
+      expect(xlsx.data?.filename).toBe('partner_bookings.xlsx')
+    })
+
     it('asks for an Excel file with export=xlsx and a .xlsx fallback name, on all four exports', async () => {
       fetchMock.mockResolvedValue(csvResponse(null))
 
