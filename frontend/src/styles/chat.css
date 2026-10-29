@@ -190,7 +190,7 @@
 @media (max-width: 767px) {
   /* The fixed bottom navigation must not cover the message box */
   .chat-thread__list {
-    height: clamp(240px, calc(100dvh - 470px), 420px);
+    height: clamp(240px, calc(100dvh - 490px), 420px);
   }
 
   .admin-chat__layout {

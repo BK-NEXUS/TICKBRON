@@ -524,3 +524,34 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Phones: room for the floating bottom navigation, and air between things that were touching */
+@media (max-width: 767px) {
+  .main-content {
+    padding-bottom: var(--spacing-lg);
+  }
+
+  .footer {
+    margin-bottom: 0;
+    padding-bottom: var(--mobile-nav-clearance);
+  }
+
+  .info-page-section {
+    margin-top: var(--spacing-lg);
+  }
+
+  .info-page-section h2 {
+    margin: 0 0 var(--spacing-sm);
+  }
+
+  .info-page-footer {
+    margin: var(--spacing-md) 0 0;
+  }
+
+  .auth-forgot-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: var(--spacing-xs);
+  }
+}
