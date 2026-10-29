@@ -16,6 +16,7 @@ vi.mock('../adapters/promotionAdapter', () => ({
     cancelPromotion: vi.fn(),
     getPromotionStats: vi.fn(),
     getRegionPanel: vi.fn(),
+    listRenewals: vi.fn(),
     getPromotionPhotos: vi.fn(),
     uploadPromotionPhoto: vi.fn(),
     deletePromotionPhoto: vi.fn(),
@@ -69,6 +70,7 @@ describe('AdminPromotions', () => {
     vi.resetAllMocks()
     adapter.listPromotions.mockResolvedValue(list([promo(1)]))
     adapter.getRegionPanel.mockResolvedValue({ data: [], error: null, code: null })
+    adapter.listRenewals.mockResolvedValue({ data: { count: 0, next: null, previous: null, results: [] }, error: null, code: null })
   })
 
   describe('list', () => {

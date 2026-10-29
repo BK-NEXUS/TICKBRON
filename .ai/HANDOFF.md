@@ -3280,3 +3280,6 @@ The page showed only the first 20 notices. `notificationAdapter.list(page)` now 
 
 ## Monthly hotel fee dropped, ad renewal planned instead (2026-10-29)
 The first plan (a monthly fee for every hotel, with hiding) was wrong: hotels pay once at the start, the monthly payment is for the banner ads. The WIP code of that plan was removed (revert of `0dc17ba`, nothing of it reached master) and `.ai/PLAN_AD_RENEWAL.md` replaces `PLAN_SUBSCRIPTION.md`. No hotel is ever hidden or deleted for non-payment.
+
+## Ad renewal, step 1 (2026-10-29)
+Backend: `AdRenewal` (`promotions/models.py`), every rule in `promotions/renewals.py`, daily task `promotions.tasks.run_ad_renewals` at 00:05 (before the 00:10 tidy), `shown_now()` / `is_shown_now()` / `tidy_statuses()` keep an ad visible while its question is open, notices `ad_ending`, `ad_last_warning`, `ad_renewed`, `ad_removed`, super admin API `/admin-panel/promotions/renewals/`. Frontend: `AdminPromotionRenewals` inside the Promotions area, notice texts in uz/ru/en. The Telegram question (step 2) and the staff and owner views (step 3) are not built yet. The notices say nothing about which hotel (names are not allowed in notice params); an owner with several hotels sees the hotel only in the panel.

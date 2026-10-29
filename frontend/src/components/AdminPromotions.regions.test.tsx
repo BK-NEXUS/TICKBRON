@@ -7,7 +7,7 @@ import { promotionAdapter, type PromotionRegion } from '../adapters/promotionAda
 
 vi.mock('../adapters/promotionAdapter', () => ({
   promotionAdapter: {
-    listPromotions: vi.fn(), searchHotels: vi.fn(), createPromotion: vi.fn(), getRegionPanel: vi.fn(),
+    listPromotions: vi.fn(), searchHotels: vi.fn(), createPromotion: vi.fn(), getRegionPanel: vi.fn(), listRenewals: vi.fn(),
     getPromotionPhotos: vi.fn(), pausePromotion: vi.fn(), resumePromotion: vi.fn(), markPromotionPaid: vi.fn(),
     cancelPromotion: vi.fn(), getPromotionStats: vi.fn(), uploadPromotionPhoto: vi.fn(), deletePromotionPhoto: vi.fn(),
   },
@@ -42,6 +42,7 @@ describe('AdminPromotions regions', () => {
     localStorage.setItem('tickbron.language', 'en')
     adapter.listPromotions.mockResolvedValue(empty)
     adapter.getRegionPanel.mockResolvedValue({ data: REGIONS, error: null, code: null })
+    adapter.listRenewals.mockResolvedValue({ data: { count: 0, next: null, previous: null, results: [] }, error: null, code: null })
   })
 
   it('lists every region with the ads running and waiting and the hotels that run them', async () => {

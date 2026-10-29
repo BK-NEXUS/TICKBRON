@@ -182,4 +182,35 @@ describe('PromotionAdapter', () => {
       expect(result.code).toBeNull()
     })
   })
+
+  describe('renewals', () => {
+    it('lists the renewals of one status, one page', async () => {
+      reply(200, { count: 1, next: null, previous: null, results: [{ id: 3 }] })
+
+      const result = await adapter.listRenewals({ status: 'renewed', page: 2 })
+
+      const { url } = lastCall()
+      expect(url).toBe('http://test-api/api/v1/admin-panel/promotions/renewals/?status=renewed&page=2')
+      expect(result.data?.results).toEqual([{ id: 3 }])
+    })
+
+    it('answers yes and no with a POST', async () => {
+      reply(200, { id: 3, status: 'renewed' })
+      reply(200, { id: 4, status: 'declined' })
+
+      await adapter.confirmRenewal(3)
+      expect(lastCall().url).toBe('http://test-api/api/v1/admin-panel/promotions/renewals/3/confirm/')
+      expect(lastCall().init.method).toBe('POST')
+      await adapter.declineRenewal(4)
+      expect(lastCall().url).toBe('http://test-api/api/v1/admin-panel/promotions/renewals/4/decline/')
+    })
+
+    it('hands back the error code of a refused answer', async () => {
+      reply(409, { error: 'This question is already answered.', code: 'already_decided' })
+
+      const result = await adapter.confirmRenewal(3)
+
+      expect(result.code).toBe('already_decided')
+    })
+  })
 })

@@ -5,6 +5,7 @@ import {
 } from '../adapters/promotionAdapter'
 import { promotionErrorKey } from '../utils/promotionErrors'
 import { CancelPromotionDialog, CreatePromotionDialog, PromotionStatsDialog } from './PromotionDialogs'
+import { AdminPromotionRenewals } from './AdminPromotionRenewals'
 import { PromotionHotelFinder } from './PromotionHotelFinder'
 import { PromotionPhotosDialog } from './PromotionPhotosDialog'
 import { PromotionRegionPanel } from './PromotionRegionPanel'
@@ -110,6 +111,8 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
       ) : (
         <p className="admin-view-subtitle">{t('promoAdmin.readOnly')}</p>
       )}
+
+      <AdminPromotionRenewals isSuperAdmin={isSuperAdmin} onChanged={() => { setChanges(count => count + 1); void load() }} />
 
       <PromotionRegionPanel
         selected={regionId}

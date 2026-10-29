@@ -82,6 +82,40 @@ export interface PromotionList {
   results: AdminPromotion[]
 }
 
+export type RenewalStatus = 'pending' | 'renewed' | 'declined' | 'expired'
+
+/** An ad whose month ended: did the hotel pay for the next one? (.ai/PLAN_AD_RENEWAL.md) */
+export interface AdRenewalRow {
+  id: number
+  promotion_id: number
+  property_id: number
+  hotel_name: string
+  city: string
+  address: string
+  latitude: string | null
+  longitude: string | null
+  owner_name: string
+  owner_phone: string
+  owner_email: string
+  start_date: string
+  end_date: string
+  price_amount: string | null
+  price_currency: string
+  ends_on: string
+  deadline: string
+  days_left: number
+  status: RenewalStatus
+  decided_via: '' | 'panel' | 'telegram' | 'auto'
+  decided_at: string | null
+}
+
+export interface RenewalList {
+  count: number
+  next: string | null
+  previous: string | null
+  results: AdRenewalRow[]
+}
+
 export interface PromotionInput {
   property: number
   start_date: string
@@ -185,6 +219,20 @@ export class PromotionAdapter {
 
   listPromotions(params: PromotionListParams = {}): Promise<PromotionResult<PromotionList>> {
     return this.request<PromotionList>(withQuery(`${ADMIN}/promotions/`, { ...params }))
+  }
+
+  listRenewals(params: { status?: RenewalStatus; page?: number } = {}): Promise<PromotionResult<RenewalList>> {
+    return this.request<RenewalList>(withQuery(`${ADMIN}/promotions/renewals/`, { ...params }))
+  }
+
+  /** The hotel paid for the next month: the ad is extended by one month */
+  confirmRenewal(id: number): Promise<PromotionResult<AdRenewalRow>> {
+    return this.send(`${ADMIN}/promotions/renewals/${id}/confirm/`, 'POST')
+  }
+
+  /** The hotel did not pay: the ad is removed from the banner now */
+  declineRenewal(id: number): Promise<PromotionResult<AdRenewalRow>> {
+    return this.send(`${ADMIN}/promotions/renewals/${id}/decline/`, 'POST')
   }
 
   createPromotion(input: PromotionInput): Promise<PromotionResult<AdminPromotion>> {
