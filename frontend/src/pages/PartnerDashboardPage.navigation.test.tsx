@@ -51,6 +51,9 @@ vi.mock('../components/PartnerReviews', () => ({
     <div data-testid="partner-reviews">reviews of {properties.map(property => property.name).join(', ')}</div>
   ),
 }))
+vi.mock('../components/PartnerAds', () => ({
+  PartnerAds: () => <div data-testid="partner-ads">my ads</div>,
+}))
 vi.mock('../components/PartnerStatusTab', () => ({
   PartnerStatusTab: () => <div data-testid="partner-status">partner status</div>,
 }))
@@ -138,5 +141,12 @@ describe('PartnerDashboardPage navigation', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Reviews' }))
 
     expect(screen.getByTestId('partner-reviews')).toHaveTextContent('reviews of')
+  })
+
+  it('has an Advertising tab for the ads of the owner', async () => {
+    renderDashboard()
+    fireEvent.click(await screen.findByRole('button', { name: 'My ads' }))
+
+    expect(screen.getByTestId('partner-ads')).toBeInTheDocument()
   })
 })

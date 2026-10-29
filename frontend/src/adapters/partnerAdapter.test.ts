@@ -914,5 +914,32 @@ describe('partnerAdapter singleton', () => {
       expect(result.error).toBeNull()
     })
   })
-})
 
+  describe('Own ads', () => {
+    const mockBaseUrl = 'http://test-api.com'
+    const adapter = new PartnerAdapter(mockBaseUrl)
+    beforeEach(() => vi.mocked(fetch).mockClear())
+
+    it('asks for one page of the ads of the owner hotels, optionally of one status', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ count: 30, next: 'http://x/?page=2', previous: null, results: [{ id: 1 }] }),
+      } as Response)
+
+      const result = await adapter.getPromotions({ status: 'active', page: 2 })
+
+      expect(vi.mocked(fetch).mock.calls[0][0]).toBe(`${mockBaseUrl}/api/v1/partner/promotions/?page=2&status=active`)
+      expect(result.data).toEqual({ count: 30, hasMore: true, results: [{ id: 1 }] })
+    })
+
+    it('leaves the status out when none is chosen and reports the end of the list', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ count: 1, next: null, previous: null, results: [{ id: 1 }] }),
+      } as Response)
+
+      const result = await adapter.getPromotions()
+
+      expect(vi.mocked(fetch).mock.calls[0][0]).toBe(`${mockBaseUrl}/api/v1/partner/promotions/?page=1`)
+      expect(result.data?.hasMore).toBe(false)
+    })
+  })
+})

@@ -555,3 +555,8 @@
     margin-top: var(--spacing-xs);
   }
 }
+
+/* The three short numbers of an ad sit in one row; the renewal cards' longer facts still wrap */
+.renewal-facts--stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}

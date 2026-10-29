@@ -376,6 +376,29 @@ export interface OwnerReviewsPage {
   results: OwnerReview[]
 }
 
+/** One ad of an owner's hotel in the banner: how it runs and how people reacted. No price: that stays with the staff. */
+export interface OwnerPromotion {
+  id: number
+  property: { id: number; name: string }
+  start_date: string
+  end_date: string
+  status: 'scheduled' | 'active' | 'paused' | 'ended' | 'cancelled'
+  paid: boolean
+  is_shown_now: boolean
+  blocked_reason: 'hotel_not_active' | 'outside_scope' | null
+  impressions: number
+  clicks: number
+  click_rate: string | null
+  /** The open question "did the hotel pay for the next month?": the ad stays visible until `deadline` */
+  renewal: { ends_on: string; deadline: string; days_left: number } | null
+}
+
+export interface OwnerPromotionsPage {
+  count: number
+  hasMore: boolean
+  results: OwnerPromotion[]
+}
+
 export interface AssignedPlace {
   country_ref: number | null
   region_ref: number | null
@@ -803,6 +826,17 @@ class PartnerAdapter {
     if (propertyId) params.set('property', String(propertyId))
     const { data, error } = await this.request<{ count: number; next: string | null; results: OwnerReview[] }>(
       `/api/v1/partner/reviews/?${params.toString()}`)
+    return data
+      ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
+      : { data: null, error }
+  }
+
+  /** One page of the ads of the owner's hotels, newest first (optionally only one status) */
+  async getPromotions({ status, page = 1 }: { status?: OwnerPromotion['status']; page?: number } = {}): Promise<ApiResponse<OwnerPromotionsPage>> {
+    const params = new URLSearchParams({ page: String(page) })
+    if (status) params.set('status', status)
+    const { data, error } = await this.request<{ count: number; next: string | null; results: OwnerPromotion[] }>(
+      `/api/v1/partner/promotions/?${params.toString()}`)
     return data
       ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
       : { data: null, error }
