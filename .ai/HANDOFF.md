@@ -3274,3 +3274,6 @@ Merged by hand: djangorestframework 3.18.3 (#115), phonenumbers 9.0.41 (#113), @
 
 ## conftest: the default rate no longer leaks (2026-10-29)
 `default_exchange_rate` wrote its row outside the test's transaction for tests that get the database through a fixture, so a committed `test-default` rate stayed behind and broke later exchange-rate tests. Now such tests get `db` / `transactional_db` first, so the row is rolled back or flushed. Test: `core/tests/test_conftest_rate_rollback.py` (failed before the change, passes after). `pytestmark = pytest.mark.django_db` is no longer needed for this reason, but is harmless.
+
+## Notifications page: Show more (2026-10-29)
+The page showed only the first 20 notices. `notificationAdapter.list(page)` now returns `{items, hasMore}` and the page has a "Show more" button (uz/ru/en `notifications.showMore`); a failing next page keeps the loaded notices and shows the error under them. No backend change (the list was already paginated); the contract said "Array", now corrected. Tests: `notificationAdapter.test.ts` (new), `NotificationsPage.test.tsx` (3 new; the existing mocks only changed shape).

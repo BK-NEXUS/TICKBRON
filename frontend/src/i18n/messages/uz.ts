@@ -814,6 +814,7 @@ export const uz: Catalog = {
   'notifications.emptyTitle': "Hali bildirishnoma yo'q",
   'notifications.emptyText': "Bronlaringiz haqidagi yangiliklar shu yerda ko'rinadi.",
   'notifications.markAll': "Hammasini o'qilgan deb belgilash",
+  'notifications.showMore': "Yana ko'rsatish",
   'notifications.unreadLabel': "O'qilmagan bildirishnomalar: {count}",
   'notifications.unread': "O'qilmagan",
   'notification.booking_confirmed.title': "{booking_reference} bron tasdiqlandi",

@@ -25,7 +25,7 @@ describe('NotificationsPage', () => {
     vi.clearAllMocks()
     localStorage.setItem('tickbron.language', 'en')
     vi.mocked(useAuth).mockReturnValue({ isAuthenticated: true, isLoading: false } as never)
-    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: [notice({})], error: null })
+    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: { items: [notice({})], hasMore: false }, error: null })
     vi.mocked(notificationAdapter.markRead).mockResolvedValue({ data: notice({ is_read: true }), error: null })
     vi.mocked(notificationAdapter.markAllRead).mockResolvedValue({ data: { marked_as_read: 1 }, error: null })
   })
@@ -52,7 +52,8 @@ describe('NotificationsPage', () => {
 
   it('shows the English text of a code the site has no text for', async () => {
     vi.mocked(notificationAdapter.list).mockResolvedValue({
-      data: [notice({ code: 'something_new', title: 'Something new', message: 'Fallback words' })], error: null,
+      data: { items: [notice({ code: 'something_new', title: 'Something new', message: 'Fallback words' })], hasMore: false },
+      error: null,
     })
     show()
     expect(await screen.findByText('Fallback words')).toBeInTheDocument()
@@ -65,7 +66,7 @@ describe('NotificationsPage', () => {
   })
 
   it('does not ask the server again for a notice that is already read', async () => {
-    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: [notice({ is_read: true })], error: null })
+    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: { items: [notice({ is_read: true })], hasMore: false }, error: null })
     show()
     fireEvent.click(await screen.findByRole('button', { name: /New booking AB12CD/ }))
     await settle()
@@ -80,7 +81,7 @@ describe('NotificationsPage', () => {
   })
 
   it('has an empty state', async () => {
-    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: [], error: null })
+    vi.mocked(notificationAdapter.list).mockResolvedValue({ data: { items: [], hasMore: false }, error: null })
     show()
     expect(await screen.findByText('No notifications yet')).toBeInTheDocument()
   })
@@ -89,5 +90,39 @@ describe('NotificationsPage', () => {
     vi.mocked(notificationAdapter.list).mockResolvedValue({ data: null, error: 'Server down' })
     show()
     expect(await screen.findByRole('alert')).toHaveTextContent('Server down')
+  })
+
+  it('shows more notices when the server has another page, and hides the button at the end', async () => {
+    vi.mocked(notificationAdapter.list)
+      .mockResolvedValueOnce({ data: { items: [notice({ id: 1 })], hasMore: true }, error: null })
+      .mockResolvedValueOnce({
+        data: { items: [notice({ id: 2, params: { booking_id: 6, booking_reference: 'ZZ99YY', check_in: '2026-12-01', check_out: '2026-12-03' } })], hasMore: false },
+        error: null,
+      })
+    show()
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }))
+
+    expect(await screen.findByText('New booking ZZ99YY')).toBeInTheDocument()
+    expect(notificationAdapter.list).toHaveBeenLastCalledWith(2)
+    expect(screen.getByText('New booking AB12CD')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument()
+  })
+
+  it('has no Show more button when everything fits on the first page', async () => {
+    show()
+    await screen.findByText('New booking AB12CD')
+    expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the notices and shows the error when the next page fails', async () => {
+    vi.mocked(notificationAdapter.list)
+      .mockResolvedValueOnce({ data: { items: [notice({ id: 1 })], hasMore: true }, error: null })
+      .mockResolvedValueOnce({ data: null, error: 'Server down' })
+    show()
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Server down')
+    expect(screen.getByText('New booking AB12CD')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument()
   })
 })
