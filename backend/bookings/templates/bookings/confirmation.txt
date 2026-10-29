@@ -1,0 +1,7 @@
+{% autoescape off %}TICKBRON
+{% for block in blocks %}
+{{ block.label }}:
+{% for line in block.lines %}{{ line }}
+{% endfor %}{% endfor %}
+{{ link }}
+{% endautoescape %}

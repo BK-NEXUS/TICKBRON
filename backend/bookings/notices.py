@@ -1,4 +1,7 @@
-"""Tell the guest and the hotel owner about a booking: a line in the site's list and an e-mail. The mail to the owner carries no guest details."""
+"""
+Tell the guest and the hotel owner about a booking: a line in the site's list and an e-mail.
+The guest gets the full confirmation; the mail to the owner is one line and carries no guest details.
+"""
 import logging
 
 from django.conf import settings
@@ -7,6 +10,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 
 from accounts import notify
+from bookings.confirmation_mail import confirmation_body
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +18,8 @@ SUBJECT = 'TICKBRON: bron / бронь / booking'
 
 # kind -> who is mailed and the text in uz / ru / en ({code} is the booking reference)
 MAILS = {
-    'guest_confirmed': {
-        'to': 'guest', 'path': '/bookings',
-        'uz': "{code} raqamli broningiz tasdiqlandi.",
-        'ru': "Ваша бронь {code} подтверждена.",
-        'en': "Your booking {code} is confirmed.",
-    },
+    # The guest's mail is the full confirmation (bookings/confirmation_mail.py), so it has no text of its own here
+    'guest_confirmed': {'to': 'guest', 'path': '/bookings'},
     'owner_new': {
         'to': 'owner', 'path': '/partner',
         'uz': "Mehmonxonangizga yangi bron: {code}.",
@@ -41,9 +41,11 @@ def mail_for(booking, kind):
     user = booking.guest if spec['to'] == 'guest' else booking.property.owner
     if not user.is_active or not user.email:
         return None
+    link = f'{settings.FRONTEND_URL}{spec["path"]}'
+    if kind == 'guest_confirmed':
+        return f'{SUBJECT} {booking.confirmation_code}', confirmation_body(booking, link), user.email
     texts = {language: spec[language].format(code=booking.confirmation_code) for language in ('uz', 'ru', 'en')}
-    body = render_to_string('bookings/notice.txt', {**texts, 'link': f'{settings.FRONTEND_URL}{spec["path"]}'})
-    return SUBJECT, body, user.email
+    return SUBJECT, render_to_string('bookings/notice.txt', {**texts, 'link': link}), user.email
 
 
 def send_notice(booking, kind):
