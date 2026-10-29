@@ -89,95 +89,88 @@ export function AdminPromotionRenewals({ isSuperAdmin, onChanged }: AdminPromoti
       {!loading && !loadFailed && rows.length === 0 && <p className="empty-state">{t('promoRenewals.empty')}</p>}
 
       {rows.length > 0 && (
-        <div className="customers-table-container">
-          <table className="customers-table">
-            <thead>
-              <tr>
-                <th scope="col">{t('promoRenewals.col.hotel')}</th>
-                <th scope="col">{t('promoRenewals.col.period')}</th>
-                <th scope="col">{t('promoRenewals.col.price')}</th>
-                <th scope="col">{t('promoRenewals.col.deadline')}</th>
-                <th scope="col">{t('promoRenewals.col.status')}</th>
-                {isSuperAdmin && <th scope="col">{t('promoRenewals.col.actions')}</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => {
-                const busy = busyId === row.id
-                const link = mapLink(row)
-                return (
-                  <tr key={row.id}>
-                    <td>
-                      <strong>{row.hotel_name}</strong>
-                      <div className="promotion-city">{row.city}, {row.address}</div>
-                      <div className="promotion-city">
-                        {row.owner_name && <span>{row.owner_name} </span>}
-                        {row.owner_phone && <span>{row.owner_phone} </span>}
-                        <span>{row.owner_email}</span>
-                      </div>
-                      {link && (
-                        <a href={link} target="_blank" rel="noopener noreferrer"
-                          aria-label={`${t('promoRenewals.openMap')}: ${row.hotel_name}`}>
-                          {t('promoRenewals.openMap')}
-                        </a>
-                      )}
-                    </td>
-                    <td>{formatDate(row.start_date)} - {formatDate(row.end_date)}</td>
-                    <td>
+        <ul className="renewal-list">
+          {rows.map(row => {
+            const busy = busyId === row.id
+            const link = mapLink(row)
+            return (
+              <li key={row.id} className="renewal-card">
+                <div className="renewal-card-head">
+                  <div>
+                    <strong>{row.hotel_name}</strong>
+                    <div className="promotion-city">{row.city}, {row.address}</div>
+                  </div>
+                  <span className={`status-badge status-badge--${BADGE[row.status]}`}>
+                    {t(`promoRenewals.status.${row.status}`)}
+                  </span>
+                </div>
+                <div className="promotion-city">
+                  {row.owner_name && <span>{row.owner_name} </span>}
+                  {row.owner_phone && <span>{row.owner_phone} </span>}
+                  <span>{row.owner_email}</span>
+                </div>
+                {link && (
+                  <a href={link} target="_blank" rel="noopener noreferrer"
+                    aria-label={`${t('promoRenewals.openMap')}: ${row.hotel_name}`}>
+                    {t('promoRenewals.openMap')}
+                  </a>
+                )}
+                <dl className="renewal-facts">
+                  <div>
+                    <dt>{t('promoRenewals.col.period')}</dt>
+                    <dd>{formatDate(row.start_date)} - {formatDate(row.end_date)}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('promoRenewals.col.price')}</dt>
+                    <dd>
                       {row.price_amount
                         ? formatMoney(row.price_amount, row.price_currency, { minDecimals: 0, maxDecimals: 0 })
                         : '-'}
-                    </td>
-                    <td>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('promoRenewals.col.deadline')}</dt>
+                    <dd>
                       {formatDate(row.deadline)}
                       {row.status === 'pending' && (
                         <div className="promotion-city">
                           {row.days_left >= 0 ? t('promoRenewals.daysLeft', { count: row.days_left }) : t('promoRenewals.overdue')}
                         </div>
                       )}
-                    </td>
-                    <td>
-                      <span className={`status-badge status-badge--${BADGE[row.status]}`}>
-                        {t(`promoRenewals.status.${row.status}`)}
-                      </span>
-                      {row.decided_via && <div className="promotion-city">{t(`promoRenewals.via.${row.decided_via}`)}</div>}
-                    </td>
-                    {isSuperAdmin && (
-                      <td>
-                        {row.status === 'pending' && askingId !== row.id && (
-                          <div className="promotion-actions">
-                            <button type="button" className="btn btn-primary btn-sm" disabled={busy}
-                              aria-label={`${t('promoRenewals.confirm')}: ${row.hotel_name}`}
-                              onClick={() => void answer(row.id, () => promotionAdapter.confirmRenewal(row.id))}>
-                              {t('promoRenewals.confirm')}
-                            </button>
-                            <button type="button" className="btn btn-danger btn-sm" disabled={busy}
-                              aria-label={`${t('promoRenewals.decline')}: ${row.hotel_name}`}
-                              onClick={() => setAskingId(row.id)}>
-                              {t('promoRenewals.decline')}
-                            </button>
-                          </div>
-                        )}
-                        {row.status === 'pending' && askingId === row.id && (
-                          <div className="promotion-actions" role="group" aria-label={t('promoRenewals.declineQuestion')}>
-                            <span>{t('promoRenewals.declineQuestion')}</span>
-                            <button type="button" className="btn btn-danger btn-sm" disabled={busy}
-                              onClick={() => void answer(row.id, () => promotionAdapter.declineRenewal(row.id))}>
-                              {t('promoRenewals.declineYes')}
-                            </button>
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAskingId(null)}>
-                              {t('promoRenewals.declineNo')}
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </dd>
+                  </div>
+                </dl>
+                {row.decided_via && <div className="promotion-city">{t(`promoRenewals.via.${row.decided_via}`)}</div>}
+                {isSuperAdmin && row.status === 'pending' && askingId !== row.id && (
+                  <div className="promotion-actions">
+                    <button type="button" className="btn btn-primary btn-sm" disabled={busy}
+                      aria-label={`${t('promoRenewals.confirm')}: ${row.hotel_name}`}
+                      onClick={() => void answer(row.id, () => promotionAdapter.confirmRenewal(row.id))}>
+                      {t('promoRenewals.confirm')}
+                    </button>
+                    <button type="button" className="btn btn-danger btn-sm" disabled={busy}
+                      aria-label={`${t('promoRenewals.decline')}: ${row.hotel_name}`}
+                      onClick={() => setAskingId(row.id)}>
+                      {t('promoRenewals.decline')}
+                    </button>
+                  </div>
+                )}
+                {isSuperAdmin && row.status === 'pending' && askingId === row.id && (
+                  <div className="promotion-actions" role="group" aria-label={t('promoRenewals.declineQuestion')}>
+                    <span>{t('promoRenewals.declineQuestion')}</span>
+                    <button type="button" className="btn btn-danger btn-sm" disabled={busy}
+                      onClick={() => void answer(row.id, () => promotionAdapter.declineRenewal(row.id))}>
+                      {t('promoRenewals.declineYes')}
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAskingId(null)}>
+                      {t('promoRenewals.declineNo')}
+                    </button>
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       )}
 
       {data && data.count > PAGE_SIZE && (

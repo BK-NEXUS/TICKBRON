@@ -10053,3 +10053,46 @@ button.property-gallery-image {
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* Monthly ad renewals: one card per ad, so the buttons are always in view, also at 390px */
+.renewal-list {
+  display: grid;
+  gap: var(--spacing-md);
+  margin: 0 0 var(--spacing-md);
+  padding: 0;
+  list-style: none;
+}
+
+.renewal-card {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border, currentColor);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-muted, transparent);
+  overflow-wrap: anywhere;
+}
+
+.renewal-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.renewal-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--spacing-sm);
+  margin: 0;
+}
+
+.renewal-facts dt {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.renewal-facts dd {
+  margin: 0;
+}
