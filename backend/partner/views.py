@@ -23,7 +23,8 @@ from bookings.arrival import mark_arrived
 from bookings.models import Booking
 from partner.models import OwnerPlace
 from bookings.noshow import report_deadline, reportable_bookings
-from common.dates import business_today
+from common.csv_export import export_response, wants_export
+from common.dates import business_time_zone, business_today
 from partner.serializers import (
     MAX_PHOTOS_PER_PROPERTY, MAX_PHOTOS_PER_ROOM_TYPE,
     PartnerPropertySerializer, PartnerPropertyCreateSerializer,
@@ -486,6 +487,22 @@ def partner_property_types(request):
     return Response([{'id': kind.id, 'name': kind.name, 'slug': kind.slug} for kind in types])
 
 
+# The owner's bookings file: what the bookings list shows without the guest (no name, e-mail, phone or request)
+BOOKINGS_EXPORT_HEADER = ['reference', 'hotel', 'status', 'payment_status', 'check_in', 'check_out', 'nights', 'rooms',
+                          'guests', 'total', 'currency', 'booked_on', 'arrival_time', 'arrived']
+
+
+def _bookings_export_row(booking):
+    arrival = booking.expected_arrival_time
+    return [
+        booking.confirmation_code, booking.property.display_name(), booking.status, booking.payment_status,
+        booking.check_in.isoformat(), booking.check_out.isoformat(), booking.number_of_nights,
+        booking.number_of_rooms, booking.guest_count, booking.total_price, booking.currency,
+        booking.created_at.astimezone(business_time_zone()).date().isoformat(),
+        arrival.strftime('%H:%M') if arrival else '', 'yes' if booking.arrived_at else 'no',
+    ]
+
+
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
@@ -497,6 +514,7 @@ def partner_bookings(request):
         status: Filter by booking status (optional)
         payment_status: Filter by payment status (optional)
         reportable: true keeps only bookings the owner can report as no-show today (optional)
+        export: csv or xlsx downloads the same list as a file (no guest details), see BOOKINGS_EXPORT_HEADER
     
     Returns:
         List of bookings for the hotel-owner's properties
@@ -519,6 +537,10 @@ def partner_bookings(request):
     if request.query_params.get('reportable') == 'true':
         bookings = reportable
     reportable_ids = set(reportable.values_list('id', flat=True))
+
+    if wants_export(request):
+        rows = (_bookings_export_row(booking) for booking in bookings.order_by('-check_in', '-id'))
+        return export_response(request, 'partner_bookings', BOOKINGS_EXPORT_HEADER, rows)
 
     # Serialize bookings
     bookings_data = []
