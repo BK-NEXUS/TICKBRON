@@ -3277,3 +3277,6 @@ Merged by hand: djangorestframework 3.18.3 (#115), phonenumbers 9.0.41 (#113), @
 
 ## Notifications page: Show more (2026-10-29)
 The page showed only the first 20 notices. `notificationAdapter.list(page)` now returns `{items, hasMore}` and the page has a "Show more" button (uz/ru/en `notifications.showMore`); a failing next page keeps the loaded notices and shows the error under them. No backend change (the list was already paginated); the contract said "Array", now corrected. Tests: `notificationAdapter.test.ts` (new), `NotificationsPage.test.tsx` (3 new; the existing mocks only changed shape).
+
+## Monthly hotel fee dropped, ad renewal planned instead (2026-10-29)
+The first plan (a monthly fee for every hotel, with hiding) was wrong: hotels pay once at the start, the monthly payment is for the banner ads. The WIP code of that plan was removed (revert of `0dc17ba`, nothing of it reached master) and `.ai/PLAN_AD_RENEWAL.md` replaces `PLAN_SUBSCRIPTION.md`. No hotel is ever hidden or deleted for non-payment.

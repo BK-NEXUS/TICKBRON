@@ -70,7 +70,6 @@ class TestNotify:
             'booking_id': 1, 'booking_reference': 'TB-ABC123', 'report_id': 2, 'refund_id': 3,
             'amount': '1000', 'currency': 'UZS', 'percent': 50, 'check_in': '2026-10-01',
             'check_out': '2026-10-03', 'review_id': 4, 'property_id': 5,
-            'fee_id': 6, 'due_date': '2026-12-01',
         }
         for code, spec in NOTIFICATION_CODES.items():
             params = {key: sample[key] for key in spec['params']}

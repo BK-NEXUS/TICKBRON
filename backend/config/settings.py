@@ -73,7 +73,6 @@ INSTALLED_APPS = [
     'geography',
     'currency',
     'promotions',
-    'subscriptions',
     'chat',
     
     # Third-party apps
@@ -437,11 +436,6 @@ CELERY_BEAT_SCHEDULE = {
     'end-expired-promotions': {
         'task': 'promotions.tasks.end_expired_promotions',
         'schedule': crontab(hour=0, minute=10),
-    },
-    # Monthly hotel fee: free periods start, the month's fees are created, owners are reminded, 06:00 Asia/Tashkent
-    'run-daily-fees': {
-        'task': 'subscriptions.tasks.run_daily_fees',
-        'schedule': crontab(hour=6, minute=0),
     },
 }
 
