@@ -434,3 +434,12 @@ msgstr "У этого отеля есть другая реклама в сле�
 
 msgid "Choose one of: scheduled, active, paused, ended, cancelled."
 msgstr "Выберите одно из: scheduled, active, paused, ended, cancelled."
+
+msgid "Two-step sign-in is already on."
+msgstr "Двухэтапный вход уже включён."
+
+msgid "The code is not right. Check the time on your phone and try again."
+msgstr "Код неверный. Проверьте время на телефоне и попробуйте ещё раз."
+
+msgid "Set up two-step sign-in first."
+msgstr "Сначала настройте двухэтапный вход."

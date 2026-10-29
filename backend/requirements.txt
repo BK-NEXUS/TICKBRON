@@ -29,3 +29,7 @@ XlsxWriter==3.2.9
 
 # Web server for the Docker image (python manage.py runserver is for development only)
 gunicorn==23.0.0
+
+# Two-step sign-in (users/two_factor.py): authenticator app codes and the sealed secrets
+pyotp==2.9.0
+cryptography==50.0.1

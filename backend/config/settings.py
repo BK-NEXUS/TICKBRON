@@ -4,6 +4,7 @@ TICKBRON Backend Settings
 Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
 
+import base64
 import ipaddress
 import os
 import re
@@ -91,6 +92,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # An administrator without two-step sign-in can only set it up (users/two_factor.py)
+    'users.middleware.TwoFactorSetupMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'common.middleware.SecurityHeadersMiddleware',
@@ -247,6 +250,12 @@ SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true
 SILENCED_SYSTEM_CHECKS = ['security.W021']  # W021 asks for preload: documented choice above
 SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
+
+# Two-step sign-in (users/two_factor.py): administrators and staff must have it. TWO_FACTOR_KEY seals the
+# authenticator secrets in the database; development and tests derive a key from SECRET_KEY instead.
+# Off by default until the site's sign-in screen has the code step (planned: on in production by default)
+TWO_FACTOR_REQUIRED_FOR_ADMINS = os.getenv('TWO_FACTOR_REQUIRED_FOR_ADMINS', 'False').lower() == 'true'
+TWO_FACTOR_KEY = os.getenv('TWO_FACTOR_KEY', '')
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = _env_list(os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000'))
@@ -477,6 +486,13 @@ _PLACEHOLDER_SECRET_KEYS = {
 }
 
 
+def _is_fernet_key(value):
+    try:
+        return len(base64.urlsafe_b64decode(value)) == 32
+    except ValueError:
+        return False
+
+
 def _production_config_errors():
     errors = []
     if (SECRET_KEY in _PLACEHOLDER_SECRET_KEYS or SECRET_KEY.startswith('django-insecure-')
@@ -500,6 +516,8 @@ def _production_config_errors():
         errors.append('FRONTEND_URL must be the https:// address of the site (password reset links point to it)')
     if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST:
         errors.append('EMAIL_HOST must be set (password reset e-mails cannot be sent without a mail server)')
+    if TWO_FACTOR_REQUIRED_FOR_ADMINS and not _is_fernet_key(TWO_FACTOR_KEY):
+        errors.append('TWO_FACTOR_KEY must be set to a Fernet key (see deploy/env.production.example)')
     # N-19
     if not SESSION_COOKIE_SECURE:
         errors.append('SESSION_COOKIE_SECURE must be True when DEBUG is False')

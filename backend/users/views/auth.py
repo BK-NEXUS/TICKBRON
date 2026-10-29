@@ -15,7 +15,7 @@ from accounts.history import record_history
 from common.csrf import enforce_csrf
 from common.request import get_client_ip
 from common.security_log import log_security_event
-from users import lockout
+from users import lockout, two_factor
 from users.models import User
 from users.serializers import UserLoginSerializer, UserRegistrationSerializer, UserSerializer
 from users.sessions import start_session
@@ -82,6 +82,11 @@ def login_view(request):
         lockout.record_failure(user, client_ip)
         log_security_event('login_failed', request, user=user, reason='bad_credentials')
         return _login_failed_response()
+
+    if authenticated_user.two_factor_enabled:
+        # Not signed in yet: the failure counters stay until the code is right too
+        two_factor.remember_password_step(request, authenticated_user)
+        return Response({'two_factor_required': True}, status=status.HTTP_200_OK)
 
     start_session(request, authenticated_user, client_ip, method='password')
     return Response(UserSerializer(authenticated_user).data, status=status.HTTP_200_OK)

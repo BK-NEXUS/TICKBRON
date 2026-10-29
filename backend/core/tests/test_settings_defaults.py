@@ -15,6 +15,7 @@ ISOLATED_ENV_VARS = (
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
     'USE_X_FORWARDED_PROTO', 'SECURE_SSL_REDIRECT', 'SECURE_HSTS_PRELOAD', 'SESSION_COOKIE_AGE',
     'DB_HOST', 'DB_SSLMODE', 'DB_NETWORK_IS_PRIVATE', 'FRONTEND_URL', 'EMAIL_HOST', 'EMAIL_BACKEND',
+    'TWO_FACTOR_REQUIRED_FOR_ADMINS', 'TWO_FACTOR_KEY',
 )
 
 # Load settings in a clean interpreter with .env loading disabled, so the
@@ -49,6 +50,7 @@ PRODUCTION_ENV = {
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
     'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # password reset links and mail
+    'TWO_FACTOR_REQUIRED_FOR_ADMINS': 'True', 'TWO_FACTOR_KEY': 'D7eMmWkvKa9v2OeQIO0bLAKuod5UPZ9jR1n2vge7atk=',
 }
 
 

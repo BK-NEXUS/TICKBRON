@@ -88,6 +88,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
     two_factor_backup_codes = models.TextField(blank=True, null=True)
+    # The 30 second step of the last code accepted, so a code cannot be used twice (users/two_factor.py)
+    two_factor_last_step = models.BigIntegerField(null=True, blank=True)
     
     # Contact method preferences
     whatsapp = models.CharField(max_length=20, blank=True, null=True)

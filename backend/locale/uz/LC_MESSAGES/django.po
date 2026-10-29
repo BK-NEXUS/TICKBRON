@@ -598,3 +598,12 @@ msgstr "Bu mehmonxonaning keyingi oyda boshqa reklamasi bor, shuning uchun bu re
 
 msgid "Choose one of: scheduled, active, paused, ended, cancelled."
 msgstr "Quyidagilardan birini tanlang: scheduled, active, paused, ended, cancelled."
+
+msgid "Two-step sign-in is already on."
+msgstr "Ikki bosqichli kirish allaqachon yoqilgan."
+
+msgid "The code is not right. Check the time on your phone and try again."
+msgstr "Kod noto'g'ri. Telefoningizdagi vaqtni tekshirib, qaytadan urinib ko'ring."
+
+msgid "Set up two-step sign-in first."
+msgstr "Avval ikki bosqichli kirishni sozlang."
