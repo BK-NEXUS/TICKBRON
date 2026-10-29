@@ -3315,3 +3315,10 @@ What the owner Status already had: totals, month against last month, occupancy, 
 
 ## 2FA plan (2026-10-29)
 `.ai/PLAN_2FA.md` written, nothing built (security work: plan first). Needs the owner's five answers at the end of the plan. Existing facts it relies on: the unused fields `two_factor_enabled/secret/backup_codes` on `User`, one sign-in function (`users/views/auth.py::login_view` -> `users/sessions.py::start_session`), the lockout and audit log.
+
+## 2FA, backend (PR 1 of 3, 2026-10-29)
+Built as in `.ai/PLAN_2FA.md` with the owner's default answers: `pyotp` for the codes, `cryptography` (Fernet) to seal the secret (`TWO_FACTOR_KEY`), logic in `users/two_factor.py`, views in `users/views/two_factor.py`, the setup gate in `users/middleware.py`, tests in `users/tests/test_two_factor.py` (27) and the settings checks in `core/tests/test_r4_production_config.py`. Contract: API_CONTRACT.md "Two-step sign-in".
+- **The switch is off by default** (`TWO_FACTOR_REQUIRED_FOR_ADMINS=False`). The plan said "on in production", but the site's sign-in screen does not know the code step yet: with it on, an administrator could not sign in through the site. PR 2 (the screens) must flip the default to on in production, the same pull request.
+- Deliberate change in existing tests: the production start-up fixtures (`core/tests/test_r4_production_config.py`, `core/tests/test_settings_defaults.py`) now carry `TWO_FACTOR_REQUIRED_FOR_ADMINS=True` and a `TWO_FACTOR_KEY`, because production now needs the key when the requirement is on; two new cases refuse a missing or malformed key. No assertion was weakened.
+- Ending the user's other sessions scans the session table (sessions are database rows); fine for the rare event of switching it on, slow only with a very large session table.
+- Not checked: an authenticator app on a real phone (the codes are checked against RFC 6238 test values and `pyotp`), the real server. Found, not fixed: nothing switches 2FA off (admins must not; owners and guests have no screen for it yet).

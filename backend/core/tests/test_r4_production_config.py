@@ -13,6 +13,7 @@ import pytest
 
 from core.tests.test_settings_defaults import BACKEND_DIR, ISOLATED_ENV_VARS, LOAD_SETTINGS
 
+FERNET_KEY = 'D7eMmWkvKa9v2OeQIO0bLAKuod5UPZ9jR1n2vge7atk='
 STRONG_KEY = 'k' * 20 + '-Production-Secret-Key-For-Tests-0123456789'
 GOOD_PRODUCTION_ENV = {
     'DEBUG': 'False',
@@ -25,6 +26,7 @@ GOOD_PRODUCTION_ENV = {
     'USE_X_FORWARDED_PROTO': 'True',
     'SECURE_SSL_REDIRECT': 'True',
     'FRONTEND_URL': 'https://tickbron.uz', 'EMAIL_HOST': 'smtp.tickbron.uz',  # password reset links and mail
+    'TWO_FACTOR_REQUIRED_FOR_ADMINS': 'True', 'TWO_FACTOR_KEY': FERNET_KEY,  # then the sealing key is required
 }
 EXTRA_ISOLATED = ('SECRET_KEY', 'ALLOWED_HOSTS', 'CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS')
 
@@ -67,6 +69,8 @@ def test_good_production_settings_start():
     ({'CSRF_COOKIE_SECURE': 'False'}, 'CSRF_COOKIE_SECURE'),
     ({'USE_REDIS_CACHE': 'False'}, 'USE_REDIS_CACHE'),
     ({'DB_HOST': 'db.example.com', 'DB_SSLMODE': 'prefer'}, 'DB_SSLMODE'),
+    ({'TWO_FACTOR_KEY': None}, 'TWO_FACTOR_KEY'),
+    ({'TWO_FACTOR_KEY': 'not-a-key'}, 'TWO_FACTOR_KEY'),
 ])
 def test_insecure_production_settings_refuse_to_start(overrides, message):
     result = _start(**overrides)
@@ -122,3 +126,18 @@ def test_check_deploy_reports_no_issues():
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'no issues' in result.stdout
+
+
+def test_without_the_two_factor_requirement_the_key_is_not_needed():
+    result = _start(TWO_FACTOR_REQUIRED_FOR_ADMINS='False', TWO_FACTOR_KEY=None)
+    assert result.returncode == 0, result.stderr
+
+
+def test_two_step_sign_in_is_off_by_default_until_the_site_has_the_code_screen():
+    result = subprocess.run(
+        [sys.executable, '-c', LOAD_SETTINGS.format(expression='settings.TWO_FACTOR_REQUIRED_FOR_ADMINS')],
+        cwd=BACKEND_DIR, capture_output=True, text=True, timeout=120,
+        env={**{k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS},
+             'DJANGO_SETTINGS_MODULE': 'config.settings', 'DEBUG': 'True'},
+    )
+    assert result.stdout.strip().splitlines()[-1] == 'False', result.stderr

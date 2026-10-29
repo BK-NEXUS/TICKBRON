@@ -8,6 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from users import two_factor
 from users.models import User
 from users.validators import EmailFormatValidator, PHONE_NUMBER_ERROR, parse_phone_number
 from django.utils.translation import gettext as _
@@ -57,13 +58,15 @@ class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     # Role name ('hotel-owner') or None. Only a super-admin assigns roles, so it is read-only
     role = serializers.SerializerMethodField()
+    # True for an administrator who must set up two-step sign-in and has not: the site shows the setup screen
+    two_factor_setup_required = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
-                  'email_verified', 'two_factor_enabled', 'is_staff', 'is_superuser', 'role']
+                  'email_verified', 'two_factor_enabled', 'two_factor_setup_required', 'is_staff', 'is_superuser', 'role']
         # phone_number is legacy data: shown, never written
         read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
@@ -72,6 +75,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         return obj.role.name if obj.role else None
+
+    def get_two_factor_setup_required(self, obj):
+        return two_factor.needs_setup(obj)
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

@@ -66,3 +66,15 @@ class PasswordChangeThrottle(AccountRateThrottle):
     """Password changes (and wrong current passwords) per account: 5 per minute."""
     rate = '5/min'
     scope = 'password_change'
+
+
+class TwoFactorLoginThrottle(IPRateThrottle):
+    """Codes tried from one network: 10 per minute (the lockout stops guessing sooner)."""
+    rate = '10/min'
+    scope = 'two_factor_login'
+
+
+class TwoFactorSetupThrottle(AccountRateThrottle):
+    """Setup and confirm calls per account: 10 per minute."""
+    rate = '10/min'
+    scope = 'two_factor_setup'
