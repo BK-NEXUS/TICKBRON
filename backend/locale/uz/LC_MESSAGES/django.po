@@ -595,3 +595,6 @@ msgstr "Bu reklamani endi uzaytirib bo'lmaydi."
 
 msgid "This hotel has another ad in the next month, so this one cannot be extended."
 msgstr "Bu mehmonxonaning keyingi oyda boshqa reklamasi bor, shuning uchun bu reklamani uzaytirib bo'lmaydi."
+
+msgid "Choose one of: scheduled, active, paused, ended, cancelled."
+msgstr "Quyidagilardan birini tanlang: scheduled, active, paused, ended, cancelled."

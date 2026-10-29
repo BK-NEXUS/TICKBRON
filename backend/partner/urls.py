@@ -8,6 +8,7 @@ from bookings.views_noshow import (
     partner_no_show_report_create, partner_no_show_report_withdraw, partner_no_show_reports,
 )
 from partner.status import partner_status, partner_status_arrivals, partner_status_hotel, partner_status_rooms
+from partner.promotions import partner_promotions
 from partner.reviews import partner_review_reply, partner_reviews
 from partner.views import (
     PartnerAPIRootView, PartnerPropertyViewSet, PartnerRoomTypeViewSet,
@@ -39,6 +40,7 @@ urlpatterns = [
          name='partner-property-photo-detail'),
     path('property-types/', partner_property_types, name='partner-property-types'),
     path('assigned-place/', partner_assigned_place, name='partner-assigned-place'),
+    path('promotions/', partner_promotions, name='partner-promotions'),
     path('reviews/', partner_reviews, name='partner-reviews'),
     path('reviews/<int:review_id>/reply/', partner_review_reply, name='partner-review-reply'),
     path('bookings/', partner_bookings, name='partner-bookings'),
