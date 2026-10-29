@@ -55,6 +55,7 @@ ACCESS = [
 # Allowed roles that still get 403 by design, not because of a permission check
 FORBIDDEN_BY_DESIGN = {
     ('post', '/api/v1/me/notifications/'),  # notifications are created by the system only
+    ('post', '/api/v1/auth/login/2fa/'),  # open to all, but 401 until the password step of the same session was done
 }
 
 PATH_VALUES = {'provider': 'payme', 'code': 'UZ', 'country': 'UZ', 'region': '1'}
