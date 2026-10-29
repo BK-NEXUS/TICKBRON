@@ -11,6 +11,7 @@ from bookings.views_noshow import (
 )
 from chat import admin_views as chat_views
 from promotions import admin_views as promotion_views
+from promotions import renewal_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
@@ -88,6 +89,11 @@ urlpatterns = [
     path('chat/conversations/<int:conversation_id>/', chat_views.Thread.as_view(), name='admin-chat-thread'),
     path('chat/conversations/<int:conversation_id>/read/', chat_views.ThreadRead.as_view(), name='admin-chat-read'),
     path('chat/unread/', chat_views.StaffUnread.as_view(), name='admin-chat-unread'),
+    path('promotions/renewals/', renewal_views.renewal_list, name='admin-promotion-renewals'),
+    path('promotions/renewals/<int:renewal_id>/confirm/', renewal_views.renewal_confirm,
+         name='admin-promotion-renewal-confirm'),
+    path('promotions/renewals/<int:renewal_id>/decline/', renewal_views.renewal_decline,
+         name='admin-promotion-renewal-decline'),
     path('promotions/', promotion_views.promotions, name='admin-promotions'),
     path('promotions/regions/', promotion_views.promotion_regions, name='admin-promotion-regions'),
     path('promotions/<int:promotion_id>/', promotion_views.promotion_detail, name='admin-promotion-detail'),

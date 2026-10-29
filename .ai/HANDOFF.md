@@ -3277,3 +3277,12 @@ Merged by hand: djangorestframework 3.18.3 (#115), phonenumbers 9.0.41 (#113), @
 
 ## Notifications page: Show more (2026-10-29)
 The page showed only the first 20 notices. `notificationAdapter.list(page)` now returns `{items, hasMore}` and the page has a "Show more" button (uz/ru/en `notifications.showMore`); a failing next page keeps the loaded notices and shows the error under them. No backend change (the list was already paginated); the contract said "Array", now corrected. Tests: `notificationAdapter.test.ts` (new), `NotificationsPage.test.tsx` (3 new; the existing mocks only changed shape).
+
+## Monthly hotel fee dropped, ad renewal planned instead (2026-10-29)
+The first plan (a monthly fee for every hotel, with hiding) was wrong: hotels pay once at the start, the monthly payment is for the banner ads. The WIP code of that plan was removed (revert of `0dc17ba`, nothing of it reached master) and `.ai/PLAN_AD_RENEWAL.md` replaces `PLAN_SUBSCRIPTION.md`. No hotel is ever hidden or deleted for non-payment.
+
+## Ad renewal, step 1 (2026-10-29)
+Backend: `AdRenewal` (`promotions/models.py`), every rule in `promotions/renewals.py`, daily task `promotions.tasks.run_ad_renewals` at 00:05 (before the 00:10 tidy), `shown_now()` / `is_shown_now()` / `tidy_statuses()` keep an ad visible while its question is open, notices `ad_ending`, `ad_last_warning`, `ad_renewed`, `ad_removed`, super admin API `/admin-panel/promotions/renewals/`. Frontend: `AdminPromotionRenewals` inside the Promotions area, notice texts in uz/ru/en. The Telegram question (step 2) and the staff and owner views (step 3) are not built yet. The notices say nothing about which hotel (names are not allowed in notice params); an owner with several hotels sees the hotel only in the panel.
+
+Browser check (Chromium, 1440 and 390 px, local dev DB, then restored): the Renewals section lists the waiting ads with owner contact, deadline and days left; confirm extends the ad and moves it to the "Extended" history; remove asks first and then removes; the owner got `ad_ending`, `ad_last_warning`, `ad_renewed` and `ad_removed` on /notifications; no horizontal page scroll. At 390 px the first version (a table) hid the buttons off to the right, so the section uses cards. Both migrations were reversed and applied again. Not checked: a real e-mail, a real phone, dark mode, a run of the Celery beat itself.
+Found, not fixed: the dev DB references a country flag file that does not exist (a 404 in the browser console on the admin page), unrelated to ads.

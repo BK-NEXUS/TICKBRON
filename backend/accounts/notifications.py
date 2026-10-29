@@ -80,12 +80,15 @@ PARAM_VALIDATORS = {
     'refund_id': _id,
     'review_id': _id,
     'property_id': _id,
+    'promotion_id': _id,
     'booking_reference': _reference,
     'amount': _amount,
     'currency': _currency,
     'percent': _percent,
     'check_in': _date,
     'check_out': _date,
+    'end_date': _date,
+    'until_date': _date,
 }
 
 # code -> notification type, required params and the English fallback text (str.format on params).
@@ -170,6 +173,36 @@ NOTIFICATION_CODES = {
         'params': ('review_id', 'property_id'),
         'title': 'The hotel answered your review',
         'message': 'The hotel wrote an answer to your review.',
+    },
+    'ad_ending': {
+        'type': 'promotion',
+        'params': ('promotion_id', 'property_id', 'end_date', 'until_date'),
+        'title': 'Your ad period has ended',
+        'message': (
+            'The month of your ad in the banner ended on {end_date}. It stays visible until {until_date} '
+            'while the payment for the next month is awaited.'
+        ),
+    },
+    'ad_last_warning': {
+        'type': 'promotion',
+        'params': ('promotion_id', 'property_id', 'end_date', 'until_date'),
+        'title': 'Last reminder: your ad',
+        'message': (
+            'The payment for the next month of your ad is still awaited. '
+            'Without it the ad is removed from the banner after {until_date}.'
+        ),
+    },
+    'ad_renewed': {
+        'type': 'promotion',
+        'params': ('promotion_id', 'property_id', 'end_date'),
+        'title': 'Your ad was extended',
+        'message': 'Thank you, your ad in the banner now runs until {end_date}.',
+    },
+    'ad_removed': {
+        'type': 'promotion',
+        'params': ('promotion_id', 'property_id'),
+        'title': 'Your ad was removed',
+        'message': 'Your ad was removed from the banner because the next month was not paid. Your hotel is still on the site.',
     },
     'refund_succeeded': {
         'type': 'payment',

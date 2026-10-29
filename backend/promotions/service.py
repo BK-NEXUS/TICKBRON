@@ -14,14 +14,14 @@ from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import F, Max, Q
+from django.db.models import Exists, F, Max, OuterRef, Q
 from django.utils import timezone
 
 from admin_panel.models import AdminAccessLog
 from common.dates import business_today
 from common.storage import image_upload_error
 from geography.models import Region
-from promotions.models import Promotion, PromotionPhoto
+from promotions.models import AdRenewal, Promotion, PromotionPhoto
 from properties.models import Property
 
 MAX_DAYS = 365                # longest single promotion
@@ -227,11 +227,13 @@ def _scope_matches_property():
 def shown_now(today: date | None = None):
     """Promotions that may be served right now. Computed from the facts, never from `status` alone."""
     today = today or business_today()
+    awaiting_answer = Exists(AdRenewal.objects.filter(
+        promotion=OuterRef('pk'), status=AdRenewal.STATUS_PENDING, deadline__gte=today))
     return Promotion.objects.filter(
         is_deleted=False, status__in=(Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE),
-        paid_at__isnull=False, start_date__lte=today, end_date__gte=today,
+        paid_at__isnull=False, start_date__lte=today,
         property__is_active=True, property__is_deleted=False, property__status='active',
-    ).filter(_scope_matches_property()).select_related('property')
+    ).filter(Q(end_date__gte=today) | awaiting_answer).filter(_scope_matches_property()).select_related('property')
 
 
 def _rotation_key(promotion, today):
@@ -259,6 +261,12 @@ def blocked_reason(promotion):
     return None
 
 
+def _awaiting_answer(promotion, today):
+    """The ad ended but the question "did the hotel pay for the next month?" is still open (renewals.py)."""
+    return any(renewal.status == AdRenewal.STATUS_PENDING and renewal.deadline >= today
+               for renewal in promotion.renewals.all())
+
+
 def is_shown_now(promotion, today: date | None = None):
     """Python twin of shown_now() for one loaded promotion (admin screens). Keep the two in step."""
     today = today or business_today()
@@ -266,20 +274,22 @@ def is_shown_now(promotion, today: date | None = None):
         not promotion.is_deleted
         and promotion.status in (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE)
         and promotion.paid_at is not None
-        and promotion.start_date <= today <= promotion.end_date
+        and promotion.start_date <= today
+        and (today <= promotion.end_date or _awaiting_answer(promotion, today))
         and blocked_reason(promotion) is None
     )
 
 
 def tidy_statuses(today: date | None = None):
     """
-    Nightly: expired promotions become `ended`, paid ones whose period has begun become `active`.
+    Nightly: expired promotions become `ended` (not while their renewal question is open), paid ones whose
+    period has begun become `active`.
     Only keeps `status` readable in the admin lists; serving is computed by `shown_now()`.
     """
     today = today or business_today()
     live = Promotion.objects.filter(is_deleted=False)
-    ended = live.filter(status__in=Promotion.HOLDING_STATUSES, end_date__lt=today).update(
-        status=Promotion.STATUS_ENDED)
+    ended = live.filter(status__in=Promotion.HOLDING_STATUSES, end_date__lt=today).exclude(
+        renewals__status=AdRenewal.STATUS_PENDING).update(status=Promotion.STATUS_ENDED)
     activated = live.filter(
         status=Promotion.STATUS_SCHEDULED, paid_at__isnull=False, start_date__lte=today, end_date__gte=today,
     ).update(status=Promotion.STATUS_ACTIVE)

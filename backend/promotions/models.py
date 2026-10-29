@@ -63,6 +63,47 @@ class Promotion(BaseModel):
         return f'Promotion {self.pk} property:{self.property_id} {self.start_date}..{self.end_date}'
 
 
+class AdRenewal(models.Model):
+    """
+    The question asked when an ad's month ends: did the hotel pay for the next one? Opened on the end day;
+    the ad stays visible until `deadline`; no confirmation by then removes it (promotions/renewals.py).
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_RENEWED = 'renewed'
+    STATUS_DECLINED = 'declined'
+    STATUS_EXPIRED = 'expired'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Waiting for the answer'),
+        (STATUS_RENEWED, 'Renewed for one more month'),
+        (STATUS_DECLINED, 'Declined, ad removed'),
+        (STATUS_EXPIRED, 'No answer in time, ad removed'),
+    ]
+    VIA_PANEL = 'panel'
+    VIA_TELEGRAM = 'telegram'
+    VIA_AUTO = 'auto'
+    VIA_CHOICES = [(VIA_PANEL, 'Admin panel'), (VIA_TELEGRAM, 'Telegram'), (VIA_AUTO, 'Automatic')]
+
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='renewals')
+    ends_on = models.DateField(help_text='The end date being renewed')
+    deadline = models.DateField(help_text='Inclusive: the last day the ad stays visible without an answer')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    reminder_stage = models.PositiveSmallIntegerField(default=0, help_text='Notices sent to the owner (0-2)')
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    decided_via = models.CharField(max_length=10, choices=VIA_CHOICES, blank=True, default='')
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'promotion_renewals'
+        ordering = ['deadline', 'id']
+        constraints = [models.UniqueConstraint(fields=['promotion', 'ends_on'], name='promo_renewal_unique_end')]
+        indexes = [models.Index(fields=['status', 'deadline'], name='promo_renewal_status_idx')]
+
+    def __str__(self):
+        return f'AdRenewal {self.pk} promotion:{self.promotion_id} ends:{self.ends_on} {self.status}'
+
+
 class PromotionDailyStat(models.Model):
     """Views and clicks of one promotion on one business date. No visitor data is stored."""
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='daily_stats')
