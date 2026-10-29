@@ -135,6 +135,8 @@
   --container-wide: 1440px;
   --container-narrow: 760px;
   --gutter: 16px;
+  /* Room a phone page leaves at its end for the floating bottom navigation (97px tall) and a gap above it */
+  --mobile-nav-clearance: calc(112px + env(safe-area-inset-bottom));
   --header-height: 72px;
 
   /* Focus ring (WCAG 2.4.7) */

@@ -87,3 +87,29 @@ describe('design refresh round 3 (phones)', () => {
     expect(refresh).toMatch(/@media \(max-width: 599px\) \{\s*\.search-results-grid \{\s*grid-template-columns: minmax\(0, 1fr\)/)
   })
 })
+
+describe('design refresh: phone spacing', () => {
+  const tokens = read('tokens.css')
+  const chat = read('chat.css')
+
+  it('keeps the room the floating bottom navigation needs in one token that counts the safe area', () => {
+    expect(tokens).toMatch(/--mobile-nav-clearance:\s*calc\(\d+px \+ env\(safe-area-inset-bottom\)\)/)
+  })
+
+  it('leaves that room under the footer, so the last line is never behind the navigation', () => {
+    expect(refresh).toMatch(/@media \(max-width: 767px\) \{[\s\S]*?\.footer \{\s*margin-bottom: 0;\s*padding-bottom: var\(--mobile-nav-clearance\)/)
+  })
+
+  it('puts air between the sections and between the two buttons of an information page', () => {
+    expect(refresh).toMatch(/\.info-page-section \{\s*margin-top: var\(--spacing-lg\)/)
+    expect(refresh).toMatch(/\.info-page-footer \{\s*margin: var\(--spacing-md\) 0 0/)
+  })
+
+  it('gives "Forgot password?" a full-size tap target with a gap above it', () => {
+    expect(refresh).toMatch(/\.auth-forgot-link \{[^}]*min-height: 44px[^}]*margin-top: var\(--spacing-xs\)/)
+  })
+
+  it('keeps the chat message box clear of the navigation with a gap', () => {
+    expect(chat).toMatch(/\.chat-thread__list \{\s*height: clamp\(240px, calc\(100dvh - 490px\), 420px\)/)
+  })
+})
