@@ -1,6 +1,6 @@
 # Core Django (6.1; 4.2 reached end of life, 5.2 was the LTS used until 2026-10-23)
 Django==6.1.2
-djangorestframework==3.18.2
+djangorestframework==3.18.3
 django-cors-headers==4.9.0
 
 # Database (PostgreSQL; 2.9.10+ ships Python 3.13 wheels for Windows)
@@ -15,7 +15,7 @@ celery==5.6.3
 django-redis==6.0.0
 
 # Phone number validation (E.164)
-phonenumbers==9.0.40
+phonenumbers==9.0.41
 
 # Time zones (Asia/Tashkent for the CBU rate date; Windows has no system tz database)
 tzdata==2026.4

@@ -3268,3 +3268,6 @@ Browser check (Chromium, 1440 and 390 px, local dev DB): guest list with the hot
 
 ## Staff passwords back to 8 characters (2026-10-29)
 The owner asked for one password rule for everybody (8 characters, a letter, a digit, a special character). Removed `STAFF_MIN_PASSWORD_LENGTH` and `privileged` (backend and frontend). Deliberate change of expected values in `users/tests/test_staff_password_policy.py` (11/12 characters became 7/8), `passwordRules.test.ts` and `CreateHotelOwnerAccount.admin.test.tsx`; no assertion was weakened, the letter/digit/special-character checks still run for staff. Online card payment is not wanted for now, so it is not planned.
+
+## Safe Dependabot bumps in one PR (2026-10-29)
+Merged by hand: djangorestframework 3.18.3 (#115), phonenumbers 9.0.41 (#113), @types/leaflet.markercluster 1.5.6 (#117), pytest-cov 7.1.0 (#109). Checked: `tsc` clean, users/review/password tests pass. Left open on purpose, each is a major jump that needs its own change: eslint 8 -> 10 (#118) with @typescript-eslint 6 -> 8 (#116) and eslint-plugin-react-hooks 4 -> 7 (#114) (lint config), redis 5 -> 8 (#110) together with django-redis 6 -> 7 (#112), jsdom 23 -> 30 (#111).
