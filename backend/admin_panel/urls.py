@@ -11,6 +11,7 @@ from bookings.views_noshow import (
 )
 from chat import admin_views as chat_views
 from promotions import admin_views as promotion_views
+from subscriptions import admin_views as fee_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
@@ -45,6 +46,10 @@ router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 
 urlpatterns = [
+    path('fees/', fee_views.fees, name='admin-fees'),
+    path('fees/settings/', fee_views.fee_settings, name='admin-fee-settings'),
+    path('fees/<int:fee_id>/mark-paid/', fee_views.fee_mark_paid, name='admin-fee-mark-paid'),
+    path('fees/<int:fee_id>/undo/', fee_views.fee_undo, name='admin-fee-undo'),
     path('reviews/', admin_reviews, name='admin-reviews'),
     path('reviews/<int:review_id>/approve/', admin_review_approve, name='admin-review-approve'),
     path('reviews/<int:review_id>/reject/', admin_review_reject, name='admin-review-reject'),

@@ -47,9 +47,10 @@ ACCESS = [
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
+    (r'^/api/v1/admin-panel/fees/(settings|\d+/(mark-paid|undo))/$', None, SUPERADMIN),  # monthly hotel fee: money
     (r'^/api/v1/admin-panel/$', None, STAFF),
     (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|customers|exchange-rates|no-show-reports'
-     r'|promotion-hotels|promotions|properties|reviews|statistics|status|users)/', None, STAFF),
+     r'|fees|promotion-hotels|promotions|properties|reviews|statistics|status|users)/', None, STAFF),
 ]
 
 # Allowed roles that still get 403 by design, not because of a permission check

@@ -21,6 +21,7 @@ from datetime import timedelta
 from properties.listing import missing_for_listing
 from properties.models import Property, Amenity, AmenityCategory
 from users.models import User
+from subscriptions.services import ensure_account
 from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog, InternalNote
@@ -138,6 +139,8 @@ def admin_property_approve(request, property_id):
             property.approved_at = timezone.now()
         
         property.save()
+        if not rejection_reason:
+            ensure_account(property)
         AdminAccessLog.record(
             request.user, 'property_reject' if rejection_reason else 'property_approve',
             details={'property_id': property.id},

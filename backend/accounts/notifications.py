@@ -80,12 +80,14 @@ PARAM_VALIDATORS = {
     'refund_id': _id,
     'review_id': _id,
     'property_id': _id,
+    'fee_id': _id,
     'booking_reference': _reference,
     'amount': _amount,
     'currency': _currency,
     'percent': _percent,
     'check_in': _date,
     'check_out': _date,
+    'due_date': _date,
 }
 
 # code -> notification type, required params and the English fallback text (str.format on params).
@@ -170,6 +172,33 @@ NOTIFICATION_CODES = {
         'params': ('review_id', 'property_id'),
         'title': 'The hotel answered your review',
         'message': 'The hotel wrote an answer to your review.',
+    },
+    'fee_due': {
+        'type': 'payment',
+        'params': ('fee_id', 'property_id', 'amount', 'currency', 'due_date'),
+        'title': 'Monthly fee is due',
+        'message': 'The monthly fee of {amount} {currency} for your hotel is due on {due_date}.',
+    },
+    'fee_overdue': {
+        'type': 'payment',
+        'params': ('fee_id', 'property_id', 'amount', 'currency', 'due_date'),
+        'title': 'Monthly fee is overdue',
+        'message': 'The monthly fee of {amount} {currency} for your hotel, due on {due_date}, is not paid yet.',
+    },
+    'fee_last_warning': {
+        'type': 'payment',
+        'params': ('fee_id', 'property_id', 'amount', 'currency', 'due_date'),
+        'title': 'Last reminder: monthly fee',
+        'message': (
+            'The monthly fee of {amount} {currency} for your hotel, due on {due_date}, is still not paid. '
+            'Please pay it soon, otherwise the hotel may be removed from the site.'
+        ),
+    },
+    'fee_paid': {
+        'type': 'payment',
+        'params': ('fee_id', 'property_id', 'amount', 'currency', 'due_date'),
+        'title': 'Monthly fee received',
+        'message': 'Thank you, the monthly fee of {amount} {currency} due on {due_date} is marked as paid.',
     },
     'refund_succeeded': {
         'type': 'payment',
