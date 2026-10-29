@@ -83,9 +83,10 @@ export const PARTNER_STATUS: PartnerStatus = {
   insights: INSIGHTS,
   properties: [
     { id: 1, name: 'Alpha Hotel', city: 'Tashkent', region: 'Tashkent', country: 'Uzbekistan', status: 'active',
-      bookings: 1203, guests: 1001, revenue: [{ currency: 'USD', amount: '12450.00' }] },
+      bookings: 1203, guests: 1001, revenue: [{ currency: 'USD', amount: '12450.00' }], rating: { count: 12, average: '4.3' } },
     { id: 2, name: 'Beta Hotel', city: 'Tashkent', region: 'Unspecified', country: 'Uzbekistan', status: 'active',
-      bookings: 2, guests: 2, revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '80.00' }] },
+      bookings: 2, guests: 2, revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '80.00' }],
+      rating: { count: 0, average: null } },
   ],
   granularity: 'month',
   series: SERIES,
@@ -108,6 +109,10 @@ export const PARTNER_HOTEL: PartnerHotelStatus = {
   totals: TOTALS,
   insights: INSIGHTS,
   rank: null,
+  reviews: {
+    count: 12, average: '4.3', distribution: [0, 1, 1, 4, 6],
+    categories: { cleanliness: '4.5', location: '4.0', value: '3.8', amenities: null, service: '4.2' },
+  },
   granularity: 'month',
   series: SERIES,
   reconciliation: RECONCILIATION,

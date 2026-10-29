@@ -40,10 +40,11 @@ const STATUS = {
   properties: [
     { id: 1, name: 'Alpha Hotel', city: 'Tashkent', region: 'Tashkent', country: 'Uzbekistan', status: 'active',
       bookings: 1203, guests: 1001, unique_customers: 800, nights: 4000, room_nights: 4300, stayed: 1090, booking_value: [],
-      revenue: [{ currency: 'USD', amount: '12450.00' }] },
+      revenue: [{ currency: 'USD', amount: '12450.00' }], rating: { count: 12, average: '4.3' } },
     { id: 2, name: 'Beta Hotel', city: 'Tashkent', region: 'Unspecified', country: 'Uzbekistan', status: 'active',
       bookings: 2, guests: 2, unique_customers: 2, nights: 4, room_nights: 4, stayed: 1, booking_value: [],
-      revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '80.00' }] },
+      revenue: [{ currency: 'EUR', amount: '60.00' }, { currency: 'USD', amount: '80.00' }],
+      rating: { count: 0, average: null } },
   ],
   year: 2026,
   available_years: [2025, 2026],
@@ -143,6 +144,16 @@ describe('PartnerStatusTab', () => {
     expect(within(rows[1]).getByText('1,203')).toBeInTheDocument()
     expect(within(rows[1]).getByText('$12,450.00')).toBeInTheDocument()
     expect(within(rows[2]).getByText('€60.00 · $80.00')).toBeInTheDocument()
+  })
+
+  it('shows the guest rating of each hotel in the table, a dash when nobody rated it', async () => {
+    render(<PartnerStatusTab />)
+
+    const table = await screen.findByRole('table', { name: 'Your properties' })
+    const rows = within(table).getAllByRole('row')
+    expect(within(rows[0]).getByRole('columnheader', { name: 'Rating' })).toBeInTheDocument()
+    expect(within(rows[1]).getByText('4.3 (12)')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('-')).toBeInTheDocument()
   })
 
   it('month or year selector', async () => {

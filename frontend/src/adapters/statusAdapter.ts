@@ -272,7 +272,20 @@ export interface StatusUserDetail {
   history: Omit<StatusPage<StatusUserBooking>, 'period'>
 }
 
+/** How guests rate one hotel: approved reviews, all time. `average` is text with one decimal, null without reviews. */
+export interface ReviewRating {
+  count: number
+  average: string | null
+}
+
+export interface ReviewSummary extends ReviewRating {
+  /** How many reviews gave 1, 2, 3, 4 and 5 stars */
+  distribution: number[]
+  categories: Record<'cleanliness' | 'location' | 'value' | 'amenities' | 'service', string | null>
+}
+
 export interface PartnerStatusProperty extends StatusTotals {
+  rating: ReviewRating
   unique_customers: number
   nights: number
   room_nights: number
@@ -374,6 +387,7 @@ export interface PartnerStatus {
 export interface PartnerHotelStatus extends Omit<StatusHotelDetail, 'hotel'> {
   hotel: { id: number; name: string; status: string; address: string; city: string; region: string; country: string }
   rank: StatusRank | null
+  reviews: ReviewSummary
 }
 
 export type ArrivalsDay = 'today' | 'tomorrow'

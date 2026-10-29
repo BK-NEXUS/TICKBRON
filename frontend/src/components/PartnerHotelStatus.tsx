@@ -5,6 +5,7 @@ import { useStatusPeriod } from '../hooks/useStatusPeriod'
 import { StatusPeriodSelector } from './StatusPeriodSelector'
 import { StatusReport } from './StatusReport'
 import { PartnerArrivals } from './PartnerArrivals'
+import { OwnerHotelRating } from './OwnerHotelRating'
 
 interface PartnerHotelStatusProps {
   hotelId: number
@@ -66,6 +67,8 @@ export function PartnerHotelStatus({ hotelId, onBack }: PartnerHotelStatusProps)
           <p className="admin-view-subtitle">{data.hotel.address}, {data.hotel.city}</p>
         </div>
       )}
+
+      {data && <OwnerHotelRating hotelId={data.hotel.id} reviews={data.reviews} />}
 
       <div className="status-controls">
         <StatusPeriodSelector value={period} range={range} onChange={setPeriod} onRangeChange={setRange} />
