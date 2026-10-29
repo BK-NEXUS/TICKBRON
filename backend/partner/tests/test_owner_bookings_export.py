@@ -1,4 +1,4 @@
-"""The hotel owner downloads the bookings of their own hotels as CSV or Excel. No guest names, e-mails or phones are in the file."""
+"""The hotel owner downloads the bookings of their own hotels as CSV or Excel, with no guest names, e-mails or phones."""
 import csv
 import io
 from datetime import date, time
@@ -40,7 +40,8 @@ def hotel(owner):
 
 @pytest.fixture
 def guest():
-    return User.objects.create_user(email='guest.private@example.com', password='x', first_name='Private', last_name='Person')
+    return User.objects.create_user(
+        email='guest.private@example.com', password='x', first_name='Private', last_name='Person')
 
 
 def rows_of(response):
