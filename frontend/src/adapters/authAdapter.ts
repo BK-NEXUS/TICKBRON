@@ -21,6 +21,8 @@ export interface User {
   last_login?: string
   email_verified: boolean
   two_factor_enabled: boolean
+  /** True for an administrator who must set up two-step sign-in and has not: the site shows the setup page */
+  two_factor_setup_required?: boolean
   is_staff?: boolean
   is_superuser?: boolean
   // Role name, e.g. 'hotel-owner'; null for regular users. Read-only on the backend
@@ -62,6 +64,27 @@ export interface AuthResponse {
   /** Machine-readable reason from the backend, e.g. 'otp_invalid' */
   code?: string
   detail?: string
+  /** The password was right but nobody is signed in until the app's code is sent too */
+  twoFactorRequired?: boolean
+}
+
+/** The app's 6 digits, or one of the backup codes */
+export type TwoFactorCredential = { code: string } | { backupCode: string }
+
+export interface TwoFactorSetupResponse {
+  success: boolean
+  error?: string
+  /** otpauth:// link the authenticator app reads from the QR code */
+  otpauthUri?: string
+  /** The same secret as text, for typing it in */
+  secret?: string
+}
+
+export interface TwoFactorConfirmResponse {
+  success: boolean
+  error?: string
+  /** Shown once: the only way in when the phone is lost */
+  backupCodes?: string[]
 }
 
 export interface ResetPasswordRequest {
@@ -119,6 +142,7 @@ class AuthAdapter {
       }
 
       const data = await response.json()
+      if (data?.two_factor_required) return { success: true, twoFactorRequired: true }
       return {
         success: true,
         user: data,
@@ -169,6 +193,39 @@ class AuthAdapter {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  }
+
+  /** Second step of the login, after login() answered twoFactorRequired */
+  async loginTwoFactor(credential: TwoFactorCredential): Promise<AuthResponse> {
+    const body = 'code' in credential ? { code: credential.code } : { backup_code: credential.backupCode }
+    return this.changeSession('/api/v1/auth/login/2fa/', { method: 'POST', body: JSON.stringify(body) })
+  }
+
+  private async post<T>(endpoint: string, body?: object): Promise<{ data: T | null; error?: string }> {
+    try {
+      const response = await apiFetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+      if (!response.ok) return { data: null, error: (await readApiError(response)).message }
+      return { data: await response.json() }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : translateNow('apiError.networkOccurred') }
+    }
+  }
+
+  /** A new secret for the signed-in user's authenticator app; nothing is switched on until confirmTwoFactorSetup */
+  async startTwoFactorSetup(): Promise<TwoFactorSetupResponse> {
+    const { data, error } = await this.post<{ otpauth_uri: string; secret: string }>('/api/v1/auth/2fa/setup/')
+    return data ? { success: true, otpauthUri: data.otpauth_uri, secret: data.secret } : { success: false, error }
+  }
+
+  /** The first right code switches it on; the backup codes come back this once */
+  async confirmTwoFactorSetup(code: string): Promise<TwoFactorConfirmResponse> {
+    const { data, error } = await this.post<{ backup_codes: string[] }>('/api/v1/auth/2fa/confirm/', { code })
+    return data ? { success: true, backupCodes: data.backup_codes } : { success: false, error }
   }
 
   async logout(): Promise<AuthResponse> {

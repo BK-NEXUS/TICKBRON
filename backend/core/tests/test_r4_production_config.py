@@ -133,11 +133,23 @@ def test_without_the_two_factor_requirement_the_key_is_not_needed():
     assert result.returncode == 0, result.stderr
 
 
-def test_two_step_sign_in_is_off_by_default_until_the_site_has_the_code_screen():
+def _requirement(**overrides):
+    env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS + EXTRA_ISOLATED}
+    env.update({'DJANGO_SETTINGS_MODULE': 'config.settings', **GOOD_PRODUCTION_ENV, **overrides})
+    if 'TWO_FACTOR_REQUIRED_FOR_ADMINS' not in overrides:
+        env.pop('TWO_FACTOR_REQUIRED_FOR_ADMINS')  # what the code decides when nobody set it
+    env = {k: v for k, v in env.items() if v is not None}
     result = subprocess.run(
         [sys.executable, '-c', LOAD_SETTINGS.format(expression='settings.TWO_FACTOR_REQUIRED_FOR_ADMINS')],
-        cwd=BACKEND_DIR, capture_output=True, text=True, timeout=120,
-        env={**{k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS},
-             'DJANGO_SETTINGS_MODULE': 'config.settings', 'DEBUG': 'True'},
+        cwd=BACKEND_DIR, env=env, capture_output=True, text=True, timeout=120,
     )
-    assert result.stdout.strip().splitlines()[-1] == 'False', result.stderr
+    assert result.returncode == 0, result.stderr
+    return result.stdout.strip().splitlines()[-1]
+
+
+def test_two_step_sign_in_is_required_for_administrators_in_production_by_default():
+    assert _requirement() == 'True'
+
+
+def test_two_step_sign_in_is_off_by_default_for_local_development():
+    assert _requirement(DEBUG='True', ALLOWED_HOSTS='localhost') == 'False'

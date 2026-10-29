@@ -595,3 +595,70 @@
 .bookings-view-header .status-csv {
   margin: var(--spacing-sm) 0 var(--spacing-md);
 }
+
+/* Two-step sign-in: the code step of the login and the one-time setup page */
+.auth-footer--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.auth-link-button {
+  min-height: 44px;
+  padding: 0 var(--spacing-sm);
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.two-factor-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin: 0 0 var(--spacing-lg);
+  padding-left: var(--spacing-lg);
+  color: var(--color-text-primary);
+}
+
+.qr-code {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  margin: var(--spacing-sm) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.two-factor-secret {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.two-factor-secret code,
+.two-factor-codes code {
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  overflow-wrap: anywhere;
+}
+
+.two-factor-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.two-factor-saved {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+  min-height: 44px;
+}

@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { MainLayout } from './layout/MainLayout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { RequireAccess } from './components/RequireAccess'
+import { TWO_FACTOR_SETUP_PATH, TwoFactorSetupGate } from './components/TwoFactorSetupGate'
 import { canUseAdminPanel, canUsePartnerPanel } from './utils/roles'
 
 // Lazy load pages for code splitting and performance optimization
@@ -19,6 +20,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const TwoFactorSetupPage = lazy(() => import('./pages/TwoFactorSetupPage'))
 const BookingsPage = lazy(() => import('./pages/BookingsPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
@@ -46,6 +48,7 @@ function App() {
         <ErrorBoundary>
           <AuthProvider>
             <Router>
+              <TwoFactorSetupGate>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<MainLayout />}>
@@ -76,8 +79,10 @@ function App() {
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path={TWO_FACTOR_SETUP_PATH} element={<TwoFactorSetupPage />} />
                 </Routes>
               </Suspense>
+              </TwoFactorSetupGate>
             </Router>
           </AuthProvider>
         </ErrorBoundary>

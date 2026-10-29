@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { authAdapter, User } from '../adapters/authAdapter'
+import { authAdapter, User, type TwoFactorCredential } from '../adapters/authAdapter'
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  /** twoFactorRequired: the password was right, the app's code is still needed (loginTwoFactor) */
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; twoFactorRequired?: boolean }>
+  loginTwoFactor: (credential: TwoFactorCredential) => Promise<{ success: boolean; error?: string }>
   register: (data: {
     email: string
     full_name: string
@@ -55,6 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authAdapter.login({ email, password })
+    if (response.success && response.user) {
+      setUser(response.user)
+    }
+    return response
+  }
+
+  const loginTwoFactor = async (credential: TwoFactorCredential) => {
+    const response = await authAdapter.loginTwoFactor(credential)
     if (response.success && response.user) {
       setUser(response.user)
     }
@@ -115,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     login,
+    loginTwoFactor,
     register,
     logout,
     refreshUser,

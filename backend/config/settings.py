@@ -253,8 +253,7 @@ X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # Two-step sign-in (users/two_factor.py): administrators and staff must have it. TWO_FACTOR_KEY seals the
 # authenticator secrets in the database; development and tests derive a key from SECRET_KEY instead.
-# Off by default until the site's sign-in screen has the code step (planned: on in production by default)
-TWO_FACTOR_REQUIRED_FOR_ADMINS = os.getenv('TWO_FACTOR_REQUIRED_FOR_ADMINS', 'False').lower() == 'true'
+TWO_FACTOR_REQUIRED_FOR_ADMINS = os.getenv('TWO_FACTOR_REQUIRED_FOR_ADMINS', str(not DEBUG and not TESTING)).lower() == 'true'
 TWO_FACTOR_KEY = os.getenv('TWO_FACTOR_KEY', '')
 
 # CORS Settings
