@@ -6,14 +6,15 @@ from decimal import Decimal
 
 import pytest
 from django.test import override_settings
-from openpyxl import load_workbook
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
+from admin_panel.tests.test_xlsx_export import read_xlsx
 from bookings.tests.r12_helpers import make_booking
 from common.dates import business_time_zone
 from partner.views import BOOKINGS_EXPORT_HEADER
-from promotions.tests.helpers import make_guest, make_hotel, make_owner, make_staff
+from promotions.tests.helpers import (make_guest, make_hotel, make_owner,
+                                      make_staff)
 from properties.models import PropertyTranslation
 from users.models import User
 
@@ -128,10 +129,10 @@ class TestTheExcelFile:
         response = client_of(owner).get(URL, {'export': 'xlsx'})
         assert response.status_code == 200
         assert response['Content-Disposition'] == 'attachment; filename="partner_bookings.xlsx"'
-        sheet = load_workbook(io.BytesIO(response.content)).active
-        assert [cell.value for cell in sheet[1]] == BOOKINGS_EXPORT_HEADER
-        assert sheet.cell(row=2, column=1).value == booking.confirmation_code
-        assert sheet.cell(row=2, column=BOOKINGS_EXPORT_HEADER.index('total') + 1).value == 400000
+        rows, _ = read_xlsx(response)
+        assert rows[0] == BOOKINGS_EXPORT_HEADER
+        assert rows[1][0] == booking.confirmation_code
+        assert rows[1][BOOKINGS_EXPORT_HEADER.index('total')] == 400000
 
 
 class TestNothingElseChanges:
