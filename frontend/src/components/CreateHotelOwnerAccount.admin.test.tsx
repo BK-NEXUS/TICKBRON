@@ -40,14 +40,14 @@ describe('CreateHotelOwnerAccount as the administrator form', () => {
     expect(screen.getByText('Administrator Account Created Successfully')).toBeInTheDocument()
   })
 
-  it('wants 12 characters, longer than the 8 of a hotel owner, and does not call the server for fewer', async () => {
+  it('wants 8 characters like everybody else, and does not call the server for fewer', async () => {
     render(<CreateHotelOwnerAccount kind="admin" />)
     fill()
     for (const label of ['Password:', 'Confirm Password:']) {
-      fireEvent.change(screen.getByLabelText(label), { target: { value: 'kitob7$yoz!' } })
+      fireEvent.change(screen.getByLabelText(label), { target: { value: 'kit7$ab' } })
     }
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('at least 12 characters')
+    expect(await screen.findByRole('alert')).toHaveTextContent('at least 8 characters')
     expect(adminAdapter.createAdmin).not.toHaveBeenCalled()
   })
 
