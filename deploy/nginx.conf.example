@@ -4,6 +4,7 @@
 
 server {
     listen 80;
+    listen [::]:80;
     server_name tickbron.com www.tickbron.com;
     return 301 https://tickbron.com$request_uri;
 }
@@ -11,6 +12,7 @@ server {
 # www goes to the bare name (Django only knows tickbron.com)
 server {
     listen 443 ssl;
+    listen [::]:443 ssl;
     http2 on;
     server_name www.tickbron.com;
     # ssl_certificate / ssl_certificate_key: the same certificate, it must cover www.tickbron.com too
@@ -19,6 +21,7 @@ server {
 
 server {
     listen 443 ssl;
+    listen [::]:443 ssl;
     http2 on;
     server_name tickbron.com;
 

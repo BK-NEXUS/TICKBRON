@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.db.models import F
 
 from common.dates import business_today
-from common.request import get_client_ip
+from common.request import get_client_ip, network_key
 from promotions.models import PromotionDailyStat
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ _COLUMN = {IMPRESSION: 'impressions', CLICK: 'clicks'}
 
 def _visitor_hash(request):
     # Salted with SECRET_KEY so the cache never holds a usable IP address
-    raw = f'{settings.SECRET_KEY}:{get_client_ip(request) or ""}'
+    raw = f'{settings.SECRET_KEY}:{network_key(get_client_ip(request)) or ""}'
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 

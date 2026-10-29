@@ -171,7 +171,8 @@ def check_password_security():
         if 'MinimumLengthValidator' in validator['NAME']:
             min_length = validator.get('OPTIONS', {}).get('min_length', 8)
             print(f"  Minimum Password Length: {min_length}")
-            if min_length >= 12:
+            # 8 characters with a letter, a digit and a special character is the owner's rule for everybody (2026-10-29)
+            if min_length >= 8:
                 print("  [PASS] Strong password requirement")
             else:
                 print("  [FAIL] Weak password requirement")

@@ -306,7 +306,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [] if TESTING else [
-        'rest_framework.throttling.AnonRateThrottle',
+        'common.throttling.BlockAnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {

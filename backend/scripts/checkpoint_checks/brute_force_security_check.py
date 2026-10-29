@@ -65,12 +65,13 @@ def check_brute_force_security():
     for validator in password_validators:
         if 'MinimumLengthValidator' in validator.get('NAME', ''):
             min_length = validator.get('OPTIONS', {}).get('min_length', 8)
-            if min_length >= 12:
+            # 8 characters with a letter, a digit and a special character is the owner's rule for everybody (2026-10-29)
+            if min_length >= 8:
                 print(f"PASS Password minimum length: {min_length} characters")
                 min_length_found = True
                 checks.append(True)
             else:
-                print(f"WARN Password minimum length: {min_length} characters (recommended: 12+)")
+                print(f"WARN Password minimum length: {min_length} characters (the owner's rule is 8+)")
                 warnings.append(True)
                 checks.append(True)
     

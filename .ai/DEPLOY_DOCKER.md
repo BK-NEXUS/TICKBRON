@@ -31,6 +31,15 @@ In the domain's DNS panel add two **A** records, both with the server's public I
 
 Check, from your own computer (it can take from minutes up to a few hours): `nslookup tickbron.com` must show the server's IP. Do this before step 5: the certificate can only be issued when the name already points at the server.
 
+### IPv6 (optional, later)
+
+The site works with IPv4 only, which every visitor can reach. IPv6 is an extra: add an **AAAA** record (`@` and `www`) with the server's public IPv6 address **only after** this check passes, because Docker can hide the visitor's real address behind its own:
+
+1. Visit the site over IPv6 only (for example `curl -6 https://tickbron.com/healthz/` from a computer with IPv6, or an online "IPv6 only" tester) with the AAAA record already set.
+2. `docker compose logs caddy | tail`: the line of that request must show your real IPv6 address. If it shows a Docker address (`172.` or `fd00:`), remove the AAAA record again: every IPv6 visitor would then look like one visitor to the limits and the login lock.
+
+What the app does by itself: it stores and shows IPv6 addresses (audit log, last login), and the limits (login, register, anonymous API, ad view counting, login lock) count an IPv6 visitor by its /64 block, because a provider gives one connection a whole block and the visitor can change address inside it. IPv4 is counted per address as before. Caddy needs no setting for IPv6.
+
 ## Step 2. Prepare the server
 
 ```

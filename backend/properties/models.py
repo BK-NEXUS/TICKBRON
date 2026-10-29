@@ -209,7 +209,17 @@ class Property(BaseModel):
         if self.postal_code:
             parts.append(self.postal_code)
         parts.append(self.country)
-        return ', '.join(parts)
+        return ', '.join(self._without_repeats(parts))
+
+    @staticmethod
+    def _without_repeats(parts):
+        """A city and its region often share a name (Tashkent, Tashkent); write each name once."""
+        seen, kept = set(), []
+        for part in parts:
+            if part.casefold() not in seen:
+                seen.add(part.casefold())
+                kept.append(part)
+        return kept
 
 
 class PropertyTranslation(BaseModel):
