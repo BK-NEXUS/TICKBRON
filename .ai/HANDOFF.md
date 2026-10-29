@@ -3286,3 +3286,6 @@ Backend: `AdRenewal` (`promotions/models.py`), every rule in `promotions/renewal
 
 Browser check (Chromium, 1440 and 390 px, local dev DB, then restored): the Renewals section lists the waiting ads with owner contact, deadline and days left; confirm extends the ad and moves it to the "Extended" history; remove asks first and then removes; the owner got `ad_ending`, `ad_last_warning`, `ad_renewed` and `ad_removed` on /notifications; no horizontal page scroll. At 390 px the first version (a table) hid the buttons off to the right, so the section uses cards. Both migrations were reversed and applied again. Not checked: a real e-mail, a real phone, dark mode, a run of the Celery beat itself.
 Found, not fixed: the dev DB references a country flag file that does not exist (a 404 in the browser console on the admin page), unrelated to ads.
+
+## Fix: AdminDashboardPage test mock lacked listRenewals (2026-10-29)
+The Advertising screen now loads the renewals, but `AdminDashboardPage.test.tsx` mocks the promotion adapter without `listRenewals`, so vitest reported 3 unhandled rejections and CI exited 1 although every test passed. Added `listRenewals` to that mock. Lesson: look at the exit code and the "Errors" line of a vitest run, not only "Tests".
