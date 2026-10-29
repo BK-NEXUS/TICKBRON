@@ -5,6 +5,7 @@ Provides rate limiting, caching, and other utility decorators.
 """
 from django.core.cache import cache
 from common.request import get_client_ip as _get_client_ip
+from common.request import network_key
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from functools import wraps
@@ -35,7 +36,7 @@ def rate_limit(limit='100/h', key_func=None):
             elif request.user.is_authenticated:
                 cache_key = f"rate_limit:{request.user.id}"
             else:
-                cache_key = f"rate_limit:{get_client_ip(request)}"
+                cache_key = f"rate_limit:{network_key(get_client_ip(request))}"
             
             # Parse limit (e.g., '100/h' -> 100 requests per hour)
             try:

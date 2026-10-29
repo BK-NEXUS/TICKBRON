@@ -231,6 +231,15 @@ class PropertyModelTest(TestCase):
         expected = '123 Main Street, Apt 4B, Tashkent, Tashkent Region, 100000, Uzbekistan'
         self.assertEqual(full_address, expected)
     
+    def test_full_address_does_not_repeat_a_place_name(self):
+        """A city and its region with the same name (Tashkent, Tashkent) are written once."""
+        self.property.address_line2 = ''
+        self.property.state = 'tashkent'
+        self.property.postal_code = ''
+        self.property.save()
+
+        self.assertEqual(self.property.get_full_address(), '123 Main Street, Tashkent, Uzbekistan')
+
     def test_property_ownership_relation(self):
         """Test Property ownership relation."""
         self.assertEqual(self.property.owner, self.user)

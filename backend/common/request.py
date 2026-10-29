@@ -38,6 +38,28 @@ def get_client_ip(request):
     return candidate
 
 
+def network_key(ip):
+    """
+    What limits and lockouts count a client by: the address for IPv4, the /64 block for IPv6.
+
+    A home or phone connection gets a whole /64 from its provider and can switch address inside it
+    at will, so counting single IPv6 addresses would let one visitor dodge every limit. An IPv4
+    address written as IPv6 (::ffff:1.2.3.4) is the IPv4 address. Anything that is not an address is
+    returned unchanged (it is only a cache key).
+    """
+    if not ip:
+        return ip
+    try:
+        address = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if address.version == 6:
+        if address.ipv4_mapped:
+            return str(address.ipv4_mapped)
+        return str(ipaddress.ip_network(f'{address}/64', strict=False))
+    return str(address)
+
+
 # The address of the request being handled, set by RequestLoggingMiddleware, so code far from the
 # view (audit rows) can record where an action came from without every caller passing the request.
 _current_ip = ContextVar('current_client_ip', default=None)

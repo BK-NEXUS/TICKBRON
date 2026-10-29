@@ -13,6 +13,7 @@ Counters for the per-IP rule live in the cache (Redis in production).
 """
 from django.core.cache import cache
 
+from common.request import network_key
 from common.security_log import log_security_event
 
 IP_FAILURE_LIMIT = 5
@@ -20,7 +21,7 @@ IP_LOCK_SECONDS = 30 * 60
 
 
 def _ip_key(user, client_ip):
-    return f'auth_failures:{user.pk}:{client_ip or "unknown"}'
+    return f'auth_failures:{user.pk}:{network_key(client_ip) or "unknown"}'
 
 
 def is_locked(user, client_ip):

@@ -7,13 +7,13 @@ logged-in account.
 import os
 import sys
 
-from rest_framework.throttling import AnonRateThrottle
+from common.throttling import BlockAnonRateThrottle
 
 # Throttling is off while tests run; the tests that check a limit patch this flag back to False
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 
-class IPRateThrottle(AnonRateThrottle):
+class IPRateThrottle(BlockAnonRateThrottle):
     """
     Throttle keyed by client IP for every caller.
 
