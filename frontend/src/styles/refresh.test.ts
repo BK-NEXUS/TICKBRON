@@ -112,4 +112,8 @@ describe('design refresh: phone spacing', () => {
   it('keeps the chat message box clear of the navigation with a gap', () => {
     expect(chat).toMatch(/\.chat-thread__list \{\s*height: clamp\(240px, calc\(100dvh - 490px\), 420px\)/)
   })
+
+  it('shows the three numbers of an ad (views, clicks, click rate) side by side, also on a phone', () => {
+    expect(refresh).toMatch(/\.renewal-facts--stats \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
+  })
 })

@@ -431,3 +431,6 @@ msgstr "Эту рекламу больше нельзя продлить."
 
 msgid "This hotel has another ad in the next month, so this one cannot be extended."
 msgstr "У этого отеля есть другая реклама в следующем месяце, поэтому эту рекламу нельзя продлить."
+
+msgid "Choose one of: scheduled, active, paused, ended, cancelled."
+msgstr "Выберите одно из: scheduled, active, paused, ended, cancelled."
