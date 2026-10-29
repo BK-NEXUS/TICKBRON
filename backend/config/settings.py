@@ -432,6 +432,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bookings.tasks.complete_finished_stays',
         'schedule': crontab(hour=0, minute=5),
     },
+    # Monthly ad renewal: ask "did the hotel pay for the next month?", remove ads not renewed in time, 00:05 Asia/Tashkent
+    # (before the 00:10 tidy below, which leaves an ad with an open question running)
+    'run-ad-renewals': {
+        'task': 'promotions.tasks.run_ad_renewals',
+        'schedule': crontab(hour=0, minute=5),
+    },
     # R10: expired hotel promotions end, paid ones that started become active, 00:10 Asia/Tashkent
     'end-expired-promotions': {
         'task': 'promotions.tasks.end_expired_promotions',

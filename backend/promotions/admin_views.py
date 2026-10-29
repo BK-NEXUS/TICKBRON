@@ -57,7 +57,7 @@ def _date_param(request, name):
 def _queryset():
     return (Promotion.objects.filter(is_deleted=False)
             .select_related('property')
-            .prefetch_related('property__translations', 'photos')
+            .prefetch_related('property__translations', 'photos', 'renewals')
             .annotate(sum_impressions=Coalesce(Sum('daily_stats__impressions'), 0),
                       sum_clicks=Coalesce(Sum('daily_stats__clicks'), 0)))
 

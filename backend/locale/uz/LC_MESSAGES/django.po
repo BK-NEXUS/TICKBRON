@@ -583,3 +583,15 @@ msgstr "Quyidagilardan birini tanlang: pending, approved, rejected."
 
 msgid "property_id must be a whole number."
 msgstr "property_id butun son bo'lishi kerak."
+
+msgid "Choose one of: pending, renewed, declined, expired."
+msgstr "Quyidagilardan birini tanlang: pending, renewed, declined, expired."
+
+msgid "This question is already answered."
+msgstr "Bu savolga allaqachon javob berilgan."
+
+msgid "This ad can no longer be extended."
+msgstr "Bu reklamani endi uzaytirib bo'lmaydi."
+
+msgid "This hotel has another ad in the next month, so this one cannot be extended."
+msgstr "Bu mehmonxonaning keyingi oyda boshqa reklamasi bor, shuning uchun bu reklamani uzaytirib bo'lmaydi."
