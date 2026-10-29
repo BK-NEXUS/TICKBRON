@@ -116,4 +116,8 @@ describe('design refresh: phone spacing', () => {
   it('shows the three numbers of an ad (views, clicks, click rate) side by side, also on a phone', () => {
     expect(refresh).toMatch(/\.renewal-facts--stats \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
   })
+
+  it('lays out the star split of an owner hotel as label, bar and count', () => {
+    expect(refresh).toMatch(/\.owner-rating-split-row \{\s*display: grid;\s*grid-template-columns: 3rem minmax\(0, 1fr\) 2\.5rem/)
+  })
 })

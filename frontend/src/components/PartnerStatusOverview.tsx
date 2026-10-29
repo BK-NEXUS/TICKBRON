@@ -3,6 +3,7 @@ import { useI18n } from '../i18n/I18nContext'
 import type { MonthComparison, PartnerStatus } from '../adapters/statusAdapter'
 import { monthChange } from '../utils/statusChange'
 import { formatCount, formatMoneyList, monthLabel, periodLabel } from '../utils/statusFormat'
+import { StarIcon } from './StarIcon'
 import { StatusMetricCard } from './StatusMetricCard'
 import { StatusYearCharts } from './StatusYearCharts'
 
@@ -79,6 +80,7 @@ export function PartnerStatusOverview({ data, onYearChange, onOpenHotel }: Partn
                   <th scope="col" className="status-cell--numeric">{t('status.stayed')}</th>
                   <th scope="col" className="status-cell--numeric">{t('searchForm.guests')}</th>
                   <th scope="col" className="status-cell--numeric">{t('status.revenue')}</th>
+                  <th scope="col" className="status-cell--numeric">{t('ownerRating.column')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,6 +94,11 @@ export function PartnerStatusOverview({ data, onYearChange, onOpenHotel }: Partn
                     <td className="status-cell--numeric">{formatCount(property.stayed)}</td>
                     <td className="status-cell--numeric">{formatCount(property.guests)}</td>
                     <td className="status-cell--numeric">{formatMoneyList(property.revenue)}</td>
+                    <td className="status-cell--numeric">
+                      {property.rating.average === null ? '-' : (
+                        <>{property.rating.average} <StarIcon /> ({property.rating.count})</>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

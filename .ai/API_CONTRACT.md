@@ -1301,3 +1301,9 @@ Frontend: route `/support` (login required; `?topic=ads` pre-fills an advertisin
 - A row: `id`, `property {id, name}`, `start_date`, `end_date`, `status`, `paid` (the payment was recorded), `is_shown_now`, `blocked_reason` (`hotel_not_active`, `outside_scope` or null), `impressions`, `clicks`, `click_rate` (percent with one decimal as text, null before the first view) and `renewal`: the open question "did the hotel pay for the next month?" `{ends_on, deadline, days_left}` or null; the ad stays visible until `deadline` (see "Monthly ad renewal").
 - Never in it: the agreed price, the staff's note, the priority, who created or confirmed it.
 - Frontend: a "My ads" tab in the owner panel (cards; filter by status; Show more).
+
+## 2026-10-29 Owner Status: how guests rate each hotel
+- Approved, not deleted reviews only, **all time** (the `period` of the page does not change them). Added fields, nothing removed:
+- `GET /api/v1/partner/status/`: every row of `properties` has `rating: {count, average}`; `average` is text with one decimal rounded half up ("4.3"), `null` when the hotel has no approved review (`count` 0). One grouped query for all hotels.
+- `GET /api/v1/partner/status/hotels/{id}/`: `reviews: {count, average, distribution, categories}`; `distribution` is `[n1, n2, n3, n4, n5]` (how many reviews gave 1 to 5 stars); `categories` has `cleanliness, location, value, amenities, service`, each an average like above or `null` when no guest rated that category. Another owner's hotel stays a 404.
+- Frontend: a "Rating" column in the hotel table and a "Guest reviews" block (the guests' rating block plus the star split) on the hotel's Status page.

@@ -28,6 +28,7 @@ from bookings.metrics import InvalidPeriod, period_from_request, range_json
 from bookings.models import Booking, BookingItem
 from common.csv_export import export_response, wants_export
 from common.dates import business_today
+from partner.review_stats import rating_detail, ratings_by_hotel
 from partner.views import IsHotelOwner
 from properties.models import Property, RoomType
 from properties.regions import hotel_name_expression, region_expression
@@ -122,6 +123,7 @@ def partner_status(request):
     )
     revenue = metrics.revenue_by(scope.filter(metrics.revenue_q('', date_range)), 'property_id')
     value = metrics.booking_value_by(scope.filter(metrics.counted_q('', date_range)), 'property_id')
+    ratings = ratings_by_hotel([row['id'] for row in rows])
     properties = [
         {
             'id': row['id'], 'name': row['name'], 'city': row['city'], 'region': row['region'],
@@ -129,6 +131,7 @@ def partner_status(request):
             **metrics.grouped_row(row),
             'revenue': revenue.get(row['id'], []),
             'booking_value': value.get(row['id'], []),
+            'rating': ratings[row['id']],
         }
         for row in rows
     ]
@@ -161,6 +164,7 @@ def partner_status_hotel(request, property_id):
             'city': prop.city, 'region': prop.region, 'country': prop.country,
         },
         'rank': metrics.region_rank(prop, date_range),
+        'reviews': rating_detail(prop.id),
         **numbers,
     })
 

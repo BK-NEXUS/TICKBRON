@@ -37,6 +37,14 @@ describe('PartnerHotelStatus', () => {
     await waitFor(() => expect(getArrivals).toHaveBeenCalledWith({ day: 'today', property: 1, page: 1 }))
   })
 
+  it('shows how guests rate this hotel above the period controls', async () => {
+    render(<PartnerHotelStatus hotelId={1} onBack={vi.fn()} />)
+
+    expect(await screen.findByRole('heading', { name: 'Guest reviews' })).toBeInTheDocument()
+    expect(screen.getByText('12 reviews')).toBeInTheDocument()
+    expect(screen.getByText('4.3')).toBeInTheDocument()
+  })
+
   it('asks for another granularity, a preset and a custom range', async () => {
     render(<PartnerHotelStatus hotelId={1} onBack={vi.fn()} />)
     await screen.findByRole('heading', { name: 'Alpha Hotel' })

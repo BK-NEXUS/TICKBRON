@@ -560,3 +560,33 @@
 .renewal-facts--stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+/* Owner Status > one hotel: how many guests gave 5, 4, 3, 2 and 1 stars */
+.owner-hotel-rating {
+  margin-bottom: var(--spacing-lg);
+}
+
+.owner-rating-split {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.owner-rating-split-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.owner-rating-split-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.owner-rating-split-count {
+  text-align: right;
+}
