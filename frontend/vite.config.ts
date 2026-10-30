@@ -35,7 +35,7 @@ export default defineConfig({
         // Manual chunk splitting for better caching
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return undefined
-          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'react-vendor'
+          if (/node_modules\/(react|react-dom|react-router|scheduler)\//.test(id)) return 'react-vendor'
           if (id.includes('node_modules/react-helmet-async/')) return 'ui-vendor'
           return undefined
         },
@@ -44,6 +44,6 @@ export default defineConfig({
   },
   // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
+    include: ['react', 'react-dom', 'react-router', 'react-helmet-async'],
   },
 })

@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { CalendarDays, Heart, Search, User } from 'lucide-react'
 
 export function MobileBottomNavigation() {

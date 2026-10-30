@@ -5,7 +5,7 @@ import { PropertyCard } from './PropertyCard'
 import { I18nProvider } from '../i18n/I18nContext'
 import type { Property } from '../adapters/propertyAdapter'
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
 
 const property = (patch: Partial<Property> = {}) => ({
   id: 1, owner_id: 1, property_type: { id: 1, name: 'Hotel', slug: 'hotel' }, status: 'active', max_guests: 2,

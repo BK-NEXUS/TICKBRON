@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
 import { Heart } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useFavorites } from '../hooks/useFavorites'
 
 interface FavoriteButtonProps {

@@ -1,7 +1,7 @@
 /** The home banner follows the country the guest opens under "Where to?": ads are not the same everywhere. */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { HomePage } from './HomePage'
 import { I18nProvider } from '../i18n/I18nContext'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'

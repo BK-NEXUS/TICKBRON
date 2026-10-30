@@ -39,7 +39,7 @@ export function AdminUserManagement() {
         )
         setUsers(sortedUsers)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadUsers'))
     } finally {
       setLoading(false)

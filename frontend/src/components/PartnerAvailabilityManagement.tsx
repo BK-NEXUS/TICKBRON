@@ -64,7 +64,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
         ratePlanInventory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         setDateInventory(ratePlanInventory)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadDate'))
     } finally {
       setLoading(false)
@@ -92,7 +92,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       loadDateInventory()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToCreateDate'))
       setLoading(false)
     }
@@ -130,7 +130,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       loadDateInventory()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToUpdateDate'))
       setLoading(false)
     }
@@ -155,7 +155,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       loadDateInventory()
 
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToDeleteDate'))
       setLoading(false)
     }
@@ -180,7 +180,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       loadDateInventory()
 
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToUpdateThe'))
       setBulkSaving(false)
     }
@@ -422,7 +422,8 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       <form className="availability-form" noValidate onSubmit={(e) => {
         e.preventDefault()
         if (!formAccepts(e.currentTarget, t, setError)) return
-        viewMode === 'create' ? handleCreate() : handleUpdate()
+        if (viewMode === 'create') handleCreate()
+        else handleUpdate()
       }}>
         <div className="form-group">
           <label htmlFor="inventory_date">{t('partner.date2')}</label>

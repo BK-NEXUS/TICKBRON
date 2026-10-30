@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
 import { redirectPathFrom } from '../utils/redirect'

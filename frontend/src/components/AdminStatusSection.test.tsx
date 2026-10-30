@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { AdminStatusSection } from './AdminStatusSection'
 import { BreadcrumbProvider, Breadcrumbs } from './Breadcrumbs'
 import { I18nProvider } from '../i18n/I18nContext'

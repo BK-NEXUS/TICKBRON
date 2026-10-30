@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { AdminCustomerProfile } from './AdminCustomerProfile'
 import { adminAdapter } from '../adapters/adminAdapter'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 
 // Mock the admin adapter
 vi.mock('../adapters/adminAdapter', () => ({
@@ -14,10 +14,10 @@ vi.mock('../adapters/adminAdapter', () => ({
   },
 }))
 
-// Mock react-router-dom
+// Mock react-router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router')
   return {
     ...actual,
     useNavigate: () => mockNavigate,

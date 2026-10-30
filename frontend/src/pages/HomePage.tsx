@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
 import { geographyName, type GeographyCountry } from '../adapters/geographyAdapter'
 import { HomeHotelSection } from '../components/HomeHotelSection'

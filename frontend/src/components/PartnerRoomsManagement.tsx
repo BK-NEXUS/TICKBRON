@@ -64,7 +64,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
         const propertyRoomTypes = response.data.filter(rt => rt.property === propertyId)
         setRoomTypes(propertyRoomTypes)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadRoom'))
     } finally {
       setLoading(false)
@@ -105,7 +105,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       setViewMode('list')
       resetForm()
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToCreateRoom'))
     } finally {
       setLoading(false)
@@ -147,7 +147,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       loadRoomTypes()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToUpdateRoom'))
       setLoading(false)
     }
@@ -172,7 +172,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       loadRoomTypes()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToDeleteRoom'))
       setLoading(false)
     }
@@ -405,7 +405,8 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       <form className="rooms-form" noValidate onSubmit={(e) => {
         e.preventDefault()
         if (!formAccepts(e.currentTarget, t, setError)) return
-        viewMode === 'create' ? handleCreate() : handleUpdate()
+        if (viewMode === 'create') handleCreate()
+        else handleUpdate()
       }}>
         <fieldset className="rooms-form-section">
           <legend>{t('roomForm.basics')}</legend>

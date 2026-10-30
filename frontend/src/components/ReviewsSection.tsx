@@ -82,7 +82,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
         }
 
         setLoading(false)
-      } catch (err) {
+      } catch {
         setError({ key: 'reviews.errorLoad' })
         setLoading(false)
       }
@@ -115,7 +115,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
             setEligibleProperties(eligibleResponse.data)
           }
         }
-      } catch (err) {
+      } catch {
         setError({ key: 'reviews.errorReload' })
       }
     }

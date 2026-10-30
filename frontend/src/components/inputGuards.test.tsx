@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { CreateHotelOwnerAccount } from './CreateHotelOwnerAccount'
 import { RegisterPage } from '../pages/RegisterPage'
 import { AuthProvider } from '../contexts/AuthContext'

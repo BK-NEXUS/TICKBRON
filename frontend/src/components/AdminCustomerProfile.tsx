@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SegmentedControl } from './SegmentedControl'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router'
 import { adminAdapter } from '../adapters/adminAdapter'
 import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'
@@ -50,7 +50,7 @@ export function AdminCustomerProfile() {
       } else if (response.data) {
         setProfile(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadCustomer'))
     } finally {
       setLoading(false)
@@ -77,7 +77,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteAddFailed'))
     } finally {
       setNoteSaving(false)
@@ -115,7 +115,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteUpdateFailed'))
     } finally {
       setNoteSaving(false)
@@ -141,7 +141,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteDeleteFailed'))
     } finally {
       setNoteSaving(false)

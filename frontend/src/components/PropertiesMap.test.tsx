@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { PropertiesMap } from './PropertiesMap'
 import { I18nProvider } from '../i18n/I18nContext'
 import type { Property } from '../adapters/propertyAdapter'

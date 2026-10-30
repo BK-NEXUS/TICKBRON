@@ -1,6 +1,6 @@
 import { Property } from '../adapters/propertyAdapter'
 import { House, MapPin, Wifi, Car, Snowflake, Flame, ArrowUpDown } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { FavoriteButton } from './FavoriteButton'
 import { StarIcon } from './StarIcon'
 import { PriceApprox } from './PriceApprox'

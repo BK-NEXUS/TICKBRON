@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { PartnerDashboardPage } from './PartnerDashboardPage'
 import { BreadcrumbProvider, Breadcrumbs } from '../components/Breadcrumbs'
 import { partnerAdapter } from '../adapters/partnerAdapter'

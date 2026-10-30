@@ -31,7 +31,7 @@ export function AdminStatisticsDashboard() {
       } else if (response.data) {
         setStatistics(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadStatistics'))
     } finally {
       setLoading(false)

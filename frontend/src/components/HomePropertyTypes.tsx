@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { propertyAdapter, type FilterOptions } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
 

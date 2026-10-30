@@ -1,7 +1,7 @@
 import { useNumberKeyGuard } from './hooks/useNumberKeyGuard'
 import { useI18n } from './i18n/I18nContext'
 import { lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router'
 import { ThemeProvider } from './theme/ThemeContext'
 import { I18nProvider } from './i18n/I18nContext'
 import { AuthProvider } from './contexts/AuthContext'

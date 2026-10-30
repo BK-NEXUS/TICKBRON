@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { Lock, Heart, House } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { accountAdapter, Favorite } from '../adapters/accountAdapter'
 import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'

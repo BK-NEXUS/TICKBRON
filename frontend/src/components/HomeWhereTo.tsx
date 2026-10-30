@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ImageOff } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import {

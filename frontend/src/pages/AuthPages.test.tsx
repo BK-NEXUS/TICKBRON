@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, render, screen, fireEvent } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { LoginPage } from './LoginPage'
 import { RegisterPage } from './RegisterPage'
 import { AuthProvider } from '../contexts/AuthContext'

@@ -1,6 +1,6 @@
 import type { MessageKey } from '../i18n/messages/en'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router'
 import { propertyAdapter, Property } from '../adapters/propertyAdapter'
 import { PropertyGallery } from '../components/PropertyGallery'
 import { PropertyDetailHeader } from '../components/PropertyDetailHeader'
@@ -65,7 +65,7 @@ export function PropertyDetailPage() {
           setError({ key: 'property.errorNotFound' })
           setLoading(false)
         }
-      } catch (err) {
+      } catch {
         setError({ key: 'property.errorLoad' })
         setLoading(false)
       }

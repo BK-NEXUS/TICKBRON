@@ -12,24 +12,24 @@ Pillow==13.0.0
 # Redis & Celery
 redis==5.0.1
 celery==5.6.3
-django-redis==6.0.0
+django-redis==7.0.0
 
 # Phone number validation (E.164)
-phonenumbers==9.0.41
+phonenumbers==9.0.42
 
 # Time zones (Asia/Tashkent for the CBU rate date; Windows has no system tz database)
-tzdata==2026.4
+tzdata==2026.6
 
 # Environment & Configuration
 python-dotenv==1.2.4
 
 # API Documentation
 drf-spectacular==0.30.0
-XlsxWriter==3.2.9
+XlsxWriter==3.3.1
 
 # Web server for the Docker image (python manage.py runserver is for development only)
-gunicorn==23.0.0
+gunicorn==26.2.0
 
 # Two-step sign-in (users/two_factor.py): authenticator app codes and the sealed secrets
-pyotp==2.9.0
-cryptography==50.0.1
+pyotp==2.10.0
+cryptography==50.0.2

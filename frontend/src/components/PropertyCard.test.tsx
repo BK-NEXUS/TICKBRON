@@ -6,7 +6,7 @@ import { I18nProvider } from '../i18n/I18nContext'
 
 // Mock React Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
 }))
 

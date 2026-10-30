@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
-import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router'
 import { BreadcrumbProvider, Breadcrumbs, usePageTrail } from './Breadcrumbs'
 import { rememberSearch, searchUrlForCity } from '../utils/searchFilters'
 

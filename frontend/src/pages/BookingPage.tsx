@@ -4,7 +4,7 @@ import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import type { MessageKey } from '../i18n/messages/en'
 import { useState, useEffect, useRef } from 'react'
 import { Check, Clock } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router'
 import { bookingAdapter, BookingCreateRequest, Booking } from '../adapters/bookingAdapter'
 import { propertyAdapter, Property, RoomType, RatePlan, StayQuote } from '../adapters/propertyAdapter'
 import { useAuth } from '../contexts/AuthContext'
@@ -210,7 +210,7 @@ export function BookingPage() {
         setRoomType(foundRoomType)
         setRatePlan(foundRatePlan)
         setLoading(false)
-      } catch (err) {
+      } catch {
         setError({ key: 'booking.errorLoad' })
         setLoading(false)
       }
@@ -386,7 +386,7 @@ export function BookingPage() {
       setBooking(response.data)
       setStep('success')
       setSubmitting(false)
-    } catch (err) {
+    } catch {
       setError({ key: 'booking.errorCreateRetry' })
       setSubmitting(false)
     }

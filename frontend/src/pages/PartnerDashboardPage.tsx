@@ -56,7 +56,7 @@ export function PartnerDashboardPage() {
       } else if (response.data) {
         setProperties(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadProperties'))
     } finally {
       setLoading(false)

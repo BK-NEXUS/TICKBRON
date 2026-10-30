@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { I18nProvider } from './I18nContext'
 import { AuthProvider } from '../contexts/AuthContext'
 import { Footer } from '../components/Footer'

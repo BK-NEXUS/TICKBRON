@@ -32,7 +32,7 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
       } else if (response.data) {
         setTopBookers(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadTop'))
     } finally {
       setLoading(false)

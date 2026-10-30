@@ -195,7 +195,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
       if (response.data && onSuccess) {
         onSuccess(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToCreateProperty'))
       setLoading(false)
     }

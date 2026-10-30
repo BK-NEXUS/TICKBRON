@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { TwoFactorSetupPage } from './TwoFactorSetupPage'
 import { TwoFactorSetupGate } from '../components/TwoFactorSetupGate'
 import { AuthProvider } from '../contexts/AuthContext'

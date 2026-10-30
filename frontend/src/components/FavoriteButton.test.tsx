@@ -8,7 +8,7 @@ import { accountAdapter } from '../adapters/accountAdapter'
 import { resetFavoritesStore } from '../hooks/useFavorites'
 
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }))
+vi.mock('react-router', () => ({ useNavigate: () => mockNavigate }))
 
 const auth = { isAuthenticated: false, isLoading: false, user: null as { id: number } | null }
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => auth }))

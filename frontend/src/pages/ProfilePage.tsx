@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Lock, Calendar, Heart, House } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { EmptyState } from '../components/EmptyState'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { canUsePartnerPanel } from '../utils/roles'
 import { ChangePasswordForm } from '../components/ChangePasswordForm'
 
@@ -73,7 +73,7 @@ export function ProfilePage() {
       } else {
         setError(response.error || t('profile.errorUpdate'))
       }
-    } catch (err) {
+    } catch {
       setError(t('profile.errorUpdateGeneric'))
     } finally {
       setSaving(false)
