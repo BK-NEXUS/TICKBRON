@@ -8,5 +8,5 @@ pytest-cov==7.1.0
 
 # Code Quality
 black==26.10.1
-flake8==7.4.1
+flake8==7.5.0
 isort==9.0.2
