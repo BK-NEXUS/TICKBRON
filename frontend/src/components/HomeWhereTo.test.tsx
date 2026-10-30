@@ -51,6 +51,17 @@ describe('HomeWhereTo', () => {
     expect(within(kz).getByText('0 properties')).toBeInTheDocument()
   })
 
+  it('shows the same placeholder as a place without a picture when the picture file is missing', async () => {
+    renderIt()
+    await screen.findByText('Uzbekistan')
+    const picture = document.querySelector('.where-to-picture img') as HTMLImageElement
+
+    fireEvent.error(picture)
+
+    await waitFor(() => expect(document.querySelectorAll('.where-to-picture img')).toHaveLength(0))
+    expect(document.querySelectorAll('.where-to-picture svg').length).toBe(2)
+  })
+
   it('names follow the page language', async () => {
     renderIt('ru')
     expect(await screen.findByRole('button', { name: /Узбекистан/ })).toBeInTheDocument()

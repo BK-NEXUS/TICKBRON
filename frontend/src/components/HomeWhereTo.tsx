@@ -14,11 +14,13 @@ interface Place extends GeographyNames {
 
 function PlaceCard({ place, children }: { place: Place; children: (body: ReactElement) => ReactElement }) {
   const { tp, language } = useI18n()
+  // A picture whose file is gone from the server shows the same placeholder as a place without one
+  const [pictureMissing, setPictureMissing] = useState(false)
   const body = (
     <>
       <span className="where-to-picture">
-        {place.image_url
-          ? <img src={place.image_url} alt="" loading="lazy" />
+        {place.image_url && !pictureMissing
+          ? <img src={place.image_url} alt="" loading="lazy" onError={() => setPictureMissing(true)} />
           : <ImageOff size={24} aria-hidden="true" />}
       </span>
       <span className="where-to-name">{geographyName(place, language)}</span>
