@@ -30,7 +30,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     ViewSet for managing user favorites.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return favorites for the current user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -50,13 +50,13 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             ),
             card_prices_prefetch('property__'),
         )
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
             return FavoriteCreateSerializer
         return FavoriteSerializer
-    
+
     def perform_create(self, serializer):
         """
         Create favorite for the current user.
@@ -88,12 +88,12 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             user_agent=self.request.META.get('HTTP_USER_AGENT', ''),
             property=property_obj
         )
-    
+
     def destroy(self, request, *args, **kwargs):
         """Soft delete favorite."""
         instance = self.get_object()
         instance.soft_delete()
-        
+
         # Log account history
         AccountHistory.objects.create(
             user=request.user,
@@ -103,9 +103,9 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             property=instance.property
         )
-        
+
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(detail=False, methods=['get'])
     def count(self, request):
         """Get total count of user favorites."""
@@ -118,25 +118,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
     ViewSet for managing property reviews.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return reviews based on user role."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
             return self.get_serializer_class().Meta.model.objects.none()
         user = self.request.user
-        
+
         # Regular users can only see their own reviews
         if not user.is_staff:
             return Review.objects.filter(
                 user=user,
                 is_deleted=False
             ).select_related('user', 'property', 'booking')
-        
+
         # Staff can see all reviews
         return Review.objects.filter(
             is_deleted=False
         ).select_related('user', 'property', 'booking')
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
@@ -200,9 +200,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 'check_in': booking.check_in,
                 'check_out': booking.check_out
             })
-        
+
         return Response({'eligible_properties': eligible_properties})
-    
+
     # Public and read-only: the approved reviews of a listed hotel, newest first (the reviewer as "Aziz K.")
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def public(self, request):
@@ -226,7 +226,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         Returns average ratings across different categories for a property.
         """
         property_id = request.query_params.get('property_id')
-        
+
         if not property_id:
             return Response(
                 {'detail': 'property_id parameter is required'},
@@ -247,7 +247,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
             status='approved',
             is_deleted=False
         )
-        
+
         if not reviews.exists():
             return Response({
                 'property_id': property_id,
@@ -255,19 +255,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 'average_rating': None,
                 'category_scores': {}
             })
-        
+
         # Calculate average ratings
         avg_overall = reviews.aggregate(avg_rating=Avg('overall_rating'))['avg_rating']
-        
+
         category_scores = {}
-        rating_fields = ['cleanliness_rating', 'location_rating', 'value_rating', 
+        rating_fields = ['cleanliness_rating', 'location_rating', 'value_rating',
                         'amenities_rating', 'service_rating']
-        
+
         for field in rating_fields:
             avg = reviews.aggregate(avg=Avg(field))['avg']
             if avg is not None:
                 category_scores[field] = round(avg, 1)
-        
+
         return Response({
             'property_id': property_id,
             'total_reviews': reviews.count(),
@@ -281,7 +281,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     ViewSet for managing user notifications.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return notifications for the current user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -290,32 +290,32 @@ class NotificationViewSet(viewsets.ModelViewSet):
             user=self.request.user,
             is_deleted=False
         ).select_related('booking', 'property')
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action in ['update', 'partial_update']:
             return NotificationUpdateSerializer
         return NotificationSerializer
-    
+
     def create(self, request, *args, **kwargs):
         """Prevent direct creation of notifications through API."""
         return Response(
             {'detail': _('Notifications cannot be created directly through API.')},
             status=status.HTTP_403_FORBIDDEN
         )
-    
+
     def perform_update(self, serializer):
         """Update notification."""
         if 'is_read' in serializer.validated_data:
             serializer.save()
-    
+
     @action(detail=False, methods=['get'])
     def unread(self, request):
         """Get unread notifications for the current user."""
         unread = self.get_queryset().filter(is_read=False)
         serializer = self.get_serializer(unread, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
         """Mark all notifications as read for the current user."""
@@ -324,13 +324,13 @@ class NotificationViewSet(viewsets.ModelViewSet):
             read_at=timezone.now()
         )
         return Response({'marked_as_read': count})
-    
+
     @action(detail=False, methods=['get'])
     def count(self, request):
         """Get notification counts for the current user."""
         total = self.get_queryset().count()
         unread = self.get_queryset().filter(is_read=False).count()
-        
+
         return Response({
             'total': total,
             'unread': unread,
@@ -343,7 +343,7 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     ViewSet for viewing user account history.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return account history for the current user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -352,11 +352,11 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
             user=self.request.user,
             is_deleted=False
         ).select_related('booking', 'property')
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         return AccountHistorySerializer
-    
+
     @action(detail=False, methods=['get'])
     def recent(self, request):
         """Get recent account history entries."""
@@ -376,17 +376,17 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
         recent = self.get_queryset()[:limit]
         serializer = self.get_serializer(recent, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Get account activity statistics."""
         queryset = self.get_queryset()
-        
+
         # Count by action type
         action_counts = queryset.values('action').annotate(
             count=Count('id')
         ).order_by('-count')
-        
+
         return Response({
             'total_entries': queryset.count(),
             'action_counts': list(action_counts)

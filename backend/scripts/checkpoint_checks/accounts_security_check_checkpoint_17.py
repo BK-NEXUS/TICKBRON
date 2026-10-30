@@ -22,19 +22,19 @@ from users.models import User
 
 def check_account_security():
     """Perform comprehensive security review of accounts app."""
-    
+
     print("=" * 80)
     print("ACCOUNTS APP SECURITY REVIEW - CHECKPOINT 17")
     print("=" * 80)
-    
+
     total_checks = 0
     passed_checks = 0
     failed_checks = 0
-    
+
     # 1. Authentication and Authorization
     print("\n1. AUTHENTICATION AND AUTHORIZATION")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_viewset_authentication(FavoriteViewSet):
         passed_checks += 1
@@ -42,7 +42,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] FavoriteViewSet authentication check failed")
-    
+
     total_checks += 1
     if check_viewset_authentication(ReviewViewSet):
         passed_checks += 1
@@ -50,7 +50,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] ReviewViewSet authentication check failed")
-    
+
     total_checks += 1
     if check_viewset_authentication(NotificationViewSet):
         passed_checks += 1
@@ -58,7 +58,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] NotificationViewSet authentication check failed")
-    
+
     total_checks += 1
     if check_viewset_authentication(AccountHistoryViewSet):
         passed_checks += 1
@@ -66,11 +66,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] AccountHistoryViewSet authentication check failed")
-    
+
     # 2. User Isolation
     print("\n2. USER ISOLATION")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_user_isolation_favorites():
         passed_checks += 1
@@ -78,7 +78,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Favorites user isolation check failed")
-    
+
     total_checks += 1
     if check_user_isolation_reviews():
         passed_checks += 1
@@ -86,7 +86,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Reviews user isolation check failed")
-    
+
     total_checks += 1
     if check_user_isolation_notifications():
         passed_checks += 1
@@ -94,7 +94,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Notifications user isolation check failed")
-    
+
     total_checks += 1
     if check_user_isolation_history():
         passed_checks += 1
@@ -102,11 +102,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Account history user isolation check failed")
-    
+
     # 3. Input Validation
     print("\n3. INPUT VALIDATION")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_rating_validation():
         passed_checks += 1
@@ -114,7 +114,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Review rating validation check failed")
-    
+
     total_checks += 1
     if check_property_status_validation():
         passed_checks += 1
@@ -122,7 +122,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Property status validation check failed")
-    
+
     total_checks += 1
     if check_booking_status_validation():
         passed_checks += 1
@@ -130,11 +130,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Booking status validation check failed")
-    
+
     # 4. Access Control
     print("\n4. ACCESS CONTROL")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_notification_creation_blocked():
         passed_checks += 1
@@ -142,7 +142,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Notification creation blocking check failed")
-    
+
     total_checks += 1
     if check_history_read_only():
         passed_checks += 1
@@ -150,7 +150,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Account history read-only check failed")
-    
+
     total_checks += 1
     if check_staff_review_access():
         passed_checks += 1
@@ -158,11 +158,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Staff review access check failed")
-    
+
     # 5. Data Integrity
     print("\n5. DATA INTEGRITY")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_favorite_unique_constraint():
         passed_checks += 1
@@ -170,7 +170,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Favorite unique constraint check failed")
-    
+
     total_checks += 1
     if check_review_unique_constraint():
         passed_checks += 1
@@ -178,7 +178,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Review unique constraint check failed")
-    
+
     total_checks += 1
     if check_soft_delete_functionality():
         passed_checks += 1
@@ -186,11 +186,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Soft delete functionality check failed")
-    
+
     # 6. Audit Trail
     print("\n6. AUDIT TRAIL")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_account_history_logging():
         passed_checks += 1
@@ -198,7 +198,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Account history logging check failed")
-    
+
     total_checks += 1
     if check_review_history_logging():
         passed_checks += 1
@@ -206,11 +206,11 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Review history logging check failed")
-    
+
     # 7. Database Security
     print("\n7. DATABASE SECURITY")
     print("-" * 80)
-    
+
     total_checks += 1
     if check_database_indexes():
         passed_checks += 1
@@ -218,7 +218,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Database indexes check failed")
-    
+
     total_checks += 1
     if check_soft_delete_filtering():
         passed_checks += 1
@@ -226,7 +226,7 @@ def check_account_security():
     else:
         failed_checks += 1
         print("[FAIL] Soft delete filtering check failed")
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("SECURITY REVIEW SUMMARY")
@@ -236,7 +236,7 @@ def check_account_security():
     print(f"Failed: {failed_checks}")
     print(f"Success Rate: {(passed_checks/total_checks*100):.1f}%")
     print("=" * 80)
-    
+
     return failed_checks == 0
 
 
@@ -255,12 +255,12 @@ def check_user_isolation_favorites():
         # Check that queryset filters by user
         factory = RequestFactory()
         request = factory.get('/api/v1/me/favorites/')
-        
+
         user = User(email='test@example.com')
         viewset = FavoriteViewSet()
         viewset.request = request
         viewset.request.user = user
-        
+
         # This should filter by user in the actual implementation
         return True
     except:
@@ -274,12 +274,12 @@ def check_user_isolation_reviews():
         from accounts.views import ReviewViewSet
         factory = RequestFactory()
         request = factory.get('/api/v1/me/reviews/')
-        
+
         user = User(email='test@example.com', is_staff=False)
         viewset = ReviewViewSet()
         viewset.request = request
         viewset.request.user = user
-        
+
         return True
     except:
         return False
@@ -290,12 +290,12 @@ def check_user_isolation_notifications():
     try:
         factory = RequestFactory()
         request = factory.get('/api/v1/me/notifications/')
-        
+
         user = User(email='test@example.com')
         viewset = NotificationViewSet()
         viewset.request = request
         viewset.request.user = user
-        
+
         return True
     except:
         return False
@@ -306,12 +306,12 @@ def check_user_isolation_history():
     try:
         factory = RequestFactory()
         request = factory.get('/api/v1/me/history/')
-        
+
         user = User(email='test@example.com')
         viewset = AccountHistoryViewSet()
         viewset.request = request
         viewset.request.user = user
-        
+
         return True
     except:
         return False
@@ -322,14 +322,14 @@ def check_rating_validation():
     try:
         from django.core.validators import MinValueValidator, MaxValueValidator
         from accounts.models import Review
-        
+
         # Check model validators
         overall_field = Review._meta.get_field('overall_rating')
         validators = overall_field.validators
-        
+
         has_min = any(isinstance(v, MinValueValidator) and v.limit_value == 1 for v in validators)
         has_max = any(isinstance(v, MaxValueValidator) and v.limit_value == 5 for v in validators)
-        
+
         return has_min and has_max
     except:
         return False
@@ -411,9 +411,9 @@ def check_soft_delete_functionality():
     try:
         from accounts.models import Favorite, Review, Notification, AccountHistory
         from common.models import BaseModel
-        
+
         # All should inherit from BaseModel which has soft delete
-        return (issubclass(Favorite, BaseModel) and 
+        return (issubclass(Favorite, BaseModel) and
                 issubclass(Review, BaseModel) and
                 issubclass(Notification, BaseModel) and
                 issubclass(AccountHistory, BaseModel))
@@ -445,11 +445,11 @@ def check_database_indexes():
     """Check database indexes."""
     try:
         from accounts.models import Favorite
-        
+
         # Check for common indexes
         has_user_index = any('user' in str(index.fields) for index in Favorite._meta.indexes)
         has_property_index = any('property' in str(index.fields) for index in Favorite._meta.indexes)
-        
+
         return has_user_index and has_property_index
     except:
         return False
@@ -459,7 +459,7 @@ def check_soft_delete_filtering():
     """Check soft delete filtering."""
     try:
         from accounts.models import Favorite
-        
+
         # Should use BaseQuerySet which filters soft-deleted records
         return hasattr(Favorite.objects, 'not_deleted')
     except:

@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('is_staff', 'is_active', 'is_deleted', 'email_verified', 'two_factor_enabled')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('-date_joined',)
-    
+
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number')}),
@@ -26,7 +26,7 @@ class UserAdmin(BaseUserAdmin):
         ('Two-Factor Authentication', {'fields': ('two_factor_enabled', 'two_factor_secret', 'two_factor_backup_codes')}),
         ('Soft delete', {'fields': ('is_deleted', 'deleted_at')}),
     )
-    
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),

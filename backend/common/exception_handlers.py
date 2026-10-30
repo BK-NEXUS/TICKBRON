@@ -42,7 +42,7 @@ def custom_exception_handler(exc, context):
     """
     # Call REST framework's default exception handler first
     response = exception_handler(exc, context)
-    
+
     # Django's own "the request is bad" errors are the caller's mistake, not a server failure
     if response is None and isinstance(exc, (SuspiciousOperation, BadRequest)):
         logger.warning(f"Bad request: {exc.__class__.__name__}")
@@ -68,7 +68,7 @@ def custom_exception_handler(exc, context):
             exc_info=True,
             extra={'context': context}
         )
-        
+
         # Return standardized error response
         return Response(
             {
@@ -80,7 +80,7 @@ def custom_exception_handler(exc, context):
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
+
     # Handle TICKBRON custom exceptions
     if isinstance(exc, TickBronException):
         # Log the exception (already logged in exception class)
@@ -88,12 +88,12 @@ def custom_exception_handler(exc, context):
             f"TICKBRON exception: {exc.__class__.__name__} - {str(exc)}",
             extra={'context': context}
         )
-        
+
         # Add retry-after header for rate limit exceptions
         headers = {}
         if hasattr(exc, 'retry_after') and exc.retry_after:
             headers['Retry-After'] = str(exc.retry_after)
-        
+
         # Return standardized error response
         return Response(
             {
@@ -106,14 +106,14 @@ def custom_exception_handler(exc, context):
             status=exc.status_code,
             headers=headers
         )
-    
+
     # Log validation errors
     if response.status_code == status.HTTP_400_BAD_REQUEST:
         logger.warning(
             f"Validation error: {str(exc)}",
             extra={'context': context}
         )
-    
+
     # Log permission errors, and every refused request as a security event (who, from where, which URL)
     if response.status_code == status.HTTP_403_FORBIDDEN:
         logger.warning(
@@ -123,14 +123,14 @@ def custom_exception_handler(exc, context):
         _log_refusal(exc, context, 'csrf_failed' if str(exc).startswith('CSRF Failed') else 'permission_denied')
     if response.status_code == status.HTTP_401_UNAUTHORIZED:
         _log_refusal(exc, context, 'unauthenticated')
-    
+
     # Log not found errors
     if response.status_code == status.HTTP_404_NOT_FOUND:
         logger.info(
             f"Resource not found: {str(exc)}",
             extra={'context': context}
         )
-    
+
     # Log rate limit errors
     if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
         logger.warning(
@@ -138,7 +138,7 @@ def custom_exception_handler(exc, context):
             extra={'context': context}
         )
         _log_refusal(exc, context, 'throttled')
-    
+
     # Log server errors
     if response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         logger.error(
@@ -146,7 +146,7 @@ def custom_exception_handler(exc, context):
             exc_info=True,
             extra={'context': context}
         )
-    
+
     # Standardize error response format
     if hasattr(response, 'data'):
         original_data = response.data

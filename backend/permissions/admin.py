@@ -14,7 +14,7 @@ class RoleAdmin(admin.ModelAdmin):
     list_filter = ('is_system_role', 'is_active', 'is_deleted')
     search_fields = ('name', 'description')
     readonly_fields = ('created_at', 'updated_at')
-    
+
     def has_delete_permission(self, request, obj=None):
         """Prevent deletion of system roles."""
         if obj and obj.is_system_role:

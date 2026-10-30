@@ -14,7 +14,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from properties.models import (
-    AmenityCategory, AmenityCategoryTranslation, 
+    AmenityCategory, AmenityCategoryTranslation,
     Amenity, PropertyAmenity
 )
 
@@ -34,15 +34,15 @@ def run_security_checks():
     print("AMENITY MODELS SECURITY REVIEW - CHECKPOINT 06")
     print("=" * 60)
     print()
-    
+
     passed_checks = 0
     total_checks = 0
-    
+
     # Clean up any existing test data - delete amenities first due to PROTECT constraint
     Amenity.objects.filter(name__contains='Test').delete()
     Amenity.objects.filter(category__name__contains='Test').delete()
     AmenityCategory.objects.filter(name__contains='Test').delete()
-    
+
     # Check 1: Model field security
     print("1. Model Field Security")
     print("-" * 40)
@@ -52,7 +52,7 @@ def run_security_checks():
             name='Field Security Test',
             slug='field-security-test'
         )
-        
+
         # Check string representation doesn't expose sensitive data
         str_repr = str(category)
         passed = 'email' not in str_repr.lower() and 'password' not in str_repr.lower()
@@ -63,11 +63,11 @@ def run_security_checks():
             f"String repr: {str_repr}"
         )
         category.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("Model field security", False, str(e))
-    
+
     # Check 2: Unique constraints
     print("\n2. Unique Constraints")
     print("-" * 40)
@@ -76,7 +76,7 @@ def run_security_checks():
             name='Unique Constraint Test',
             slug='unique-constraint-test'
         )
-        
+
         # Try to create duplicate
         try:
             duplicate = AmenityCategory(
@@ -87,18 +87,18 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "AmenityCategory unique name constraint",
             passed
         )
         category.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("Unique constraints", False, str(e))
-    
+
     # Check 3: Foreign key security
     print("\n3. Foreign Key Security")
     print("-" * 40)
@@ -113,14 +113,14 @@ def run_security_checks():
             name='FK Test Amenity',
             slug='fk-test-amenity'
         )
-        
+
         # Check that amenity is properly linked to category
         passed = amenity.category == category
         passed_checks += print_security_check(
             "Amenity-Category foreign key relation",
             passed
         )
-        
+
         # Check CASCADE deletion
         amenity_id = amenity.id
         amenity.delete()  # Delete amenity first since category is PROTECT
@@ -130,11 +130,11 @@ def run_security_checks():
             "CASCADE deletion on amenity delete",
             passed
         )
-        
+
     except Exception as e:
         print_security_check("Foreign key security", False, str(e))
         print_security_check("CASCADE deletion", False, "Skipped due to error")
-    
+
     # Check 4: Soft delete security
     print("\n4. Soft Delete Security")
     print("-" * 40)
@@ -143,7 +143,7 @@ def run_security_checks():
             name='Soft Delete Test',
             slug='soft-delete-test'
         )
-        
+
         # Test soft delete
         category.soft_delete()
         passed = category.is_deleted and category.deleted_at is not None
@@ -152,7 +152,7 @@ def run_security_checks():
             "Soft delete functionality",
             passed
         )
-        
+
         # Test restore
         category.restore()
         passed = not category.is_deleted and category.deleted_at is None
@@ -161,13 +161,13 @@ def run_security_checks():
             "Soft delete restore functionality",
             passed
         )
-        
+
         category.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("Soft delete security", False, str(e))
-    
+
     # Check 5: Translation uniqueness
     print("\n5. Translation Uniqueness")
     print("-" * 40)
@@ -176,13 +176,13 @@ def run_security_checks():
             name='Translation Uniqueness Test',
             slug='translation-uniqueness-test'
         )
-        
+
         AmenityCategoryTranslation.objects.create(
             category=category,
             language='en',
             name='Translation Test'
         )
-        
+
         # Try to create duplicate translation
         try:
             translation2 = AmenityCategoryTranslation(
@@ -194,19 +194,19 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "Translation unique constraint (category, language)",
             passed
         )
-        
+
         category.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("Translation uniqueness", False, str(e))
-    
+
     # Check 6: PropertyAmenity relation security
     print("\n6. PropertyAmenity Relation Security")
     print("-" * 40)
@@ -221,7 +221,7 @@ def run_security_checks():
             name='PA Relation Test Amenity',
             slug='pa-relation-test-amenity'
         )
-        
+
         # Test the model validation without actual Property relation
         try:
             # Test that the model has the expected fields
@@ -231,7 +231,7 @@ def run_security_checks():
                 "PropertyAmenity model structure",
                 passed
             )
-            
+
             # Test unique constraint definition
             unique_together = PropertyAmenity._meta.unique_together
             passed = ('property', 'amenity') in unique_together
@@ -240,21 +240,21 @@ def run_security_checks():
                 "PropertyAmenity unique constraint definition",
                 passed
             )
-            
+
         except Exception as model_error:
             total_checks += 2
             print_security_check("PropertyAmenity model structure", False, str(model_error))
             print_security_check("PropertyAmenity unique constraint", False, "Skipped due to error")
-        
+
         # Cleanup
         amenity.delete()
         category.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("PropertyAmenity relation security", False, str(e))
         print_security_check("PropertyAmenity unique constraint", False, "Skipped due to error")
-    
+
     # Check 7: Searchable flag security
     print("\n7. Searchable Flag Security")
     print("-" * 40)
@@ -263,25 +263,25 @@ def run_security_checks():
             name='Searchable Flag Test',
             slug='searchable-flag-test'
         )
-        
+
         searchable_amenity = Amenity.objects.create(
             category=category,
             name='Searchable Test Amenity',
             slug='searchable-test-amenity',
             is_searchable=True
         )
-        
+
         non_searchable_amenity = Amenity.objects.create(
             category=category,
             name='Non-Searchable Test Amenity',
             slug='non-searchable-test-amenity',
             is_searchable=False
         )
-        
+
         # Check filtering works correctly
         searchable_count = Amenity.objects.filter(is_searchable=True).count()
         non_searchable_count = Amenity.objects.filter(is_searchable=False).count()
-        
+
         passed = searchable_count >= 1 and non_searchable_count >= 1
         total_checks += 1
         passed_checks += print_security_check(
@@ -289,23 +289,23 @@ def run_security_checks():
             passed,
             f"Searchable: {searchable_count}, Non-searchable: {non_searchable_count}"
         )
-        
+
         # Cleanup
         searchable_amenity.delete()
         non_searchable_amenity.delete()
         category.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("Searchable flag security", False, str(e))
-    
+
     # Check 8: Database indexes
     print("\n8. Database Indexes")
     print("-" * 40)
     try:
         # Check that models have proper indexes
         pass
-        
+
         # Check AmenityCategory indexes
         category_indexes = AmenityCategory._meta.indexes
         passed = len(category_indexes) > 0
@@ -315,7 +315,7 @@ def run_security_checks():
             passed,
             f"Found {len(category_indexes)} indexes"
         )
-        
+
         # Check Amenity indexes
         amenity_indexes = Amenity._meta.indexes
         passed = len(amenity_indexes) > 0
@@ -325,7 +325,7 @@ def run_security_checks():
             passed,
             f"Found {len(amenity_indexes)} indexes"
         )
-        
+
         # Check PropertyAmenity indexes
         property_amenity_indexes = PropertyAmenity._meta.indexes
         passed = len(property_amenity_indexes) > 0
@@ -335,13 +335,13 @@ def run_security_checks():
             passed,
             f"Found {len(property_amenity_indexes)} indexes"
         )
-        
+
     except Exception as e:
         total_checks += 3
         print_security_check("Database indexes", False, str(e))
         print_security_check("Amenity indexes", False, "Skipped due to error")
         print_security_check("PropertyAmenity indexes", False, "Skipped due to error")
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("SECURITY REVIEW SUMMARY")
@@ -351,7 +351,7 @@ def run_security_checks():
     print(f"Failed: {total_checks - passed_checks}")
     print(f"Success rate: {(passed_checks/total_checks)*100:.1f}%")
     print("=" * 60)
-    
+
     return passed_checks == total_checks
 
 

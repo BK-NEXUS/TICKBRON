@@ -81,18 +81,18 @@ def property_search(request):
         Paginated search results with property information
     """
     search_service = PropertySearchService()
-    
+
     # Parse and validate search parameters
     params_serializer = SearchParamsSerializer(data=request.query_params)
-    
+
     if not params_serializer.is_valid():
         return Response(
             {'error': _('Invalid search parameters'), 'details': params_serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     search_params = params_serializer.validated_data
-    
+
     # Handle amenities parameter (comma-separated list)
     amenities_param = request.query_params.get('amenities')
     if amenities_param:
@@ -103,7 +103,7 @@ def property_search(request):
                 {'error': _('Invalid amenities parameter format'), 'details': _('Amenities must be comma-separated integers')},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
     # Perform search with improved error handling
     try:
         search_results = search_service.search(search_params)
@@ -121,14 +121,14 @@ def property_search(request):
             {'error': 'Search failed', 'details': _('An unexpected error occurred during search')},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
+
     # Serialize results
     results_serializer = PropertySearchResultSerializer(
         search_results['results'],
         many=True,
         context={'rate_request': request}
     )
-    
+
     response_data = {
         'count': search_results['count'],
         'next': search_results['next'],
@@ -139,7 +139,7 @@ def property_search(request):
         'total_pages': search_results.get('total_pages', 1),
         'promoted': _promoted_banners(request, search_service, search_params, search_results.get('page', 1)),
     }
-    
+
     return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -210,20 +210,20 @@ def property_search_suggestions(request):
         List of search suggestions
     """
     search_service = PropertySearchService()
-    
+
     query = request.query_params.get('q', '')
     limit = request.query_params.get('limit', 5)
-    
+
     try:
         limit = int(limit)
         if limit < 1 or limit > 20:
             limit = 5
     except (ValueError, TypeError):
         limit = 5
-    
+
     if not query or len(query) < 2:
         return Response({'suggestions': []}, status=status.HTTP_200_OK)
-    
+
     try:
         suggestions = search_service.get_search_suggestions(query, limit)
     except Exception:
@@ -232,7 +232,7 @@ def property_search_suggestions(request):
             {'error': _('Failed to get suggestions')},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
+
     return Response({'suggestions': suggestions}, status=status.HTTP_200_OK)
 
 
@@ -257,7 +257,7 @@ def property_detail(request, property_id):
         - Metadata
     """
     from properties.models import Property
-    
+
     try:
         # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
@@ -271,10 +271,10 @@ def property_detail(request, property_id):
             {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
             status=status.HTTP_404_NOT_FOUND
         )
-    
+
     # Serialize property with all related data
     serializer = PropertyDetailSerializer(property, context={'rate_request': request})
-    
+
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -300,16 +300,16 @@ def property_availability(request, property_id):
         - Deterministic pricing preview (same inputs = same outputs)
     """
     from properties.models import Property
-    
+
     # Validate date range parameters
     params_serializer = AvailabilityParamsSerializer(data=request.query_params)
-    
+
     if not params_serializer.is_valid():
         return Response(
             {'error': _('Invalid availability parameters'), 'details': params_serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     try:
         # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
@@ -323,7 +323,7 @@ def property_availability(request, property_id):
             {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
             status=status.HTTP_404_NOT_FOUND
         )
-    
+
     # Serialize property with availability data
     serializer = PropertyAvailabilitySerializer(
         property,

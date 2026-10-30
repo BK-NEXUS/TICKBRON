@@ -37,16 +37,16 @@ def run_security_checks():
     print("ROOM/RATE PLAN/INVENTORY SECURITY REVIEW - CHECKPOINT 08")
     print("=" * 60)
     print()
-    
+
     passed_checks = 0
     total_checks = 0
-    
+
     # Clean up any existing test data
     User.objects.filter(email__contains='securitytest').delete()
     Property.objects.filter(address_line1__contains='Security Test').delete()
     PropertyType.objects.filter(name__contains='Security Test').delete()
     AmenityCategory.objects.filter(name__contains='Security Test').delete()
-    
+
     # Set up test data
     user = User.objects.create_user(
         email='securitytest@example.com',
@@ -76,7 +76,7 @@ def run_security_checks():
         name='Security Test Amenity',
         slug='security-test-amenity'
     )
-    
+
     # Check 1: RoomType model field security
     print("1. RoomType Model Field Security")
     print("-" * 40)
@@ -89,7 +89,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Check string representation doesn't expose sensitive data
         str_repr = str(room_type)
         passed = 'email' not in str_repr.lower() and 'password' not in str_repr.lower()
@@ -99,7 +99,7 @@ def run_security_checks():
             passed,
             f"String repr: {str_repr}"
         )
-        
+
         # Check validation for occupancy
         invalid_room = RoomType(
             property=property,
@@ -114,20 +114,20 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RoomType occupancy validation",
             passed
         )
-        
+
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("RoomType field security", False, str(e))
         print_security_check("RoomType occupancy validation", False, "Skipped due to error")
-    
+
     # Check 2: RoomType unique constraints
     print("\n2. RoomType Unique Constraints")
     print("-" * 40)
@@ -140,7 +140,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Try to create duplicate slug for same property
         try:
             duplicate = RoomType(
@@ -155,19 +155,19 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RoomType unique constraint (property, slug)",
             passed
         )
-        
+
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("RoomType unique constraints", False, str(e))
-    
+
     # Check 3: RoomPhoto model security
     print("\n3. RoomPhoto Model Security")
     print("-" * 40)
@@ -180,7 +180,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Check primary photo constraint
         from django.core.files.uploadedfile import SimpleUploadedFile
         image = SimpleUploadedFile(
@@ -188,19 +188,19 @@ def run_security_checks():
             content=b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x4c\x01\x00\x3b',
             content_type='image/jpeg'
         )
-        
+
         photo1 = RoomPhoto.objects.create(
             room_type=room_type,
             photo=image,
             is_primary=True
         )
-        
+
         photo2 = RoomPhoto.objects.create(
             room_type=room_type,
             photo=image,
             is_primary=True
         )
-        
+
         # Refresh and check only one is primary
         photo1.refresh_from_db()
         photo2.refresh_from_db()
@@ -210,14 +210,14 @@ def run_security_checks():
             "RoomPhoto primary photo constraint",
             passed
         )
-        
+
         # Check image validation
         invalid_file = SimpleUploadedFile(
             name='test.txt',
             content=b'This is not an image',
             content_type='text/plain'
         )
-        
+
         invalid_photo = RoomPhoto(
             room_type=room_type,
             photo=invalid_file
@@ -227,22 +227,22 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RoomPhoto image validation",
             passed
         )
-        
+
         photo1.delete()
         photo2.delete()
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("RoomPhoto primary constraint", False, str(e))
         print_security_check("RoomPhoto image validation", False, "Skipped due to error")
-    
+
     # Check 4: RoomAmenity model security
     print("\n4. RoomAmenity Model Security")
     print("-" * 40)
@@ -255,13 +255,13 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         room_amenity = RoomAmenity.objects.create(
             room_type=room_type,
             amenity=amenity,
             is_available=True
         )
-        
+
         # Try to create duplicate
         try:
             duplicate = RoomAmenity(
@@ -273,20 +273,20 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RoomAmenity unique constraint (room_type, amenity)",
             passed
         )
-        
+
         room_amenity.delete()
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 1
         print_security_check("RoomAmenity unique constraints", False, str(e))
-    
+
     # Check 5: RatePlan model security
     print("\n5. RatePlan Model Security")
     print("-" * 40)
@@ -299,7 +299,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Check nights validation
         invalid_rate = RatePlan(
             room_type=room_type,
@@ -314,13 +314,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RatePlan nights validation",
             passed
         )
-        
+
         # Check deposit validation
         invalid_deposit = RatePlan(
             room_type=room_type,
@@ -335,13 +335,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RatePlan deposit validation",
             passed
         )
-        
+
         # Check unique constraint
         rate_plan = RatePlan.objects.create(
             room_type=room_type,
@@ -349,7 +349,7 @@ def run_security_checks():
             slug='test-rate',
             base_price=Decimal('80.00')
         )
-        
+
         try:
             duplicate = RatePlan(
                 room_type=room_type,
@@ -361,22 +361,22 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RatePlan unique constraint (room_type, slug)",
             passed
         )
-        
+
         rate_plan.delete()
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 3
         print_security_check("RatePlan nights validation", False, str(e))
         print_security_check("RatePlan deposit validation", False, "Skipped due to error")
         print_security_check("RatePlan unique constraint", False, "Skipped due to error")
-    
+
     # Check 6: DateInventory model security
     print("\n6. DateInventory Model Security")
     print("-" * 40)
@@ -395,7 +395,7 @@ def run_security_checks():
             slug='test-rate',
             base_price=Decimal('80.00')
         )
-        
+
         # Check booked_rooms validation
         invalid_inventory = DateInventory(
             rate_plan=rate_plan,
@@ -408,13 +408,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "DateInventory booked_rooms validation",
             passed
         )
-        
+
         # Check stay validation
         invalid_stay = DateInventory(
             rate_plan=rate_plan,
@@ -429,13 +429,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "DateInventory stay validation",
             passed
         )
-        
+
         # Check unique constraint
         inventory = DateInventory.objects.create(
             rate_plan=rate_plan,
@@ -443,7 +443,7 @@ def run_security_checks():
             available_rooms=5,
             booked_rooms=0
         )
-        
+
         try:
             duplicate = DateInventory(
                 rate_plan=rate_plan,
@@ -454,13 +454,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "DateInventory unique constraint (rate_plan, date)",
             passed
         )
-        
+
         # Check remaining_rooms property
         inventory.booked_rooms = 2
         inventory.save()
@@ -471,7 +471,7 @@ def run_security_checks():
             passed,
             f"Available: 5, Booked: 2, Remaining: {inventory.remaining_rooms}"
         )
-        
+
         # Check is_available_for_booking method
         passed = inventory.is_available_for_booking(nights=5)
         total_checks += 1
@@ -479,11 +479,11 @@ def run_security_checks():
             "DateInventory availability check",
             passed
         )
-        
+
         inventory.delete()
         rate_plan.delete()
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 5
         print_security_check("DateInventory booked validation", False, str(e))
@@ -491,7 +491,7 @@ def run_security_checks():
         print_security_check("DateInventory unique constraint", False, "Skipped due to error")
         print_security_check("DateInventory remaining_rooms", False, "Skipped due to error")
         print_security_check("DateInventory availability check", False, "Skipped due to error")
-    
+
     # Check 7: CASCADE deletion security
     print("\n7. CASCADE Deletion Security")
     print("-" * 40)
@@ -504,7 +504,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Create related objects
         from django.core.files.uploadedfile import SimpleUploadedFile
         image = SimpleUploadedFile(
@@ -512,19 +512,19 @@ def run_security_checks():
             content=b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x4c\x01\x00\x3b',
             content_type='image/jpeg'
         )
-        
+
         photo = RoomPhoto.objects.create(
             room_type=room_type,
             photo=image
         )
         photo_id = photo.id
-        
+
         room_amenity = RoomAmenity.objects.create(
             room_type=room_type,
             amenity=amenity
         )
         room_amenity_id = room_amenity.id
-        
+
         rate_plan = RatePlan.objects.create(
             room_type=room_type,
             name='Cascade Test Rate',
@@ -532,52 +532,52 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
         rate_plan_id = rate_plan.id
-        
+
         inventory = DateInventory.objects.create(
             rate_plan=rate_plan,
             date=date(2024, 6, 15),
             available_rooms=5
         )
         inventory_id = inventory.id
-        
+
         # Delete room type and check cascade
         room_type.delete()
-        
+
         passed = not RoomPhoto.objects.filter(id=photo_id).exists()
         total_checks += 1
         passed_checks += print_security_check(
             "CASCADE deletion: RoomType -> RoomPhoto",
             passed
         )
-        
+
         passed = not RoomAmenity.objects.filter(id=room_amenity_id).exists()
         total_checks += 1
         passed_checks += print_security_check(
             "CASCADE deletion: RoomType -> RoomAmenity",
             passed
         )
-        
+
         passed = not RatePlan.objects.filter(id=rate_plan_id).exists()
         total_checks += 1
         passed_checks += print_security_check(
             "CASCADE deletion: RoomType -> RatePlan",
             passed
         )
-        
+
         passed = not DateInventory.objects.filter(id=inventory_id).exists()
         total_checks += 1
         passed_checks += print_security_check(
             "CASCADE deletion: RatePlan -> DateInventory",
             passed
         )
-        
+
     except Exception as e:
         total_checks += 4
         print_security_check("CASCADE deletion: RoomType -> RoomPhoto", False, str(e))
         print_security_check("CASCADE deletion: RoomType -> RoomAmenity", False, "Skipped due to error")
         print_security_check("CASCADE deletion: RoomType -> RatePlan", False, "Skipped due to error")
         print_security_check("CASCADE deletion: RatePlan -> DateInventory", False, "Skipped due to error")
-    
+
     # Check 8: Database indexes
     print("\n8. Database Indexes")
     print("-" * 40)
@@ -591,7 +591,7 @@ def run_security_checks():
             passed,
             f"Found {len(room_type_indexes)} indexes"
         )
-        
+
         # Check RatePlan indexes
         rate_plan_indexes = RatePlan._meta.indexes
         passed = len(rate_plan_indexes) > 0
@@ -601,7 +601,7 @@ def run_security_checks():
             passed,
             f"Found {len(rate_plan_indexes)} indexes"
         )
-        
+
         # Check DateInventory indexes
         date_inventory_indexes = DateInventory._meta.indexes
         passed = len(date_inventory_indexes) > 0
@@ -611,13 +611,13 @@ def run_security_checks():
             passed,
             f"Found {len(date_inventory_indexes)} indexes"
         )
-        
+
     except Exception as e:
         total_checks += 3
         print_security_check("Database indexes", False, str(e))
         print_security_check("RatePlan indexes", False, "Skipped due to error")
         print_security_check("DateInventory indexes", False, "Skipped due to error")
-    
+
     # Check 9: Soft delete security
     print("\n9. Soft Delete Security")
     print("-" * 40)
@@ -630,7 +630,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Test soft delete
         room_type.soft_delete()
         passed = room_type.is_deleted and room_type.deleted_at is not None
@@ -639,7 +639,7 @@ def run_security_checks():
             "RoomType soft delete functionality",
             passed
         )
-        
+
         # Test restore
         room_type.restore()
         passed = not room_type.is_deleted and room_type.deleted_at is None
@@ -648,14 +648,14 @@ def run_security_checks():
             "RoomType soft delete restore functionality",
             passed
         )
-        
+
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("Soft delete security", False, str(e))
         print_security_check("Soft delete restore", False, "Skipped due to error")
-    
+
     # Check 10: Price validation security
     print("\n10. Price Validation Security")
     print("-" * 40)
@@ -668,7 +668,7 @@ def run_security_checks():
             max_occupancy=4,
             base_price=Decimal('80.00')
         )
-        
+
         # Check negative price validation
         invalid_price_room = RoomType(
             property=property,
@@ -683,13 +683,13 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RoomType negative price validation",
             passed
         )
-        
+
         # Check negative price for RatePlan
         invalid_price_rate = RatePlan(
             room_type=room_type,
@@ -702,27 +702,27 @@ def run_security_checks():
             passed = False
         except:
             passed = True
-        
+
         total_checks += 1
         passed_checks += print_security_check(
             "RatePlan negative price validation",
             passed
         )
-        
+
         room_type.delete()
-        
+
     except Exception as e:
         total_checks += 2
         print_security_check("RoomType price validation", False, str(e))
         print_security_check("RatePlan price validation", False, "Skipped due to error")
-    
+
     # Cleanup
     amenity.delete()
     category.delete()
     property.delete()
     property_type.delete()
     user.delete()
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("SECURITY REVIEW SUMMARY")
@@ -732,7 +732,7 @@ def run_security_checks():
     print(f"Failed: {total_checks - passed_checks}")
     print(f"Success rate: {(passed_checks/total_checks)*100:.1f}%")
     print("=" * 60)
-    
+
     return passed_checks == total_checks
 
 

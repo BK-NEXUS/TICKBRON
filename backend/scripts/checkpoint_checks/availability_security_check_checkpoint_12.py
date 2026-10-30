@@ -17,10 +17,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 def check_availability_endpoint_exists():
     """Check if availability endpoint exists."""
     print("[*] Checking availability endpoint...")
-    
+
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
-    
+
     checks = {
         'property_availability_view': 'def property_availability' in views_content,
         'property_id_parameter': 'property_id' in views_content,
@@ -28,24 +28,24 @@ def check_availability_endpoint_exists():
         'availability_serializer': 'PropertyAvailabilitySerializer' in views_content,
         'availability_params_serializer': 'AvailabilityParamsSerializer' in views_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Availability endpoint: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_serializer_completeness():
     """Check if availability serializer includes all required sections."""
     print("[*] Checking availability serializer completeness...")
-    
+
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
-    
+
     checks = {
         'room_types_method': 'def get_room_types' in serializers_content,
         'rate_plans_method': 'def get_rate_plans' in serializers_content,
@@ -55,24 +55,24 @@ def check_availability_serializer_completeness():
         'rate_plan_availability_serializer': 'RatePlanAvailabilitySerializer' in serializers_content,
         'room_type_availability_serializer': 'RoomTypeAvailabilitySerializer' in serializers_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Serializer completeness: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_date_range_validation():
     """Check if date range parameters are properly validated."""
     print("[*] Checking date range validation...")
-    
+
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
-    
+
     checks = {
         'availability_params_serializer': 'AvailabilityParamsSerializer' in serializers_content,
         'check_in_field': 'check_in' in serializers_content,
@@ -80,24 +80,24 @@ def check_availability_date_range_validation():
         'date_field_type': 'DateField' in serializers_content,
         'date_range_validation': 'check_out must be after check_in' in serializers_content or 'check_out <= check_in' in serializers_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Date range validation: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_deterministic_behavior():
     """Check if availability behavior is deterministic."""
     print("[*] Checking deterministic availability behavior...")
-    
+
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
-    
+
     checks = {
         'date_inventory_filtering': 'date__gte' in serializers_content or 'date__lte' in serializers_content,
         'ordered_date_inventory': 'order_by' in serializers_content and 'date' in serializers_content,
@@ -105,24 +105,24 @@ def check_availability_deterministic_behavior():
         'deleted_data_filter': 'is_deleted=False' in serializers_content,
         'consistent_pricing_logic': 'remaining_rooms' in serializers_content or 'available_rooms - booked_rooms' in serializers_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Deterministic behavior: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_security():
     """Check if availability endpoint has proper security."""
     print("[*] Checking availability security...")
-    
+
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
     views_content = views_file.read_text()
-    
+
     checks = {
         'property_existence_check': 'Property.DoesNotExist' in views_content,
         'is_active_check': 'is_active=True' in views_content,
@@ -132,69 +132,69 @@ def check_availability_security():
         'error_response_structure': "'error'" in views_content and "'details'" in views_content,
         'public_endpoint_protection': sensitive_data_exposure_check(views_content),
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Availability security: {passed}/{total} checks passed")
     return passed == total
 
 def sensitive_data_exposure_check(views_content):
     """Check that sensitive data is not exposed."""
     # Check that we're not exposing sensitive fields like owner email, phone, etc.
-    
+
     # In the availability view, we should not be exposing owner's sensitive data
     # The PropertyAvailabilitySerializer should not include owner's email/phone
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
-    
+
     # Check that owner field is read-only and limited
     if 'owner' in serializers_content:
         # Owner should be read-only and probably just an ID
         return "'owner'" in serializers_content and "read_only_fields" in serializers_content
-    
+
     return True  # If owner is not included at all, that's also safe
 
 def check_availability_url_configuration():
     """Check if availability URL is properly configured."""
     print("[*] Checking URL configuration...")
-    
+
     urls_file = Path(__file__).parent.parent.parent / 'properties' / 'urls.py'
     urls_content = urls_file.read_text()
-    
+
     checks = {
         'availability_url': 'property_availability' in urls_content,
         'property_id_path': '<int:property_id>' in urls_content,
         'availability_import': 'from properties.views import' in urls_content and 'property_availability' in urls_content,
         'availability_path': 'availability/' in urls_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  URL configuration: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_test_coverage():
     """Check if availability has comprehensive test coverage."""
     print("[*] Checking test coverage...")
-    
+
     test_file = Path(__file__).parent.parent.parent / 'properties' / 'tests' / 'test_availability.py'
-    
+
     if not test_file.exists():
         print("  [FAIL] Availability test file does not exist")
         return False
-    
+
     test_content = test_file.read_text()
-    
+
     checks = {
         'test_file_exists': test_file.exists(),
         'basic_availability_test': 'test_availability_success' in test_content,
@@ -205,24 +205,24 @@ def check_availability_test_coverage():
         'not_found_test': 'test_availability_property_not_found' in test_content,
         'public_access_test': 'test_availability_public_access' in test_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Test coverage: {passed}/{total} checks passed")
     return passed == total
 
 def check_availability_pricing_preview():
     """Check if pricing preview is properly implemented."""
     print("[*] Checking pricing preview implementation...")
-    
+
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
-    
+
     checks = {
         'price_field_in_inventory': 'price' in serializers_content,
         'currency_field_in_inventory': 'currency' in serializers_content,
@@ -232,14 +232,14 @@ def check_availability_pricing_preview():
         'minimum_stay_field': 'minimum_stay' in serializers_content,
         'maximum_stay_field': 'maximum_stay' in serializers_content,
     }
-    
+
     passed = sum(checks.values())
     total = len(checks)
-    
+
     for check, result in checks.items():
         status = "[PASS]" if result else "[FAIL]"
         print(f"  {status} {check}")
-    
+
     print(f"  Pricing preview: {passed}/{total} checks passed")
     return passed == total
 
@@ -249,7 +249,7 @@ def run_security_review():
     print("CHECKPOINT 12 SECURITY REVIEW: Availability API/Pricing Preview")
     print("=" * 60)
     print()
-    
+
     results = {
         'Availability Endpoint': check_availability_endpoint_exists(),
         'Serializer Completeness': check_availability_serializer_completeness(),
@@ -260,22 +260,22 @@ def run_security_review():
         'Test Coverage': check_availability_test_coverage(),
         'Pricing Preview': check_availability_pricing_preview(),
     }
-    
+
     print()
     print("=" * 60)
     print("SECURITY REVIEW SUMMARY")
     print("=" * 60)
-    
+
     passed = sum(results.values())
     total = len(results)
-    
+
     for category, result in results.items():
         status = "[PASS] PASSED" if result else "[FAIL] FAILED"
         print(f"{status}: {category}")
-    
+
     print()
     print(f"Overall: {passed}/{total} categories passed")
-    
+
     if passed == total:
         print("[SUCCESS] All security checks passed!")
         return True

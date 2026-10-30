@@ -23,7 +23,7 @@ class BookingStateMachine:
     
     Enforces deterministic state transitions with validation.
     """
-    
+
     # Valid state transitions
     TRANSITIONS: Dict[BookingState, Set[BookingState]] = {
         BookingState.PENDING: {BookingState.CONFIRMED, BookingState.CANCELLED},
@@ -32,7 +32,7 @@ class BookingStateMachine:
         BookingState.COMPLETED: set(),  # Terminal state
         BookingState.NO_SHOW: set(),  # Terminal state
     }
-    
+
     # Transition reasons for audit logging
     TRANSITION_REASONS: Dict[Tuple[BookingState, BookingState], str] = {
         (BookingState.PENDING, BookingState.CONFIRMED): 'payment_completed',
@@ -41,7 +41,7 @@ class BookingStateMachine:
         (BookingState.CONFIRMED, BookingState.COMPLETED): 'checkout_completed',
         (BookingState.CONFIRMED, BookingState.NO_SHOW): 'guest_no_show',
     }
-    
+
     # Transitions that exist ONLY with one specific reason (R12): a completed stay becomes
     # a no-show only when staff approve the hotel's no-show report. can_transition() stays
     # False for them; validate_transition() accepts them only with that reason.
@@ -66,12 +66,12 @@ class BookingStateMachine:
         """
         if from_state == to_state:
             return False  # No self-transitions
-        
+
         valid_transitions = cls.TRANSITIONS.get(from_state, set())
         return to_state in valid_transitions
-    
+
     @classmethod
-    def validate_transition(cls, from_state: BookingState, to_state: BookingState, 
+    def validate_transition(cls, from_state: BookingState, to_state: BookingState,
                           reason: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         """
         Validate a state transition and return validation result.
@@ -86,7 +86,7 @@ class BookingStateMachine:
         """
         if from_state == to_state:
             return False, f"Cannot transition from {from_state.value} to {to_state.value} (same state)"
-        
+
         gated_reason = cls.GATED_TRANSITIONS.get((from_state, to_state))
         if gated_reason is not None:
             if reason == gated_reason:
@@ -96,7 +96,7 @@ class BookingStateMachine:
         valid_transitions = cls.TRANSITIONS.get(from_state, set())
         if to_state not in valid_transitions:
             return False, f"Invalid transition from {from_state.value} to {to_state.value}"
-        
+
         # Validate reason if provided
         if reason:
             expected_reason = cls.TRANSITION_REASONS.get((from_state, to_state))
@@ -108,9 +108,9 @@ class BookingStateMachine:
                         return False, f"Invalid reason '{reason}' for transition from {from_state.value} to {to_state.value}. Expected: user_cancelled or expiry"
                 elif reason != expected_reason:
                     return False, f"Invalid reason '{reason}' for transition from {from_state.value} to {to_state.value}. Expected: {expected_reason}"
-        
+
         return True, None
-    
+
     @classmethod
     def get_transition_reason(cls, from_state: BookingState, to_state: BookingState) -> Optional[str]:
         """
@@ -124,7 +124,7 @@ class BookingStateMachine:
             str or None: Expected reason or None if not defined
         """
         return cls.TRANSITION_REASONS.get((from_state, to_state))
-    
+
     @classmethod
     def get_valid_transitions(cls, from_state: BookingState) -> Set[BookingState]:
         """

@@ -37,7 +37,7 @@ def rate_limit(limit='100/h', key_func=None):
                 cache_key = f"rate_limit:{request.user.id}"
             else:
                 cache_key = f"rate_limit:{network_key(get_client_ip(request))}"
-            
+
             # Parse limit (e.g., '100/h' -> 100 requests per hour)
             try:
                 count, period = limit.split('/')
@@ -52,21 +52,21 @@ def rate_limit(limit='100/h', key_func=None):
                 logger.error(f"Invalid rate limit format: {limit}")
                 count = 100
                 period_seconds = 3600
-            
+
             # Check rate limit
             current_count = cache.get(cache_key, 0)
-            
+
             if current_count >= count:
                 logger.warning(f"Rate limit exceeded for {cache_key}")
                 raise PermissionDenied("Rate limit exceeded. Please try again later.")
-            
+
             # Increment counter
             cache.set(cache_key, current_count + 1, period_seconds)
-            
+
             return view_func(request, *args, **kwargs)
-        
+
         return wrapped_view
-    
+
     return decorator
 
 

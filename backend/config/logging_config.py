@@ -14,7 +14,7 @@ def get_logging_config():
     """
     log_level = os.getenv('LOG_LEVEL', 'INFO' if settings.DEBUG else 'WARNING')
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
+
     return {
         'version': 1,
         'disable_existing_loggers': False,

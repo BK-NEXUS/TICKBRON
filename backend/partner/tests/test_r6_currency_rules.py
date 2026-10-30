@@ -18,7 +18,7 @@ P = '/api/v1/partner'
 def _property_payload(inv, **extra):
     payload = {
         'property_type': inv['property_type'].id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1,
-        'translations': {'en': {'name': 'Test Hotel'}}, 
+        'translations': {'en': {'name': 'Test Hotel'}},
         'address_line1': '2 Navoi', **uzbek_location('Tashkent'), 'base_price': '700000',
     }
     payload.update(extra)

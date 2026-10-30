@@ -89,14 +89,14 @@ class PropertySearchService:
     
     Provides full-text search, geographic search, fuzzy matching, and comprehensive filtering.
     """
-    
+
     def __init__(self):
         self.base_queryset = self._get_base_queryset()
-    
+
     def _get_base_queryset(self):
         """Get the base queryset for property search."""
         from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation
-        
+
         return with_review_scores(searchable_properties()).select_related(
             'owner',
             'property_type'
@@ -110,7 +110,7 @@ class PropertySearchService:
                 is_active=True, is_deleted=False)),
             card_prices_prefetch(),
         )
-    
+
     def _validate_search_params(self, search_params):
         """
         Validate and sanitize search parameters.
@@ -309,7 +309,7 @@ class PropertySearchService:
         # SearchParamsSerializer has already turned the query value into a date
         if isinstance(date_str, date):
             return date_str
-        
+
         try:
             # Try YYYY-MM-DD format first
             return datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -319,39 +319,39 @@ class PropertySearchService:
                 return datetime.strptime(date_str, '%Y/%m/%d').date()
             except ValueError:
                 raise ValueError(f"Invalid date format: {date_str}. Use YYYY-MM-DD format.")
-    
+
     def filtered_queryset(self, search_params):
         """The searchable properties that match every filter, before sorting and paging."""
         return self._apply_filters(self.base_queryset, self._validate_search_params(search_params))
 
     def _apply_filters(self, queryset, search_params):
-        
+
         # Apply text search
         if search_params.get('q'):
             queryset = self._apply_text_search(queryset, search_params['q'])
-        
+
         # Apply location search
         if search_params.get('location'):
             queryset = self._apply_location_search(queryset, search_params['location'])
-        
+
         # Apply geographic search
         if all(k in search_params for k in ['lat', 'lng']):
             radius = search_params.get('radius', 10)  # default 10km
             queryset = self._apply_geographic_search(
-                queryset, 
-                search_params['lat'], 
-                search_params['lng'], 
+                queryset,
+                search_params['lat'],
+                search_params['lng'],
                 radius
             )
-        
+
         # Apply price filtering
         if search_params.get('min_price') is not None or search_params.get('max_price') is not None:
             queryset = self._apply_price_filter(
-                queryset, 
+                queryset,
                 search_params.get('min_price'),
                 search_params.get('max_price')
             )
-        
+
         # Apply guest capacity filtering
         if search_params.get('min_guests') is not None or search_params.get('max_guests') is not None:
             queryset = self._apply_guest_filter(
@@ -359,23 +359,23 @@ class PropertySearchService:
                 search_params.get('min_guests'),
                 search_params.get('max_guests')
             )
-        
+
         # Apply amenity filtering
         if search_params.get('amenities'):
             queryset = self._apply_amenity_filter(queryset, search_params['amenities'])
-        
+
         # Apply feature filtering (every requested flag must be set)
         if search_params.get('features'):
             queryset = queryset.filter(**{FEATURES[f][0]: True for f in search_params['features']})
-        
+
         # Apply minimum rating filtering (unrated properties have no rating, so they drop out)
         if search_params.get('min_rating') is not None:
             queryset = queryset.filter(average_rating__gte=search_params['min_rating'])
-        
+
         # Apply property type filtering
         if search_params.get('property_type'):
             queryset = self._apply_property_type_filter(queryset, search_params['property_type'])
-        
+
         # Apply date availability filtering
         if search_params.get('check_in') and search_params.get('check_out'):
             queryset = self._apply_date_filter(
@@ -383,9 +383,9 @@ class PropertySearchService:
                 search_params['check_in'],
                 search_params['check_out']
             )
-        
+
         return queryset
-    
+
     def search(self, search_params):
         """
         Perform property search based on provided parameters.
@@ -412,17 +412,17 @@ class PropertySearchService:
         """
         # Validate and sanitize search parameters
         search_params = self._validate_search_params(search_params)
-        
+
         queryset = self._apply_filters(self.base_queryset, search_params)
-        
+
         # Apply sorting
         sort_method = search_params.get('sort', 'relevance')
         queryset = self._apply_sorting(queryset, sort_method, search_params)
-        
+
         # Apply pagination with standardized error handling
         page = search_params.get('page', 1)
         page_size = search_params.get('page_size', 20)
-        
+
         try:
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
@@ -431,7 +431,7 @@ class PropertySearchService:
             page = 1
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
-        
+
         return {
             'count': paginator.count,
             'next': page_obj.has_next() and page + 1 or None,
@@ -441,7 +441,7 @@ class PropertySearchService:
             'page_size': page_size,
             'total_pages': paginator.num_pages
         }
-    
+
     def _apply_text_search(self, queryset, query):
         """
         Apply text search using Django ORM icontains (works with SQLite and PostgreSQL).
@@ -455,7 +455,7 @@ class PropertySearchService:
         """
         if not query or len(query) < 2:
             return queryset
-        
+
         from properties.models import PropertyTranslation
 
         # Each word is matched on its own, and every word must match somewhere (a word may match a
@@ -493,7 +493,7 @@ class PropertySearchService:
             Q(country__icontains=location) |
             Q(address_line1__icontains=location)
         )
-    
+
     def _apply_geographic_search(self, queryset, lat, lng, radius_km):
         """
         Apply geographic search using simplified bounding box approach.
@@ -508,14 +508,14 @@ class PropertySearchService:
         # Convert radius to approximate degrees (1 degree ≈ 111 km)
         lat_range = radius_km / 111.0
         lng_range = radius_km / (111.0 * math.cos(math.radians(float(lat))))
-        
+
         return queryset.filter(
             latitude__gte=float(lat) - lat_range,
             latitude__lte=float(lat) + lat_range,
             longitude__gte=float(lng) - lng_range,
             longitude__lte=float(lng) + lng_range
         )
-    
+
     def _apply_price_filter(self, queryset, min_price=None, max_price=None):
         """
         Apply price range filtering with standardized behavior.
@@ -532,9 +532,9 @@ class PropertySearchService:
             queryset = queryset.filter(base_price__gte=min_price)
         if max_price is not None:
             queryset = queryset.filter(base_price__lte=max_price)
-        
+
         return queryset
-    
+
     def _apply_guest_filter(self, queryset, min_guests=None, max_guests=None):
         """
         Apply guest capacity filtering with standardized behavior.
@@ -551,9 +551,9 @@ class PropertySearchService:
             queryset = queryset.filter(max_guests__gte=min_guests)
         if max_guests is not None:
             queryset = queryset.filter(max_guests__lte=max_guests)
-        
+
         return queryset
-    
+
     def _apply_amenity_filter(self, queryset, amenity_ids):
         """
         Apply amenity filtering with standardized behavior.
@@ -565,20 +565,20 @@ class PropertySearchService:
         Returns:
             filtered queryset
         """
-        
+
         # Filter properties that have all specified amenities
         for amenity_id in amenity_ids:
             queryset = queryset.filter(
                 property_amenities__amenity_id=amenity_id,
                 property_amenities__is_available=True
             )
-        
+
         return queryset.distinct()
-    
+
     def _apply_property_type_filter(self, queryset, property_type_id):
         """Apply property type filtering."""
         return queryset.filter(property_type_id=property_type_id)
-    
+
     def _apply_date_filter(self, queryset, check_in, check_out):
         """
         Keep properties that can be booked for the whole stay: one active rate plan
@@ -637,7 +637,7 @@ class PropertySearchService:
         return queryset.filter(
             id__in=bookable_rate_plans.values('room_type__property_id')
         )
-    
+
     def _apply_sorting(self, queryset, sort_method, search_params):
         """
         Apply sorting to search results with standardized behavior.
@@ -655,32 +655,32 @@ class PropertySearchService:
             if hasattr(queryset.model, 'rank'):
                 return queryset.order_by('-rank', '-created_at')
             return queryset.order_by('-created_at')
-        
+
         elif sort_method == 'price_asc':
             return queryset.order_by('base_price', '-created_at')
-        
+
         elif sort_method == 'price_desc':
             return queryset.order_by('-base_price', '-created_at')
-        
+
         elif sort_method == 'rating':
             # Highest average first, unrated last; more reviews wins a tie
             return queryset.order_by(
                 F('average_rating').desc(nulls_last=True), '-review_count', '-created_at'
             )
-        
+
         elif sort_method == 'reviews':
             return queryset.order_by(
                 '-review_count', F('average_rating').desc(nulls_last=True), '-created_at'
             )
-        
+
         elif sort_method == 'distance':
             # Sort by distance from search center (simplified approach)
             # For now, sort by created_at as proper distance sorting requires complex calculation
             return queryset.order_by('-created_at')
-        
+
         # Default sorting
         return queryset.order_by('-created_at')
-    
+
     def get_search_suggestions(self, query, limit=5):
         """
         Get search suggestions for autocomplete.
@@ -693,10 +693,10 @@ class PropertySearchService:
             list of suggestion strings
         """
         from properties.models import Property
-        
+
         if not query or len(query) < 2:
             return []
-        
+
         # Places (city, region, country) that have public hotels, named in whichever language
         # matched what was typed; so the suggestion finds the same hotels when it is searched for.
         # Properties never mapped to the dictionary fall back to their text city / country.

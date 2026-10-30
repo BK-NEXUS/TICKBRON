@@ -47,7 +47,7 @@ class APISmokeTestV2:
     def setup_test_data(self):
         """Create test data for smoke tests"""
         print("\n=== SETTING UP TEST DATA ===")
-        
+
         # Create super admin
         self.super_admin, created = User.objects.get_or_create(
             email='admin@smoketest.com',
@@ -66,7 +66,7 @@ class APISmokeTestV2:
             self.super_admin.set_password('adminpass123')
             self.super_admin.save()
         print(f"Created/retrieved super admin: {self.super_admin.email}")
-        
+
         # Create property type
         property_type, created = PropertyType.objects.get_or_create(
             slug='apartment',
@@ -75,7 +75,7 @@ class APISmokeTestV2:
                 'description': 'Apartment property type'
             }
         )
-        
+
         # Create test property
         self.test_property, created = Property.objects.get_or_create(
             address_line1='123 Test St',
@@ -93,7 +93,7 @@ class APISmokeTestV2:
             }
         )
         print(f"Created/retrieved test property: {self.test_property.id} - {self.test_property.city}, {self.test_property.country}")
-        
+
         # Create room type
         room_type, created = RoomType.objects.get_or_create(
             property=self.test_property,
@@ -107,7 +107,7 @@ class APISmokeTestV2:
                 'total_rooms': 5
             }
         )
-        
+
         # Create rate plan
         rate_plan, created = RatePlan.objects.get_or_create(
             room_type=room_type,
@@ -122,12 +122,12 @@ class APISmokeTestV2:
                 'is_active': True
             }
         )
-        
+
         # Create date inventory for testing
         today = date.today()
         # Delete existing inventory for this rate plan
         DateInventory.objects.filter(rate_plan=rate_plan).delete()
-        
+
         for i in range(30):
             inventory_date = today + timedelta(days=i)
             DateInventory.objects.create(
@@ -139,7 +139,7 @@ class APISmokeTestV2:
                 currency='USD',
                 is_available=True
             )
-        
+
         print("Created room type, rate plan, and inventory")
 
         # R6: a USD hotel can only be booked once an exchange rate exists
@@ -154,15 +154,15 @@ class APISmokeTestV2:
     def test_registration(self):
         """Test user registration with fresh unique user"""
         print("\n=== STEP 1: USER REGISTRATION ===")
-        
+
         unique_email = self.get_unique_email()
         unique_phone = self.get_unique_phone()
         test_password = 'testpassword123'
-        
+
         print(f"Using unique email: {unique_email}")
         print(f"Using unique phone: {unique_phone}")
         print(f"Using password: {test_password}")
-        
+
         data = {
             'full_name': 'Smoke Test User',
             'phone_number': unique_phone,
@@ -170,16 +170,16 @@ class APISmokeTestV2:
             'password': test_password,
             'password_confirm': test_password
         }
-        
+
         print("\nREQUEST: POST /api/v1/auth/register/")
         print(f"Payload: {data}")
-        
+
         response = self.client.post('/api/v1/auth/register/', data, content_type='application/json')
-        
+
         print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
-        
+
         if response.status_code == 201:
             # Verify user was created
             user_exists = User.objects.filter(email=unique_email).exists()
@@ -202,28 +202,28 @@ class APISmokeTestV2:
     def test_password_login(self):
         """Test password login with the freshly registered user"""
         print("\n=== STEP 2: PASSWORD LOGIN ===")
-        
+
         if not hasattr(self, 'test_user_email'):
             print("SKIPPED: No user from registration step")
             return False
-        
+
         print(f"Email from registration: {self.test_user_email}")
         print(f"Password from registration: {self.test_user_password}")
-        
+
         data = {
             'email': self.test_user_email,
             'password': self.test_user_password
         }
-        
+
         print("\nREQUEST: POST /api/v1/auth/login/")
         print(f"Payload: {data}")
-        
+
         response = self.client.post('/api/v1/auth/login/', data, content_type='application/json')
-        
+
         print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
-        
+
         if response.status_code == 200:
             print("\nSUCCESS: Login successful")
             # Update test_user reference to the authenticated user
@@ -251,25 +251,25 @@ class APISmokeTestV2:
     def test_booking_creation(self):
         """Test booking creation with authenticated session"""
         print("\n=== STEP 3: BOOKING CREATION ===")
-        
+
         if not self.test_user or not self.test_property:
             print("SKIPPED: Missing test data")
             return False
-        
+
         # Get room type and rate plan
         room_type = RoomType.objects.filter(property=self.test_property).first()
         if not room_type:
             print("SKIPPED: No room type available")
             return False
-        
+
         rate_plan = RatePlan.objects.filter(room_type=room_type).first()
         if not rate_plan:
             print("SKIPPED: No rate plan available")
             return False
-        
+
         check_in = date.today() + timedelta(days=10)
         check_out = date.today() + timedelta(days=12)
-        
+
         data = {
             'property_id': self.test_property.id,
             'room_type_id': room_type.id,
@@ -279,17 +279,17 @@ class APISmokeTestV2:
             'guest_count': 2,
             'special_requests': 'Smoke test booking'
         }
-        
+
         print("\nREQUEST: POST /api/v1/bookings/")
         print(f"Payload: {data}")
         print(f"Authenticated as: {self.test_user.email}")
-        
+
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
-        
+
         print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
-        
+
         if response.status_code == 201:
             print("\nSUCCESS: Booking creation successful")
             try:
@@ -315,23 +315,23 @@ class APISmokeTestV2:
     def test_favorites(self):
         """Test favorites functionality with authenticated session"""
         print("\n=== STEP 4: FAVORITES ===")
-        
+
         if not self.test_user or not self.test_property:
             print("SKIPPED: Missing test data")
             return False
-        
+
         data = {'property': self.test_property.id}
-        
+
         print("\nREQUEST: POST /api/v1/me/favorites/")
         print(f"Payload: {data}")
         print(f"Authenticated as: {self.test_user.email}")
-        
+
         response = self.client.post('/api/v1/me/favorites/', data, content_type='application/json')
-        
+
         print("\nRESPONSE:")
         print(f"Status Code: {response.status_code}")
         print(f"Response Body: {response.content.decode('utf-8')}")
-        
+
         if response.status_code == 201:
             print("\nSUCCESS: Added to favorites")
             return True
@@ -346,22 +346,22 @@ class APISmokeTestV2:
         print("=" * 80)
         print(f"Test Timestamp: {self.timestamp}")
         print(f"Random Suffix: {self.random_suffix}")
-        
+
         try:
             self.setup_test_data()
-            
+
             # Step 1: Register
             step1_pass = self.test_registration()
-            
+
             # Step 2: Login
             step2_pass = self.test_password_login()
-            
+
             # Step 3: Create booking
             step3_pass = self.test_booking_creation()
-            
+
             # Step 4: Add to favorites
             step4_pass = self.test_favorites()
-            
+
             # Summary
             print("\n" + "=" * 80)
             print("FULL CHAIN SUMMARY")
@@ -370,12 +370,12 @@ class APISmokeTestV2:
             print(f"Step 2 - Login: {'PASS' if step2_pass else 'FAIL'}")
             print(f"Step 3 - Booking Creation: {'PASS' if step3_pass else 'FAIL'}")
             print(f"Step 4 - Favorites: {'PASS' if step4_pass else 'FAIL'}")
-            
+
             all_pass = step1_pass and step2_pass and step3_pass and step4_pass
             print(f"\nFULL CHAIN: {'CONFIRMED' if all_pass else 'FAILED'}")
-            
+
             return all_pass
-            
+
         except Exception as e:
             print(f"\nCHAIN FAILED WITH EXCEPTION: {e}")
             import traceback

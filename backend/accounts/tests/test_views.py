@@ -17,7 +17,7 @@ User = get_user_model()
 
 class FavoriteViewSetTest(TestCase):
     """Test cases for FavoriteViewSet."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
@@ -28,7 +28,7 @@ class FavoriteViewSetTest(TestCase):
             last_name='User'
         )
         self.client.force_authenticate(user=self.user)
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
@@ -46,7 +46,7 @@ class FavoriteViewSetTest(TestCase):
             base_price=100.00,
             currency='USD'
         )
-    
+
     def test_create_favorite(self):
         """Test creating a favorite."""
         data = {
@@ -57,14 +57,14 @@ class FavoriteViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Favorite.objects.count(), 1)
         self.assertEqual(Favorite.objects.first().user, self.user)
-    
+
     def test_list_favorites(self):
         """Test listing user favorites."""
         Favorite.objects.create(user=self.user, property=self.property)
         response = self.client.get('/api/v1/me/favorites/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-    
+
     def test_delete_favorite(self):
         """Test deleting a favorite."""
         favorite = Favorite.objects.create(user=self.user, property=self.property)
@@ -72,14 +72,14 @@ class FavoriteViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         favorite.refresh_from_db()
         self.assertTrue(favorite.is_deleted)
-    
+
     def test_favorite_count(self):
         """Test getting favorite count."""
         Favorite.objects.create(user=self.user, property=self.property)
         response = self.client.get('/api/v1/me/favorites/count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
-    
+
     def test_cannot_favorite_inactive_property(self):
         """Test that inactive properties cannot be favorited."""
         self.property.is_active = False
@@ -198,7 +198,7 @@ class FavoritePropertyNameTest(TestCase):
 
 class ReviewViewSetTest(TestCase):
     """Test cases for ReviewViewSet."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
@@ -209,7 +209,7 @@ class ReviewViewSetTest(TestCase):
             last_name='User'
         )
         self.client.force_authenticate(user=self.user)
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
@@ -238,7 +238,7 @@ class ReviewViewSetTest(TestCase):
             currency='USD',
             status='completed'
         )
-    
+
     def test_create_review_for_completed_booking(self):
         """Test creating a review for a completed booking (a booking is required)."""
         data = {
@@ -250,7 +250,7 @@ class ReviewViewSetTest(TestCase):
         }
         response = self.client.post('/api/v1/me/reviews/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    
+
     def test_eligible_properties(self):
         """Test getting eligible properties for review."""
         response = self.client.get('/api/v1/me/reviews/eligible_properties/')
@@ -258,7 +258,7 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(len(response.data['eligible_properties']), 1)
         self.assertEqual(response.data['eligible_properties'][0]['property_id'], self.property.id)
         self.assertEqual(response.data['eligible_properties'][0]['property_city'], 'Test City')
-    
+
     def test_eligible_properties_excludes_reviewed(self):
         """Test that reviewed properties are excluded from eligible list."""
         Review.objects.create(
@@ -267,11 +267,11 @@ class ReviewViewSetTest(TestCase):
             booking=self.booking,
             overall_rating=5
         )
-        
+
         response = self.client.get('/api/v1/me/reviews/eligible_properties/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['eligible_properties']), 0)
-    
+
     def test_property_scores(self):
         """Test getting property review scores."""
         # Create approved reviews
@@ -282,12 +282,12 @@ class ReviewViewSetTest(TestCase):
             cleanliness_rating=5,
             status='approved'
         )
-        
+
         response = self.client.get(f'/api/v1/me/reviews/property_scores/?property_id={self.property.id}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_reviews'], 1)
         self.assertEqual(response.data['average_rating'], 5.0)
-    
+
     def test_property_scores_no_reviews(self):
         """Test property scores when no reviews exist."""
         response = self.client.get(f'/api/v1/me/reviews/property_scores/?property_id={self.property.id}')
@@ -303,7 +303,7 @@ class ReviewViewSetTest(TestCase):
 
 class NotificationViewSetTest(TestCase):
     """Test cases for NotificationViewSet."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
@@ -314,7 +314,7 @@ class NotificationViewSetTest(TestCase):
             last_name='User'
         )
         self.client.force_authenticate(user=self.user)
-        
+
         self.notification = Notification.objects.create(
             user=self.user,
             notification_type='booking',
@@ -322,26 +322,26 @@ class NotificationViewSetTest(TestCase):
             title='Test Notification',
             message='Test message'
         )
-    
+
     def test_list_notifications(self):
         """Test listing user notifications."""
         response = self.client.get('/api/v1/me/notifications/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-    
+
     def test_unread_notifications(self):
         """Test getting unread notifications."""
         response = self.client.get('/api/v1/me/notifications/unread/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-    
+
     def test_mark_notification_as_read(self):
         """Test marking notification as read."""
         response = self.client.patch(f'/api/v1/me/notifications/{self.notification.id}/', {'is_read': True})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
         self.assertTrue(self.notification.is_read)
-    
+
     def test_mark_all_read(self):
         """Test marking all notifications as read."""
         Notification.objects.create(
@@ -351,18 +351,18 @@ class NotificationViewSetTest(TestCase):
             title='Another Notification',
             message='Another message'
         )
-        
+
         response = self.client.post('/api/v1/me/notifications/mark_all_read/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['marked_as_read'], 2)
-    
+
     def test_notification_count(self):
         """Test getting notification counts."""
         response = self.client.get('/api/v1/me/notifications/count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total'], 1)
         self.assertEqual(response.data['unread'], 1)
-    
+
     def test_cannot_create_notification_via_api(self):
         """Test that notifications cannot be created via API."""
         data = {
@@ -377,7 +377,7 @@ class NotificationViewSetTest(TestCase):
 
 class AccountHistoryViewSetTest(TestCase):
     """Test cases for AccountHistoryViewSet."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.client = APIClient()
@@ -388,19 +388,19 @@ class AccountHistoryViewSetTest(TestCase):
             last_name='User'
         )
         self.client.force_authenticate(user=self.user)
-        
+
         self.history = AccountHistory.objects.create(
             user=self.user,
             action='login',
             description='User logged in'
         )
-    
+
     def test_list_account_history(self):
         """Test listing account history."""
         response = self.client.get('/api/v1/me/history/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-    
+
     def test_recent_history(self):
         """Test getting recent history."""
         response = self.client.get('/api/v1/me/history/recent/')
@@ -416,14 +416,14 @@ class AccountHistoryViewSetTest(TestCase):
         """A negative limit must return 400, not a slice error (audit #28)."""
         response = self.client.get('/api/v1/me/history/recent/?limit=-5')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    
+
     def test_history_stats(self):
         """Test getting history statistics."""
         response = self.client.get('/api/v1/me/history/stats/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_entries'], 1)
         self.assertEqual(len(response.data['action_counts']), 1)
-    
+
     def test_cannot_create_history_via_api(self):
         """Test that history cannot be created via API (read-only)."""
         data = {

@@ -45,15 +45,15 @@ class IsHotelOwner(IsAuthenticated):
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
-        
+
         # Allow staff users (super-admin and admin)
         if request.user.is_staff:
             return True
-        
+
         # Check if user has hotel-owner role
         if request.user.role and request.user.role.name == 'hotel-owner':
             return True
-        
+
         return False
 
 
@@ -69,7 +69,7 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
     Scoped to properties owned by the authenticated hotel-owner.
     """
     permission_classes = [IsHotelOwner]
-    
+
     def get_queryset(self):
         """Filter queryset to properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -78,13 +78,13 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
             owner=self.request.user,
             is_deleted=False
         ).select_related('property_type').prefetch_related('translations')
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
             return PartnerPropertyCreateSerializer
         return PartnerPropertySerializer
-    
+
     def perform_create(self, serializer):
         """Ensure owner is set to authenticated user."""
         serializer.save(owner=self.request.user)
@@ -98,7 +98,7 @@ class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerRoomTypeSerializer
-    
+
     def get_queryset(self):
         """Filter queryset to room types in properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -120,7 +120,7 @@ class PartnerRatePlanViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerRatePlanSerializer
-    
+
     def get_queryset(self):
         """Filter queryset to rate plans in properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -139,7 +139,7 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerDateInventorySerializer
-    
+
     def get_queryset(self):
         """Filter queryset to date inventory in properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -527,7 +527,7 @@ def partner_bookings(request):
     status_filter = request.query_params.get('status')
     if status_filter:
         bookings = bookings.filter(status=status_filter)
-    
+
     payment_status_filter = request.query_params.get('payment_status')
     if payment_status_filter:
         bookings = bookings.filter(payment_status=payment_status_filter)
@@ -567,5 +567,5 @@ def partner_bookings(request):
             'report_deadline': report_deadline(booking) if booking.id in reportable_ids else None,
         }
         bookings_data.append(booking_data)
-    
+
     return Response(bookings_data, status=status.HTTP_200_OK)

@@ -16,21 +16,21 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 class BookingModelTests(TestCase):
     """Test cases for Booking model."""
-    
+
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(phone_number='+998901112233', 
+        self.user = User.objects.create_user(phone_number='+998901112233',
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
             last_name='User'
         )
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
         )
-        
+
         self.property = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -44,7 +44,7 @@ class BookingModelTests(TestCase):
             base_price=Decimal('100.00'),
             currency='USD'
         )
-        
+
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -55,7 +55,7 @@ class BookingModelTests(TestCase):
             currency='USD',
             total_rooms=5
         )
-        
+
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -67,11 +67,11 @@ class BookingModelTests(TestCase):
             max_nights=30,
             is_active=True
         )
-        
+
         # Create date inventory for test dates
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
-        
+
         current_date = self.check_in
         while current_date < self.check_out:
             DateInventory.objects.create(
@@ -84,7 +84,7 @@ class BookingModelTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-    
+
     def test_booking_creation_success(self):
         """Test successful booking creation with inventory locking."""
         booking = Booking.create_booking(
@@ -96,7 +96,7 @@ class BookingModelTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         self.assertIsNotNone(booking)
         self.assertEqual(booking.guest, self.user)
         self.assertEqual(booking.property, self.property)
@@ -106,14 +106,14 @@ class BookingModelTests(TestCase):
         self.assertEqual(booking.guest_count, 2)
         self.assertEqual(booking.total_price, Decimal('200.00'))
         self.assertIsNotNone(booking.confirmation_code)
-        
+
         # Check booking item was created
         self.assertEqual(booking.booking_items.count(), 1)
         booking_item = booking.booking_items.first()
         self.assertEqual(booking_item.room_type, self.room_type)
         self.assertEqual(booking_item.rate_plan, self.rate_plan)
         self.assertEqual(booking_item.number_of_rooms, 1)
-        
+
         # Check inventory was updated (RoomInventory: shared by every rate plan of
         # this room type, see bookings.models.Booking.create_booking, audit #31)
         inventory_records = RoomInventory.objects.filter(
@@ -133,7 +133,7 @@ class BookingModelTests(TestCase):
                 room_type=self.room_type, date=current_date, available_rooms=5, booked_rooms=5,
             )
             current_date += timedelta(days=1)
-        
+
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
                 guest=self.user,
@@ -144,9 +144,9 @@ class BookingModelTests(TestCase):
                 check_out=self.check_out,
                 guest_count=2
             )
-        
+
         self.assertIn('availability', context.exception.message_dict)
-    
+
     def test_booking_creation_date_unavailable(self):
         """Test booking creation fails when date is unavailable."""
         # Set is_available to False
@@ -154,7 +154,7 @@ class BookingModelTests(TestCase):
             rate_plan=self.rate_plan,
             date=self.check_in
         ).update(is_available=False)
-        
+
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
                 guest=self.user,
@@ -165,15 +165,15 @@ class BookingModelTests(TestCase):
                 check_out=self.check_out,
                 guest_count=2
             )
-        
+
         self.assertIn('availability', context.exception.message_dict)
-    
+
     def test_booking_creation_min_nights_violation(self):
         """Test booking creation fails when min nights requirement is violated."""
         # Update rate plan min_nights
         self.rate_plan.min_nights = 3
         self.rate_plan.save()
-        
+
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
                 guest=self.user,
@@ -184,15 +184,15 @@ class BookingModelTests(TestCase):
                 check_out=self.check_out,
                 guest_count=2
             )
-        
+
         self.assertIn('check_in', context.exception.message_dict)
-    
+
     def test_booking_creation_max_nights_violation(self):
         """Test booking creation fails when max nights requirement is violated."""
         # Update rate plan max_nights
         self.rate_plan.max_nights = 1
         self.rate_plan.save()
-        
+
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
                 guest=self.user,
@@ -203,9 +203,9 @@ class BookingModelTests(TestCase):
                 check_out=self.check_out,
                 guest_count=2
             )
-        
+
         self.assertIn('check_in', context.exception.message_dict)
-    
+
     def test_booking_creation_invalid_date_range(self):
         """Test booking creation fails with invalid date range."""
         with self.assertRaises(ValidationError) as context:
@@ -218,9 +218,9 @@ class BookingModelTests(TestCase):
                 check_out=self.check_in,
                 guest_count=2
             )
-        
+
         self.assertIn('check_out', context.exception.message_dict)
-    
+
     def test_double_booking_prevention(self):
         """Test that double booking is prevented with concurrent requests."""
         # Create first booking
@@ -233,7 +233,7 @@ class BookingModelTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Refresh inventory to see the updated booked_rooms (RoomInventory now
         # gates room count; the first booking above already created its rows)
         RoomInventory.objects.filter(
@@ -241,7 +241,7 @@ class BookingModelTests(TestCase):
             date__gte=self.check_in,
             date__lt=self.check_out
         ).update(available_rooms=1)  # Only 1 room available total
-        
+
         # Try to create second booking for same dates (should fail)
         with self.assertRaises(ValidationError) as context:
             Booking.create_booking(
@@ -253,9 +253,9 @@ class BookingModelTests(TestCase):
                 check_out=self.check_out,
                 guest_count=2
             )
-        
+
         self.assertIn('availability', context.exception.message_dict)
-    
+
     def test_booking_cancellation_success(self):
         """Test successful booking cancellation with inventory restoration."""
         # Create booking
@@ -268,15 +268,15 @@ class BookingModelTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Cancel booking
         booking.cancel_booking(cancellation_reason='Test cancellation')
-        
+
         # Check booking status
         self.assertEqual(booking.status, 'cancelled')
         self.assertIsNotNone(booking.cancelled_at)
         self.assertEqual(booking.cancellation_reason, 'Test cancellation')
-        
+
         # Check inventory was restored
         inventory_records = RoomInventory.objects.filter(
             room_type=self.room_type,
@@ -298,17 +298,17 @@ class BookingModelTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Set status to cancelled
         booking.status = 'cancelled'
         booking.save()
-        
+
         # Try to cancel again (should fail)
         with self.assertRaises(ValidationError) as context:
             booking.cancel_booking(cancellation_reason='Test cancellation')
-        
+
         self.assertIn('status', context.exception.message_dict)
-    
+
     def test_confirmation_code_generation(self):
         """Test confirmation code generation is unique."""
         booking1 = Booking.create_booking(
@@ -320,11 +320,11 @@ class BookingModelTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Create inventory for second booking dates
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
-        
+
         current_date = check_in2
         while current_date < check_out2:
             DateInventory.objects.create(
@@ -337,7 +337,7 @@ class BookingModelTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-        
+
         booking2 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -347,7 +347,7 @@ class BookingModelTests(TestCase):
             check_out=check_out2,
             guest_count=2
         )
-        
+
         self.assertNotEqual(booking1.confirmation_code, booking2.confirmation_code)
         self.assertEqual(len(booking1.confirmation_code), 6)  # reference code length since checkpoint 23
         self.assertEqual(len(booking2.confirmation_code), 6)
@@ -355,21 +355,21 @@ class BookingModelTests(TestCase):
 
 class BookingSerializerTests(TestCase):
     """Test cases for booking serializers."""
-    
+
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(phone_number='+998901112233', 
+        self.user = User.objects.create_user(phone_number='+998901112233',
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
             last_name='User'
         )
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
         )
-        
+
         self.property = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -383,7 +383,7 @@ class BookingSerializerTests(TestCase):
             base_price=Decimal('100.00'),
             currency='USD'
         )
-        
+
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -394,7 +394,7 @@ class BookingSerializerTests(TestCase):
             currency='USD',
             total_rooms=5
         )
-        
+
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -406,11 +406,11 @@ class BookingSerializerTests(TestCase):
             max_nights=30,
             is_active=True
         )
-        
+
         # Create date inventory
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
-        
+
         current_date = self.check_in
         while current_date < self.check_out:
             DateInventory.objects.create(
@@ -423,12 +423,12 @@ class BookingSerializerTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-        
+
         # Create mock request
         self.factory = APIRequestFactory()
         self.request = self.factory.post('/api/v1/bookings/')
         self.request.user = self.user
-    
+
     def test_booking_create_serializer_valid(self):
         """Test booking create serializer with valid data."""
         data = {
@@ -440,15 +440,15 @@ class BookingSerializerTests(TestCase):
             'guest_count': 2, 'expected_arrival_time': '14:00',
             'special_requests': 'Late check-in requested'
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertTrue(serializer.is_valid())
-        
+
         booking = serializer.save()
         self.assertIsNotNone(booking)
         self.assertEqual(booking.guest, self.user)
         self.assertEqual(booking.status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
-    
+
     def test_booking_create_serializer_invalid_date_range(self):
         """Test booking create serializer with invalid date range."""
         data = {
@@ -459,11 +459,11 @@ class BookingSerializerTests(TestCase):
             'check_out': self.check_in.strftime('%Y-%m-%d'),
             'guest_count': 2, 'expected_arrival_time': '14:00'
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('check_out', serializer.errors)
-    
+
     def test_booking_create_serializer_invalid_property(self):
         """Test booking create serializer with invalid property."""
         data = {
@@ -474,11 +474,11 @@ class BookingSerializerTests(TestCase):
             'check_out': self.check_out.strftime('%Y-%m-%d'),
             'guest_count': 2, 'expected_arrival_time': '14:00'
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('property_id', serializer.errors)
-    
+
     def test_booking_create_serializer_exceeds_max_occupancy(self):
         """Test booking create serializer when guest count exceeds max occupancy."""
         data = {
@@ -489,18 +489,18 @@ class BookingSerializerTests(TestCase):
             'check_out': self.check_out.strftime('%Y-%m-%d'),
             'guest_count': 10, 'expected_arrival_time': '14:00'  # Exceeds max_occupancy of 4
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('guest_count', serializer.errors)
-    
+
     def test_booking_create_with_guest_details_autofill(self):
         """Test booking creation auto-fills guest details from user profile."""
         # Update user with profile details
         self.user.full_name = 'John Doe'
         self.user.phone_number = '+998901234567'
         self.user.save()
-        
+
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
@@ -509,22 +509,22 @@ class BookingSerializerTests(TestCase):
             'check_out': self.check_out.strftime('%Y-%m-%d'),
             'guest_count': 2, 'expected_arrival_time': '14:00'
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertTrue(serializer.is_valid())
-        
+
         booking = serializer.save()
         self.assertEqual(booking.guest_full_name, 'John Doe')
         self.assertEqual(booking.guest_phone, '+998901234567')
         self.assertEqual(booking.guest_email, 'test@example.com')
-    
+
     def test_booking_create_with_guest_details_override(self):
         """Test booking creation allows overriding guest details."""
         # Update user with profile details
         self.user.full_name = 'John Doe'
         self.user.phone_number = '+998901234567'
         self.user.save()
-        
+
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
@@ -536,15 +536,15 @@ class BookingSerializerTests(TestCase):
             'guest_phone': '+998917654321',
             'guest_email': 'jane@example.com'
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertTrue(serializer.is_valid())
-        
+
         booking = serializer.save()
         self.assertEqual(booking.guest_full_name, 'Jane Smith')
         self.assertEqual(booking.guest_phone, '+998917654321')
         self.assertEqual(booking.guest_email, 'jane@example.com')
-    
+
     def test_booking_create_with_number_of_rooms(self):
         """Test booking creation with custom number of rooms."""
         data = {
@@ -556,15 +556,15 @@ class BookingSerializerTests(TestCase):
             'guest_count': 2, 'expected_arrival_time': '14:00',
             'number_of_rooms': 2
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertTrue(serializer.is_valid())
-        
+
         booking = serializer.save()
         self.assertEqual(booking.number_of_rooms, 2)
         booking_item = booking.booking_items.first()
         self.assertEqual(booking_item.number_of_rooms, 2)
-    
+
     def test_booking_create_with_children(self):
         """Test booking creation with children ages."""
         data = {
@@ -576,10 +576,10 @@ class BookingSerializerTests(TestCase):
             'guest_count': 3, 'expected_arrival_time': '14:00',
             'children': [5, 8]
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertTrue(serializer.is_valid())
-        
+
         booking = serializer.save()
         self.assertEqual(booking.children, [5, 8])
 
@@ -612,7 +612,7 @@ class BookingSerializerTests(TestCase):
 
     def test_no_children_still_works(self):
         self.assertEqual(self._book_with_children(1, []).children, [])
-    
+
     def test_booking_create_with_invalid_children_age(self):
         """Test booking creation with invalid children age (negative)."""
         data = {
@@ -624,11 +624,11 @@ class BookingSerializerTests(TestCase):
             'guest_count': 2, 'expected_arrival_time': '14:00',
             'children': [-1, 5]
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('children', serializer.errors)
-    
+
     def test_booking_create_with_invalid_children_age_adult(self):
         """Test booking creation with invalid children age (adult)."""
         data = {
@@ -640,11 +640,11 @@ class BookingSerializerTests(TestCase):
             'guest_count': 2, 'expected_arrival_time': '14:00',
             'children': [18, 5]
         }
-        
+
         serializer = BookingCreateSerializer(data=data, context={'request': self.request})
         self.assertFalse(serializer.is_valid())
         self.assertIn('children', serializer.errors)
-    
+
     def test_booking_cancel_serializer_valid(self):
         """Test booking cancel serializer with valid data."""
         # Create booking
@@ -657,11 +657,11 @@ class BookingSerializerTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         data = {
             'cancellation_reason': 'Test cancellation'
         }
-        
+
         serializer = BookingCancelSerializer(
             booking,
             data=data,
@@ -669,11 +669,11 @@ class BookingSerializerTests(TestCase):
             context={'booking': booking}
         )
         self.assertTrue(serializer.is_valid())
-        
+
         updated_booking = serializer.save()
         self.assertEqual(updated_booking.status, 'cancelled')
         self.assertEqual(updated_booking.cancellation_reason, 'Test cancellation')
-    
+
     def test_booking_cancel_serializer_invalid_status(self):
         """Test booking cancel serializer with invalid status."""
         # Create booking
@@ -686,15 +686,15 @@ class BookingSerializerTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Set status to cancelled
         booking.status = 'cancelled'
         booking.save()
-        
+
         data = {
             'cancellation_reason': 'Test cancellation'
         }
-        
+
         serializer = BookingCancelSerializer(
             booking,
             data=data,
@@ -703,7 +703,7 @@ class BookingSerializerTests(TestCase):
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn('status', serializer.errors)
-    
+
     def test_booking_serializer_includes_new_fields(self):
         """Test BookingSerializer includes new guest and room fields."""
         booking = Booking.create_booking(
@@ -720,10 +720,10 @@ class BookingSerializerTests(TestCase):
             number_of_rooms=2,
             children=[5, 8]
         )
-        
+
         serializer = BookingSerializer(booking)
         data = serializer.data
-        
+
         self.assertIn('guest_full_name', data)
         self.assertIn('guest_phone', data)
         self.assertIn('guest_email', data)
@@ -738,21 +738,21 @@ class BookingSerializerTests(TestCase):
 
 class BookingExpiryTests(TestCase):
     """Test cases for booking expiry functionality."""
-    
+
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(phone_number='+998901112233', 
+        self.user = User.objects.create_user(phone_number='+998901112233',
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
             last_name='User'
         )
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
         )
-        
+
         self.property = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -766,7 +766,7 @@ class BookingExpiryTests(TestCase):
             base_price=Decimal('100.00'),
             currency='USD'
         )
-        
+
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -777,7 +777,7 @@ class BookingExpiryTests(TestCase):
             currency='USD',
             total_rooms=5
         )
-        
+
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -789,11 +789,11 @@ class BookingExpiryTests(TestCase):
             max_nights=30,
             is_active=True
         )
-        
+
         # Create date inventory for test dates
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
-        
+
         current_date = self.check_in
         while current_date < self.check_out:
             DateInventory.objects.create(
@@ -806,7 +806,7 @@ class BookingExpiryTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-    
+
     def test_booking_expiry_on_creation(self):
         """Test that pending bookings are automatically assigned an expiry time."""
         booking = Booking.create_booking(
@@ -818,7 +818,7 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         self.assertIsNotNone(booking.expires_at)
         # Check that expiry is approximately 15 minutes from now
         from django.utils import timezone
@@ -826,7 +826,7 @@ class BookingExpiryTests(TestCase):
         expected_expiry = timezone.now() + timedelta(minutes=15)
         time_difference = abs((booking.expires_at - expected_expiry).total_seconds())
         self.assertLess(time_difference, 5)  # Allow 5 seconds variance
-    
+
     def test_booking_expiry_success(self):
         """Test successful booking expiry with inventory restoration."""
         booking = Booking.create_booking(
@@ -838,7 +838,7 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Verify inventory was booked
         inventory_records = RoomInventory.objects.filter(
             room_type=self.room_type,
@@ -860,7 +860,7 @@ class BookingExpiryTests(TestCase):
         for inventory in inventory_records:
             inventory.refresh_from_db()
             self.assertEqual(inventory.booked_rooms, 0)
-    
+
     def test_booking_expiry_invalid_status(self):
         """Test booking expiry fails for non-pending status."""
         booking = Booking.create_booking(
@@ -872,17 +872,17 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Set status to confirmed
         booking.status = 'confirmed'
         booking.save()
-        
+
         # Try to expire (should fail)
         with self.assertRaises(ValidationError) as context:
             booking.expire_booking()
-        
+
         self.assertIn('status', context.exception.message_dict)
-    
+
     def test_process_expired_bookings_method(self):
         """Test the class method for processing expired bookings."""
         # Create multiple bookings
@@ -895,11 +895,11 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Create inventory for second booking dates (different dates to avoid conflict)
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
-        
+
         current_date = check_in2
         while current_date < check_out2:
             DateInventory.objects.create(
@@ -912,7 +912,7 @@ class BookingExpiryTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-        
+
         booking2 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -922,31 +922,31 @@ class BookingExpiryTests(TestCase):
             check_out=check_out2,
             guest_count=2
         )
-        
+
         # Manually set expiry times to past
         from django.utils import timezone
         past_time = timezone.now() - timedelta(minutes=30)
-        
+
         booking1.expires_at = past_time
         booking1.save(update_fields=['expires_at'])
-        
+
         booking2.expires_at = past_time
         booking2.save(update_fields=['expires_at'])
-        
+
         # Process expired bookings
         processed_count = Booking.process_expired_bookings()
-        
+
         self.assertEqual(processed_count, 2)
-        
+
         # Verify both bookings are now cancelled
         booking1.refresh_from_db()
         booking2.refresh_from_db()
-        
+
         self.assertEqual(booking1.status, 'cancelled')
         self.assertEqual(booking2.status, 'cancelled')
         self.assertEqual(booking1.cancellation_reason, 'Booking expired - payment not completed within time limit')
         self.assertEqual(booking2.cancellation_reason, 'Booking expired - payment not completed within time limit')
-    
+
     def test_deterministic_state_transitions(self):
         """Test that booking state transitions are deterministic and well-defined."""
         booking = Booking.create_booking(
@@ -958,16 +958,16 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Initial state: pending
         self.assertEqual(booking.status, 'pending')
         self.assertEqual(booking.payment_status, 'pending')
-        
+
         # Transition 1: pending -> cancelled (via cancellation)
         booking.cancel_booking('User cancelled')
         self.assertEqual(booking.status, 'cancelled')
         self.assertIsNotNone(booking.cancelled_at)
-        
+
         # Create a new booking for expiry test
         booking2 = Booking.create_booking(
             guest=self.user,
@@ -978,25 +978,25 @@ class BookingExpiryTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Transition 2: pending -> cancelled (via expiry)
         booking2.expire_booking()
         self.assertEqual(booking2.status, 'cancelled')
         self.assertEqual(booking2.cancellation_reason, 'Booking expired - payment not completed within time limit')
-        
+
         # Verify that cancelled bookings cannot be cancelled again
         with self.assertRaises(ValidationError):
             booking.cancel_booking('Try again')
-        
+
         with self.assertRaises(ValidationError):
             booking2.expire_booking()
-    
+
     def test_expiry_inventory_restoration_accuracy(self):
         """Test that expiry accurately restores inventory for multiple rooms and nights."""
         # Create booking for 3 nights (different dates to avoid conflict with setUp)
         check_in = date.today() + timedelta(days=30)
         check_out = date.today() + timedelta(days=33)  # 3 nights
-        
+
         current_date = check_in
         while current_date < check_out:
             DateInventory.objects.create(
@@ -1009,7 +1009,7 @@ class BookingExpiryTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-        
+
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -1019,7 +1019,7 @@ class BookingExpiryTests(TestCase):
             check_out=check_out,
             guest_count=2
         )
-        
+
         # Verify inventory was booked for 3 nights
         inventory_records = RoomInventory.objects.filter(
             room_type=self.room_type,
@@ -1029,10 +1029,10 @@ class BookingExpiryTests(TestCase):
         self.assertEqual(inventory_records.count(), 3)
         for inventory in inventory_records:
             self.assertEqual(inventory.booked_rooms, 1)
-        
+
         # Expire the booking
         booking.expire_booking()
-        
+
         # Verify inventory was restored for all 3 nights
         for inventory in inventory_records:
             inventory.refresh_from_db()
@@ -1041,21 +1041,21 @@ class BookingExpiryTests(TestCase):
 
 class TransactionSafetyTests(TestCase):
     """Test cases for transaction safety and concurrency."""
-    
+
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(phone_number='+998901112233', 
+        self.user = User.objects.create_user(phone_number='+998901112233',
             email='test@example.com',
             password='TestPassword123!',
             first_name='Test',
             last_name='User'
         )
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
         )
-        
+
         self.property = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -1069,7 +1069,7 @@ class TransactionSafetyTests(TestCase):
             base_price=Decimal('100.00'),
             currency='USD'
         )
-        
+
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -1080,7 +1080,7 @@ class TransactionSafetyTests(TestCase):
             currency='USD',
             total_rooms=5
         )
-        
+
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -1092,7 +1092,7 @@ class TransactionSafetyTests(TestCase):
             max_nights=30,
             is_active=True
         )
-        
+
         # Create date inventory with limited availability (RoomInventory is what the
         # booking engine actually gates and updates -- see create_booking, audit #31)
         self.check_in = date.today() + timedelta(days=10)
@@ -1121,7 +1121,7 @@ class TransactionSafetyTests(TestCase):
             date__gte=self.check_in,
             date__lt=self.check_out
         ).first().booked_rooms
-        
+
         # Try to create booking with invalid data (should rollback)
         try:
             with transaction.atomic():
@@ -1135,12 +1135,12 @@ class TransactionSafetyTests(TestCase):
                     check_out=self.check_out,
                     guest_count=2
                 )
-                
+
                 # Force an error to test rollback
                 raise ValueError("Simulated error")
         except ValueError:
             pass
-        
+
         # Check that inventory was not updated (transaction rolled back)
         final_booked_count = RoomInventory.objects.filter(
             room_type=self.room_type,
@@ -1158,7 +1158,7 @@ class TransactionSafetyTests(TestCase):
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
-        
+
         # Create booking
         Booking.create_booking(
             guest=self.user,
@@ -1169,14 +1169,14 @@ class TransactionSafetyTests(TestCase):
             check_out=self.check_out,
             guest_count=2
         )
-        
+
         # Check inventory consistency
         final_inventory = list(RoomInventory.objects.filter(
             room_type=self.room_type,
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
-        
+
         for initial, final in zip(initial_inventory, final_inventory):
             self.assertEqual(final.booked_rooms, initial.booked_rooms + 1)
             self.assertEqual(final.available_rooms, initial.available_rooms)

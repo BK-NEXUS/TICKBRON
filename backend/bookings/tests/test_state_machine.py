@@ -13,135 +13,135 @@ from bookings.state_machine import BookingStateMachine, BookingState
 
 class BookingStateMachineTests(TestCase):
     """Tests for BookingStateMachine."""
-    
+
     def test_valid_transition_pending_to_confirmed(self):
         """Test valid transition from pending to confirmed."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CONFIRMED
         )
         self.assertTrue(is_valid)
-    
+
     def test_valid_transition_pending_to_cancelled(self):
         """Test valid transition from pending to cancelled."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CANCELLED
         )
         self.assertTrue(is_valid)
-    
+
     def test_valid_transition_confirmed_to_cancelled(self):
         """Test valid transition from confirmed to cancelled."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.CONFIRMED, 
+            BookingState.CONFIRMED,
             BookingState.CANCELLED
         )
         self.assertTrue(is_valid)
-    
+
     def test_valid_transition_confirmed_to_completed(self):
         """Test valid transition from confirmed to completed."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.CONFIRMED, 
+            BookingState.CONFIRMED,
             BookingState.COMPLETED
         )
         self.assertTrue(is_valid)
-    
+
     def test_valid_transition_confirmed_to_no_show(self):
         """Test valid transition from confirmed to no_show."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.CONFIRMED, 
+            BookingState.CONFIRMED,
             BookingState.NO_SHOW
         )
         self.assertTrue(is_valid)
-    
+
     def test_invalid_transition_confirmed_to_pending(self):
         """Test invalid transition from confirmed to pending."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.CONFIRMED, 
+            BookingState.CONFIRMED,
             BookingState.PENDING
         )
         self.assertFalse(is_valid)
-    
+
     def test_invalid_transition_cancelled_to_confirmed(self):
         """Test invalid transition from cancelled to confirmed."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.CANCELLED, 
+            BookingState.CANCELLED,
             BookingState.CONFIRMED
         )
         self.assertFalse(is_valid)
-    
+
     def test_invalid_transition_completed_to_cancelled(self):
         """Test invalid transition from completed to cancelled."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.COMPLETED, 
+            BookingState.COMPLETED,
             BookingState.CANCELLED
         )
         self.assertFalse(is_valid)
-    
+
     def test_self_transition_rejected(self):
         """Test that self-transitions are rejected."""
         is_valid = BookingStateMachine.can_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.PENDING
         )
         self.assertFalse(is_valid)
-    
+
     def test_validate_transition_valid(self):
         """Test validate_transition for valid transition."""
         is_valid, error = BookingStateMachine.validate_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CONFIRMED
         )
         self.assertTrue(is_valid)
         self.assertIsNone(error)
-    
+
     def test_validate_transition_invalid(self):
         """Test validate_transition for invalid transition."""
         is_valid, error = BookingStateMachine.validate_transition(
-            BookingState.CONFIRMED, 
+            BookingState.CONFIRMED,
             BookingState.PENDING
         )
         self.assertFalse(is_valid)
         self.assertIsNotNone(error)
-    
+
     def test_validate_transition_with_reason(self):
         """Test validate_transition with correct reason."""
         is_valid, error = BookingStateMachine.validate_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CONFIRMED,
             reason='payment_completed'
         )
         self.assertTrue(is_valid)
         self.assertIsNone(error)
-    
+
     def test_validate_transition_with_expiry_reason(self):
         """Test validate_transition with expiry reason for pending->cancelled."""
         is_valid, error = BookingStateMachine.validate_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CANCELLED,
             reason='expiry'
         )
         self.assertTrue(is_valid)
         self.assertIsNone(error)
-    
+
     def test_validate_transition_with_wrong_reason(self):
         """Test validate_transition with incorrect reason."""
         is_valid, error = BookingStateMachine.validate_transition(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CONFIRMED,
             reason='wrong_reason'
         )
         self.assertFalse(is_valid)
         self.assertIsNotNone(error)
-    
+
     def test_get_transition_reason(self):
         """Test getting transition reason."""
         reason = BookingStateMachine.get_transition_reason(
-            BookingState.PENDING, 
+            BookingState.PENDING,
             BookingState.CONFIRMED
         )
         self.assertEqual(reason, 'payment_completed')
-    
+
     def test_get_valid_transitions(self):
         """Test getting valid transitions from a state."""
         valid_transitions = BookingStateMachine.get_valid_transitions(BookingState.PENDING)
@@ -151,7 +151,7 @@ class BookingStateMachineTests(TestCase):
 
 class BookingModelStateMachineIntegrationTests(TestCase):
     """Tests for Booking model integration with state machine."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
@@ -160,12 +160,12 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             first_name='Test',
             last_name='User'
         )
-        
+
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment'
         )
-        
+
         self.property = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -179,7 +179,7 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             base_price=Decimal('100.00'),
             currency='USD'
         )
-        
+
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -190,7 +190,7 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             currency='USD',
             total_rooms=5
         )
-        
+
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -200,11 +200,11 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             currency='USD',
             is_active=True
         )
-        
+
         # Create date inventory
         check_in = timezone.now().date() + timedelta(days=7)
         check_out = check_in + timedelta(days=3)
-        
+
         current_date = check_in
         while current_date < check_out:
             DateInventory.objects.create(
@@ -217,7 +217,7 @@ class BookingModelStateMachineIntegrationTests(TestCase):
                 is_available=True
             )
             current_date += timedelta(days=1)
-        
+
         # Create booking
         self.booking = Booking.objects.create(
             guest=self.user,
@@ -232,7 +232,7 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             currency='USD',
             confirmation_code='TST345'
         )
-        
+
         BookingItem.objects.create(
             booking=self.booking,
             room_type=self.room_type,
@@ -241,14 +241,14 @@ class BookingModelStateMachineIntegrationTests(TestCase):
             price_per_night=Decimal('100.00'),
             currency='USD'
         )
-    
+
     def test_cancel_booking_valid_transition(self):
         """Test cancel_booking performs valid state transition."""
         # First set the booking items to have proper inventory
         from properties.models import DateInventory
         check_in = self.booking.check_in
         check_out = self.booking.check_out
-        
+
         current_date = check_in
         while current_date < check_out:
             DateInventory.objects.filter(
@@ -256,76 +256,76 @@ class BookingModelStateMachineIntegrationTests(TestCase):
                 date=current_date
             ).update(booked_rooms=1)
             current_date += timedelta(days=1)
-        
+
         self.booking.cancel_booking('Test cancellation')
         self.booking.refresh_from_db()
-        
+
         self.assertEqual(self.booking.status, 'cancelled')
         self.assertEqual(self.booking.cancellation_reason, 'Test cancellation')
-    
+
     def test_cancel_booking_invalid_status(self):
         """Test cancel_booking fails for invalid status."""
         self.booking.status = 'completed'
         self.booking.save()
-        
+
         with self.assertRaises(Exception):
             self.booking.cancel_booking('Test cancellation')
-    
+
     def test_complete_booking_valid_transition(self):
         """Test complete_booking performs valid state transition."""
         self.booking.status = 'confirmed'
         self.booking.payment_status = 'paid'
         self.booking.save()
-        
+
         self.booking.complete_booking()
         self.booking.refresh_from_db()
-        
+
         self.assertEqual(self.booking.status, 'completed')
-    
+
     def test_complete_booking_invalid_status(self):
         """Test complete_booking fails for invalid status."""
         with self.assertRaises(Exception):
             self.booking.complete_booking()
-    
+
     def test_mark_no_show_valid_transition(self):
         """Test mark_no_show performs valid state transition."""
         self.booking.status = 'confirmed'
         self.booking.payment_status = 'paid'
         self.booking.save()
-        
+
         self.booking.mark_no_show()
         self.booking.refresh_from_db()
-        
+
         self.assertEqual(self.booking.status, 'no_show')
-    
+
     def test_mark_no_show_invalid_status(self):
         """Test mark_no_show fails for invalid status."""
         with self.assertRaises(Exception):
             self.booking.mark_no_show()
-    
+
     def test_booking_clean_validates_state_transition(self):
         """Test booking clean method validates state transitions."""
         # First save the booking with pending status
         self.booking.save()
-        
+
         # Then try to change to an invalid status (cancelled to confirmed is invalid)
         self.booking.status = 'cancelled'
         self.booking.save()
-        
+
         # Now try to change back to confirmed (invalid transition)
         self.booking.status = 'confirmed'
-        
+
         # This should raise validation error since cancelled->confirmed is invalid
         with self.assertRaises(Exception):
             self.booking.full_clean()
-    
+
     def test_expire_booking_valid_transition(self):
         """Test expire_booking performs valid state transition."""
         # First set the booking items to have proper inventory
         from properties.models import DateInventory
         check_in = self.booking.check_in
         check_out = self.booking.check_out
-        
+
         current_date = check_in
         while current_date < check_out:
             DateInventory.objects.filter(
@@ -333,17 +333,17 @@ class BookingModelStateMachineIntegrationTests(TestCase):
                 date=current_date
             ).update(booked_rooms=1)
             current_date += timedelta(days=1)
-        
+
         self.booking.expire_booking()
         self.booking.refresh_from_db()
-        
+
         self.assertEqual(self.booking.status, 'cancelled')
         self.assertIn('expired', self.booking.cancellation_reason.lower())
-    
+
     def test_expire_booking_invalid_status(self):
         """Test expire_booking fails for invalid status."""
         self.booking.status = 'confirmed'
         self.booking.save()
-        
+
         with self.assertRaises(Exception):
             self.booking.expire_booking()

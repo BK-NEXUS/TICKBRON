@@ -69,7 +69,7 @@ class PropertyAdmin(admin.ModelAdmin):
     search_fields = ('owner__email', 'city', 'country', 'address_line1')
     ordering = ('-created_at',)
     inlines = [PropertyTranslationInline, PropertyPolicyInline, PropertyAmenityInline, PropertyPhotoInline]
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('owner', 'property_type', 'status')
@@ -206,7 +206,7 @@ class PropertyPhotoAdmin(admin.ModelAdmin):
     search_fields = ('property__id', 'caption', 'alt_text')
     ordering = ('property', 'display_order', 'created_at')
     raw_id_fields = ('property',)
-    
+
     fieldsets = (
         ('Photo Information', {
             'fields': ('property', 'photo', 'photo_type')
@@ -251,7 +251,7 @@ class RoomTypeAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('property', 'name')
     inlines = [RoomPhotoInline, RoomAmenityInline]
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('property', 'name', 'slug', 'description')
@@ -281,7 +281,7 @@ class RoomPhotoAdmin(admin.ModelAdmin):
     search_fields = ('room_type__name', 'caption', 'alt_text')
     ordering = ('room_type', 'display_order', 'created_at')
     raw_id_fields = ('room_type',)
-    
+
     fieldsets = (
         ('Photo Information', {
             'fields': ('room_type', 'photo', 'photo_type')
@@ -317,7 +317,7 @@ class RatePlanAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug', 'description', 'room_type__name')
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('room_type', 'name')
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('room_type', 'name', 'slug', 'rate_type', 'description')
@@ -347,12 +347,12 @@ class DateInventoryAdmin(admin.ModelAdmin):
     search_fields = ('rate_plan__name', 'notes')
     ordering = ('rate_plan', 'date')
     raw_id_fields = ('rate_plan',)
-    
+
     def get_remaining_rooms(self, obj):
         """Display remaining rooms in admin list."""
         return obj.remaining_rooms
     get_remaining_rooms.short_description = 'Remaining Rooms'
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('rate_plan', 'date')
