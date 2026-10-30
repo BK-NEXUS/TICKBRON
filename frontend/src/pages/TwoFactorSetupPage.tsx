@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router'
 import { authAdapter } from '../adapters/authAdapter'
 import { BrandLogo } from '../components/BrandLogo'
 import { Button } from '../components/Button'

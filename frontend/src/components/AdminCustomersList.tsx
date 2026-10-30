@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { adminAdapter, AdminCustomer, GetCustomersParams } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { act, render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router'
 import { RoomSelection } from './RoomSelection'
 import { addDays, businessToday } from '../utils/dates'
 import { RoomType, RatePlan, propertyAdapter } from '../adapters/propertyAdapter'
@@ -38,8 +38,8 @@ const dayLabel = (date: string) => {
 }
 
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-router-dom')>()
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>()
   return { ...actual, useNavigate: () => mockNavigate }
 })
 

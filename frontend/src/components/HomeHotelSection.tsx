@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ChevronRight } from 'lucide-react'
 import { propertyAdapter, type Property, type SearchParams } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'

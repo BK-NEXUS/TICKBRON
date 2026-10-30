@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'
 
 // Mock React Router
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useParams: () => ({ id: '1' }),
   useNavigate: () => vi.fn(),
 }))

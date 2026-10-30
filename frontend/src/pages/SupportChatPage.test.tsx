@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import SupportChatPage from './SupportChatPage'
 import { useAuth } from '../contexts/AuthContext'
 import { settle } from '../test/utils'

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
 import type { PromotedProperty } from '../adapters/promotionAdapter'
 import { PromoCarousel } from '../components/PromoCarousel'

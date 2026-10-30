@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { RouterProvider, createMemoryRouter } from 'react-router'
 import { SearchResultsPage } from './SearchResultsPage'
 import * as propertyAdapter from '../adapters/propertyAdapter'
 import { settle } from '../test/utils'

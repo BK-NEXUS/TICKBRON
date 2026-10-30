@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
 import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router'
 
 export interface Crumb {
   label: string

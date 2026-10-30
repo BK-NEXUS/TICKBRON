@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 /**
  * Static information pages linked from the header and footer.

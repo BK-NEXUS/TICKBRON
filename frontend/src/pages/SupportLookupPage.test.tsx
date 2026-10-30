@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render as rtlRender, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import userEvent from '@testing-library/user-event'
 import { SupportLookupPage } from './SupportLookupPage'
 import { AuthProvider } from '../contexts/AuthContext'

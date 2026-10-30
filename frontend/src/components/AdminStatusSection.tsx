@@ -1,7 +1,7 @@
 import type { MessageKey } from '../i18n/messages/en'
 import { useI18n } from '../i18n/I18nContext'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { statusAdapter, StatusCountry, StatusHotel, StatusRegion, StatusUser } from '../adapters/statusAdapter'
 import { Crumb, usePageTrail } from './Breadcrumbs'
 import { StatusRankedTable, StatusColumn } from './StatusRankedTable'

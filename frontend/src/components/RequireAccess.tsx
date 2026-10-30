@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/I18nContext'
-import { Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router'
 import { useAuth } from '../contexts/AuthContext'
 import type { User } from '../adapters/authAdapter'
 import { AccessDeniedPage } from '../pages/AccessDeniedPage'

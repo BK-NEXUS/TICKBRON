@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { propertyAdapter } from '../adapters/propertyAdapter'
-import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router'
 import { HomePage } from './HomePage'
 
 // The home page asks the backend for banners; these tests are about the rest of the page,

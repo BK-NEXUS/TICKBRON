@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SegmentedControl } from './SegmentedControl'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router'
 import { adminAdapter } from '../adapters/adminAdapter'
 import type { AdminCustomerProfile as AdminCustomerProfileData, InternalNote, CreateNoteRequest, UpdateNoteRequest } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'

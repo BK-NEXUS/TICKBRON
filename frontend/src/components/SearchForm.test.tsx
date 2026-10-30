@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
-import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter } from 'react-router'
+import { RouterProvider, createMemoryRouter, MemoryRouter, Routes, Route, useLocation } from 'react-router'
 import { SearchForm } from './SearchForm'
 
 describe('SearchForm', () => {

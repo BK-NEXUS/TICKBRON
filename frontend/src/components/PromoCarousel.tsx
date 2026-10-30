@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ChevronLeft, ChevronRight, House, MapPin, Pause, Play } from 'lucide-react'
 import { promotionAdapter, type PromotedProperty } from '../adapters/promotionAdapter'
 import { useI18n } from '../i18n/I18nContext'

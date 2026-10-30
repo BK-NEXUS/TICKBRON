@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { SegmentedControl, type SegmentedOption } from './SegmentedControl'
 import { useI18n } from '../i18n/I18nContext'
 

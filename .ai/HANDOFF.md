@@ -3341,3 +3341,6 @@ Built as in `.ai/PLAN_2FA.md` with the owner's default answers: `pyotp` for the 
 
 ## Dependency bumps, batch 3: small frontend updates (2026-10-30)
 `lucide-react` 1.52 -> 1.65, `react-router` and `react-router-dom` 7.18.4 -> 7.18.5, `@testing-library/user-event` 14.6.7 -> 14.6.8, `@types/leaflet` 1.9.12 -> 1.9.22 (still pinned exactly, next to `leaflet` 1.9.4). Full run unchanged: 2307 tests, tsc, lint, build, `npm audit` 0.
+
+## Dependency bumps, batch 4a: react-router 8 (2026-10-30)
+`react-router` 7.18.5 -> 8.5.1. Version 8 has no separate `react-router-dom` (it stays at 7.x): every import from `react-router-dom` (97 files, plus the Vite chunk and pre-bundle lists) now reads from `react-router`, and the dependency was removed. Needs Node >= 22.22 (CI `node-version: 22` and the `node:22-alpine` images give the latest 22) and React >= 19.2.7 (we have 19.3). Checked: tsc, lint, build, 2307 tests, and a browser smoke (home, a link to /about, back, login to register, an unknown address; no page errors). Not checked: every screen by hand.

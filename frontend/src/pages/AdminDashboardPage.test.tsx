@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AdminDashboardPage } from './AdminDashboardPage'
 import { useAuth } from '../contexts/AuthContext'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { BreadcrumbProvider, Breadcrumbs } from '../components/Breadcrumbs'
 import { promotionAdapter } from '../adapters/promotionAdapter'
 
