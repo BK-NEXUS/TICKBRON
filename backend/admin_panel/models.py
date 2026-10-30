@@ -103,6 +103,7 @@ class AdminAccessLog(models.Model):
         ('review_approve', 'Approved a guest review'),
         ('review_reject', 'Rejected a guest review'),
         ('admin_create', 'Created an administrator account'),
+        ('two_factor_reset', 'Reset the two-step sign-in of an account'),
         ('amenity_create', 'Created an amenity'),
         ('amenity_update', 'Changed an amenity'),
         ('amenity_delete', 'Deleted an amenity'),

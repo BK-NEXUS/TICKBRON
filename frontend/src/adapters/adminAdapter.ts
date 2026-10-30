@@ -61,6 +61,7 @@ export interface AdminUser {
   role: string
   date_joined: string
   last_login?: string
+  two_factor_enabled: boolean
 }
 
 export interface CreateHotelOwnerRequest {
@@ -526,6 +527,17 @@ class AdminAdapter {
     return this.request<CreateHotelOwnerResponse>('/api/v1/admin-panel/users/create-admin/', {
       method: 'POST',
       body: JSON.stringify(adminData),
+    })
+  }
+
+  /**
+   * Reset another account's two-step sign-in after a lost phone (super-admin only).
+   * `code` is the super admin's OWN current app code. Integrates with POST /api/v1/admin-panel/users/{id}/2fa-reset/
+   */
+  async resetTwoFactor(userId: number, code: string): Promise<ApiResponse<AdminUser>> {
+    return this.request<AdminUser>(`/api/v1/admin-panel/users/${userId}/2fa-reset/`, {
+      method: 'POST',
+      body: JSON.stringify({ code }),
     })
   }
 

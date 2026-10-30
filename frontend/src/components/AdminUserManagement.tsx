@@ -1,10 +1,19 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
 import { adminAdapter, AdminUser } from '../adapters/adminAdapter'
+import { Button } from './Button'
+import { useAuth } from '../contexts/AuthContext'
 
 export function AdminUserManagement() {
   const { t, formatDate: formatLocalDate } = useI18n()
+  const { user: viewer } = useAuth()
   const [users, setUsers] = useState<AdminUser[]>([])
+  // The account whose two-step sign-in the super admin is about to reset, with the super admin's own code
+  const [resetting, setResetting] = useState<AdminUser | null>(null)
+  const [ownCode, setOwnCode] = useState('')
+  const [resetError, setResetError] = useState('')
+  const [resetBusy, setResetBusy] = useState(false)
+  const [resetDone, setResetDone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +43,34 @@ export function AdminUserManagement() {
       setError(t('admin.failedToLoadUsers'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const openReset = (user: AdminUser) => {
+    setResetting(user)
+    setOwnCode('')
+    setResetError('')
+    setResetDone('')
+  }
+
+  const submitReset = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!resetting) return
+    if (!ownCode.trim()) {
+      setResetError(t('admin.twoFactorOwnCodeRequired'))
+      return
+    }
+    setResetError('')
+    setResetBusy(true)
+    const response = await adminAdapter.resetTwoFactor(resetting.id, ownCode.trim())
+    setResetBusy(false)
+    if (response.data) {
+      const reset = response.data
+      setUsers(previous => previous.map(user => (user.id === reset.id ? reset : user)))
+      setResetDone(t('admin.twoFactorResetDone', { email: resetting.email }))
+      setResetting(null)
+    } else {
+      setResetError(response.error || t('admin.failedToLoadUsers'))
     }
   }
 
@@ -71,6 +108,8 @@ export function AdminUserManagement() {
           {error}
         </div>
       )}
+
+      {resetDone && <p className="alert alert-success" role="status">{resetDone}</p>}
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
@@ -131,6 +170,39 @@ export function AdminUserManagement() {
               </div>
 
               <div className="user-card-footer">
+                <div className="user-two-factor-block">
+                  <p className="user-two-factor">{t(user.two_factor_enabled ? 'admin.twoFactorOn' : 'admin.twoFactorOff')}</p>
+                  {viewer?.is_superuser && !user.is_superuser && user.two_factor_enabled && resetting?.id !== user.id && (
+                    <Button type="button" variant="secondary" size="sm" onClick={() => openReset(user)}>
+                      {t('admin.twoFactorReset')}
+                    </Button>
+                  )}
+                  {resetting?.id === user.id && (
+                    <form className="user-two-factor-reset" onSubmit={submitReset} noValidate>
+                      <p className="auth-hint">{t('admin.twoFactorResetHint', { email: user.email })}</p>
+                      {resetError && <div className="alert alert-error" role="alert">{resetError}</div>}
+                      <label htmlFor={`own-code-${user.id}`}>{t('admin.twoFactorOwnCode')}</label>
+                      <input
+                        id={`own-code-${user.id}`}
+                        className="search-input"
+                        value={ownCode}
+                        onChange={(event) => setOwnCode(event.target.value)}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={7}
+                        disabled={resetBusy}
+                      />
+                      <div className="user-two-factor-actions">
+                        <Button type="submit" size="sm" loading={resetBusy} disabled={resetBusy}>
+                          {resetBusy ? t('admin.twoFactorResetting') : t('admin.twoFactorResetConfirm')}
+                        </Button>
+                        <Button type="button" variant="secondary" size="sm" disabled={resetBusy} onClick={() => setResetting(null)}>
+                          {t('admin.twoFactorResetCancel')}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </div>
                 <div className="user-dates">
                   <small className="user-created">
                     {t('admin.joinedOnShort', { date: formatDate(user.date_joined) })}

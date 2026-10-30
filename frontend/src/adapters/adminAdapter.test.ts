@@ -235,6 +235,30 @@ describe('AdminAdapter', () => {
       )
     })
 
+    it('resets another account\'s two-step sign-in with the super admin\'s own code', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 7, two_factor_enabled: false }) })
+
+      const result = await adapter.resetTwoFactor(7, '123456')
+
+      expect(result.error).toBeNull()
+      expect(result.data?.two_factor_enabled).toBe(false)
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/users/7/2fa-reset/',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ code: '123456' }) })
+      )
+    })
+
+    it('returns the server message when the own code is wrong', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false, status: 400, json: async () => ({ detail: 'Enter your own current two-step code.' }),
+      })
+
+      const result = await adapter.resetTwoFactor(7, '000000')
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBe('Enter your own current two-step code.')
+    })
+
     it('should handle 403 error for non-super-admin when creating hotel owner', async () => {
       const ownerData = {
         email: 'owner@example.com',
