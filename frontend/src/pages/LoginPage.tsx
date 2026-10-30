@@ -7,6 +7,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { TwoFactorCodeForm } from '../components/TwoFactorCodeForm'
 import { authFormProblem } from '../utils/authForm'
 import { useI18n } from '../i18n/I18nContext'
 
@@ -16,7 +17,9 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
+  // The password was right and the app's code is the only thing missing
+  const [needsCode, setNeedsCode] = useState(false)
+
   const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -25,6 +28,8 @@ export function LoginPage() {
   if (isAuthenticated) {
     return <Navigate to={redirectPathFrom(location.state)} replace />
   }
+
+  const goBack = () => navigate(redirectPathFrom(location.state), { replace: true })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,9 +45,10 @@ export function LoginPage() {
     
     setIsLoading(false)
     
-    if (response.success) {
-      const from = redirectPathFrom(location.state)
-      navigate(from, { replace: true })
+    if (response.twoFactorRequired) {
+      setNeedsCode(true)
+    } else if (response.success) {
+      goBack()
     } else {
       setError(response.error || t('auth.errorLogin'))
     }
@@ -54,66 +60,75 @@ export function LoginPage() {
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
-          <AuthModeSwitch mode="login" disabled={isLoading} />
+          {needsCode ? (
+            <TwoFactorCodeForm onSuccess={goBack} onBack={() => { setNeedsCode(false); setPassword('') }} />
+          ) : (
+            <>
+            <AuthModeSwitch mode="login" disabled={isLoading} />
 
-          <div className="auth-header">
-            <h1 className="auth-title">{t('auth.welcomeBack')}</h1>
-            <p className="auth-subtitle">{t('auth.signInSubtitle')}</p>
-          </div>
-
-          {error && (
-            <div className="auth-error" role="alert">
-              {error}
+            <div className="auth-header">
+              <h1 className="auth-title">{t('auth.welcomeBack')}</h1>
+              <p className="auth-subtitle">{t('auth.signInSubtitle')}</p>
             </div>
+
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+              <div className="auth-field">
+                <label htmlFor="email" className="auth-label">
+                  {t('auth.email')}
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  className="auth-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="password" className="auth-label">
+                  {t('auth.password')}
+                </label>
+                <PasswordField
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                />
+                <Link to="/forgot-password" className="auth-link auth-forgot-link">
+                  {t('auth.forgotPassword')}
+                </Link>
+              </div>
+
+              <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
+                {isLoading ? t('auth.signingIn') : t('auth.signIn')}
+              </Button>
+            </form>
+
+            </>
           )}
 
-          <form className="auth-form" onSubmit={handleSubmit} noValidate>
-            <div className="auth-field">
-              <label htmlFor="email" className="auth-label">
-                {t('auth.email')}
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="auth-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                autoComplete="email"
-              />
+          {!needsCode && (
+            <div className="auth-footer">
+              <p className="auth-footer-text">
+                {t('auth.noAccount')}{' '}
+                <Link to="/register" className="auth-link">
+                  {t('auth.signUp')}
+                </Link>
+              </p>
             </div>
-
-            <div className="auth-field">
-              <label htmlFor="password" className="auth-label">
-                {t('auth.password')}
-              </label>
-              <PasswordField
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
-              <Link to="/forgot-password" className="auth-link auth-forgot-link">
-                {t('auth.forgotPassword')}
-              </Link>
-            </div>
-
-            <Button type="submit" size="lg" fullWidth className="auth-submit" loading={isLoading} disabled={isLoading}>
-              {isLoading ? t('auth.signingIn') : t('auth.signIn')}
-            </Button>
-          </form>
-
-          <div className="auth-footer">
-            <p className="auth-footer-text">
-              {t('auth.noAccount')}{' '}
-              <Link to="/register" className="auth-link">
-                {t('auth.signUp')}
-              </Link>
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

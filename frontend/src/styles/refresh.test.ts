@@ -121,6 +121,12 @@ describe('design refresh: phone spacing', () => {
     expect(refresh).toMatch(/\.bookings-view-header \.status-csv \{\s*margin: var\(--spacing-sm\) 0 var\(--spacing-md\)/)
   })
 
+  it('keeps the two-step setup readable on a phone: a QR code no wider than the card, two columns of backup codes, 44 px link buttons', () => {
+    expect(refresh).toMatch(/\.qr-code \{[^}]*width: min\(100%, 240px\)/)
+    expect(refresh).toMatch(/\.two-factor-codes \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
+    expect(refresh).toMatch(/\.auth-link-button \{[^}]*min-height: 44px/)
+  })
+
   it('lays out the star split of an owner hotel as label, bar and count', () => {
     expect(refresh).toMatch(/\.owner-rating-split-row \{\s*display: grid;\s*grid-template-columns: 3rem minmax\(0, 1fr\) 2\.5rem/)
   })

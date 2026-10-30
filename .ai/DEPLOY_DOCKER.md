@@ -71,6 +71,14 @@ Change every value that says `CHANGE_ME`, and `DOMAIN`, `ALLOWED_HOSTS`, `FRONTE
 docker compose run --rm --no-deps web python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
 ```
 
+Make the key that seals the administrators' two-step sign-in secrets (`TWO_FACTOR_KEY`) with:
+
+```
+docker compose run --rm --no-deps web python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Keep a copy of it apart from the database backups: without it nobody can use the authenticator codes already set up, a leaked database alone is no use to a thief. Two-step sign-in is required for administrators and staff when `DEBUG=False`.
+
 `.env` holds passwords: it is not in git, do not send it by chat or e-mail. The app refuses to start with a weak or missing setting and says which one (`docker compose logs migrate`).
 
 ## Step 5. Start
@@ -94,7 +102,7 @@ Then add the property types (hotel, hostel, guest house, apartment, resort). A n
 docker compose exec web python manage.py seed_property_types
 ```
 
-Sign in at `https://your-domain/login` with that e-mail. Hotel owner accounts are created by this administrator in the admin panel. Do NOT run `seed_demo` on the real server (it is for development and refuses to run without DEBUG).
+Sign in at `https://your-domain/login` with that e-mail. The first sign-in sends the administrator to the two-step setup page: install an authenticator app on the phone (Google Authenticator, Microsoft Authenticator, Authy or 2FAS), scan the picture, type the 6-digit code, and keep the 10 backup codes on paper. Hotel owner accounts are created by this administrator in the admin panel. Do NOT run `seed_demo` on the real server (it is for development and refuses to run without DEBUG).
 
 ## Update to a new version
 
