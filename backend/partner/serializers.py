@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 """
 Serializers for partner API endpoints.
 
@@ -114,7 +115,8 @@ class SlugFromNameMixin:
     slug_fallback = 'item'
 
     def to_internal_value(self, data):
-        if self.instance is None and not str(data.get('slug') or '').strip():
+        # anything that is not a JSON object goes to the base class, which answers 400 "Expected a dictionary"
+        if isinstance(data, Mapping) and self.instance is None and not str(data.get('slug') or '').strip():
             data = data.copy()
             data['slug'] = self._free_slug(data)
         return super().to_internal_value(data)

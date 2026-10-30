@@ -153,3 +153,10 @@ def test_two_step_sign_in_is_required_for_administrators_in_production_by_defaul
 
 def test_two_step_sign_in_is_off_by_default_for_local_development():
     assert _requirement(DEBUG='True', ALLOWED_HOSTS='localhost') == 'False'
+
+
+def test_the_refusal_tells_a_developer_how_to_get_past_it():
+    result = _start(SECRET_KEY='short-key')
+
+    assert result.returncode != 0
+    assert 'set DEBUG=True in backend/.env' in result.stderr

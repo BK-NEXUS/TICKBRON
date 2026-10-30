@@ -51,6 +51,15 @@ def custom_exception_handler(exc, context):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    # psycopg2 refuses a NUL character before the query leaves Python: the caller sent something the database cannot hold
+    if response is None and isinstance(exc, ValueError) and 'NUL (0x00)' in str(exc):
+        logger.warning('Refused a NUL character that reached the database layer')
+        return Response(
+            {'error': {'code': 'invalid_input', 'message': 'The request contains a character that is not allowed.',
+                       'details': None}},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # If response is None, it's a non-API exception
     if response is None:
         # Log unexpected exceptions

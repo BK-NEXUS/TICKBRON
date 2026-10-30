@@ -85,6 +85,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'common.middleware.RequestBodyLimitMiddleware',
+    'common.middleware.RejectNullCharactersMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # The site sends Accept-Language (uz, ru, en); validation errors come back in that language
@@ -558,4 +559,7 @@ if DEBUG and not TESTING and not all(_is_local_host(host) for host in ALLOWED_HO
 if not DEBUG and not TESTING:
     _errors = _production_config_errors()
     if _errors:
-        raise ValueError('Insecure production settings:\n- ' + '\n- '.join(_errors))
+        raise ValueError(
+            'Insecure production settings (DEBUG is False). On your own computer set DEBUG=True in backend/.env.\n- '
+            + '\n- '.join(_errors)
+        )

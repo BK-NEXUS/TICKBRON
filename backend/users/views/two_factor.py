@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from common.csrf import enforce_csrf
-from common.request import get_client_ip
+from common.request import get_client_ip, object_body
 from common.security_log import log_security_event
 from users import lockout, two_factor
 from users.serializers import UserSerializer
@@ -42,7 +42,7 @@ def login_two_factor(request):
         log_security_event('two_factor_failed', request, user=user, reason='no_password_step' if user is None else 'locked')
         return _login_failed_response()
 
-    method = _code_is_right(user, request.data)
+    method = _code_is_right(user, object_body(request))
     if method is None:
         lockout.record_failure(user, client_ip)
         log_security_event('two_factor_failed', request, user=user, reason='bad_code')
@@ -73,7 +73,7 @@ def setup_two_factor(request):
 def confirm_two_factor(request):
     """The first right code from the app switches two-step sign-in on and returns the backup codes (once)."""
     secret = request.session.get(two_factor.SETUP_KEY)
-    code = request.data.get('code')
+    code = object_body(request).get('code')
     step = two_factor.matching_step(secret, code) if secret and isinstance(code, str) else None
     if step is None:
         return Response(
