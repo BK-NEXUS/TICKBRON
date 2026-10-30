@@ -80,3 +80,18 @@ def test_wrong_query_strings_never_cause_a_server_error(clients, method, path): 
         if found:
             problems[role] = found[:3]
     assert not problems, problems
+
+
+@pytest.mark.django_db
+def test_the_second_step_of_the_login_reads_a_wrong_body_as_nothing(clients):  # noqa: F811
+    # the hostile-body test above cannot reach this: the password step has to be done first
+    from users import two_factor
+    from users.models import User
+
+    user = User.objects.create_user(email='second@example.com', password='Kitob7$yy')
+    two_factor.enable(user, two_factor.new_secret(), step=0)
+    for body in (None, [], 'text', 123, [1, 2]):
+        api = clients['anonymous']
+        api.raise_request_exception = False
+        api.post('/api/v1/auth/login/', {'email': 'second@example.com', 'password': 'Kitob7$yy'}, format='json')
+        assert api.post('/api/v1/auth/login/2fa/', body, format='json').status_code == 401

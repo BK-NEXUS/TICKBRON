@@ -4,6 +4,7 @@ Custom middleware for TICKBRON Backend.
 Provides security headers, request logging, and performance monitoring.
 """
 import re
+from urllib.parse import unquote
 import time
 import logging
 from django.conf import settings
@@ -57,6 +58,36 @@ class RequestBodyLimitMiddleware:
             return JsonResponse(
                 {'error': {'code': 'payload_too_large', 'message': 'The request body is too large.', 'details': None}},
                 status=413,
+            )
+        return self.get_response(request)
+
+
+class RejectNullCharactersMiddleware:
+    """
+    Answer 400 to a request that carries a NUL character (%00 in the query string, \\u0000 or a raw NUL byte in a JSON body).
+
+    PostgreSQL can neither store nor search for it, so a search box or a text field would otherwise answer 500.
+    Runs after the size limit, so the body read here is already small.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    @staticmethod
+    def _has_nul(request):
+        if '\x00' in unquote(request.META.get('QUERY_STRING', '')):
+            return True
+        if request.content_type == 'application/json':
+            body = request.body
+            return b'\x00' in body or re.search(rb'(?<!\\)(?:\\\\)*\\u0000', body, re.IGNORECASE) is not None
+        return False
+
+    def __call__(self, request):
+        if self._has_nul(request):
+            return JsonResponse(
+                {'error': {'code': 'invalid_input', 'message': 'The request contains a character that is not allowed.',
+                           'details': None}},
+                status=400,
             )
         return self.get_response(request)
 

@@ -27,6 +27,7 @@ from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
 from accounts.notifications import notify
 from admin_panel.models import AdminAccessLog, InternalNote
+from common.request import object_body
 from common.security_log import log_security_event
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
@@ -299,7 +300,7 @@ def admin_reset_two_factor(request, user_id):
     everywhere and sets it up again at its next sign-in. A super admin's own two-step sign-in cannot be
     reset here: that is done on the server (`manage.py reset_2fa`). Written to the admin access log.
     """
-    code = request.data.get('code')
+    code = object_body(request).get('code')
     if not (request.user.two_factor_enabled and isinstance(code, str) and two_factor.accept_code(request.user, code)):
         return Response({'detail': _('Enter your own current two-step code.')}, status=status.HTTP_400_BAD_REQUEST)
     target = get_object_or_404(User.objects.filter(is_deleted=False), pk=user_id)

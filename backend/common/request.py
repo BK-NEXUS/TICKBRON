@@ -2,6 +2,7 @@
 Request helpers shared across apps.
 """
 import ipaddress
+from collections.abc import Mapping
 from contextvars import ContextVar
 
 from django.conf import settings
@@ -58,6 +59,14 @@ def network_key(ip):
             return str(address.ipv4_mapped)
         return str(ipaddress.ip_network(f'{address}/64', strict=False))
     return str(address)
+
+
+def object_body(request):
+    """The JSON object a client sent, or {} when it sent something else (a list, a text, a number).
+
+    Views read single fields from the body; `request.data.get` on a list is a 500 instead of the 400 the caller earns.
+    """
+    return request.data if isinstance(request.data, Mapping) else {}
 
 
 # The address of the request being handled, set by RequestLoggingMiddleware, so code far from the

@@ -85,6 +85,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'common.middleware.RequestBodyLimitMiddleware',
+    'common.middleware.RejectNullCharactersMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # The site sends Accept-Language (uz, ru, en); validation errors come back in that language
