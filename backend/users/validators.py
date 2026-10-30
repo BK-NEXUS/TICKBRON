@@ -35,14 +35,6 @@ def parse_phone_number(value):
     return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
 
 
-def normalize_phone_number(value):
-    """E.164 form of a phone number; raises ValidationError if it is not valid."""
-    normalized = parse_phone_number(value)
-    if normalized is None:
-        raise ValidationError(PHONE_NUMBER_ERROR, code='invalid_phone_number')
-    return normalized
-
-
 class StrongPasswordValidator:
     """
     Custom password validator for strong password requirements.
@@ -60,7 +52,7 @@ class StrongPasswordValidator:
         # Off in AUTH_PASSWORD_VALIDATORS: any "abc"/"456" run would also reject
         # long random passphrases, and length + blocklist matter more
         self.forbid_sequences = forbid_sequences
-    
+
     def validate(self, password, user=None):
         """
         Validate password strength.
@@ -71,7 +63,7 @@ class StrongPasswordValidator:
                 code='password_too_short',
                 params={'min_length': self.min_length},
             )
-        
+
         if not any(char.isalpha() for char in password):
             raise ValidationError(
                 _("Password must contain at least one letter."),
@@ -89,13 +81,13 @@ class StrongPasswordValidator:
                 _("Password must contain at least one special character."),
                 code='password_no_special',
             )
-        
+
         # Check for common patterns
         common_patterns = [
             r'123456', r'qwerty', r'password', r'admin', r'letmein',
             r'welcome', r'monkey', r'football', r'abc123', r'111111'
         ]
-        
+
         password_lower = password.lower()
         for pattern in common_patterns:
             if pattern in password_lower:
@@ -103,14 +95,14 @@ class StrongPasswordValidator:
                     _("Password contains common patterns and is not secure."),
                     code='password_common_pattern',
                 )
-        
+
         # Check for sequential characters
         if self.forbid_sequences and self._has_sequential_chars(password):
             raise ValidationError(
                 _("Password contains sequential characters and is not secure."),
                 code='password_sequential',
             )
-    
+
     def _has_sequential_chars(self, password):
         """Check if password contains sequential characters."""
         password_lower = password.lower()
@@ -119,7 +111,7 @@ class StrongPasswordValidator:
                 ord(password_lower[i+2]) == ord(password_lower[i]) + 2):
                 return True
         return False
-    
+
     def get_help_text(self):
         """
         Return help text for password requirements.
@@ -137,32 +129,32 @@ class EmailFormatValidator:
     
     Validates email format with stricter rules than Django's default.
     """
-    
+
     def validate(self, email):
         """
         Validate email format.
         """
         if not email:
             raise ValidationError(_("Email address is required."))
-        
+
         # Basic format check
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             raise ValidationError(_("Invalid email format."))
-        
+
         # Check for disposable email domains (basic list)
         disposable_domains = [
             'tempmail.com', 'throwaway.com', 'guerrillamail.com',
             'mailinator.com', '10minutemail.com'
         ]
-        
+
         domain = email.split('@')[1].lower()
         if any(disposable in domain for disposable in disposable_domains):
             raise ValidationError(
                 _("Disposable email addresses are not allowed."),
                 code='disposable_email',
             )
-    
+
     def get_help_text(self):
         """
         Return help text for email requirements.

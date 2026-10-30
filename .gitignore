@@ -4,3 +4,8 @@ backend/scripts/loadtest/sessions.json
 # Docker deployment: the filled-in settings and the database dumps never go to git
 .env
 backups/
+
+# Redis dump and frontend tool caches never go to git
+dump.rdb
+*.rdb
+node_modules/

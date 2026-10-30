@@ -13,12 +13,3 @@ class SoftDeleteManager(models.Manager):
     def get_queryset(self):
         """Return queryset excluding soft-deleted records."""
         return super().get_queryset().filter(is_deleted=False)
-
-
-class ActiveManager(models.Manager):
-    """
-    Manager that returns only active records.
-    """
-    def get_queryset(self):
-        """Return queryset with only active records."""
-        return super().get_queryset().filter(is_active=True)

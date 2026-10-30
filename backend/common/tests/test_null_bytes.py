@@ -63,3 +63,15 @@ def test_any_other_value_error_is_still_a_server_error():
     from common.exception_handlers import custom_exception_handler
 
     assert custom_exception_handler(ValueError('something else broke'), {}).status_code == 500
+
+
+class TestCorsHeaders:
+    """The 400 for %00 must carry the CORS headers, or a browser on another origin shows a CORS error instead of the 400."""
+
+    def test_the_refusal_carries_the_cors_headers(self, settings):
+        settings.CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
+
+        response = client().get('/api/v1/properties/search/?search=%00', HTTP_ORIGIN='http://localhost:3000')
+
+        assert response.status_code == 400
+        assert response['Access-Control-Allow-Origin'] == 'http://localhost:3000'

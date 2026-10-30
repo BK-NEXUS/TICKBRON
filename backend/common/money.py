@@ -20,7 +20,6 @@ CHARGE_CURRENCY = 'UZS'
 CURRENCY_CHOICES = [(code, code) for code in SUPPORTED_BASE_CURRENCIES]
 
 _STEP = {code: Decimal(1).scaleb(-decimals) for code, decimals in CURRENCIES.items()}
-TIYIN_PER_SOM = 100
 
 
 def _decimal(value):
@@ -49,18 +48,3 @@ def is_valid_unit(amount, currency):
 def is_whole_som(amount):
     amount = _decimal(amount)
     return amount == amount.to_integral_value()
-
-
-def som_to_tiyin(amount):
-    """Payme works in tiyin (1 so'm = 100 tiyin). Charged amounts are whole so'm."""
-    amount = _decimal(amount)
-    if not is_whole_som(amount):
-        raise ValueError("Charged UZS amounts must be whole so'm")
-    return int(amount) * TIYIN_PER_SOM
-
-
-def tiyin_to_som(value):
-    """Provider tiyin (int or digit string) back to so'm as a Decimal."""
-    if isinstance(value, bool) or not isinstance(value, (int, str)) or not str(value).isdigit():
-        raise ValueError(f'Invalid tiyin amount: {value!r}')
-    return Decimal(int(value)) / TIYIN_PER_SOM
