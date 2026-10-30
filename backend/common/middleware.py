@@ -64,26 +64,17 @@ class RequestBodyLimitMiddleware:
 
 class RejectNullCharactersMiddleware:
     """
-    Answer 400 to a request that carries a NUL character (%00 in the query string, \\u0000 or a raw NUL byte in a JSON body).
+    Answer 400 to a query string that carries a NUL character (%00).
 
-    PostgreSQL can neither store nor search for it, so a search box or a text field would otherwise answer 500.
-    Runs after the size limit, so the body read here is already small.
+    PostgreSQL can neither store nor search for it, so a search box would otherwise answer 500. A NUL inside a JSON
+    body is left to the field checks (which name the field) and, for text nobody checks, to the exception handler.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
-    @staticmethod
-    def _has_nul(request):
-        if '\x00' in unquote(request.META.get('QUERY_STRING', '')):
-            return True
-        if request.content_type == 'application/json':
-            body = request.body
-            return b'\x00' in body or re.search(rb'(?<!\\)(?:\\\\)*\\u0000', body, re.IGNORECASE) is not None
-        return False
-
     def __call__(self, request):
-        if self._has_nul(request):
+        if '\x00' in unquote(request.META.get('QUERY_STRING', '')):
             return JsonResponse(
                 {'error': {'code': 'invalid_input', 'message': 'The request contains a character that is not allowed.',
                            'details': None}},

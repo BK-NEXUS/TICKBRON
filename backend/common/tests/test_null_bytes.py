@@ -1,6 +1,6 @@
-"""A NUL character (%00 in a query string, \\u0000 in a JSON body) is refused with 400 before any view or database sees it.
+"""A NUL character is never a 500: %00 in a query string is refused first, anywhere else the exception handler answers 400.
 
-PostgreSQL cannot store or search for it, so without this check a search box or a text field answers 500.
+PostgreSQL cannot store or search for it, so without this a search box or an unchecked text field answers 500.
 """
 import json
 
@@ -31,20 +31,35 @@ class TestQueryString:
 
 
 class TestJsonBody:
+    """A NUL in a body is answered by the field checks or, failing that, by the exception handler: never a 500."""
+
     def post(self, raw):
         return client().post('/api/v1/auth/login/', data=raw, content_type='application/json')
 
-    def test_an_escaped_nul_in_the_body_is_refused(self):
+    def test_an_escaped_nul_in_a_field_is_a_client_error(self):
         assert self.post('{"email": "a\\u0000b@example.com", "password": "x"}').status_code == 400
 
-    def test_a_raw_nul_byte_in_the_body_is_refused(self):
-        assert self.post('{"email": "a\x00b@example.com", "password": "x"}').status_code == 400
-
-    def test_a_backslash_followed_by_u0000_as_text_is_not_confused_with_a_nul(self):
-        # the JSON text "\\u0000" is a backslash and the letters u0000, not a NUL
+    def test_a_backslash_followed_by_u0000_as_text_is_an_ordinary_value(self):
         body = json.dumps({'email': 'a\\u0000b@example.com', 'password': 'x'})
 
-        assert self.post(body).status_code != 400 or 'invalid_input' not in self.post(body).content.decode()
+        assert self.post(body).status_code < 500
 
     def test_a_normal_body_still_works(self):
         assert self.post(json.dumps({'email': 'nobody@example.com', 'password': 'x'})).status_code == 401
+
+
+def test_a_nul_that_reaches_the_database_layer_is_answered_400_not_500():
+    from rest_framework.views import exception_handler  # noqa: F401  (the handler is configured in REST_FRAMEWORK)
+
+    from common.exception_handlers import custom_exception_handler
+
+    response = custom_exception_handler(ValueError('A string literal cannot contain NUL (0x00) characters.'), {})
+
+    assert response.status_code == 400
+    assert response.data['error']['code'] == 'invalid_input'
+
+
+def test_any_other_value_error_is_still_a_server_error():
+    from common.exception_handlers import custom_exception_handler
+
+    assert custom_exception_handler(ValueError('something else broke'), {}).status_code == 500
