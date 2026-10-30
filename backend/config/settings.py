@@ -26,6 +26,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Check if running in test mode
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
+if TESTING:
+    # Tests hash passwords with a fast algorithm; production keeps Django's default (PBKDF2).
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+    # A developer's .env (e.g. .env.dev.example) must not change values that tests assert as defaults.
+    for _name in (
+        'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE', 'THROTTLE_BOOKING_CREATE_RATE',
+        'THROTTLE_NO_SHOW_REPORT_RATE', 'THROTTLE_CHAT_SEND_RATE', 'THROTTLE_CHAT_POLL_RATE',
+        'CELERY_TASK_ALWAYS_EAGER',
+    ):
+        os.environ.pop(_name, None)
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
 
@@ -59,7 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # TICKBRON apps
     'common',
     'core',
@@ -75,7 +86,7 @@ INSTALLED_APPS = [
     'currency',
     'promotions',
     'chat',
-    
+
     # Third-party apps
     'rest_framework',
     'corsheaders',
@@ -85,8 +96,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'common.middleware.RequestBodyLimitMiddleware',
-    'common.middleware.RejectNullCharactersMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    # after CorsMiddleware: its 400 must carry the CORS headers, or a browser shows a CORS error instead of the 400
+    'common.middleware.RejectNullCharactersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # The site sends Accept-Language (uz, ru, en); validation errors come back in that language
     'common.middleware.RequestLanguageMiddleware',
@@ -283,6 +295,8 @@ CORS_ALLOW_METHODS = [
 # Number of trusted reverse proxies in front of the app that append to
 # X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
 # set it to match the deployment (e.g. 1 behind a single nginx/load balancer).
+
+
 def _read_num_proxies():
     raw = os.getenv('NUM_PROXIES')
     if raw is None:
@@ -314,6 +328,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
+    # SafeJSONParser answers 400 to JSON nested too deeply to read (the stock parser lets a RecursionError become a 500)
+    'DEFAULT_PARSER_CLASSES': [
+        'common.parsers.SafeJSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
     'DEFAULT_THROTTLE_CLASSES': [] if TESTING else [
         'common.throttling.BlockAnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'

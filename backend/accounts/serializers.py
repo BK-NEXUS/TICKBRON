@@ -28,7 +28,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     property_translations = PropertyTranslationSerializer(
         source='property.translations', many=True, read_only=True
     )
-    
+
     class Meta:
         model = Favorite
         fields = ['id', 'user', 'property', 'property_translations', 'property_city',
@@ -37,7 +37,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
         read_only_fields = ['id', 'user', 'property', 'created_at']
         extra_kwargs = {'notes': {'max_length': 500}}
-    
+
     def get_property_primary_photo(self, obj) -> str | None:
         """URL of the primary photo; the list view loads it for every favorite in one query."""
         photos = obj.property.primary_photos if hasattr(obj.property, 'primary_photos') else obj.property.photos.filter(
@@ -63,7 +63,7 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ['property', 'notes']
         extra_kwargs = {'notes': {'max_length': 500}}
-    
+
     def validate_property(self, value):
         """Validate that the property is published."""
         if not value.is_active or value.is_deleted or value.status != 'active':
@@ -114,32 +114,32 @@ class ReviewSerializer(serializers.ModelSerializer):
     property_city = serializers.CharField(source='property.city', read_only=True)
     property_country = serializers.CharField(source='property.country', read_only=True)
     booking_confirmation_code = serializers.CharField(source='booking.confirmation_code', read_only=True, allow_null=True)
-    
+
     class Meta:
         model = Review
-        fields = ['id', 'user', 'user_email', 'user_full_name', 'property', 'property_city', 
+        fields = ['id', 'user', 'user_email', 'user_full_name', 'property', 'property_city',
                   'property_country', 'booking', 'booking_confirmation_code', 'overall_rating',
-                  'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating', 
+                  'cleanliness_rating', 'location_rating', 'value_rating', 'amenities_rating',
                   'service_rating', 'title', 'comment', 'status', 'reviewed_at', 'created_at', 'owner_reply', 'replied_at']
         read_only_fields = ['id', 'user', 'status', 'reviewed_at', 'created_at', 'owner_reply', 'replied_at']
         extra_kwargs = {'comment': {'max_length': 2000}}
-    
+
     def validate_overall_rating(self, value):
         """Validate overall rating is between 1 and 5."""
         if not 1 <= value <= 5:
             raise serializers.ValidationError(_("Overall rating must be between 1 and 5."))
         return value
-    
+
     def validate(self, attrs):
         """Validate category ratings if provided."""
-        rating_fields = ['cleanliness_rating', 'location_rating', 'value_rating', 
+        rating_fields = ['cleanliness_rating', 'location_rating', 'value_rating',
                         'amenities_rating', 'service_rating']
-        
+
         for field in rating_fields:
             if field in attrs and attrs[field] is not None:
                 if not 1 <= attrs[field] <= 5:
                     raise serializers.ValidationError({field: f"{field} must be between 1 and 5."})
-        
+
         return attrs
 
 
@@ -198,11 +198,11 @@ class NotificationSerializer(serializers.ModelSerializer):
     property_name = serializers.CharField(source='property.display_name', read_only=True, allow_null=True)
     property_slug = serializers.CharField(source='property.slug', read_only=True, allow_null=True)
     booking_confirmation_code = serializers.CharField(source='booking.confirmation_code', read_only=True, allow_null=True)
-    
+
     class Meta:
         model = Notification
         fields = ['id', 'user', 'notification_type', 'priority', 'title', 'message', 'code', 'params',
-                  'booking', 'booking_confirmation_code', 'property', 'property_name', 
+                  'booking', 'booking_confirmation_code', 'property', 'property_name',
                   'property_slug', 'is_read', 'read_at', 'sent_via_email', 'sent_via_sms',
                   'action_url', 'action_label', 'created_at']
         read_only_fields = ['id', 'user', 'code', 'params', 'sent_via_email', 'sent_via_sms', 'created_at']
@@ -215,7 +215,7 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['is_read']
-    
+
     def validate_is_read(self, value):
         """Ensure read_at is set when marking as read."""
         if value and not self.instance.read_at:
@@ -232,20 +232,10 @@ class AccountHistorySerializer(serializers.ModelSerializer):
     user_full_name = serializers.CharField(source='user.get_full_name', read_only=True)
     property_city = serializers.CharField(source='property.city', read_only=True, allow_null=True)
     booking_confirmation_code = serializers.CharField(source='booking.confirmation_code', read_only=True, allow_null=True)
-    
+
     class Meta:
         model = AccountHistory
         fields = ['id', 'user', 'user_email', 'user_full_name', 'action', 'description',
                   'ip_address', 'user_agent', 'booking', 'booking_confirmation_code',
                   'property', 'property_city', 'metadata', 'created_at']
         read_only_fields = ['id', 'user', 'property', 'created_at']
-
-
-class AccountHistoryCreateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating account history entries.
-    """
-    class Meta:
-        model = AccountHistory
-        fields = ['action', 'description', 'ip_address', 'user_agent', 
-                  'booking', 'property', 'metadata']

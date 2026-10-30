@@ -452,3 +452,6 @@ msgstr "Двухэтапный вход суперадмина можно сбр
 
 msgid "Two-step sign-in is not on for this account."
 msgstr "Для этого аккаунта двухэтапный вход не включён."
+
+msgid "The JSON is nested too deeply."
+msgstr "JSON вложен слишком глубоко."

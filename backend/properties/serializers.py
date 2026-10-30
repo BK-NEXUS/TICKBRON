@@ -66,7 +66,7 @@ class CardPricesMixin(serializers.Serializer):
 
 class PropertyTypeSerializer(serializers.ModelSerializer):
     """Serializer for PropertyType model."""
-    
+
     class Meta:
         model = PropertyType
         fields = ['id', 'name', 'slug', 'description', 'icon']
@@ -75,7 +75,7 @@ class PropertyTypeSerializer(serializers.ModelSerializer):
 
 class AmenityCategorySerializer(serializers.ModelSerializer):
     """Serializer for AmenityCategory model."""
-    
+
     class Meta:
         model = AmenityCategory
         fields = ['id', 'name', 'slug', 'description', 'icon', 'sort_order']
@@ -85,7 +85,7 @@ class AmenityCategorySerializer(serializers.ModelSerializer):
 class AmenitySerializer(serializers.ModelSerializer):
     """Serializer for Amenity model."""
     category = AmenityCategorySerializer(read_only=True)
-    
+
     class Meta:
         model = Amenity
         fields = ['id', 'name', 'slug', 'description', 'icon', 'is_searchable', 'sort_order', 'category']
@@ -95,7 +95,7 @@ class AmenitySerializer(serializers.ModelSerializer):
 class PropertyAmenitySerializer(serializers.ModelSerializer):
     """Serializer for PropertyAmenity model."""
     amenity = AmenitySerializer(read_only=True)
-    
+
     class Meta:
         model = PropertyAmenity
         fields = ['amenity', 'is_available', 'notes']
@@ -105,12 +105,12 @@ class PropertyAmenitySerializer(serializers.ModelSerializer):
 class PropertyPhotoSerializer(serializers.ModelSerializer):
     """Serializer for PropertyPhoto model."""
     photo_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = PropertyPhoto
         fields = ['id', 'photo', 'photo_url', 'photo_type', 'caption', 'is_primary', 'display_order', 'alt_text']
         read_only_fields = ['id']
-    
+
     def get_photo_url(self, obj):
         """Get the absolute URL for the photo."""
         if obj.photo:
@@ -120,7 +120,7 @@ class PropertyPhotoSerializer(serializers.ModelSerializer):
 
 class PropertyTranslationSerializer(serializers.ModelSerializer):
     """Serializer for PropertyTranslation model."""
-    
+
     class Meta:
         model = PropertyTranslation
         fields = ['language', 'name', 'description', 'address_line1', 'address_line2', 'city']
@@ -129,7 +129,7 @@ class PropertyTranslationSerializer(serializers.ModelSerializer):
 
 class PropertyPolicySerializer(serializers.ModelSerializer):
     """Serializer for PropertyPolicy model."""
-    
+
     class Meta:
         model = PropertyPolicy
         fields = ['policy_type', 'title', 'description', 'is_strict']
@@ -151,7 +151,7 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
     # Annotated by the search queryset (properties.search.with_review_scores)
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Property
         fields = [
@@ -163,7 +163,7 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
             'primary_photo', 'amenities', 'full_address', 'average_rating', 'review_count', 'created_at'
         ]
         read_only_fields = ['id']
-    
+
     def get_primary_photo(self, obj):
         """The primary photo, else the first one; read from the rows the search already loaded."""
         photos = list(obj.active_photos if hasattr(obj, 'active_photos') else obj.photos.filter(
@@ -181,11 +181,11 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
-    
+
     def get_average_rating(self, obj):
         value = getattr(obj, 'average_rating', None)
         return round(float(value), 1) if value is not None else None
-    
+
     def get_review_count(self, obj):
         return getattr(obj, 'review_count', 0) or 0
 
@@ -204,7 +204,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
     full_address = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
     room_types = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Property
         fields = [
@@ -218,26 +218,26 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-    
+
     def get_amenities(self, obj):
         """Get all amenities for the property."""
         property_amenities = obj.property_amenities.filter(
             is_deleted=False
         ).select_related('amenity__category')
-        
+
         return PropertyAmenitySerializer(property_amenities, many=True).data
-    
+
     def get_full_address(self, obj):
         """Get the full address as a string."""
         return obj.get_full_address()
-    
+
     def get_gallery(self, obj):
         """Get property gallery organized by photo type."""
         photos = obj.photos.filter(
             is_active=True,
             is_deleted=False
         ).order_by('display_order', 'created_at')
-        
+
         gallery = {
             'exterior': [],
             'interior': [],
@@ -245,7 +245,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
             'room': [],
             'other': []
         }
-        
+
         for photo in photos:
             photo_data = PropertyPhotoSerializer(photo).data
             # Handle missing photo URL gracefully
@@ -256,9 +256,9 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 gallery[photo_type].append(photo_data)
             else:
                 gallery['other'].append(photo_data)
-        
+
         return gallery
-    
+
     def get_room_types(self, obj):
         """Get room types with rate plans for the property."""
         # Filtered in SQL inside the prefetch, so there are four queries however many room types exist
@@ -269,7 +269,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
             Prefetch('room_amenities', queryset=RoomAmenity.objects.filter(
                 is_deleted=False).select_related('amenity__category')),
         )
-        
+
         request = self.context.get('request')
         rates = {}
 
@@ -284,7 +284,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         for room_type in room_types:
             # Get active rate plans
             active_rate_plans = room_type.rate_plans.all()
-            
+
             rate_plans_data = []
             for rate_plan in active_rate_plans:
                 rate_plan_data = {
@@ -304,10 +304,10 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'prices': price_list(rate_plan, rate_of),
                 }
                 rate_plans_data.append(rate_plan_data)
-            
+
             # Get room photos
             room_photos = room_type.photos.all()
-            
+
             room_photos_data = []
             for photo in room_photos:
                 photo_data = {
@@ -320,10 +320,10 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'alt_text': photo.alt_text,
                 }
                 room_photos_data.append(photo_data)
-            
+
             # Get room amenities
             room_amenities = room_type.room_amenities.all()
-            
+
             room_amenities_data = []
             for room_amenity in room_amenities:
                 amenity_data = {
@@ -346,7 +346,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                     'notes': room_amenity.notes,
                 }
                 room_amenities_data.append(amenity_data)
-            
+
             room_type_data = {
                 'id': room_type.id,
                 'name': room_type.name,
@@ -377,63 +377,63 @@ class SearchParamsSerializer(serializers.Serializer):
     Validates and parses search parameters for the search endpoint with standardized validation.
     """
     q = serializers.CharField(
-        required=False, 
-        allow_blank=True, 
+        required=False,
+        allow_blank=True,
         max_length=500,
         help_text="Text search query (max 500 characters)"
     )
     location = serializers.CharField(
-        required=False, 
-        allow_blank=True, 
+        required=False,
+        allow_blank=True,
         max_length=200,
         help_text="Location search (city, country, max 200 characters)"
     )
     lat = serializers.DecimalField(
-        required=False, 
-        max_digits=9, 
+        required=False,
+        max_digits=9,
         decimal_places=6,
         min_value=-90,
         max_value=90,
         help_text="Latitude for geographic search (-90 to 90)"
     )
     lng = serializers.DecimalField(
-        required=False, 
-        max_digits=9, 
+        required=False,
+        max_digits=9,
         decimal_places=6,
         min_value=-180,
         max_value=180,
         help_text="Longitude for geographic search (-180 to 180)"
     )
     radius = serializers.IntegerField(
-        required=False, 
-        default=10, 
-        min_value=1, 
-        max_value=100, 
+        required=False,
+        default=10,
+        min_value=1,
+        max_value=100,
         help_text="Search radius in kilometers (1-100)"
     )
     min_price = serializers.DecimalField(
-        required=False, 
-        max_digits=10, 
-        decimal_places=2, 
+        required=False,
+        max_digits=10,
+        decimal_places=2,
         min_value=0,
         help_text="Minimum price (non-negative)"
     )
     max_price = serializers.DecimalField(
-        required=False, 
-        max_digits=10, 
-        decimal_places=2, 
+        required=False,
+        max_digits=10,
+        decimal_places=2,
         min_value=0,
         help_text="Maximum price (non-negative)"
     )
     min_guests = serializers.IntegerField(
-        required=False, 
-        min_value=1, 
+        required=False,
+        min_value=1,
         max_value=50,
         help_text="Minimum number of guests (min 1)"
     )
     max_guests = serializers.IntegerField(
-        required=False, 
-        min_value=1, 
+        required=False,
+        min_value=1,
         max_value=50,
         help_text="Maximum number of guests (min 1)"
     )
@@ -444,7 +444,7 @@ class SearchParamsSerializer(serializers.Serializer):
         help_text="List of amenity IDs to filter by (max 20)"
     )
     property_type = serializers.IntegerField(
-        required=False, 
+        required=False,
         min_value=1,
         help_text="Property type ID to filter by"
     )
@@ -462,11 +462,11 @@ class SearchParamsSerializer(serializers.Serializer):
         help_text="Minimum average guest rating (1-5)"
     )
     check_in = serializers.DateField(
-        required=False, 
+        required=False,
         help_text="Check-in date (YYYY-MM-DD format)"
     )
     check_out = serializers.DateField(
-        required=False, 
+        required=False,
         help_text="Check-out date (YYYY-MM-DD format)"
     )
     sort = serializers.ChoiceField(
@@ -476,19 +476,19 @@ class SearchParamsSerializer(serializers.Serializer):
         help_text="Sorting method"
     )
     page = serializers.IntegerField(
-        required=False, 
-        default=1, 
+        required=False,
+        default=1,
         min_value=1,
         help_text="Page number (min 1)"
     )
     page_size = serializers.IntegerField(
-        required=False, 
-        default=20, 
-        min_value=1, 
+        required=False,
+        default=20,
+        min_value=1,
         max_value=100,
         help_text="Results per page (1-100)"
     )
-    
+
     def validate_features(self, value):
         from properties.search import FEATURES
         features = [f.strip() for f in value.split(',') if f.strip()]
@@ -498,47 +498,32 @@ class SearchParamsSerializer(serializers.Serializer):
                 f"Unknown feature(s): {', '.join(unknown)}. Allowed: {', '.join(FEATURES)}."
             )
         return features
-    
+
     def validate(self, data):
         """Validate search parameters with comprehensive checks."""
         # Validate geographic search parameters
         if (data.get('lat') and not data.get('lng')) or (data.get('lng') and not data.get('lat')):
             raise serializers.ValidationError(_("Both lat and lng are required for geographic search"))
-        
+
         # Validate date range
         check_in = data.get('check_in')
         check_out = data.get('check_out')
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError("check_out must be after check_in")
-        
+
         # Validate price range
         min_price = data.get('min_price')
         max_price = data.get('max_price')
         if min_price and max_price and max_price < min_price:
             raise serializers.ValidationError("max_price must be greater than or equal to min_price")
-        
+
         # Validate guest range
         min_guests = data.get('min_guests')
         max_guests = data.get('max_guests')
         if min_guests and max_guests and max_guests < min_guests:
             raise serializers.ValidationError("max_guests must be greater than or equal to min_guests")
-        
+
         return data
-
-
-class PaginatedSearchResponseSerializer(serializers.Serializer):
-    """
-    Serializer for paginated search response.
-    
-    Standardizes the response format for search results.
-    """
-    count = serializers.IntegerField(help_text="Total number of results")
-    next = serializers.IntegerField(allow_null=True, help_text="Next page number")
-    previous = serializers.IntegerField(allow_null=True, help_text="Previous page number")
-    results = serializers.ListField(help_text="Search results")
-    page = serializers.IntegerField(help_text="Current page number")
-    page_size = serializers.IntegerField(help_text="Results per page")
-    total_pages = serializers.IntegerField(help_text="Total number of pages")
 
 
 class DateInventorySerializer(serializers.ModelSerializer):
@@ -550,7 +535,7 @@ class DateInventorySerializer(serializers.ModelSerializer):
     remaining_rooms = serializers.IntegerField(help_text="Calculated remaining available rooms")
     # R16: the night's price in every currency; needs the rate plan in the context (see RatePlanAvailabilitySerializer)
     prices = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = DateInventory
         fields = [
@@ -584,7 +569,7 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
     date_inventory = serializers.SerializerMethodField()
     # R16: the plan's price in every currency (owner / main / converted), see bookings.pricing.price_list
     prices = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = RatePlan
         fields = [
@@ -593,7 +578,7 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
             'deposit_required', 'deposit_percentage', 'advance_booking_days', 'date_inventory',
         ]
         read_only_fields = ['id']
-    
+
     def get_date_inventory(self, obj):
         """
         Get date inventory for this rate plan within the requested date range.
@@ -657,7 +642,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
     Includes room type details and rate plans with their availability.
     """
     rate_plans = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = RoomType
         fields = [
@@ -665,7 +650,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
             'base_price', 'currency', 'total_rooms', 'bed_configuration', 'room_size', 'is_vip', 'rate_plans'
         ]
         read_only_fields = ['id']
-    
+
     def get_rate_plans(self, obj):
         """Get active rate plans with availability data for this room type."""
         request = self.context.get('request')
@@ -673,10 +658,10 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
             is_active=True,
             is_deleted=False
         ).prefetch_related('prices').order_by('name')
-        
+
         return RatePlanAvailabilitySerializer(
-            rate_plans, 
-            many=True, 
+            rate_plans,
+            many=True,
             context={'request': request, 'rate_of': rate_lookup(request)}
         ).data
 
@@ -688,7 +673,7 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
     Includes property details and room types with rate plans and date inventory.
     """
     room_types = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Property
         fields = [
@@ -697,7 +682,7 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
             'latitude', 'longitude', 'base_price', 'currency', 'base_price_uzs_approx', 'uzs_rate', 'room_types'
         ]
         read_only_fields = ['id']
-    
+
     def get_room_types(self, obj):
         """Get room types with availability data for this property."""
         request = self.context.get('request')
@@ -705,7 +690,7 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
         room_types = obj.room_types.filter(
             is_deleted=False
         ).order_by('-is_vip', 'name')
-        
+
         return RoomTypeAvailabilitySerializer(
             room_types,
             many=True,
@@ -727,15 +712,15 @@ class AvailabilityParamsSerializer(serializers.Serializer):
         required=False,
         help_text="Check-out date (YYYY-MM-DD format)"
     )
-    
+
     def validate(self, data):
         """Validate date range parameters."""
         check_in = data.get('check_in')
         check_out = data.get('check_out')
-        
+
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError("check_out must be after check_in")
-        
+
         if check_in and check_in < business_today():
             raise serializers.ValidationError("check_in cannot be in the past")
 

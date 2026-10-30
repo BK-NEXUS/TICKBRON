@@ -17,11 +17,11 @@ class TickBronException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = 'A server error occurred.'
     default_code = 'server_error'
-    
+
     def __init__(self, detail=None, code=None, log_level='error'):
         self.log_level = log_level
         super().__init__(detail, code)
-        
+
         # Log the exception
         log_method = getattr(logger, log_level, logger.error)
         log_method(f"{self.__class__.__name__}: {self.detail}")
@@ -34,7 +34,7 @@ class RateLimitException(TickBronException):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = 'Rate limit exceeded. Please try again later.'
     default_code = 'rate_limit_exceeded'
-    
+
     def __init__(self, detail=None, retry_after=None):
         if detail is None:
             detail = self.default_detail
@@ -49,7 +49,7 @@ class PermissionDeniedException(TickBronException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = 'You do not have permission to perform this action.'
     default_code = 'permission_denied'
-    
+
     def __init__(self, detail=None):
         if detail is None:
             detail = self.default_detail
@@ -63,7 +63,7 @@ class ResourceNotFoundException(TickBronException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = 'Resource not found.'
     default_code = 'not_found'
-    
+
     def __init__(self, detail=None):
         if detail is None:
             detail = self.default_detail
@@ -77,7 +77,7 @@ class ValidationException(TickBronException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'Invalid input data.'
     default_code = 'validation_error'
-    
+
     def __init__(self, detail=None):
         if detail is None:
             detail = self.default_detail
@@ -91,7 +91,7 @@ class ExternalServiceException(TickBronException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = 'External service unavailable.'
     default_code = 'external_service_error'
-    
+
     def __init__(self, detail=None, service_name=None):
         if detail is None:
             detail = self.default_detail

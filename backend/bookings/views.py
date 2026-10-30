@@ -53,7 +53,7 @@ class BookingViewSet(mixins.CreateModelMixin,
     """
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return bookings for the current user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
@@ -66,7 +66,7 @@ class BookingViewSet(mixins.CreateModelMixin,
             Prefetch('booking_items', queryset=BookingItem.objects.select_related('room_type', 'rate_plan')),
             'property__translations',
         )
-    
+
     @staticmethod
     def _pending_cap_reached(user):
         """The guest already holds the most upcoming bookings (not cancelled, not arrived, not over)."""
@@ -134,13 +134,13 @@ class BookingViewSet(mixins.CreateModelMixin,
             data=request.data,
             context={'request': request}
         )
-        
+
         if not serializer.is_valid():
             return Response(
                 {'error': _('Invalid booking parameters'), 'details': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         refused = self._refused_by_account_rules(request.user, serializer)
         if refused is not None:
             return refused
@@ -186,7 +186,7 @@ class BookingViewSet(mixins.CreateModelMixin,
                 {'error': _('Failed to create booking')},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
     def retrieve(self, request, *args, **kwargs):
         """
         Retrieve a specific booking.
@@ -200,7 +200,7 @@ class BookingViewSet(mixins.CreateModelMixin,
         booking = self.get_object()
         serializer = self.get_serializer(booking)
         return Response(serializer.data)
-    
+
     def list(self, request, *args, **kwargs):
         """
         List the current user's bookings, newest first, 20 per page.
@@ -250,20 +250,20 @@ def booking_cancel(request, booking_id):
         guest=request.user,
         is_deleted=False
     )
-    
+
     serializer = BookingCancelSerializer(
         booking,
         data=request.data,
         partial=True,
         context={'booking': booking}
     )
-    
+
     if not serializer.is_valid():
         return Response(
             {'error': _('Invalid cancellation parameters'), 'details': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     try:
         updated_booking = serializer.save()
         return Response(BookingSerializer(updated_booking).data, status=status.HTTP_200_OK)

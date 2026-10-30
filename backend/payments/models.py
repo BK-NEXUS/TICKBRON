@@ -27,13 +27,13 @@ class PaymentTransaction(BaseModel):
         ('refunded', _('Refunded')),
         ('partially_refunded', _('Partially Refunded')),
     ]
-    
+
     PROVIDER_CHOICES = [
         ('payme', _('Payme')),
         ('click', _('Click')),
         ('visa', _('Visa')),
     ]
-    
+
     # Idempotency key - ensures duplicate payment requests are handled safely
     idempotency_key = models.CharField(
         max_length=255,
@@ -41,7 +41,7 @@ class PaymentTransaction(BaseModel):
         db_index=True,
         help_text=_('Unique key for idempotent payment requests')
     )
-    
+
     # Associated booking
     booking = models.ForeignKey(
         'bookings.Booking',
@@ -50,7 +50,7 @@ class PaymentTransaction(BaseModel):
         db_index=True,
         help_text=_('Associated booking for this payment')
     )
-    
+
     # Payment provider information
     provider = models.CharField(
         max_length=20,
@@ -66,7 +66,7 @@ class PaymentTransaction(BaseModel):
         db_index=True,
         help_text=_('Transaction ID from payment provider')
     )
-    
+
     # Amount information
     amount = models.DecimalField(
         max_digits=12,
@@ -79,7 +79,7 @@ class PaymentTransaction(BaseModel):
         default='USD',
         help_text=_('ISO 4217 currency code')
     )
-    
+
     # Payment status
     status = models.CharField(
         max_length=20,
@@ -87,7 +87,7 @@ class PaymentTransaction(BaseModel):
         default='pending',
         db_index=True
     )
-    
+
     # Payment method token (never raw card data)
     payment_method_token = models.CharField(
         max_length=255,
@@ -95,14 +95,14 @@ class PaymentTransaction(BaseModel):
         blank=True,
         help_text=_('Tokenized payment method from provider')
     )
-    
+
     # Response data from provider (sanitized, no sensitive data)
     provider_response = models.JSONField(
         null=True,
         blank=True,
         help_text=_('Sanitized response data from payment provider')
     )
-    
+
     # Error information
     error_code = models.CharField(
         max_length=100,
@@ -115,7 +115,7 @@ class PaymentTransaction(BaseModel):
         blank=True,
         help_text=_('Error message from payment provider')
     )
-    
+
     # Metadata for auditing
     client_ip = models.GenericIPAddressField(
         null=True,
@@ -127,7 +127,7 @@ class PaymentTransaction(BaseModel):
         blank=True,
         help_text=_('User agent string for audit trail')
     )
-    
+
     class Meta:
         db_table = 'payment_transactions'
         verbose_name = 'Payment Transaction'
@@ -140,20 +140,20 @@ class PaymentTransaction(BaseModel):
             models.Index(fields=['provider_transaction_id']),
             models.Index(fields=['created_at']),
         ]
-    
+
     def __str__(self):
         return f"Payment {self.idempotency_key} - {self.amount} {self.currency}"
-    
+
     def clean(self):
         """Validate payment transaction data."""
         super().clean()
-        
+
         # Validate that booking is in pending status for new payments
         if self.status == 'pending' and self.booking.status != 'pending':
             raise ValidationError({
                 'booking': _('Payment can only be initiated for pending bookings')
             })
-        
+
         # A payment is the booking's charge snapshot (R6): its UZS amount, or for bookings
         # made before R6 their total in their own currency
         if self.amount != self.booking.charge_amount:
@@ -164,12 +164,12 @@ class PaymentTransaction(BaseModel):
             raise ValidationError({
                 'currency': _('Payment currency must match the booking charge currency')
             })
-    
+
     def save(self, *args, **kwargs):
         """Override save to enforce idempotency."""
         self.full_clean()
         super().save(*args, **kwargs)
-    
+
     @classmethod
     def get_or_create_idempotent(cls, idempotency_key, **kwargs):
         """
@@ -200,7 +200,7 @@ class Refund(models.Model):
 
     - amount is in the payment's currency (UZS: whole so'm); the sum of a payment's
       non-failed refunds (pending, succeeded, needs_manual) never exceeds its amount,
-      checked by payments.refunds.create_refund with the payment row locked
+      checked under a lock on the payment row
     - pending: committed, provider not called yet; succeeded / failed: provider answer;
       needs_manual: the provider cannot do it through the API (partial refund not
       supported or not verified, integration missing), staff refund by hand and mark it done
@@ -259,13 +259,13 @@ class WebhookEvent(BaseModel):
         ('invalid_signature', _('Invalid Signature')),
         ('replay_attack', _('Replay Attack')),
     ]
-    
+
     PROVIDER_CHOICES = [
         ('payme', _('Payme')),
         ('click', _('Click')),
         ('visa', _('Visa')),
     ]
-    
+
     # Provider information
     provider = models.CharField(
         max_length=20,
@@ -273,19 +273,19 @@ class WebhookEvent(BaseModel):
         db_index=True,
         help_text=_('Payment provider sending the webhook')
     )
-    
+
     # Event ID from provider (for replay protection)
     provider_event_id = models.CharField(
         max_length=255,
         db_index=True,
         help_text=_('Event ID from payment provider')
     )
-    
+
     # Webhook payload
     payload = models.JSONField(
         help_text=_('Raw webhook payload from provider')
     )
-    
+
     # Signature verification
     signature = models.CharField(
         max_length=255,
@@ -295,7 +295,7 @@ class WebhookEvent(BaseModel):
         default=False,
         help_text=_('Whether the signature was valid')
     )
-    
+
     # Timestamp validation
     timestamp = models.DateTimeField(
         null=True,
@@ -306,7 +306,7 @@ class WebhookEvent(BaseModel):
         default=False,
         help_text=_('Whether the timestamp was within acceptable range')
     )
-    
+
     # Processing status
     status = models.CharField(
         max_length=20,
@@ -314,7 +314,7 @@ class WebhookEvent(BaseModel):
         default='received',
         db_index=True
     )
-    
+
     # Associated payment transaction (if any)
     payment_transaction = models.ForeignKey(
         PaymentTransaction,
@@ -324,21 +324,21 @@ class WebhookEvent(BaseModel):
         related_name='webhook_events',
         help_text=_('Associated payment transaction')
     )
-    
+
     # Error information
     error_message = models.TextField(
         null=True,
         blank=True,
         help_text=_('Error message if processing failed')
     )
-    
+
     # Processing metadata
     processed_at = models.DateTimeField(
         null=True,
         blank=True,
         help_text=_('When the webhook was processed')
     )
-    
+
     class Meta:
         db_table = 'webhook_events'
         verbose_name = 'Webhook Event'
@@ -351,10 +351,10 @@ class WebhookEvent(BaseModel):
         ]
         # Unique constraint to prevent replay attacks
         unique_together = [['provider', 'provider_event_id']]
-    
+
     def __str__(self):
         return f"Webhook {self.provider_event_id} from {self.provider}"
-    
+
     def is_replay_attack(self):
         """
         Check if this webhook event is a replay attack.
@@ -368,13 +368,13 @@ class WebhookEvent(BaseModel):
                 provider=self.provider,
                 provider_event_id=self.provider_event_id
             ).exists()
-        
+
         return WebhookEvent.objects.filter(
             provider=self.provider,
             provider_event_id=self.provider_event_id,
             id__lt=self.id  # Exclude current instance
         ).exists()
-    
+
     def is_timestamp_valid(self, max_age_seconds=300):
         """
         Check if webhook timestamp is within acceptable range.
@@ -387,7 +387,7 @@ class WebhookEvent(BaseModel):
         """
         if not self.timestamp:
             return False
-        
+
         time_diff = timezone.now() - self.timestamp
         return abs(time_diff.total_seconds()) <= max_age_seconds
 
@@ -408,7 +408,7 @@ class PaymentAuditLog(BaseModel):
         ('booking_status_changed', _('Booking Status Changed')),
         ('payment_status_changed', _('Payment Status Changed')),
     ]
-    
+
     # Associated entities
     payment_transaction = models.ForeignKey(
         PaymentTransaction,
@@ -434,7 +434,7 @@ class PaymentAuditLog(BaseModel):
         related_name='payment_audit_logs',
         help_text=_('Associated booking')
     )
-    
+
     # Action information
     action = models.CharField(
         max_length=50,
@@ -442,7 +442,7 @@ class PaymentAuditLog(BaseModel):
         db_index=True,
         help_text=_('Action that was performed')
     )
-    
+
     # State changes
     old_status = models.CharField(
         max_length=50,
@@ -456,7 +456,7 @@ class PaymentAuditLog(BaseModel):
         blank=True,
         help_text=_('New status after action')
     )
-    
+
     # Additional context
     actor = models.ForeignKey(
         'users.User',
@@ -476,7 +476,7 @@ class PaymentAuditLog(BaseModel):
         blank=True,
         help_text=_('Additional details about the action')
     )
-    
+
     class Meta:
         db_table = 'payment_audit_logs'
         verbose_name = 'Payment Audit Log'
@@ -489,13 +489,13 @@ class PaymentAuditLog(BaseModel):
             models.Index(fields=['action']),
             models.Index(fields=['created_at']),
         ]
-    
+
     def __str__(self):
         return f"Audit Log {self.action} at {self.created_at}"
-    
+
     @classmethod
-    def log_action(cls, action, payment_transaction=None, webhook_event=None, 
-                   booking=None, old_status=None, new_status=None, actor=None, 
+    def log_action(cls, action, payment_transaction=None, webhook_event=None,
+                   booking=None, old_status=None, new_status=None, actor=None,
                    ip_address=None, details=None):
         """
         Create an audit log entry for a payment action.

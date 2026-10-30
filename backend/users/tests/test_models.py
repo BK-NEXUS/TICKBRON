@@ -12,7 +12,7 @@ User = get_user_model()
 
 class TestUserModel(TestCase):
     """Test cases for User model."""
-    
+
     def test_create_user(self):
         """Test creating a regular user."""
         user = User.objects.create_user(
@@ -21,7 +21,7 @@ class TestUserModel(TestCase):
             first_name='Test',
             last_name='User'
         )
-        
+
         assert user.email == 'test@example.com'
         assert user.first_name == 'Test'
         assert user.last_name == 'User'
@@ -29,7 +29,7 @@ class TestUserModel(TestCase):
         assert user.is_staff is False
         assert user.is_superuser is False
         assert user.is_active is True
-    
+
     def test_create_superuser(self):
         """Test creating a superuser."""
         user = User.objects.create_superuser(
@@ -38,12 +38,12 @@ class TestUserModel(TestCase):
             first_name='Admin',
             last_name='User'
         )
-        
+
         assert user.email == 'admin@example.com'
         assert user.is_staff is True
         assert user.is_superuser is True
         assert user.is_active is True
-    
+
     def test_user_email_normalized(self):
         """Test that email is normalized."""
         email = 'Test@Example.com'
@@ -51,10 +51,10 @@ class TestUserModel(TestCase):
             email=email,
             password='testpass123'
         )
-        
+
         # The whole address is lowercased (see users/tests/test_email_case.py)
         assert user.email == 'test@example.com'
-    
+
     def test_user_without_email_raises_error(self):
         """Test that creating user without email raises ValueError."""
         with pytest.raises(ValueError):
@@ -62,16 +62,16 @@ class TestUserModel(TestCase):
                 email=None,
                 password='testpass123'
             )
-    
+
     def test_user_str_representation(self):
         """Test string representation of User."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
-        
+
         assert str(user) == 'test@example.com'
-    
+
     def test_get_full_name(self):
         """Test get_full_name method with full_name field."""
         user = User.objects.create_user(
@@ -79,9 +79,9 @@ class TestUserModel(TestCase):
             password='testpass123',
             full_name='John Doe'
         )
-        
+
         assert user.get_full_name() == 'John Doe'
-    
+
     def test_get_full_name_from_first_last(self):
         """Test get_full_name method falling back to first_name/last_name."""
         user = User.objects.create_user(
@@ -90,18 +90,18 @@ class TestUserModel(TestCase):
             first_name='John',
             last_name='Doe'
         )
-        
+
         assert user.get_full_name() == 'John Doe'
-    
+
     def test_get_full_name_empty(self):
         """Test get_full_name when all name fields are empty."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
-        
+
         assert user.get_full_name() == 'test@example.com'
-    
+
     def test_get_short_name(self):
         """Test get_short_name method."""
         user = User.objects.create_user(
@@ -110,29 +110,29 @@ class TestUserModel(TestCase):
             first_name='John',
             last_name='Doe'
         )
-        
+
         assert user.get_short_name() == 'John'
-    
+
     def test_user_email_unique(self):
         """Test that email field is unique."""
         User.objects.create_user(
             email='unique@example.com',
             password='testpass123'
         )
-        
+
         with pytest.raises(IntegrityError):
             User.objects.create_user(
                 email='unique@example.com',
                 password='testpass123'
             )
-    
+
     def test_user_inherits_base_model(self):
         """Test that User inherits from BaseModel."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
-        
+
         # Check BaseModel fields
         assert hasattr(user, 'created_at')
         assert hasattr(user, 'updated_at')
@@ -141,7 +141,7 @@ class TestUserModel(TestCase):
         assert hasattr(user, 'is_active')
         assert user.is_deleted is False
         assert user.is_active is True
-    
+
     def test_user_whatsapp_field(self):
         """Test whatsapp field can be set and retrieved."""
         user = User.objects.create_user(
@@ -149,9 +149,9 @@ class TestUserModel(TestCase):
             password='testpass123',
             whatsapp='+1234567890'
         )
-        
+
         assert user.whatsapp == '+1234567890'
-    
+
     def test_user_telegram_field(self):
         """Test telegram field can be set and retrieved."""
         user = User.objects.create_user(
@@ -159,18 +159,18 @@ class TestUserModel(TestCase):
             password='testpass123',
             telegram='@telegramuser'
         )
-        
+
         assert user.telegram == '@telegramuser'
-    
+
     def test_user_preferred_contact_method_default(self):
         """Test preferred_contact_method defaults to email."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
-        
+
         assert user.preferred_contact_method == 'email'
-    
+
     def test_user_preferred_contact_method_choices(self):
         """Test preferred_contact_method accepts valid choices."""
         for method in ['phone', 'whatsapp', 'telegram', 'email']:
@@ -180,7 +180,7 @@ class TestUserModel(TestCase):
                 preferred_contact_method=method
             )
             assert user.preferred_contact_method == method
-    
+
     def test_user_all_contact_fields(self):
         """Test user with all contact fields set."""
         user = User.objects.create_user(
@@ -191,7 +191,7 @@ class TestUserModel(TestCase):
             telegram='@telegramuser',
             preferred_contact_method='whatsapp'
         )
-        
+
         assert user.phone_number == '+1234567890'
         assert user.whatsapp == '+1234567890'
         assert user.telegram == '@telegramuser'

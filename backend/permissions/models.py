@@ -16,13 +16,13 @@ class Role(BaseModel):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
     is_system_role = models.BooleanField(default=False)  # System roles cannot be deleted
-    
+
     class Meta:
         db_table = 'roles'
         verbose_name = 'Role'
         verbose_name_plural = 'Roles'
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
 
@@ -37,13 +37,13 @@ class Permission(BaseModel):
     codename = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
     module = models.CharField(max_length=100, blank=True, null=True)  # e.g., 'properties', 'bookings'
-    
+
     class Meta:
         db_table = 'permissions'
         verbose_name = 'Permission'
         verbose_name_plural = 'Permissions'
         ordering = ['module', 'name']
-    
+
     def __str__(self):
         return f"{self.module}.{self.codename}" if self.module else self.codename
 
@@ -54,12 +54,12 @@ class RolePermission(BaseModel):
     """
     role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name='role_permissions')
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE, related_name='permission_roles')
-    
+
     class Meta:
         db_table = 'role_permissions'
         unique_together = ('role', 'permission')
         verbose_name = 'Role Permission'
         verbose_name_plural = 'Role Permissions'
-    
+
     def __str__(self):
         return f"{self.role.name} - {self.permission.name}"

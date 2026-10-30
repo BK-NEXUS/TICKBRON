@@ -11,12 +11,13 @@ from django.db.models.deletion import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from admin_panel.audit import AuditedModelViewSetMixin
 from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdmin
+from common.parsers import SafeJSONParser
 from geography.admin_serializers import (
     AdminCitySerializer, AdminCountrySerializer, AdminRegionSerializer, search_filter,
 )
@@ -34,7 +35,7 @@ class GeographyPagination(PageNumberPagination):
 
 class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsSuperAdmin]
-    parser_classes = [JSONParser, MultiPartParser, FormParser]  # countries and regions upload a picture
+    parser_classes = [SafeJSONParser, MultiPartParser, FormParser]  # countries and regions upload a picture
     pagination_class = GeographyPagination
     audit_name = 'geography'
     model = None

@@ -38,7 +38,7 @@ class InternalNote(TimeStampedModel, SoftDeleteModel):
         validators=[MinLengthValidator(1)],
         help_text='Internal note content'
     )
-    
+
     class Meta:
         db_table = 'internal_notes'
         verbose_name = 'Internal Note'
@@ -48,7 +48,7 @@ class InternalNote(TimeStampedModel, SoftDeleteModel):
             models.Index(fields=['customer', 'created_at']),
             models.Index(fields=['author', 'created_at']),
         ]
-    
+
     def __str__(self):
         return f"Note for {self.customer.email} by {self.author.email if self.author else 'Unknown'}"
 

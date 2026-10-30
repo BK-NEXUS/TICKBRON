@@ -22,10 +22,10 @@ logger = logging.getLogger('tickbron')
 
 class BookingItemSerializer(serializers.ModelSerializer):
     """Serializer for booking items."""
-    
+
     room_type_name = serializers.CharField(source='room_type.name', read_only=True)
     rate_plan_name = serializers.CharField(source='rate_plan.name', read_only=True)
-    
+
     class Meta:
         model = BookingItem
         fields = [
@@ -37,7 +37,7 @@ class BookingItemSerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     """Serializer for bookings."""
-    
+
     booking_items = BookingItemSerializer(many=True, read_only=True)
     guest_name = serializers.CharField(source='guest.get_full_name', read_only=True)
     property_name = serializers.CharField(source='property.display_name', read_only=True)
@@ -79,7 +79,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class BookingCreateSerializer(serializers.Serializer):
     """Serializer for creating bookings with transaction-safe inventory locking."""
-    
+
     property_id = serializers.IntegerField()
     room_type_id = serializers.IntegerField()
     rate_plan_id = serializers.IntegerField()
@@ -87,7 +87,7 @@ class BookingCreateSerializer(serializers.Serializer):
     check_out = serializers.DateField()
     guest_count = serializers.IntegerField(min_value=1)
     special_requests = serializers.CharField(required=False, allow_blank=True, max_length=1000)
-    
+
     # Guest contact details (optional - will be pre-filled from user profile)
     guest_full_name = serializers.CharField(
         required=False, allow_blank=True, max_length=300, validators=[validate_person_name],
@@ -96,7 +96,7 @@ class BookingCreateSerializer(serializers.Serializer):
     # Cash at the hotel: when the guest will arrive on the check-in day (HH:MM)
     expected_arrival_time = serializers.TimeField(input_formats=['%H:%M', '%H:%M:%S'])
     guest_email = serializers.EmailField(required=False, allow_blank=True)
-    
+
     # Room and children information
     number_of_rooms = serializers.IntegerField(min_value=1, max_value=10, default=1)
     children = serializers.ListField(
@@ -121,18 +121,18 @@ class BookingCreateSerializer(serializers.Serializer):
 
         if not (data.get('guest_phone') or self.context['request'].user.phone_number):
             raise serializers.ValidationError({'guest_phone': _('A phone number is required.')})
-        
+
         # Validate date range
         if data['check_out'] <= data['check_in']:
             raise ValidationError({
                 'check_out': _('Check-out date must be after check-in date')
             })
-        
+
         if data['check_in'] < business_today():
             raise ValidationError({
                 'check_in': _('Check-in date cannot be in the past')
             })
-        
+
         # Validate property exists and is active
         try:
             # Only approved (status='active') properties can be booked
@@ -146,7 +146,7 @@ class BookingCreateSerializer(serializers.Serializer):
             raise ValidationError({
                 'property_id': _('Property not found or not available')
             })
-        
+
         # Validate room type exists and belongs to property
         try:
             room_type = RoomType.objects.get(
@@ -158,7 +158,7 @@ class BookingCreateSerializer(serializers.Serializer):
             raise ValidationError({
                 'room_type_id': _('Room type not found or does not belong to this property')
             })
-        
+
         # Validate rate plan exists and belongs to room type
         try:
             rate_plan = RatePlan.objects.get(
@@ -171,48 +171,48 @@ class BookingCreateSerializer(serializers.Serializer):
             raise ValidationError({
                 'rate_plan_id': _('Rate plan not found or does not belong to this room type')
             })
-        
+
         # Validate guest count against the capacity of all booked rooms
         capacity = room_type.max_occupancy * data.get('number_of_rooms', 1)
         if data['guest_count'] > capacity:
             raise ValidationError({
                 'guest_count': _('Guest count exceeds maximum occupancy of %(capacity)s for the booked rooms') % {'capacity': capacity}
             })
-        
+
         # Validate rate plan constraints
         number_of_nights = (data['check_out'] - data['check_in']).days
-        
+
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
             raise ValidationError({
                 'check_in': _('Booking duration is less than minimum nights requirement (%(nights)s)') % {'nights': rate_plan.min_nights}
             })
-        
+
         if rate_plan.max_nights and number_of_nights > rate_plan.max_nights:
             raise ValidationError({
                 'check_in': _('Booking duration exceeds maximum nights requirement (%(nights)s)') % {'nights': rate_plan.max_nights}
             })
-        
+
         # Store validated objects for later use
         self.validated_objects = {
             'property': property_obj,
             'room_type': room_type,
             'rate_plan': rate_plan
         }
-        
+
         return data
-    
+
     def create(self, validated_data):
         """Create booking with transaction-safe inventory locking."""
         guest = self.context['request'].user
         property_obj = self.validated_objects['property']
         room_type = self.validated_objects['room_type']
         rate_plan = self.validated_objects['rate_plan']
-        
+
         # Pre-fill guest details from user profile if not provided
         guest_full_name = validated_data.get('guest_full_name') or guest.get_full_name()
         guest_phone = validated_data.get('guest_phone') or guest.phone_number
         guest_email = validated_data.get('guest_email') or guest.email
-        
+
         try:
             booking = Booking.create_booking(
                 guest=guest,
@@ -256,13 +256,13 @@ class BookingCreateSerializer(serializers.Serializer):
 
 class BookingCancelSerializer(serializers.Serializer):
     """Serializer for cancelling bookings."""
-    
+
     cancellation_reason = serializers.CharField(required=False, allow_blank=True, max_length=1000)
-    
+
     def validate(self, data):
         """Validate cancellation parameters."""
         booking = self.context['booking']
-        
+
         if booking.status in ['cancelled', 'completed', 'no_show']:
             raise ValidationError({
                 'status': _('Booking cannot be cancelled in current status')
@@ -276,7 +276,7 @@ class BookingCancelSerializer(serializers.Serializer):
             })
 
         return data
-    
+
     def update(self, instance, validated_data):
         """Cancel booking and restore inventory."""
         try:

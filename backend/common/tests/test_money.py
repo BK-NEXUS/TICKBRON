@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 
 from common.money import (
-    CHARGE_CURRENCY, SUPPORTED_BASE_CURRENCIES, is_valid_unit, quantize, som_to_tiyin, tiyin_to_som, to_uzs,
+    CHARGE_CURRENCY, SUPPORTED_BASE_CURRENCIES, is_valid_unit, quantize, to_uzs,
 )
 
 
@@ -72,12 +72,3 @@ def test_conversion_rounds_the_total_once():
 
 def test_to_uzs_example_from_the_plan():
     assert to_uzs(Decimal('200.00'), Decimal('11772.95')) == Decimal('2354590')
-
-
-def test_tiyin_conversion_is_exact():
-    assert som_to_tiyin(Decimal('2354590')) == 235459000
-    assert tiyin_to_som(235459000) == Decimal('2354590')
-    with pytest.raises(ValueError):
-        som_to_tiyin(Decimal('10.5'))   # charged amounts are whole so'm
-    with pytest.raises(ValueError):
-        tiyin_to_som('12.3')

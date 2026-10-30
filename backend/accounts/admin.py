@@ -27,13 +27,13 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'property__name', 'title', 'comment']
     readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
     date_hierarchy = 'created_at'
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('user', 'property', 'booking', 'status')
         }),
         ('Ratings', {
-            'fields': ('overall_rating', 'cleanliness_rating', 'location_rating', 
+            'fields': ('overall_rating', 'cleanliness_rating', 'location_rating',
                       'value_rating', 'amenities_rating', 'service_rating')
         }),
         ('Review Content', {
@@ -56,7 +56,7 @@ class NotificationAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'title', 'message']
     readonly_fields = ['created_at', 'updated_at', 'read_at']
     date_hierarchy = 'created_at'
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('user', 'notification_type', 'priority', 'title', 'message')
@@ -87,7 +87,7 @@ class AccountHistoryAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'description', 'ip_address']
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'created_at'
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('user', 'action', 'description')

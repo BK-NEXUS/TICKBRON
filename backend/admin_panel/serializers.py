@@ -28,7 +28,7 @@ class AdminPropertySerializer(serializers.ModelSerializer):
     owner_email = serializers.SerializerMethodField()
     owner_name = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Property
         fields = [
@@ -40,15 +40,15 @@ class AdminPropertySerializer(serializers.ModelSerializer):
             'rejection_reason', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'approved_at', 'approved_by', 'created_at', 'updated_at']
-    
+
     def get_owner_email(self, obj) -> str | None:
         """Get owner email."""
         return obj.owner.email if obj.owner else None
-    
+
     def get_owner_name(self, obj) -> str | None:
         """Get owner full name."""
         return obj.owner.get_full_name() if obj.owner else None
-    
+
     def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
         return obj.get_full_address()
@@ -107,11 +107,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'email_verified', 'two_factor_enabled'
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
-    
+
     def get_full_name(self, obj) -> str:
         """Get user full name."""
         return obj.get_full_name()
-    
+
     def get_role_name(self, obj) -> str | None:
         """Get role name."""
         return obj.role.name if obj.role else None
@@ -192,7 +192,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
             'region': validated_data.pop('region_ref'),
             'city': validated_data.pop('city_ref'),
         }
-        
+
         # Get or create hotel-owner role
         hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
@@ -201,7 +201,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
                 'is_system_role': True
             }
         )
-        
+
         # Create user with hotel-owner role
         user = User.objects.create_user(
             email=validated_data['email'],
@@ -233,7 +233,7 @@ class AdminAmenitySerializer(serializers.ModelSerializer):
     Serializer for amenity management by admins (write operations).
     """
     category = serializers.PrimaryKeyRelatedField(queryset=AmenityCategory.objects.all())
-    
+
     class Meta:
         model = Amenity
         fields = [
@@ -248,7 +248,7 @@ class AdminAmenityReadSerializer(serializers.ModelSerializer):
     Serializer for amenity read operations (includes nested category).
     """
     category = AmenityCategorySerializer(read_only=True)
-    
+
     class Meta:
         model = Amenity
         fields = [
@@ -284,7 +284,7 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
     Returns full customer contact information.
     """
     full_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = [
@@ -293,7 +293,7 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
             'last_login', 'is_active', 'email_verified'
         ]
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
-    
+
     def get_full_name(self, obj) -> str:
         """Get user full name."""
         return obj.get_full_name()
@@ -323,7 +323,7 @@ class AdminInternalNoteSerializer(serializers.ModelSerializer):
     """
     author_name = serializers.SerializerMethodField()
     author_email = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = InternalNote
         fields = [
@@ -333,11 +333,11 @@ class AdminInternalNoteSerializer(serializers.ModelSerializer):
         # A note belongs to the customer in its URL and keeps its original author;
         # neither can be changed by editing
         read_only_fields = ['id', 'customer', 'author', 'created_at', 'updated_at']
-    
+
     def get_author_name(self, obj):
         """Get author full name."""
         return obj.author.get_full_name() if obj.author else None
-    
+
     def get_author_email(self, obj):
         """Get author email."""
         return obj.author.email if obj.author else None
@@ -352,7 +352,7 @@ class AdminInternalNoteCreateSerializer(serializers.ModelSerializer):
         fields = ['customer', 'note']
         # Taken from the URL by the view (serializer.save(customer=...)), not the body
         read_only_fields = ['customer']
-    
+
     def create(self, validated_data):
         """Create internal note with current user as author."""
         validated_data['author'] = self.context['request'].user

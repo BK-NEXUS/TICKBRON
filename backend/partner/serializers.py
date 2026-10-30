@@ -1,10 +1,10 @@
-from collections.abc import Mapping
 """
 Serializers for partner API endpoints.
 
 This module contains serializers for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+from collections.abc import Mapping
 import os
 import uuid
 from decimal import Decimal, InvalidOperation
@@ -220,7 +220,7 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
     # Hotel name for the partner cards: English translation, else any, else the address
     name = serializers.SerializerMethodField()
     translations = HotelTextsField(required=False)
-    
+
     class Meta:
         model = Property
         fields = [
@@ -235,11 +235,11 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
         # (city / state / country) is derived from the Geography refs (English names) and read-only.
         read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
         extra_kwargs = PROPERTY_LIMITS
-    
+
     def get_full_address(self, obj) -> str:
         """Get the full address as a string."""
         return obj.get_full_address()
-    
+
     def get_name(self, obj) -> str:
         return obj.display_name()
 
@@ -270,7 +270,7 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]
         extra_kwargs = PROPERTY_LIMITS
-    
+
     @transaction.atomic
     def create(self, validated_data):
         """Create property with owner set to authenticated user."""
@@ -338,7 +338,7 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
             raise serializers.ValidationError(
                 {'max_occupancy': _('Cannot be less than the usual number of guests.')})
         return attrs
-    
+
     def validate_property(self, value):
         """Ensure the property belongs to the authenticated hotel-owner."""
         request = self.context.get('request')
@@ -424,7 +424,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
     def property_of(self, attrs):
         room_type = attrs.get('room_type') or getattr(self.instance, 'room_type', None)
         return room_type.property if room_type else None
-    
+
     def validate_room_type(self, value):
         """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
         request = self.context.get('request')
@@ -534,7 +534,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
     def property_of(self, attrs):
         rate_plan = attrs.get('rate_plan') or getattr(self.instance, 'rate_plan', None)
         return rate_plan.room_type.property if rate_plan else None
-    
+
     def validate_rate_plan(self, value):
         """Ensure the rate plan belongs to a property owned by the authenticated hotel-owner."""
         request = self.context.get('request')
@@ -775,26 +775,3 @@ class PartnerRoomPhotoSerializer(PartnerPhotoSerializer):
             'display_order', 'alt_text'
         ]
         read_only_fields = ['id']
-
-
-class PartnerBookingSerializer(serializers.Serializer):
-    """
-    Serializer for partner booking listing.
-    
-    Shows bookings for properties owned by the hotel-owner.
-    """
-    id = serializers.IntegerField()
-    guest_name = serializers.CharField()
-    property_name = serializers.CharField()
-    status = serializers.CharField()
-    payment_status = serializers.CharField()
-    check_in = serializers.DateField()
-    check_out = serializers.DateField()
-    number_of_nights = serializers.IntegerField()
-    guest_count = serializers.IntegerField()
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    currency = serializers.CharField()
-    confirmation_code = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    can_report_no_show = serializers.BooleanField()
-    report_deadline = serializers.DateField(allow_null=True)

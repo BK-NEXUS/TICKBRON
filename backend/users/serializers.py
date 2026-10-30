@@ -95,7 +95,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'full_name', 'phone_number', 'whatsapp', 'telegram',
                   'preferred_contact_method', 'password', 'password_confirm']
         extra_kwargs = {'full_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]}}
-    
+
     def validate_email(self, value):
         """Validate email format."""
         validator = EmailFormatValidator()
@@ -110,7 +110,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password": _("Password fields didn't match.")})
         validate_new_password(attrs)
         return attrs
-    
+
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
@@ -126,7 +126,7 @@ class UserLoginSerializer(serializers.Serializer):
     """
     email = LowercaseEmailField()
     password = serializers.CharField()
-    
+
     def validate_email(self, value):
         """Validate email format."""
         validator = EmailFormatValidator()

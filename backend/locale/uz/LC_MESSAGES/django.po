@@ -616,3 +616,6 @@ msgstr "Super adminning ikki bosqichli kirishini faqat serverda tiklash mumkin."
 
 msgid "Two-step sign-in is not on for this account."
 msgstr "Bu hisobda ikki bosqichli kirish yoqilmagan."
+
+msgid "The JSON is nested too deeply."
+msgstr "JSON juda chuqur ichma-ich joylashgan."

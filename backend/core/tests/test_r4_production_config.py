@@ -30,6 +30,13 @@ GOOD_PRODUCTION_ENV = {
 }
 EXTRA_ISOLATED = ('SECRET_KEY', 'ALLOWED_HOSTS', 'CORS_ALLOWED_ORIGINS', 'CSRF_TRUSTED_ORIGINS')
 
+# `manage.py check --deploy` with .env loading off, so a developer's .env cannot change the result
+CHECK_DEPLOY = (
+    "import dotenv; dotenv.load_dotenv = lambda *a, **k: None\n"
+    "from django.core.management import execute_from_command_line\n"
+    "execute_from_command_line(['manage.py', 'check', '--deploy', '--fail-level', 'WARNING'])\n"
+)
+
 
 def _start(**env_overrides):
     env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS + EXTRA_ISOLATED}
@@ -121,7 +128,7 @@ def test_check_deploy_reports_no_issues():
     env = {k: v for k, v in os.environ.items() if k not in ISOLATED_ENV_VARS + EXTRA_ISOLATED}
     env.update(GOOD_PRODUCTION_ENV, DJANGO_SETTINGS_MODULE='config.settings')
     result = subprocess.run(
-        [sys.executable, 'manage.py', 'check', '--deploy', '--fail-level', 'WARNING'],
+        [sys.executable, '-c', CHECK_DEPLOY],
         cwd=BACKEND_DIR, env=env, capture_output=True, text=True, timeout=300,
     )
     assert result.returncode == 0, result.stdout + result.stderr

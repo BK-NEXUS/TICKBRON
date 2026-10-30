@@ -52,11 +52,11 @@ class IsSuperAdminOrStaff(IsAuthenticated):
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
-        
+
         # Check if user is staff
         if request.user.is_staff:
             return True
-        
+
         return False
 
 
@@ -69,7 +69,7 @@ class IsSuperAdmin(IsAuthenticated):
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
-        
+
         # Check if user is superuser
         if request.user.is_superuser:
             return True
@@ -93,7 +93,7 @@ class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminPropertySerializer
-    
+
     def get_queryset(self):
         """Return all properties for moderation."""
         return Property.objects.filter(
@@ -118,12 +118,12 @@ def admin_property_approve(request, property_id):
         Updated property with approval status
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
-    
+
     serializer = AdminPropertyApproveSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         rejection_reason = serializer.validated_data.get('rejection_reason', '')
-        
+
         if rejection_reason:
             # Reject property
             property.status = 'rejected'
@@ -141,18 +141,18 @@ def admin_property_approve(request, property_id):
             property.rejection_reason = ''
             property.approved_by = request.user
             property.approved_at = timezone.now()
-        
+
         property.save()
         AdminAccessLog.record(
             request.user, 'property_reject' if rejection_reason else 'property_approve',
             details={'property_id': property.id},
         )
-        
+
         return Response(
             AdminPropertySerializer(property).data,
             status=status.HTTP_200_OK
         )
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -204,11 +204,11 @@ def admin_property_suspend(request, property_id):
         Updated property with suspended status
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
-    
+
     property.status = 'suspended'
     property.save()
     AdminAccessLog.record(request.user, 'property_suspend', details={'property_id': property.id})
-    
+
     return Response(
         AdminPropertySerializer(property).data,
         status=status.HTTP_200_OK
@@ -223,11 +223,11 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminUserSerializer
-    
+
     def get_queryset(self):
         """Return all users for management."""
         return User.objects.filter(is_deleted=False).select_related('role')
-    
+
     def list(self, request, *args, **kwargs):
         """Custom list method to handle both router and custom URL."""
         queryset = self.get_queryset()
@@ -260,7 +260,7 @@ def admin_create_hotel_owner(request):
         Created user object with hotel-owner role
     """
     serializer = AdminUserCreateSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         user = serializer.save()
         AdminAccessLog.record(request.user, 'hotel_owner_create', target_user_id=user.id)
@@ -268,7 +268,7 @@ def admin_create_hotel_owner(request):
             AdminUserSerializer(user).data,
             status=status.HTTP_201_CREATED
         )
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -326,7 +326,7 @@ class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSe
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenityCategorySerializer
     audit_name = 'amenity_category'
-    
+
     def get_queryset(self):
         """Return all amenity categories."""
         return AmenityCategory.objects.filter(is_deleted=False)
@@ -341,14 +341,14 @@ class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenitySerializer
     audit_name = 'amenity'
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action in ['list', 'retrieve']:
             # Use a serializer with nested category for read operations
             return AdminAmenityReadSerializer
         return AdminAmenitySerializer
-    
+
     def get_queryset(self):
         """Return all amenities."""
         return Amenity.objects.filter(is_deleted=False).select_related('category')
@@ -375,13 +375,13 @@ def admin_booking_lookup_by_reference(request):
         - Payment status
     """
     reference_code = request.query_params.get('reference_code')
-    
+
     if not reference_code:
         return Response(
             {'error': 'reference_code parameter is required'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     # Look up booking by reference code
     try:
         booking = Booking.objects.select_related(
@@ -397,7 +397,7 @@ def admin_booking_lookup_by_reference(request):
             {'error': _('Booking not found with this reference code')},
             status=status.HTTP_404_NOT_FOUND
         )
-    
+
     # Build comprehensive response
     booking_items_data = []
     for item in booking.booking_items.all():
@@ -419,7 +419,7 @@ def admin_booking_lookup_by_reference(request):
             'price_per_night': str(item.price_per_night),
             'currency': item.currency,
         })
-    
+
     response_data = {
         'booking': {
             'id': booking.id,
@@ -514,11 +514,11 @@ def admin_customers_directory(request):
     page = request.query_params.get('page', 1)
     sort_by = request.query_params.get('sort_by', 'registration_date')
     sort_order = request.query_params.get('sort_order', 'desc')
-    
+
     # Validate sort_order
     if sort_order not in ['asc', 'desc']:
         sort_order = 'desc'
-    
+
     # Validate sort_by field
     valid_sort_fields = [
         'registration_date', 'full_name', 'email', 'total_booking_count',
@@ -526,7 +526,7 @@ def admin_customers_directory(request):
     ]
     if sort_by not in valid_sort_fields:
         sort_by = 'registration_date'
-    
+
     # Aggregates come from correlated subqueries, so one customer is never counted twice
     customer_bookings = Booking.objects.filter(
         guest=OuterRef('pk'), is_deleted=False
@@ -570,7 +570,7 @@ def admin_customers_directory(request):
             Q(email__icontains=search) |
             Q(id__icontains=search)
         )
-    
+
     # Sort in the database; id breaks ties so pages are stable
     sort_expressions = {
         'registration_date': F('date_joined'),
@@ -635,16 +635,16 @@ def admin_customer_detail(request, customer_id):
     """
     # Get customer
     customer = get_object_or_404(User, id=customer_id, is_deleted=False)
-    
+
     # Get booking filter
     booking_filter = request.query_params.get('booking_filter', 'all')
-    
+
     # Build bookings query
     bookings = Booking.objects.filter(
         guest=customer,
         is_deleted=False
     ).select_related('property').order_by('-created_at')
-    
+
     # Apply booking filter
     if booking_filter == 'upcoming':
         bookings = bookings.filter(
@@ -656,7 +656,7 @@ def admin_customer_detail(request, customer_id):
     elif booking_filter == 'cancelled':
         bookings = bookings.filter(status='cancelled')
     # 'all' returns all bookings
-    
+
     # Serialize bookings
     bookings_data = []
     for booking in bookings:
@@ -674,17 +674,17 @@ def admin_customer_detail(request, customer_id):
             'property_city': booking.property.city,
             'created_at': booking.created_at
         })
-    
+
     bookings_serializer = AdminBookingSummarySerializer(bookings_data, many=True)
-    
+
     # Get internal notes
     internal_notes = InternalNote.objects.filter(
         customer=customer,
         is_deleted=False
     ).select_related('author').order_by('-created_at')
-    
+
     internal_notes_serializer = AdminInternalNoteSerializer(internal_notes, many=True)
-    
+
     # Calculate last activity timestamp
     # Last activity is the most recent of: last_login, last booking created_at
     last_activities = []
@@ -692,9 +692,9 @@ def admin_customer_detail(request, customer_id):
         last_activities.append(customer.last_login)
     if bookings.exists():
         last_activities.append(bookings.first().created_at)
-    
+
     last_activity = max(last_activities) if last_activities else None
-    
+
     # Build response
     response_data = {
         'customer': AdminCustomerDetailSerializer(customer).data,
@@ -724,12 +724,12 @@ def admin_internal_note_create(request, customer_id):
         Created internal note
     """
     customer = get_object_or_404(User, id=customer_id, is_deleted=False)
-    
+
     serializer = AdminInternalNoteCreateSerializer(
         data=request.data,
         context={'request': request}
     )
-    
+
     if serializer.is_valid():
         note = serializer.save(customer=customer)
         AdminAccessLog.record(request.user, 'internal_note_create', target_user_id=customer.id,
@@ -738,7 +738,7 @@ def admin_internal_note_create(request, customer_id):
             AdminInternalNoteSerializer(note).data,
             status=status.HTTP_201_CREATED
         )
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -766,7 +766,7 @@ def admin_internal_note_detail(request, customer_id, note_id):
         customer=customer,
         is_deleted=False
     )
-    
+
     if request.method == 'PUT':
         serializer = AdminInternalNoteSerializer(note, data=request.data, partial=True)
         if serializer.is_valid():
@@ -775,7 +775,7 @@ def admin_internal_note_detail(request, customer_id, note_id):
                                   details={'object_id': note.id})
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     elif request.method == 'DELETE':
         note.soft_delete()
         AdminAccessLog.record(request.user, 'internal_note_delete', target_user_id=customer.id,
@@ -801,7 +801,7 @@ def admin_registration_statistics(request):
         Registration statistics with counts and period labels
     """
     stats_type = request.query_params.get('type', 'rolling_12_months')
-    
+
     if stats_type == 'calendar_year':
         # Get registration counts by calendar year
         yearly_stats = User.objects.filter(
@@ -811,7 +811,7 @@ def admin_registration_statistics(request):
         ).values('year').annotate(
             count=Count('id')
         ).order_by('year')
-        
+
         # Format response
         stats_data = [
             {
@@ -820,17 +820,17 @@ def admin_registration_statistics(request):
             }
             for item in yearly_stats
         ]
-        
+
         return Response({
             'type': 'calendar_year',
             'statistics': stats_data
         }, status=status.HTTP_200_OK)
-    
+
     else:  # rolling_12_months (default)
         # Get rolling 12-month window
         end_date = timezone.now()
         start_date = end_date - timedelta(days=365)
-        
+
         # Get registration counts by month for the rolling window
         monthly_stats = User.objects.filter(
             is_deleted=False,
@@ -841,7 +841,7 @@ def admin_registration_statistics(request):
         ).values('month').annotate(
             count=Count('id')
         ).order_by('month')
-        
+
         # Format response with month labels
         stats_data = []
         for item in monthly_stats:
@@ -850,7 +850,7 @@ def admin_registration_statistics(request):
                 'period': month_date.strftime('%Y-%m'),
                 'count': item['count']
             })
-        
+
         return Response({
             'type': 'rolling_12_months',
             'start_date': start_date,
@@ -878,7 +878,7 @@ def admin_top_bookers_leaderboard(request):
     """
     period = request.query_params.get('period', 'all_time')
     limit = request.query_params.get('limit', 10)
-    
+
     # Validate and sanitize limit
     try:
         limit = int(limit)
@@ -888,10 +888,10 @@ def admin_top_bookers_leaderboard(request):
             limit = 100
     except (ValueError, TypeError):
         limit = 10
-    
+
     # Build date filter based on period
     now = timezone.now()
-    
+
     if period == 'this_month':
         # First day of current month
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -913,7 +913,7 @@ def admin_top_bookers_leaderboard(request):
             bookings__is_deleted=False,
             bookings__status='completed'
         )
-    
+
     # Get top bookers with completed booking counts
     top_bookers = User.objects.filter(
         is_deleted=False
@@ -922,7 +922,7 @@ def admin_top_bookers_leaderboard(request):
     ).filter(
         completed_booking_count__gt=0
     ).order_by('-completed_booking_count')[:limit]
-    
+
     # Build leaderboard response
     leaderboard_data = []
     for rank, user in enumerate(top_bookers, start=1):
@@ -932,7 +932,7 @@ def admin_top_bookers_leaderboard(request):
             'customer_name': user.get_full_name(),
             'completed_booking_count': user.completed_booking_count
         })
-    
+
     return Response({
         'period': period,
         'limit': limit,

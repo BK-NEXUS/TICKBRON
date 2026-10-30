@@ -38,7 +38,7 @@ class Booking(BaseModel):
         ('completed', _('Completed')),
         ('no_show', _('No Show')),
     ]
-    
+
     PAYMENT_STATUS_CHOICES = [
         ('pending', _('Pending')),
         ('paid', _('Paid')),
@@ -46,7 +46,7 @@ class Booking(BaseModel):
         ('refunded', _('Refunded')),
         ('partially_refunded', _('Partially Refunded')),
     ]
-    
+
     # User information
     guest = models.ForeignKey(
         'users.User',
@@ -54,7 +54,7 @@ class Booking(BaseModel):
         related_name='bookings',
         db_index=True
     )
-    
+
     # Property information
     property = models.ForeignKey(
         'properties.Property',
@@ -62,7 +62,7 @@ class Booking(BaseModel):
         related_name='bookings',
         db_index=True
     )
-    
+
     # Booking status
     status = models.CharField(
         max_length=20,
@@ -76,7 +76,7 @@ class Booking(BaseModel):
         default='pending',
         db_index=True
     )
-    
+
     # Cash at the hotel: when the guest says they will arrive on the check-in day, and when the hotel
     # marked them as arrived. A confirmed booking without arrived_at is cancelled ARRIVAL_GRACE_HOURS
     # after the given time (bookings/arrival.py). Old bookings have no arrival time and are never cancelled.
@@ -90,18 +90,18 @@ class Booking(BaseModel):
         validators=[MinValueValidator(1)],
         help_text=_('Number of nights for the booking')
     )
-    
+
     # Guest information
     guest_count = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
         help_text=_('Number of guests')
     )
-    
+
     # Guest contact details (can differ from user profile for specific booking)
     guest_full_name = models.CharField(max_length=300, blank=True, null=True)
     guest_phone = models.CharField(max_length=20, blank=True, null=True)
     guest_email = models.EmailField(blank=True, null=True)
-    
+
     # Room and children information
     number_of_rooms = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
@@ -109,7 +109,7 @@ class Booking(BaseModel):
         help_text=_('Number of rooms booked')
     )
     children = models.JSONField(default=list, blank=True, help_text=_('List of children with ages'))
-    
+
     # Pricing information
     total_price = models.DecimalField(
         max_digits=12,
@@ -155,14 +155,14 @@ class Booking(BaseModel):
         db_index=True,
         help_text=_('Unique 6-character booking reference code')
     )
-    
+
     # Cancellation information
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True)
-    
+
     # Expiry information
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text=_('Timestamp when pending booking expires'))
-    
+
     class Meta:
         db_table = 'bookings'
         verbose_name = 'Booking'
@@ -179,24 +179,24 @@ class Booking(BaseModel):
             # Status sections: counted bookings (status) in a period (check-in date)
             models.Index(fields=['status', 'check_in'], name='booking_status_checkin_idx'),
         ]
-    
+
     def __str__(self):
         return f"Booking {self.confirmation_code} - {self.property}"
-    
+
     def clean(self):
         """Validate booking data."""
         super().clean()
-        
+
         if self.check_out <= self.check_in:
             raise ValidationError({
                 'check_out': _('Check-out date must be after check-in date')
             })
-        
+
         if self.number_of_nights != (self.check_out - self.check_in).days:
             raise ValidationError({
                 'number_of_nights': _('Number of nights must match the date range')
             })
-        
+
         # Validate state transition if status is being changed
         if self.pk:
             try:
@@ -211,7 +211,7 @@ class Booking(BaseModel):
                         })
             except Booking.DoesNotExist:
                 pass  # New booking, no transition validation needed
-    
+
     # The price and the charge snapshot: never changed once the booking exists
     SNAPSHOT_FIELDS = (
         'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
@@ -263,12 +263,12 @@ class Booking(BaseModel):
         # Calculate number of nights if not set
         if not self.number_of_nights:
             self.number_of_nights = (self.check_out - self.check_in).days
-        
+
         # Set expiry time for pending bookings (15 minutes from creation)
         if self.status == 'pending' and not self.expires_at:
             from datetime import timedelta
             self.expires_at = timezone.now() + timedelta(minutes=15)
-        
+
         # Generate confirmation code if not set
         if not self.confirmation_code:
             max_attempts = 10
@@ -285,7 +285,7 @@ class Booking(BaseModel):
             raise IntegrityError("Could not generate unique confirmation code after multiple attempts")
         else:
             super().save(*args, **kwargs)
-    
+
     def generate_confirmation_code(self):
         """
         Generate a unique 6-character booking reference code using cryptographically secure random.
@@ -297,13 +297,13 @@ class Booking(BaseModel):
         and retries if IntegrityError occurs.
         """
         import secrets
-        
+
         # Unambiguous character set (excludes 0/O, 1/I/L)
         unambiguous_chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
-        
+
         # Generate a single random code - uniqueness is enforced by save() method
         return ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
-    
+
     @classmethod
     def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None, confirmed=False):
         """
@@ -340,9 +340,9 @@ class Booking(BaseModel):
         # Validate input
         if check_out <= check_in:
             raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
-        
+
         number_of_nights = (check_out - check_in).days
-        
+
         # Validate children ages if provided
         if children is None:
             children = []
@@ -352,19 +352,19 @@ class Booking(BaseModel):
         # Children are part of guest_count (persons), and the booker is an adult
         if len(children) >= guest_count:
             raise ValidationError({'children': _('Children are part of the guest count; at least one guest must be an adult')})
-        
+
         if property_obj.status != 'active' or not property_obj.is_active or property_obj.is_deleted:
             raise ValidationError({'property_id': _('Property not found or not available')})
-        
+
         if number_of_rooms < 1:
             raise ValidationError({'number_of_rooms': _('At least one room must be booked')})
-        
+
         if check_in < business_today():
             raise ValidationError({'check_in': _('Check-in date cannot be in the past')})
-        
+
         if guest_count > room_type.max_occupancy * number_of_rooms:
             raise ValidationError({'guest_count': _('Guest count exceeds the capacity of the booked rooms')})
-        
+
         # Use atomic transaction for consistency
         with transaction.atomic():
             # Locks every night's inventory row and prices the stay; the public quote
@@ -418,7 +418,7 @@ class Booking(BaseModel):
                 number_of_rooms=number_of_rooms,
                 children=children
             )
-            
+
             # Create booking item
             BookingItem.objects.create(
                 booking=booking,
@@ -429,7 +429,7 @@ class Booking(BaseModel):
                 price_per_night=(nightly_total / number_of_nights).quantize(Decimal('0.01')),
                 currency=rate_plan.currency
             )
-            
+
             # Update inventory - atomically reserve every booked room. RoomInventory is
             # keyed by room type, not rate plan, so this is what stops a second rate
             # plan of the same room type from selling the same physical room (#31).
@@ -438,7 +438,7 @@ class Booking(BaseModel):
                 inventory.save(update_fields=['booked_rooms'])
 
             return booking
-    
+
     def _lock_row(self):
         """
         Lock this booking's row and reload its mutable state from it.
@@ -465,7 +465,7 @@ class Booking(BaseModel):
             Exception: If database error occurs
         """
         from datetime import timedelta
-        
+
         with transaction.atomic():
             # Lock the row and re-read its state so concurrent transitions
             # (e.g. cancel vs. expire vs. payment) are serialized
@@ -478,10 +478,10 @@ class Booking(BaseModel):
                 raise ValidationError({
                     'status': error_message
                 })
-            
+
             # Get booking items
             booking_items = self.booking_items.all()
-            
+
             # Restore inventory for each booking item
             for item in booking_items:
                 date_range = []
@@ -489,7 +489,7 @@ class Booking(BaseModel):
                 while current_date < self.check_out:
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
-                
+
                 # Lock and update inventory (RoomInventory: shared by every rate plan
                 # of this room type, see create_booking)
                 from properties.models import RoomInventory
@@ -502,17 +502,17 @@ class Booking(BaseModel):
                     # Decrement booked_rooms
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
                     inventory.save(update_fields=['booked_rooms'])
-            
+
             # Update booking status
             old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = cancellation_reason
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
-            
+
             # Log state transition
             self._log_state_transition(old_status, 'cancelled', cancellation_reason or 'user_cancelled')
-    
+
     def expire_booking(self):
         """
         Expire a pending booking and restore inventory.
@@ -525,7 +525,7 @@ class Booking(BaseModel):
             Exception: If database error occurs
         """
         from datetime import timedelta
-        
+
         with transaction.atomic():
             # Lock the row and re-read its state so concurrent transitions
             # (e.g. cancel vs. expire vs. payment) are serialized
@@ -538,10 +538,10 @@ class Booking(BaseModel):
                 raise ValidationError({
                     'status': error_message
                 })
-            
+
             # Get booking items
             booking_items = self.booking_items.all()
-            
+
             # Restore inventory for each booking item
             for item in booking_items:
                 date_range = []
@@ -549,7 +549,7 @@ class Booking(BaseModel):
                 while current_date < self.check_out:
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
-                
+
                 # Lock and update inventory (RoomInventory: shared by every rate plan
                 # of this room type, see create_booking)
                 from properties.models import RoomInventory
@@ -562,17 +562,17 @@ class Booking(BaseModel):
                     # Decrement booked_rooms
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
                     inventory.save(update_fields=['booked_rooms'])
-            
+
             # Update booking status
             old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = 'Booking expired - payment not completed within time limit'
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
-            
+
             # Log state transition
             self._log_state_transition(old_status, 'cancelled', 'expiry')
-    
+
     @classmethod
     def process_expired_bookings(cls, raise_on_error=False):
         """
@@ -593,7 +593,7 @@ class Booking(BaseModel):
             expires_at__lt=timezone.now(),
             is_deleted=False
         )
-        
+
         processed_count = 0
         failed_ids = []
         for booking in expired_bookings:
@@ -611,13 +611,13 @@ class Booking(BaseModel):
                 # Keep going so one bad booking does not block the others
                 logger.exception(f"Failed to expire booking {booking.pk}")
                 failed_ids.append(booking.pk)
-        
+
         if failed_ids and raise_on_error:
             raise ExpiredBookingProcessingError(
                 f"{len(failed_ids)} expired booking(s) could not be processed: {failed_ids}"
             )
         return processed_count
-    
+
     def complete_booking(self):
         """
         Complete a booking after checkout.
@@ -641,15 +641,15 @@ class Booking(BaseModel):
                 raise ValidationError({
                     'status': error_message
                 })
-            
+
             # Update booking status
             old_status = self.status
             self.status = 'completed'
             self.save(update_fields=['status'])
-            
+
             # Log state transition
             self._log_state_transition(old_status, 'completed', 'checkout_completed')
-    
+
     def mark_no_show(self, via_approved_report=False):
         """
         Mark a booking as no-show when guest doesn't arrive.
@@ -677,16 +677,16 @@ class Booking(BaseModel):
                 raise ValidationError({
                     'status': error_message
                 })
-            
+
             # Update booking status
             old_status = self.status
             self.status = 'no_show'
             self.save(update_fields=['status'])
-            
+
             # Log state transition
             self._log_state_transition(
                 old_status, 'no_show', 'no_show_report_approved' if via_approved_report else 'guest_no_show')
-    
+
     def restore_after_reversed_no_show(self, completed):
         """
         Staff corrected an approved no-show report: the booking goes back to `completed` (the
@@ -769,7 +769,7 @@ class BookingItem(BaseModel):
         help_text=_('Price per night for this room type')
     )
     currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
-    
+
     class Meta:
         db_table = 'booking_items'
         verbose_name = 'Booking Item'
@@ -779,7 +779,7 @@ class BookingItem(BaseModel):
             models.Index(fields=['booking', 'room_type']),
             models.Index(fields=['rate_plan']),
         ]
-    
+
     def __str__(self):
         return f"{self.booking.confirmation_code} - {self.room_type.name}"
 
