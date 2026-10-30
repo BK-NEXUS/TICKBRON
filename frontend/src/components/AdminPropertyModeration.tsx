@@ -41,7 +41,7 @@ export function AdminPropertyModeration() {
         )
         setProperties(sortedProperties)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadProperties'))
     } finally {
       setLoading(false)
@@ -64,7 +64,7 @@ export function AdminPropertyModeration() {
         // Refresh the list
         await loadProperties()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToApproveProperty'))
     } finally {
       setActionLoading(null)
@@ -94,7 +94,7 @@ export function AdminPropertyModeration() {
         // Refresh the list
         await loadProperties()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToRejectProperty'))
     } finally {
       setActionLoading(null)
@@ -121,7 +121,7 @@ export function AdminPropertyModeration() {
         // Refresh the list
         await loadProperties()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToSuspendProperty'))
     } finally {
       setActionLoading(null)

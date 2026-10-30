@@ -210,7 +210,7 @@ export function BookingPage() {
         setRoomType(foundRoomType)
         setRatePlan(foundRatePlan)
         setLoading(false)
-      } catch (err) {
+      } catch {
         setError({ key: 'booking.errorLoad' })
         setLoading(false)
       }
@@ -386,7 +386,7 @@ export function BookingPage() {
       setBooking(response.data)
       setStep('success')
       setSubmitting(false)
-    } catch (err) {
+    } catch {
       setError({ key: 'booking.errorCreateRetry' })
       setSubmitting(false)
     }

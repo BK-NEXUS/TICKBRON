@@ -61,7 +61,7 @@ export function AdminCustomersList() {
         setNextPage(response.data.next)
         setPreviousPage(response.data.previous)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadCustomers'))
     } finally {
       setLoading(false)

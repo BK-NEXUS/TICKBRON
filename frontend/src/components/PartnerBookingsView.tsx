@@ -41,7 +41,7 @@ export function PartnerBookingsView() {
         )
         setBookings(sortedBookings)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadBookings'))
     } finally {
       setLoading(false)

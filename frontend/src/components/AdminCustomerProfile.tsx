@@ -50,7 +50,7 @@ export function AdminCustomerProfile() {
       } else if (response.data) {
         setProfile(response.data)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadCustomer'))
     } finally {
       setLoading(false)
@@ -77,7 +77,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteAddFailed'))
     } finally {
       setNoteSaving(false)
@@ -115,7 +115,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteUpdateFailed'))
     } finally {
       setNoteSaving(false)
@@ -141,7 +141,7 @@ export function AdminCustomerProfile() {
         // Reload profile to get updated notes
         await loadProfile()
       }
-    } catch (err) {
+    } catch {
       setNoteError(t('admin.noteDeleteFailed'))
     } finally {
       setNoteSaving(false)

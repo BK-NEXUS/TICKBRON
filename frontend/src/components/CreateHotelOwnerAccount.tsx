@@ -92,7 +92,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
           onSuccess()
         }
       }
-    } catch (err) {
+    } catch {
       setError(t(isAdmin ? 'admin.failedToCreateAdmin' : 'admin.failedToCreateHotel'))
     } finally {
       setLoading(false)

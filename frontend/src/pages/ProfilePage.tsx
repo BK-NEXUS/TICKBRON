@@ -73,7 +73,7 @@ export function ProfilePage() {
       } else {
         setError(response.error || t('profile.errorUpdate'))
       }
-    } catch (err) {
+    } catch {
       setError(t('profile.errorUpdateGeneric'))
     } finally {
       setSaving(false)

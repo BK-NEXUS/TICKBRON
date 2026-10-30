@@ -65,7 +65,7 @@ export function PropertyDetailPage() {
           setError({ key: 'property.errorNotFound' })
           setLoading(false)
         }
-      } catch (err) {
+      } catch {
         setError({ key: 'property.errorLoad' })
         setLoading(false)
       }

@@ -38,7 +38,7 @@ export function SupportLookupPage() {
         setBooking(response.data)
         setError(null)
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLookUp'))
       setBooking(null)
     } finally {

@@ -73,7 +73,7 @@ export function AdminAmenityManagement() {
           setCategories(sortedCategories)
         }
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToLoadData'))
     } finally {
       setLoading(false)
@@ -94,7 +94,7 @@ export function AdminAmenityManagement() {
         resetAmenityForm()
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToCreateAmenity'))
     } finally {
       setActionLoading(null)
@@ -127,7 +127,7 @@ export function AdminAmenityManagement() {
         resetAmenityForm()
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToUpdateAmenity'))
     } finally {
       setActionLoading(null)
@@ -148,7 +148,7 @@ export function AdminAmenityManagement() {
       } else {
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToDeleteAmenity'))
     } finally {
       setActionLoading(null)
@@ -169,7 +169,7 @@ export function AdminAmenityManagement() {
         resetCategoryForm()
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToCreateCategory'))
     } finally {
       setActionLoading(null)
@@ -201,7 +201,7 @@ export function AdminAmenityManagement() {
         resetCategoryForm()
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToUpdateCategory'))
     } finally {
       setActionLoading(null)
@@ -222,7 +222,7 @@ export function AdminAmenityManagement() {
       } else {
         await loadData()
       }
-    } catch (err) {
+    } catch {
       setError(t('admin.failedToDeleteCategory'))
     } finally {
       setActionLoading(null)

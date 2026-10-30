@@ -72,7 +72,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
         const roomTypeRatePlans = response.data.filter(rp => rp.room_type === roomTypeId)
         setRatePlans(roomTypeRatePlans)
       }
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToLoadRate'))
     } finally {
       setLoading(false)
@@ -100,7 +100,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       loadRatePlans()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToCreateRate'))
       setLoading(false)
     }
@@ -142,7 +142,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       loadRatePlans()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToUpdateRate'))
       setLoading(false)
     }
@@ -167,7 +167,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       loadRatePlans()
       
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+    } catch {
       setError(t('partner.failedToDeleteRate'))
       setLoading(false)
     }
@@ -409,7 +409,8 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       <form className="rates-form" noValidate onSubmit={(e) => {
         e.preventDefault()
         if (!formAccepts(e.currentTarget, t, setError)) return
-        viewMode === 'create' ? handleCreate() : handleUpdate()
+        if (viewMode === 'create') handleCreate()
+        else handleUpdate()
       }}>
         <div className="form-group">
           <label htmlFor="rate_name">{t('partner.ratePlanName')}</label>

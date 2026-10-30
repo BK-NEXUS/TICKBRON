@@ -231,7 +231,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -252,7 +252,7 @@ export const accountAdapter = {
       }
 
       return { data: null, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -274,7 +274,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -303,7 +303,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -325,7 +325,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -353,7 +353,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -383,7 +383,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -405,7 +405,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -426,7 +426,7 @@ export const accountAdapter = {
 
       const body = await response.json()
       return { data: { count: body.count, hasMore: Boolean(body.next), results: body.results }, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
@@ -448,7 +448,7 @@ export const accountAdapter = {
 
       const data = await response.json()
       return { data, error: null }
-    } catch (error) {
+    } catch {
       return { data: null, error: translateNow('apiError.networkOccurred') }
     }
   },
