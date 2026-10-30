@@ -204,6 +204,12 @@ NOTIFICATION_CODES = {
         'title': 'Your ad was removed',
         'message': 'Your ad was removed from the banner because the next month was not paid. Your hotel is still on the site.',
     },
+    'two_factor_reset': {
+        'type': 'system',
+        'params': (),
+        'title': 'Two-step sign-in was reset',
+        'message': 'A super admin reset your two-step sign-in. You will set it up again the next time you sign in.',
+    },
     'refund_succeeded': {
         'type': 'payment',
         'params': ('refund_id', 'booking_id', 'booking_reference', 'amount', 'currency'),

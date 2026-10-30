@@ -1326,3 +1326,10 @@ Plan: `.ai/PLAN_2FA.md`. Off until `TWO_FACTOR_REQUIRED_FOR_ADMINS=True`; the si
 
 ## Two-step sign-in, site screens (2026-10-29)
 No new endpoints. The site now uses the ones above: `POST /auth/login/` answering `two_factor_required` shows the code step (`TwoFactorCodeForm`, app code or backup code) and `POST /auth/login/2fa/` finishes the sign-in; a user with `two_factor_setup_required: true` is sent to `/two-factor-setup` (QR code drawn in the browser from `otpauth_uri`, the secret as text, the first code to `/auth/2fa/confirm/`, then the 10 backup codes once with a download button and a "saved" tick). `TWO_FACTOR_REQUIRED_FOR_ADMINS` now defaults to **on when `DEBUG=False`** (off in development and tests); production needs `TWO_FACTOR_KEY`.
+
+## Two-step sign-in, reset (2026-10-30)
+- `POST /api/v1/admin-panel/users/{id}/2fa-reset/` (super admin only), body `{"code": "123456"}`: the super admin's OWN current app code (a stolen session alone cannot do it; a code works once). Switches the target's two-step sign-in off, clears the secret and backup codes, signs the target out everywhere, writes `two_factor_reset` to the admin access log (no details) and sends the target the notice `two_factor_reset`. `200` the user (admin user shape, `two_factor_enabled: false`). `400 {"detail"}` for a wrong or missing own code, a super admin without two-step sign-in of their own, or a target that has it off. `403` for a target that is a super admin (their reset is the server command below), and for staff and everybody else; `404` unknown account. Throttle 5 per minute per account.
+- `GET /api/v1/admin-panel/users/` already returns `two_factor_enabled` for every account.
+- Server: `python manage.py reset_2fa <email>` resets any account including a super admin (the only way for the last super admin who lost the phone and the codes); it signs the account out everywhere and writes a `two_factor_reset` security log line. Run it on the server only.
+- Notification code `two_factor_reset` (type `system`, no params), texts in en/uz/ru.
+- Migration `admin_panel/0016` (choices only).

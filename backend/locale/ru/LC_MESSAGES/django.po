@@ -443,3 +443,12 @@ msgstr "Код неверный. Проверьте время на телефо
 
 msgid "Set up two-step sign-in first."
 msgstr "Сначала настройте двухэтапный вход."
+
+msgid "Enter your own current two-step code."
+msgstr "Введите свой текущий код двухэтапного входа."
+
+msgid "A super admin's two-step sign-in can only be reset on the server."
+msgstr "Двухэтапный вход суперадмина можно сбросить только на сервере."
+
+msgid "Two-step sign-in is not on for this account."
+msgstr "Для этого аккаунта двухэтапный вход не включён."

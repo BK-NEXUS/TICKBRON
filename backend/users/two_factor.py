@@ -121,11 +121,24 @@ def enable(user, secret, step):
     return [f'{code[:5]}-{code[5:]}' for code in codes]
 
 
-def end_other_sessions(user, keep_key):
-    """Sign the user out everywhere except the session being used (sessions are rows in the database)."""
-    for session in Session.objects.filter(expire_date__gt=timezone.now()).exclude(session_key=keep_key).iterator():
+def end_sessions(user, keep_key=None):
+    """Sign the user out everywhere (except the session `keep_key`, if given); sessions are rows in the database."""
+    sessions = Session.objects.filter(expire_date__gt=timezone.now())
+    if keep_key:
+        sessions = sessions.exclude(session_key=keep_key)
+    for session in sessions.iterator():
         if session.get_decoded().get(SESSION_KEY) == str(user.pk):
             session.delete()
+
+
+def reset(user):
+    """Switch two-step sign-in off and forget the secret and backup codes (a lost phone); the user is signed out everywhere."""
+    user.two_factor_enabled = False
+    user.two_factor_secret = None
+    user.two_factor_backup_codes = None
+    user.two_factor_last_step = None
+    user.save(update_fields=['two_factor_enabled', 'two_factor_secret', 'two_factor_backup_codes', 'two_factor_last_step'])
+    end_sessions(user)
 
 
 def remember_password_step(request, user):

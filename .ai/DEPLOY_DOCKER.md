@@ -149,6 +149,7 @@ A restore was tried on a test copy of this setup (a deleted user came back, a de
 - **400 "DisallowedHost" / the API refuses**: `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` or `CORS_ALLOWED_ORIGINS` in `.env` do not match the domain (they take the domain exactly, `https://` in the last two). After editing `.env`: `docker compose up -d`.
 - **The site calls the wrong address**: the address of the API is built into the site. After changing `DOMAIN` run `docker compose up -d --build`.
 - **No e-mails**: the SMTP values in `.env`; `docker compose logs worker` shows the errors.
+- **An administrator lost the phone (and the backup codes)**: another super admin opens the user list in the admin panel and presses "Reset two-step sign-in" on that account (needs the super admin's own current code). If it is the last super admin, on the server: `docker compose exec web python manage.py reset_2fa their@email`. The account sets it up again at its next sign-in.
 - **Disk full**: `docker system df`; old images: `docker image prune`. Never `docker volume prune` on the real server.
 
 ## Security notes

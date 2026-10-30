@@ -83,6 +83,6 @@ def confirm_two_factor(request):
     backup_codes = two_factor.enable(request.user, secret, step)
     request.session.pop(two_factor.SETUP_KEY, None)
     request.session.cycle_key()
-    two_factor.end_other_sessions(request.user, request.session.session_key)
+    two_factor.end_sessions(request.user, keep_key=request.session.session_key)
     log_security_event('two_factor_enabled', request, level=logging.INFO)
     return Response({'backup_codes': backup_codes})

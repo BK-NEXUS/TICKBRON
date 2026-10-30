@@ -7,7 +7,7 @@ amenity management, and payment monitoring.
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import routers, serializers, viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -20,10 +20,14 @@ from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat
 from datetime import timedelta
 from properties.listing import missing_for_listing
 from properties.models import Property, Amenity, AmenityCategory
+from users import two_factor
 from users.models import User
+from users.throttles import TwoFactorResetThrottle
 from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
+from accounts.notifications import notify
 from admin_panel.models import AdminAccessLog, InternalNote
+from common.security_log import log_security_event
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
     AdminUserSerializer, AdminUserCreateSerializer, AdminStaffCreateSerializer,
@@ -282,6 +286,34 @@ def admin_create_admin(request):
     user = serializer.save()
     AdminAccessLog.record(request.user, 'admin_create', target_user_id=user.id)
     return Response(AdminUserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['POST'])
+@permission_classes([IsSuperAdmin])
+@throttle_classes([TwoFactorResetThrottle])
+def admin_reset_two_factor(request, user_id):
+    """
+    Reset another account's two-step sign-in after a lost phone (super-admin only). Body: code, the
+    super admin's OWN current app code, so a stolen session alone cannot do it. The account is signed out
+    everywhere and sets it up again at its next sign-in. A super admin's own two-step sign-in cannot be
+    reset here: that is done on the server (`manage.py reset_2fa`). Written to the admin access log.
+    """
+    code = request.data.get('code')
+    if not (request.user.two_factor_enabled and isinstance(code, str) and two_factor.accept_code(request.user, code)):
+        return Response({'detail': _('Enter your own current two-step code.')}, status=status.HTTP_400_BAD_REQUEST)
+    target = get_object_or_404(User.objects.filter(is_deleted=False), pk=user_id)
+    if target.is_superuser:
+        return Response(
+            {'detail': _("A super admin's two-step sign-in can only be reset on the server.")},
+            status=status.HTTP_403_FORBIDDEN)
+    if not target.two_factor_enabled:
+        return Response({'detail': _('Two-step sign-in is not on for this account.')}, status=status.HTTP_400_BAD_REQUEST)
+    two_factor.reset(target)
+    AdminAccessLog.record(request.user, 'two_factor_reset', target_user_id=target.id)
+    notify(target, 'two_factor_reset', {})
+    log_security_event('two_factor_reset', request, target=target.pk)
+    return Response(AdminUserSerializer(target).data)
 
 
 class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):

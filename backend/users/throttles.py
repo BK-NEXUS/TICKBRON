@@ -78,3 +78,9 @@ class TwoFactorSetupThrottle(AccountRateThrottle):
     """Setup and confirm calls per account: 10 per minute."""
     rate = '10/min'
     scope = 'two_factor_setup'
+
+
+class TwoFactorResetThrottle(AccountRateThrottle):
+    """A super admin proving themselves with their own code to reset someone else: 5 tries per minute."""
+    rate = '5/min'
+    scope = 'two_factor_reset'

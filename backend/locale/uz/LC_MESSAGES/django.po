@@ -607,3 +607,12 @@ msgstr "Kod noto'g'ri. Telefoningizdagi vaqtni tekshirib, qaytadan urinib ko'rin
 
 msgid "Set up two-step sign-in first."
 msgstr "Avval ikki bosqichli kirishni sozlang."
+
+msgid "Enter your own current two-step code."
+msgstr "O'zingizning joriy ikki bosqichli kodingizni kiriting."
+
+msgid "A super admin's two-step sign-in can only be reset on the server."
+msgstr "Super adminning ikki bosqichli kirishini faqat serverda tiklash mumkin."
+
+msgid "Two-step sign-in is not on for this account."
+msgstr "Bu hisobda ikki bosqichli kirish yoqilmagan."

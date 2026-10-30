@@ -127,6 +127,13 @@ describe('design refresh: phone spacing', () => {
     expect(refresh).toMatch(/\.auth-link-button \{[^}]*min-height: 44px/)
   })
 
+  it('stacks the two-step reset question of the admin user list and keeps its buttons apart', () => {
+    expect(refresh).toMatch(/\.user-card \.user-card-footer \{\s*flex-wrap: wrap/)
+    expect(refresh).toMatch(/\.user-two-factor-block \{\s*flex: 1 1 100%/)
+    expect(refresh).toMatch(/\.user-two-factor-reset \{[^}]*flex-direction: column[^}]*max-width: 28rem/)
+    expect(refresh).toMatch(/\.user-two-factor-actions \{[^}]*flex-wrap: wrap[^}]*gap: var\(--spacing-sm\)/)
+  })
+
   it('lays out the star split of an owner hotel as label, bar and count', () => {
     expect(refresh).toMatch(/\.owner-rating-split-row \{\s*display: grid;\s*grid-template-columns: 3rem minmax\(0, 1fr\) 2\.5rem/)
   })

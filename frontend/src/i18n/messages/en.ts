@@ -1952,6 +1952,18 @@ export const en = {
   'twoFactorSetup.saved': "I saved these codes",
   'twoFactorSetup.done': "Continue",
   'twoFactorSetup.signOut': "Sign out",
+  'admin.twoFactorOn': "Two-step sign-in: on",
+  'admin.twoFactorOff': "Two-step sign-in: off",
+  'admin.twoFactorReset': "Reset two-step sign-in",
+  'admin.twoFactorResetHint': "{email} will be signed out everywhere and sets two-step sign-in up again at the next sign-in. Confirm with your own current code from the app.",
+  'admin.twoFactorOwnCode': "Your own 6-digit code",
+  'admin.twoFactorOwnCodeRequired': "Enter your own 6-digit code.",
+  'admin.twoFactorResetConfirm': "Reset",
+  'admin.twoFactorResetting': "Resetting...",
+  'admin.twoFactorResetCancel': "Cancel",
+  'admin.twoFactorResetDone': "Two-step sign-in was reset for {email}.",
+  'notification.two_factor_reset.title': "Two-step sign-in was reset",
+  'notification.two_factor_reset.message': "A super admin reset your two-step sign-in. You will set it up again the next time you sign in.",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

@@ -5,7 +5,7 @@ const KNOWN_CODES = new Set([
   'booking_confirmed', 'new_booking', 'booking_cancelled_by_guest', 'booking_not_arrived', 'guest_not_arrived',
   'no_show_marked', 'no_show_marked_no_refund', 'no_show_report_approved', 'no_show_report_rejected', 'refund_succeeded',
   'review_approved', 'review_rejected', 'new_review', 'review_reply',
-  'ad_ending', 'ad_last_warning', 'ad_renewed', 'ad_removed',
+  'ad_ending', 'ad_last_warning', 'ad_renewed', 'ad_removed', 'two_factor_reset',
 ])
 
 type Translate = (key: string, params?: Record<string, string | number>) => string
