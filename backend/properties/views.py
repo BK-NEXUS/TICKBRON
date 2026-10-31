@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
+from django.conf import settings
 from common import public_cache
 from currency.rates import rate_for_request, uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
@@ -30,8 +31,8 @@ logger = logging.getLogger('tickbron')
 
 
 class SearchRateThrottle(AnonRateThrottle):
-    """Rate throttle for search endpoint - 100 requests per minute per IP."""
-    rate = '100/min'
+    """Rate throttle for the search endpoints: 100 requests per minute per IP unless THROTTLE_SEARCH_RATE says otherwise."""
+    rate = settings.SEARCH_THROTTLE_RATE
     scope = 'search'
 
     def allow_request(self, request, view):

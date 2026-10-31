@@ -400,6 +400,9 @@ else:
         }
     }
 
+# Limit of the search endpoints per visitor address (properties.views.SearchRateThrottle)
+SEARCH_THROTTLE_RATE = os.getenv('THROTTLE_SEARCH_RATE', '100/min')
+
 # Seconds a copy of a public answer (hotel page, availability, search results) is kept in the cache; 0 turns it off.
 # The tests run with it off so one test never sees another's data. (common/public_cache.py)
 PUBLIC_CACHE_SECONDS = max(int(os.getenv('PUBLIC_CACHE_SECONDS', '0' if TESTING else '30')), 0)

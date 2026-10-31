@@ -16,6 +16,9 @@ BUSINESS_REFUSALS = (400, 409, 429)
 # Against a production-like server (DEBUG off, https only) set this to one of its CSRF_TRUSTED_ORIGINS: the test then
 # speaks as a visitor that came over https through the proxy. Leave it unset against the development server.
 HTTPS_ORIGIN = os.getenv('LOADTEST_ORIGIN', '')
+# Seconds a visitor reads a page before the next click. 1-3 is a stress test; 40-80 is people reading (3000 visitors).
+WAIT_MIN = float(os.getenv('LOADTEST_WAIT_MIN', '1'))
+WAIT_MAX = float(os.getenv('LOADTEST_WAIT_MAX', '3'))
 
 
 def stay():
@@ -26,7 +29,7 @@ def stay():
 class Guest(HttpUser):
     """Browses: search, hotel page, availability, quote."""
     weight = 8
-    wait_time = between(1, 3)
+    wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def on_start(self):
         self.hotel = None

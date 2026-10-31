@@ -42,6 +42,18 @@ server {
     location / {
         root /var/www/tickbron/frontend/dist;
         try_files $uri /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+
+    # The built files carry the hash of their content in the name: a browser may keep them for good.
+    location /assets/ {
+        root /var/www/tickbron/frontend/dist;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
         add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
         add_header X-Content-Type-Options "nosniff" always;
@@ -83,6 +95,7 @@ server {
         types { image/jpeg jpg jpeg; image/png png; image/gif gif; image/webp webp; }
         default_type application/octet-stream;
         add_header Content-Disposition "inline" always;
+        add_header Cache-Control "public, max-age=86400" always;  # a photo can be replaced under the same name
         add_header X-Content-Type-Options "nosniff" always;
         add_header Content-Security-Policy "default-src 'none'; sandbox" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
