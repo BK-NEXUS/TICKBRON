@@ -8,6 +8,7 @@ from bookings.views_noshow import (
     partner_no_show_report_create, partner_no_show_report_withdraw, partner_no_show_reports,
 )
 from partner.status import partner_status, partner_status_arrivals, partner_status_hotel, partner_status_rooms
+from partner import commission_views
 from partner.promotions import partner_promotions
 from partner.reviews import partner_review_reply, partner_reviews
 from partner.views import (
@@ -28,6 +29,7 @@ router.register(r'room-inventory', PartnerRoomInventoryViewSet, basename='partne
 router.register(r'blocks', PartnerBlockViewSet, basename='partner-block')
 
 urlpatterns = [
+    path('commission/', commission_views.partner_commission, name='partner-commission'),
     path('status/', partner_status, name='partner-status'),
     path('status/hotels/<int:property_id>/', partner_status_hotel, name='partner-status-hotel'),
     path('status/arrivals/', partner_status_arrivals, name='partner-status-arrivals'),

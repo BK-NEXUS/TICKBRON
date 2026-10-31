@@ -1334,3 +1334,15 @@ No new endpoints. The site now uses the ones above: `POST /auth/login/` answerin
 - Server: `python manage.py reset_2fa <email>` resets any account including a super admin (the only way for the last super admin who lost the phone and the codes); it signs the account out everywhere and writes a `two_factor_reset` security log line. Run it on the server only.
 - Notification code `two_factor_reset` (type `system`, no params), texts in en/uz/ru.
 - Migration `admin_panel/0016` (choices only).
+
+
+## Commission (2026-10-31)
+Plan: `.ai/PLAN_COMMISSION.md`. All money figures are decimal strings, always a list per currency (never mixed). Counted bookings = confirmed or completed, by the month of check-in. `percent` is a decimal string `"2.50"` or `null` (no percent set: no commission, `commission: null`).
+
+- `GET /api/v1/partner/commission/` (hotel owner; staff get their own empty one). Answer: `{percent, percent_since, months: [{month: "2026-05", bookings, gross: [{currency, amount}], percent, commission: [{currency, amount}] | null, paid: null | {by, role: "super_admin"|"staff", at, amounts}}], years: null | [{year, bookings, gross, commission}]}`. Months newest first: every month with a counted booking plus always the current month. `years` is `null` until the account is a year old.
+- `GET /api/v1/admin-panel/commission/?search=&page=&page_size=` (staff or super admin). Paginated list of hotel owners: `{id, name, email, phone_number, percent, this_month: {month, bookings, gross, commission}, unpaid: [{currency, amount}]}`; `unpaid` is the commission of ended months not yet confirmed. `search` matches owner name, e-mail, phone or hotel name (case-insensitive, up to 100 characters).
+- `GET /api/v1/admin-panel/commission/<owner_id>/` (staff or super admin): the same body as the owner's own view. 404 for an account that is not a hotel owner.
+- `PUT /api/v1/admin-panel/commission/<owner_id>/rate/` (super admin only). Body `{percent}`: 0 to 100, at most two decimals (400 under `percent`). Applies from the first day of the current month; setting it again in the same month replaces it; earlier months keep their percent. 200 -> the statement. Log: `commission_rate_set`, `details {percent}`.
+- `POST /api/v1/admin-panel/commission/<owner_id>/months/<YYYY-MM>/paid/` (staff or super admin): confirm that the owner paid that month. The confirmer's name, role and the amounts are stored. 400: month not ended, no percent for it, nothing to pay; 409: already confirmed; 404: bad month format. 200 -> the statement. Log: `commission_paid`, `details {month}`.
+- `DELETE` on the same URL takes the confirmation back (404 if there was none). Log: `commission_unpaid`.
+- `POST /api/v1/admin-panel/users/create-hotel-owner/` now requires `commission_percent` (0 to 100, two decimals; 400 under `commission_percent`, no account is created). It is stored as the owner's percent from the month of creation.

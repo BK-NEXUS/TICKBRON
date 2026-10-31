@@ -45,11 +45,12 @@ ACCESS = [
     (r'^/api/v1/admin-panel/users/create-hotel-owner/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/create-admin/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/\d+/2fa-reset/$', None, SUPERADMIN),
+    (r'^/api/v1/admin-panel/commission/\d+/rate/$', None, SUPERADMIN),  # the percent is the super admin's decision
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
     (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
     (r'^/api/v1/admin-panel/$', None, STAFF),
-    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|customers|exchange-rates|no-show-reports'
+    (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|commission|customers|exchange-rates|no-show-reports'
      r'|promotion-hotels|promotions|properties|reviews|statistics|status|users)/', None, STAFF),
 ]
 

@@ -12,6 +12,7 @@ from bookings.views_noshow import (
 from chat import admin_views as chat_views
 from promotions import admin_views as promotion_views
 from promotions import renewal_views
+from partner import commission_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
 from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
@@ -60,6 +61,11 @@ urlpatterns = [
     path('customers/<int:customer_id>/notes/<int:note_id>/', admin_internal_note_detail, name='admin-internal-note-detail'),
     path('statistics/registrations/', admin_registration_statistics, name='admin-registration-statistics'),
     path('statistics/top-bookers/', admin_top_bookers_leaderboard, name='admin-top-bookers-leaderboard'),
+    path('commission/', commission_views.admin_commission_list, name='admin-commission-list'),
+    path('commission/<int:owner_id>/', commission_views.admin_commission_detail, name='admin-commission-detail'),
+    path('commission/<int:owner_id>/rate/', commission_views.admin_commission_rate, name='admin-commission-rate'),
+    path('commission/<int:owner_id>/months/<str:month>/paid/', commission_views.admin_commission_paid,
+         name='admin-commission-paid'),
     path('status/overview/', status_overview, name='admin-status-overview'),
     path('status/countries/', status_countries, name='admin-status-countries'),
     path('status/countries/<str:country>/regions/', status_regions, name='admin-status-regions'),

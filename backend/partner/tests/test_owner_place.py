@@ -50,6 +50,7 @@ def account(world, **overrides):
         'email': 'newowner@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
         'phone_number': '+998901234567', 'password': 'Owner#Secret2026', 'password_confirm': 'Owner#Secret2026',
         'country_ref': world['country'].id, 'region_ref': world['east'].id, 'city_ref': world['capital'].id,
+        'commission_percent': '2.00',
     }
     body.update(overrides)
     return body
