@@ -85,7 +85,7 @@ def run_security_checks():
             )
             duplicate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -192,7 +192,7 @@ def run_security_checks():
             )
             translation2.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1

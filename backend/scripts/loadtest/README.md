@@ -22,3 +22,15 @@ locust -f scripts/loadtest/locustfile.py --headless -u 200 -r 20 -t 2m --host ht
 Browsing users (weight 8) search, open a hotel, check availability and ask for a quote. Booking users (weight 2) do the same
 and then create a pending booking with a session from `sessions.json`. A booking user takes a new guest after every booking. A refusal that is a business rule (400/409/429: too many pending
 bookings, no rooms left, throttle) counts as a success of the endpoint and is reported under its own name.
+
+## A production-like server and 3000 visitors
+A server with `DEBUG=False` only answers https and checks the origin of writes. Give the script one of its `CSRF_TRUSTED_ORIGINS`
+and it behaves like a visitor that came over https through the proxy; make the sessions with `DEBUG=True` (the script refuses otherwise):
+
+```bash
+DEBUG=True DB_NAME=tickbron_perf python scripts/loadtest/make_sessions.py
+LOADTEST_ORIGIN=https://perf.example.com LOADTEST_WAIT_MIN=40 LOADTEST_WAIT_MAX=80 \
+  locust -f scripts/loadtest/locustfile.py --headless -u 3000 -r 30 -t 12m --host http://127.0.0.1:8000
+```
+`LOADTEST_WAIT_MIN/MAX` is how many seconds a visitor reads before the next click: 1-3 (the default) is a stress test, 40-80 is people reading.
+Between runs delete only the `public:` keys of Redis (the copies of public pages), not the whole of it: it also holds the throttle counters.

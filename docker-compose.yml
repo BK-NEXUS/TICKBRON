@@ -22,8 +22,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    # Kept on disk, so the waiting background tasks survive a restart
-    command: ["redis-server", "--appendonly", "yes"]
+    # Kept on disk, so the waiting background tasks survive a restart. The memory is capped; when it is full only keys
+    # that expire (the copies of public pages, throttle counters) are removed, never the waiting background tasks
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "volatile-lru"]
     volumes:
       - redisdata:/data
     healthcheck:

@@ -1,6 +1,6 @@
 """The commission the site takes from each hotel owner: a percent per owner, figures per month and per year,
 and the confirmation that a month was paid (by a super admin or a staff admin, shown by name)."""
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from unittest import mock
 
 import pytest

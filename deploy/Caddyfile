@@ -64,6 +64,19 @@ www.{$DOMAIN} {
 		header {
 			Content-Disposition "inline"
 			Content-Security-Policy "default-src 'none'; sandbox"
+			# An owner can delete a photo and upload another under the same name: a day, not longer
+			Cache-Control "public, max-age=86400"
+		}
+		file_server
+	}
+
+	# The built files of the site have the hash of their content in the name: a changed file gets a new name, so a
+	# browser may keep the old one for good and thousands of visitors do not ask for it again on every page
+	handle /assets/* {
+		root * /srv/www
+		header {
+			Cache-Control "public, max-age=31536000, immutable"
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 		}
 		file_server
 	}
@@ -73,6 +86,8 @@ www.{$DOMAIN} {
 		root * /srv/www
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 		try_files {path} /index.html
+		# The page itself names the current built files, so it is asked again each time (a 304 when unchanged)
+		header Cache-Control "no-cache"
 		file_server
 	}
 }

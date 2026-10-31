@@ -8,7 +8,7 @@ CONFIG = Path(__file__).resolve().parents[2] / 'gunicorn.conf.py'
 
 
 def load(monkeypatch, **env):
-    for name in ('WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE'):
+    for name in ('WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE', 'WEB_MAX_REQUESTS'):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
@@ -20,6 +20,24 @@ def test_defaults_suit_a_small_server(monkeypatch):
     assert (config['workers'], config['threads'], config['timeout']) == (3, 4, 30)
     assert config['keepalive'] == 125  # longer than the proxy's 2 minutes of idle upstream connections
     assert config['bind'] == '0.0.0.0:8000'
+
+
+def test_processes_are_not_replaced_unless_asked_to_because_a_replacement_resets_open_connections(monkeypatch):
+    # Measured with 3000 visitors: replacing a process every 10,000 requests cut some connections and slowed the others
+    config = load(monkeypatch)
+    assert config['max_requests'] == 0
+    assert load(monkeypatch, WEB_MAX_REQUESTS='500')['max_requests'] == 500
+    assert 0 < load(monkeypatch, WEB_MAX_REQUESTS='500')['max_requests_jitter'] < 500
+
+
+def test_the_heartbeat_files_of_the_processes_live_in_memory_not_on_a_slow_disk(monkeypatch):
+    assert load(monkeypatch)['worker_tmp_dir'] == '/dev/shm'
+
+
+@pytest.mark.parametrize('bad', ['-1', 'many', ''])
+def test_a_bad_replacement_number_stops_the_start(monkeypatch, bad):
+    with pytest.raises(ValueError, match='WEB_MAX_REQUESTS'):
+        load(monkeypatch, WEB_MAX_REQUESTS=bad)
 
 
 def test_size_comes_from_the_environment(monkeypatch):

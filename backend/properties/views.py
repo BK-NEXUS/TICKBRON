@@ -11,6 +11,8 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
+from django.conf import settings
+from common import public_cache
 from currency.rates import rate_for_request, uzs_amount
 from properties.search import PropertySearchService, FEATURES, SORT_OPTIONS, searchable_properties
 from promotions.search import promoted_for_search, serialize_banners
@@ -29,8 +31,8 @@ logger = logging.getLogger('tickbron')
 
 
 class SearchRateThrottle(AnonRateThrottle):
-    """Rate throttle for search endpoint - 100 requests per minute per IP."""
-    rate = '100/min'
+    """Rate throttle for the search endpoints: 100 requests per minute per IP unless THROTTLE_SEARCH_RATE says otherwise."""
+    rate = settings.SEARCH_THROTTLE_RATE
     scope = 'search'
 
     def allow_request(self, request, view):
@@ -104,9 +106,27 @@ def property_search(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    # Perform search with improved error handling
-    try:
+    def find():
         search_results = search_service.search(search_params)
+        results_serializer = PropertySearchResultSerializer(
+            search_results['results'],
+            many=True,
+            context={'rate_request': request}
+        )
+        return {
+            'count': search_results['count'],
+            'next': search_results['next'],
+            'previous': search_results['previous'],
+            'results': results_serializer.data,
+            'page': search_results.get('page', 1),
+            'page_size': search_results.get('page_size', 20),
+            'total_pages': search_results.get('total_pages', 1),
+        }
+
+    # The results are the same for every visitor and are copied for a few seconds; the paid banners are not part of
+    # the copy, so every visitor's view of them is still counted
+    try:
+        response_data = dict(public_cache.remember(request, 'search', find))
     except ValueError as e:
         # Handle validation errors from search service
         logger.warning(f"Invalid search parameters: {e}")
@@ -122,24 +142,7 @@ def property_search(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # Serialize results
-    results_serializer = PropertySearchResultSerializer(
-        search_results['results'],
-        many=True,
-        context={'rate_request': request}
-    )
-
-    response_data = {
-        'count': search_results['count'],
-        'next': search_results['next'],
-        'previous': search_results['previous'],
-        'results': results_serializer.data,
-        'page': search_results.get('page', 1),
-        'page_size': search_results.get('page_size', 20),
-        'total_pages': search_results.get('total_pages', 1),
-        'promoted': _promoted_banners(request, search_service, search_params, search_results.get('page', 1)),
-    }
-
+    response_data['promoted'] = _promoted_banners(request, search_service, search_params, response_data['page'])
     return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -156,43 +159,46 @@ def property_filter_options(request):
     from django.db.models import Count, Max, Min, Q
     from properties.models import Amenity, PropertyType
 
-    properties = searchable_properties()
+    def build():
+        properties = searchable_properties()
 
-    property_types = PropertyType.objects.filter(is_deleted=False).annotate(
-        count=Count('properties', filter=Q(properties__in=properties))
-    ).filter(count__gt=0).order_by('name')
+        property_types = PropertyType.objects.filter(is_deleted=False).annotate(
+            count=Count('properties', filter=Q(properties__in=properties))
+        ).filter(count__gt=0).order_by('name')
 
-    feature_counts = properties.aggregate(**{
-        feature: Count('id', filter=Q(**{flag: True})) for feature, (flag, _) in FEATURES.items()
-    })
+        feature_counts = properties.aggregate(**{
+            feature: Count('id', filter=Q(**{flag: True})) for feature, (flag, _) in FEATURES.items()
+        })
 
-    amenities = Amenity.objects.filter(is_searchable=True, is_active=True, is_deleted=False).annotate(
-        count=Count('property_amenities', filter=Q(
-            property_amenities__property__in=properties,
-            property_amenities__is_available=True,
-            property_amenities__is_deleted=False,
-        ))
-    ).order_by('name')
+        amenities = Amenity.objects.filter(is_searchable=True, is_active=True, is_deleted=False).annotate(
+            count=Count('property_amenities', filter=Q(
+                property_amenities__property__in=properties,
+                property_amenities__is_available=True,
+                property_amenities__is_deleted=False,
+            ))
+        ).order_by('name')
 
-    prices = properties.aggregate(min=Min('base_price'), max=Max('base_price'))
+        prices = properties.aggregate(min=Min('base_price'), max=Max('base_price'))
 
-    return Response({
-        'property_types': [
-            {'id': t.id, 'name': t.name, 'slug': t.slug, 'count': t.count} for t in property_types
-        ],
-        'features': [
-            {'id': feature, 'label': label, 'count': feature_counts[feature]}
-            for feature, (_, label) in FEATURES.items()
-        ],
-        'amenities': [
-            {'id': a.id, 'name': a.name, 'slug': a.slug, 'icon': a.icon, 'count': a.count} for a in amenities
-        ],
-        'price_range': {
-            'min': float(prices['min']) if prices['min'] is not None else None,
-            'max': float(prices['max']) if prices['max'] is not None else None,
-        },
-        'sort_options': [{'id': sort_id, 'label': label} for sort_id, label in SORT_OPTIONS],
-    }, status=status.HTTP_200_OK)
+        return {
+            'property_types': [
+                {'id': t.id, 'name': t.name, 'slug': t.slug, 'count': t.count} for t in property_types
+            ],
+            'features': [
+                {'id': feature, 'label': label, 'count': feature_counts[feature]}
+                for feature, (_, label) in FEATURES.items()
+            ],
+            'amenities': [
+                {'id': a.id, 'name': a.name, 'slug': a.slug, 'icon': a.icon, 'count': a.count} for a in amenities
+            ],
+            'price_range': {
+                'min': float(prices['min']) if prices['min'] is not None else None,
+                'max': float(prices['max']) if prices['max'] is not None else None,
+            },
+            'sort_options': [{'id': sort_id, 'label': label} for sort_id, label in SORT_OPTIONS],
+        }
+
+    return Response(public_cache.remember(request, 'filter-options', build), status=status.HTTP_200_OK)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -225,7 +231,8 @@ def property_search_suggestions(request):
         return Response({'suggestions': []}, status=status.HTTP_200_OK)
 
     try:
-        suggestions = search_service.get_search_suggestions(query, limit)
+        suggestions = public_cache.remember(
+            request, 'suggestions', lambda: {'suggestions': search_service.get_search_suggestions(query, limit)})['suggestions']
     except Exception:
         logger.exception('Unexpected error getting search suggestions')
         return Response(
@@ -258,7 +265,7 @@ def property_detail(request, property_id):
     """
     from properties.models import Property
 
-    try:
+    def build():
         # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
             id=property_id,
@@ -266,16 +273,17 @@ def property_detail(request, property_id):
             is_active=True,
             is_deleted=False
         )
+        return PropertyDetailSerializer(property, context={'rate_request': request}).data
+
+    try:
+        data = public_cache.remember(request, 'detail', build)
     except Property.DoesNotExist:
         return Response(
             {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Serialize property with all related data
-    serializer = PropertyDetailSerializer(property, context={'rate_request': request})
-
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -310,7 +318,7 @@ def property_availability(request, property_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    try:
+    def build():
         # Pending, rejected and suspended properties are not public
         property = Property.objects.get(
             id=property_id,
@@ -318,19 +326,18 @@ def property_availability(request, property_id):
             is_active=True,
             is_deleted=False
         )
+        return PropertyAvailabilitySerializer(property, context={'request': request}).data
+
+    try:
+        # Free rooms change faster than the rest of the page: this copy lives half as long
+        data = public_cache.remember(request, 'availability', build, divisor=2)
     except Property.DoesNotExist:
         return Response(
             {'error': 'Property not found', 'details': f'Property with ID {property_id} does not exist or is not available'},
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Serialize property with availability data
-    serializer = PropertyAvailabilitySerializer(
-        property,
-        context={'request': request}
-    )
-
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

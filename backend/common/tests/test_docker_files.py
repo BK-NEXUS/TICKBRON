@@ -24,6 +24,28 @@ def env_keys(path):
             if line.strip() and not line.lstrip().startswith('#') and '=' in line}
 
 
+CADDYFILE = REPO / 'deploy' / 'Caddyfile'
+NGINX_EXAMPLE = REPO / 'deploy' / 'nginx.conf.example'
+
+
+class TestBrowserCaching:
+    """Thousands of visitors must not download the same built files again on every page."""
+
+    @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
+    def test_hashed_site_files_are_kept_by_the_browser_for_good(self, path):
+        assert 'public, max-age=31536000, immutable' in path.read_text()
+
+    @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
+    def test_the_page_that_names_those_files_is_asked_again_each_time(self, path):
+        assert 'no-cache' in path.read_text()
+
+    @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
+    def test_photos_are_kept_for_a_day_at_most(self, path):
+        text = path.read_text()
+        assert 'max-age=86400' in text
+        assert 'max-age=604800' not in text
+
+
 class TestCompose:
     def test_has_every_service(self, compose):
         assert set(compose['services']) == {'db', 'redis', 'migrate', 'web', 'worker', 'beat', 'caddy'}
@@ -58,6 +80,12 @@ class TestCompose:
         check = ' '.join(compose['services']['web']['healthcheck']['test'])
         assert "'Host': os.environ['DOMAIN']" in check
         assert "'X-Forwarded-Proto': 'https'" in check
+
+    def test_redis_memory_is_capped_and_only_expiring_keys_are_dropped(self, compose):
+        command = compose['services']['redis']['command']
+
+        assert command[command.index('--maxmemory') + 1] == '512mb'
+        assert command[command.index('--maxmemory-policy') + 1] == 'volatile-lru'
 
     def test_every_service_restarts_by_itself(self, compose):
         for name, service in compose['services'].items():

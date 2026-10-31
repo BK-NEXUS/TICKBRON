@@ -71,7 +71,8 @@ class TestList:
 
     def test_a_hotel_can_be_picked(self, owner, hotel, kind):
         other = make_hotel(owner, kind, city='Samarkand')
-        a, b = review(hotel, guest(1)), review(other, guest(2))
+        review(hotel, guest(1))
+        b = review(other, guest(2))
         assert [row['id'] for row in owner_client(owner).get(LIST, {'property': other.id}).data['results']] == [b.id]
         assert len(owner_client(owner).get(LIST).data['results']) == 2
 

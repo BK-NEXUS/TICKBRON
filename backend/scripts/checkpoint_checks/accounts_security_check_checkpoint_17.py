@@ -245,7 +245,7 @@ def check_viewset_authentication(viewset_class):
     try:
         from rest_framework.permissions import IsAuthenticated
         return IsAuthenticated in viewset_class.permission_classes
-    except:
+    except Exception:
         return False
 
 
@@ -263,7 +263,7 @@ def check_user_isolation_favorites():
 
         # This should filter by user in the actual implementation
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -281,7 +281,7 @@ def check_user_isolation_reviews():
         viewset.request.user = user
 
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -297,7 +297,7 @@ def check_user_isolation_notifications():
         viewset.request.user = user
 
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -313,7 +313,7 @@ def check_user_isolation_history():
         viewset.request.user = user
 
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -331,7 +331,7 @@ def check_rating_validation():
         has_max = any(isinstance(v, MaxValueValidator) and v.limit_value == 5 for v in validators)
 
         return has_min and has_max
-    except:
+    except Exception:
         return False
 
 
@@ -341,7 +341,7 @@ def check_property_status_validation():
         pass
         # The serializer should validate property status
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -351,7 +351,7 @@ def check_booking_status_validation():
         pass
         # The serializer should validate booking status
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -361,7 +361,7 @@ def check_notification_creation_blocked():
         from accounts.views import NotificationViewSet
         # Check that create method is overridden to block
         return hasattr(NotificationViewSet, 'create')
-    except:
+    except Exception:
         return False
 
 
@@ -372,7 +372,7 @@ def check_history_read_only():
         # Should be ReadOnlyModelViewSet
         from rest_framework.viewsets import ReadOnlyModelViewSet
         return issubclass(AccountHistoryViewSet, ReadOnlyModelViewSet)
-    except:
+    except Exception:
         return False
 
 
@@ -382,7 +382,7 @@ def check_staff_review_access():
         pass
         # ViewSet should have different queryset for staff
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -392,7 +392,7 @@ def check_favorite_unique_constraint():
         from accounts.models import Favorite
         unique_together = Favorite._meta.unique_together
         return ('user', 'property') in unique_together
-    except:
+    except Exception:
         return False
 
 
@@ -402,7 +402,7 @@ def check_review_unique_constraint():
         from accounts.models import Review
         unique_together = Review._meta.unique_together
         return ('user', 'booking') in unique_together
-    except:
+    except Exception:
         return False
 
 
@@ -417,7 +417,7 @@ def check_soft_delete_functionality():
                 issubclass(Review, BaseModel) and
                 issubclass(Notification, BaseModel) and
                 issubclass(AccountHistory, BaseModel))
-    except:
+    except Exception:
         return False
 
 
@@ -427,7 +427,7 @@ def check_account_history_logging():
         from accounts.views import FavoriteViewSet
         # Check that account history is created in perform_create
         return hasattr(FavoriteViewSet, 'perform_create')
-    except:
+    except Exception:
         return False
 
 
@@ -437,7 +437,7 @@ def check_review_history_logging():
         from accounts.views import ReviewViewSet
         # Check that account history is created in perform_create
         return hasattr(ReviewViewSet, 'perform_create')
-    except:
+    except Exception:
         return False
 
 
@@ -451,7 +451,7 @@ def check_database_indexes():
         has_property_index = any('property' in str(index.fields) for index in Favorite._meta.indexes)
 
         return has_user_index and has_property_index
-    except:
+    except Exception:
         return False
 
 
@@ -462,7 +462,7 @@ def check_soft_delete_filtering():
 
         # Should use BaseQuerySet which filters soft-deleted records
         return hasattr(Favorite.objects, 'not_deleted')
-    except:
+    except Exception:
         return False
 
 
