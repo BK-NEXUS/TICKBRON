@@ -1,10 +1,12 @@
 """R14: the number of queries of the search page and the hotel page does not grow with what they show."""
 from decimal import Decimal
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
+from rest_framework import serializers
 
 from properties.models import (
     Amenity, AmenityCategory, Property, PropertyAmenity, PropertyPhoto, PropertyType, RatePlan, RoomType,
@@ -74,6 +76,41 @@ class SearchQueryCountTests(PropertyFixtureMixin, TestCase):
         row = response.data['results'][0]
         assert row['primary_photo']['is_primary'] is True
         assert len(row['amenities']) == 4
+
+
+def field_builds_of(client, url):
+    """How many times DRF worked out a model serializer's fields (reading the model) while answering the URL."""
+    real = serializers.ModelSerializer.get_fields
+    with mock.patch.object(serializers.ModelSerializer, 'get_fields', autospec=True, side_effect=real) as spy:
+        response = client.get(url)
+    assert response.status_code == 200, response.content
+    return spy.call_count
+
+
+class SerializerWorkTests(PropertyFixtureMixin, TestCase):
+    """Building a serializer reads the model and is slow: it must not be done once per hotel on a page of hotels."""
+
+    def test_the_search_page_builds_the_same_serializers_for_one_hotel_and_for_many(self):
+        self.add_hotel(1)
+        few = field_builds_of(self.client, SearchQueryCountTests.URL)
+        for number in range(2, 13):
+            self.add_hotel(number)
+
+        many = field_builds_of(self.client, SearchQueryCountTests.URL)
+
+        assert many == few, f'{few} serializer builds for 1 hotel, {many} for 12'
+
+    def test_the_hotel_page_builds_the_same_serializers_for_few_and_many_amenities(self):
+        hotel = self.add_hotel(1)
+        few = field_builds_of(self.client, f'/api/v1/properties/{hotel.id}/')
+        category = self.amenities[0].category
+        for number in range(10, 20):
+            amenity = Amenity.objects.create(name=f'More {number}', slug=f'more-{number}', category=category, is_searchable=True)
+            PropertyAmenity.objects.create(property=hotel, amenity=amenity, is_available=True)
+
+        many = field_builds_of(self.client, f'/api/v1/properties/{hotel.id}/')
+
+        assert many == few, f'{few} serializer builds for 4 amenities, {many} for 14'
 
 
 class DetailQueryCountTests(PropertyFixtureMixin, TestCase):

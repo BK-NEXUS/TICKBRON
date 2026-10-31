@@ -400,6 +400,10 @@ else:
         }
     }
 
+# Seconds a copy of a public answer (hotel page, availability, search results) is kept in the cache; 0 turns it off.
+# The tests run with it off so one test never sees another's data. (common/public_cache.py)
+PUBLIC_CACHE_SECONDS = max(int(os.getenv('PUBLIC_CACHE_SECONDS', '0' if TESTING else '30')), 0)
+
 # R16: when True (the default), a rate plan must carry the owner's price in every supported currency (create and
 # every edit); the owner decided this on 2026-10-19 (see .ai/PLAN_R16_MULTI_CURRENCY.md).
 RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'True').lower() == 'true'

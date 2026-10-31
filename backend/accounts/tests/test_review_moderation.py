@@ -45,8 +45,8 @@ def staff_client(**flags):
 
 class TestPublicList:
     def test_anonymous_sees_only_approved_reviews_newest_first(self, hotel):
-        first = review(hotel, guest(1), comment='first')
-        second = review(hotel, guest(2), comment='second')
+        review(hotel, guest(1), comment='first')
+        review(hotel, guest(2), comment='second')
         review(hotel, guest(3), status='pending', comment='waiting')
         review(hotel, guest(4), status='rejected', comment='refused')
         gone = review(hotel, guest(5), comment='deleted')

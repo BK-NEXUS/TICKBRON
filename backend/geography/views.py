@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from common import public_cache
 from geography.models import City, Country, Region
 
 PUBLIC_PROPERTY = Q(properties__is_active=True, properties__is_deleted=False, properties__status='active')
@@ -37,7 +38,8 @@ def _rows(queryset, *fields):
 @permission_classes([AllowAny])
 def country_list(request):
     """Active countries with their currency and hotel counts."""
-    return Response(_rows(Country.objects.filter(is_active=True), 'code', 'currency', 'image'))
+    return Response(public_cache.remember(
+        request, 'countries', lambda: _rows(Country.objects.filter(is_active=True), 'code', 'currency', 'image')))
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -45,8 +47,11 @@ def country_list(request):
 @permission_classes([AllowAny])
 def region_list(request, code):
     """Active regions of an active country (code is case-insensitive)."""
-    country = get_object_or_404(Country, code=code.upper(), is_active=True)
-    return Response(_rows(Region.objects.filter(country=country, is_active=True), 'image'))
+    def build():
+        country = get_object_or_404(Country, code=code.upper(), is_active=True)
+        return _rows(Region.objects.filter(country=country, is_active=True), 'image')
+
+    return Response(public_cache.remember(request, 'regions', build))
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -54,5 +59,8 @@ def region_list(request, code):
 @permission_classes([AllowAny])
 def city_list(request, region_id):
     """Active cities of an active region in an active country."""
-    region = get_object_or_404(Region, pk=region_id, is_active=True, country__is_active=True)
-    return Response(_rows(City.objects.filter(region=region, is_active=True)))
+    def build():
+        region = get_object_or_404(Region, pk=region_id, is_active=True, country__is_active=True)
+        return _rows(City.objects.filter(region=region, is_active=True))
+
+    return Response(public_cache.remember(request, 'cities', build))

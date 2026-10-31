@@ -136,6 +136,12 @@ class PropertyPolicySerializer(serializers.ModelSerializer):
         read_only_fields = []
 
 
+# Built once: a serializer reads the model to work out its fields, which costs more than filling it with one
+# hotel's row, and a search page has up to 100 hotels. They take no request, so nothing is shared between requests.
+_PHOTO_ROW = PropertyPhotoSerializer()
+_AMENITY_ROW = PropertyAmenitySerializer()
+
+
 class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for property search results.
@@ -169,14 +175,14 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
         photos = list(obj.active_photos if hasattr(obj, 'active_photos') else obj.photos.filter(
             is_active=True, is_deleted=False))
         primary = next((photo for photo in photos if photo.is_primary), None) or (photos[0] if photos else None)
-        return PropertyPhotoSerializer(primary).data if primary else None
+        return _PHOTO_ROW.to_representation(primary) if primary else None
 
     def get_amenities(self, obj):
         """Available, searchable amenities; read from the rows the search already loaded."""
         links = obj.searchable_amenities if hasattr(obj, 'searchable_amenities') else obj.property_amenities.filter(
             is_available=True, amenity__is_searchable=True, is_deleted=False,
         ).select_related('amenity__category')
-        return PropertyAmenitySerializer(links, many=True).data
+        return [_AMENITY_ROW.to_representation(link) for link in links]
 
     def get_full_address(self, obj):
         """Get the full address as a string."""
