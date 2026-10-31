@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import (
@@ -20,6 +21,7 @@ from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat
 from datetime import timedelta
 from properties.listing import missing_for_listing
 from properties.models import Property, Amenity, AmenityCategory
+from partner import commission
 from users import two_factor
 from users.models import User
 from users.throttles import TwoFactorResetThrottle
@@ -253,6 +255,7 @@ def admin_create_hotel_owner(request):
         last_name: Last name (required)
         phone_number: Phone number (required)
         country_ref, region_ref, city_ref: the place of the owner's hotels (required, must fit together)
+        commission_percent: what the site takes from each booking, 0 to 100 (required)
         password: Initial password (required, min 8 characters)
         password_confirm: Password confirmation (required)
     
@@ -262,7 +265,9 @@ def admin_create_hotel_owner(request):
     serializer = AdminUserCreateSerializer(data=request.data)
 
     if serializer.is_valid():
-        user = serializer.save()
+        with transaction.atomic():
+            user = serializer.save()
+            commission.set_percent(user, serializer.validated_data['commission_percent'], request.user)
         AdminAccessLog.record(request.user, 'hotel_owner_create', target_user_id=user.id)
         return Response(
             AdminUserSerializer(user).data,

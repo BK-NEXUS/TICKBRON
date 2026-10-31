@@ -208,8 +208,12 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
     region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
     city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
 
+    # What the site takes from each booking of this owner: the super admin must decide it on creation
+    commission_percent = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=0, max_value=100, write_only=True)
+
     class Meta(AccountCreateSerializer.Meta):
-        fields = AccountCreateSerializer.Meta.fields + ['country_ref', 'region_ref', 'city_ref']
+        fields = AccountCreateSerializer.Meta.fields + ['country_ref', 'region_ref', 'city_ref', 'commission_percent']
 
     def validate(self, data):
         data = super().validate(data)

@@ -186,6 +186,7 @@ describe('CreateHotelOwnerAccount', () => {
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
@@ -208,6 +209,7 @@ describe('CreateHotelOwnerAccount', () => {
         country_ref: 1,
         region_ref: 10,
         city_ref: 100,
+        commission_percent: '2.5',
       })
     })
 
@@ -247,6 +249,7 @@ describe('CreateHotelOwnerAccount', () => {
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
@@ -287,6 +290,7 @@ describe('CreateHotelOwnerAccount', () => {
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })
@@ -343,6 +347,7 @@ describe('CreateHotelOwnerAccount', () => {
     fireEvent.change(lastNameInput, { target: { value: 'Doe' } })
 
     fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } }) // a new account needs a phone number
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
 
     const passwordInput = screen.getByLabelText('Password:')
     fireEvent.change(passwordInput, { target: { value: 'SecurePassword123!' } })

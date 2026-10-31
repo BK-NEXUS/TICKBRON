@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, MessageSquare, UserX, MapPin, Coins, Star } from 'lucide-react'
+import { Lock, Ban, House, Bell, Users, User, ChartColumn, Search, Plus, Megaphone, MessageSquare, UserX, MapPin, Coins, Star, Percent } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../contexts/AuthContext'
 import { AdminPropertyModeration } from '../components/AdminPropertyModeration'
@@ -10,6 +10,7 @@ import { AdminCustomersList } from '../components/AdminCustomersList'
 import { AdminStatisticsDashboard } from '../components/AdminStatisticsDashboard'
 import { AdminStatusSection } from '../components/AdminStatusSection'
 import { AdminPromotions } from '../components/AdminPromotions'
+import { AdminCommission } from '../components/AdminCommission'
 import { AdminSupportChat } from '../components/AdminSupportChat'
 import { useChatUnread } from '../hooks/useChatUnread'
 import { AdminNoShowReports } from '../components/AdminNoShowReports'
@@ -19,7 +20,7 @@ import { AdminReviewModeration } from '../components/AdminReviewModeration'
 import { CreateHotelOwnerAccount } from '../components/CreateHotelOwnerAccount'
 import { EmptyState } from '../components/EmptyState'
 
-type AdminView = 'properties' | 'reviews' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'messages' | 'no-show' | 'geography' | 'rates' | 'create-owner'
+type AdminView = 'properties' | 'reviews' | 'amenities' | 'users' | 'customers' | 'statistics' | 'status' | 'promotions' | 'messages' | 'no-show' | 'geography' | 'rates' | 'commission' | 'create-owner'
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
@@ -175,6 +176,14 @@ export function AdminDashboardPage() {
         <span className="nav-label">{t('noShowAdmin.nav')}</span>
       </button>
       <button
+        onClick={() => setCurrentView('commission')}
+        className={`nav-item ${currentView === 'commission' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'commission' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Percent size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('commission.nav')}</span>
+      </button>
+      <button
         onClick={() => setCurrentView('rates')}
         className={`nav-item ${currentView === 'rates' ? 'nav-item--active' : ''}`}
         aria-current={currentView === 'rates' ? 'page' : undefined}
@@ -247,6 +256,8 @@ export function AdminDashboardPage() {
         return <AdminReviewModeration />
       case 'rates':
         return <AdminExchangeRates isSuperAdmin={Boolean(user.is_superuser)} />
+      case 'commission':
+        return <AdminCommission isSuperAdmin={Boolean(user.is_superuser)} />
       case 'promotions':
         return <AdminPromotions isSuperAdmin={Boolean(user.is_superuser)} />
       case 'messages':

@@ -10096,3 +10096,51 @@ button.property-gallery-image {
 .renewal-facts dd {
   margin: 0;
 }
+
+/* Commission: the owner's and the staff's month table (scrolls inside its box on a phone) */
+.commission-statement {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.commission-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+}
+
+.commission-table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+}
+
+.commission-table th,
+.commission-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.commission-table tbody tr:last-child th,
+.commission-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.commission-table td .btn {
+  margin-top: var(--spacing-xs, 0.25rem);
+}
+
+.commission-percent-form,
+.user-contact-form {
+  display: grid;
+  gap: var(--spacing-sm);
+  max-width: 24rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.admin-commission > .btn {
+  justify-self: start;
+  margin-bottom: var(--spacing-md);
+}

@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { adminAdapter, AdminUser } from '../adapters/adminAdapter'
+import { adminAdapter, AdminUser, ContactChange } from '../adapters/adminAdapter'
+import { isPhoneValid } from '../utils/inputFilters'
 import { Button } from './Button'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -14,6 +15,13 @@ export function AdminUserManagement() {
   const [resetError, setResetError] = useState('')
   const [resetBusy, setResetBusy] = useState(false)
   const [resetDone, setResetDone] = useState('')
+  // The account whose phone number and/or e-mail a super admin or a staff admin is changing
+  const [editing, setEditing] = useState<AdminUser | null>(null)
+  const [newPhone, setNewPhone] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [contactError, setContactError] = useState('')
+  const [contactBusy, setContactBusy] = useState(false)
+  const [contactDone, setContactDone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,6 +82,47 @@ export function AdminUserManagement() {
     }
   }
 
+  // Staff may change guests and owners; a super admin also staff admins; nobody changes a super admin here
+  const canEditContact = (account: AdminUser) => (
+    !account.is_superuser && (Boolean(viewer?.is_superuser) || !account.is_staff)
+  )
+
+  const openContact = (account: AdminUser) => {
+    setEditing(account)
+    setNewPhone('')
+    setNewEmail('')
+    setContactError('')
+    setContactDone('')
+  }
+
+  const submitContact = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!editing) return
+    const change: ContactChange = {}
+    if (newPhone.trim()) change.phone_number = newPhone.trim()
+    if (newEmail.trim()) change.email = newEmail.trim()
+    if (!change.phone_number && !change.email) {
+      setContactError(t('admin.contactNeedOne'))
+      return
+    }
+    if (change.phone_number && !isPhoneValid(change.phone_number)) {
+      setContactError(t('auth.errPhone'))
+      return
+    }
+    setContactError('')
+    setContactBusy(true)
+    const response = await adminAdapter.changeContact(editing.id, change)
+    setContactBusy(false)
+    if (response.data) {
+      const changed = response.data
+      setUsers(previous => previous.map(account => (account.id === changed.id ? { ...account, ...changed } : account)))
+      setContactDone(t('admin.contactSaved', { email: changed.email }))
+      setEditing(null)
+    } else {
+      setContactError(response.error || t('admin.failedToLoadUsers'))
+    }
+  }
+
   const getRoleBadgeClass = (role: string, isStaff: boolean, isSuperuser: boolean) => {
     if (isSuperuser) return 'role-badge--super-admin'
     if (isStaff) return 'role-badge--staff'
@@ -110,6 +159,7 @@ export function AdminUserManagement() {
       )}
 
       {resetDone && <p className="alert alert-success" role="status">{resetDone}</p>}
+      {contactDone && <p className="alert alert-success" role="status">{contactDone}</p>}
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
@@ -170,6 +220,34 @@ export function AdminUserManagement() {
               </div>
 
               <div className="user-card-footer">
+                {canEditContact(user) && (
+                  <div className="user-contact-block">
+                    {editing?.id !== user.id ? (
+                      <Button type="button" variant="secondary" size="sm" onClick={() => openContact(user)}>
+                        {t('admin.contactEdit')}
+                      </Button>
+                    ) : (
+                      <form className="user-contact-form" onSubmit={submitContact} noValidate>
+                        <p className="auth-hint">{t('admin.contactHint')}</p>
+                        {contactError && <div className="alert alert-error" role="alert">{contactError}</div>}
+                        <label htmlFor={`new-phone-${user.id}`}>{t('admin.contactNewPhone')}</label>
+                        <input id={`new-phone-${user.id}`} className="search-input" type="tel" inputMode="tel"
+                          autoComplete="off" value={newPhone} disabled={contactBusy} placeholder="+998 90 123 45 67"
+                          onChange={(event) => setNewPhone(event.target.value)} />
+                        <label htmlFor={`new-email-${user.id}`}>{t('admin.contactNewEmail')}</label>
+                        <input id={`new-email-${user.id}`} className="search-input" type="email"
+                          autoComplete="off" value={newEmail} disabled={contactBusy}
+                          onChange={(event) => setNewEmail(event.target.value)} />
+                        <div className="user-two-factor-actions">
+                          <Button type="submit" size="sm" loading={contactBusy} disabled={contactBusy}>{t('admin.contactSave')}</Button>
+                          <Button type="button" variant="secondary" size="sm" disabled={contactBusy} onClick={() => setEditing(null)}>
+                            {t('admin.contactCancel')}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
                 <div className="user-two-factor-block">
                   <p className="user-two-factor">{t(user.two_factor_enabled ? 'admin.twoFactorOn' : 'admin.twoFactorOff')}</p>
                   {viewer?.is_superuser && !user.is_superuser && user.two_factor_enabled && resetting?.id !== user.id && (

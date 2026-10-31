@@ -6,12 +6,13 @@ import { adminAdapter, type AdminUser } from '../adapters/adminAdapter'
 import { useAuth } from '../contexts/AuthContext'
 
 vi.mock('../adapters/adminAdapter', () => ({
-  adminAdapter: { getUsers: vi.fn(), resetTwoFactor: vi.fn() },
+  adminAdapter: { getUsers: vi.fn(), resetTwoFactor: vi.fn(), changeContact: vi.fn() },
 }))
 vi.mock('../contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 
 const getUsers = vi.mocked(adminAdapter.getUsers)
 const resetTwoFactor = vi.mocked(adminAdapter.resetTwoFactor)
+const changeContact = vi.mocked(adminAdapter.changeContact)
 
 const account = (extra: Partial<AdminUser>): AdminUser => ({
   id: 1, email: 'a@example.com', first_name: 'A', last_name: 'B', full_name: 'A B', is_active: true, is_staff: false,
@@ -105,5 +106,70 @@ describe('AdminUserManagement two-step sign-in', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.queryByLabelText('Your own 6-digit code')).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminUserManagement contact change', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getUsers.mockResolvedValue({ data: [MODERATOR, BOSS, GUEST], error: null })
+    changeContact.mockResolvedValue({ data: { ...GUEST, phone_number: '+998909998877' }, error: null })
+  })
+
+  const edit = (email: string) => fireEvent.click(within(card(email)).getByRole('button', { name: 'Change phone or e-mail' }))
+
+  it('offers a super admin the change for staff and guests but not for a super admin', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('guest@example.com')
+
+    expect(within(card('guest@example.com')).getByRole('button', { name: 'Change phone or e-mail' })).toBeInTheDocument()
+    expect(within(card('moderator@example.com')).getByRole('button', { name: 'Change phone or e-mail' })).toBeInTheDocument()
+    expect(within(card('boss@example.com')).queryByRole('button', { name: 'Change phone or e-mail' })).not.toBeInTheDocument()
+  })
+
+  it('offers staff the change for guests only', async () => {
+    renderList({ is_superuser: false })
+    await screen.findByText('guest@example.com')
+
+    expect(within(card('guest@example.com')).getByRole('button', { name: 'Change phone or e-mail' })).toBeInTheDocument()
+    expect(within(card('moderator@example.com')).queryByRole('button', { name: 'Change phone or e-mail' })).not.toBeInTheDocument()
+    expect(within(card('boss@example.com')).queryByRole('button', { name: 'Change phone or e-mail' })).not.toBeInTheDocument()
+  })
+
+  it('sends only the field that was filled and shows the new number', async () => {
+    renderList({ is_superuser: false })
+    await screen.findByText('guest@example.com')
+    edit('guest@example.com')
+    fireEvent.change(screen.getByLabelText('New phone number'), { target: { value: '+998909998877' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(changeContact).toHaveBeenCalledWith(4, { phone_number: '+998909998877' }))
+    expect(await screen.findByText('The contact details of guest@example.com were saved.')).toBeInTheDocument()
+    expect(screen.getByText('+998909998877')).toBeInTheDocument()
+  })
+
+  it('refuses an empty form and a bad phone number without calling the server', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('guest@example.com')
+    edit('guest@example.com')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a new phone number or a new e-mail.')
+
+    fireEvent.change(screen.getByLabelText('New phone number'), { target: { value: '12345' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(screen.getByRole('alert')).not.toHaveTextContent('Enter a new phone number or a new e-mail.'))
+    expect(changeContact).not.toHaveBeenCalled()
+  })
+
+  it('shows the server answer, for instance an e-mail that is already taken', async () => {
+    changeContact.mockResolvedValueOnce({ data: null, error: 'email: User with this email already exists.' })
+    renderList({ is_superuser: true })
+    await screen.findByText('guest@example.com')
+    edit('guest@example.com')
+    fireEvent.change(screen.getByLabelText('New e-mail'), { target: { value: 'taken@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('already exists')
+    expect(changeContact).toHaveBeenCalledWith(4, { email: 'taken@example.com' })
   })
 })

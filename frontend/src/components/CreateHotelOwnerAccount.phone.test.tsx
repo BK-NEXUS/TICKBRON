@@ -30,6 +30,7 @@ async function fill(phone: string) {
   fireEvent.change(screen.getByLabelText('First Name:'), { target: { value: 'Olim' } })
   fireEvent.change(screen.getByLabelText('Last Name:'), { target: { value: 'Karimov' } })
   fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: phone } })
+  fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
   fireEvent.change(screen.getByLabelText('Password:', { exact: true }), { target: { value: 'Owner#Secret2026' } })
   fireEvent.change(screen.getByLabelText('Confirm Password:'), { target: { value: 'Owner#Secret2026' } })
   await pickPlace()

@@ -21,6 +21,7 @@ function fillAccount() {
   fireEvent.change(screen.getByLabelText('First Name:'), { target: { value: 'Olim' } })
   fireEvent.change(screen.getByLabelText('Last Name:'), { target: { value: 'Karimov' } })
   fireEvent.change(screen.getByLabelText('Phone number'), { target: { value: '+998901234567' } })
+  fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '2.5' } })
   fireEvent.change(screen.getByLabelText('Password:'), { target: { value: 'Owner#Secret2026' } })
   fireEvent.change(screen.getByLabelText('Confirm Password:'), { target: { value: 'Owner#Secret2026' } })
 }
@@ -80,5 +81,36 @@ describe('CreateHotelOwnerAccount place', () => {
     await pickPlace()
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
     expect(await screen.findByRole('alert')).toHaveTextContent('This region is not in the chosen country.')
+  })
+
+  it.each([['abc', 'text'], ['101', 'over 100'], ['2.555', 'three decimals'], ['-1', 'negative']])(
+    'refuses a commission percent that is %s (%s) before calling the server', async (value) => {
+      render(<CreateHotelOwnerAccount />)
+      fillAccount()
+      await pickPlace()
+      fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value } })
+      fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
+      expect(await screen.findByRole('alert')).toHaveTextContent('Enter the commission percent')
+      expect(adminAdapter.createHotelOwner).not.toHaveBeenCalled()
+    })
+
+  it('does not create the account when the commission percent is left empty', async () => {
+    render(<CreateHotelOwnerAccount />)
+    fillAccount()
+    await pickPlace()
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
+    expect(await screen.findByText('Commission percent (%) is required.', { exact: false })).toBeInTheDocument()
+    expect(adminAdapter.createHotelOwner).not.toHaveBeenCalled()
+  })
+
+  it('sends the percent with the account', async () => {
+    render(<CreateHotelOwnerAccount />)
+    fillAccount()
+    await pickPlace()
+    fireEvent.change(screen.getByLabelText('Commission percent (%)'), { target: { value: ' 12.5 ' } })
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
+    await waitFor(() => expect(adminAdapter.createHotelOwner).toHaveBeenCalledWith(
+      expect.objectContaining({ commission_percent: '12.5' })))
   })
 })

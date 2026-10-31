@@ -5,6 +5,7 @@ import { parseApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
+import type { CommissionOwnerPage, CommissionOwnerRow, CommissionStatement } from './commissionTypes'
 
 // Admin Property types from backend contract
 export interface AdminProperty {
@@ -75,10 +76,20 @@ export interface CreateHotelOwnerRequest {
   country_ref: number
   region_ref: number
   city_ref: number
+  /** What the site takes from each booking of this owner, "0" to "100" */
+  commission_percent: string
 }
 
-/** The body of a new administrator: no place, the rights are fixed by the server */
-export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>
+/** The body of a new administrator: no place and no commission; `role` is the only thing that sets the rights */
+export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'commission_percent'> & {
+  role: 'staff' | 'super_admin'
+}
+
+/** A new phone number and/or e-mail for an account (PATCH /api/v1/admin-panel/users/{id}/contact/) */
+export interface ContactChange {
+  email?: string
+  phone_number?: string
+}
 
 export type ReviewStatus = 'pending' | 'approved' | 'rejected'
 
@@ -539,6 +550,53 @@ class AdminAdapter {
       method: 'POST',
       body: JSON.stringify({ code }),
     })
+  }
+
+  /**
+   * Change the phone number and/or e-mail of an account (super admin or staff; staff only for guests and owners).
+   * Integrates with PATCH /api/v1/admin-panel/users/{id}/contact/
+   */
+  async changeContact(userId: number, change: ContactChange): Promise<ApiResponse<AdminUser>> {
+    return this.request<AdminUser>(`/api/v1/admin-panel/users/${userId}/contact/`, {
+      method: 'PATCH',
+      body: JSON.stringify(change),
+    })
+  }
+
+  // Commission
+
+  /** GET /api/v1/admin-panel/commission/: hotel owners with percent, this month and unpaid commission */
+  async getCommissionOwners({ search, page = 1 }: { search?: string; page?: number } = {}): Promise<ApiResponse<CommissionOwnerPage>> {
+    const params = new URLSearchParams({ page: String(page) })
+    if (search) params.set('search', search)
+    const { data, error } = await this.request<{ count: number; next: string | null; results: CommissionOwnerRow[] }>(
+      `/api/v1/admin-panel/commission/?${params.toString()}`)
+    return data
+      ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
+      : { data: null, error }
+  }
+
+  /** GET /api/v1/admin-panel/commission/{ownerId}/ */
+  async getCommissionStatement(ownerId: number): Promise<ApiResponse<CommissionStatement>> {
+    return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/`)
+  }
+
+  /** PUT .../commission/{ownerId}/rate/ (super admin): the percent from this month on */
+  async setCommissionPercent(ownerId: number, percent: string): Promise<ApiResponse<CommissionStatement>> {
+    return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/rate/`, {
+      method: 'PUT',
+      body: JSON.stringify({ percent }),
+    })
+  }
+
+  /** POST .../commission/{ownerId}/months/{YYYY-MM}/paid/: the owner paid that ended month */
+  async confirmCommissionMonth(ownerId: number, month: string): Promise<ApiResponse<CommissionStatement>> {
+    return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/months/${month}/paid/`, { method: 'POST' })
+  }
+
+  /** DELETE on the same URL: take the confirmation back */
+  async undoCommissionMonth(ownerId: number, month: string): Promise<ApiResponse<CommissionStatement>> {
+    return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/months/${month}/paid/`, { method: 'DELETE' })
   }
 
   // Admin Amenity Management Methods

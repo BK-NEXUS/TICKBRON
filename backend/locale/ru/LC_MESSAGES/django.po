@@ -464,3 +464,21 @@ msgstr "Отправьте новый номер телефона или нов�
 
 msgid "You cannot change the contact details of this account."
 msgstr "Вы не можете изменить контактные данные этого аккаунта."
+
+msgid "This month has not ended yet."
+msgstr "Этот месяц ещё не закончился."
+
+msgid "There is no commission percent for this month."
+msgstr "Для этого месяца не задан процент комиссии."
+
+msgid "There is nothing to pay for this month."
+msgstr "За этот месяц нечего оплачивать."
+
+msgid "This month is already confirmed as paid."
+msgstr "Этот месяц уже подтверждён как оплаченный."
+
+msgid "This month was not confirmed as paid."
+msgstr "Этот месяц не был подтверждён как оплаченный."
+
+msgid "Enter a percent from 0 to 100 with at most two decimals."
+msgstr "Введите процент от 0 до 100 не более чем с двумя знаками после запятой."
