@@ -11,6 +11,7 @@ instead of the database. (.ai/LOAD_TEST.md)
 """
 import hashlib
 import logging
+import time
 
 from django.conf import settings
 from django.core.cache import cache
@@ -18,8 +19,25 @@ from django.core.cache import cache
 logger = logging.getLogger('tickbron')
 
 KEY_PREFIX = 'public'
+# A cache server that is down answers every call only after its timeout: after a failure the cache is left alone this long
+PAUSE_SECONDS = 15
+_paused_until = 0.0
 # A single answer bigger than this is not worth a Redis round trip of that size
 MAX_ITEMS = 2000
+
+
+def resume():
+    global _paused_until
+    _paused_until = 0.0
+
+
+def _pause():
+    global _paused_until
+    _paused_until = time.monotonic() + PAUSE_SECONDS
+
+
+def _paused():
+    return time.monotonic() < _paused_until
 
 
 def seconds():
@@ -36,14 +54,15 @@ def key_for(request, scope):
 def remember(request, scope, build, divisor=1):
     """The answer of `build()` (plain data), from the copy when there is a fresh one. `divisor` shortens the time."""
     ttl = seconds() // max(divisor, 1)
-    if ttl <= 0:
+    if ttl <= 0 or _paused():
         return build()
     key = key_for(request, scope)
     try:
         found = cache.get(key)
     except Exception:
-        logger.warning('Public cache read failed', exc_info=True)
-        found = None
+        logger.warning('Public cache read failed; leaving it alone for %s seconds', PAUSE_SECONDS, exc_info=True)
+        _pause()
+        return build()
     if found is not None:
         return found
     data = build()
@@ -51,7 +70,8 @@ def remember(request, scope, build, divisor=1):
         try:
             cache.set(key, data, ttl)
         except Exception:
-            logger.warning('Public cache write failed', exc_info=True)
+            logger.warning('Public cache write failed; leaving it alone for %s seconds', PAUSE_SECONDS, exc_info=True)
+            _pause()
     return data
 
 

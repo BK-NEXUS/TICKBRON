@@ -31,8 +31,10 @@ def cache_on(settings):
 @pytest.fixture(autouse=True)
 def clean_cache():
     cache.clear()
+    public_cache.resume()
     yield
     cache.clear()
+    public_cache.resume()
 
 
 @pytest.fixture
@@ -210,6 +212,24 @@ class TestWhenTheCacheIsDown:
 @pytest.fixture
 def any_host(settings):
     settings.ALLOWED_HOSTS = ['*']
+
+
+@CACHE_ON
+class TestWhenTheCacheStaysDown:
+    """Every call to a dead Redis waits for its timeout: after one failure the pages stop asking for a while."""
+
+    def test_after_one_failure_the_cache_is_left_alone_until_the_pause_ends(self, hotel):
+        clock = mock.Mock()
+        # the time of each look at the clock: is it paused (1st request), start the pause, paused? (2nd), paused? (3rd)
+        clock.monotonic.side_effect = [100.0, 100.0, 105.0, 200.0, 200.0]
+        with mock.patch.object(public_cache.cache, 'get', side_effect=ConnectionError('redis is down')) as get, \
+                mock.patch.object(public_cache.cache, 'set') as put, mock.patch.object(public_cache, 'time', clock):
+            APIClient().get(detail_url(hotel))      # fails once and starts the pause
+            APIClient().get(detail_url(hotel))      # inside the pause: no call to the cache at all
+            assert get.call_count == 1 and put.call_count == 0
+
+            APIClient().get(detail_url(hotel))      # pause over: tries again
+            assert get.call_count == 2
 
 
 @pytest.mark.usefixtures('any_host')

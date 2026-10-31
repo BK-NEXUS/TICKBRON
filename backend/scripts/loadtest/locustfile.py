@@ -63,9 +63,14 @@ class Guest(HttpUser):
         plans = room.get('rate_plans') or []
         if plans:
             check_in, check_out = stay()
-            self.client.get(f'{API}/properties/{self.hotel}/quote/', name='quote', params={
-                'room_type_id': room['id'], 'rate_plan_id': plans[0]['id'],
-                'check_in': check_in, 'check_out': check_out})
+            # "No rooms left" (400) is the right answer once the booking users have filled the best hotels
+            with self.client.get(f'{API}/properties/{self.hotel}/quote/', name='quote', catch_response=True, params={
+                    'room_type_id': room['id'], 'rate_plan_id': plans[0]['id'],
+                    'check_in': check_in, 'check_out': check_out}) as quote:
+                if quote.status_code in (200, 400):
+                    quote.success()
+                else:
+                    quote.failure(f'status {quote.status_code}')
 
     @task(2)
     def filter_options(self):
@@ -119,7 +124,7 @@ class Booker(Guest):
         check_in, check_out = stay()
         body = {'property_id': self.hotel, 'room_type_id': rooms[0]['id'],
                 'rate_plan_id': rooms[0]['rate_plans'][0]['id'], 'check_in': check_in, 'check_out': check_out,
-                'guest_count': 1}
+                'guest_count': 1, 'expected_arrival_time': '14:00'}
         with self.client.post(f'{API}/bookings/', name='create booking', json=body, catch_response=True,
                               headers=self.write_headers()) as response:
             if response.status_code in (200, 201):
