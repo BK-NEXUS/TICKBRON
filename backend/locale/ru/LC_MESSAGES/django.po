@@ -482,3 +482,15 @@ msgstr "Этот месяц не был подтверждён как оплач
 
 msgid "Enter a percent from 0 to 100 with at most two decimals."
 msgstr "Введите процент от 0 до 100 не более чем с двумя знаками после запятой."
+
+msgid "We could not send the code. Please try again in a moment."
+msgstr "Не удалось отправить код. Пожалуйста, попробуйте чуть позже."
+
+msgid "Please wait before asking for another code."
+msgstr "Подождите, прежде чем запрашивать новый код."
+
+msgid "The code is wrong or has expired."
+msgstr "Код неверный или срок его действия истёк."
+
+msgid "This sign-up has expired. Please start again."
+msgstr "Срок регистрации истёк. Пожалуйста, начните заново."

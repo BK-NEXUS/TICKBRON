@@ -15,7 +15,10 @@ from accounts.history import record_history
 from common.csrf import enforce_csrf
 from common.request import get_client_ip
 from common.security_log import log_security_event
-from users import lockout, two_factor
+from django.conf import settings
+from django.db import transaction
+
+from users import email_codes, lockout, two_factor
 from users.models import User
 from users.serializers import UserLoginSerializer, UserRegistrationSerializer, UserSerializer
 from users.sessions import start_session
@@ -36,17 +39,62 @@ def _login_failed_response():
 @permission_classes([AllowAny])
 @throttle_classes([RegisterRateThrottle])
 def register(request):
-    """Create an account from e-mail, name and password, and sign the new user in."""
+    """
+    Sign up with e-mail, name and password. With EMAIL_VERIFICATION_REQUIRED (the normal setting) nothing is created yet:
+    a six-digit code goes to the address and the account is made by POST /auth/register/verify/. Without it the account
+    is made at once and the new user is signed in.
+    """
     enforce_csrf(request)
     serializer = UserRegistrationSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    if settings.EMAIL_VERIFICATION_REQUIRED:
+        return _start_verified_sign_up(request, serializer.validated_data)
 
     user = serializer.save()
     login(request, user)
     log_security_event('account_created', request, user=user, level=logging.INFO)
     record_history(user, 'account_created', request)
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+def mail_failed_response():
+    return Response({'detail': _('We could not send the code. Please try again in a moment.')},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+def too_soon_response(error):
+    return Response({'detail': _('Please wait before asking for another code.'), 'retry_after': error.retry_after},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': str(error.retry_after)})
+
+
+def _start_verified_sign_up(request, data):
+    """Keep the typed data (the password only as a hash) with a new code and mail the code; make no account yet."""
+    email = data['email']
+    waiting = {key: value for key, value in data.items() if key not in ('password', 'password_confirm')}
+    waiting['password_hash'] = make_password(data['password'])
+    try:
+        email_codes.issue('register', email, email, payload=waiting)
+    except email_codes.TooSoon as error:
+        return too_soon_response(error)
+    except email_codes.SendFailed:
+        log_security_event('email_code_failed', request, reason='mail_not_sent', purpose='register')
+        return mail_failed_response()
+    log_security_event('email_code_sent', request, level=logging.INFO, purpose='register')
+    return Response({'email_code_required': True, 'email': email, 'expires_in': email_codes.LIFETIME_SECONDS,
+                     'resend_after': email_codes.RESEND_AFTER_SECONDS}, status=status.HTTP_202_ACCEPTED)
+
+
+def create_verified_user(waiting):
+    """The account of a confirmed sign-up: the stored password hash is used as it is, the address counts as confirmed."""
+    fields = {key: value for key, value in waiting.items() if key != 'password_hash'}
+    with transaction.atomic():
+        user = User.objects.create_user(password=None, **fields)
+        user.password = waiting['password_hash']
+        user.email_verified = True
+        user.save(update_fields=['password', 'email_verified'])
+    return user
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -88,8 +136,30 @@ def login_view(request):
         two_factor.remember_password_step(request, authenticated_user)
         return Response({'two_factor_required': True}, status=status.HTTP_200_OK)
 
+    if email_codes.needs_code_at_login(authenticated_user):
+        return _ask_for_login_code(request, authenticated_user)
+
     start_session(request, authenticated_user, client_ip, method='password')
     return Response(UserSerializer(authenticated_user).data, status=status.HTTP_200_OK)
+
+
+def _ask_for_login_code(request, user):
+    """The password is right: mail a code and wait for it; the session starts only when the code is typed."""
+    ident = str(user.pk)
+    try:
+        email_codes.issue('login', ident, user.email)
+    except email_codes.TooSoon as error:
+        if error.retry_after > email_codes.RESEND_AFTER_SECONDS:  # the hourly limit, not "the last code is still fresh"
+            return too_soon_response(error)
+    except email_codes.SendFailed:
+        log_security_event('email_code_failed', request, user=user, reason='mail_not_sent', purpose='login')
+        return mail_failed_response()
+    else:
+        log_security_event('email_code_sent', request, user=user, level=logging.INFO, purpose='login')
+    email_codes.remember_login_step(request, user)
+    return Response({'email_code_required': True, 'email_hint': email_codes.hint(user.email),
+                     'expires_in': email_codes.LIFETIME_SECONDS, 'resend_after': email_codes.RESEND_AFTER_SECONDS},
+                    status=status.HTTP_200_OK)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)

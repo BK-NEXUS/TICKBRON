@@ -646,3 +646,15 @@ msgstr "Bu oy to'langan deb tasdiqlanmagan."
 
 msgid "Enter a percent from 0 to 100 with at most two decimals."
 msgstr "0 dan 100 gacha foiz kiriting, ko'pi bilan ikki xonali kasr bilan."
+
+msgid "We could not send the code. Please try again in a moment."
+msgstr "Kodni yubora olmadik. Iltimos, birozdan keyin qayta urinib ko'ring."
+
+msgid "Please wait before asking for another code."
+msgstr "Yangi kod so'rashdan oldin biroz kuting."
+
+msgid "The code is wrong or has expired."
+msgstr "Kod noto'g'ri yoki muddati tugagan."
+
+msgid "This sign-up has expired. Please start again."
+msgstr "Ro'yxatdan o'tish muddati tugagan. Iltimos, qaytadan boshlang."

@@ -2019,6 +2019,20 @@ export const en = {
   'admin.contactCancel': "Cancel",
   'admin.contactNeedOne': "Enter a new phone number or a new e-mail.",
   'admin.contactSaved': "The contact details of {email} were saved.",
+  'auth.emailCodeTitle': "Check your e-mail",
+  'auth.emailCodeSubtitleRegister': "We sent a 6-digit code to {email}. Enter it to create your account.",
+  'auth.emailCodeSubtitleLogin': "We sent a 6-digit code to {email}. Enter it to sign in.",
+  'auth.emailCodeLabel': "6-digit code",
+  'auth.emailCodeInvalid': "Enter the 6 digits from the e-mail.",
+  'auth.emailCodeWrong': "The code is wrong or has expired.",
+  'auth.emailCodeSpam': "Not there? Look in the spam folder.",
+  'auth.emailCodeSubmitRegister': "Confirm and create account",
+  'auth.emailCodeSubmitLogin': "Confirm and sign in",
+  'auth.emailCodeResend': "Send a new code",
+  'auth.emailCodeResendIn': "Send a new code in {seconds} s",
+  'auth.emailCodeResent': "A new code was sent.",
+  'auth.emailCodeResendFailed': "Could not send a new code. Please try again later.",
+  'auth.emailCodeBack': "Back",
 } as const
 
 // Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always

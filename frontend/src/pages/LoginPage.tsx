@@ -8,6 +8,7 @@ import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
 import { TwoFactorCodeForm } from '../components/TwoFactorCodeForm'
+import { EmailCodeForm } from '../components/EmailCodeForm'
 import { authFormProblem } from '../utils/authForm'
 import { useI18n } from '../i18n/I18nContext'
 
@@ -19,8 +20,10 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   // The password was right and the app's code is the only thing missing
   const [needsCode, setNeedsCode] = useState(false)
+  // The password was right and a code was mailed: where it went, and how soon a new one may be asked for
+  const [mailedCode, setMailedCode] = useState<{ hint: string; resendAfter: number } | null>(null)
 
-  const { login, isAuthenticated } = useAuth()
+  const { login, loginEmailCode, resendLoginCode, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -47,6 +50,8 @@ export function LoginPage() {
     
     if (response.twoFactorRequired) {
       setNeedsCode(true)
+    } else if (response.emailCodeRequired) {
+      setMailedCode({ hint: response.emailHint ?? email, resendAfter: response.resendAfter ?? 60 })
     } else if (response.success) {
       goBack()
     } else {
@@ -60,7 +65,17 @@ export function LoginPage() {
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
-          {needsCode ? (
+          {mailedCode ? (
+            <EmailCodeForm
+              purpose="login"
+              sentTo={mailedCode.hint}
+              resendAfter={mailedCode.resendAfter}
+              onSubmit={loginEmailCode}
+              onResend={resendLoginCode}
+              onSuccess={goBack}
+              onBack={() => { setMailedCode(null); setPassword('') }}
+            />
+          ) : needsCode ? (
             <TwoFactorCodeForm onSuccess={goBack} onBack={() => { setNeedsCode(false); setPassword('') }} />
           ) : (
             <>

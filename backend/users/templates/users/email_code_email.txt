@@ -1,0 +1,14 @@
+{% autoescape off %}Tasdiqlash kodi / Код подтверждения / Verification code
+
+{{ code }}
+
+Uz: Bu kodni TICKBRON saytiga kiriting (u {{ minutes }} daqiqa amal qiladi). Kodni hech kimga bermang: TICKBRON xodimlari uni hech qachon so'ramaydi.
+Ru: Введите этот код на сайте TICKBRON (он действует {{ minutes }} минут). Никому не сообщайте код: сотрудники TICKBRON никогда его не спрашивают.
+En: Enter this code on the TICKBRON site (valid for {{ minutes }} minutes). Never share it: TICKBRON staff will never ask for it.
+
+Uz: Agar bu kodni siz so'ramagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.
+Ru: Если вы не запрашивали код, просто проигнорируйте это письмо.
+En: If you did not ask for this code, ignore this e-mail.
+
+TICKBRON
+{% endautoescape %}

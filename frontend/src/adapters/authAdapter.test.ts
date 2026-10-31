@@ -341,4 +341,58 @@ describe('AuthAdapter password calls', () => {
     expect(response.success).toBe(false)
     expect(response.error).toContain('The current password is incorrect.')
   })
+
+  describe('mailed codes', () => {
+    it('reads the answer that asks for a code at sign-up', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true, status: 202, json: async () => ({ email_code_required: true, email: 'new@example.com', resend_after: 60 }),
+      })
+
+      const result = await adapter.register({ email: 'new@example.com', full_name: 'N', phone_number: '+998901234567', password: 'x', password_confirm: 'x' })
+
+      expect(result).toMatchObject({ success: true, emailCodeRequired: true, email: 'new@example.com', resendAfter: 60 })
+      expect(result.user).toBeUndefined()
+    })
+
+    it('reads the answer that asks for a code at sign-in', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ email_code_required: true, email_hint: 'g***@example.com', resend_after: 60 }),
+      })
+
+      const result = await adapter.login({ email: 'g@example.com', password: 'x' })
+
+      expect(result).toMatchObject({ success: true, emailCodeRequired: true, emailHint: 'g***@example.com', resendAfter: 60 })
+    })
+
+    it('sends the sign-up code with the address and the sign-in code alone', async () => {
+      mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 1 }) })
+
+      await adapter.verifyRegistration('new@example.com', '123456')
+      await adapter.loginEmailCode('654321')
+
+      const post = (url: string) => mockFetch.mock.calls.find(([address, init]) => address === url && init?.method === 'POST')
+      expect(JSON.parse(post('http://test-api/api/v1/auth/register/verify/')?.[1].body)).toEqual({ email: 'new@example.com', code: '123456' })
+      expect(JSON.parse(post('http://test-api/api/v1/auth/login/email-code/')?.[1].body)).toEqual({ code: '654321' })
+    })
+
+    it('asks for new codes on the resend addresses', async () => {
+      mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ email_code_required: true, resend_after: 60 }) })
+
+      await adapter.resendRegistrationCode('new@example.com')
+      await adapter.resendLoginCode()
+
+      const addresses = mockFetch.mock.calls.map(([address]) => address)
+      expect(addresses).toContain('http://test-api/api/v1/auth/register/resend/')
+      expect(addresses).toContain('http://test-api/api/v1/auth/login/email-code/resend/')
+    })
+
+    it('returns the text of a refused code', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ detail: 'The code is wrong or has expired.' }) })
+
+      const result = await adapter.verifyRegistration('new@example.com', '000000')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('The code is wrong or has expired.')
+    })
+  })
 })

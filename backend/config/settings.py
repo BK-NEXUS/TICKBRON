@@ -439,6 +439,12 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 # Where the team hears of a new chat message (empty = the team is not mailed; the admin tab still shows the badge)
 SUPPORT_NOTIFY_EMAIL = os.getenv('SUPPORT_NOTIFY_EMAIL', '')
 PASSWORD_RESET_TIMEOUT = 60 * 60  # a reset link works for one hour
+# A mail server that does not answer must not hold a web process for long: the code mail is sent inside the request
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
+# Six-digit codes mailed to the address (users/email_codes.py): at sign-up the account is made only after the code is
+# typed, and every sign-in of a guest or hotel owner needs one after the password. Both need working mail (EMAIL_HOST).
+EMAIL_VERIFICATION_REQUIRED = os.getenv('EMAIL_VERIFICATION_REQUIRED', 'True').lower() == 'true'
+EMAIL_LOGIN_CODE_REQUIRED = os.getenv('EMAIL_LOGIN_CODE_REQUIRED', 'True').lower() == 'true'
 
 # Alerts to a Telegram chat (common/alerts.py). Both empty = alerts off. Create the bot with
 # @BotFather, add it to the chat and take the chat id from the getUpdates call.

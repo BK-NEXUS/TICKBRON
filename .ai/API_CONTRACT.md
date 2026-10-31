@@ -1346,3 +1346,14 @@ Plan: `.ai/PLAN_COMMISSION.md`. All money figures are decimal strings, always a 
 - `POST /api/v1/admin-panel/commission/<owner_id>/months/<YYYY-MM>/paid/` (staff or super admin): confirm that the owner paid that month. The confirmer's name, role and the amounts are stored. 400: month not ended, no percent for it, nothing to pay; 409: already confirmed; 404: bad month format. 200 -> the statement. Log: `commission_paid`, `details {month}`.
 - `DELETE` on the same URL takes the confirmation back (404 if there was none). Log: `commission_unpaid`.
 - `POST /api/v1/admin-panel/users/create-hotel-owner/` now requires `commission_percent` (0 to 100, two decimals; 400 under `commission_percent`, no account is created). It is stored as the owner's percent from the month of creation.
+
+
+## Mailed six-digit codes (2026-10-31)
+Plan: `.ai/PLAN_EMAIL_CODES.md`. Switches `EMAIL_VERIFICATION_REQUIRED` and `EMAIL_LOGIN_CODE_REQUIRED` (default on). Codes: 6 digits, valid 10 minutes, one use, 5 wrong tries burn it, a new one after 60 s and at most 5 mails an hour to one address. The code is never in any answer.
+- `POST /api/v1/auth/register/` (changed with the switch on): the body and its 400s are as before, but **no account is made**: **202** `{email_code_required: true, email, expires_in: 600, resend_after: 60}` and a mail to `email`. 429 `{detail, retry_after}` (too soon), 503 `{detail}` (the mail was not sent; nothing is waiting). With the switch off: 201 and signed in, as before.
+- `POST /api/v1/auth/register/verify/` `{email, code}`: right code -> **201** the user (as the old register answer), `email_verified: true`, signed in. Wrong, expired, used or unknown: **400** `{detail}` (one answer for all). An account made meanwhile for the address: 400 `{email: [...]}`.
+- `POST /api/v1/auth/register/resend/` `{email}`: **200** like the 202 body; 400 when no sign-up is waiting for the address; 429 / 503 as above.
+- `POST /api/v1/auth/login/` (changed with the switch on, for guests and hotel owners): after the right password **200** `{email_code_required: true, email_hint: "o***@gmail.com", expires_in, resend_after}` and a mail; no session yet (the password step is remembered in the session for 10 minutes). Wrong password, unknown address, locked or inactive account: the same 401 as before, and no mail. 503 when the mail was not sent. Staff and super admins are not affected (`two_factor_required` as before).
+- `POST /api/v1/auth/login/email-code/` `{code}`: right -> **200** the user, signed in, `email_verified: true`. No password step, wrong, expired or used code: the same **401** as a wrong password (wrong codes count towards the account lock).
+- `POST /api/v1/auth/login/email-code/resend/`: **200** like the login answer; 401 without the password step; 429 / 503 as above.
+- Throttles per network: verify 20/min, send 30/hour. Log events `email_code_sent`, `email_code_failed` (never the code).
