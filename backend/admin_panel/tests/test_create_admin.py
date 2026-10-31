@@ -79,3 +79,40 @@ class TestCreateAdmin:
         response = api.post(URL, body(email=boss.email), format='json')
         assert response.status_code == 400
         assert 'email' in response.data
+
+
+@pytest.mark.django_db
+class TestCreateSuperAdmin:
+    def test_super_admin_creates_another_super_admin_when_asked(self):
+        api, boss = client_of(is_staff=True, is_superuser=True)
+        response = api.post(URL, body(role='super_admin'), format='json')
+        assert response.status_code == 201, response.data
+        created = User.objects.get(email='new.admin@example.com')
+        assert (created.is_staff, created.is_superuser) == (True, True)
+
+    def test_the_default_role_is_staff(self):
+        api, _ = client_of(is_staff=True, is_superuser=True)
+        api.post(URL, body(role='staff'), format='json')
+        assert User.objects.get(email='new.admin@example.com').is_superuser is False
+
+    def test_an_unknown_role_is_refused(self):
+        api, _ = client_of(is_staff=True, is_superuser=True)
+        response = api.post(URL, body(role='owner'), format='json')
+        assert response.status_code == 400 and 'role' in response.data
+
+    def test_staff_cannot_create_a_super_admin(self):
+        api, _ = client_of(is_staff=True)
+        assert api.post(URL, body(role='super_admin'), format='json').status_code == 403
+
+    def test_the_log_says_which_kind_was_created(self):
+        api, _ = client_of(is_staff=True, is_superuser=True)
+        api.post(URL, body(role='super_admin'), format='json')
+        assert AdminAccessLog.objects.get(action='admin_create').details == {'role': 'super_admin'}
+
+    def test_the_first_and_last_name_are_required_so_the_panel_can_show_who_acted(self):
+        api, _ = client_of(is_staff=True, is_superuser=True)
+        for field in ('first_name', 'last_name'):
+            data = body()
+            del data[field]
+            response = api.post(URL, data, format='json')
+            assert response.status_code == 400 and field in response.data

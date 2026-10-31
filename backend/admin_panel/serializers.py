@@ -13,7 +13,8 @@ from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
 from users.models import User
-from users.serializers import unique_email_field, validate_new_password, validate_phone_number_format
+from users.serializers import LowercaseEmailField, unique_email_field, validate_new_password, validate_phone_number_format
+from users.validators import EmailFormatValidator
 from admin_panel.models import InternalNote
 from django.utils.translation import gettext as _
 
@@ -147,17 +148,53 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 class AdminStaffCreateSerializer(AccountCreateSerializer):
     """
-    An administrator added by a super-admin: staff (can use the panel), never a super-admin.
-    The rights are fixed here; nothing in the request can change them.
+    An administrator added by a super-admin: staff (can use the panel) or, when `role` says so, another
+    super-admin. The rights come only from `role`; no other field of the request can change them.
+    Both names are required: the panel shows who confirmed a payment by name.
     """
+    ROLES = ('staff', 'super_admin')
+    role = serializers.ChoiceField(choices=ROLES, default='staff', write_only=True)
+
+    class Meta(AccountCreateSerializer.Meta):
+        fields = AccountCreateSerializer.Meta.fields + ['role']
+        extra_kwargs = {
+            'first_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]},
+            'last_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]},
+        }
+
     @transaction.atomic
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         return User.objects.create_user(
             email=validated_data['email'], password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''), last_name=validated_data.get('last_name', ''),
-            phone_number=validated_data['phone_number'], is_staff=True, is_superuser=False,
+            first_name=validated_data['first_name'], last_name=validated_data['last_name'],
+            phone_number=validated_data['phone_number'], is_staff=True,
+            is_superuser=validated_data['role'] == 'super_admin',
         )
+
+
+class AdminContactSerializer(serializers.Serializer):
+    """A new phone number and/or e-mail for an account, typed by an administrator. At least one of the two."""
+    email = LowercaseEmailField(required=False)
+    phone_number = serializers.CharField(required=False, max_length=30)
+
+    def __init__(self, *args, account, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.account = account
+
+    def validate_email(self, value):
+        EmailFormatValidator().validate(value)
+        if User.objects.filter(email__iexact=value).exclude(pk=self.account.pk).exists():
+            raise serializers.ValidationError(_('User with this email already exists.'))
+        return value
+
+    def validate_phone_number(self, value):
+        return validate_phone_number_format(value)
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(_('Send a new phone number or a new e-mail.'))
+        return attrs
 
 
 class AdminUserCreateSerializer(AccountCreateSerializer):

@@ -31,7 +31,7 @@ from common.request import object_body
 from common.security_log import log_security_event
 from admin_panel.serializers import (
     AdminPropertySerializer, AdminPropertyApproveSerializer, AdminPropertyRegionSerializer,
-    AdminUserSerializer, AdminUserCreateSerializer, AdminStaffCreateSerializer,
+    AdminUserSerializer, AdminUserCreateSerializer, AdminStaffCreateSerializer, AdminContactSerializer,
     AdminAmenityCategorySerializer, AdminAmenitySerializer,
     AdminAmenityReadSerializer,
     AdminCustomerSerializer,
@@ -285,8 +285,40 @@ def admin_create_admin(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     user = serializer.save()
-    AdminAccessLog.record(request.user, 'admin_create', target_user_id=user.id)
+    AdminAccessLog.record(request.user, 'admin_create', target_user_id=user.id,
+                          details={'role': serializer.validated_data['role']})
     return Response(AdminUserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
+@api_view(['PATCH'])
+@permission_classes([IsSuperAdminOrStaff])
+def admin_change_contact(request, user_id):
+    """
+    Change the phone number and/or e-mail of an account (super admin or staff). Body: phone_number, email.
+    A staff admin may change guests and hotel owners; a super admin may also change staff admins. A super
+    admin's contact data cannot be changed here. A new e-mail marks the account unverified and signs it out
+    everywhere. Written to the admin access log (which fields, never the values).
+    """
+    target = get_object_or_404(User.objects.filter(is_deleted=False), pk=user_id)
+    allowed_over_staff = request.user.is_superuser
+    if target.is_superuser or (target.is_staff and not allowed_over_staff):
+        return Response({'detail': _('You cannot change the contact details of this account.')},
+                        status=status.HTTP_403_FORBIDDEN)
+    serializer = AdminContactSerializer(data=object_body(request), account=target)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    changed = serializer.validated_data
+    for field, value in changed.items():
+        setattr(target, field, value)
+    if 'email' in changed:
+        target.email_verified = False
+    target.save(update_fields=list(changed) + (['email_verified'] if 'email' in changed else []))
+    if 'email' in changed:
+        two_factor.end_sessions(target)
+    AdminAccessLog.record(request.user, 'user_contact_update', target_user_id=target.id,
+                          details={'fields': ','.join(sorted(changed))})
+    return Response(AdminUserSerializer(target).data)
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
