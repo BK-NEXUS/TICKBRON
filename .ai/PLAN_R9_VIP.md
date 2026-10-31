@@ -13,7 +13,7 @@ Status: DRAFT v2 2026-10-17 (v1 had an admin approval step; the owner answered o
 5. **No admin screen, no queue, no audit rows, no notifications:** there is no decision to make. (Decision 3 of v1, "an admin can remove VIP with a reason", belonged to the approval flow and is dropped; if abuse appears, an admin can still switch it in the Django admin, and a reporting screen can be planned then.)
 
 ## Steps (each with tests first)
-S1 migration + model + Django admin column. S2 owner form: create, edit on, edit off, another owner refused, guest/anonymous refused, default false. S3 public `is_vip` on the property page, quote and booking summary + permission-matrix check + contract. S4 frontend (badge, switch). S5 HANDOFF, ROADMAP.
+S1 migration + model + Django admin column (the Django admin was removed later; the admin panel reads the field). S2 owner form: create, edit on, edit off, another owner refused, guest/anonymous refused, default false. S3 public `is_vip` on the property page, quote and booking summary + permission-matrix check + contract. S4 frontend (badge, switch). S5 HANDOFF, ROADMAP.
 
 ## One question for the owner
 Should VIP rooms be listed first on the property page (above ordinary rooms of the same hotel)? [Yes: stable order, VIP first, then the current order] / [No: keep the current order, only the badge]
