@@ -43,5 +43,26 @@ locust -f scripts/loadtest/locustfile.py --headless -u 200 -r 20 -t 90s --host h
 ```
 Use a scratch database (`tickbron_perf`), never the real one. More detail: `backend/scripts/loadtest/README.md`.
 
+## 3000 visitors in 10 minutes (2026-10-31)
+What was done to carry it, and the measurements (same 4-core box that also ran the load generator, so a real server does better):
+- **Short copies of public answers** (`common/public_cache.py`, `PUBLIC_CACHE_SECONDS`, default 30, 0 = off): hotel page, free rooms (half as long), search results, search filters, suggestions, geography lists. Not copied: price quotes (what a guest pays), the paid banners and their view counter (still counted for every visitor), anything for one account, any error. A price or a free-room count on a list can be up to 30 s old; booking always checks again. A Redis that is down never breaks a page: after one failure the pages stop asking it for 15 s.
+- The search card built two serializers per hotel (DRF reads the model each time): now built once; the search page does 30% less work on its own.
+- The built files of the site (`/assets/*`, hashed names) are cached by the browser for a year, the photos for a day, `index.html` is revalidated (Caddyfile and nginx example); Redis has a 512 MB cap that only drops expiring keys; a web process is replaced after 10,000 requests.
+- Test: 3000 simulated visitors, ramp 30/s, each clicks every 40-80 s (a click = search, hotel page, free rooms, price quote; 20% also book), 12 minutes, `LOADTEST_WAIT_MIN=40 LOADTEST_WAIT_MAX=80`, production-like server (DEBUG off, `LOADTEST_ORIGIN` set), 4 workers x 4 threads, 2000 hotels, 10,000 bookings. About 130 requests/s the whole time.
+
+| Run | Requests | Failures | Visitor-side median / p95 | Server-side p50 / p95 / p99 |
+|---|---|---|---|---|
+| 1, copies on | 94,272 | 0 | 53 ms / 380 ms | not measured |
+| 2, copies on | 93,421 | 0 | 65 ms / 1.1 s | 28 / 243 / 394 ms |
+| 3, copies on, bookings fixed | 94,931 | 0 real (103 "no rooms left" quotes, an answer, not a failure) | 58 ms / 520 ms | 28 / 234 / 350 ms (1,059 bookings made) |
+| Copies **off**, same load, 6 min | 30,313 | 0 | **10 s** / 23 s | (queueing) |
+| Twice the load (click every 20-40 s), copies on, 6 min | 63,805 | 0 | 5 s / 9 s (queueing, the box is full at about 177 requests/s) | 44 / 305 / 447 ms |
+
+- With the copies the box serves the 3000-visitor load with room to spare; without them it tops out at about 84 requests/s and every visitor waits seconds. At double the load nothing failed, pages just waited their turn.
+- The visitor-side numbers include the load generator's own CPU use on the same box; the server-side numbers (gunicorn's request time) are the honest ones.
+- A login or a sign-up costs about 0.4 s of one CPU core (PBKDF2, Django's own strength). 3000 people signing in within 10 minutes is about 2 cores for those 10 minutes; a normal day is a fraction of that. Do not lower the strength to save CPU.
+- Behind a mobile operator many phones share one address and the limits are per address (`THROTTLE_ANON_RATE` 2000/hour, `THROTTLE_SEARCH_RATE` 100/min). If the logs show "429" for ordinary visitors on a busy day, raise them in `.env`.
+- **Sizing for the launch:** 4 dedicated cores for the web container (`WEB_WORKERS=4`, `WEB_THREADS=4`), PostgreSQL and Redis on the same or another machine with its own core, Redis (the cache) switched on. For a 5 times bigger crowd add cores to the web container first (about 45 requests/s per core). Run the test again on the real server before the advertisement: `LOADTEST_ORIGIN=https://<an allowed origin>` makes the script behave like an https visitor.
+
 ## Photos
 Photos hotel owners upload are re-saved at most 1600 px on the longest side (same format and file name) and lose the camera's hidden data (place, time, device), `common/images.py`. A phone photo of several MB becomes a few hundred KB, so pages and the server's `/media/` traffic stay light. Photos uploaded before this change keep their size.
