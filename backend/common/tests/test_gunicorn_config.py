@@ -22,15 +22,22 @@ def test_defaults_suit_a_small_server(monkeypatch):
     assert config['bind'] == '0.0.0.0:8000'
 
 
-def test_a_process_is_replaced_after_many_requests_so_a_slow_memory_leak_cannot_grow_forever(monkeypatch):
+def test_processes_are_not_replaced_unless_asked_to_because_a_replacement_resets_open_connections(monkeypatch):
+    # Measured with 3000 visitors: replacing a process every 10,000 requests cut some connections and slowed the others
     config = load(monkeypatch)
-    assert config['max_requests'] == 10000
-    assert 0 < config['max_requests_jitter'] < config['max_requests']  # the processes do not all restart together
+    assert config['max_requests'] == 0
     assert load(monkeypatch, WEB_MAX_REQUESTS='500')['max_requests'] == 500
+    assert 0 < load(monkeypatch, WEB_MAX_REQUESTS='500')['max_requests_jitter'] < 500
 
 
 def test_the_heartbeat_files_of_the_processes_live_in_memory_not_on_a_slow_disk(monkeypatch):
     assert load(monkeypatch)['worker_tmp_dir'] == '/dev/shm'
+
+
+@pytest.mark.parametrize('bad', ['-1', 'many', ''])
+def test_a_bad_replacement_number_stops_the_start(monkeypatch, bad):
+    with pytest.raises(ValueError, match='WEB_MAX_REQUESTS'):
+        load(monkeypatch, WEB_MAX_REQUESTS=bad)
 
 
 def test_size_comes_from_the_environment(monkeypatch):
@@ -38,7 +45,7 @@ def test_size_comes_from_the_environment(monkeypatch):
     assert (config['workers'], config['threads'], config['timeout'], config['keepalive']) == (9, 2, 45, 300)
 
 
-@pytest.mark.parametrize('name', ['WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE', 'WEB_MAX_REQUESTS'])
+@pytest.mark.parametrize('name', ['WEB_WORKERS', 'WEB_THREADS', 'WEB_TIMEOUT', 'WEB_KEEPALIVE'])
 @pytest.mark.parametrize('bad', ['0', '-1', 'many', ''])
 def test_a_bad_number_stops_the_start_instead_of_running_with_a_wrong_size(monkeypatch, name, bad):
     with pytest.raises(ValueError, match=name):

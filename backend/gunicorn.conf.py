@@ -4,7 +4,8 @@ Settings of the web server (gunicorn) in the Docker image. The size comes from t
   WEB_WORKERS  processes, one per CPU core is a good start
   WEB_THREADS  requests each process handles at the same time (the site mostly waits for the database)
   WEB_TIMEOUT  seconds before a stuck request is cut
-  WEB_MAX_REQUESTS  requests after which a process is replaced by a fresh one (a slow memory leak cannot grow for ever)
+  WEB_MAX_REQUESTS  requests after which a process is replaced by a fresh one; 0 (the default) never replaces. Memory stayed
+               flat over 90,000 requests, and every replacement resets the connections that process had open
   WEB_KEEPALIVE  seconds an idle connection from the proxy stays open; it must be longer than the proxy's own idle
                time (Caddy keeps upstream connections 2 minutes), else the proxy reuses a connection the app just closed
 
@@ -30,7 +31,12 @@ workers = _positive_int('WEB_WORKERS', 3)
 threads = _positive_int('WEB_THREADS', 4)
 timeout = _positive_int('WEB_TIMEOUT', 30)
 keepalive = _positive_int('WEB_KEEPALIVE', 125)
-max_requests = _positive_int('WEB_MAX_REQUESTS', 10000)
+try:
+    max_requests = int(os.getenv('WEB_MAX_REQUESTS', '0'))
+except ValueError:
+    max_requests = -1
+if max_requests < 0:
+    raise ValueError(f"WEB_MAX_REQUESTS must be 0 or a whole number above it, got {os.getenv('WEB_MAX_REQUESTS')!r}")
 max_requests_jitter = max_requests // 10  # so the processes are not all replaced at the same moment
 # In a container the files the processes use to say they are alive belong in memory: a slow disk freezes the server
 worker_tmp_dir = '/dev/shm'

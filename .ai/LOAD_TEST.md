@@ -47,7 +47,7 @@ Use a scratch database (`tickbron_perf`), never the real one. More detail: `back
 What was done to carry it, and the measurements (same 4-core box that also ran the load generator, so a real server does better):
 - **Short copies of public answers** (`common/public_cache.py`, `PUBLIC_CACHE_SECONDS`, default 30, 0 = off): hotel page, free rooms (half as long), search results, search filters, suggestions, geography lists. Not copied: price quotes (what a guest pays), the paid banners and their view counter (still counted for every visitor), anything for one account, any error. A price or a free-room count on a list can be up to 30 s old; booking always checks again. A Redis that is down never breaks a page: after one failure the pages stop asking it for 15 s.
 - The search card built two serializers per hotel (DRF reads the model each time): now built once; the search page does 30% less work on its own.
-- The built files of the site (`/assets/*`, hashed names) are cached by the browser for a year, the photos for a day, `index.html` is revalidated (Caddyfile and nginx example); Redis has a 512 MB cap that only drops expiring keys; a web process is replaced after 10,000 requests.
+- The built files of the site (`/assets/*`, hashed names) are cached by the browser for a year, the photos for a day, `index.html` is revalidated (Caddyfile and nginx example); Redis has a 512 MB cap that only drops expiring keys. (A web process can be replaced after N requests with `WEB_MAX_REQUESTS`, off by default: in the last run it cut 29 connections of 92,000 and slowed the tail, and memory was flat anyway.)
 - Test: 3000 simulated visitors, ramp 30/s, each clicks every 40-80 s (a click = search, hotel page, free rooms, price quote; 20% also book), 12 minutes, `LOADTEST_WAIT_MIN=40 LOADTEST_WAIT_MAX=80`, production-like server (DEBUG off, `LOADTEST_ORIGIN` set), 4 workers x 4 threads, 2000 hotels, 10,000 bookings. About 130 requests/s the whole time.
 
 | Run | Requests | Failures | Visitor-side median / p95 | Server-side p50 / p95 / p99 |
@@ -55,9 +55,11 @@ What was done to carry it, and the measurements (same 4-core box that also ran t
 | 1, copies on | 94,272 | 0 | 53 ms / 380 ms | not measured |
 | 2, copies on | 93,421 | 0 | 65 ms / 1.1 s | 28 / 243 / 394 ms |
 | 3, copies on, bookings fixed | 94,931 | 0 real (103 "no rooms left" quotes, an answer, not a failure) | 58 ms / 520 ms | 28 / 234 / 350 ms (1,059 bookings made) |
+| Final code, copies on, 12 min (the box was slower than in runs 1-3: load average 8.8) | 91,992 | 0 | 160 ms / 2.6 s | 37 / 307 / 480 ms |
 | Copies **off**, same load, 6 min | 30,313 | 0 | **10 s** / 23 s | (queueing) |
 | Twice the load (click every 20-40 s), copies on, 6 min | 63,805 | 0 | 5 s / 9 s (queueing, the box is full at about 177 requests/s) | 44 / 305 / 447 ms |
 
+- An earlier run of the final code had 29 failed requests of 92,000 ("connection reset"): the new `WEB_MAX_REQUESTS` replaced web processes while visitors' connections were open. Memory was flat, so it is now off by default and the failures are gone.
 - With the copies the box serves the 3000-visitor load with room to spare; without them it tops out at about 84 requests/s and every visitor waits seconds. At double the load nothing failed, pages just waited their turn.
 - The visitor-side numbers include the load generator's own CPU use on the same box; the server-side numbers (gunicorn's request time) are the honest ones.
 - A login or a sign-up costs about 0.4 s of one CPU core (PBKDF2, Django's own strength). 3000 people signing in within 10 minutes is about 2 cores for those 10 minutes; a normal day is a fraction of that. Do not lower the strength to save CPU.
