@@ -44,7 +44,7 @@ class StayQuote:
     @property
     def nightly_total(self):
         """Price of one room for the whole stay."""
-        return sum((price for _, price in self.nights), Decimal('0'))
+        return sum((price for _night, price in self.nights), Decimal('0'))
 
     @property
     def total_price(self):
@@ -62,7 +62,7 @@ class StayQuote:
         rate_of = rate_of or current_uzs_rate
         total = Decimal('0')
         source = 'main'
-        for _, price in self.nights:
+        for _night, price in self.nights:
             amount, source = night_price_in(self.currency, self.owner_prices, price, currency, rate_of)
             if amount is None:
                 return None, source
@@ -74,7 +74,7 @@ class StayQuote:
         rate_of = rate_of or current_uzs_rate
         rows = []
         for night, price in self.nights:
-            amount, _ = night_price_in(self.currency, self.owner_prices, price, currency, rate_of)
+            amount, _source = night_price_in(self.currency, self.owner_prices, price, currency, rate_of)
             if amount is None:
                 return None
             rows.append((night, quantize(amount, currency)))
