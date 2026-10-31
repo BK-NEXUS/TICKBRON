@@ -103,6 +103,7 @@ class AdminAccessLog(models.Model):
         ('review_approve', 'Approved a guest review'),
         ('review_reject', 'Rejected a guest review'),
         ('admin_create', 'Created an administrator account'),
+        ('user_contact_update', 'Changed the phone number or e-mail of an account'),
         ('two_factor_reset', 'Reset the two-step sign-in of an account'),
         ('amenity_create', 'Created an amenity'),
         ('amenity_update', 'Changed an amenity'),
@@ -147,7 +148,7 @@ class AdminAccessLog(models.Model):
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
                              'refund_id', 'export', 'rows', 'format', 'report_id',
                              'promotion_id', 'property_id', 'start_date', 'end_date', 'amount',
-                             'object_id', 'level'})
+                             'object_id', 'level', 'role', 'fields'})
 
     @classmethod
     def _check_details(cls, details):

@@ -455,3 +455,12 @@ msgstr "Для этого аккаунта двухэтапный вход не 
 
 msgid "The JSON is nested too deeply."
 msgstr "JSON вложен слишком глубоко."
+
+msgid "User with this email already exists."
+msgstr "Пользователь с таким email уже существует."
+
+msgid "Send a new phone number or a new e-mail."
+msgstr "Отправьте новый номер телефона или новый email."
+
+msgid "You cannot change the contact details of this account."
+msgstr "Вы не можете изменить контактные данные этого аккаунта."

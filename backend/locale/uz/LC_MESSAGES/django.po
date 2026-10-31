@@ -619,3 +619,12 @@ msgstr "Bu hisobda ikki bosqichli kirish yoqilmagan."
 
 msgid "The JSON is nested too deeply."
 msgstr "JSON juda chuqur ichma-ich joylashgan."
+
+msgid "User with this email already exists."
+msgstr "Bu email bilan foydalanuvchi allaqachon mavjud."
+
+msgid "Send a new phone number or a new e-mail."
+msgstr "Yangi telefon raqami yoki yangi email yuboring."
+
+msgid "You cannot change the contact details of this account."
+msgstr "Bu hisobning aloqa ma'lumotlarini o'zgartira olmaysiz."
