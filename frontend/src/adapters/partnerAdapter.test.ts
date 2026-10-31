@@ -942,4 +942,30 @@ describe('partnerAdapter singleton', () => {
       expect(result.data?.hasMore).toBe(false)
     })
   })
+
+  describe('getCommission', () => {
+    const mockBaseUrl = 'http://test-api.com'
+    const adapter = new PartnerAdapter(mockBaseUrl)
+    beforeEach(() => vi.mocked(fetch).mockClear())
+
+    it('reads the owner\'s own commission statement', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true, status: 200, json: async () => ({ percent: '2.50', percent_since: '2026-03-01', months: [], years: null }),
+      } as Response)
+
+      const result = await adapter.getCommission()
+
+      expect(vi.mocked(fetch).mock.calls[0][0]).toBe(`${mockBaseUrl}/api/v1/partner/commission/`)
+      expect(result.data?.percent).toBe('2.50')
+    })
+
+    it('returns the error when the server refuses', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({}) } as Response)
+
+      const result = await adapter.getCommission()
+
+      expect(result.data).toBeNull()
+      expect(result.error).toBeTruthy()
+    })
+  })
 })

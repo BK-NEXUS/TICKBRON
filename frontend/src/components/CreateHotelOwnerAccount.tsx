@@ -9,6 +9,8 @@ import {
 } from '../utils/passwordRules'
 import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from '../adapters/adminAdapter'
 
+const PERCENT_FORMAT = /^\d{1,3}(\.\d{1,2})?$/
+
 interface CreateHotelOwnerAccountProps {
   /** `owner` (default) picks the place of the hotels; `admin` adds an administrator, which has no place */
   kind?: 'owner' | 'admin'
@@ -22,7 +24,10 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
   const { t } = useI18n()
   const isAdmin = kind === 'admin'
   const [place, setPlace] = useState<GeographyValue>(NO_PLACE)
-  const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref'>>({
+  // What the site takes from each booking of a new owner (required), and which rights a new administrator gets
+  const [commissionPercent, setCommissionPercent] = useState('')
+  const [role, setRole] = useState<'staff' | 'super_admin'>('staff')
+  const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'commission_percent'>>({
     email: '',
     first_name: '',
     last_name: '',
@@ -46,6 +51,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
 
   const validateForm = (): string | null => {
     if (!isAdmin && (place.country_ref === null || place.region_ref === null || place.city_ref === null)) return t('admin.errPlace')
+    if (!isAdmin && !(PERCENT_FORMAT.test(commissionPercent.trim()) && Number(commissionPercent) <= 100)) return t('admin.errCommission')
     if (!formData.email.trim()) return t('admin.errEmail')
     if (!formData.first_name.trim()) return t('admin.errFirstName')
     if (!isPhoneValid(formData.phone_number)) return t('auth.errPhone')
@@ -76,12 +82,13 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
 
     try {
       const response = isAdmin
-        ? await adminAdapter.createAdmin(formData)
+        ? await adminAdapter.createAdmin({ ...formData, role })
         : await adminAdapter.createHotelOwner({
           ...formData,
           country_ref: place.country_ref as number,
           region_ref: place.region_ref as number,
           city_ref: place.city_ref as number,
+          commission_percent: commissionPercent.trim(),
         })
       
       if (response.error) {
@@ -109,6 +116,8 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
       password_confirm: '',
     })
     setPlace(NO_PLACE)
+    setCommissionPercent('')
+    setRole('staff')
     setError(null)
     setCreatedCredentials(null)
   }
@@ -285,6 +294,29 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
               minLength={MIN_PASSWORD_LENGTH}
             />
           </div>
+
+          {isAdmin && (
+            <div className="form-group">
+              <label htmlFor="role">{t('admin.roleLabel')}</label>
+              <select id="role" name="role" value={role} className="form-control" disabled={loading}
+                onChange={(e) => setRole(e.target.value as 'staff' | 'super_admin')}>
+                <option value="staff">{t('admin.roleStaff')}</option>
+                <option value="super_admin">{t('admin.roleSuperAdmin')}</option>
+              </select>
+              <small className="form-hint">{t('admin.roleHint')}</small>
+            </div>
+          )}
+
+          {!isAdmin && (
+            <div className="form-group">
+              <label htmlFor="commission_percent">{t('admin.commissionPercent')}</label>
+              <input id="commission_percent" name="commission_percent" type="text" inputMode="decimal" autoComplete="off"
+                value={commissionPercent} className="form-control" required disabled={loading}
+                aria-describedby="commission-percent-hint" placeholder="2.5"
+                onChange={(e) => { setCommissionPercent(e.target.value); setError(null) }} />
+              <small id="commission-percent-hint" className="form-hint">{t('admin.commissionPercentHint')}</small>
+            </div>
+          )}
 
           {!isAdmin && (
             <fieldset className="form-group create-owner-place">

@@ -222,7 +222,7 @@ describe('AdminAdapter', () => {
     it('posts a new administrator to the administrator endpoint', async () => {
       const adminData = {
         email: 'new.admin@example.com', first_name: 'Aziza', last_name: 'Karimova', phone_number: '+998901234567',
-        password: 'Long-Enough-Pass#2026', password_confirm: 'Long-Enough-Pass#2026',
+        password: 'Long-Enough-Pass#2026', password_confirm: 'Long-Enough-Pass#2026', role: 'super_admin' as const,
       }
       global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ id: 9 }) })
 
@@ -233,6 +233,40 @@ describe('AdminAdapter', () => {
         'http://test-api/api/v1/admin-panel/users/create-admin/',
         expect.objectContaining({ method: 'POST', body: JSON.stringify(adminData) })
       )
+    })
+
+    it('changes the phone and e-mail of an account with PATCH', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 4 }) })
+
+      const result = await adapter.changeContact(4, { phone_number: '+998909998877' })
+
+      expect(result.error).toBeNull()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api/api/v1/admin-panel/users/4/contact/',
+        expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ phone_number: '+998909998877' }) })
+      )
+    })
+
+    it('reads the commission list with the search and the page, and reports whether more pages follow', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ count: 30, next: 'x', results: [{ id: 7 }] }) })
+
+      const result = await adapter.getCommissionOwners({ search: 'My Hotel', page: 2 })
+
+      expect(global.fetch).toHaveBeenCalledWith('http://test-api/api/v1/admin-panel/commission/?page=2&search=My+Hotel', expect.anything())
+      expect(result.data).toEqual({ count: 30, hasMore: true, results: [{ id: 7 }] })
+    })
+
+    it('sets the percent with PUT and confirms and takes back a month on the same URL', async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ percent: '2.50' }) })
+
+      await adapter.setCommissionPercent(7, '2.50')
+      await adapter.confirmCommissionMonth(7, '2026-03')
+      await adapter.undoCommissionMonth(7, '2026-03')
+
+      const calls = vi.mocked(global.fetch).mock.calls
+      expect(calls[0]).toEqual(['http://test-api/api/v1/admin-panel/commission/7/rate/', expect.objectContaining({ method: 'PUT', body: JSON.stringify({ percent: '2.50' }) })])
+      expect(calls[1]).toEqual(['http://test-api/api/v1/admin-panel/commission/7/months/2026-03/paid/', expect.objectContaining({ method: 'POST' })])
+      expect(calls[2]).toEqual(['http://test-api/api/v1/admin-panel/commission/7/months/2026-03/paid/', expect.objectContaining({ method: 'DELETE' })])
     })
 
     it('resets another account\'s two-step sign-in with the super admin\'s own code', async () => {

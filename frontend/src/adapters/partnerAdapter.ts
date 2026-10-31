@@ -5,6 +5,7 @@ import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
+import type { CommissionStatement } from './commissionTypes'
 
 // Property types from backend contract
 /** Hotel name and description per language (uz, ru, en) */
@@ -829,6 +830,11 @@ class PartnerAdapter {
     return data
       ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
       : { data: null, error }
+  }
+
+  /** GET /api/v1/partner/commission/: the owner's percent, months and (for an account a year old) year totals */
+  async getCommission(): Promise<ApiResponse<CommissionStatement>> {
+    return this.request<CommissionStatement>('/api/v1/partner/commission/')
   }
 
   /** One page of the ads of the owner's hotels, newest first (optionally only one status) */

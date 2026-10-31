@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import { useState, useEffect } from 'react'
-import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images, Pencil, Star, Megaphone } from 'lucide-react'
+import { Lock, House, Calendar, BedDouble, Banknote, UserX, Images, Pencil, Star, Megaphone, Percent } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { partnerAdapter, PartnerProperty } from '../adapters/partnerAdapter'
 import { PartnerPropertyWizard } from '../components/PartnerPropertyWizard'
@@ -14,12 +14,13 @@ import { PartnerBookingsView } from '../components/PartnerBookingsView'
 import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { PartnerAds } from '../components/PartnerAds'
+import { PartnerCommission } from '../components/PartnerCommission'
 import { PartnerReviews } from '../components/PartnerReviews'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
 import { propertyStatusLabel } from '../utils/statusLabels'
 
-type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'reviews' | 'ads' | 'no-show-reports' | 'status' | 'add-property'
+type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'reviews' | 'ads' | 'commission' | 'no-show-reports' | 'status' | 'add-property'
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
@@ -188,6 +189,14 @@ export function PartnerDashboardPage() {
       >
         <span className="nav-icon"><Calendar size={18} /></span>
         <span className="nav-label">{t('partner.bookings')}</span>
+      </button>
+      <button
+        onClick={() => setCurrentView('commission')}
+        className={`nav-item ${currentView === 'commission' ? 'nav-item--active' : ''}`}
+        aria-current={currentView === 'commission' ? 'page' : undefined}
+      >
+        <span className="nav-icon"><Percent size={18} aria-hidden="true" /></span>
+        <span className="nav-label">{t('commission.nav')}</span>
       </button>
       <button
         onClick={() => setCurrentView('no-show-reports')}
@@ -415,6 +424,8 @@ export function PartnerDashboardPage() {
         ) : null
       case 'ads':
         return <PartnerAds />
+      case 'commission':
+        return <PartnerCommission />
       case 'reviews':
         return <PartnerReviews properties={properties.map(property => ({ id: property.id, name: propertyName(property) }))} />
       case 'bookings':

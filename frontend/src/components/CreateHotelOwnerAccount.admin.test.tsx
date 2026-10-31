@@ -35,7 +35,7 @@ describe('CreateHotelOwnerAccount as the administrator form', () => {
     expect(adminAdapter.createHotelOwner).not.toHaveBeenCalled()
     expect(adminAdapter.createAdmin).toHaveBeenCalledWith({
       email: 'new.admin@example.com', first_name: 'Aziza', last_name: 'Karimova', phone_number: '+998901234567',
-      password: 'Long-Enough-Pass#2026', password_confirm: 'Long-Enough-Pass#2026',
+      password: 'Long-Enough-Pass#2026', password_confirm: 'Long-Enough-Pass#2026', role: 'staff',
     })
     expect(screen.getByText('Administrator Account Created Successfully')).toBeInTheDocument()
   })
@@ -57,5 +57,14 @@ describe('CreateHotelOwnerAccount as the administrator form', () => {
     fill()
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
     expect(await screen.findByRole('alert')).toHaveTextContent('A user with this email already exists.')
+  })
+
+  it('lets a super admin make another super admin and sends no commission percent', async () => {
+    render(<CreateHotelOwnerAccount kind="admin" />)
+    fill()
+    fireEvent.change(screen.getByLabelText('Rights'), { target: { value: 'super_admin' } })
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
+    await waitFor(() => expect(adminAdapter.createAdmin).toHaveBeenCalledWith(expect.objectContaining({ role: 'super_admin' })))
+    expect(screen.queryByLabelText('Commission percent (%)')).not.toBeInTheDocument()
   })
 })

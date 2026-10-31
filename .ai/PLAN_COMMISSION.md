@@ -1,6 +1,6 @@
 # Plan: commission the site takes from hotel owners
 
-Status: approved by the owner in chat (2026-10-31); parts 1 and 2 built. Part 3 (owner screen) and part 4 (super admin / staff screen) are frontend.
+Status: approved by the owner in chat (2026-10-31); built: backend (parts 1 and 2) and the screens (owner Commission section, super admin / staff Commission section, percent and role in the account forms, contact change in the users list), all in one pull request at the owner's request.
 
 ## Owner's rules
 - Every hotel owner has one commission percent: what the site takes from each booking. The super admin types it when creating the owner (required). Existing owners have none until the super admin sets it; no percent means no commission.
