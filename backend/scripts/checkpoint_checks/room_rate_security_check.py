@@ -112,7 +112,7 @@ def run_security_checks():
         try:
             invalid_room.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -153,7 +153,7 @@ def run_security_checks():
             )
             duplicate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -225,7 +225,7 @@ def run_security_checks():
         try:
             invalid_photo.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -271,7 +271,7 @@ def run_security_checks():
             )
             duplicate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -312,7 +312,7 @@ def run_security_checks():
         try:
             invalid_rate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -333,7 +333,7 @@ def run_security_checks():
         try:
             invalid_deposit.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -359,7 +359,7 @@ def run_security_checks():
             )
             duplicate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -406,7 +406,7 @@ def run_security_checks():
         try:
             invalid_inventory.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -427,7 +427,7 @@ def run_security_checks():
         try:
             invalid_stay.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -452,7 +452,7 @@ def run_security_checks():
             )
             duplicate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -681,7 +681,7 @@ def run_security_checks():
         try:
             invalid_price_room.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
@@ -700,7 +700,7 @@ def run_security_checks():
         try:
             invalid_price_rate.full_clean()
             passed = False
-        except:
+        except Exception:
             passed = True
 
         total_checks += 1
