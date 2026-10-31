@@ -104,6 +104,24 @@ docker compose exec web python manage.py seed_property_types
 
 Sign in at `https://your-domain/login` with that e-mail. The first sign-in sends the administrator to the two-step setup page: install an authenticator app on the phone (Google Authenticator, Microsoft Authenticator, Authy or 2FAS), scan the picture, type the 6-digit code, and keep the 10 backup codes on paper. Hotel owner accounts are created by this administrator in the admin panel. Do NOT run `seed_demo` on the real server (it is for development and refuses to run without DEBUG).
 
+## Step 7. Prepare the data and check the mail (before anyone else comes)
+
+A new server has no exchange rate, no mail test and no amenities. Do these once, in this order:
+
+1. **Exchange rate.** Hotels priced in dollars cannot be booked until the first rate of the central bank is stored (the daily task only runs at 09:00 and 18:00 Tashkent time). The server must reach the internet:
+   ```
+   docker compose exec web python manage.py fetch_exchange_rates
+   ```
+   It prints `USD: <rate> UZS for <date>`. If it says "fetch failed", check that the server can open `https://cbu.uz`.
+2. **Mail.** Sign-up and sign-in of guests and hotel owners need a mailed six-digit code, and password reset needs the same mail: if the mail does not work nobody can sign up or sign in. Send a test mail to yourself:
+   ```
+   docker compose exec web python manage.py sendtestemail you@your-address.com
+   ```
+   It must arrive within a minute (look in the spam folder too). A personal Gmail account sends about 500 mails a day; use a mail service with a big daily limit (Brevo, SendGrid, Mailgun, Amazon SES) and set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` and `DEFAULT_FROM_EMAIL` in `.env`, then `docker compose up -d web worker`.
+3. **Amenities** (wifi, parking, breakfast and so on): sign in as the administrator, open the admin panel, "Amenities", and add the ones hotels can tick. Without them the hotel form and the search filter have nothing to offer.
+4. **Try it as a stranger would**, with your own second e-mail address: sign up on the site (the code arrives by mail), sign out, sign in (a code again), ask for a password reset. Then as the administrator create a hotel-owner account (it asks for the commission percent), sign in as that owner in a private window, add a hotel and approve it in the admin panel, and book it from the guest account.
+5. **Alerts** (optional): `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID` in `.env` send locked-account and server-error alerts to a Telegram chat.
+
 ## Update to a new version
 
 ```
