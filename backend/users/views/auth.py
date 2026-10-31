@@ -16,7 +16,7 @@ from common.csrf import enforce_csrf
 from common.request import get_client_ip
 from common.security_log import log_security_event
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import transaction
 
 from users import email_codes, lockout, two_factor
 from users.models import User
