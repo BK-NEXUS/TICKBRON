@@ -1,13 +1,20 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { authAdapter, User, type TwoFactorCredential } from '../adapters/authAdapter'
+import { authAdapter, User, type AuthResponse, type TwoFactorCredential } from '../adapters/authAdapter'
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  /** twoFactorRequired: the password was right, the app's code is still needed (loginTwoFactor) */
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; twoFactorRequired?: boolean }>
+  /**
+   * twoFactorRequired: the password was right, the app's code is still needed (loginTwoFactor).
+   * emailCodeRequired: the password was right, the mailed code is still needed (loginEmailCode).
+   */
+  login: (email: string, password: string) => Promise<AuthResponse>
   loginTwoFactor: (credential: TwoFactorCredential) => Promise<{ success: boolean; error?: string }>
+  loginEmailCode: (code: string) => Promise<AuthResponse>
+  resendLoginCode: () => Promise<AuthResponse>
+  verifyRegistration: (email: string, code: string) => Promise<AuthResponse>
+  resendRegistrationCode: (email: string) => Promise<AuthResponse>
   register: (data: {
     email: string
     full_name: string
@@ -16,7 +23,7 @@ interface AuthContextType {
     password_confirm: string
     first_name?: string
     last_name?: string
-  }) => Promise<{ success: boolean; error?: string }>
+  }) => Promise<AuthResponse>
   logout: () => Promise<{ success: boolean; error?: string }>
   refreshUser: () => Promise<void>
   updateProfile: (data: {
@@ -70,6 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return response
   }
+
+  const signedInBy = (call: () => Promise<AuthResponse>) => async () => {
+    const response = await call()
+    if (response.success && response.user) setUser(response.user)
+    return response
+  }
+
+  const loginEmailCode = (code: string) => signedInBy(() => authAdapter.loginEmailCode(code))()
+  const resendLoginCode = () => authAdapter.resendLoginCode()
+  const verifyRegistration = (email: string, code: string) => signedInBy(() => authAdapter.verifyRegistration(email, code))()
+  const resendRegistrationCode = (email: string) => authAdapter.resendRegistrationCode(email)
 
   const register = async (data: {
     email: string
@@ -126,6 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     login,
     loginTwoFactor,
+    loginEmailCode,
+    resendLoginCode,
+    verifyRegistration,
+    resendRegistrationCode,
     register,
     logout,
     refreshUser,

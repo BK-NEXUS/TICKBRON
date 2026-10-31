@@ -8,13 +8,18 @@ from users.views import (
     change_password, confirm_password_reset, csrf_token, login_view, logout_view, me, refresh_session, register,
     request_password_reset, update_profile,
 )
+from users.views.email_code import login_email_code, login_email_code_resend, register_resend, register_verify
 from users.views.two_factor import confirm_two_factor, login_two_factor, setup_two_factor
 
 app_name = 'users'
 
 urlpatterns = [
     path('register/', register, name='register'),
+    path('register/verify/', register_verify, name='register_verify'),
+    path('register/resend/', register_resend, name='register_resend'),
     path('login/', login_view, name='login'),
+    path('login/email-code/', login_email_code, name='login_email_code'),
+    path('login/email-code/resend/', login_email_code_resend, name='login_email_code_resend'),
     path('login/2fa/', login_two_factor, name='login_two_factor'),
     path('2fa/setup/', setup_two_factor, name='setup_two_factor'),
     path('2fa/confirm/', confirm_two_factor, name='confirm_two_factor'),

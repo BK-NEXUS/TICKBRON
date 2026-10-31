@@ -8,6 +8,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Button } from '../components/Button'
 import { PasswordField } from '../components/PasswordField'
 import { AuthModeSwitch } from '../components/AuthModeSwitch'
+import { EmailCodeForm } from '../components/EmailCodeForm'
 import { authFormProblem } from '../utils/authForm'
 import { passwordFormatProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 import { useI18n } from '../i18n/I18nContext'
@@ -23,8 +24,10 @@ export function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // The data was accepted and a code was mailed: the account is made when it is typed
+  const [mailedCode, setMailedCode] = useState<{ email: string; resendAfter: number } | null>(null)
   
-  const { register, isAuthenticated } = useAuth()
+  const { register, verifyRegistration, resendRegistrationCode, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -73,7 +76,9 @@ export function RegisterPage() {
     
     setIsLoading(false)
     
-    if (response.success) {
+    if (response.emailCodeRequired) {
+      setMailedCode({ email: response.email ?? formData.email, resendAfter: response.resendAfter ?? 60 })
+    } else if (response.success) {
       const from = redirectPathFrom(location.state)
       navigate(from, { replace: true })
     } else {
@@ -87,6 +92,18 @@ export function RegisterPage() {
       <div className="container">
         <BrandLogo variant="auth" />
         <div className="auth-container">
+          {mailedCode ? (
+            <EmailCodeForm
+              purpose="register"
+              sentTo={mailedCode.email}
+              resendAfter={mailedCode.resendAfter}
+              onSubmit={(code) => verifyRegistration(mailedCode.email, code)}
+              onResend={() => resendRegistrationCode(mailedCode.email)}
+              onSuccess={() => navigate(redirectPathFrom(location.state), { replace: true })}
+              onBack={() => setMailedCode(null)}
+            />
+          ) : (
+          <>
           <AuthModeSwitch mode="register" disabled={isLoading} />
 
           <div className="auth-header">
@@ -202,6 +219,8 @@ export function RegisterPage() {
               </Link>
             </p>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

@@ -30,7 +30,7 @@ SUPERADMIN = {'superadmin'}
 ACCESS = [
     (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventory, staff only outside DEBUG
     (r'^/(healthz|readyz)/$', None, PUBLIC),  # A09: probes for the load balancer, no data
-    (r'^/api/v1/auth/(register|login|logout|csrf|password-reset/request|password-reset/confirm|login/2fa)/$', None, PUBLIC),
+    (r'^/api/v1/auth/(register|register/verify|register/resend|login|login/email-code|login/email-code/resend|logout|csrf|password-reset/request|password-reset/confirm|login/2fa)/$', None, PUBLIC),
     (r'^/api/v1/auth/(me|refresh|me/update|password/change|2fa/setup|2fa/confirm)/$', None, AUTHENTICATED),
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
@@ -58,6 +58,8 @@ ACCESS = [
 FORBIDDEN_BY_DESIGN = {
     ('post', '/api/v1/me/notifications/'),  # notifications are created by the system only
     ('post', '/api/v1/auth/login/2fa/'),  # open to all, but 401 until the password step of the same session was done
+    ('post', '/api/v1/auth/login/email-code/'),  # same: 401 until the password step of the same session was done
+    ('post', '/api/v1/auth/login/email-code/resend/'),
 }
 
 PATH_VALUES = {'provider': 'payme', 'code': 'UZ', 'country': 'UZ', 'region': '1'}

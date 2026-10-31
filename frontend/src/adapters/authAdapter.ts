@@ -66,6 +66,14 @@ export interface AuthResponse {
   detail?: string
   /** The password was right but nobody is signed in until the app's code is sent too */
   twoFactorRequired?: boolean
+  /** A six-digit code was mailed: sign-up makes the account only after it is typed, sign-in starts only after it */
+  emailCodeRequired?: boolean
+  /** Sign-up: the address the code went to */
+  email?: string
+  /** Sign-in: "o***@gmail.com" */
+  emailHint?: string
+  /** Seconds until a new code may be asked for */
+  resendAfter?: number
 }
 
 /** The app's 6 digits, or one of the backup codes */
@@ -143,6 +151,12 @@ class AuthAdapter {
 
       const data = await response.json()
       if (data?.two_factor_required) return { success: true, twoFactorRequired: true }
+      if (data?.email_code_required) {
+        return {
+          success: true, emailCodeRequired: true, email: data.email, emailHint: data.email_hint,
+          resendAfter: data.resend_after,
+        }
+      }
       return {
         success: true,
         user: data,
@@ -193,6 +207,26 @@ class AuthAdapter {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  }
+
+  /** Last step of sign-up, after register() answered emailCodeRequired: the right code makes the account and signs in */
+  async verifyRegistration(email: string, code: string): Promise<AuthResponse> {
+    return this.changeSession('/api/v1/auth/register/verify/', { method: 'POST', body: JSON.stringify({ email, code }) })
+  }
+
+  /** A new code for a sign-up that is waiting */
+  async resendRegistrationCode(email: string): Promise<AuthResponse> {
+    return this.request('/api/v1/auth/register/resend/', { method: 'POST', body: JSON.stringify({ email }) })
+  }
+
+  /** Second step of the sign-in of a guest or hotel owner, after login() answered emailCodeRequired */
+  async loginEmailCode(code: string): Promise<AuthResponse> {
+    return this.changeSession('/api/v1/auth/login/email-code/', { method: 'POST', body: JSON.stringify({ code }) })
+  }
+
+  /** A new code for the sign-in that is waiting */
+  async resendLoginCode(): Promise<AuthResponse> {
+    return this.request('/api/v1/auth/login/email-code/resend/', { method: 'POST', body: JSON.stringify({}) })
   }
 
   /** Second step of the login, after login() answered twoFactorRequired */

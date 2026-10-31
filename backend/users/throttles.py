@@ -55,6 +55,18 @@ class PasswordResetConfirmThrottle(IPRateThrottle):
     scope = 'password_reset_confirm'
 
 
+class EmailCodeVerifyThrottle(IPRateThrottle):
+    """Mailed codes tried from one network: 20 per minute (5 wrong tries burn a code sooner)."""
+    rate = '20/min'
+    scope = 'email_code_verify'
+
+
+class EmailCodeSendThrottle(IPRateThrottle):
+    """New mailed codes asked for from one network: 30 per hour (one address gets 5 an hour at most)."""
+    rate = '30/hour'
+    scope = 'email_code_send'
+
+
 class AccountRateThrottle(IPRateThrottle):
     """Keyed by the logged-in account, not by anything the client puts in the request."""
 

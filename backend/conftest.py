@@ -129,6 +129,17 @@ def default_exchange_rate(request, django_db_blocker):
 
 
 @pytest.fixture(autouse=True)
+def mailed_codes_off_by_default(settings):
+    """
+    The mailed six-digit codes are on in a running system, but most tests sign people up and in through the API with
+    a password only: they run with the codes off. The tests of the codes themselves (users/tests/test_email_codes.py)
+    switch them on.
+    """
+    settings.EMAIL_VERIFICATION_REQUIRED = False
+    settings.EMAIL_LOGIN_CODE_REQUIRED = False
+
+
+@pytest.fixture(autouse=True)
 def clear_cache():
     """Start every test with an empty cache."""
     from django.core.cache import cache
