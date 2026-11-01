@@ -16,7 +16,7 @@ from common.csrf import enforce_csrf
 from common.request import get_client_ip
 from common.security_log import log_security_event
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from users import email_codes, lockout, two_factor
 from users.models import User
@@ -52,7 +52,10 @@ def register(request):
     if settings.EMAIL_VERIFICATION_REQUIRED:
         return _start_verified_sign_up(request, serializer.validated_data)
 
-    user = serializer.save()
+    try:
+        user = serializer.save()
+    except IntegrityError:  # a parallel sign-up took the address between validation and insert
+        return Response({'email': [_('User with this email already exists.')]}, status=status.HTTP_400_BAD_REQUEST)
     login(request, user)
     log_security_event('account_created', request, user=user, level=logging.INFO)
     record_history(user, 'account_created', request)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Bell, Lock } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,6 +6,16 @@ import { EmptyState } from '../components/EmptyState'
 import { notificationAdapter, type AppNotification } from '../adapters/notificationAdapter'
 import { notificationText } from '../utils/notificationText'
 import { NOTIFICATIONS_CHANGED } from '../hooks/useNotificationCount'
+
+/** Only an unread notice does something when pressed (it gets marked as read), so only that one is a button. */
+function NoticeRow({ notice, onOpen, children }: { notice: AppNotification; onOpen: () => void; children: ReactNode }) {
+  if (notice.is_read) return <div className="notification-row">{children}</div>
+  return (
+    <button type="button" onClick={onOpen} className="notification-row notification-row--unread">
+      {children}
+    </button>
+  )
+}
 
 export function NotificationsPage() {
   const { t, formatDate } = useI18n()
@@ -56,7 +66,6 @@ export function NotificationsPage() {
   const changed = () => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED))
 
   const open = async (notice: AppNotification) => {
-    if (notice.is_read) return
     const result = await notificationAdapter.markRead(notice.id)
     if (result.error) return setError(result.error)
     setNotices(current => current.map(row => (row.id === notice.id ? { ...row, is_read: true } : row)))
@@ -150,18 +159,14 @@ export function NotificationsPage() {
             const text = notificationText(notice, t)
             return (
               <li key={notice.id}>
-                <button
-                  type="button"
-                  onClick={() => void open(notice)}
-                  className={`notification-row ${notice.is_read ? '' : 'notification-row--unread'}`}
-                >
+                <NoticeRow notice={notice} onOpen={() => void open(notice)}>
                   <span className="notification-row-title">
                     {!notice.is_read && <span className="notification-dot" role="img" aria-label={t('notifications.unread')} />}
                     {text.title}
                   </span>
                   <span className="notification-row-message">{text.message}</span>
                   <time className="notification-row-time" dateTime={notice.created_at}>{formatDate(notice.created_at)}</time>
-                </button>
+                </NoticeRow>
               </li>
             )
           })}

@@ -350,6 +350,7 @@ test('F super-admin: create owner, customers, note, support lookup, statistics',
     await page.getByLabel('Country').selectOption({ label: 'Uzbekistan' })
     await page.getByLabel('Region').selectOption({ label: 'Tashkent' })
     await page.getByLabel('City').selectOption({ index: 1 })
+    await page.getByLabel('Commission percent (%)').fill('2.5')
     await page.getByLabel('Password:', { exact: true }).fill(newOwner.password)
     await page.getByLabel('Confirm Password:').fill(newOwner.password)
     await page.getByRole('button', { name: 'Create Account' }).click()

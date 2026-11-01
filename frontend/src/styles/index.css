@@ -10186,3 +10186,10 @@ button.property-gallery-image {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* A single action inside a wide settings card sizes to its text instead of stretching across the card. */
+@media (min-width: 640px) {
+  .profile-password-form > .btn {
+    align-self: flex-start;
+  }
+}

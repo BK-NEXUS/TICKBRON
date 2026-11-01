@@ -22,8 +22,9 @@ const BLANK_TILE = Buffer.from(
 
 /** The map tiles come from the internet; tests must not depend on it (offline CI, proxies). */
 export async function stubMapTiles(page: Page) {
-  await page.route('https://tile.openstreetmap.org/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }))
+  for (const tiles of ['https://tile.openstreetmap.org/**', 'https://server.arcgisonline.com/**']) {
+    await page.route(tiles, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }))
+  }
 }
 
 export interface Issue {
