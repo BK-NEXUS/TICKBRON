@@ -1,9 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 import { adminAdapter, AdminProperty, ApprovePropertyRequest } from '../adapters/adminAdapter'
 import { PropertyLocationField } from './PropertyLocationField'
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
+import { AlphabetFilter } from './AlphabetFilter'
+import { StatusPagination } from './StatusPagination'
+import { propertyStatusLabel } from '../utils/statusLabels'
+
+const PAGE_SIZE = 20
+const SEARCH_DELAY_MS = 300
+const STATUS_FILTERS = ['draft', 'pending_approval', 'active', 'suspended', 'rejected'] as const
+// A new hotel is a draft; the old 'pending' is kept for data made before. All of these wait for a decision.
+const AWAITING_DECISION = ['draft', 'pending_approval', 'pending']
 
 const MISSING_PART_KEYS: Record<string, MessageKey> = {
   room: 'admin.missing.room',
@@ -12,41 +21,47 @@ const MISSING_PART_KEYS: Record<string, MessageKey> = {
 }
 
 export function AdminPropertyModeration() {
+  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
   const [properties, setProperties] = useState<AdminProperty[]>([])
+  const [total, setTotal] = useState(0)
+  const [letter, setLetter] = useState('')
+  const [typed, setTyped] = useState('')
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [rejectModal, setRejectModal] = useState<{ propertyId: number; propertyName: string } | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
 
-  useEffect(() => {
-    loadProperties()
-    // Loads once; the loader is also the Retry action, so it stays a plain function
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const loadProperties = async () => {
+  const loadProperties = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await adminAdapter.getProperties()
-      
+      const response = await adminAdapter.getProperties({ letter, status: statusFilter || undefined, search, page })
       if (response.error) {
         setError(response.error)
       } else if (response.data) {
-        // Sort by creation date (most recent first)
-        const sortedProperties = [...response.data].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-        setProperties(sortedProperties)
+        setProperties(response.data.results)
+        setTotal(response.data.count)
       }
     } catch {
       setError(t('partner.failedToLoadProperties'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [letter, statusFilter, search, page, t])
+
+  useEffect(() => {
+    void loadProperties()
+  }, [loadProperties])
+
+  useEffect(() => {
+    const timer = setTimeout(() => { setSearch(typed.trim()); setPage(1) }, SEARCH_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [typed])
 
   const handleApprove = async (propertyId: number) => {
     setActionLoading(propertyId)
@@ -133,6 +148,8 @@ export function AdminPropertyModeration() {
       case 'active':
         return 'property-status--active'
       case 'pending':
+      case 'pending_approval':
+      case 'draft':
         return 'property-status--pending'
       case 'rejected':
         return 'property-status--rejected'
@@ -142,8 +159,6 @@ export function AdminPropertyModeration() {
         return 'property-status--unknown'
     }
   }
-
-  const { t, formatMoney, formatDate: formatLocalDate } = useI18n()
 
   const formatCurrency = (amount: number, currency: string) => {
     return formatMoney(amount, currency)
@@ -163,6 +178,23 @@ export function AdminPropertyModeration() {
           {error}
         </div>
       )}
+
+      <div className="customers-controls">
+        <div className="search-bar">
+          <label htmlFor="moderation-search" className="search-label">{t('admin.hotelsSearchLabel')}</label>
+          <input id="moderation-search" type="search" className="search-input" value={typed} maxLength={100}
+            placeholder={t('admin.hotelsSearchPlaceholder')} onChange={(e) => setTyped(e.target.value)} />
+        </div>
+        <div className="search-bar">
+          <label htmlFor="moderation-status" className="search-label">{t('admin.hotelsStatusLabel')}</label>
+          <select id="moderation-status" className="search-input" value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
+            <option value="">{t('admin.hotelsAllStatuses')}</option>
+            {STATUS_FILTERS.map(value => <option key={value} value={value}>{propertyStatusLabel(value, t)}</option>)}
+          </select>
+        </div>
+      </div>
+      <AlphabetFilter value={letter} onChange={(next) => { setLetter(next); setPage(1) }} />
 
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
@@ -188,7 +220,7 @@ export function AdminPropertyModeration() {
                 </div>
                 <div className="property-status-badges">
                   <span className={`property-status ${getStatusClass(property.status)}`}>
-                    {property.status.toUpperCase()}
+                    {propertyStatusLabel(property.status, t)}
                   </span>
                 </div>
               </div>
@@ -250,7 +282,7 @@ export function AdminPropertyModeration() {
 
               <div className="property-card-footer">
                 <div className="property-actions">
-                  {property.status === 'pending' && (
+                  {AWAITING_DECISION.includes(property.status) && (
                     <>
                       <button
                         onClick={() => handleApprove(property.id)}
@@ -294,6 +326,10 @@ export function AdminPropertyModeration() {
               </div>
             </div>
           ))}
+          {total > PAGE_SIZE && (
+            <StatusPagination page={page} count={total} pageSize={PAGE_SIZE}
+              hasPrevious={page > 1} hasNext={page * PAGE_SIZE < total} onPage={setPage} />
+          )}
         </div>
       )}
 

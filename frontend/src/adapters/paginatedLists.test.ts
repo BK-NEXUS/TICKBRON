@@ -20,7 +20,6 @@ const LIST_METHODS: Array<{ name: string; url: string; call: () => Promise<{ dat
   { name: 'accountAdapter.getFavorites', url: `${ACCOUNT_BASE}/api/v1/me/favorites/`, call: () => accountAdapter.getFavorites() },
   { name: 'accountAdapter.getAccountHistory', url: `${ACCOUNT_BASE}/api/v1/me/history/`, call: () => accountAdapter.getAccountHistory() },
   { name: 'accountAdapter.getReviews', url: `${ACCOUNT_BASE}/api/v1/me/reviews/`, call: () => accountAdapter.getReviews() },
-  { name: 'adminAdapter.getProperties', url: `${ADMIN_BASE}/api/v1/admin-panel/properties/`, call: () => admin.getProperties() },
   { name: 'adminAdapter.getAmenities', url: `${ADMIN_BASE}/api/v1/admin-panel/amenities/`, call: () => admin.getAmenities() },
   { name: 'adminAdapter.getAmenityCategories', url: `${ADMIN_BASE}/api/v1/admin-panel/amenities/categories/`, call: () => admin.getAmenityCategories() },
   { name: 'partnerAdapter.getProperties', url: `${PARTNER_BASE}/api/v1/partner/properties/`, call: () => partner.getProperties() },

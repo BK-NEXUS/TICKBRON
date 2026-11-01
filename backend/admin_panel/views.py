@@ -10,17 +10,18 @@ from rest_framework import routers, serializers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import (
-    Count, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField
+    Count, Exists, Max, Q, F, OuterRef, Subquery, Value, Case, When, CharField
 )
 from django.db.models.functions import TruncMonth, ExtractYear, Coalesce, Concat, Lower, NullIf, Trim
 from datetime import timedelta
 from properties.listing import missing_for_listing
-from properties.models import Property, Amenity, AmenityCategory
+from properties.models import Property, PropertyTranslation, Amenity, AmenityCategory
 from partner import commission
 from users import two_factor
 from users.models import User
@@ -29,6 +30,7 @@ from bookings.models import Booking
 from admin_panel.audit import AuditedModelViewSetMixin
 from accounts.notifications import notify
 from admin_panel.models import AdminAccessLog, InternalNote
+from common.alphabet import DISPLAY_NAME, hotels_with_letter, letter_from, letter_q, people_with_letter
 from common.request import object_body
 from common.security_log import log_security_event
 from admin_panel.serializers import (
@@ -97,10 +99,22 @@ class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AdminPropertySerializer
 
     def get_queryset(self):
-        """Return all properties for moderation."""
-        return Property.objects.filter(
-            is_deleted=False
-        ).select_related('owner', 'property_type', 'approved_by')
+        """
+        All properties for moderation. Query: ?letter= (first letter of the hotel name in any language, or #),
+        ?status= (pending, active, suspended, ...), ?search= (name in any language or city).
+        """
+        params = self.request.query_params
+        properties = hotels_with_letter(
+            Property.objects.filter(is_deleted=False).select_related('owner', 'property_type', 'approved_by'),
+            letter_from(self.request))
+        hotel_status = (params.get('status') or '').strip()
+        if hotel_status:
+            properties = properties.filter(status=hotel_status)
+        term = (params.get('search') or '').strip()[:SEARCH_LENGTH]
+        if term:
+            named = PropertyTranslation.objects.filter(property=OuterRef('pk'), name__icontains=term)
+            properties = properties.filter(Exists(named) | Q(city__icontains=term))
+        return properties
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -217,25 +231,60 @@ def admin_property_suspend(request, property_id):
     )
 
 
+class AdminListPagination(PageNumberPagination):
+    """The lists of the panels: 50 a page, up to 100 when asked."""
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+USER_ROLES = ('guest', 'owner', 'staff', 'super_admin')
+SEARCH_LENGTH = 100
+
+
+def users_of_role(queryset, role):
+    """Narrow users to one kind of account; the kinds do not overlap."""
+    if role == 'super_admin':
+        return queryset.filter(is_superuser=True)
+    if role == 'staff':
+        return queryset.filter(is_staff=True, is_superuser=False)
+    if role == 'owner':
+        return queryset.filter(is_staff=False, is_superuser=False, role__name=HOTEL_OWNER_ROLE)
+    return queryset.filter(is_staff=False, is_superuser=False).exclude(role__name=HOTEL_OWNER_ROLE)
+
+
 class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for user management by admins.
-    
-    Read-only access to all users for management purposes.
+
+    Read-only, a page at a time, in the alphabetical order of the shown name. Query: ?letter= (first letter of the
+    shown name, or # for no letter), ?search= (name, e-mail or phone), ?role= guest|owner|staff|super_admin,
+    ?page=, ?page_size= (up to 100).
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminUserSerializer
+    pagination_class = AdminListPagination
 
     def get_queryset(self):
-        """Return all users for management."""
-        return User.objects.filter(is_deleted=False).select_related('role')
+        """Users for management, narrowed by the query."""
+        params = self.request.query_params
+        users = people_with_letter(User.objects.filter(is_deleted=False).select_related('role'), letter_from(self.request))
+        role = (params.get('role') or '').strip()
+        if role:
+            if role not in USER_ROLES:
+                raise ValidationError({'role': [_('Choose one of: guest, owner, staff, super_admin.')]})
+            users = users_of_role(users, role)
+        term = (params.get('search') or '').strip()[:SEARCH_LENGTH]
+        if term:
+            users = users.filter(
+                Q(full_name__icontains=term) | Q(first_name__icontains=term) | Q(last_name__icontains=term)
+                | Q(email__icontains=term) | Q(phone_number__icontains=term))
+        return users.annotate(sort_name=Lower(DISPLAY_NAME)).order_by('sort_name', 'id')
 
     def list(self, request, *args, **kwargs):
-        """Custom list method to handle both router and custom URL."""
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
+        response = super().list(request, *args, **kwargs)
         AdminAccessLog.record(request.user, 'user_list')
-        return Response(serializer.data)
+        return response
 
 
 @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
@@ -596,6 +645,10 @@ def admin_customers_directory(request):
             output_field=CharField(),
         ),
     )
+
+    letter = letter_from(request)
+    if letter is not None:
+        users = users.filter(letter_q('display_name', letter))
 
     # Apply search filter
     if search:

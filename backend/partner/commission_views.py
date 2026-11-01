@@ -13,6 +13,7 @@ from rest_framework.response import Response
 
 from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdmin, IsSuperAdminOrStaff
+from common.alphabet import letter_from, people_with_letter
 from common.request import object_body
 from partner import commission
 from partner.views import IsHotelOwner
@@ -82,8 +83,8 @@ def owner_row(owner):
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_commission_list(request):
-    """Hotel owners with their percent, this month and unconfirmed commission. ?search= name, e-mail, phone or hotel name."""
-    owners = hotel_owners().order_by('full_name', 'email')
+    """Hotel owners with their percent, this month and unconfirmed commission. ?search= name, e-mail, phone or hotel name; ?letter= first letter of the owner's name (or #)."""
+    owners = people_with_letter(hotel_owners(), letter_from(request)).order_by('full_name', 'email')
     term = (request.query_params.get('search') or '').strip()[:100]
     if term:
         owners = owners.filter(

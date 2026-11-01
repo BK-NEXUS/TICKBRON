@@ -1,3 +1,4 @@
+import { AlphabetFilter } from './AlphabetFilter'
 import { useI18n } from '../i18n/I18nContext'
 import type { MessageKey } from '../i18n/messages/en'
 import { ReactNode, useEffect, useId, useState } from 'react'
@@ -28,7 +29,9 @@ interface StatusRankedTableProps<T> {
   /** Extra controls next to the search box, e.g. a sort order */
   toolbar?: ReactNode
   /** Extra actions that need the current search, e.g. an export button */
-  renderActions?: (state: { search: string }) => ReactNode
+  renderActions?: (state: { search: string; letter: string }) => ReactNode
+  /** Show the alphabet filter: only for lists whose endpoint takes ?letter= (the hotels and the guests) */
+  alphabet?: boolean
   /** Changing it reloads the list from the first page (use it for the options `load` closes over) */
   reloadKey?: string
   load: (params: StatusListParams) => Promise<StatusResponse<StatusPage<T>>>
@@ -44,7 +47,7 @@ interface StatusRankedTableProps<T> {
  * and the shared period selector. Loading, empty and error states included.
  */
 export function StatusRankedTable<T>({
-  title, subtitle, noun, period, onPeriodChange, range, onRangeChange, toolbar, renderActions, reloadKey = '',
+  title, subtitle, noun, period, onPeriodChange, range, onRangeChange, toolbar, renderActions, alphabet = false, reloadKey = '',
   load, rowKey, rowLabel, onOpen, columns,
 }: StatusRankedTableProps<T>) {
   const { t } = useI18n()
@@ -53,6 +56,7 @@ export function StatusRankedTable<T>({
   const id = useId()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+  const [letter, setLetter] = useState('')
   const [pageState, setPageState] = useState({ key: reloadKey, page: 1 })
   // A new reloadKey starts again from the first page without a second request
   const page = pageState.key === reloadKey ? pageState.page : 1
@@ -76,7 +80,7 @@ export function StatusRankedTable<T>({
     setLoading(true)
     setError(null)
     const applied = period === 'custom' && range ? { from: range.from, to: range.to } : {}
-    load({ period, ...applied, search, page }).then(response => {
+    load({ period, ...applied, search, letter: letter || undefined, page }).then(response => {
       if (cancelled) return
       setData(response.data)
       setError(response.error)
@@ -85,7 +89,7 @@ export function StatusRankedTable<T>({
     return () => { cancelled = true }
     // `load` is a new function every render; the list depends on what it is asked for
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, range, search, page, reloadKey])
+  }, [period, range, search, letter, page, reloadKey])
 
   const handlePeriod = (next: string) => {
     goToPage(1)
@@ -122,8 +126,9 @@ export function StatusRankedTable<T>({
         <StatusPeriodSelector
           value={period} range={range} onChange={handlePeriod} onRangeChange={onRangeChange && handleRange}
         />
-        {renderActions?.({ search })}
+        {renderActions?.({ search, letter })}
       </div>
+      {alphabet && <AlphabetFilter value={letter} onChange={next => { setLetter(next); goToPage(1) }} />}
 
       {error ? (
         <div className="alert alert-error" role="alert">{error}</div>

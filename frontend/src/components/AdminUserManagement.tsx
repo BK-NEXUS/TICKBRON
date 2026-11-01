@@ -1,14 +1,26 @@
 import { useI18n } from '../i18n/I18nContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { adminAdapter, AdminUser, ContactChange } from '../adapters/adminAdapter'
 import { isPhoneValid } from '../utils/inputFilters'
 import { Button } from './Button'
 import { useAuth } from '../contexts/AuthContext'
+import { AlphabetFilter } from './AlphabetFilter'
+import { StatusPagination } from './StatusPagination'
+
+const PAGE_SIZE = 50
+const SEARCH_DELAY_MS = 300
+const ROLES = ['guest', 'owner', 'staff', 'super_admin'] as const
 
 export function AdminUserManagement() {
   const { t, formatDate: formatLocalDate } = useI18n()
   const { user: viewer } = useAuth()
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [total, setTotal] = useState(0)
+  const [letter, setLetter] = useState('')
+  const [typed, setTyped] = useState('')
+  const [search, setSearch] = useState('')
+  const [role, setRole] = useState<'' | (typeof ROLES)[number]>('')
+  const [page, setPage] = useState(1)
   // The account whose two-step sign-in the super admin is about to reset, with the super admin's own code
   const [resetting, setResetting] = useState<AdminUser | null>(null)
   const [ownCode, setOwnCode] = useState('')
@@ -25,34 +37,33 @@ export function AdminUserManagement() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadUsers()
-    // Loads once; the loader is also the Retry action, so it stays a plain function
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const loadUsers = async () => {
+  // The list is read a page at a time, in alphabetical order, narrowed by the letter, the role and the search
+  const loadUsers = useCallback(async () => {
     setLoading(true)
     setError(null)
-
     try {
-      const response = await adminAdapter.getUsers()
-      
-      if (response.error) {
+      const response = await adminAdapter.getUsers({ letter, search, role: role || undefined, page })
+      if (response.data) {
+        setUsers(response.data.results)
+        setTotal(response.data.count)
+      } else {
         setError(response.error)
-      } else if (response.data) {
-        // Sort by date joined (most recent first)
-        const sortedUsers = [...response.data].sort((a, b) => 
-          new Date(b.date_joined).getTime() - new Date(a.date_joined).getTime()
-        )
-        setUsers(sortedUsers)
       }
     } catch {
       setError(t('admin.failedToLoadUsers'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [letter, search, role, page, t])
+
+  useEffect(() => {
+    void loadUsers()
+  }, [loadUsers])
+
+  useEffect(() => {
+    const timer = setTimeout(() => { setSearch(typed.trim()); setPage(1) }, SEARCH_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [typed])
 
   const openReset = (user: AdminUser) => {
     setResetting(user)
@@ -161,6 +172,23 @@ export function AdminUserManagement() {
       {resetDone && <p className="alert alert-success" role="status">{resetDone}</p>}
       {contactDone && <p className="alert alert-success" role="status">{contactDone}</p>}
 
+      <div className="customers-controls">
+        <div className="search-bar">
+          <label htmlFor="users-search" className="search-label">{t('admin.usersSearchLabel')}</label>
+          <input id="users-search" type="search" className="search-input" value={typed} maxLength={100}
+            placeholder={t('admin.usersSearchPlaceholder')} onChange={(e) => setTyped(e.target.value)} />
+        </div>
+        <div className="search-bar">
+          <label htmlFor="users-role" className="search-label">{t('admin.usersRoleLabel')}</label>
+          <select id="users-role" className="search-input" value={role}
+            onChange={(e) => { setRole(e.target.value as '' | (typeof ROLES)[number]); setPage(1) }}>
+            <option value="">{t('admin.usersAllRoles')}</option>
+            {ROLES.map(value => <option key={value} value={value}>{t(`admin.usersRole.${value}`)}</option>)}
+          </select>
+        </div>
+      </div>
+      <AlphabetFilter value={letter} onChange={(next) => { setLetter(next); setPage(1) }} />
+
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
           {t('admin.loadingUsers')}
@@ -173,7 +201,7 @@ export function AdminUserManagement() {
       ) : (
         <div className="users-list">
           <div className="users-count">
-            <p>{t('admin.totalUsers', { count: users.length })}</p>
+            <p>{t('admin.totalUsers', { count: total })}</p>
           </div>
           
           {users.map(user => (
@@ -289,6 +317,10 @@ export function AdminUserManagement() {
               </div>
             </div>
           ))}
+          {total > PAGE_SIZE && (
+            <StatusPagination page={page} count={total} pageSize={PAGE_SIZE}
+              hasPrevious={page > 1} hasNext={page * PAGE_SIZE < total} onPage={setPage} />
+          )}
         </div>
       )}
     </div>

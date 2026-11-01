@@ -172,7 +172,7 @@ class TestOwnersAreNotCustomers:
 
     def test_users_list_reports_the_role_of_each_account(self, accounts):
         response = call(accounts['staff'], 'get', f'{A}/users/')
-        by_email = {row['email']: row for row in response.data}
+        by_email = {row['email']: row for row in response.data['results']}  # a page at a time since 2026-11-01
 
         assert by_email['owner@example.com']['role'] == 'hotel-owner'
         assert by_email['guest@example.com']['role'] is None

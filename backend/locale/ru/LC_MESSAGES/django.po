@@ -494,3 +494,9 @@ msgstr "Код неверный или срок его действия истё
 
 msgid "This sign-up has expired. Please start again."
 msgstr "Срок регистрации истёк. Пожалуйста, начните заново."
+
+msgid "Choose one of: guest, owner, staff, super_admin."
+msgstr "Выберите одно из: guest, owner, staff, super_admin."
+
+msgid "Use one letter, or # for names that do not start with a letter."
+msgstr "Укажите одну букву или # для имён, не начинающихся с буквы."

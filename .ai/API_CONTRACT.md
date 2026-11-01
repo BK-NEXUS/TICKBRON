@@ -1357,3 +1357,10 @@ Plan: `.ai/PLAN_EMAIL_CODES.md`. Switches `EMAIL_VERIFICATION_REQUIRED` and `EMA
 - `POST /api/v1/auth/login/email-code/` `{code}`: right -> **200** the user, signed in, `email_verified: true`. No password step, wrong, expired or used code: the same **401** as a wrong password (wrong codes count towards the account lock).
 - `POST /api/v1/auth/login/email-code/resend/`: **200** like the login answer; 401 without the password step; 429 / 503 as above.
 - Throttles per network: verify 20/min, send 30/hour. Log events `email_code_sent`, `email_code_failed` (never the code).
+
+
+## Alphabet filter and paged user list (2026-11-01)
+`?letter=` narrows a list to the names that start with that letter: one letter (any script; both cases match), or `#` for names that do not start with a letter (a digit, a quote). Anything else is **400** `{letter: [...]}`. The name is the one the panels show: a person's full name, else first and last name, else the e-mail address; a hotel matches when its name in any language starts with the letter.
+- `GET /api/v1/admin-panel/users/` **is now paged** (it used to return every account at once): `{count, next, previous, results}`, 50 a page (`?page_size=` up to 100), in the alphabetical order of the shown name. Query: `?letter=`, `?search=` (name, e-mail or phone, up to 100 characters), `?role=guest|owner|staff|super_admin` (400 for another value), `?page=`. Still staff or super admin only and still written to the access log (`user_list`).
+- `GET /api/v1/admin-panel/properties/` takes `?letter=`, `?status=` and `?search=` (hotel name in any language, or city); still paged, 20 a page.
+- `?letter=` also on: `GET /admin-panel/customers/` (guests), `GET /admin-panel/status/users/`, `GET /admin-panel/status/hotels/` (and its CSV export), `GET /admin-panel/commission/` (by the owner's name), `GET /partner/properties/` (the owner's own hotels).

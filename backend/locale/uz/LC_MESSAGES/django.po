@@ -658,3 +658,9 @@ msgstr "Kod noto'g'ri yoki muddati tugagan."
 
 msgid "This sign-up has expired. Please start again."
 msgstr "Ro'yxatdan o'tish muddati tugagan. Iltimos, qaytadan boshlang."
+
+msgid "Choose one of: guest, owner, staff, super_admin."
+msgstr "Quyidagilardan birini tanlang: guest, owner, staff, super_admin."
+
+msgid "Use one letter, or # for names that do not start with a letter."
+msgstr "Bitta harf kiriting yoki harf bilan boshlanmaydigan nomlar uchun # kiriting."
