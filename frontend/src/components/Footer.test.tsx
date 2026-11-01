@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { Footer } from './Footer'
 
@@ -72,6 +72,21 @@ describe('Footer social links', () => {
     expect(telegram).toHaveAttribute('target', '_blank')
     expect(telegram).toHaveAttribute('rel', expect.stringContaining('noopener'))
     expect(screen.getByRole('link', { name: 'Instagram' })).toHaveAttribute('href', 'https://www.instagram.com/ese.muratovk/')
+  })
+
+  it('puts the TICKBRON Instagram logo at the right end of the footer and the developer among the Legal links', () => {
+    show()
+    const legal = screen.getByText('Legal').closest('.footer-section') as HTMLElement
+    const social = screen.getByRole('link', { name: 'TICKBRON on Instagram' }).closest('.footer-section') as HTMLElement
+    expect(social).toHaveClass('footer-section--social')
+    expect(social.previousElementSibling).toBe(legal)
+    expect(within(legal).getByRole('button', { name: 'Contact the developer' })).toBeInTheDocument()
+  })
+
+  it('draws the Instagram logo in its own colours', () => {
+    show()
+    const logo = screen.getByRole('link', { name: 'TICKBRON on Instagram' }).querySelector('svg linearGradient')
+    expect(logo).not.toBeNull()
   })
 
   it('closes the developer contacts with Escape and when clicking elsewhere', () => {
