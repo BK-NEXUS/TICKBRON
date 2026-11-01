@@ -5,23 +5,23 @@ import { SOCIAL_LINKS } from '../utils/socialLinks'
 
 const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const
 
-/** lucide-react has no brand icons, so Instagram's round logo (its own colours) is drawn here. */
+/** lucide-react has no brand icons, so Instagram's logo (rounded square, its own gradient) is drawn here. */
 function InstagramLogo({ size, id }: { size: number; id: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false">
       <defs>
-        <linearGradient id={id} x1="4" y1="36" x2="36" y2="4" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#FEDA75" />
-          <stop offset="0.25" stopColor="#FA7E1E" />
-          <stop offset="0.5" stopColor="#D62976" />
-          <stop offset="0.75" stopColor="#962FBF" />
-          <stop offset="1" stopColor="#4F5BD5" />
-        </linearGradient>
+        <radialGradient id={id} cx="12" cy="43" r="46" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FDF497" />
+          <stop offset="0.05" stopColor="#FDF497" />
+          <stop offset="0.45" stopColor="#FD5949" />
+          <stop offset="0.6" stopColor="#D6249F" />
+          <stop offset="0.9" stopColor="#285AEB" />
+        </radialGradient>
       </defs>
-      <circle cx="20" cy="20" r="20" fill={`url(#${id})`} />
-      <rect x="11.5" y="11.5" width="17" height="17" rx="5" fill="none" stroke="#fff" strokeWidth="2" />
-      <circle cx="20" cy="20" r="4" fill="none" stroke="#fff" strokeWidth="2" />
-      <circle cx="25.2" cy="14.8" r="1.1" fill="#fff" />
+      <rect width="40" height="40" rx="10" fill={`url(#${id})`} />
+      <rect x="10.5" y="10.5" width="19" height="19" rx="5.5" fill="none" stroke="#fff" strokeWidth="2.2" />
+      <circle cx="20" cy="20" r="4.5" fill="none" stroke="#fff" strokeWidth="2.2" />
+      <circle cx="25.6" cy="14.4" r="1.3" fill="#fff" />
     </svg>
   )
 }
@@ -32,7 +32,7 @@ export function BrandInstagramLink() {
   return (
     <a className="footer-instagram" href={SOCIAL_LINKS.tickbronInstagram} aria-label={t('footer.instagram')}
       title={t('footer.instagram')} {...EXTERNAL}>
-      <InstagramLogo size={44} id={gradientId} />
+      <InstagramLogo size={52} id={gradientId} />
     </a>
   )
 }

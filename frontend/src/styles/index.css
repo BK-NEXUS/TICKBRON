@@ -627,14 +627,14 @@ body {
   color: var(--color-text-tertiary);
 }
 
-/* TICKBRON's own Instagram: the official round logo, at the right end of the footer; the link area suits thumbs. */
+/* TICKBRON's own Instagram: the official logo, at the right end of the footer; the link area suits thumbs. */
 .footer-instagram {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  min-height: 48px;
-  border-radius: 50%;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 14px;
   transition: transform var(--transition-fast);
 }
 

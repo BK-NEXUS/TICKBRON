@@ -85,7 +85,7 @@ describe('Footer social links', () => {
 
   it('draws the Instagram logo in its own colours', () => {
     show()
-    const logo = screen.getByRole('link', { name: 'TICKBRON on Instagram' }).querySelector('svg linearGradient')
+    const logo = screen.getByRole('link', { name: 'TICKBRON on Instagram' }).querySelector('svg radialGradient')
     expect(logo).not.toBeNull()
   })
 
