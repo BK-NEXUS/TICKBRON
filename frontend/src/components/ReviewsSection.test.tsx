@@ -55,6 +55,16 @@ describe('ReviewsSection guest reviews', () => {
     expect(await screen.findByText('No reviews yet.')).toBeInTheDocument()
   })
 
+  it('says "No reviews yet" once when the hotel has no reviews at all (no second empty "Guest reviews" block)', async () => {
+    vi.mocked(accountAdapter.getPropertyScores).mockResolvedValue({
+      data: { property_id: 5, total_reviews: 0, average_rating: 0, category_scores: {} }, error: null })
+    vi.mocked(accountAdapter.getPublicReviews).mockResolvedValue({ data: { count: 0, hasMore: false, results: [] }, error: null })
+    show()
+    expect(await screen.findByText('No reviews yet')).toBeInTheDocument()
+    expect(screen.queryByText('No reviews yet.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Guest reviews' })).not.toBeInTheDocument()
+  })
+
   it('keeps the page when the list cannot be loaded and says so', async () => {
     vi.mocked(accountAdapter.getPublicReviews).mockResolvedValue({ data: null, error: 'Server down' })
     show()

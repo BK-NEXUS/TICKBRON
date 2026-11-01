@@ -4562,10 +4562,6 @@ button.property-gallery-image {
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .room-selection-room-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .room-selection-rate-plans {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -4580,10 +4576,6 @@ button.property-gallery-image {
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-  .room-selection-room-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .room-selection-rate-plans {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -4598,10 +4590,6 @@ button.property-gallery-image {
 }
 
 @media (min-width: 1440px) {
-  .room-selection-room-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .room-selection-rate-plans {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -10274,4 +10262,13 @@ button.property-gallery-image {
   .profile-password-form > .btn {
     align-self: flex-start;
   }
+}
+
+/* Under a price that is not in the chosen currency because that currency has no rate yet */
+.price-note {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
 }

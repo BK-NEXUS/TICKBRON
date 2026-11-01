@@ -461,6 +461,7 @@ export const uz: Catalog = {
   'charge.approx': "≈ {amount}",
   'charge.rateOf': "{date} dagi kurs (MB)",
   'charge.rateStale': "Kurs eskirgan bo'lishi mumkin",
+  'price.noRate': "{currency} kursi hali yo'q",
   'charge.inSom': "Bugungi kurs bo'yicha taxminan {amount}",
   'charge.youPay': "Siz {amount} to'laysiz (mehmon xona belgilagan so'mdagi narx)",
   'gallery.label': "Obyekt rasmlari galereyasi",

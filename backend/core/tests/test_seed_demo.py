@@ -103,7 +103,28 @@ class TestSeedDemoExchangeRate:
         assert rate is not None and rate.source == 'demo'
         assert 'fetch_exchange_rates' in output
         run_seed()
-        assert ExchangeRate.objects.filter(source='demo').count() == 1
+        # one demo rate each for dollars, tenge and roubles, and a second run adds none
+        assert ExchangeRate.objects.filter(source='demo').count() == 3
+
+    def test_demo_rates_for_every_currency_the_site_shows(self):
+        from currency.rates import current_rate
+
+        run_seed()
+
+        for code in ('USD', 'KZT', 'RUB'):
+            rate = current_rate(code)
+            assert rate is not None and rate.source == 'demo', code
+
+    def test_a_real_rate_of_one_currency_is_left_alone(self):
+        from decimal import Decimal
+        from currency.cbu import tashkent_today
+        from currency.models import ExchangeRate
+
+        ExchangeRate.objects.create(currency='KZT', rate=Decimal('24.510000'), nominal=1, source='cbu.uz',
+                                    status='accepted', rate_date=tashkent_today())
+        run_seed()
+        assert not ExchangeRate.objects.filter(currency='KZT', source='demo').exists()
+        assert ExchangeRate.objects.filter(currency='RUB', source='demo').exists()
 
     def test_real_rate_is_left_alone(self):
         from decimal import Decimal
@@ -113,4 +134,5 @@ class TestSeedDemoExchangeRate:
         ExchangeRate.objects.create(currency='USD', rate=Decimal('11772.95'), nominal=1, source='cbu.uz',
                                     status='accepted', rate_date=tashkent_today())
         run_seed()
-        assert not ExchangeRate.objects.filter(source='demo').exists()
+        # the real dollar rate is not replaced or doubled by a demo one (tenge and roubles still get demo rates)
+        assert not ExchangeRate.objects.filter(currency='USD', source='demo').exists()
