@@ -627,6 +627,88 @@ body {
   color: var(--color-text-tertiary);
 }
 
+/* TICKBRON's own Instagram: the official logo, at the right end of the footer; the link area suits thumbs. */
+.footer-instagram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 14px;
+  transition: transform var(--transition-fast);
+}
+
+/* Wider than the generic 2- and 3-column footer rules below, so the logo stays at the right end of the row. */
+@media (min-width: 1024px) {
+  .footer .footer-container {
+    grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+  }
+
+  .footer .footer-section--social {
+    align-self: start;
+    justify-self: end;
+  }
+}
+
+.footer-instagram:hover,
+.footer-instagram:focus-visible {
+  transform: scale(1.08);
+}
+
+/* The developer entry looks like the other small Legal links. */
+.footer-developer {
+  position: relative;
+}
+
+.footer-link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.footer-link-button:hover,
+.footer-link-button[aria-expanded='true'] {
+  color: var(--color-pomegranate);
+}
+
+.footer-developer-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--spacing-xs));
+  z-index: 10;
+  min-width: 170px;
+  margin: 0;
+  padding: var(--spacing-xs);
+  list-style: none;
+  background: var(--color-surface, var(--color-background));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.footer-developer-menu li {
+  margin: 0;
+}
+
+.footer-section .footer-developer-menu a {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-text-primary);
+}
+
+.footer-section .footer-developer-menu a:hover,
+.footer-section .footer-developer-menu a:focus-visible {
+  background: var(--color-background-alt);
+  color: var(--color-pomegranate);
+}
+
 /* Buttons: one system. Variants: primary, secondary, tonal, ghost, danger, link. Sizes: sm, md, lg.
    Legacy aliases kept for existing markup: btn-small, btn-large, btn-block, btn-tertiary, btn-sm. */
 .btn {
