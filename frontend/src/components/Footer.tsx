@@ -1,5 +1,6 @@
 import { BrandLogo } from './BrandLogo'
 import { useI18n } from '../i18n/I18nContext'
+import { BrandInstagramLink, DeveloperContacts } from './FooterSocial'
 
 export function Footer() {
   const { t } = useI18n()
@@ -37,6 +38,10 @@ export function Footer() {
       </div>
       <div className="container footer-bottom">
         <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
+        <div className="footer-bottom-actions">
+          <BrandInstagramLink />
+          <DeveloperContacts />
+        </div>
       </div>
     </footer>
   )

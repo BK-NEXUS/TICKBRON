@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { Footer } from './Footer'
 
@@ -42,5 +42,46 @@ describe('Footer', () => {
       </BrowserRouter>
     )
     expect(screen.getByText(new RegExp(`${new Date().getFullYear()} TICKBRON`))).toBeInTheDocument()
+  })
+})
+
+describe('Footer social links', () => {
+  const show = () => render(<BrowserRouter><Footer /></BrowserRouter>)
+
+  it('links to the TICKBRON Instagram account in a new tab', () => {
+    show()
+    const link = screen.getByRole('link', { name: 'TICKBRON on Instagram' })
+    expect(link).toHaveAttribute('href', 'https://www.instagram.com/tickbron/')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
+  })
+
+  it('keeps the developer contacts closed until the button is pressed', () => {
+    show()
+    const button = screen.getByRole('button', { name: 'Contact the developer' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('link', { name: 'Telegram' })).not.toBeInTheDocument()
+  })
+
+  it('opens the developer contacts with Telegram and Instagram links', () => {
+    show()
+    fireEvent.click(screen.getByRole('button', { name: 'Contact the developer' }))
+    expect(screen.getByRole('button', { name: 'Contact the developer' })).toHaveAttribute('aria-expanded', 'true')
+    const telegram = screen.getByRole('link', { name: 'Telegram' })
+    expect(telegram).toHaveAttribute('href', 'https://t.me/Kpakona')
+    expect(telegram).toHaveAttribute('target', '_blank')
+    expect(telegram).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    expect(screen.getByRole('link', { name: 'Instagram' })).toHaveAttribute('href', 'https://www.instagram.com/ese.muratovk/')
+  })
+
+  it('closes the developer contacts with Escape and when clicking elsewhere', () => {
+    show()
+    const open = () => fireEvent.click(screen.getByRole('button', { name: 'Contact the developer' }))
+    open()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('link', { name: 'Telegram' })).not.toBeInTheDocument()
+    open()
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByRole('link', { name: 'Telegram' })).not.toBeInTheDocument()
   })
 })

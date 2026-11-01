@@ -3404,3 +3404,8 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Limits are now settings: `THROTTLE_PROMOTION_PUBLIC_RATE` (home banners, default 60/min per address, was fixed in code) next to `THROTTLE_SEARCH_RATE` (default 100/min). Defaults are unchanged. The browser crawl hit both on the home page (429), so the E2E guide now says to raise them for the crawl.
 - Found, not fixed: many guests behind one mobile-carrier or hotel address share those two budgets and one home page load makes several of those calls. Measure on the real server before choosing higher defaults.
 - E2E: the create-owner test did not fill the required commission percent (stale since the commission PR) and the crawl did not stub the satellite map layer (blocked in offline runs); both fixed in the tests only.
+
+## Footer links (2026-11-01)
+
+- Footer bottom row: TICKBRON Instagram icon and a "Developer" button that opens a small card with the developer's Telegram and Instagram. Addresses live in `frontend/src/utils/socialLinks.ts` (tracking parameters removed from the pasted links). Texts are i18n keys `footer.instagram`, `footer.developer`, `footer.developerContacts`.
+- Found, not fixed: "tell me when an order comes in" (developer notification) was mentioned and not built; needs a decision what an order means (booking, or a site order).
