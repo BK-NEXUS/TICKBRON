@@ -1,5 +1,6 @@
 import { BrandLogo } from './BrandLogo'
 import { useI18n } from '../i18n/I18nContext'
+import { BrandInstagramLink, DeveloperContacts } from './FooterSocial'
 
 export function Footer() {
   const { t } = useI18n()
@@ -32,7 +33,11 @@ export function Footer() {
             <li><a href="/terms">{t('footer.terms')}</a></li>
             <li><a href="/privacy">{t('footer.privacy')}</a></li>
             <li><a href="/cookies">{t('footer.cookies')}</a></li>
+            <DeveloperContacts />
           </ul>
+        </div>
+        <div className="footer-section footer-section--social">
+          <BrandInstagramLink />
         </div>
       </div>
       <div className="container footer-bottom">
