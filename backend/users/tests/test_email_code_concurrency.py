@@ -1,57 +1,44 @@
 """A mailed code is single use even when two requests present it at the same moment."""
+import re
 import threading
 import uuid
-from unittest import SkipTest
+from unittest import mock
 
-from django.conf import settings
-from django.core.cache import cache
-from django.db import connection
-from django.test import SimpleTestCase, override_settings
+from django.core import mail
+from django.test import SimpleTestCase
 
 from users import email_codes
 
-REDIS_CACHES = {'default': {'BACKEND': 'django_redis.cache.RedisCache', 'LOCATION': settings.REDIS_URL,
-                            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                                        'SOCKET_CONNECT_TIMEOUT': 1, 'SOCKET_TIMEOUT': 1}}}
 
-
-@override_settings(CACHES=REDIS_CACHES)
 class VerifyOnceTests(SimpleTestCase):
-    """Run on Redis, the production cache: the in-process test cache serializes the race away."""
+    def test_two_requests_that_both_read_the_code_before_either_uses_it_succeed_once(self):
+        ident = f'race-{uuid.uuid4().hex}'
+        email_codes.issue('signup', ident, 'race@example.com', payload={'k': 'v'})
+        code = re.search(r'\b(\d{6})\b', mail.outbox[-1].body).group(1)
 
-    def setUp(self):
-        try:
-            cache.set('race-test-ping', 1, 5)
-        except Exception as error:
-            raise SkipTest(f'Redis is not reachable: {error}')
-
-    def test_parallel_verifications_of_one_code_succeed_once(self):
-        for round_number in range(40):
-            ident = f'race-{uuid.uuid4().hex}'
-            email_codes.issue('signup', ident, 'race@example.com', payload={'k': 'v'})
-            code = self._live_code()
-            outcomes = self._verify_together(ident, code, threads=4)
-            assert sum(1 for outcome in outcomes if outcome is not None) == 1, f'round {round_number}'
-
-    @staticmethod
-    def _verify_together(ident, code, threads):
-        barrier = threading.Barrier(threads)
+        # The race window: both requests have read the live code before the first one removes it. A real cache
+        # (Redis) opens this window by itself under load; the barrier makes it certain here.
+        both_have_read = threading.Barrier(2)
         outcomes = []
 
         def attempt():
-            barrier.wait(timeout=10)
-            outcomes.append(email_codes.verify('signup', ident, code))
-            connection.close()
+            # Django hands every thread its own cache object, so the patch has to be made inside the thread.
+            real_get = email_codes.cache.get
 
-        workers = [threading.Thread(target=attempt) for _ in range(threads)]
+            def get_then_wait(key, *args):
+                entry = real_get(key, *args)
+                if key == email_codes.entry_key('signup', ident) and entry is not None:
+                    both_have_read.wait(timeout=10)
+                return entry
+
+            with mock.patch.object(email_codes.cache, 'get', side_effect=get_then_wait):
+                outcomes.append(email_codes.verify('signup', ident, code))
+
+        workers = [threading.Thread(target=attempt) for _ in range(2)]
         for worker in workers:
             worker.start()
         for worker in workers:
             worker.join(timeout=30)
-        return outcomes
 
-    @staticmethod
-    def _live_code():
-        from django.core import mail
-        body = mail.outbox[-1].body
-        return next(word for word in body.split() if email_codes.looks_like_a_code(word))
+        assert len(outcomes) == 2
+        assert sum(1 for outcome in outcomes if outcome is not None) == 1
