@@ -3404,3 +3404,5 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Limits are now settings: `THROTTLE_PROMOTION_PUBLIC_RATE` (home banners, default 60/min per address, was fixed in code) next to `THROTTLE_SEARCH_RATE` (default 100/min). Defaults are unchanged. The browser crawl hit both on the home page (429), so the E2E guide now says to raise them for the crawl.
 - Found, not fixed: many guests behind one mobile-carrier or hotel address share those two budgets and one home page load makes several of those calls. Measure on the real server before choosing higher defaults.
 - E2E: the create-owner test did not fill the required commission percent (stale since the commission PR) and the crawl did not stub the satellite map layer (blocked in offline runs); both fixed in the tests only.
+- Found, not fixed: the sign-up form has no "I accept the terms and privacy policy" checkbox; add it if the lawyer asks (`.ai/OWNER_GUIDE_LAUNCH.docx`, section 3.2).
+- Owner guide for launch (company, personal data law questions, server choice, mail service): `.ai/OWNER_GUIDE_LAUNCH.docx`.
