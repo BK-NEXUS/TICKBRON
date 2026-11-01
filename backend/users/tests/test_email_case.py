@@ -143,3 +143,12 @@ class TestEmailCaseMigration(TransactionTestCase):
             self._migrate(self.after)
         assert sorted(OldUser.objects.values_list('email', flat=True)) == ['ALI@mail.com', 'ali@mail.com']
         OldUser.objects.all().delete()
+
+
+@pytest.mark.django_db
+def test_sign_up_that_loses_the_race_for_an_address_answers_400_not_500():
+    """Two sign-ups pass validation together; the database lets only one create the account."""
+    with mock.patch('users.serializers.UserRegistrationSerializer.save', side_effect=IntegrityError('duplicate')):
+        response = signup('race.signup@example.com')
+    assert response.status_code == 400
+    assert 'email' in response.data

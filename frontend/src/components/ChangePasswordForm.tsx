@@ -50,7 +50,7 @@ export function ChangePasswordForm() {
   return (
     <div className="profile-section">
       <h2 className="profile-section-title">{t('profile.changePassword')}</h2>
-      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      <form className="auth-form profile-password-form" onSubmit={handleSubmit} noValidate>
         {error && (
           <div className="auth-error" role="alert">
             {error}

@@ -162,7 +162,9 @@ def verify(purpose, ident, code):
         if tries >= MAX_ATTEMPTS:
             cache.delete(key)
         return None
-    cache.delete(key)
+    # Only the request that actually removes the entry owns the code; parallel requests with the same right code lose
+    if not cache.delete(key):
+        return None
     cache.delete(tries_key)
     return entry['payload'] or {}
 
