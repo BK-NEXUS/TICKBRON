@@ -1,8 +1,10 @@
 """Public promotion endpoints: the home carousel and the click counter."""
+from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import (api_view, permission_classes,
+                                       throttle_classes)
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
@@ -13,8 +15,8 @@ from promotions.search import promoted_for_home, serialize_banners
 
 
 class PromotionPublicThrottle(AnonRateThrottle):
-    """60 requests per minute per IP for the public promotion endpoints."""
-    rate = '60/min'
+    """Requests per minute per IP for the public promotion endpoints (THROTTLE_PROMOTION_PUBLIC_RATE, 60/min by default)."""
+    rate = settings.PROMOTION_PUBLIC_THROTTLE_RATE
     scope = 'promotion_public'
 
     def allow_request(self, request, view):

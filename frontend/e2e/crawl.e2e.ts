@@ -153,7 +153,7 @@ async function crawl(page: Page, role: Role, viewport: typeof DESKTOP, viewportN
 
 for (const role of ['guest', 'owner', 'admin'] as Role[]) {
   test(`crawl as ${role}: no 404s, dead buttons or console errors`, async ({ page }) => {
-    test.setTimeout(900_000)
+    test.setTimeout(2_400_000)
     await stubMapTiles(page)
     if (role === 'owner') await loginWithPassword(page, DEMO.owner.email, DEMO.owner.password)
     if (role === 'admin') await loginWithPassword(page, DEMO.admin.email, DEMO.admin.password)

@@ -65,11 +65,11 @@ describe('NotificationsPage', () => {
     await waitFor(() => expect(notificationAdapter.markRead).toHaveBeenCalledWith(1))
   })
 
-  it('does not ask the server again for a notice that is already read', async () => {
+  it('shows a notice that is already read as plain text, not as a button that does nothing', async () => {
     vi.mocked(notificationAdapter.list).mockResolvedValue({ data: { items: [notice({ is_read: true })], hasMore: false }, error: null })
     show()
-    fireEvent.click(await screen.findByRole('button', { name: /New booking AB12CD/ }))
-    await settle()
+    expect(await screen.findByText(/New booking AB12CD/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /New booking AB12CD/ })).not.toBeInTheDocument()
     expect(notificationAdapter.markRead).not.toHaveBeenCalled()
   })
 

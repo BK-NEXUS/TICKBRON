@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test'
  *   backend:  cd backend && venv\Scripts\python.exe manage.py seed_demo && venv\Scripts\python.exe manage.py runserver 8000
  *             with THROTTLE_ANON_RATE=100000/hour and THROTTLE_USER_RATE=100000/hour set: the crawl (crawl.e2e.ts)
  *             loads every page many times and would otherwise use up the demo accounts' hourly API limit
+ *             (also THROTTLE_SEARCH_RATE=100000/min and THROTTLE_PROMOTION_PUBLIC_RATE=100000/min: the search and banner calls
+ *             of a page load share a per-minute limit that a crawl exceeds)
  *   frontend: npm run dev            (http://localhost:3000)
  *   tests:    npm run test:e2e   (E2E_CHROMIUM_PATH=/path/to/chrome when Playwright's own browser is not installed)
  * Screenshots (desktop 1440px + mobile 390px per step) and console/network logs go to e2e/screenshots/ (gitignored).
