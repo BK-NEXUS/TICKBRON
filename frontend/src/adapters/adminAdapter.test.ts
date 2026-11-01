@@ -30,15 +30,18 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as never).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockProperties,
+        json: async () => ({ count: 41, next: 'http://x/?page=2', previous: null, results: mockProperties }),
       })
 
-      const result = await adapter.getProperties()
+      const result = await adapter.getProperties({ letter: 'G', status: 'draft', search: 'grand', page: 2 })
 
-      expect(result.data).toEqual(mockProperties)
+      expect(result.data).toEqual({ count: 41, hasMore: true, results: mockProperties })
+      const address = String(vi.mocked(global.fetch).mock.calls[0][0])
+      expect(address).toContain('/api/v1/admin-panel/properties/?')
+      for (const part of ['letter=G', 'status=draft', 'search=grand', 'page=2']) expect(address).toContain(part)
       expect(result.error).toBeNull()
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api/api/v1/admin-panel/properties/',
+        expect.stringContaining('http://test-api/api/v1/admin-panel/properties/?'),
         expect.objectContaining({
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -166,19 +169,16 @@ describe('AdminAdapter', () => {
 
       ;(global.fetch as never).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUsers,
+        json: async () => ({ count: 1, next: null, previous: null, results: mockUsers }),
       })
 
-      const result = await adapter.getUsers()
+      const result = await adapter.getUsers({ letter: '#', role: 'owner', page: 3 })
+      const address = String(vi.mocked(global.fetch).mock.calls[0][0])
+      for (const part of ['letter=%23', 'role=owner', 'page=3']) expect(address).toContain(part)
 
-      expect(result.data).toEqual(mockUsers)
+      expect(result.data).toEqual({ count: 1, hasMore: false, results: mockUsers })
       expect(result.error).toBeNull()
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api/api/v1/admin-panel/users/',
-        expect.objectContaining({
-          method: 'GET',
-        })
-      )
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('http://test-api/api/v1/admin-panel/users/?'), expect.anything())
     })
 
     it('should create hotel owner account successfully', async () => {

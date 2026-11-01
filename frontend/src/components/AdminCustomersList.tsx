@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 import { adminAdapter, AdminCustomer, GetCustomersParams } from '../adapters/adminAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { AlphabetFilter } from './AlphabetFilter'
 
 const SORT_FIELDS = [
   { value: 'registration_date', labelKey: 'admin.registrationDate' },
@@ -22,6 +23,7 @@ export function AdminCustomersList() {
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
+  const [letter, setLetter] = useState('')
   const [sortBy, setSortBy] = useState('registration_date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -36,7 +38,7 @@ export function AdminCustomersList() {
     loadCustomers()
   // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, sortBy, sortOrder, currentPage, pageSize])
+  }, [searchQuery, letter, sortBy, sortOrder, currentPage, pageSize])
 
   const loadCustomers = async () => {
     setLoading(true)
@@ -44,6 +46,7 @@ export function AdminCustomersList() {
 
     const params: GetCustomersParams = {
       search: searchQuery || undefined,
+      letter: letter || undefined,
       page: currentPage,
       page_size: pageSize,
       sort_by: sortBy,
@@ -196,6 +199,8 @@ export function AdminCustomersList() {
           </div>
         </div>
       </div>
+
+      <AlphabetFilter value={letter} onChange={(next) => { setLetter(next); setCurrentPage(1) }} />
 
       {/* Loading State */}
       {loading ? (

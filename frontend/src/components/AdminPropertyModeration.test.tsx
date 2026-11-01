@@ -15,6 +15,9 @@ vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
   },
 }))
 
+/** The list comes a page at a time since the alphabet filter (2026-11-01) */
+const asPage = <T,>(rows: T[]) => ({ count: rows.length, hasMore: false, results: rows })
+
 describe('AdminPropertyModeration', () => {
   const mockProperties = [
     {
@@ -67,7 +70,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should render property moderation page', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -81,7 +84,7 @@ describe('AdminPropertyModeration', () => {
 
   it('each property card has a location field for the Status section', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: [{ ...mockProperties[0], country_ref: 1, region_ref: 10, city_ref: 100 }, mockProperties[1]],
+      data: asPage([{ ...mockProperties[0], country_ref: 1, region_ref: 10, city_ref: 100 }, mockProperties[1]]),
       error: null,
     })
 
@@ -95,7 +98,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should load properties on mount', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -108,7 +111,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should display properties list', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -122,7 +125,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should show approve button for pending properties', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -136,7 +139,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should show reject button for pending properties', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -150,7 +153,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should show suspend button for active properties', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -171,7 +174,7 @@ describe('AdminPropertyModeration', () => {
     ]
 
     ;(adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: suspendedProperties,
+      data: asPage(suspendedProperties),
       error: null,
     })
 
@@ -184,7 +187,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should open reject modal when reject button is clicked', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -198,7 +201,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should call approveProperty when approve button is clicked', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -220,7 +223,7 @@ describe('AdminPropertyModeration', () => {
   })
 
   it('tells the admin which parts are missing when approval is refused', async () => {
-    (adminAdapter.getProperties as never).mockResolvedValueOnce({ data: mockProperties, error: null })
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({ data: asPage(mockProperties), error: null })
     ;(adminAdapter.approveProperty as never).mockResolvedValueOnce({
       data: null,
       error: 'Property is not ready to be listed',
@@ -237,7 +240,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should call approveProperty with rejection reason when reject is submitted', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -256,7 +259,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should call suspendProperty when suspend button is clicked', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -289,7 +292,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should display empty state when no properties', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: [],
+      data: asPage([]),
       error: null,
     })
 
@@ -315,7 +318,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should close reject modal when cancel is clicked', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -338,7 +341,7 @@ describe('AdminPropertyModeration', () => {
 
   it('should display property amenities tags', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
@@ -351,15 +354,51 @@ describe('AdminPropertyModeration', () => {
 
   it('should display property status badges', async () => {
     (adminAdapter.getProperties as never).mockResolvedValueOnce({
-      data: mockProperties,
+      data: asPage(mockProperties),
       error: null,
     })
 
     render(<AdminPropertyModeration />)
 
     await waitFor(() => {
-      expect(screen.getByText('PENDING')).toBeInTheDocument()
-      expect(screen.getByText('ACTIVE')).toBeInTheDocument()
+      // The labels are in the page language since 2026-11-01; a code the site does not know is shown as it came
+      expect(screen.getByText('pending', { selector: '.property-status' })).toBeInTheDocument()
+      expect(screen.getByText('Active', { selector: '.property-status' })).toBeInTheDocument()
     })
+  })
+
+  it('offers to approve and reject a new hotel, which starts as a draft', async () => {
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
+      data: asPage([{ ...mockProperties[0], status: 'draft' }]),
+      error: null,
+    })
+
+    render(<AdminPropertyModeration />)
+
+    expect(await screen.findByRole('button', { name: /^Approve/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Reject/ })).toBeInTheDocument()
+    expect(screen.getByText('Draft', { selector: '.property-status' })).toBeInTheDocument()
+  })
+
+  it('also offers the decision to a hotel waiting for approval', async () => {
+    (adminAdapter.getProperties as never).mockResolvedValueOnce({
+      data: asPage([{ ...mockProperties[0], status: 'pending_approval' }]),
+      error: null,
+    })
+
+    render(<AdminPropertyModeration />)
+
+    expect(await screen.findByRole('button', { name: /^Approve/ })).toBeInTheDocument()
+  })
+
+  it('asks the server for a letter, a status and a search, from page 1', async () => {
+    (adminAdapter.getProperties as never).mockResolvedValue({ data: asPage(mockProperties), error: null })
+
+    render(<AdminPropertyModeration />)
+    await settle()
+    fireEvent.click(screen.getByRole('button', { name: 'Names starting with G' }))
+    await waitFor(() => expect(adminAdapter.getProperties).toHaveBeenLastCalledWith({ letter: 'G', status: undefined, search: '', page: 1 }))
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'draft' } })
+    await waitFor(() => expect(adminAdapter.getProperties).toHaveBeenLastCalledWith({ letter: 'G', status: 'draft', search: '', page: 1 }))
   })
 })

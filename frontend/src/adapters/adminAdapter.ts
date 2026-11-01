@@ -86,6 +86,28 @@ export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | '
 }
 
 /** A new phone number and/or e-mail for an account (PATCH /api/v1/admin-panel/users/{id}/contact/) */
+/** One page of a list of the panel */
+export interface AdminPage<T> {
+  count: number
+  hasMore: boolean
+  results: T[]
+}
+
+export interface AdminUsersParams {
+  /** First letter of the shown name, or '#' */
+  letter?: string
+  search?: string
+  role?: 'guest' | 'owner' | 'staff' | 'super_admin'
+  page?: number
+}
+
+export interface AdminPropertiesParams {
+  letter?: string
+  status?: string
+  search?: string
+  page?: number
+}
+
 export interface ContactChange {
   email?: string
   phone_number?: string
@@ -214,6 +236,8 @@ export interface AdminCustomersResponse {
 
 export interface GetCustomersParams {
   search?: string
+  /** First letter of the shown name, or '#' */
+  letter?: string
   page?: number
   page_size?: number
   sort_by?: string
@@ -413,6 +437,18 @@ class AdminAdapter {
   }
 
   /** GET a paginated list endpoint and return the items of every page */
+  /** One page of a paginated list: the rows, how many there are in all, and whether another page follows */
+  private async requestPage<T>(endpoint: string, params: Record<string, string | number | undefined>): Promise<ApiResponse<AdminPage<T>>> {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== '') query.set(key, String(value))
+    }
+    const { data, error } = await this.request<{ count: number; next: string | null; results: T[] }>(`${endpoint}?${query.toString()}`)
+    return data
+      ? { data: { count: data.count, hasMore: Boolean(data.next), results: data.results }, error: null }
+      : { data: null, error }
+  }
+
   private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
     const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
       errorMessages: { 401: translateNow('apiError.authRequired'), 403: translateNow('apiError.adminRequired'), 404: translateNow('apiError.notFound') },
@@ -478,11 +514,11 @@ class AdminAdapter {
   // Admin Property Moderation Methods
 
   /**
-   * List all properties for moderation
+   * One page of the properties for moderation, newest first
    * Integrates with GET /api/v1/admin-panel/properties/ endpoint
    */
-  async getProperties(): Promise<ApiResponse<AdminProperty[]>> {
-    return this.requestAll<AdminProperty>('/api/v1/admin-panel/properties/')
+  async getProperties({ letter, status, search, page = 1 }: AdminPropertiesParams = {}): Promise<ApiResponse<AdminPage<AdminProperty>>> {
+    return this.requestPage<AdminProperty>('/api/v1/admin-panel/properties/', { letter, status, search, page })
   }
 
   /**
@@ -510,13 +546,11 @@ class AdminAdapter {
   // Admin User Management Methods
 
   /**
-   * List all users for management
+   * One page of the users in the alphabetical order of their shown name
    * Integrates with GET /api/v1/admin-panel/users/ endpoint
    */
-  async getUsers(): Promise<ApiResponse<AdminUser[]>> {
-    return this.request<AdminUser[]>('/api/v1/admin-panel/users/', {
-      method: 'GET',
-    })
+  async getUsers({ letter, search, role, page = 1 }: AdminUsersParams = {}): Promise<ApiResponse<AdminPage<AdminUser>>> {
+    return this.requestPage<AdminUser>('/api/v1/admin-panel/users/', { letter, search, role, page })
   }
 
   /**
@@ -566,9 +600,10 @@ class AdminAdapter {
   // Commission
 
   /** GET /api/v1/admin-panel/commission/: hotel owners with percent, this month and unpaid commission */
-  async getCommissionOwners({ search, page = 1 }: { search?: string; page?: number } = {}): Promise<ApiResponse<CommissionOwnerPage>> {
+  async getCommissionOwners({ search, letter, page = 1 }: { search?: string; letter?: string; page?: number } = {}): Promise<ApiResponse<CommissionOwnerPage>> {
     const params = new URLSearchParams({ page: String(page) })
     if (search) params.set('search', search)
+    if (letter) params.set('letter', letter)
     const { data, error } = await this.request<{ count: number; next: string | null; results: CommissionOwnerRow[] }>(
       `/api/v1/admin-panel/commission/?${params.toString()}`)
     return data
@@ -692,6 +727,7 @@ class AdminAdapter {
   async getCustomers(params?: GetCustomersParams): Promise<ApiResponse<AdminCustomersResponse>> {
     const queryParams = new URLSearchParams()
     if (params?.search) queryParams.append('search', params.search)
+    if (params?.letter) queryParams.append('letter', params.letter)
     if (params?.page) queryParams.append('page', params.page.toString())
     if (params?.page_size) queryParams.append('page_size', params.page_size.toString())
     if (params?.sort_by) queryParams.append('sort_by', params.sort_by)

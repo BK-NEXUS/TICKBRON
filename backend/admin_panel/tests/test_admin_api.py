@@ -182,7 +182,7 @@ class AdminUserTests(TestCase):
         response = self.client.get('/api/v1/admin-panel/users/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data['count'], 3)  # a page at a time since the alphabet filter (2026-11-01)
 
     def test_staff_can_list_all_users(self):
         """Test that staff can list all users."""
@@ -190,7 +190,7 @@ class AdminUserTests(TestCase):
         response = self.client.get('/api/v1/admin-panel/users/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data['count'], 3)
 
     def test_regular_user_cannot_list_admin_users(self):
         """Test that regular user cannot access admin user endpoints."""

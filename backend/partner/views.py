@@ -4,6 +4,7 @@ Views for partner API endpoints.
 This module contains views for property, room, rate, and availability
 management scoped to hotel-owner accounts.
 """
+from common.alphabet import hotels_with_letter, letter_from
 from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -74,10 +75,11 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
         """Filter queryset to properties owned by the authenticated user."""
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
             return self.get_serializer_class().Meta.model.objects.none()
-        return Property.objects.filter(
+        properties = Property.objects.filter(
             owner=self.request.user,
             is_deleted=False
         ).select_related('property_type').prefetch_related('translations')
+        return hotels_with_letter(properties, letter_from(self.request))
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""

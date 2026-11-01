@@ -33,7 +33,7 @@ const card = (email: string) => screen.getByText(email).closest('.user-card') as
 describe('AdminUserManagement two-step sign-in', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getUsers.mockResolvedValue({ data: [MODERATOR, BOSS, GUEST], error: null })
+    getUsers.mockResolvedValue({ data: { count: 3, hasMore: false, results: [MODERATOR, BOSS, GUEST] }, error: null })
   })
 
   it('shows on every account whether two-step sign-in is on', async () => {
@@ -112,7 +112,7 @@ describe('AdminUserManagement two-step sign-in', () => {
 describe('AdminUserManagement contact change', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getUsers.mockResolvedValue({ data: [MODERATOR, BOSS, GUEST], error: null })
+    getUsers.mockResolvedValue({ data: { count: 3, hasMore: false, results: [MODERATOR, BOSS, GUEST] }, error: null })
     changeContact.mockResolvedValue({ data: { ...GUEST, phone_number: '+998909998877' }, error: null })
   })
 
@@ -171,5 +171,66 @@ describe('AdminUserManagement contact change', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('already exists')
     expect(changeContact).toHaveBeenCalledWith(4, { email: 'taken@example.com' })
+  })
+})
+
+describe('AdminUserManagement list controls', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getUsers.mockResolvedValue({ data: { count: 120, hasMore: true, results: [MODERATOR, BOSS, GUEST] }, error: null })
+  })
+
+  it('asks the server for the first page, with no letter, search or role', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('moderator@example.com')
+
+    expect(getUsers).toHaveBeenCalledWith({ letter: '', search: '', role: undefined, page: 1 })
+    expect(screen.getByText('Total users: 120')).toBeInTheDocument()
+  })
+
+  it('asks for a letter and goes back to page 1', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('moderator@example.com')
+    fireEvent.click(screen.getByRole('button', { name: 'Names starting with M' }))
+
+    await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({ letter: 'M', search: '', role: undefined, page: 1 }))
+  })
+
+  it('narrows to a kind of account', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('moderator@example.com')
+    fireEvent.change(screen.getByLabelText('Kind of account'), { target: { value: 'owner' } })
+
+    await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({ letter: '', search: '', role: 'owner', page: 1 }))
+  })
+
+  it('searches after a short pause', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('moderator@example.com')
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: ' karimov ' } })
+
+    await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({ letter: '', search: 'karimov', role: undefined, page: 1 }))
+  })
+
+  it('goes to the next page', async () => {
+    renderList({ is_superuser: true })
+    await screen.findByText('moderator@example.com')
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({ letter: '', search: '', role: undefined, page: 2 }))
+  })
+
+  it('shows the empty state for a letter nobody has', async () => {
+    getUsers.mockResolvedValue({ data: { count: 0, hasMore: false, results: [] }, error: null })
+    renderList({ is_superuser: true })
+
+    expect(await screen.findByText('No users found.')).toBeInTheDocument()
+  })
+
+  it('shows a load error', async () => {
+    getUsers.mockResolvedValue({ data: null, error: 'down' })
+    renderList({ is_superuser: true })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('down')
   })
 })

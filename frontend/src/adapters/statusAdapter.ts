@@ -439,6 +439,8 @@ export interface StatusPeriodParams {
 
 export interface StatusListParams extends StatusPeriodParams {
   search?: string
+  /** First letter of the name (or '#'): only the hotels and the guests lists take it */
+  letter?: string
   page?: number
 }
 
@@ -557,8 +559,8 @@ async function requestCsv(
   }
 }
 
-const listValues = ({ search, page, ...period }: StatusListParams): QueryValues =>
-  ({ ...periodValues(period), search, page })
+const listValues = ({ search, letter, page, ...period }: StatusListParams): QueryValues =>
+  ({ ...periodValues(period), search, letter, page })
 
 const listQuery = (params: StatusListParams) => query(listValues(params))
 

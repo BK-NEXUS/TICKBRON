@@ -10,6 +10,7 @@ custom with ?from=&to=, YYYY, YYYY-MM), ?search= (inside the current list only) 
 ?page= / ?page_size= (20 by default, 100 at most). Definitions of counted bookings,
 guests, nights, stays and revenue: bookings/metrics.py.
 """
+from common.alphabet import hotels_with_letter, letter_from, people_with_letter
 from django.db.models import Avg, CharField, Count, DecimalField, F, Max, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Cast, Coalesce, TruncDate
 from django.shortcuts import get_object_or_404
@@ -466,7 +467,7 @@ def status_users(request):
         return bad_request('period', error)
 
     counted = counted_q('bookings__', date_range)
-    users = User.objects.filter(is_deleted=False)
+    users = people_with_letter(User.objects.filter(is_deleted=False), letter_from(request))
     search = search_term(request)
     if search:
         users = users.annotate(id_text=Cast('id', CharField())).filter(
@@ -730,6 +731,7 @@ def status_hotels_flat(request):
         properties = properties.filter(region_filter(params['region'].strip()))
     if hotel_status:
         properties = properties.filter(status=hotel_status)
+    properties = hotels_with_letter(properties, letter_from(request))
     search = search_term(request)
     if search:
         properties = properties.filter(hotel_search_q(search))

@@ -4,6 +4,7 @@ import type { CommissionOwnerPage, CommissionOwnerRow, CommissionStatement as St
 import { useI18n } from '../i18n/I18nContext'
 import { CommissionStatement } from './CommissionStatement'
 import { StatusPagination } from './StatusPagination'
+import { AlphabetFilter } from './AlphabetFilter'
 
 const PAGE_SIZE = 20
 const SEARCH_DELAY_MS = 300
@@ -23,6 +24,7 @@ export function AdminCommission({ isSuperAdmin }: AdminCommissionProps) {
   const { t, formatMoney } = useI18n()
   const [typed, setTyped] = useState('')
   const [search, setSearch] = useState('')
+  const [letter, setLetter] = useState('')
   const [page, setPage] = useState(1)
   const [list, setList] = useState<CommissionOwnerPage | null>(null)
   const [loading, setLoading] = useState(true)
@@ -45,11 +47,11 @@ export function AdminCommission({ isSuperAdmin }: AdminCommissionProps) {
   const load = useCallback(async () => {
     setLoading(true)
     setLoadError(null)
-    const result = await adminAdapter.getCommissionOwners({ search, page })
+    const result = await adminAdapter.getCommissionOwners({ search, letter, page })
     if (result.data) setList(result.data)
     else setLoadError(result.error ?? t('commission.loadError'))
     setLoading(false)
-  }, [search, page, t])
+  }, [search, letter, page, t])
 
   useEffect(() => {
     void load()
@@ -156,6 +158,8 @@ export function AdminCommission({ isSuperAdmin }: AdminCommissionProps) {
             onChange={(e) => setTyped(e.target.value)} />
         </div>
       </div>
+
+      <AlphabetFilter value={letter} onChange={(next) => { setLetter(next); setPage(1) }} />
 
       {loadError && (
         <div className="alert alert-error" role="alert">

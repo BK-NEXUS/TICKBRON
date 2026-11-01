@@ -74,10 +74,11 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
         onRangeChange={onRangeChange}
         toolbar={toolbar}
         reloadKey={ordering}
-        renderActions={({ search }) => (
+        alphabet
+        renderActions={({ search, letter }) => (
           <StatusCsvButton
             onExport={format => statusAdapter.exportAdminHotels({
-              period, ...(period === 'custom' && range ? range : {}), search, ordering,
+              period, ...(period === 'custom' && range ? range : {}), search, letter: letter || undefined, ordering,
             }, format)}
           />
         )}

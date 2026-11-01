@@ -58,7 +58,7 @@ describe('AdminCommission', () => {
     expect(await screen.findByText('Olim Karimov')).toBeInTheDocument()
     expect(screen.getByText('2.00%')).toBeInTheDocument()
     expect(screen.getByText(/olim@example.com/)).toBeInTheDocument()
-    expect(adapter.getCommissionOwners).toHaveBeenCalledWith({ search: '', page: 1 })
+    expect(adapter.getCommissionOwners).toHaveBeenCalledWith({ search: '', letter: '', page: 1 })
   })
 
   it('has an empty state, a loading state and a failed load with Try Again', async () => {
@@ -78,7 +78,7 @@ describe('AdminCommission', () => {
     fireEvent.change(screen.getByLabelText('Search'), { target: { value: ' My Hotel ' } })
     await act(async () => { await vi.advanceTimersByTimeAsync(400) })
     vi.useRealTimers()
-    await waitFor(() => expect(adapter.getCommissionOwners).toHaveBeenLastCalledWith({ search: 'My Hotel', page: 1 }))
+    await waitFor(() => expect(adapter.getCommissionOwners).toHaveBeenLastCalledWith({ search: 'My Hotel', letter: '', page: 1 }))
   })
 
   it('shows a super admin the percent form and saves a valid percent', async () => {

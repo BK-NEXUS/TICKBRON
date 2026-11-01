@@ -15,6 +15,8 @@ import { PartnerNoShowReports } from '../components/PartnerNoShowReports'
 import { PartnerStatusTab } from '../components/PartnerStatusTab'
 import { PartnerAds } from '../components/PartnerAds'
 import { PartnerCommission } from '../components/PartnerCommission'
+import { AlphabetFilter } from '../components/AlphabetFilter'
+import { nameMatchesLetter } from '../utils/alphabet'
 import { PartnerReviews } from '../components/PartnerReviews'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb, usePageTrail } from '../components/Breadcrumbs'
@@ -24,10 +26,13 @@ type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | '
 
 /** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
+// An owner with only a few hotels does not need the alphabet
+const ALPHABET_FROM = 6
 
 export function PartnerDashboardPage() {
   const { t } = useI18n()
   const { user, isAuthenticated } = useAuth()
+  const [letter, setLetter] = useState('')
   const [currentView, setCurrentView] = useState<DashboardView>('properties')
   const [properties, setProperties] = useState<PartnerProperty[]>([])
   const [selectedProperty, setSelectedProperty] = useState<PartnerProperty | null>(null)
@@ -315,8 +320,10 @@ export function PartnerDashboardPage() {
           onClick={() => setCurrentView('add-property')}
         />
       ) : (
+        <>
+        {properties.length >= ALPHABET_FROM && <AlphabetFilter value={letter} onChange={setLetter} />}
         <div className="properties-grid">
-          {properties.map(property => (
+          {properties.filter(property => nameMatchesLetter(propertyName(property), letter)).map(property => (
             <div key={property.id} className="property-card">
               <div className="property-card-header">
                 <h3 className="property-card-title">{propertyName(property)}</h3>
@@ -365,6 +372,7 @@ export function PartnerDashboardPage() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   )

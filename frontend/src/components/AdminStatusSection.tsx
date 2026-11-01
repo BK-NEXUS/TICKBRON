@@ -122,6 +122,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
         subtitle={t('status.subtitleUsers')}
         noun="status.nounUsers"
         {...periodProps}
+        alphabet
         load={params => statusAdapter.getUsers(params)}
         rowKey={row => row.id}
         rowLabel={row => row.full_name || row.email}
