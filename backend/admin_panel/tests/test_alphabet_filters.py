@@ -5,8 +5,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from admin_panel.tests.status_fixtures import make_booking
-from partner.models import CommissionRate
-from promotions.tests.helpers import make_guest, make_hotel, make_owner, make_staff, make_superadmin
+from promotions.tests.helpers import make_hotel, make_owner, make_staff, make_superadmin
 from properties.models import PropertyTranslation
 from users.models import User
 
