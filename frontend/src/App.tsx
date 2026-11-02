@@ -7,6 +7,7 @@ import { I18nProvider } from './i18n/I18nContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { MainLayout } from './layout/MainLayout'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { OfflineScreen } from './components/OfflineScreen'
 import { RequireAccess } from './components/RequireAccess'
 import { TWO_FACTOR_SETUP_PATH, TwoFactorSetupGate } from './components/TwoFactorSetupGate'
 import { canUseAdminPanel, canUsePartnerPanel } from './utils/roles'
@@ -45,6 +46,7 @@ function App() {
   return (
     <ThemeProvider>
       <I18nProvider>
+        <OfflineScreen />
         <ErrorBoundary>
           <AuthProvider>
             <Router>
