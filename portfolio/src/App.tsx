@@ -6,6 +6,7 @@ import { About } from './sections/About'
 import { Certificates } from './sections/Certificates'
 import { Contact } from './sections/Contact'
 import { Hero } from './sections/Hero'
+import { SceneLayer } from './scene/SceneLayer'
 import { Website } from './sections/Website'
 
 const NAV = [
@@ -19,6 +20,7 @@ function Page() {
   const { t } = useI18n()
   return (
     <>
+      <SceneLayer />
       <header className="topbar">
         <nav aria-label="Main">
           {NAV.map((item) => (
