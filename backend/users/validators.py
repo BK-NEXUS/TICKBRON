@@ -126,7 +126,7 @@ class StrongPasswordValidator:
 class EmailFormatValidator:
     """
     Enhanced email format validator.
-    
+
     Validates email format with stricter rules than Django's default.
     """
 

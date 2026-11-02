@@ -16,7 +16,7 @@ from common.storage import get_media_upload_path, validate_image_file
 class PropertyType(BaseModel):
     """
     Property type model (e.g., apartment, house, villa, studio).
-    
+
     Categorizes properties by their type for filtering and display.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
@@ -37,7 +37,7 @@ class PropertyType(BaseModel):
 class Property(BaseModel):
     """
     Core Property model for TICKBRON.
-    
+
     Represents a property available for booking with all essential information.
     """
     # Ownership
@@ -225,7 +225,7 @@ class Property(BaseModel):
 class PropertyTranslation(BaseModel):
     """
     Property translation model for multilingual support.
-    
+
     Stores translated property information for different languages.
     """
     LANGUAGE_CHOICES = [
@@ -265,7 +265,7 @@ class PropertyTranslation(BaseModel):
 class PropertyPolicy(BaseModel):
     """
     Property policy model for property-level policies.
-    
+
     Stores various policies like check-in/check-out, cancellation, etc.
     """
     POLICY_TYPE_CHOICES = [
@@ -312,7 +312,7 @@ class PropertyPolicy(BaseModel):
 class AmenityCategory(BaseModel):
     """
     Amenity category model for organizing amenities into groups.
-    
+
     Examples: Kitchen, Bathroom, Entertainment, Safety, etc.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
@@ -337,7 +337,7 @@ class AmenityCategory(BaseModel):
 class AmenityCategoryTranslation(BaseModel):
     """
     Amenity category translation model for multilingual support.
-    
+
     Stores translated amenity category information for different languages.
     """
     LANGUAGE_CHOICES = [
@@ -374,7 +374,7 @@ class AmenityCategoryTranslation(BaseModel):
 class Amenity(BaseModel):
     """
     Amenity model for individual property amenities.
-    
+
     Examples: WiFi, Air Conditioning, Swimming Pool, Kitchen, etc.
     """
     category = models.ForeignKey(
@@ -410,7 +410,7 @@ class Amenity(BaseModel):
 class AmenityTranslation(BaseModel):
     """
     Amenity translation model for multilingual support.
-    
+
     Stores translated amenity information for different languages.
     """
     LANGUAGE_CHOICES = [
@@ -447,7 +447,7 @@ class AmenityTranslation(BaseModel):
 class PropertyAmenity(BaseModel):
     """
     Property amenity relation model.
-    
+
     Links properties to their available amenities with optional additional information.
     """
     property = models.ForeignKey(
@@ -487,7 +487,7 @@ class PropertyAmenity(BaseModel):
 class PropertyPhoto(BaseModel):
     """
     Property photo model for handling property images.
-    
+
     Stores property photos with metadata, ordering, and storage abstraction.
     """
     PHOTO_TYPE_CHOICES = [
@@ -604,7 +604,7 @@ class PropertyPhoto(BaseModel):
 class RoomType(BaseModel):
     """
     Room type model for classifying rooms within properties.
-    
+
     Examples: Standard Room, Suite, Deluxe Room, Studio, Penthouse.
     """
     property = models.ForeignKey(
@@ -683,7 +683,7 @@ class RoomType(BaseModel):
 class RoomPhoto(BaseModel):
     """
     Room photo model for handling room images.
-    
+
     Stores room photos with metadata, ordering, and storage abstraction.
     """
     PHOTO_TYPE_CHOICES = [
@@ -801,7 +801,7 @@ class RoomPhoto(BaseModel):
 class RoomAmenity(BaseModel):
     """
     Room amenity relation model.
-    
+
     Links room types to their available amenities with optional additional information.
     """
     room_type = models.ForeignKey(
@@ -841,7 +841,7 @@ class RoomAmenity(BaseModel):
 class RatePlan(BaseModel):
     """
     Rate plan model for pricing strategies.
-    
+
     Defines different pricing plans (e.g., Standard, Non-refundable, Early Bird).
     """
     RATE_TYPE_CHOICES = [
@@ -996,7 +996,7 @@ class RatePlanPrice(models.Model):
 class DateInventory(BaseModel):
     """
     Date inventory model for tracking availability and pricing over time.
-    
+
     Stores day-by-day inventory data including availability status and pricing adjustments.
     """
     rate_plan = models.ForeignKey(

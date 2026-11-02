@@ -15,7 +15,7 @@ from common.models import BaseModel
 class PaymentTransaction(BaseModel):
     """
     Core Payment Transaction model for TICKBRON payment ledger.
-    
+
     Represents a payment transaction with idempotency support.
     Raw card data is never stored - only tokens/references from payment providers.
     """
@@ -174,14 +174,14 @@ class PaymentTransaction(BaseModel):
     def get_or_create_idempotent(cls, idempotency_key, **kwargs):
         """
         Get existing transaction by idempotency key or create new one.
-        
+
         This ensures that duplicate payment requests return the same transaction,
         preventing duplicate charges.
-        
+
         Args:
             idempotency_key: Unique key for idempotent request
             **kwargs: Other fields for payment transaction
-        
+
         Returns:
             tuple: (transaction, created) where created is True if new transaction was created
         """
@@ -249,7 +249,7 @@ class Refund(models.Model):
 class WebhookEvent(BaseModel):
     """
     Webhook Event model for processing payment provider webhooks.
-    
+
     Implements replay protection through event ID tracking and timestamp validation.
     """
     STATUS_CHOICES = [
@@ -358,7 +358,7 @@ class WebhookEvent(BaseModel):
     def is_replay_attack(self):
         """
         Check if this webhook event is a replay attack.
-        
+
         Returns:
             bool: True if this is a replay attack (duplicate event ID)
         """
@@ -378,10 +378,10 @@ class WebhookEvent(BaseModel):
     def is_timestamp_valid(self, max_age_seconds=300):
         """
         Check if webhook timestamp is within acceptable range.
-        
+
         Args:
             max_age_seconds: Maximum age of webhook in seconds (default: 5 minutes)
-        
+
         Returns:
             bool: True if timestamp is valid
         """
@@ -395,7 +395,7 @@ class WebhookEvent(BaseModel):
 class PaymentAuditLog(BaseModel):
     """
     Payment Audit Log for tracking all payment-related state changes.
-    
+
     Provides a complete audit trail for payment operations.
     """
     ACTION_CHOICES = [
@@ -499,7 +499,7 @@ class PaymentAuditLog(BaseModel):
                    ip_address=None, details=None):
         """
         Create an audit log entry for a payment action.
-        
+
         Args:
             action: Action that was performed
             payment_transaction: Associated payment transaction (optional)
@@ -510,7 +510,7 @@ class PaymentAuditLog(BaseModel):
             actor: User who performed the action (optional)
             ip_address: IP address (optional)
             details: Additional details (optional)
-        
+
         Returns:
             PaymentAuditLog: Created audit log entry
         """

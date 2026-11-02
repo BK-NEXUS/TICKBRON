@@ -137,4 +137,4 @@ in the table. The crawler `frontend/e2e/crawl.e2e.ts` presses every safe button 
   `no_show_refund_statement`, `no_show_refund_statement_percent`, `partner.stateRegion`, `partner.urlFriendlyIdentifierE`,
   `pay.statusName.partially_refunded`, `pay.statusName.processing`, `promoAdmin.regionFilter`,
   `promoRenewals.col.actions`, `promoRenewals.col.hotel`, `promoRenewals.col.status`.
-- Backend `payments/` (Payme, Click, Visa adapters, webhooks, `/api/v1/payments/`): no screen calls it; the owner decided online card payment is not needed. Kept as is because it carries tests and the booking state machine references payment states.
+- Backend `payments/` is only a leftover Django app: the online payment code is already gone (guarded by `core/tests/test_no_online_payments.py`). Its tables hold the booking status history, so they are kept.

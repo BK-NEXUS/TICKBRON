@@ -6,10 +6,11 @@ Provides structured logging with different handlers for development and producti
 import os
 from django.conf import settings
 
+
 def get_logging_config():
     """
     Get logging configuration based on environment.
-    
+
     Returns a dict suitable for Django's LOGGING setting.
     """
     log_level = os.getenv('LOG_LEVEL', 'INFO' if settings.DEBUG else 'WARNING')

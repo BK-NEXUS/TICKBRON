@@ -222,7 +222,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def property_scores(self, request):
         """
         Get review scores for a specific property.
-        
+
         Returns average ratings across different categories for a property.
         """
         property_id = request.query_params.get('property_id')
@@ -391,4 +391,3 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
             'total_entries': queryset.count(),
             'action_counts': list(action_counts)
         })
-

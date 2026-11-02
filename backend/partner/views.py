@@ -40,7 +40,7 @@ from django.utils.translation import gettext as _
 class IsHotelOwner(IsAuthenticated):
     """
     Custom permission to ensure user is a hotel-owner.
-    
+
     Checks if the authenticated user has the hotel-owner role or staff status.
     """
     def has_permission(self, request, view):
@@ -66,7 +66,7 @@ class PartnerAPIRootView(routers.APIRootView):
 class PartnerPropertyViewSet(viewsets.ModelViewSet):
     """
     ViewSet for property management by hotel-owners.
-    
+
     Scoped to properties owned by the authenticated hotel-owner.
     """
     permission_classes = [IsHotelOwner]
@@ -95,7 +95,7 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
 class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
     """
     ViewSet for room type management by hotel-owners.
-    
+
     Scoped to room types in properties owned by the authenticated hotel-owner.
     """
     permission_classes = [IsHotelOwner]
@@ -117,7 +117,7 @@ class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
 class PartnerRatePlanViewSet(viewsets.ModelViewSet):
     """
     ViewSet for rate plan management by hotel-owners.
-    
+
     Scoped to rate plans in properties owned by the authenticated hotel-owner.
     """
     permission_classes = [IsHotelOwner]
@@ -136,7 +136,7 @@ class PartnerRatePlanViewSet(viewsets.ModelViewSet):
 class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     """
     ViewSet for date inventory management by hotel-owners.
-    
+
     Scoped to date inventory in properties owned by the authenticated hotel-owner.
     """
     permission_classes = [IsHotelOwner]
@@ -511,13 +511,13 @@ def _bookings_export_row(booking):
 def partner_bookings(request):
     """
     List bookings for properties owned by the hotel-owner.
-    
+
     Query Parameters:
         status: Filter by booking status (optional)
         payment_status: Filter by payment status (optional)
         reportable: true keeps only bookings the owner can report as no-show today (optional)
         export: csv or xlsx downloads the same list as a file (no guest details), see BOOKINGS_EXPORT_HEADER
-    
+
     Returns:
         List of bookings for the hotel-owner's properties
     """

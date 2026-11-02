@@ -5,6 +5,12 @@ Checkpoint sequence: 01 → 26
 Current checkpoint: 26
 Completed: 26/26
 
+## Current state (2026-11-02)
+This file below is the history of checkpoints 01-26 and later rounds; screens and flows it mentions for online card payment (card form, payment pages, Payme/Click/Visa) were removed when the owner decided that guests pay cash at the hotel. For what exists now read the code, `.ai/UI_BUTTON_MAP.md` (every screen, what it reads and writes) and `.ai/HANDOFF.md`.
+- `npm test` 2415 passed, `tsc --noEmit` and `npm run lint` clean; browser E2E in `frontend/e2e` (guest, owner, admin crawl at 1440 and 390 px).
+- Languages uz, ru, en (one catalog each, same keys); currencies UZS, USD, KZT, RUB; light and dark theme.
+- Footer: the TICKBRON Instagram logo and a small "Developer" entry; addresses in `src/utils/socialLinks.ts`.
+
 Frontend owns frontend/ and frontend-specific documentation/configuration where explicitly assigned.
 
 Before every checkpoint:

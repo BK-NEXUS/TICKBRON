@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCount, formatMoney, formatMoneyCompact, formatMoneyList, monthLabel, periodLabel } from './statusFormat'
+import { formatCount, formatMoney, formatMoneyCompact, formatMoneyList, isLongValue, monthLabel, periodLabel } from './statusFormat'
 
 describe('statusFormat', () => {
   it('formats counts with thousand separators', () => {
@@ -36,5 +36,15 @@ describe('statusFormat', () => {
     expect(formatMoneyCompact({ currency: 'USD', amount: '350.00' })).toBe('$350')
     expect(formatMoneyCompact({ currency: 'UZS', amount: '54201950.00' })).toMatch(/^UZS\s?54\.2M$/)
     expect(formatMoneyCompact({ currency: 'XYZ?', amount: '2500000' })).toBe('XYZ? 2.5M')
+  })
+})
+
+describe('isLongValue: a card value too long for one column', () => {
+  it('is true for several currencies or one long amount, false for counts and short amounts', () => {
+    expect(isLongValue('UZS 1,500,000,000.00 · $45,000.00')).toBe(true)
+    expect(isLongValue('UZS 388,503,400.00')).toBe(true)
+    expect(isLongValue('$530.00')).toBe(false)
+    expect(isLongValue('3,210')).toBe(false)
+    expect(isLongValue('80.00%')).toBe(false)
   })
 })

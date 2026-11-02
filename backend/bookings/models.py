@@ -28,7 +28,7 @@ class ExpiredBookingProcessingError(Exception):
 class Booking(BaseModel):
     """
     Core Booking model for TICKBRON.
-    
+
     Represents a booking with transaction-safe inventory locking.
     """
     STATUS_CHOICES = [
@@ -289,10 +289,10 @@ class Booking(BaseModel):
     def generate_confirmation_code(self):
         """
         Generate a unique 6-character booking reference code using cryptographically secure random.
-        
+
         Uses unambiguous character set excluding: 0/O, 1/I/L to prevent confusion.
         Character set: 2-9, A-H, J-K, M-N, P, R-Z (excluding 0, 1, I, L, O)
-        
+
         Note: The save() method handles collision detection via database constraint
         and retries if IntegrityError occurs.
         """
@@ -308,10 +308,10 @@ class Booking(BaseModel):
     def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None, confirmed=False):
         """
         Create a booking with transaction-safe inventory locking.
-        
+
         This method uses database transactions and row-level locking to prevent
         double-booking and ensure inventory consistency.
-        
+
         Args:
             guest: User object (the guest making the booking)
             property_obj: Property object
@@ -326,10 +326,10 @@ class Booking(BaseModel):
             guest_email: Optional guest email (defaults to user's email)
             number_of_rooms: Number of rooms (defaults to 1)
             children: List of children ages, counted inside guest_count (defaults to empty list)
-        
+
         Returns:
             Booking object if successful
-        
+
         Raises:
             ValidationError: If booking cannot be created (no availability, validation errors)
             Exception: If database error occurs
@@ -453,13 +453,13 @@ class Booking(BaseModel):
     def cancel_booking(self, cancellation_reason=None):
         """
         Cancel a booking and restore inventory.
-        
+
         This method uses transactions to ensure inventory is properly restored
         even if cancellation fails partway through.
-        
+
         Args:
             cancellation_reason: Optional reason for cancellation
-        
+
         Raises:
             ValidationError: If booking cannot be cancelled
             Exception: If database error occurs
@@ -516,10 +516,10 @@ class Booking(BaseModel):
     def expire_booking(self):
         """
         Expire a pending booking and restore inventory.
-        
+
         This method is called when a pending booking expires (typically after 15 minutes).
         It uses transactions to ensure inventory is properly restored.
-        
+
         Raises:
             ValidationError: If booking cannot be expired
             Exception: If database error occurs
@@ -577,14 +577,14 @@ class Booking(BaseModel):
     def process_expired_bookings(cls, raise_on_error=False):
         """
         Process all expired pending bookings and restore their inventory.
-        
+
         This method should be called periodically (e.g., via a management command or Celery task)
         to clean up expired bookings and restore inventory.
-        
+
         A booking that fails to expire is logged and skipped so the rest are
         still processed. With raise_on_error=True, ExpiredBookingProcessingError
         is raised after the run if any booking failed.
-        
+
         Returns:
             int: Number of bookings processed
         """
@@ -621,10 +621,10 @@ class Booking(BaseModel):
     def complete_booking(self):
         """
         Complete a booking after checkout.
-        
+
         This method is called when guest checks out to transition the booking
         from confirmed to completed status.
-        
+
         Raises:
             ValidationError: If booking cannot be completed
             Exception: If database error occurs
@@ -653,11 +653,11 @@ class Booking(BaseModel):
     def mark_no_show(self, via_approved_report=False):
         """
         Mark a booking as no-show when guest doesn't arrive.
-        
+
         This method is called when a confirmed booking becomes a no-show. With
         via_approved_report=True (R12, staff approved the hotel's no-show report) a
         completed booking may become a no-show as well; nothing else allows that.
-        
+
         Raises:
             ValidationError: If booking cannot be marked as no-show
             Exception: If database error occurs
@@ -711,7 +711,7 @@ class Booking(BaseModel):
     def _log_state_transition(self, old_status, new_status, reason):
         """
         Log booking state transition for audit purposes.
-        
+
         Args:
             old_status: Previous booking status
             new_status: New booking status
@@ -736,7 +736,7 @@ class Booking(BaseModel):
 class BookingItem(BaseModel):
     """
     Booking item model for individual room bookings within a booking.
-    
+
     Represents specific room types and rate plans booked.
     """
     booking = models.ForeignKey(

@@ -86,7 +86,7 @@ def with_review_scores(queryset):
 class PropertySearchService:
     """
     Service class for property search using PostgreSQL capabilities.
-    
+
     Provides full-text search, geographic search, fuzzy matching, and comprehensive filtering.
     """
 
@@ -294,13 +294,13 @@ class PropertySearchService:
     def _parse_date(self, date_str):
         """
         Parse date string in various formats.
-        
+
         Args:
             date_str: date string (YYYY-MM-DD format preferred)
-        
+
         Returns:
             datetime.date object
-        
+
         Raises:
             ValueError: if date format is invalid
         """
@@ -389,7 +389,7 @@ class PropertySearchService:
     def search(self, search_params):
         """
         Perform property search based on provided parameters.
-        
+
         Args:
             search_params: dict containing search parameters
                 - q: text search query
@@ -403,10 +403,10 @@ class PropertySearchService:
                 - sort: sorting method (relevance, price_asc, price_desc, rating, distance)
                 - page: page number
                 - page_size: results per page
-        
+
         Returns:
             dict with search results and metadata
-        
+
         Raises:
             ValueError: if search parameters are invalid
         """
@@ -445,11 +445,11 @@ class PropertySearchService:
     def _apply_text_search(self, queryset, query):
         """
         Apply text search using Django ORM icontains (works with SQLite and PostgreSQL).
-        
+
         Args:
             queryset: base queryset
             query: sanitized search query string
-        
+
         Returns:
             filtered queryset
         """
@@ -497,7 +497,7 @@ class PropertySearchService:
     def _apply_geographic_search(self, queryset, lat, lng, radius_km):
         """
         Apply geographic search using simplified bounding box approach.
-        
+
         Args:
             queryset: base queryset
             lat: latitude of search center
@@ -519,12 +519,12 @@ class PropertySearchService:
     def _apply_price_filter(self, queryset, min_price=None, max_price=None):
         """
         Apply price range filtering with standardized behavior.
-        
+
         Args:
             queryset: base queryset
             min_price: minimum price (validated)
             max_price: maximum price (validated)
-        
+
         Returns:
             filtered queryset
         """
@@ -538,12 +538,12 @@ class PropertySearchService:
     def _apply_guest_filter(self, queryset, min_guests=None, max_guests=None):
         """
         Apply guest capacity filtering with standardized behavior.
-        
+
         Args:
             queryset: base queryset
             min_guests: minimum number of guests (validated)
             max_guests: maximum number of guests (validated)
-        
+
         Returns:
             filtered queryset
         """
@@ -557,11 +557,11 @@ class PropertySearchService:
     def _apply_amenity_filter(self, queryset, amenity_ids):
         """
         Apply amenity filtering with standardized behavior.
-        
+
         Args:
             queryset: base queryset
             amenity_ids: list of amenity IDs (validated)
-        
+
         Returns:
             filtered queryset
         """
@@ -641,12 +641,12 @@ class PropertySearchService:
     def _apply_sorting(self, queryset, sort_method, search_params):
         """
         Apply sorting to search results with standardized behavior.
-        
+
         Args:
             queryset: base queryset
             sort_method: validated sorting method
             search_params: search parameters for context
-        
+
         Returns:
             sorted queryset
         """
@@ -684,11 +684,11 @@ class PropertySearchService:
     def get_search_suggestions(self, query, limit=5):
         """
         Get search suggestions for autocomplete.
-        
+
         Args:
             query: partial search query
             limit: maximum number of suggestions
-        
+
         Returns:
             list of suggestion strings
         """

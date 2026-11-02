@@ -15,7 +15,7 @@ from common.models import TimeStampedModel, SoftDeleteModel
 class InternalNote(TimeStampedModel, SoftDeleteModel):
     """
     Internal notes for customers, visible only to staff/admins.
-    
+
     These are staff-only free-text entries for customer management,
     fully CRUD-able, each stamped with the author (staff member) and timestamp.
     Never exposed to customers.

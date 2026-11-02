@@ -178,4 +178,3 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def validate_phone_number(self, value):
         return validate_phone_number_format(value)
-

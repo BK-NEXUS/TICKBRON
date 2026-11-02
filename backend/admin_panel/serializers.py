@@ -22,7 +22,7 @@ from django.utils.translation import gettext as _
 class AdminPropertySerializer(serializers.ModelSerializer):
     """
     Serializer for property moderation by admins.
-    
+
     Includes approval/suspension functionality.
     """
     property_type = PropertyTypeSerializer(read_only=True)
@@ -92,7 +92,7 @@ class AdminPropertyRegionSerializer(serializers.Serializer):
 class AdminUserSerializer(serializers.ModelSerializer):
     """
     Serializer for user management by admins.
-    
+
     Limited fields for admin user listing.
     """
     full_name = serializers.SerializerMethodField()
@@ -200,7 +200,7 @@ class AdminContactSerializer(serializers.Serializer):
 class AdminUserCreateSerializer(AccountCreateSerializer):
     """
     Serializer for creating hotel-owner accounts by super-admins.
-    
+
     Super-admin only endpoint for direct hotel-owner account creation.
     """
     # Where the owner's hotels will appear: all three are required and must fit together
@@ -302,7 +302,7 @@ class AdminAmenityReadSerializer(serializers.ModelSerializer):
 class AdminCustomerSerializer(serializers.Serializer):
     """
     Serializer for admin customers directory.
-    
+
     Returns customer information with booking aggregates.
     """
     id = serializers.IntegerField()
@@ -321,7 +321,7 @@ class AdminCustomerSerializer(serializers.Serializer):
 class AdminCustomerDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for detailed customer profile in admin panel.
-    
+
     Returns full customer contact information.
     """
     full_name = serializers.SerializerMethodField()

@@ -1,6 +1,6 @@
 import { textKeys, useTexts } from '../i18n/I18nContext'
 import type { StatusFullTotals } from '../adapters/statusAdapter'
-import { formatCount, formatMoneyList } from '../utils/statusFormat'
+import { formatCount, formatMoneyList, statusCardClass } from '../utils/statusFormat'
 
 interface StatusStatsCardsProps {
   totals: StatusFullTotals
@@ -71,13 +71,13 @@ export function StatusStatsCards({ totals, caption, lead, guestsLabel: guestsLab
   return (
     <div className="status-cards">
       {lead && (
-        <div className="status-card">
+        <div className={statusCardClass(lead.value)}>
           <span className="status-card-label">{lead.label}</span>
           <span className="status-card-value">{lead.value}</span>
         </div>
       )}
       {cardsOf(totals, guestsLabel, TEXT).map(card => (
-        <div key={card.label} className={`status-card${card.headline ? ' status-card--headline' : ''}`}>
+        <div key={card.label} className={statusCardClass(card.value, card.headline)}>
           <span className="status-card-label">{card.label}</span>
           <span className="status-card-value">{card.value}</span>
           <span className="status-card-caption">{card.label === TEXT.upcoming ? card.hint : `${caption}, ${card.hint}`}</span>

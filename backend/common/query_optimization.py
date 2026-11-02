@@ -13,7 +13,7 @@ logger = logging.getLogger('tickbron')
 def log_query_count(func):
     """
     Decorator to log database query count for views.
-    
+
     Usage:
         @log_query_count
         def my_view(request):
@@ -42,7 +42,7 @@ def log_query_count(func):
 class QueryPerformanceMonitor:
     """
     Context manager to monitor query performance.
-    
+
     Usage:
         with QueryPerformanceMonitor('my_operation'):
             # Perform database operations

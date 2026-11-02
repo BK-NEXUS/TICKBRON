@@ -36,6 +36,16 @@ export function formatMoneyList(list: Money[]): string {
   return list.length ? list.map(formatMoney).join(' · ') : '—'
 }
 
+/** A card value that would break inside its digits in one column: amounts in several currencies, or one long amount */
+export function isLongValue(value: string): boolean {
+  return value.length > 14
+}
+
+/** "status-card", plus the modifiers a card needs (the headline look, two columns for a long value) */
+export function statusCardClass(value: string, headline = false): string {
+  return ['status-card', headline && 'status-card--headline', isLongValue(value) && 'status-card--wide'].filter(Boolean).join(' ')
+}
+
 /** "2026-04" -> "Apr" (in the page language) */
 export function monthLabel(month: string, i18n: I18nValue = englishI18n): string {
   return /^\d{4}-\d{2}$/.test(month) ? i18n.formatDate(`${month}-01`, { month: 'short' }) : month

@@ -213,7 +213,7 @@ def save_hotel_texts(prop, texts):
 class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for property management by hotel-owners.
-    
+
     Limited to properties owned by the authenticated hotel-owner.
     """
     full_address = serializers.SerializerMethodField()
@@ -255,7 +255,7 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
 class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
     Serializer for creating new properties by hotel-owners.
-    
+
     Owner is automatically set to the authenticated user.
     """
     translations = HotelTextsField()
@@ -284,7 +284,7 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
 class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for room type management by hotel-owners.
-    
+
     Limited to room types in properties owned by the authenticated hotel-owner.
     """
     slug_parent_field = 'property'
@@ -395,7 +395,7 @@ class PriceMapField(serializers.Field):
 class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for rate plan management by hotel-owners.
-    
+
     Limited to rate plans in properties owned by the authenticated hotel-owner.
     """
     slug_parent_field = 'room_type'
@@ -501,7 +501,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
 class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
     Serializer for date inventory management by hotel-owners.
-    
+
     Limited to date inventory in properties owned by the authenticated hotel-owner.
     """
     # Bookings are counted on the room type's shared RoomInventory, not on this rate plan's row
