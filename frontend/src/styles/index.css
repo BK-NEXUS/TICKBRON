@@ -10272,3 +10272,60 @@ button.property-gallery-image {
   font-size: var(--font-size-xs);
   line-height: var(--line-height-tight);
 }
+
+/* Offline screen: covers the app while the device has no internet */
+.offline-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: var(--color-background);
+  overflow-y: auto;
+}
+
+.offline-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  max-width: 420px;
+  text-align: center;
+}
+
+.offline-art {
+  width: min(240px, 70vw);
+  height: auto;
+}
+
+.offline-title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  color: var(--color-text-primary);
+}
+
+.offline-hint,
+.offline-still {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.offline-still {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .offline-art-z {
+    animation: offline-float 3s ease-in-out infinite;
+  }
+
+  @keyframes offline-float {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(-4px); opacity: 0.6; }
+  }
+}

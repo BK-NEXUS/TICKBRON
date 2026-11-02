@@ -3425,3 +3425,8 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Documents brought in line with the code: `backend/CLAUDE.md` (no payment adapters any more, real URL layout, management commands, commission, sign-in codes, cache), `.ai/BACKEND_STATE.md`, `.ai/FRONTEND_STATE.md`, `.ai/ROADMAP.md` (decided and still-open items). The checkpoint reports (`.ai/checkpoints`, `frontend/SECURITY_REVIEW*`, `frontend/API_CONTRACT_COMPATIBILITY*`) are history and stay as written.
 - `.ai/OWNER_GUIDE_LAUNCH.docx` (company and tax set-up, personal-data law questions for the lawyer, server and mail-service choice, questions for the meeting) is now on master.
 - Found, not fixed: the sign-up form has no "I accept the terms and the privacy policy" box; add it if the lawyer asks. `frontend/src/components/Container.tsx` is used by nothing (only by its own test); left in place because tests are not deleted. About 20 style notes of flake8 (long lines, continuation indents) remain.
+
+## Offline screen (2026-11-02)
+
+- When the device loses the internet the whole app is covered by a friendly screen: TICKBRON's own picture (the sleeping hotel with two palms and a "no signal" badge, drawn in SVG, follows the light/dark theme), a short text and a "Try again" button (`OfflineScreen`, `useOnlineStatus`, i18n keys `offline.*`). It goes away by itself when the connection returns; "Try again" asks the server (`/healthz/`) because the browser can be wrong about being online.
+- Not done: opening the site for the first time with no internet at all (needs the installable-site step, a service worker); that comes with the PWA and the Android app after the server is up.

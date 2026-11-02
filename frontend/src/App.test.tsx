@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, waitFor, cleanup, act } from '@testing-library/react'
 import App from './App'
 
 // Every module App.tsx loads with React.lazy. lazy() needs a default export,
@@ -189,5 +189,15 @@ describe('Admin and partner route guards', () => {
     visitAs(staff, path)
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
     expect(screen.queryByText('Access Denied')).not.toBeInTheDocument()
+  })
+})
+
+describe('offline screen', () => {
+  it('covers the app with the "no internet" message when the browser goes offline', async () => {
+    localStorage.setItem('tickbron.language', 'en')
+    render(<App />)
+    act(() => { window.dispatchEvent(new Event('offline')) })
+    expect(await screen.findByRole('alert')).toHaveTextContent('No internet connection')
+    act(() => { window.dispatchEvent(new Event('online')) })
   })
 })
