@@ -1,0 +1,16 @@
+:root {
+  --bg-0: #0a0824;
+  --bg-1: #17104a;
+  --bg-2: #0d2a52;
+  --glass: rgb(255 255 255 / 0.07);
+  --glass-border: rgb(255 255 255 / 0.16);
+  --text: #f1f0ff;
+  --text-muted: #c4c1ee;
+  --accent: #8fb4ff;
+  --accent-strong: #7c6cff;
+  --focus: #ffd966;
+  --radius: 20px;
+  --gutter: 16px;
+  --max-width: 1080px;
+  color-scheme: dark;
+}
