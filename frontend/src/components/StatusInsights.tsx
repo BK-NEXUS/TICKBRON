@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nContext'
 import type { StatusInsights as Insights, StatusRank } from '../adapters/statusAdapter'
-import { formatMoneyList } from '../utils/statusFormat'
+import { formatMoneyList, statusCardClass } from '../utils/statusFormat'
 
 interface StatusInsightsProps {
   insights: Insights
@@ -69,7 +69,7 @@ export function StatusInsights({ insights, rank }: StatusInsightsProps) {
     <>
       <div className="status-cards">
         {cards.map(card => (
-          <div key={card.label} className="status-card">
+          <div key={card.label} className={statusCardClass(card.value)}>
             <span className="status-card-label">{card.label}</span>
             <span className="status-card-value">{card.value}</span>
             <span className="status-card-caption">{card.hint}</span>

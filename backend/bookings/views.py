@@ -46,7 +46,7 @@ class BookingViewSet(mixins.CreateModelMixin,
                      viewsets.GenericViewSet):
     """
     ViewSet for booking management.
-    
+
     Supports create, list and retrieve only. Bookings are never updated or
     deleted directly by guests: status changes go through the state machine
     (e.g. the cancel endpoint), so PUT/PATCH/DELETE return 405.
@@ -117,7 +117,7 @@ class BookingViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         """
         Create a new booking with transaction-safe inventory locking.
-        
+
         Request body:
             property_id: Property ID
             room_type_id: Room type ID
@@ -126,7 +126,7 @@ class BookingViewSet(mixins.CreateModelMixin,
             check_out: Check-out date (YYYY-MM-DD)
             guest_count: Number of guests
             special_requests: Optional special requests text
-        
+
         Returns:
             Created booking with confirmation code
         """
@@ -190,10 +190,10 @@ class BookingViewSet(mixins.CreateModelMixin,
     def retrieve(self, request, *args, **kwargs):
         """
         Retrieve a specific booking.
-        
+
         Path parameters:
             id: Booking ID
-        
+
         Returns:
             Booking details
         """
@@ -234,13 +234,13 @@ class BookingViewSet(mixins.CreateModelMixin,
 def booking_cancel(request, booking_id):
     """
     Cancel a booking and restore inventory. Cancelling is always free: the guest pays cash at the hotel.
-    
+
     Path parameters:
         booking_id: Booking ID
-    
+
     Request body:
         cancellation_reason: Optional reason for cancellation
-    
+
     Returns:
         Updated booking with cancelled status
     """

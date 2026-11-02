@@ -145,7 +145,7 @@ _AMENITY_ROW = PropertyAmenitySerializer()
 class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for property search results.
-    
+
     Includes essential property information for search results display.
     """
     property_type = PropertyTypeSerializer(read_only=True)
@@ -199,7 +199,7 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
 class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Detailed serializer for property information.
-    
+
     Includes all property details for property detail pages.
     """
     property_type = PropertyTypeSerializer(read_only=True)
@@ -379,7 +379,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
 class SearchParamsSerializer(serializers.Serializer):
     """
     Serializer for search request parameters.
-    
+
     Validates and parses search parameters for the search endpoint with standardized validation.
     """
     q = serializers.CharField(
@@ -535,7 +535,7 @@ class SearchParamsSerializer(serializers.Serializer):
 class DateInventorySerializer(serializers.ModelSerializer):
     """
     Serializer for DateInventory model.
-    
+
     Represents daily availability and pricing data.
     """
     remaining_rooms = serializers.IntegerField(help_text="Calculated remaining available rooms")
@@ -569,7 +569,7 @@ class DateInventorySerializer(serializers.ModelSerializer):
 class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
     """
     Serializer for RatePlan with availability data.
-    
+
     Includes rate plan details and date inventory for specified date range.
     """
     date_inventory = serializers.SerializerMethodField()
@@ -644,7 +644,7 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
 class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
     """
     Serializer for RoomType with availability data.
-    
+
     Includes room type details and rate plans with their availability.
     """
     rate_plans = serializers.SerializerMethodField()
@@ -675,7 +675,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
 class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
     Serializer for Property availability data.
-    
+
     Includes property details and room types with rate plans and date inventory.
     """
     room_types = serializers.SerializerMethodField()
@@ -707,7 +707,7 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
 class AvailabilityParamsSerializer(serializers.Serializer):
     """
     Serializer for availability endpoint request parameters.
-    
+
     Validates date range parameters for availability queries.
     """
     check_in = serializers.DateField(

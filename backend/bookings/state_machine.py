@@ -20,7 +20,7 @@ class BookingState(Enum):
 class BookingStateMachine:
     """
     State machine for booking status transitions.
-    
+
     Enforces deterministic state transitions with validation.
     """
 
@@ -56,11 +56,11 @@ class BookingStateMachine:
     def can_transition(cls, from_state: BookingState, to_state: BookingState) -> bool:
         """
         Check if a state transition is valid.
-        
+
         Args:
             from_state: Current state
             to_state: Target state
-        
+
         Returns:
             bool: True if transition is valid
         """
@@ -75,12 +75,12 @@ class BookingStateMachine:
                           reason: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         """
         Validate a state transition and return validation result.
-        
+
         Args:
             from_state: Current state
             to_state: Target state
             reason: Optional reason for transition
-        
+
         Returns:
             tuple: (is_valid, error_message)
         """
@@ -115,11 +115,11 @@ class BookingStateMachine:
     def get_transition_reason(cls, from_state: BookingState, to_state: BookingState) -> Optional[str]:
         """
         Get the expected reason for a state transition.
-        
+
         Args:
             from_state: Current state
             to_state: Target state
-        
+
         Returns:
             str or None: Expected reason or None if not defined
         """
@@ -129,10 +129,10 @@ class BookingStateMachine:
     def get_valid_transitions(cls, from_state: BookingState) -> Set[BookingState]:
         """
         Get all valid transitions from a given state.
-        
+
         Args:
             from_state: Current state
-        
+
         Returns:
             set: Set of valid target states
         """

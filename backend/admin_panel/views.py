@@ -50,7 +50,7 @@ from django.utils.translation import gettext as _
 class IsSuperAdminOrStaff(IsAuthenticated):
     """
     Custom permission to ensure user is super-admin or staff.
-    
+
     Super-admins have full access, staff have limited access.
     """
     def has_permission(self, request, view):
@@ -67,7 +67,7 @@ class IsSuperAdminOrStaff(IsAuthenticated):
 class IsSuperAdmin(IsAuthenticated):
     """
     Custom permission to ensure user is super-admin.
-    
+
     Only super-admins (is_superuser=True) can access these endpoints.
     """
     def has_permission(self, request, view):
@@ -92,7 +92,7 @@ class AdminAPIRootView(routers.APIRootView):
 class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for property moderation by admins.
-    
+
     Read-only access to all properties for moderation purposes.
     """
     permission_classes = [IsSuperAdminOrStaff]
@@ -123,13 +123,13 @@ class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
 def admin_property_approve(request, property_id):
     """
     Approve a property for listing.
-    
+
     Path Parameters:
         property_id: Property ID
-    
+
     Request Body:
         rejection_reason: Reason for rejection (optional, only when rejecting)
-    
+
     Returns:
         Updated property with approval status
     """
@@ -212,10 +212,10 @@ def admin_property_region(request, property_id):
 def admin_property_suspend(request, property_id):
     """
     Suspend a property.
-    
+
     Path Parameters:
         property_id: Property ID
-    
+
     Returns:
         Updated property with suspended status
     """
@@ -293,11 +293,11 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
 def admin_create_hotel_owner(request):
     """
     Create a hotel-owner account (super-admin only).
-    
+
     This endpoint allows super-admins to directly create hotel-owner accounts
     without self-registration. The account is created with the hotel-owner role
     and is immediately usable with the provided credentials.
-    
+
     Request Body:
         email: Hotel owner email (required)
         first_name: First name (required)
@@ -307,7 +307,7 @@ def admin_create_hotel_owner(request):
         commission_percent: what the site takes from each booking, 0 to 100 (required)
         password: Initial password (required, min 8 characters)
         password_confirm: Password confirmation (required)
-    
+
     Returns:
         Created user object with hotel-owner role
     """
@@ -406,7 +406,7 @@ def admin_reset_two_factor(request, user_id):
 class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for amenity category management by admins.
-    
+
     Full CRUD access for amenity categories.
     """
     permission_classes = [IsSuperAdminOrStaff]
@@ -421,7 +421,7 @@ class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSe
 class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for amenity management by admins.
-    
+
     Full CRUD access for amenities.
     """
     permission_classes = [IsSuperAdminOrStaff]
@@ -446,13 +446,13 @@ class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
 def admin_booking_lookup_by_reference(request):
     """
     Look up a customer's full details and booking by reference code.
-    
+
     This endpoint is for staff/support use when a guest reports a problem at the property
     and calls support with their booking reference code.
-    
+
     Query Parameters:
         reference_code: 6-character booking reference code (required)
-    
+
     Returns:
         Full booking details including:
         - Customer information (name, contact info)
@@ -580,18 +580,18 @@ class AdminCustomerPagination(PageNumberPagination):
 def admin_customers_directory(request):
     """
     Admin API for customers directory with booking aggregates.
-    
+
     Returns for each customer:
     - customer ID, registration date, full name, phone, email, whatsapp, telegram, preferred contact method
     - total booking count, last booking date, total amount paid, customer status
-    
+
     Query Parameters:
         search: Search by name, phone, email, or customer ID (optional)
         page: Page number (default: 1)
         page_size: Items per page (default: 20, max: 100)
         sort_by: Sort field (default: registration_date)
         sort_order: Sort order (asc or desc, default: desc)
-    
+
     Returns:
         Paginated list of customers with booking aggregates
     """
@@ -710,16 +710,16 @@ def admin_customers_directory(request):
 def admin_customer_detail(request, customer_id):
     """
     Admin API for a single customer's full profile.
-    
+
     Returns:
     - Contact information (full profile)
     - All bookings filterable by all/upcoming/completed/cancelled
     - Last activity timestamp
     - Internal notes (staff-only)
-    
+
     Query Parameters:
         booking_filter: Filter bookings by status (all, upcoming, completed, cancelled)
-    
+
     Path Parameters:
         customer_id: Customer ID
     """
@@ -803,13 +803,13 @@ def admin_customer_detail(request, customer_id):
 def admin_internal_note_create(request, customer_id):
     """
     Create an internal note for a customer.
-    
+
     Path Parameters:
         customer_id: Customer ID
-    
+
     Request Body:
         note: Note content (required)
-    
+
     Returns:
         Created internal note
     """
@@ -838,14 +838,14 @@ def admin_internal_note_create(request, customer_id):
 def admin_internal_note_detail(request, customer_id, note_id):
     """
     Update or delete an internal note.
-    
+
     Path Parameters:
         customer_id: Customer ID
         note_id: Note ID
-    
+
     Request Body (for PUT):
         note: Updated note content (required)
-    
+
     Returns:
         Updated note (for PUT) or 204 No Content (for DELETE)
     """
@@ -879,14 +879,14 @@ def admin_internal_note_detail(request, customer_id, note_id):
 def admin_registration_statistics(request):
     """
     Admin API for registration statistics.
-    
+
     Returns new-registration counts broken down by:
     - Rolling 12-month window (month-by-month)
     - Calendar year (year-by-year)
-    
+
     Query Parameters:
         type: Type of breakdown (rolling_12_months or calendar_year, default: rolling_12_months)
-    
+
     Returns:
         Registration statistics with counts and period labels
     """
@@ -955,14 +955,14 @@ def admin_registration_statistics(request):
 def admin_top_bookers_leaderboard(request):
     """
     Admin API for top-bookers leaderboard.
-    
+
     Returns customers ranked by number of completed bookings within a selectable period.
     Intended to support customer-reward/loyalty programs.
-    
+
     Query Parameters:
         period: Time period for the leaderboard (this_month, this_year, all_time, default: all_time)
         limit: Maximum number of top bookers to return (default: 10, max: 100)
-    
+
     Returns:
         Leaderboard with customer name, booking count, and rank
     """

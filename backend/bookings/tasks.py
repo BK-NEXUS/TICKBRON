@@ -51,7 +51,6 @@ def cancel_unarrived_bookings():
     return result
 
 
-
 # ignore_result: nobody reads the answer, and the result store is not touched (with Redis down that cost 20 s a call)
 @shared_task(ignore_result=True)
 def send_booking_notice(booking_id, kind):

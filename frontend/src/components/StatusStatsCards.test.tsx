@@ -34,6 +34,14 @@ describe('StatusStatsCards', () => {
     expect(within(cardOf('Booking value')).getByText('UZS 1,600,000,000.00')).toBeInTheDocument()
   })
 
+  it('gives a card whose amount lists several currencies two columns, so no number breaks in the middle', () => {
+    render(<StatusStatsCards totals={TOTALS} caption="All time" />)
+
+    expect(cardOf('Revenue')).toHaveClass('status-card--wide')
+    expect(cardOf('Booking value')).toHaveClass('status-card--wide')
+    expect(cardOf('Nights')).not.toHaveClass('status-card--wide')
+  })
+
   it('hides fully refunded, no-show and reported no-show while they are zero', () => {
     render(<StatusStatsCards totals={TOTALS} caption="All time" />)
 

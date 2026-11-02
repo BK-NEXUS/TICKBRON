@@ -10,7 +10,7 @@ from common.models import BaseModel
 class Role(BaseModel):
     """
     Role model for RBAC foundation.
-    
+
     Defines user roles with associated permissions.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
@@ -30,7 +30,7 @@ class Role(BaseModel):
 class Permission(BaseModel):
     """
     Permission model for RBAC foundation.
-    
+
     Defines granular permissions that can be assigned to roles.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)

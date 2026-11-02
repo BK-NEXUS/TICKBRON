@@ -16,7 +16,7 @@ from django.utils.translation import gettext as _
 class TickBronStorage:
     """
     Unified storage abstraction for TICKBRON media files.
-    
+
     This class provides a consistent interface for media storage across different
     environments (local, staging, production) while allowing environment-specific
     implementations.
@@ -28,7 +28,7 @@ class TickBronStorage:
     def _get_storage_backend(self):
         """
         Determine the appropriate storage backend based on environment.
-        
+
         Returns:
             Storage backend instance (FileSystemStorage, S3Storage, etc.)
         """
@@ -82,7 +82,7 @@ class TickBronStorage:
 class LocalStorage(FileSystemStorage):
     """
     Local filesystem storage for development.
-    
+
     This storage backend stores files on the local filesystem and is suitable
     for development and testing environments.
     """
@@ -99,7 +99,7 @@ class LocalStorage(FileSystemStorage):
     def get_available_name(self, name, max_length=None):
         """
         Get an available filename while preserving the original file extension.
-        
+
         This method ensures that uploaded files maintain their original extensions
         while avoiding name collisions.
         """
@@ -122,10 +122,10 @@ class LocalStorage(FileSystemStorage):
 class S3Storage:
     """
     S3-compatible storage for staging/production.
-    
+
     This storage backend uses S3-compatible object storage (AWS S3, MinIO, etc.)
     for production environments. Placeholder implementation - requires boto3.
-    
+
     Note: This is a placeholder. In production, you would use django-storages
     with proper S3 configuration.
     """
@@ -197,11 +197,11 @@ class S3Storage:
 def get_media_upload_path(instance, filename):
     """
     Generate upload path for property media files.
-    
+
     Args:
         instance: The model instance (PropertyPhoto)
         filename: The original filename
-    
+
     Returns:
         Path string for storing the file
     """
@@ -220,10 +220,10 @@ def get_media_upload_path(instance, filename):
 def validate_image_file(file):
     """
     Validate uploaded image files.
-    
+
     Args:
         file: UploadedFile instance
-    
+
     Returns:
         tuple (is_valid, error_message)
     """

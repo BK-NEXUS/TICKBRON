@@ -1,3 +1,5 @@
+import { statusCardClass } from '../utils/statusFormat'
+
 interface StatusMetricCardProps {
   label: string
   value: string
@@ -9,7 +11,7 @@ interface StatusMetricCardProps {
 /** One number of a Status page: label, value and a small caption (a hint, or the change against last month). */
 export function StatusMetricCard({ label, value, caption, tone }: StatusMetricCardProps) {
   return (
-    <div className="status-card">
+    <div className={statusCardClass(value)}>
       <span className="status-card-label">{label}</span>
       <span className="status-card-value">{value}</span>
       <span className={`status-card-caption${tone ? ` status-change--${tone}` : ''}`}>{caption}</span>

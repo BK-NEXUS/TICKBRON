@@ -57,7 +57,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     """
     Custom User model for TICKBRON.
-    
+
     Uses email as the username field and includes additional fields
     for user management and profile information.
     """
@@ -166,7 +166,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     def increment_failed_login(self):
         """
         Increment failed login attempts and lock account if threshold reached.
-        
+
         Failures older than the window no longer count, so occasional typos
         never add up to a lock. The threshold is high on purpose: a low
         account-wide limit lets anyone lock out any user (see users.lockout).
@@ -194,4 +194,3 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         self.last_failed_login = None
         self.account_locked_until = None
         self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
-

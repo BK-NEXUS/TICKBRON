@@ -37,7 +37,7 @@ def _log_refusal(exc, context, event):
 def custom_exception_handler(exc, context):
     """
     Custom exception handler for TICKBRON API.
-    
+
     Provides consistent error responses with proper logging.
     """
     # Call REST framework's default exception handler first

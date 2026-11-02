@@ -321,10 +321,11 @@
   padding: var(--spacing-md);
 }
 
-/* Breaks only when a single amount is wider than the card (an amount never splits inside its digits otherwise) */
+/* The numbers of the statistics cards are the point of the screen: big on a desktop, still two to a row on a phone.
+   Breaks only when a single amount is wider than the card (an amount never splits inside its digits otherwise) */
 .status-card-value {
   overflow-wrap: break-word;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-2xl);
   line-height: var(--line-height-tight);
 }
 
@@ -340,6 +341,15 @@
   padding-top: var(--spacing-lg);
 }
 
+/* An amount in several currencies takes two columns, so no number is cut in the middle */
+.status-card--wide {
+  grid-column: span 2;
+}
+
+.status-card--wide .status-card-value {
+  font-size: var(--font-size-xl);
+}
+
 @media (max-width: 599px) {
   /* Two numbers side by side: ten cards in one column was a very long page */
   .status-cards {
@@ -349,6 +359,10 @@
 
   .status-card {
     padding: var(--spacing-12);
+  }
+
+  .status-card-value {
+    font-size: var(--font-size-xl);
   }
 
   .status-table th,

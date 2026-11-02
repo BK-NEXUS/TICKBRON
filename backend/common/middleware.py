@@ -154,7 +154,7 @@ class RequestLoggingMiddleware:
     def get_client_ip(self, request):
         """
         Get the client IP address from the request.
-        
+
         Handles proxied requests (X-Forwarded-For header).
         """
         return get_client_ip(request)

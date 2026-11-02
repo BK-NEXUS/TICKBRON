@@ -62,7 +62,7 @@ def _promoted_banners(request, search_service, search_params, page):
 def property_search(request):
     """
     Search for properties based on various criteria.
-    
+
     Query Parameters:
         q: Text search query (max 500 characters)
         location: Location search (city, country, max 200 characters)
@@ -78,7 +78,7 @@ def property_search(request):
         sort: Sorting method (relevance, price_asc, price_desc, rating, reviews, distance)
         page: Page number (min 1, default: 1)
         page_size: Results per page (1-100, default: 20)
-    
+
     Returns:
         Paginated search results with property information
     """
@@ -207,11 +207,11 @@ def property_filter_options(request):
 def property_search_suggestions(request):
     """
     Get search suggestions for autocomplete.
-    
+
     Query Parameters:
         q: Partial search query
         limit: Maximum number of suggestions (default: 5)
-    
+
     Returns:
         List of search suggestions
     """
@@ -249,10 +249,10 @@ def property_search_suggestions(request):
 def property_detail(request, property_id):
     """
     Get detailed property information with complete sections.
-    
+
     Path Parameters:
         property_id: Property ID
-    
+
     Returns:
         Complete property details including:
         - Basic property information
@@ -292,14 +292,14 @@ def property_detail(request, property_id):
 def property_availability(request, property_id):
     """
     Get property availability and pricing preview.
-    
+
     Path Parameters:
         property_id: Property ID
-    
+
     Query Parameters:
         check_in: Start date for availability check (YYYY-MM-DD format, optional)
         check_out: End date for availability check (YYYY-MM-DD format, optional)
-    
+
     Returns:
         Property availability data including:
         - Property basic information

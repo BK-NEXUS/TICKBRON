@@ -12,7 +12,7 @@ from common.models import BaseModel
 class Favorite(BaseModel):
     """
     User favorite properties.
-    
+
     Allows users to save properties they are interested in for quick access.
     """
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='favorites')
@@ -37,7 +37,7 @@ class Favorite(BaseModel):
 class Review(BaseModel):
     """
     Property reviews by users.
-    
+
     Users can review properties they have booked and stayed at.
     Reviews include ratings for different categories and overall rating.
     """
@@ -121,7 +121,7 @@ class Review(BaseModel):
 class Notification(BaseModel):
     """
     User notifications.
-    
+
     System notifications for users about bookings, payments, and other events.
     """
     TYPE_CHOICES = [
@@ -190,7 +190,7 @@ class Notification(BaseModel):
 class AccountHistory(BaseModel):
     """
     User account history and activity log.
-    
+
     Tracks important user account actions and changes for audit trail.
     """
     ACTION_CHOICES = [

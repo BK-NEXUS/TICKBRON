@@ -17,11 +17,11 @@ logger = logging.getLogger('tickbron')
 def rate_limit(limit='100/h', key_func=None):
     """
     Rate limiting decorator for API endpoints.
-    
+
     Args:
         limit: Rate limit string (e.g., '100/h', '1000/d', '10/m')
         key_func: Function to generate cache key (defaults to user ID or IP)
-    
+
     Usage:
         @rate_limit('100/h')
         def my_view(request):
@@ -78,7 +78,7 @@ def get_client_ip(request):
 def class_rate_limit(limit='100/h', key_func=None):
     """
     Rate limiting decorator for class-based views.
-    
+
     Usage:
         @class_rate_limit('100/h')
         class MyView(View):

@@ -45,7 +45,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
         photo = next(iter(photos), None)
         return photo.photo.url if photo and photo.photo else None
 
-
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_property_prices(self, obj):
         """The list view loads the active rate plans of every favorite in a few queries; rates are read once."""
