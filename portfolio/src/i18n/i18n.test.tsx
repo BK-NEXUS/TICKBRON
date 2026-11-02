@@ -55,6 +55,13 @@ describe('I18nProvider', () => {
     expect(screen.getByTestId('lang')).toHaveTextContent('en')
   })
 
+  it('keeps the document lang attribute in sync', () => {
+    render(<I18nProvider><Probe /></I18nProvider>)
+    expect(document.documentElement.lang).toBe('uz')
+    act(() => screen.getByText('en').click())
+    expect(document.documentElement.lang).toBe('en')
+  })
+
   it('returns the key for unknown keys', () => {
     render(<I18nProvider><Probe /></I18nProvider>)
     expect(screen.getByTestId('missing')).toHaveTextContent('no.such.key')

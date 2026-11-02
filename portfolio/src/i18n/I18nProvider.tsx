@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { I18nContext, type I18nValue } from './context'
 import { dictionaries, LANGS, type Lang } from './dictionaries'
 
@@ -29,6 +29,10 @@ function storeLang(lang: Lang): void {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(readStoredLang)
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next)
