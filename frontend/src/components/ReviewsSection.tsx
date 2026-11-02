@@ -149,6 +149,10 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
     )
   }
 
+  // The rating card already says "No reviews yet" for a hotel without reviews: no second, empty "Guest reviews" block
+  const breakdownSaysNone = propertyScores !== null && (!propertyScores.average_rating || propertyScores.total_reviews === 0)
+  const showGuestBlock = guestFailed || guestLoading || guestReviews.length > 0 || !breakdownSaysNone
+
   return (
     <section className="reviews-section">
       <h2 className="reviews-section-title">{t('reviews.title')}</h2>
@@ -194,30 +198,32 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
         </div>
       )}
 
-      <div className="reviews-section-list reviews-section-guests">
-        <h3 className="reviews-section-list-title">{t('reviews.guestReviews')}</h3>
-        {guestFailed && <p className="reviews-section-note" role="alert">{t('reviews.errorGuestReviews')}</p>}
-        {!guestFailed && !guestLoading && guestReviews.length === 0 && (
-          <p className="reviews-section-note">{t('reviews.noneYet')}</p>
-        )}
-        {guestReviews.length > 0 && (
-          <div className="reviews-section-cards">
-            {guestReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
-        )}
-        {guestHasMore && (
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={guestLoading}
-            onClick={() => void loadGuestPage(guestPage + 1)}
-          >
-            {t('reviews.showMore')}
-          </button>
-        )}
-      </div>
+      {showGuestBlock && (
+        <div className="reviews-section-list reviews-section-guests">
+          <h3 className="reviews-section-list-title">{t('reviews.guestReviews')}</h3>
+          {guestFailed && <p className="reviews-section-note" role="alert">{t('reviews.errorGuestReviews')}</p>}
+          {!guestFailed && !guestLoading && guestReviews.length === 0 && (
+            <p className="reviews-section-note">{t('reviews.noneYet')}</p>
+          )}
+          {guestReviews.length > 0 && (
+            <div className="reviews-section-cards">
+              {guestReviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          )}
+          {guestHasMore && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={guestLoading}
+              onClick={() => void loadGuestPage(guestPage + 1)}
+            >
+              {t('reviews.showMore')}
+            </button>
+          )}
+        </div>
+      )}
 
       {!isAuthenticated && (
         <div className="reviews-section-auth-cta">

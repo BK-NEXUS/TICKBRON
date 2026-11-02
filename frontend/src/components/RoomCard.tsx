@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { RoomType } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { PriceNote } from './PriceNote'
 import { VipBadge } from './VipBadge'
 import { roomFromPrice } from '../utils/price'
 
@@ -41,6 +42,7 @@ export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) 
             {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
           </span>
           <span className="room-card-price-period">{t('room.perNight')}</span>
+          <PriceNote shown={shown} />
         </div>
       </div>
 

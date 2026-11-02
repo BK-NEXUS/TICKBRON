@@ -7,6 +7,8 @@ logged-in account.
 import os
 import sys
 
+from django.conf import settings
+
 from common.throttling import BlockAnonRateThrottle
 
 # Throttling is off while tests run; the tests that check a limit patch this flag back to False
@@ -32,14 +34,14 @@ class IPRateThrottle(BlockAnonRateThrottle):
 
 
 class LoginRateThrottle(IPRateThrottle):
-    """Rate throttle for login endpoint - 10 requests per minute per IP."""
-    rate = '10/min'
+    """Rate throttle for login endpoint per IP (THROTTLE_LOGIN_RATE, 10/min by default)."""
+    rate = settings.LOGIN_THROTTLE_RATE
     scope = 'login'
 
 
 class RegisterRateThrottle(IPRateThrottle):
-    """Rate throttle for registration endpoint - 5 requests per minute per IP."""
-    rate = '5/min'
+    """Rate throttle for registration endpoint per IP (THROTTLE_REGISTER_RATE, 5/min by default)."""
+    rate = settings.REGISTER_THROTTLE_RATE
     scope = 'register'
 
 

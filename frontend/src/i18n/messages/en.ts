@@ -459,6 +459,7 @@ export const en = {
   'charge.approx': "≈ {amount}",
   'charge.rateOf': "Rate of {date} (CBU)",
   'charge.rateStale': "The rate may be out of date",
+  'price.noRate': "{currency} rate is not available yet",
   'charge.inSom': "About {amount} at today's rate",
   'charge.youPay': "You pay {amount} (the price set by the hotel in so'm)",
   'gallery.label': "Property image gallery",

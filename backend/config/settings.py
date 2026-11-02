@@ -33,7 +33,7 @@ if TESTING:
     for _name in (
         'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE', 'THROTTLE_BOOKING_CREATE_RATE',
         'THROTTLE_NO_SHOW_REPORT_RATE', 'THROTTLE_CHAT_SEND_RATE', 'THROTTLE_CHAT_POLL_RATE',
-        'THROTTLE_SEARCH_RATE', 'THROTTLE_PROMOTION_PUBLIC_RATE',
+        'THROTTLE_SEARCH_RATE', 'THROTTLE_PROMOTION_PUBLIC_RATE', 'THROTTLE_LOGIN_RATE', 'THROTTLE_REGISTER_RATE',
         'CELERY_TASK_ALWAYS_EAGER',
     ):
         os.environ.pop(_name, None)
@@ -405,6 +405,9 @@ else:
 SEARCH_THROTTLE_RATE = os.getenv('THROTTLE_SEARCH_RATE', '100/min')
 # Limit of the public banner endpoints per visitor address (promotions.views.PromotionPublicThrottle)
 PROMOTION_PUBLIC_THROTTLE_RATE = os.getenv('THROTTLE_PROMOTION_PUBLIC_RATE', '60/min')
+# Limits of the sign-in and sign-up endpoints per visitor address (users.throttles)
+LOGIN_THROTTLE_RATE = os.getenv('THROTTLE_LOGIN_RATE', '10/min')
+REGISTER_THROTTLE_RATE = os.getenv('THROTTLE_REGISTER_RATE', '5/min')
 
 # Seconds a copy of a public answer (hotel page, availability, search results) is kept in the cache; 0 turns it off.
 # The tests run with it off so one test never sees another's data. (common/public_cache.py)

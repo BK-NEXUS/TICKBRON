@@ -466,4 +466,33 @@ describe('PropertyDetailPage', () => {
       expect(propertyAdapter.getPropertyById).toHaveBeenCalledWith(1)
     })
   })
+
+  describe('sections without data', () => {
+    const show = async (patch: Record<string, unknown>) => {
+      vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: { ...mockProperty, ...patch } as never, error: null })
+      renderWithProviders(<PropertyDetailPage />)
+      await screen.findByRole('heading', { name: 'Test Property' })
+    }
+
+    it('shows no empty card for amenities, policies, nearby places or restaurants when there is nothing to show', async () => {
+      await show({ amenities: [], policies: [], nearby_places: [], restaurants: [] })
+      for (const text of [/No amenities information/, /No policy information/, /No nearby places information/, /No restaurant information/]) {
+        expect(screen.queryByText(text)).not.toBeInTheDocument()
+      }
+    })
+
+    it('still shows those sections when the hotel has the data', async () => {
+      await show({})
+      expect(screen.getByText('Test Park')).toBeInTheDocument()
+      expect(screen.getByText('Test Restaurant')).toBeInTheDocument()
+      expect(screen.getByText('Check-in Policy')).toBeInTheDocument()
+    })
+
+    it('puts the rooms right after the hotel details, before the location and the long information sections', async () => {
+      await show({})
+      const rooms = document.querySelector('.room-selection') as HTMLElement
+      const location = screen.getByRole('heading', { name: 'Location' })
+      expect(rooms.compareDocumentPosition(location) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+  })
 })

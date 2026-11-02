@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { RatePlan } from '../adapters/propertyAdapter'
 import { useI18n } from '../i18n/I18nContext'
+import { PriceNote } from './PriceNote'
 import { priceIn } from '../utils/price'
 import { rateTypeLabel } from '../utils/rateType'
 
@@ -44,6 +45,7 @@ export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePla
             {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
           </span>
           <span className="rate-plan-card-price-period">{t('room.perNight')}</span>
+          <PriceNote shown={shown} />
         </div>
       </div>
 

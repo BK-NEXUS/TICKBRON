@@ -6,6 +6,7 @@ import { StarIcon } from './StarIcon'
 import { PriceApprox } from './PriceApprox'
 import { priceIn } from '../utils/price'
 import { useI18n } from '../i18n/I18nContext'
+import { PriceNote } from './PriceNote'
 import { useTilt } from '../hooks/useTilt'
 
 interface PropertyCardProps {
@@ -131,6 +132,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
               {shown.approximate ? t('charge.approx', { amount: priceText }) : priceText}
             </span>
             <span className="property-card-price-period">{t('card.perNight')}</span>
+            <PriceNote shown={shown} />
             {/* Without the per-currency prices (an older API) the hotel's own price keeps its so'm equivalent */}
             {!property.prices && <PriceApprox approx={property.base_price_uzs_approx} />}
           </div>

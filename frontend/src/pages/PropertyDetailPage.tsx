@@ -19,6 +19,7 @@ import { PriceApprox } from '../components/PriceApprox'
 import { propertyFromPrice } from '../utils/price'
 import { PropertyLocationMap } from '../components/PropertyLocationMap'
 import { useI18n } from '../i18n/I18nContext'
+import { PriceNote } from '../components/PriceNote'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -174,6 +175,12 @@ export function PropertyDetailPage() {
             </div>
           </section>
 
+          {property.room_types && property.room_types.length > 0 && (
+            <section className="property-detail-section">
+              <RoomSelection roomTypes={property.room_types} propertyId={property.id} currency={property.currency} />
+            </section>
+          )}
+
           <section className="property-detail-section">
             <h2 className="property-detail-section-title">{t('property.location')}</h2>
             <address className="property-detail-address">
@@ -188,31 +195,34 @@ export function PropertyDetailPage() {
             <PropertyLocationMap latitude={property.latitude} longitude={property.longitude} name={propertyDisplayName(property)} />
           </section>
 
-          <section className="property-detail-section">
-            <PropertyAmenitiesDetail amenities={property.amenities} />
-          </section>
+          {Boolean(property.amenities?.length) && (
+            <section className="property-detail-section">
+              <PropertyAmenitiesDetail amenities={property.amenities} />
+            </section>
+          )}
 
-          <section className="property-detail-section">
-            <PropertyPoliciesDetail policies={property.policies} />
-          </section>
+          {Boolean(property.policies?.length) && (
+            <section className="property-detail-section">
+              <PropertyPoliciesDetail policies={property.policies} />
+            </section>
+          )}
 
-          <section className="property-detail-section">
-            <NearbyPlaces places={property.nearby_places || []} />
-          </section>
+          {Boolean(property.nearby_places?.length) && (
+            <section className="property-detail-section">
+              <NearbyPlaces places={property.nearby_places ?? []} />
+            </section>
+          )}
 
-          <section className="property-detail-section">
-            <DiningRestaurants restaurants={property.restaurants || []} />
-          </section>
+          {Boolean(property.restaurants?.length) && (
+            <section className="property-detail-section">
+              <DiningRestaurants restaurants={property.restaurants ?? []} />
+            </section>
+          )}
 
           <section className="property-detail-section">
             <ReviewsSection propertyId={property.id} />
           </section>
 
-          {property.room_types && property.room_types.length > 0 && (
-            <section className="property-detail-section">
-              <RoomSelection roomTypes={property.room_types} propertyId={property.id} currency={property.currency} />
-            </section>
-          )}
         </div>
 
         <aside className="property-detail-sidebar">
@@ -222,6 +232,7 @@ export function PropertyDetailPage() {
                 {shownFrom.approximate ? t('charge.approx', { amount: fromText }) : fromText}
               </span>
               <span className="property-detail-price-period">{t('card.perNight')}</span>
+              <PriceNote shown={shownFrom} />
               {/* The date of the CBU rate (and its out-of-date warning) belongs to the so'm equivalent of the hotel's own price */}
               {shownFrom.currency === property.currency && (
                 <PriceApprox approx={property.base_price_uzs_approx} rate={property.uzs_rate} showRate />

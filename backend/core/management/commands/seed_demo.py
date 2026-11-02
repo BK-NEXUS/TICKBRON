@@ -29,6 +29,8 @@ INVENTORY_DAYS = 90
 # Used only when no accepted rate exists (offline dev machines, E2E); a real one comes
 # from `python manage.py fetch_exchange_rates`.
 DEMO_USD_RATE = Decimal('12000.00')
+# So'm per one unit; tenge and roubles are shown by the site too, and a currency without a rate shows no price
+DEMO_RATES = {'USD': DEMO_USD_RATE, 'KZT': Decimal('24.00'), 'RUB': Decimal('140.00')}
 
 DEMO_USERS = [
     {
@@ -97,20 +99,25 @@ class Command(BaseCommand):
         self._print_summary(properties)
         if demo_rate:
             self.stdout.write(self.style.WARNING(
-                f'No exchange rate yet: stored a DEMO rate of {DEMO_USD_RATE} UZS per USD (source "demo") so the '
-                'USD demo hotels can be booked. Run `python manage.py fetch_exchange_rates` for the real CBU rate.'
+                f'No exchange rate yet: stored DEMO rates ({", ".join(r.currency for r in demo_rate)}, source "demo") so the '
+                'USD demo hotels can be booked and tenge and roubles show prices. '
+                'Run `python manage.py fetch_exchange_rates` for the real CBU rates.'
             ))
 
     def _seed_demo_rate(self):
+        """Demo rates for the currencies that have no accepted rate yet; the ones stored are returned."""
         from currency.cbu import tashkent_today
         from currency.models import ExchangeRate
 
-        if ExchangeRate.objects.filter(currency='USD', status='accepted').exists():
-            return None
-        return ExchangeRate.objects.create(
-            currency='USD', rate=DEMO_USD_RATE, nominal=1, rate_date=tashkent_today(), source='demo',
-            status='accepted', note='seed_demo: local development only, not a real rate',
-        )
+        stored = []
+        for code, rate in DEMO_RATES.items():
+            if ExchangeRate.objects.filter(currency=code, status='accepted').exists():
+                continue
+            stored.append(ExchangeRate.objects.create(
+                currency=code, rate=rate, nominal=1, rate_date=tashkent_today(), source='demo',
+                status='accepted', note='seed_demo: local development only, not a real rate',
+            ))
+        return stored
 
     def _seed_users(self):
         owner_role, _ = Role.objects.get_or_create(
