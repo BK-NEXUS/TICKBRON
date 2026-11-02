@@ -2,49 +2,74 @@ import { useState } from 'react'
 import { useI18n } from '../i18n/I18nContext'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
-/** TICKBRON's own picture: the hotel with its two palms, asleep, and a "no signal" badge. Colours follow the theme. */
+/** TICKBRON's own picture: the hotel in a night cap, asleep between two palms, and a "no signal" badge. Colours follow the theme. */
 function SleepingHotel() {
-  const gold = { fill: 'var(--color-gold)' }
-  const goldDark = { fill: 'var(--color-gold-dark)' }
-  const ink = { stroke: 'var(--color-text-primary)', fill: 'none' }
-  const palm = (x: number, scale: number) => (
-    <g transform={`translate(${x} 160) scale(${scale})`}>
-      <path d="M0 0 C -4 -30 4 -55 0 -80" style={{ stroke: 'var(--color-gold-dark)' }} strokeWidth="6" strokeLinecap="round" fill="none" />
-      {[-42, -22, 0, 22, 42].map(angle => (
-        <path key={angle} d="M0 -80 C 14 -96 34 -92 44 -76" transform={`rotate(${angle} 0 -80)`}
-          style={{ stroke: 'var(--color-gold)' }} strokeWidth="7" strokeLinecap="round" fill="none" />
-      ))}
+  const fill = (color: string) => ({ fill: `var(${color})` })
+  const line = { stroke: 'var(--color-text-primary)', fill: 'none' }
+  const palm = (x: number, scale: number, extra: string) => (
+    <g transform={`translate(${x} 170) scale(${scale})`}>
+      <g className={`offline-sway ${extra}`}>
+        <path d="M0 0 C -5 -28 5 -52 0 -78" style={{ stroke: 'var(--color-gold-dark)' }} strokeWidth="6" strokeLinecap="round" fill="none" />
+        {[-168, -132, -96, -60, -24, 12, 148].map(angle => (
+          <path key={angle} d="M0 0 C 12 -16 38 -16 56 6 C 38 -3 14 -2 0 0 Z" transform={`translate(0 -78) rotate(${angle})`}
+            style={fill('--color-gold')} />
+        ))}
+        <circle cx="-5" cy="-74" r="4" style={fill('--color-gold-dark')} />
+        <circle cx="5" cy="-73" r="4" style={fill('--color-gold-dark')} />
+      </g>
+    </g>
+  )
+  const cloud = (x: number, y: number, extra: string) => (
+    <g transform={`translate(${x} ${y})`}>
+      <g className={`offline-drift ${extra}`} style={{ fill: 'var(--color-background-alt)' }}>
+        <ellipse cx="0" cy="0" rx="14" ry="6" />
+        <ellipse cx="-7" cy="-4" rx="8" ry="6" />
+        <ellipse cx="6" cy="-5" rx="9" ry="7" />
+      </g>
     </g>
   )
   return (
     <svg className="offline-art" viewBox="0 0 240 200" width="240" height="200" aria-hidden="true" focusable="false">
-      <ellipse cx="120" cy="172" rx="96" ry="9" style={{ fill: 'var(--color-border)' }} />
-      {palm(44, 0.9)}
-      {palm(196, 0.75)}
-      <rect x="68" y="92" width="30" height="80" rx="5" style={goldDark} />
-      <rect x="142" y="102" width="30" height="70" rx="5" style={goldDark} />
-      <rect x="92" y="44" width="56" height="128" rx="8" style={gold} />
-      {[0, 1].map(row => (
-        <g key={row}>
-          <rect x="74" y={104 + row * 24} width="8" height="12" rx="2" style={{ fill: 'var(--color-background)' }} />
-          <rect x="86" y={104 + row * 24} width="6" height="12" rx="2" style={{ fill: 'var(--color-background)' }} />
-          <rect x="148" y={114 + row * 24} width="8" height="12" rx="2" style={{ fill: 'var(--color-background)' }} />
-          <rect x="160" y={114 + row * 24} width="6" height="12" rx="2" style={{ fill: 'var(--color-background)' }} />
-        </g>
-      ))}
-      <path d="M106 150 v22 h28 v-22 a14 14 0 0 0 -28 0 z" style={{ fill: 'var(--color-text-primary)' }} />
-      <path d="M104 78 q8 8 16 0" {...ink} strokeWidth="3.2" strokeLinecap="round" />
-      <path d="M126 78 q8 8 16 0" {...ink} strokeWidth="3.2" strokeLinecap="round" />
-      <path d="M114 96 q6 5 12 0" {...ink} strokeWidth="3" strokeLinecap="round" />
-      <g className="offline-art-z" style={{ fill: 'var(--color-text-secondary)' }} fontFamily="serif" fontWeight="700">
-        <text x="150" y="52" fontSize="16">z</text>
-        <text x="162" y="38" fontSize="22">Z</text>
+      {cloud(190, 38, '')}
+      {cloud(30, 92, 'offline-drift--slow')}
+      <ellipse cx="120" cy="174" rx="98" ry="9" style={fill('--color-border')} />
+      {palm(42, 0.95, '')}
+      {palm(198, 0.78, 'offline-sway--slow')}
+      <g className="offline-breathe">
+        <rect x="66" y="94" width="32" height="80" rx="5" style={fill('--color-gold-dark')} />
+        <rect x="142" y="104" width="32" height="70" rx="5" style={fill('--color-gold-dark')} />
+        <rect x="92" y="52" width="56" height="122" rx="9" style={fill('--color-gold')} />
+        {[0, 1, 2].map(row => (
+          <g key={row}>
+            <rect className="offline-twinkle" x="72" y={106 + row * 22} width="9" height="12" rx="2" style={fill('--color-background')} />
+            <rect className="offline-twinkle offline-twinkle--late" x="85" y={106 + row * 22} width="7" height="12" rx="2" style={fill('--color-background')} />
+            <rect className="offline-twinkle offline-twinkle--late" x="148" y={114 + row * 20} width="9" height="12" rx="2" style={fill('--color-background')} />
+            <rect className="offline-twinkle" x="161" y={114 + row * 20} width="7" height="12" rx="2" style={fill('--color-background')} />
+          </g>
+        ))}
+        <path d="M106 152 v22 h28 v-22 a14 14 0 0 0 -28 0 z" style={fill('--color-text-primary')} />
+        <circle cx="132" cy="165" r="1.8" style={fill('--color-gold')} />
+        <path d="M91 56 Q104 14 144 28 Q130 33 142 53 Z" style={fill('--color-text-primary')} />
+        <path d="M91 56 L149 54" style={{ stroke: 'var(--color-gold-dark)' }} strokeWidth="5" strokeLinecap="round" />
+        <circle cx="146" cy="27" r="6" style={fill('--color-gold')} />
+        <path d="M104 86 q8 8 16 0" {...line} strokeWidth="3.2" strokeLinecap="round" />
+        <path d="M126 86 q8 8 16 0" {...line} strokeWidth="3.2" strokeLinecap="round" />
+        <circle cx="101" cy="96" r="4.5" style={{ fill: 'var(--color-gold-dark)', opacity: 0.35 }} />
+        <circle cx="145" cy="96" r="4.5" style={{ fill: 'var(--color-gold-dark)', opacity: 0.35 }} />
+        <ellipse cx="123" cy="103" rx="4" ry="3.2" style={fill('--color-text-primary')} />
+      </g>
+      <g style={{ fill: 'var(--color-text-secondary)' }} fontFamily="serif" fontWeight="700">
+        <text className="offline-zzz" x="156" y="46" fontSize="14">z</text>
+        <text className="offline-zzz offline-zzz--2" x="164" y="34" fontSize="19">z</text>
+        <text className="offline-zzz offline-zzz--3" x="174" y="20" fontSize="25">Z</text>
       </g>
       <g transform="translate(46 44)">
-        <circle r="22" style={{ fill: 'var(--color-background-alt)', stroke: 'var(--color-border)' }} strokeWidth="2" />
-        <path d="M-12 -2 a17 17 0 0 1 24 0 M-8 4 a11 11 0 0 1 16 0" {...ink} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="0" cy="11" r="2.4" style={{ fill: 'var(--color-text-primary)' }} />
-        <path d="M-14 -14 L14 14" style={{ stroke: 'var(--color-error)' }} strokeWidth="4" strokeLinecap="round" />
+        <g className="offline-pulse">
+          <circle r="22" style={{ fill: 'var(--color-background-alt)', stroke: 'var(--color-border)' }} strokeWidth="2" />
+          <path d="M-12 -2 a17 17 0 0 1 24 0 M-8 4 a11 11 0 0 1 16 0" {...line} strokeWidth="3" strokeLinecap="round" />
+          <circle cx="0" cy="11" r="2.4" style={fill('--color-text-primary')} />
+          <path d="M-14 -14 L14 14" style={{ stroke: 'var(--color-error)' }} strokeWidth="4" strokeLinecap="round" />
+        </g>
       </g>
     </svg>
   )

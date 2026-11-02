@@ -10319,13 +10319,89 @@ button.property-gallery-image {
   font-size: var(--font-size-sm);
 }
 
+/* The picture moves, but only for people who have not asked for less motion */
 @media (prefers-reduced-motion: no-preference) {
-  .offline-art-z {
-    animation: offline-float 3s ease-in-out infinite;
+  .offline-art .offline-sway,
+  .offline-art .offline-breathe,
+  .offline-art .offline-pulse,
+  .offline-art .offline-drift,
+  .offline-art .offline-zzz {
+    transform-box: fill-box;
   }
 
-  @keyframes offline-float {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(-4px); opacity: 0.6; }
+  .offline-sway {
+    transform-origin: 50% 100%;
+    animation: offline-sway 4s ease-in-out infinite;
+  }
+
+  .offline-sway--slow {
+    animation-duration: 5.5s;
+    animation-delay: -1.5s;
+  }
+
+  .offline-breathe {
+    transform-origin: 50% 100%;
+    animation: offline-breathe 3.6s ease-in-out infinite;
+  }
+
+  .offline-zzz {
+    transform-origin: 50% 100%;
+    opacity: 0;
+    animation: offline-zzz 3.6s ease-out infinite;
+  }
+
+  .offline-zzz--2 { animation-delay: 0.9s; }
+  .offline-zzz--3 { animation-delay: 1.8s; }
+
+  .offline-pulse {
+    transform-origin: 50% 50%;
+    animation: offline-pulse 2s ease-in-out infinite;
+  }
+
+  .offline-twinkle {
+    animation: offline-twinkle 3.2s ease-in-out infinite;
+  }
+
+  .offline-twinkle--late {
+    animation-delay: 1.6s;
+  }
+
+  .offline-drift {
+    animation: offline-drift 9s ease-in-out infinite alternate;
+  }
+
+  .offline-drift--slow {
+    animation-duration: 13s;
+  }
+
+  @keyframes offline-sway {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  @keyframes offline-breathe {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.025); }
+  }
+
+  @keyframes offline-zzz {
+    0% { transform: translate(-3px, 6px) scale(0.8); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translate(6px, -10px) scale(1.1); opacity: 0; }
+  }
+
+  @keyframes offline-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  @keyframes offline-twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes offline-drift {
+    from { transform: translateX(-8px); }
+    to { transform: translateX(8px); }
   }
 }
