@@ -1,3 +1,3 @@
-export function sceneSettings(isMobile: boolean): { shapeCount: number; dpr: number } {
-  return isMobile ? { shapeCount: 6, dpr: 1 } : { shapeCount: 14, dpr: 1.5 }
+export function sceneSettings(isMobile: boolean): { segments: number; dpr: number } {
+  return isMobile ? { segments: 48, dpr: 1 } : { segments: 128, dpr: 1.5 }
 }

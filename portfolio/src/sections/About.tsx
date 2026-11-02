@@ -10,7 +10,7 @@ export function About() {
       <p className="lead">{t('about.body')}</p>
       <dl className="stats">
         {profile.stats.map((stat) => (
-          <div key={stat.id} className="stat glass">
+          <div key={stat.id} className="stat">
             <dt>{t(`stats.${stat.id}`)}</dt>
             <dd>
               <Counter value={stat.value} />

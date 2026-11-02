@@ -21,9 +21,9 @@ afterEach(() => {
 })
 
 describe('sceneSettings', () => {
-  it('uses fewer shapes and a lower dpr on mobile', () => {
-    expect(sceneSettings(true)).toEqual({ shapeCount: 6, dpr: 1 })
-    expect(sceneSettings(false)).toEqual({ shapeCount: 14, dpr: 1.5 })
+  it('uses a coarser blob and a lower dpr on mobile', () => {
+    expect(sceneSettings(true)).toEqual({ segments: 48, dpr: 1 })
+    expect(sceneSettings(false)).toEqual({ segments: 128, dpr: 1.5 })
   })
 })
 

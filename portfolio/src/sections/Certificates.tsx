@@ -13,11 +13,12 @@ export function Certificates({ certificates }: { certificates: Certificate[] }) 
         <ul className="cert-grid" aria-label={t('certs.title')}>
           {certificates.map((cert) => (
             <li key={cert.id}>
-              <TiltCard className="glass cert-card">
+              <TiltCard className="cert-card">
                 <p className="cert-score">{cert.score}</p>
                 <p className="cert-name">{cert.name}</p>
                 <p className="cert-meta">
-                  {cert.issuer} · {cert.year}
+                  <span>{cert.issuer}</span>
+                  <span>{cert.year}</span>
                 </p>
               </TiltCard>
             </li>

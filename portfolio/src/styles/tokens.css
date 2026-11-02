@@ -1,16 +1,17 @@
 :root {
-  --bg-0: #0a0824;
-  --bg-1: #17104a;
-  --bg-2: #0d2a52;
-  --glass: rgb(255 255 255 / 0.07);
-  --glass-border: rgb(255 255 255 / 0.16);
-  --text: #f1f0ff;
-  --text-muted: #c4c1ee;
-  --accent: #8fb4ff;
-  --accent-strong: #7c6cff;
-  --focus: #ffd966;
-  --radius: 20px;
-  --gutter: 16px;
-  --max-width: 1080px;
+  --ink: #000;
+  --surface: #0d0d0d;
+  --surface-hover: #151515;
+  --line: #262626;
+  --text: #f4f4f2;
+  --text-muted: #a3a3a0;
+  --accent: #c8ff3d;
+  --accent-ink: #0a0f00;
+  --focus: #ffffff;
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-body: 'Instrument Sans Variable', system-ui, sans-serif;
+  --gutter: clamp(16px, 4vw, 48px);
+  --max-width: 1280px;
+  --radius: 14px;
   color-scheme: dark;
 }

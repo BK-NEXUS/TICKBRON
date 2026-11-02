@@ -5,10 +5,15 @@ export function Hero() {
   const { t } = useI18n()
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <p className="eyebrow">{t('hero.role')}</p>
       <h1 id="hero-title">
-        {profile.firstName} <span className="accent">{profile.lastName}</span>
+        <span className="line">
+          <span>{profile.firstName}</span>
+        </span>{' '}
+        <span className="line">
+          <span>{profile.lastName}</span>
+        </span>
       </h1>
+      <p className="role">{t('hero.role')}</p>
       <a className="button" href="#certificates">
         {t('hero.cta')}
       </a>
