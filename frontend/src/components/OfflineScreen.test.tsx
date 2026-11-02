@@ -58,14 +58,39 @@ describe('OfflineScreen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Internet aloqasi yo\'q')
   })
 
-  it('moves: the hotel breathes, the palms sway, the Z floats, the badge pulses, the windows twinkle, clouds drift', () => {
+  it('moves: breathing hotel, swaying palms, floating Z, sleep bubble, pulsing badge, twinkling windows and stars, glowing lamp, drifting clouds', () => {
     const { container } = show()
     goOffline()
-    for (const part of ['offline-breathe', 'offline-sway', 'offline-zzz', 'offline-pulse', 'offline-twinkle', 'offline-drift']) {
+    for (const part of ['offline-breathe', 'offline-sway', 'offline-zzz', 'offline-pulse', 'offline-twinkle', 'offline-drift', 'offline-bubble', 'offline-star', 'offline-lamp']) {
       expect(container.querySelector(`svg .${part}`), part).not.toBeNull()
     }
     expect(container.querySelectorAll('svg .offline-sway').length).toBeGreaterThanOrEqual(2)
     expect(container.querySelectorAll('svg .offline-zzz').length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('has a night sky, a moon, a suitcase and a lit lamp: a small scene, not just a building', () => {
+    const { container } = show()
+    goOffline()
+    for (const part of ['offline-moon', 'offline-suitcase', 'offline-lamp']) {
+      expect(container.querySelector(`svg .${part}`), part).not.toBeNull()
+    }
+    expect(container.querySelectorAll('svg .offline-star').length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('jumps awake for a moment when the picture is touched, and falls asleep again', () => {
+    vi.useFakeTimers()
+    try {
+      const { container } = show()
+      goOffline()
+      const wrap = container.querySelector('.offline-art-wrap') as HTMLElement
+      expect(wrap).not.toHaveClass('offline-jolt')
+      fireEvent.click(wrap)
+      expect(wrap).toHaveClass('offline-jolt')
+      act(() => { vi.advanceTimersByTime(900) })
+      expect(wrap).not.toHaveClass('offline-jolt')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('every animation of the screen is switched on only for people who have not asked for less motion', () => {

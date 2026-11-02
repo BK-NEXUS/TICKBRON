@@ -10295,8 +10295,14 @@ button.property-gallery-image {
   text-align: center;
 }
 
+.offline-art-wrap {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .offline-art {
-  width: min(240px, 70vw);
+  display: block;
+  width: min(260px, 72vw);
   height: auto;
 }
 
@@ -10325,7 +10331,11 @@ button.property-gallery-image {
   .offline-art .offline-breathe,
   .offline-art .offline-pulse,
   .offline-art .offline-drift,
-  .offline-art .offline-zzz {
+  .offline-art .offline-zzz,
+  .offline-art .offline-bubble,
+  .offline-art .offline-lamp,
+  .offline-art .offline-star,
+  .offline-art .offline-moon {
     transform-box: fill-box;
   }
 
@@ -10372,6 +10382,61 @@ button.property-gallery-image {
 
   .offline-drift--slow {
     animation-duration: 13s;
+  }
+
+  .offline-bubble {
+    transform-origin: 0% 50%;
+    animation: offline-bubble 3.6s ease-in-out infinite;
+  }
+
+  .offline-lamp {
+    transform-origin: 50% 50%;
+    animation: offline-lamp 2.8s ease-in-out infinite;
+  }
+
+  .offline-star {
+    transform-origin: 50% 50%;
+    animation: offline-star 3s ease-in-out infinite;
+  }
+
+  .offline-star--2 { animation-delay: 1s; animation-duration: 3.6s; }
+  .offline-star--3 { animation-delay: 2s; animation-duration: 2.6s; }
+
+  .offline-moon {
+    transform-origin: 50% 50%;
+    animation: offline-moon 7s ease-in-out infinite;
+  }
+
+  .offline-jolt {
+    animation: offline-jolt 0.7s ease-out;
+  }
+
+  @keyframes offline-bubble {
+    0%, 100% { transform: scale(0.5); }
+    50% { transform: scale(1.5); }
+  }
+
+  @keyframes offline-lamp {
+    0%, 100% { transform: scale(0.85); opacity: 0.2; }
+    50% { transform: scale(1.15); opacity: 0.45; }
+  }
+
+  @keyframes offline-star {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(0.55) rotate(25deg); opacity: 0.35; }
+  }
+
+  @keyframes offline-moon {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+
+  @keyframes offline-jolt {
+    0% { transform: translateY(0) scale(1, 1); }
+    25% { transform: translateY(-14px) scale(0.96, 1.06); }
+    50% { transform: translateY(0) scale(1.06, 0.94); }
+    75% { transform: translateY(-4px) scale(0.99, 1.02); }
+    100% { transform: translateY(0) scale(1, 1); }
   }
 
   @keyframes offline-sway {
