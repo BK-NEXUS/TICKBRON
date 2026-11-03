@@ -58,12 +58,22 @@ class IsHotelOwner(IsAuthenticated):
         return False
 
 
+class SoftDeleteDestroyMixin:
+    """
+    DELETE hides the record instead of erasing it. Bookings keep pointing at the property, room type and
+    rate plan they were made for (PROTECT), so a real delete would be a 500 or would lose the hotel's data.
+    """
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+
 class PartnerAPIRootView(routers.APIRootView):
     """The router's endpoint index; the default one is open to any logged-in user."""
     permission_classes = [IsHotelOwner]
 
 
-class PartnerPropertyViewSet(viewsets.ModelViewSet):
+class PartnerPropertyViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     ViewSet for property management by hotel-owners.
 
@@ -92,7 +102,7 @@ class PartnerPropertyViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
+class PartnerRoomTypeViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     ViewSet for room type management by hotel-owners.
 
@@ -114,7 +124,7 @@ class PartnerRoomTypeViewSet(viewsets.ModelViewSet):
         ).select_related('property').prefetch_related(live_photos)
 
 
-class PartnerRatePlanViewSet(viewsets.ModelViewSet):
+class PartnerRatePlanViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     ViewSet for rate plan management by hotel-owners.
 
