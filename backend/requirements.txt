@@ -4,7 +4,7 @@ djangorestframework==3.18.3
 django-cors-headers==4.9.0
 
 # Database (PostgreSQL; 2.9.10+ ships Python 3.13 wheels for Windows)
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.13
 
 # Image handling
 Pillow==13.0.0
