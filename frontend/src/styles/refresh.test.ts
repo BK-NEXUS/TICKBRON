@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const read = (file: string) => readFileSync(resolve(__dirname, file), 'utf-8')
+// Git on Windows checks files out with CRLF; the patterns below look for "\n}\n"
+const read = (file: string) => readFileSync(resolve(__dirname, file), 'utf-8').replace(/\r\n/g, '\n')
 const refresh = read('refresh.css')
 
 describe('design refresh styles', () => {
