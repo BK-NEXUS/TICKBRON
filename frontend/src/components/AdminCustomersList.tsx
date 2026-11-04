@@ -233,7 +233,7 @@ export function AdminCustomersList() {
                   <th scope="col">{t('admin.preferredContact')}</th>
                   <th scope="col">{t('admin.bookingCount')}</th>
                   <th scope="col">{t('admin.lastBookingDate')}</th>
-                  <th scope="col">{t('partner.status')}</th>
+                  <th scope="col">{t('status.statusCol')}</th>
                 </tr>
               </thead>
               <tbody>

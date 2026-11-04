@@ -38,3 +38,18 @@ describe('message catalogs', () => {
     }
   })
 })
+
+describe('the Status section and the status of a record', () => {
+  it.each([['en', en], ['uz', uz], ['ru', ru]])('%s names the admin tabs Registrations and Status differently', (_name, catalog) => {
+    expect(catalog['admin.tabRegistrations'], 'admin.tabRegistrations').toBeTruthy()
+    expect(catalog['admin.tabRegistrations']).not.toBe(catalog['partner.status'])
+  })
+
+  it('heads a status column with status.statusCol, never with the name of the Status section', () => {
+    const sources = import.meta.glob('../components/*.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    for (const [file, source] of Object.entries(sources)) {
+      expect(source, file).not.toMatch(/<th[^>]*>\s*\{t\('partner\.status'\)\}/)
+      expect(source, file).not.toMatch(/status: 'partner\.status'/)
+    }
+  })
+})

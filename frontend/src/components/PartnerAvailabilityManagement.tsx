@@ -347,7 +347,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
             <thead>
               <tr>
                 <th>{t('partner.date')}</th>
-                <th>{t('partner.status')}</th>
+                <th>{t('status.statusCol')}</th>
                 <th>{t('calendar.available')}</th>
                 <th>{t('partner.booked')}</th>
                 <th>{t('partner.price')}</th>

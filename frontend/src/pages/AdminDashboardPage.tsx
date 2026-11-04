@@ -126,7 +126,7 @@ export function AdminDashboardPage() {
         aria-current={currentView === 'statistics' ? 'page' : undefined}
       >
         <span className="nav-icon"><ChartColumn size={18} /></span>
-        <span className="nav-label">{t('status.statistics')}</span>
+        <span className="nav-label">{t('admin.tabRegistrations')}</span>
       </button>
       <button
         onClick={() => setCurrentView('status')}
