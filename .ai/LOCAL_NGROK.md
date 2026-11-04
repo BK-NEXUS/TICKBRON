@@ -2,6 +2,10 @@
 
 One ngrok tunnel to the frontend dev server is enough. The page and the API share one address: the dev server (Vite) forwards `/api` and `/media` to the backend, so there are no cookie, CORS or mixed-content problems.
 
+## One command (Windows)
+`powershell -ExecutionPolicy Bypass -File scripts\demo-tunnel.ps1` starts the database (Docker), builds and serves the site, starts ngrok, puts the tunnel address into `CSRF_TRUSTED_ORIGINS` of `backend/.env`, starts the backend and prints the address for the tester. `-Stop` stops all of it. Needs the one-time setup below (the script uses `backendenv`). The built site (not `npm run dev`) is served, because the dev server sends hundreds of small files, which is slow through a tunnel.
+Use `DB_HOST=127.0.0.1`, not `localhost`, in `backend/.env`: on Windows `localhost` is tried as IPv6 first and every new database connection waited 2 seconds (each API answer took 2.1 s instead of 0.06 s).
+
 ## One-time setup
 1. Install PostgreSQL, Redis, Python 3.13, Node 22 and [ngrok](https://ngrok.com/download); run `ngrok config add-authtoken <your token>` once.
 2. Database (once): create the user and database named in `backend/.env.dev.example` (`tickbron_user` / `tickbron`).
