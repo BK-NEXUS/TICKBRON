@@ -3,12 +3,13 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import type { Group, Mesh } from 'three'
 import type { Theme } from '../theme/context'
-import { GLOBE_RADIUS, meridian, parallel, routeArcs } from './globeGeometry'
+import { Atmosphere } from './Atmosphere'
+import { CityPulse } from './CityPulse'
+import { fibonacciSphere, GLOBE_RADIUS, routeArcs, routeEndpoints } from './globeGeometry'
 import { globeColors } from './globeColors'
 
 const NARROW_WIDTH = 6
-const MERIDIANS = Array.from({ length: 12 }, (_, i) => -180 + i * 30)
-const PARALLELS = [-60, -30, 0, 30, 60]
+const DOTS_PER_SEGMENT = 22
 
 function scrollProgress(): number {
   const max = document.documentElement.scrollHeight - window.innerHeight
@@ -17,10 +18,15 @@ function scrollProgress(): number {
 
 export function Globe({ segments, theme }: { segments: number; theme: Theme }) {
   const group = useRef<Group>(null)
-  const dots = useRef<(Mesh | null)[]>([])
+  const travellers = useRef<(Mesh | null)[]>([])
   const colors = globeColors(theme)
   const arcs = useMemo(() => routeArcs(), [])
-  const arcPoints = useMemo(() => arcs.map((curve) => curve.getPoints(48)), [arcs])
+  const arcPoints = useMemo(() => arcs.map((curve) => curve.getPoints(64)), [arcs])
+  const endpoints = useMemo(() => routeEndpoints(), [])
+  const dots = useMemo(
+    () => new Float32Array(fibonacciSphere(segments * DOTS_PER_SEGMENT).flatMap((p) => [p.x, p.y, p.z])),
+    [segments],
+  )
   const { viewport } = useThree()
   const narrow = viewport.width < NARROW_WIDTH
 
@@ -35,31 +41,35 @@ export function Globe({ segments, theme }: { segments: number; theme: Theme }) {
     g.position.y += (baseY + pointer.y * 0.2 - progress * 1.4 - g.position.y) * ease
     g.rotation.y += delta * 0.1
     g.rotation.x += (0.35 + pointer.y * 0.15 - g.rotation.x) * ease
-    dots.current.forEach((dot, i) => {
+    travellers.current.forEach((dot, i) => {
       if (dot) dot.position.copy(arcs[i].getPoint((clock.elapsedTime * 0.18 + i * 0.2) % 1))
     })
   })
 
   return (
     <group ref={group} scale={narrow ? 0.62 : 1.0}>
+      <Atmosphere theme={theme} />
       <mesh>
-        <sphereGeometry args={[GLOBE_RADIUS, segments, Math.round(segments * 0.75)]} />
-        <meshPhysicalMaterial color={colors.sphere} transparent opacity={colors.opacity} metalness={0.2} roughness={0.6} clearcoat={0.2} />
+        <sphereGeometry args={[GLOBE_RADIUS * 0.992, 64, 48]} />
+        <meshStandardMaterial color={colors.sphere} roughness={0.75} metalness={0.1} />
       </mesh>
-      {PARALLELS.map((lat) => (
-        <Line key={`p${lat}`} points={parallel(lat)} color={colors.lines} lineWidth={0.6} transparent opacity={0.35} />
-      ))}
-      {MERIDIANS.map((lng) => (
-        <Line key={`m${lng}`} points={meridian(lng)} color={colors.lines} lineWidth={0.6} transparent opacity={0.35} />
-      ))}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[dots, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color={colors.lines} size={0.026} sizeAttenuation transparent opacity={0.9} depthWrite={false} />
+      </points>
       {arcPoints.map((points, i) => (
         <group key={i}>
           <Line points={points} color={colors.arcs} lineWidth={1.6} />
-          <mesh ref={(m) => { dots.current[i] = m }}>
+          <mesh ref={(m) => { travellers.current[i] = m }}>
             <sphereGeometry args={[0.035, 12, 12]} />
             <meshBasicMaterial color={colors.dot} />
           </mesh>
         </group>
+      ))}
+      {endpoints.map((p, i) => (
+        <CityPulse key={i} position={p} color={colors.dot} offset={i * 0.45} />
       ))}
     </group>
   )

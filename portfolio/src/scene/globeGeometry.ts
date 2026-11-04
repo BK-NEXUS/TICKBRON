@@ -27,10 +27,17 @@ export function routeArcs(): QuadraticBezierCurve3[] {
   })
 }
 
-export function parallel(lat: number, segments = 64): Vector3[] {
-  return Array.from({ length: segments + 1 }, (_, i) => latLngToVector(lat, -180 + (360 * i) / segments))
+export function routeEndpoints(): Vector3[] {
+  return [TASHKENT, ...DESTINATIONS].map(([lat, lng]) => latLngToVector(lat, lng))
 }
 
-export function meridian(lng: number, segments = 48): Vector3[] {
-  return Array.from({ length: segments + 1 }, (_, i) => latLngToVector(-90 + (180 * i) / segments, lng))
+// Even spacing keeps the dotted surface calm, with no pole clustering like a lat/long grid.
+export function fibonacciSphere(count: number, radius = GLOBE_RADIUS): Vector3[] {
+  const golden = Math.PI * (3 - Math.sqrt(5))
+  return Array.from({ length: count }, (_, i) => {
+    const y = 1 - ((i + 0.5) / count) * 2
+    const ring = Math.sqrt(1 - y * y)
+    const theta = golden * i
+    return new Vector3(Math.cos(theta) * ring * radius, y * radius, Math.sin(theta) * ring * radius)
+  })
 }
