@@ -7,6 +7,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useAuth } from '../contexts/AuthContext'
 import { markFavoriteRemoved } from '../hooks/useFavorites'
 import { priceIn } from '../utils/price'
+import { ErrorState } from '../components/ErrorState'
 
 /** Display name of a favorite: its first translation, else the city */
 const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
@@ -97,15 +98,7 @@ export function FavoritesPage() {
     return (
       <div className="favorites-page">
         <div className="container">
-          <div className="error-state" role="alert" aria-live="assertive">
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="btn btn-primary"
-            >
-              {t('common.tryAgain')}
-            </button>
-          </div>
+          <ErrorState message={error} onRetry={() => window.location.reload()} />
         </div>
       </div>
     )

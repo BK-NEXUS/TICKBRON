@@ -90,6 +90,9 @@ describe('NotificationsPage', () => {
     vi.mocked(notificationAdapter.list).mockResolvedValue({ data: null, error: 'Server down' })
     show()
     expect(await screen.findByRole('alert')).toHaveTextContent('Server down')
+    expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument()
+    expect(document.querySelector('.empty-state-icon--error')).toBeInTheDocument()
   })
 
   it('shows more notices when the server has another page, and hides the button at the end', async () => {

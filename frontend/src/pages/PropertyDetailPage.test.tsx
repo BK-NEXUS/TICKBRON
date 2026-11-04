@@ -294,6 +294,8 @@ describe('PropertyDetailPage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Property Not Found' })).toBeInTheDocument()
     expect(screen.getByText('The property you are looking for does not exist.')).toBeInTheDocument()
     expect(screen.queryByText('Property not found')).toBeNull()
+    expect(document.querySelector('.empty-state-icon--error')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Return to search results' })).toBeInTheDocument()
   })
 
   it('renders error state when API call fails', async () => {

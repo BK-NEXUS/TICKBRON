@@ -848,6 +848,7 @@ export const ru: Catalog = {
   'booking.roomsCount.many': "{count} номеров",
   'common.loading': "Загрузка...",
   'common.tryAgain': "Попробовать снова",
+  'state.errorTitle': "Что-то пошло не так",
   'common.signInRequired': "Требуется вход",
   'common.goHome': "На главную",
   'common.backHome': "Назад на главную",

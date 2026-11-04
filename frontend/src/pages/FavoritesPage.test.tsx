@@ -153,6 +153,9 @@ describe('FavoritesPage', () => {
         expect(screen.getByText('Network error')).toBeInTheDocument()
       })
       expect(screen.getByText('Try Again')).toBeInTheDocument()
+      // The shared failure screen: an icon in a badge, a title, what happened, and a way to try again
+      expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument()
+      expect(document.querySelector('.empty-state-icon--error')).toBeInTheDocument()
     })
   })
 

@@ -818,6 +818,7 @@ export const en = {
   'booking.roomsCount.other': "{count} rooms",
   'common.loading': "Loading...",
   'common.tryAgain': "Try Again",
+  'state.errorTitle': "Something went wrong",
   'common.signInRequired': "Sign in required",
   'common.goHome': "Go Home",
   'common.backHome': "Back to Home",

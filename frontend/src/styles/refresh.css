@@ -817,3 +817,50 @@
     min-height: 44px;
   }
 }
+
+/* --- Design round 2: empty and error screens share one look ------------------------------------------------------ */
+
+/* The icon sits in a soft round badge instead of floating bare; an error uses the error colour */
+.empty-state-icon {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto var(--spacing-lg);
+  border-radius: 50%;
+  background-color: var(--color-tint-strong);
+  color: var(--color-text-primary);
+  font-size: 40px;
+}
+
+.empty-state-icon--error {
+  background-color: color-mix(in srgb, var(--color-error) 16%, transparent);
+  color: var(--color-error);
+}
+
+.empty-state-message {
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+/* A failure keeps the red for its icon; the words stay in the normal text colours */
+.empty-state.error-state .empty-state-title {
+  color: var(--color-text-primary);
+}
+
+.empty-state.error-state .empty-state-message {
+  color: var(--color-text-secondary);
+}
+
+.state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+@media (max-width: 480px) {
+  .state-actions .btn {
+    flex: 1 1 100%;
+  }
+}

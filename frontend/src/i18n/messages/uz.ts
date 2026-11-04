@@ -818,6 +818,7 @@ export const uz: Catalog = {
   'booking.roomsCount.other': "{count} xona",
   'common.loading': "Yuklanmoqda...",
   'common.tryAgain': "Qayta urinish",
+  'state.errorTitle': "Nimadir xato ketdi",
   'common.signInRequired': "Kirish talab qilinadi",
   'common.goHome': "Bosh sahifaga",
   'common.backHome': "Bosh sahifaga qaytish",

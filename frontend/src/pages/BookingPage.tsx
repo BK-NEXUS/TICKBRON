@@ -15,6 +15,7 @@ import type { Refusal } from '../utils/refusal'
 import { propertyDisplayName } from '../utils/propertyName'
 import { useI18n } from '../i18n/I18nContext'
 import { VipBadge } from '../components/VipBadge'
+import { ErrorState } from '../components/ErrorState'
 
 interface BookingState {
   propertyId: number
@@ -417,17 +418,14 @@ export function BookingPage() {
     return (
       <div className="booking-page booking-page--error">
         <div className="container">
-          <div className="error-state" role="alert" aria-live="assertive">
-            <h1>{t('booking.errorTitle')}</h1>
-            <p>{errorText}</p>
-            <button 
-              className="btn btn-primary"
-              onClick={handleBackToProperty}
-              aria-label={t(property ? 'booking.backToPropertyLabel' : 'booking.backToSearchLabel')}
-            >
-              {t(property ? 'booking.backToProperty' : 'booking.backToSearch')}
-            </button>
-          </div>
+          <ErrorState
+            headingLevel={1}
+            title={t('booking.errorTitle')}
+            message={errorText ?? ''}
+            ctaText={t(property ? 'booking.backToProperty' : 'booking.backToSearch')}
+            ctaLabel={t(property ? 'booking.backToPropertyLabel' : 'booking.backToSearchLabel')}
+            onCta={handleBackToProperty}
+          />
         </div>
       </div>
     )
