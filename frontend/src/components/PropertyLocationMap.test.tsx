@@ -27,6 +27,12 @@ describe('PropertyLocationMap', () => {
     expect(pins[0]).toHaveAttribute('title', 'Hotel Alpha')
   })
 
+  it('draws the pin itself: the default Leaflet pin is an image file the build cannot find, so the page showed no pin', () => {
+    const { container } = renderMap('41.311081', '69.279737')
+    expect(container.querySelector('img.leaflet-marker-icon')).toBeNull()
+    expect(container.querySelector('.leaflet-marker-icon .map-pin-dot')).toBeInTheDocument()
+  })
+
   it('credits OpenStreetMap, as the tile licence requires', () => {
     const { container } = renderMap(41.3, 69.2)
     expect(container.querySelector('.leaflet-control-attribution')).toHaveTextContent('OpenStreetMap')

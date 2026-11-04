@@ -366,7 +366,7 @@ export function AdminCustomerProfile() {
                       <th scope="col">{t('searchForm.checkOut')}</th>
                       <th scope="col">{t('status.nights')}</th>
                       <th scope="col">{t('booking.total')}</th>
-                      <th scope="col">{t('partner.status')}</th>
+                      <th scope="col">{t('status.statusCol')}</th>
                       <th scope="col">{t('admin.payment')}</th>
                       <th scope="col">{t('status.created')}</th>
                     </tr>

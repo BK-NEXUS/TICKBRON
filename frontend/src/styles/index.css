@@ -1712,6 +1712,17 @@ table .btn {
   height: auto !important;
 }
 
+.map-pin-dot {
+  display: block;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  border: 3px solid var(--color-surface);
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-primary-dark, var(--color-primary));
+  box-shadow: var(--shadow-sm);
+}
+
 .map-pin {
   display: inline-block;
   transform: translate(-50%, -100%);
