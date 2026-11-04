@@ -24,6 +24,8 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'contact.title': 'Bog‘lanish',
     'contact.body': 'Yozing, men bilan bog‘laning.',
     'lang.label': 'Til',
+    'theme.toLight': 'Kunduzgi rejimga o‘tish',
+    'theme.toDark': 'Tungi rejimga o‘tish',
     'a11y.external': 'yangi oynada ochiladi',
   },
   en: {
@@ -47,6 +49,8 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'contact.title': 'Get in touch',
     'contact.body': 'Write to me, I would love to hear from you.',
     'lang.label': 'Language',
+    'theme.toLight': 'Switch to light mode',
+    'theme.toDark': 'Switch to dark mode',
     'a11y.external': 'opens in a new tab',
   },
   ru: {
@@ -70,6 +74,8 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'contact.title': 'Связаться',
     'contact.body': 'Напишите мне, буду рада общению.',
     'lang.label': 'Язык',
+    'theme.toLight': 'Включить светлую тему',
+    'theme.toDark': 'Включить тёмную тему',
     'a11y.external': 'открывается в новой вкладке',
   },
 }
