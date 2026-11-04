@@ -3451,3 +3451,9 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Motion: the skeleton shimmer and the fade run only for visitors who allow motion (`prefers-reduced-motion: no-preference`); before this the shimmer ran for everyone.
 - Phone (up to 767 px): the price and the "Book" button of the hotel page now stay in view above the bottom menu (they used to sit after all the text); one column layout so a sticky element can follow the page, `--mobile-nav-height` in `refresh.css` is the height of the floating bottom menu. Desktop is unchanged (grid, sticky side card). Checked in the browser at 390 and 1440 px.
 - Found, not fixed: the side card's rating line reads `property.rating`, which the hotel API does not send (the reviews block shows the rating); the skeleton colour is low in contrast on the dark theme.
+
+## Design round 2: empty and error screens (2026-11-05)
+
+- Frontend only. New `ErrorState` (icon, title, what happened, "Try Again" and/or a way out) next to the existing `EmptyState`; both use one look: the icon sits in a round soft badge (red for a failure), the buttons stack on a phone. The plain "text and a button" failure blocks of Bookings, Favorites, Notifications, the booking page, the hotel page (not found), search results and the reviews block now use it; the empty search result uses `EmptyState` with a search icon and "Clear Filters". New text `state.errorTitle` (uz, ru, en) for pages without their own title.
+- Not changed: the 404 page (already has its own big "404" design), the many one-line empty hints in the admin and owner tables, the offline screen.
+- Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).

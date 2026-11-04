@@ -29,6 +29,14 @@ describe('motion respects the visitor\'s setting', () => {
   })
 })
 
+describe('the failure screen', () => {
+  it('keeps the red for the icon and writes the title and the message in the normal text colours', () => {
+    expect(refresh).toMatch(/\.empty-state\.error-state \.empty-state-title \{[^}]*color: var\(--color-text-primary\)/)
+    expect(refresh).toMatch(/\.empty-state\.error-state \.empty-state-message \{[^}]*color: var\(--color-text-secondary\)/)
+    expect(refresh).toMatch(/\.empty-state-icon--error \{[^}]*color: var\(--color-error\)/)
+  })
+})
+
 describe('the hotel page on a phone', () => {
   it('keeps the price and the book button in view at the bottom, above the bottom menu', () => {
     const phone = mediaBlocks(all, 'max-width').join('\n')
