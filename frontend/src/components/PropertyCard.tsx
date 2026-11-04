@@ -8,6 +8,7 @@ import { priceIn } from '../utils/price'
 import { useI18n } from '../i18n/I18nContext'
 import { PriceNote } from './PriceNote'
 import { useTilt } from '../hooks/useTilt'
+import { SoftImage } from './SoftImage'
 
 interface PropertyCardProps {
   property: Property
@@ -60,7 +61,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
     >
       <div className="property-card-image">
         {property.primary_photo?.photo ? (
-          <img
+          <SoftImage
             className="property-card-photo"
             src={property.primary_photo.photo}
             alt={property.primary_photo.alt_text || translation.name}

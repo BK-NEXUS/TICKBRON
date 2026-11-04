@@ -51,6 +51,15 @@ describe('HomeWhereTo', () => {
     expect(within(kz).getByText('0 properties')).toBeInTheDocument()
   })
 
+  it('shows card-shaped placeholders while the countries load, hidden from screen readers', () => {
+    api.getCountries.mockReturnValueOnce(new Promise(() => {}))
+    const { container } = renderIt()
+
+    expect(container.querySelectorAll('.where-to-skeleton')).toHaveLength(4)
+    expect(container.querySelector('.where-to-skeletons')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading destinations...')
+  })
+
   it('shows the same placeholder as a place without a picture when the picture file is missing', async () => {
     renderIt()
     await screen.findByText('Uzbekistan')

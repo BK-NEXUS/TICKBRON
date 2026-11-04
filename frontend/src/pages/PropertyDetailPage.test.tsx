@@ -195,6 +195,21 @@ describe('PropertyDetailPage', () => {
     await settle()
   })
 
+  it('shows the shape of the page while it loads, not a lone spinner', async () => {
+    vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({ data: mockProperty, error: null })
+
+    const { container } = renderWithProviders(<PropertyDetailPage />)
+
+    const skeleton = container.querySelector('.property-detail-skeleton')
+    expect(skeleton).toBeInTheDocument()
+    expect(skeleton?.querySelector('.skeleton-gallery')).toBeInTheDocument()
+    expect(skeleton?.querySelectorAll('.skeleton-text').length).toBeGreaterThanOrEqual(3)
+    expect(skeleton?.querySelector('.skeleton-booking-card')).toBeInTheDocument()
+    expect(container.querySelector('.loading-spinner')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Loading property details...')
+    await settle()
+  })
+
   it('renders property details after loading', async () => {
     vi.mocked(propertyAdapter.getPropertyById).mockResolvedValue({
       data: mockProperty,

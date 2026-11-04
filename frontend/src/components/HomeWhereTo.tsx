@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { Link } from 'react-router'
 import { ImageOff } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
+import { SoftImage } from './SoftImage'
 import {
   geographyAdapter, geographyName,
   type GeographyCountry, type GeographyNames, type GeographyRegion,
@@ -20,7 +21,7 @@ function PlaceCard({ place, children }: { place: Place; children: (body: ReactEl
     <>
       <span className="where-to-picture">
         {place.image_url && !pictureMissing
-          ? <img src={place.image_url} alt="" loading="lazy" onError={() => setPictureMissing(true)} />
+          ? <SoftImage src={place.image_url} alt="" loading="lazy" onError={() => setPictureMissing(true)} />
           : <ImageOff size={24} aria-hidden="true" />}
       </span>
       <span className="where-to-name">{geographyName(place, language)}</span>
@@ -103,7 +104,19 @@ export function HomeWhereTo({ onCountryChange }: HomeWhereToProps) {
         </div>
       )}
 
-      {loading && <p role="status" className="loading-state">{t('home.whereToLoading')}</p>}
+      {loading && (
+        <>
+          <p role="status" className="loading-state">{t('home.whereToLoading')}</p>
+          <div className="where-to-skeletons" aria-hidden="true">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="where-to-skeleton">
+                <div className="skeleton where-to-skeleton-picture"></div>
+                <div className="skeleton skeleton-text"></div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       {failed && (
         <div className="alert alert-error" role="alert">
           <p>{t('home.whereToError')}</p>

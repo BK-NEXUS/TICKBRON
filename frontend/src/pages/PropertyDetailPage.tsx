@@ -104,9 +104,20 @@ export function PropertyDetailPage() {
     return (
       <div className="property-detail-page property-detail-page--loading">
         <div className="container">
-          <div className="loading-state" role="status" aria-live="polite">
-            <div className="loading-spinner"></div>
-            <p>{t('property.loading')}</p>
+          <p className="sr-only" role="status" aria-live="polite">{t('property.loading')}</p>
+          {/* The shape of the page, so the content does not jump when it arrives */}
+          <div className="property-detail-skeleton" aria-hidden="true">
+            <div className="skeleton skeleton-title"></div>
+            <div className="skeleton skeleton-gallery"></div>
+            <div className="property-detail-skeleton-columns">
+              <div className="property-detail-skeleton-main">
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+              </div>
+              <div className="skeleton skeleton-booking-card"></div>
+            </div>
           </div>
         </div>
       </div>

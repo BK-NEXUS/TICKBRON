@@ -694,3 +694,126 @@
   flex-wrap: wrap;
   gap: var(--spacing-sm);
 }
+
+/* --- Design round 1: loading that keeps the shape of the page, pictures that fade in, the booking bar on a phone ----- */
+
+:root {
+  /* The floating bottom menu on a phone (its height plus the gap under it): the booking bar sits above it */
+  --mobile-nav-height: 96px;
+}
+
+/* The shimmer and the fade only run for visitors who allow motion; everyone else sees plain placeholders and pictures */
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+
+  .soft-image {
+    transition: opacity 0.35s ease;
+  }
+
+  .soft-image:not(.is-loaded) {
+    opacity: 0;
+  }
+}
+
+/* The grey behind a picture while it loads */
+.property-card-image,
+.property-gallery-main,
+.where-to-picture {
+  background-color: var(--color-background-alt);
+}
+
+/* Hotel page while it loads */
+.property-detail-skeleton {
+  display: grid;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl) 0 var(--spacing-3xl);
+}
+
+.skeleton-title {
+  height: 2.5rem;
+  width: min(28rem, 70%);
+}
+
+.skeleton-gallery {
+  height: clamp(220px, 38vw, 480px);
+  border-radius: var(--radius-lg);
+}
+
+.property-detail-skeleton-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--spacing-2xl);
+}
+
+.property-detail-skeleton-main {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.skeleton-booking-card {
+  height: 220px;
+  border-radius: var(--radius-lg);
+}
+
+/* "Where to?" while the countries load */
+.where-to-skeletons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.where-to-skeleton-picture {
+  aspect-ratio: 4 / 3;
+  margin-bottom: var(--spacing-sm);
+}
+
+@media (max-width: 1099px) {
+  .property-detail-skeleton-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* On a phone the price and the book button used to sit after all the text; now they stay in view above the bottom menu */
+@media (max-width: 767px) {
+  /* A grid item can only stick inside its own grid cell; in a column of the whole page it can follow the visitor */
+  .property-detail-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .property-detail-sidebar {
+    position: sticky;
+    bottom: calc(var(--mobile-nav-height) + var(--spacing-sm) + env(safe-area-inset-bottom));
+    z-index: 5;
+  }
+
+  /* Price on the left, the button on the right: a bar, not a card that covers the page */
+  .property-detail-booking-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .property-detail-booking-card .property-detail-price {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .property-detail-booking-card .property-detail-price-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .property-detail-booking-card .property-detail-rating {
+    display: none;
+  }
+
+  .property-detail-booking-card .property-detail-cta {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 44px;
+  }
+}

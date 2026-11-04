@@ -3443,3 +3443,11 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Local database only (not in git): 2 super admins, 2 staff, 5 hotel owners, 10 guests (`...@tickbron.demo`, random passwords), 5 invented hotels with full data (3 languages, policies, amenities, 3 room types, 3 rate plans each with prices in every currency, 120 days of inventory, past stays with approved reviews, two upcoming bookings), 3 ads, 25 amenities in 6 categories. All names, addresses, phones and texts are invented; the 216 pictures (hotels, rooms, 22 regions, 3 countries, ad banners) are drawn by a script, no real photographs.
 - Fixed: the pin on the hotel page used Leaflet's default image file, which the build cannot find (`/property/marker-icon.png` 404), so the map showed no pin; the pin is now drawn by `PropertyLocationMap` (`.map-pin-dot`).
 - Found, not fixed: the country "IS / istonya" in the geography list looks like a test entry; its tile shows a black picture on the home page.
+
+## Design round 1 (2026-11-05)
+
+- Frontend only, no API or backend change. The hotel page shows the shape of the page while it loads (title, gallery, text lines, booking card) instead of a lone spinner; "Where to?" on the home page shows four card placeholders. The search results already had skeleton cards.
+- `SoftImage` (`components/SoftImage.tsx`) fades a picture in once it has loaded (hotel cards, gallery, "Where to?" pictures); a cached or failed picture is shown at once, the grey behind it is the container's colour.
+- Motion: the skeleton shimmer and the fade run only for visitors who allow motion (`prefers-reduced-motion: no-preference`); before this the shimmer ran for everyone.
+- Phone (up to 767 px): the price and the "Book" button of the hotel page now stay in view above the bottom menu (they used to sit after all the text); one column layout so a sticky element can follow the page, `--mobile-nav-height` in `refresh.css` is the height of the floating bottom menu. Desktop is unchanged (grid, sticky side card). Checked in the browser at 390 and 1440 px.
+- Found, not fixed: the side card's rating line reads `property.rating`, which the hotel API does not send (the reviews block shows the rating); the skeleton colour is low in contrast on the dark theme.
