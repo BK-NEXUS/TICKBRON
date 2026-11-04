@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useReducedMotion } from '../hooks/useReducedMotion'
+import { useTheme } from '../theme/context'
 import { sceneSettings } from './sceneSettings'
 
 const Scene = lazy(() => import('./Scene'))
@@ -15,6 +16,7 @@ export function SceneLayer() {
   const reduced = useReducedMotion()
   const isMobile = useIsMobile()
   const settings = sceneSettings(isMobile)
+  const { theme } = useTheme()
 
   return (
     <>
@@ -22,7 +24,7 @@ export function SceneLayer() {
       {!reduced && (
         <ErrorBoundary fallback={null}>
           <Suspense fallback={null}>
-            <Scene {...settings} />
+            <Scene {...settings} theme={theme} />
           </Suspense>
         </ErrorBoundary>
       )}

@@ -1,6 +1,7 @@
 # Portfolio
 
 Static 3D portfolio site (Vite, React, TypeScript, Three.js). No backend.
+Black, white and blue design with a day/night switch (the choice is remembered; the system preference is the default).
 
 ## Run
 

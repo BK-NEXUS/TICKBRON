@@ -5,7 +5,6 @@ import { I18nProvider } from '../i18n/I18nProvider'
 import { Counter } from './Counter'
 import { LanguageSwitch } from './LanguageSwitch'
 import { SocialButton } from './SocialButton'
-import { TiltCard } from './TiltCard'
 
 function stubMotion(reduced: boolean) {
   vi.stubGlobal(
@@ -57,15 +56,5 @@ describe('SocialButton', () => {
     render(<I18nProvider><SocialButton link={{ id: 'email', label: 'Email', href: 'mailto:a@b.co' }} /></I18nProvider>)
     const a = screen.getByRole('link', { name: /Email/ })
     expect(a).not.toHaveAttribute('target')
-  })
-})
-
-describe('TiltCard', () => {
-  it('renders children and does not tilt with reduced motion', async () => {
-    stubMotion(true)
-    render(<TiltCard><p>card</p></TiltCard>)
-    const card = screen.getByText('card').parentElement as HTMLElement
-    await userEvent.hover(card)
-    expect(card.style.transform).toBe('')
   })
 })

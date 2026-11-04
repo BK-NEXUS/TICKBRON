@@ -1,17 +1,35 @@
 :root {
-  --ink: #000;
-  --surface: #0d0d0d;
-  --surface-hover: #151515;
-  --line: #262626;
-  --text: #f4f4f2;
-  --text-muted: #a3a3a0;
-  --accent: #c8ff3d;
-  --accent-ink: #0a0f00;
-  --focus: #ffffff;
-  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-display: 'Fraunces Variable', Georgia, serif;
   --font-body: 'Instrument Sans Variable', system-ui, sans-serif;
-  --gutter: clamp(16px, 4vw, 48px);
-  --max-width: 1280px;
-  --radius: 14px;
+  --gutter: clamp(16px, 4vw, 56px);
+  --max-width: 1240px;
+  --radius: 10px;
+}
+
+:root[data-theme='dark'] {
+  --bg: #04060a;
+  --surface: #0b1018;
+  --line: #1c2533;
+  --text: #f5f7fa;
+  --text-muted: #9fabbd;
+  --accent: #6ea3ff;
+  --btn-bg: #2f6bff;
+  --btn-ink: #ffffff;
+  --focus: #ffffff;
+  --glow: radial-gradient(60rem 38rem at 78% 30%, #0b1a3a, var(--bg) 70%);
   color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --surface: #f3f6fb;
+  --line: #dde4ef;
+  --text: #0a0f1a;
+  --text-muted: #4a5568;
+  --accent: #1d4ed8;
+  --btn-bg: #1d4ed8;
+  --btn-ink: #ffffff;
+  --focus: #0a0f1a;
+  --glow: radial-gradient(60rem 38rem at 78% 30%, #e6eeff, var(--bg) 70%);
+  color-scheme: light;
 }

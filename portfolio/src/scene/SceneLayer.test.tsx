@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ThemeProvider } from '../theme/ThemeProvider'
 import { SceneLayer } from './SceneLayer'
 import { sceneSettings } from './sceneSettings'
 
@@ -30,7 +31,7 @@ describe('sceneSettings', () => {
 describe('SceneLayer', () => {
   it('renders only the static backdrop with reduced motion', () => {
     stubMedia(true, false)
-    render(<SceneLayer />)
+    render(<ThemeProvider><SceneLayer /></ThemeProvider>)
     expect(screen.getByTestId('backdrop')).toBeInTheDocument()
     expect(screen.queryByTestId('scene-loaded')).not.toBeInTheDocument()
   })
@@ -42,7 +43,8 @@ describe('SceneLayer', () => {
     })
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const { SceneLayer: Fresh } = await import('./SceneLayer')
-    render(<Fresh />)
+    const { ThemeProvider: FreshTheme } = await import('../theme/ThemeProvider')
+    render(<FreshTheme><Fresh /></FreshTheme>)
     await waitFor(() => expect(screen.getByTestId('backdrop')).toBeInTheDocument())
     expect(screen.queryByTestId('scene-loaded')).not.toBeInTheDocument()
   })

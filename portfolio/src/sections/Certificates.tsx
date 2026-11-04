@@ -1,4 +1,3 @@
-import { TiltCard } from '../components/TiltCard'
 import type { Certificate } from '../data/profile'
 import { useI18n } from '../i18n/context'
 
@@ -10,17 +9,15 @@ export function Certificates({ certificates }: { certificates: Certificate[] }) 
       {certificates.length === 0 ? (
         <p className="lead">{t('certs.empty')}</p>
       ) : (
-        <ul className="cert-grid" aria-label={t('certs.title')}>
+        <ul className="cert-list" aria-label={t('certs.title')}>
           {certificates.map((cert) => (
-            <li key={cert.id}>
-              <TiltCard className="cert-card">
-                <p className="cert-score">{cert.score}</p>
+            <li key={cert.id} className="cert-row">
+              <p className="cert-score">{cert.score}</p>
+              <div className="cert-body">
                 <p className="cert-name">{cert.name}</p>
-                <p className="cert-meta">
-                  <span>{cert.issuer}</span>
-                  <span>{cert.year}</span>
-                </p>
-              </TiltCard>
+                <p className="cert-issuer">{cert.issuer}</p>
+              </div>
+              <p className="cert-year">{cert.year}</p>
             </li>
           ))}
         </ul>

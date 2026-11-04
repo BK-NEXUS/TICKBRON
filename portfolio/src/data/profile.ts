@@ -18,13 +18,13 @@ export type Profile = {
   website: { url: string; label: string }
   certificates: Certificate[]
   socials: SocialLink[]
-  stats: { id: 'experience' | 'students' | 'certificates'; value: number }[]
+  stats: { id: 'experience' | 'team' | 'certificates'; value: number }[]
 }
 
 // Sample data: replace with the client's real details when they arrive.
 export const profile: Profile = {
-  firstName: 'Aziza',
-  lastName: 'Karimova',
+  firstName: 'Sardor',
+  lastName: 'Rahimov',
   website: { url: 'https://example.com', label: 'example.com' },
   certificates: [
     { id: 'ielts', name: 'IELTS Academic', score: '8.0', year: 2024, issuer: 'British Council' },
@@ -40,8 +40,8 @@ export const profile: Profile = {
     { id: 'email', label: 'Email', href: 'mailto:hello@example.com' },
   ],
   stats: [
-    { id: 'experience', value: 7 },
-    { id: 'students', value: 350 },
+    { id: 'experience', value: 12 },
+    { id: 'team', value: 120 },
     { id: 'certificates', value: 5 },
   ],
 }

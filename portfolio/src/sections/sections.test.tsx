@@ -46,6 +46,12 @@ describe('App', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  it('keeps a contact link and a theme toggle reachable on every screen', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: dictionaries.uz['contact.title'] })).toHaveAttribute('href', '#contact')
+    expect(screen.getByRole('button', { name: dictionaries.uz['theme.toLight'] })).toBeInTheDocument()
+  })
+
   it('shows every social link', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: dictionaries.uz['contact.title'] })
