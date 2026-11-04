@@ -22,9 +22,12 @@ function Page() {
   const { t } = useI18n()
   return (
     <>
+      <a className="skip-link" href="#main">
+        {t('a11y.skip')}
+      </a>
       <SceneLayer />
       <header className="topbar">
-        <nav aria-label="Main">
+        <nav aria-label={t('nav.label')}>
           {NAV.map((item) => (
             <a key={item.href} href={item.href}>
               {t(item.key)}
@@ -36,7 +39,7 @@ function Page() {
           <ThemeToggle />
         </div>
       </header>
-      <main>
+      <main id="main">
         <Hero />
         <About />
         <Certificates certificates={profile.certificates} />

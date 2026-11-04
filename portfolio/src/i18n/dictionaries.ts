@@ -27,6 +27,8 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'theme.toLight': 'Kunduzgi rejimga o‘tish',
     'theme.toDark': 'Tungi rejimga o‘tish',
     'a11y.external': 'yangi oynada ochiladi',
+    'a11y.skip': 'Asosiy kontentga o‘tish',
+    'nav.label': 'Asosiy menyu',
   },
   en: {
     'nav.about': 'About',
@@ -52,6 +54,8 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'theme.toLight': 'Switch to light mode',
     'theme.toDark': 'Switch to dark mode',
     'a11y.external': 'opens in a new tab',
+    'a11y.skip': 'Skip to main content',
+    'nav.label': 'Main navigation',
   },
   ru: {
     'nav.about': 'Обо мне',
@@ -77,5 +81,7 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     'theme.toLight': 'Включить светлую тему',
     'theme.toDark': 'Включить тёмную тему',
     'a11y.external': 'открывается в новой вкладке',
+    'a11y.skip': 'Перейти к основному содержимому',
+    'nav.label': 'Основное меню',
   },
 }

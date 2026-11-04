@@ -52,6 +52,13 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: dictionaries.uz['theme.toLight'] })).toBeInTheDocument()
   })
 
+  it('lets keyboard users skip to the content and names the navigation', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: dictionaries.uz['a11y.skip'] })).toHaveAttribute('href', '#main')
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
+    expect(screen.getByRole('navigation', { name: dictionaries.uz['nav.label'] })).toBeInTheDocument()
+  })
+
   it('shows every social link', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: dictionaries.uz['contact.title'] })
