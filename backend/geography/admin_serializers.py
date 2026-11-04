@@ -3,7 +3,8 @@ from django.core.files.storage import default_storage
 from django.db.models import Q
 from rest_framework import serializers
 
-from common.storage import image_upload_error
+from common.image_rules import PLACE_PICTURE, image_upload_error
+from common.images import shrink_upload
 from geography.models import City, Country, Region
 from django.utils.translation import gettext as _
 
@@ -25,10 +26,10 @@ class _ImageMixin:
         return default_storage.url(obj.image.name) if obj.image else None
 
     def validate_image(self, value):
-        error = image_upload_error(value)
+        error = image_upload_error(value, PLACE_PICTURE)
         if error:
             raise serializers.ValidationError(error)
-        return value
+        return shrink_upload(value, PLACE_PICTURE.max_side)
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get('image'):

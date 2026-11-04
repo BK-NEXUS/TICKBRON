@@ -1364,3 +1364,17 @@ Plan: `.ai/PLAN_EMAIL_CODES.md`. Switches `EMAIL_VERIFICATION_REQUIRED` and `EMA
 - `GET /api/v1/admin-panel/users/` **is now paged** (it used to return every account at once): `{count, next, previous, results}`, 50 a page (`?page_size=` up to 100), in the alphabetical order of the shown name. Query: `?letter=`, `?search=` (name, e-mail or phone, up to 100 characters), `?role=guest|owner|staff|super_admin` (400 for another value), `?page=`. Still staff or super admin only and still written to the access log (`user_list`).
 - `GET /api/v1/admin-panel/properties/` takes `?letter=`, `?status=` and `?search=` (hotel name in any language, or city); still paged, 20 a page.
 - `?letter=` also on: `GET /admin-panel/customers/` (guests), `GET /admin-panel/status/users/`, `GET /admin-panel/status/hotels/` (and its CSV export), `GET /admin-panel/commission/` (by the owner's name), `GET /partner/properties/` (the owner's own hotels).
+
+### Picture size rules of every upload (2026-11-05, plan .ai/PLAN_IMAGE_RULES.md)
+Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers (`frontend/src/utils/imageRules.ts`) to show a hint and to refuse early. Only new uploads are checked; stored pictures are never touched.
+
+| Upload | Smallest | Shape (width : height) | Recommended | Stored |
+|---|---|---|---|---|
+| Hotel photo (`POST /partner/properties/{id}/photos/`) | 1200 x 800 px | 4:3 to 16:9 | 1600 x 1067 (3:2) | at most 1600 px long side, EXIF removed |
+| Room photo (`POST /partner/rooms/{id}/photos/`) | 1200 x 800 px | 4:3 to 16:9 | 1600 x 1067 (3:2) | same |
+| Ad banner (`POST /admin-panel/promotions/{id}/photos/`) | 1600 x 600 px | 16:9 to 16:5 | 1920 x 720 (8:3) | at most 2400 px long side, EXIF removed |
+| Country / region picture (`image` of `/admin-panel/geography/countries|regions/`) | 800 x 600 px | 6:5 to 9:5 | 1200 x 900 (4:3) | at most 1600 px, EXIF removed |
+
+- Everywhere: JPEG, PNG or WebP only (found with Pillow in the file; the `Content-Type` header and the file name are not trusted; GIF and SVG are refused), at most 10 MB, at most 40 000 000 pixels. The stored file name ends with what the file really is (`.jpg`, `.png`, `.webp`).
+- The shape is judged as the picture is shown (the camera's turn flag is applied first).
+- A refused picture answers 400 with the text in the page language (uz, ru, en): the picture's size, the smallest size, the recommended size and the types. Hotel and room photos: `{"photo": ["..."]}`; country and region: `error.details.image`; ad banner: `{"error": "...", "code": "bad_image"}`.

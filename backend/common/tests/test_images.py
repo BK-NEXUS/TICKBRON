@@ -68,3 +68,14 @@ def test_webp_and_gif_keep_their_format():
 def test_a_file_that_is_not_a_picture_is_handed_back_unchanged():
     junk = SimpleUploadedFile('x.jpg', b'not a picture', content_type='image/jpeg')
     assert shrink_upload(junk) is junk
+
+
+def test_the_longest_side_can_be_chosen_per_kind_of_picture():
+    shrunk = shrink_upload(picture(size=(3200, 1200)), max_side=2400)
+    assert opened(shrunk).size == (2400, 900)
+
+
+def test_the_stored_name_ends_with_what_the_file_really_is():
+    assert shrink_upload(picture(fmt='PNG', name='holiday.jpg')).name == 'holiday.png'
+    assert shrink_upload(picture(fmt='WEBP', name='front.png')).name == 'front.webp'
+    assert shrink_upload(picture(fmt='JPEG', name='scan.JPEG')).name == 'scan.jpg'

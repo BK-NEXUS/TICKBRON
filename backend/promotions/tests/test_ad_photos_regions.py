@@ -2,15 +2,18 @@
 Ad photos (up to 10 per promotion, set by the super-admin), what the banner shows, and the per-region view
 of the advertising panel (.ai/PLAN_AD_REGIONS.md).
 """
+import io
 import shutil
 import tempfile
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from django.test import override_settings
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
+from common.testing import image_upload
 from geography.models import City
 from promotions import service
 from promotions.models import Promotion, PromotionPhoto
@@ -20,11 +23,6 @@ from properties.models import PropertyPhoto
 pytestmark = pytest.mark.django_db
 A = '/api/v1/admin-panel'
 HOME = '/api/v1/promotions/home/'
-GIF = (
-    b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
-    b'\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
-    b'\x02\x4c\x01\x00\x3b'
-)
 MEDIA = tempfile.mkdtemp()
 
 
@@ -56,23 +54,23 @@ def promo(hotel):
     return make_promotion(hotel)
 
 
-def gif(name='ad.gif', content=GIF):
-    return SimpleUploadedFile(name, content, content_type='image/gif')
+def banner(name='ad.jpg', width=1920, height=720, **options):
+    return image_upload(width, height, name=name, **options)
 
 
 def upload(client, promo, **kwargs):
-    return client.post(f'{A}/promotions/{promo.pk}/photos/', {'photo': kwargs.pop('file', None) or gif()}, format='multipart')
+    return client.post(f'{A}/promotions/{promo.pk}/photos/', {'photo': kwargs.pop('file', None) or banner()}, format='multipart')
 
 
 class TestAdPhotos:
     def test_super_admin_adds_photos_in_order_with_random_names(self, admin, promo):
         first = upload(admin, promo)
-        second = upload(admin, promo, file=gif('my private name.gif'))
+        second = upload(admin, promo, file=banner('my private name.jpg'))
 
         assert (first.status_code, second.status_code) == (201, 201)
         assert second.json()['display_order'] > first.json()['display_order']
         stored = PromotionPhoto.objects.get(pk=second.json()['id']).photo.name
-        assert stored.startswith(f'promotions/{promo.pk}/') and stored.endswith('.gif')
+        assert stored.startswith(f'promotions/{promo.pk}/') and stored.endswith('.jpg')
         assert 'private' not in stored
 
     def test_an_ad_holds_at_most_ten_photos(self, admin, promo):
@@ -92,7 +90,7 @@ class TestAdPhotos:
         assert upload(admin, promo).status_code == 201
 
     def test_a_file_that_is_not_a_picture_is_refused(self, admin, promo):
-        response = upload(admin, promo, file=gif('evil.gif', b'<script>alert(1)</script>'))
+        response = upload(admin, promo, file=SimpleUploadedFile('evil.gif', b'<script>alert(1)</script>', content_type='image/gif'))
 
         assert response.status_code == 400
         assert response.json()['code'] == 'bad_image'
@@ -145,7 +143,7 @@ class TestAdPhotos:
         listed = admin.get(f'{A}/promotions/').json()['results'][0]
 
         assert [photo['id'] for photo in row['photos']] == [keep]
-        assert row['photos'][0]['photo_url'].endswith('.gif')
+        assert row['photos'][0]['photo_url'].endswith('.jpg')
         assert listed['photos_count'] == 1
 
 
@@ -263,3 +261,32 @@ class TestPromotionModel:
 
         assert list(promo.photos.all()) == [row]
         assert Promotion.objects.get(pk=promo.pk).photos.count() == 1
+
+
+class TestAdBannerRules:
+    """An ad banner is at least 1600 x 600 px, from 16:9 to 16:5; it is stored at most 2400 px wide."""
+
+    def test_a_banner_that_is_too_small_is_refused(self, admin, promo):
+        response = upload(admin, promo, file=banner(width=1200, height=450))
+        assert response.status_code == 400
+        assert response.json()['code'] == 'bad_image'
+        text = response.json()['error']
+        assert 'too small' in text and '1200 x 450' in text and 'at least 1600 x 600 px' in text and '1920 x 720 px' in text
+        assert not PromotionPhoto.objects.filter(promotion=promo).exists()
+
+    def test_a_square_picture_is_refused_for_its_shape(self, admin, promo):
+        response = upload(admin, promo, file=banner(width=1800, height=1800))
+        assert response.status_code == 400
+        assert 'wrong shape' in response.json()['error'] and '16:9 to 16:5' in response.json()['error']
+
+    def test_a_gif_is_refused(self, admin, promo):
+        response = upload(admin, promo, file=banner('ad.gif', fmt='GIF'))
+        assert response.status_code == 400
+        assert 'not a JPG, PNG or WebP' in response.json()['error']
+
+    def test_a_wide_banner_is_stored_at_most_2400_px_wide_without_camera_data(self, admin, promo):
+        response = upload(admin, promo, file=banner(width=3600, height=1350))
+        assert response.status_code == 201, response.json()
+        with PromotionPhoto.objects.get(pk=response.json()['id']).photo.open('rb') as handle:
+            raw = handle.read()
+        assert Image.open(io.BytesIO(raw)).size == (2400, 900)

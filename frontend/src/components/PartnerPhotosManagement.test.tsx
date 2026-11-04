@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { PartnerPhotosManagement } from './PartnerPhotosManagement'
 import { partnerAdapter } from '../adapters/partnerAdapter'
+import { readImageSize } from '../utils/imageSize'
 
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
@@ -20,7 +21,9 @@ const photo = (id: number, over: object = {}) => ({
   is_primary: false, display_order: id, alt_text: null, ...over,
 })
 const file = (name: string) => new File(['x'], name, { type: 'image/jpeg' })
+vi.mock('../utils/imageSize', () => ({ readImageSize: vi.fn() }))
 const api = vi.mocked(partnerAdapter)
+const sizeOf = vi.mocked(readImageSize)
 
 describe('PartnerPhotosManagement', () => {
   beforeEach(() => {
@@ -54,6 +57,25 @@ describe('PartnerPhotosManagement', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network error')
     fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
     expect(await screen.findAllByRole('img')).toHaveLength(2)
+  })
+
+  it('writes the size to use under the add button, in pixels', async () => {
+    render(<PartnerPhotosManagement propertyId={5} />)
+    await screen.findAllByRole('img')
+    const hint = screen.getByTestId('image-requirements')
+    expect(hint).toHaveTextContent('1600 × 1067 px (3:2)')
+    expect(hint).toHaveTextContent('1200 × 800 px')
+    expect(hint).toHaveTextContent('4:3 to 16:9')
+  })
+
+  it('does not upload a photo that is too small, names it and says the size to use, and still uploads the rest', async () => {
+    sizeOf.mockResolvedValueOnce({ width: 800, height: 500 }).mockResolvedValueOnce({ width: 1600, height: 1067 })
+    render(<PartnerPhotosManagement propertyId={5} />)
+    await screen.findAllByRole('img')
+    fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [file('small.jpg'), file('good.jpg')] } })
+    expect(await screen.findByRole('alert', {}, { timeout: 4000 })).toHaveTextContent('small.jpg: The picture is too small (800 × 500 px). Use at least 1200 × 800 px')
+    expect(api.uploadPropertyPhoto).toHaveBeenCalledTimes(1)
+    expect((api.uploadPropertyPhoto.mock.calls[0][1] as { photo: File }).photo.name).toBe('good.jpg')
   })
 
   it('uploads each chosen file, then reloads the list', async () => {

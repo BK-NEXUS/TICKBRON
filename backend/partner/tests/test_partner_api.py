@@ -694,15 +694,11 @@ class PartnerPropertyPhotoUploadTests(TestCase):
         self.upload_url = f'/api/v1/partner/properties/{self.property.id}/photos/'
 
     def test_hotel_owner_can_upload_valid_photo(self):
-        """A genuine, small, correctly-typed image is accepted."""
-        from django.core.files.uploadedfile import SimpleUploadedFile
+        """A genuine, correctly-typed picture of a size the site shows well is accepted."""
+        from common.testing import image_upload
 
         self.client.force_authenticate(user=self.hotel_owner)
-        image = SimpleUploadedFile(
-            name='photo.gif',
-            content=self.VALID_IMAGE_BYTES,
-            content_type='image/gif'
-        )
+        image = image_upload(name='photo.jpg')
         response = self.client.post(
             self.upload_url,
             {'photo': image, 'photo_type': 'exterior'},

@@ -4,12 +4,15 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { PromotionPhotosDialog } from './PromotionPhotosDialog'
 import { I18nProvider } from '../i18n/I18nContext'
 import { promotionAdapter, type AdPhoto, type AdminPromotion } from '../adapters/promotionAdapter'
+import { readImageSize } from '../utils/imageSize'
 
 vi.mock('../adapters/promotionAdapter', () => ({
   promotionAdapter: { getPromotionPhotos: vi.fn(), uploadPromotionPhoto: vi.fn(), deletePromotionPhoto: vi.fn() },
 }))
 
+vi.mock('../utils/imageSize', () => ({ readImageSize: vi.fn() }))
 const adapter = vi.mocked(promotionAdapter)
+const sizeOf = vi.mocked(readImageSize)
 const photo = (id: number): AdPhoto => ({ id, photo_url: `/media/promotions/1/${id}.jpg`, display_order: id })
 const promotion = (photos: AdPhoto[]) => ({
   id: 1, property: { id: 10, name: 'Registan Plaza', city: 'Samarkand', status: 'active' }, photos, photos_count: photos.length,
@@ -47,9 +50,11 @@ describe('PromotionPhotosDialog', () => {
     expect(screen.getByRole('dialog', { name: 'Photos of the ad: Registan Plaza' })).toBeInTheDocument()
     expect(screen.getByText('2 of 10 photos')).toBeInTheDocument()
     expect(document.querySelectorAll('.promotion-photo-item img')).toHaveLength(2)
-    const help = screen.getByText(/JPG, PNG, WebP or GIF, up to 10 MB each/)
-    expect(help).toHaveTextContent('at most 40 megapixels')
-    expect(help).toHaveTextContent('1920 × 720 px')
+    const help = screen.getByTestId('image-requirements')
+    expect(help).toHaveTextContent('1920 × 720 px (8:3)')
+    expect(help).toHaveTextContent('1600 × 600 px')
+    expect(help).toHaveTextContent('JPG, PNG or WebP, up to 10 MB')
+    expect(screen.getByText(/keep the main subject in the middle/)).toBeInTheDocument()
   })
 
   it('says the ad uses the hotel photos until it has its own', () => {
@@ -74,6 +79,27 @@ describe('PromotionPhotosDialog', () => {
     expect(adapter.uploadPromotionPhoto.mock.calls.map(call => [call[0], call[1].name])).toEqual([[1, 'a.png'], [1, 'b.png']])
     await waitFor(() => expect(screen.getByText('2 of 10 photos')).toBeInTheDocument())
     expect(onChanged).toHaveBeenCalled()
+  })
+
+  it('does not send a banner that is too small and says which size to use', async () => {
+    sizeOf.mockResolvedValue({ width: 1200, height: 450 })
+    open([])
+
+    fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [image('small.png')] } })
+
+    const alert = await screen.findByRole('alert', {}, { timeout: 4000 })
+    expect(alert).toHaveTextContent('small.png: The picture is too small (1200 × 450 px). Use at least 1600 × 600 px; 1920 × 720 px (8:3) is best.')
+    expect(adapter.uploadPromotionPhoto).not.toHaveBeenCalled()
+  })
+
+  it('does not send a square picture as a banner', async () => {
+    sizeOf.mockResolvedValue({ width: 1800, height: 1800 })
+    open([])
+
+    fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [image('square.png')] } })
+
+    expect(await screen.findByRole('alert', {}, { timeout: 4000 })).toHaveTextContent('wrong shape')
+    expect(adapter.uploadPromotionPhoto).not.toHaveBeenCalled()
   })
 
   it('never sends more than ten: only the places that are left are used', async () => {

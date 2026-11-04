@@ -20,6 +20,7 @@ export function PartnerRoomPhotos({ roomTypeId }: PartnerRoomPhotosProps) {
   }), [roomTypeId])
   return (
     <PartnerPhotoManager
+      imageKind="room"
       api={api} max={MAX_ROOM_PHOTOS} idPrefix="room-photos" titleKey="roomPhotos.title" emptyHintKey="roomPhotos.emptyHint"
       headingLevel={3}
     />

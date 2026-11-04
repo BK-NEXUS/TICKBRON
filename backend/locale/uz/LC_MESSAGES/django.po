@@ -282,6 +282,15 @@ msgstr "Fayl turi %(type)s to'g'ri rasm emas"
 msgid "Image dimensions are too large."
 msgstr "Rasm o'lchamlari juda katta."
 
+msgid "This is not a JPG, PNG or WebP picture. Send a JPG, PNG or WebP file, up to 10 MB."
+msgstr "Bu JPG, PNG yoki WebP rasm emas. JPG, PNG yoki WebP fayl yuboring, 10 MB gacha."
+
+msgid "The picture is too small (%(width)s x %(height)s px). Send at least %(min_width)s x %(min_height)s px; %(rec_width)s x %(rec_height)s px (%(rec_shape)s) is best. JPG, PNG or WebP, up to 10 MB."
+msgstr "Rasm juda kichik (%(width)s x %(height)s px). Kamida %(min_width)s x %(min_height)s px yuboring; eng yaxshisi %(rec_width)s x %(rec_height)s px (%(rec_shape)s). JPG, PNG yoki WebP, 10 MB gacha."
+
+msgid "The picture has the wrong shape (%(width)s x %(height)s px). Send a picture with a width to height ratio from %(low)s to %(high)s; %(rec_width)s x %(rec_height)s px (%(rec_shape)s) is best. JPG, PNG or WebP, up to 10 MB."
+msgstr "Rasm shakli mos kelmaydi (%(width)s x %(height)s px). Eni va bo'yi nisbati %(low)s dan %(high)s gacha bo'lgan rasm yuboring; eng yaxshisi %(rec_width)s x %(rec_height)s px (%(rec_shape)s). JPG, PNG yoki WebP, 10 MB gacha."
+
 # Messages of the bookings, accounts, users, properties, geography, currency and admin code.
 
 msgid "Check-out date must be after check-in date"

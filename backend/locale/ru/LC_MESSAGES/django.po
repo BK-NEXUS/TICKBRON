@@ -118,6 +118,15 @@ msgstr "Тип содержимого файла %(type)s не является 
 msgid "Image dimensions are too large."
 msgstr "Размеры изображения слишком велики."
 
+msgid "This is not a JPG, PNG or WebP picture. Send a JPG, PNG or WebP file, up to 10 MB."
+msgstr "Это не изображение JPG, PNG или WebP. Отправьте файл JPG, PNG или WebP до 10 МБ."
+
+msgid "The picture is too small (%(width)s x %(height)s px). Send at least %(min_width)s x %(min_height)s px; %(rec_width)s x %(rec_height)s px (%(rec_shape)s) is best. JPG, PNG or WebP, up to 10 MB."
+msgstr "Изображение слишком маленькое (%(width)s x %(height)s px). Отправьте не менее %(min_width)s x %(min_height)s px; лучше всего %(rec_width)s x %(rec_height)s px (%(rec_shape)s). JPG, PNG или WebP, до 10 МБ."
+
+msgid "The picture has the wrong shape (%(width)s x %(height)s px). Send a picture with a width to height ratio from %(low)s to %(high)s; %(rec_width)s x %(rec_height)s px (%(rec_shape)s) is best. JPG, PNG or WebP, up to 10 MB."
+msgstr "Неподходящая форма изображения (%(width)s x %(height)s px). Отправьте изображение с отношением ширины к высоте от %(low)s до %(high)s; лучше всего %(rec_width)s x %(rec_height)s px (%(rec_shape)s). JPG, PNG или WebP, до 10 МБ."
+
 # Messages of the bookings, accounts, users, properties, geography, currency and admin code.
 
 msgid "Check-out date must be after check-in date"
