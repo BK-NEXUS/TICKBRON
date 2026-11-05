@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tickbron.app",
+      "sha256_cert_fingerprints": [
+        "D0:37:E1:8F:99:F8:C3:41:CF:17:F8:EA:59:4A:A2:99:CD:FF:B0:48:72:EB:64:34:B4:FA:D8:F2:33:97:49:19"
+      ]
+    }
+  }
+]
