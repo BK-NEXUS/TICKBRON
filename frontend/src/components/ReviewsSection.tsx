@@ -6,6 +6,7 @@ import { ReviewForm } from './ReviewForm'
 import { ReviewCard } from './ReviewCard'
 import { RatingBreakdown } from './RatingBreakdown'
 import { useAuth } from '../contexts/AuthContext'
+import { ErrorState } from './ErrorState'
 
 interface ReviewsSectionProps {
   propertyId: number
@@ -141,10 +142,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
   if (error) {
     return (
       <div className="reviews-section reviews-section--error">
-        <div className="error-state" role="alert" aria-live="assertive">
-          <h2>{t('reviews.errorTitle')}</h2>
-          <p>{'text' in error ? error.text : t(error.key)}</p>
-        </div>
+        <ErrorState title={t('reviews.errorTitle')} message={'text' in error ? error.text : t(error.key)} />
       </div>
     )
   }

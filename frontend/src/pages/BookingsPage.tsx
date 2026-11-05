@@ -13,6 +13,7 @@ import type { Booking as CancelledBooking } from '../adapters/bookingAdapter'
 import { businessToday } from '../utils/dates'
 import { canUsePartnerPanel } from '../utils/roles'
 import { ARRIVAL_GRACE_HOURS, formatArrivalTime } from '../utils/arrival'
+import { ErrorState } from '../components/ErrorState'
 
 interface BookingCardProps {
   booking: Booking
@@ -261,15 +262,7 @@ export function BookingsPage() {
     return (
       <div className="bookings-page">
         <div className="container">
-          <div className="error-state" role="alert" aria-live="assertive">
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="btn btn-primary"
-            >
-              {t('common.tryAgain')}
-            </button>
-          </div>
+          <ErrorState message={error} onRetry={() => window.location.reload()} />
         </div>
       </div>
     )
