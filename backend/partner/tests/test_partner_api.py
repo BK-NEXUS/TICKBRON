@@ -205,8 +205,10 @@ class PartnerPropertyTests(TestCase):
         response = self.client.delete(f'/api/v1/partner/properties/{property_id}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        # Check that property is no longer in the active queryset (means it's soft deleted)
-        self.assertFalse(Property.objects.filter(id=property_id).exists())
+        # The row stays (soft delete) and is flagged; the owner's list no longer shows it
+        self.assertTrue(Property.objects.get(id=property_id).is_deleted)
+        self.assertEqual(self.client.get(f'/api/v1/partner/properties/{property_id}/').status_code,
+                         status.HTTP_404_NOT_FOUND)
 
     def test_hotel_owner_cannot_delete_other_property(self):
         """Test that hotel-owner cannot delete other users' property."""

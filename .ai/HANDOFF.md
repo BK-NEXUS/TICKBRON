@@ -3431,6 +3431,13 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - When the device loses the internet the whole app is covered by a friendly screen: TICKBRON's own picture (the sleeping hotel in a night cap with two palms, clouds and a "no signal" badge, drawn in SVG, follows the light/dark theme; it moves: the hotel breathes, palms sway, a "zZ" floats up, a sleep bubble swells at its nose, the badge pulses, the windows and stars twinkle, the lamp glows, clouds drift; touching the picture makes the hotel jump awake for a moment. All motion is switched off for people who asked for less motion), a short text and a "Try again" button (`OfflineScreen`, `useOnlineStatus`, i18n keys `offline.*`). It goes away by itself when the connection returns; "Try again" asks the server (`/healthz/`) because the browser can be wrong about being online.
 - Not done: opening the site for the first time with no internet at all (needs the installable-site step, a service worker); that comes with the PWA and the Android app after the server is up.
 
+  fix-partner-soft-delete-1
+## Owner DELETE is a soft delete (2026-11-04)
+
+- `DELETE /partner/properties|rooms|rates/{id}/` used to erase the row: with bookings it ended in a 500 (bookings point at the hotel, room type and rate plan with PROTECT), without bookings the hotel's rooms and rates were lost for good. Now `partner.views.SoftDeleteDestroyMixin` hides the record (`is_deleted`) and answers 204; bookings keep their links. Tests: `partner/tests/test_partner_delete.py`. The old `test_hotel_owner_can_delete_own_property` said "soft delete" but asserted a hard delete; it now checks `is_deleted` and the 404.
+- `frontend/src/styles/refresh.test.ts` read `refresh.css` with Windows CRLF line ends and failed on a Windows checkout only; the test now turns CRLF into LF before matching (no assertion changed).
+- Found, not fixed: a soft-deleted hotel with upcoming bookings stays bookable for those guests' cancel flow but no rule tells the owner about them; `inventory` and `room-inventory` DELETE still erase rows; commission can be confirmed paid before the 7-day no-show window ends, so a later approved no-show changes the gross after the snapshot (`partner/commission.py`); `tell_booked` stores the in-app notices inside the booking transaction without a savepoint (`bookings/notices.py`); `common/managers.py` `SoftDeleteManager` is unused although `backend/CLAUDE.md` says soft-deleted rows are filtered by default.
+
 ## Tunnel demo, Status wording and filters (2026-11-04)
 
 - `scripts/demo-tunnel.ps1` shows the project to one outside person through ngrok (see `.ai/LOCAL_NGROK.md`). `DB_HOST=127.0.0.1` in `.env.dev.example`: with `localhost` every API call on Windows took 2.1 s (IPv6 first), now 0.06 s.
@@ -3465,3 +3472,4 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Not changed: the 404 page (already has its own big "404" design), the many one-line empty hints in the admin and owner tables, the offline screen.
 - Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).
 master
+   master
