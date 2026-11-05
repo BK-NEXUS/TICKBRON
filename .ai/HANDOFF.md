@@ -3473,3 +3473,9 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).
 master
    master
+
+## Bigger Back button (2026-11-05)
+
+- Frontend only. The "← Back" button at the top left of every page (`Breadcrumbs.tsx`) was a small see-through ghost button. It is now a full secondary button with a gold border, 44px high, larger text and arrow (`.page-breadcrumbs-back` in `refresh.css`); the Android app has no browser Back button, so this one has to be easy to find and tap. Behaviour unchanged.
+- Fixed on the way: `index.css` grouped `.page-breadcrumbs-back:hover` with the trail list styles by mistake; it would have turned the button into a flex list on hover.
+- Seen on a 390px phone in the dark theme (ru); not looked at on a 1440px screen in this session.

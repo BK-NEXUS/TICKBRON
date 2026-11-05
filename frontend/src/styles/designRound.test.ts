@@ -52,3 +52,15 @@ describe('the hotel page on a phone', () => {
     expect(all).toMatch(/--mobile-nav-height: \d+px/)
   })
 })
+
+describe('the Back button at the top of every page', () => {
+  it('is at least 44px high with a clearly bordered, larger look', () => {
+    expect(refresh).toMatch(/\.page-breadcrumbs \.page-breadcrumbs-back \{[^}]*min-height: 44px/)
+    expect(refresh).toMatch(/\.page-breadcrumbs \.page-breadcrumbs-back \{[^}]*font-size: var\(--font-size-base\)/)
+    expect(refresh).toMatch(/\.page-breadcrumbs \.page-breadcrumbs-back \{[^}]*border-color: var\(--color-gold-dark\)/)
+  })
+
+  it('does not inherit the trail list styles on hover (they were grouped with the list by mistake)', () => {
+    expect(index).not.toMatch(/\.page-breadcrumbs-back:hover,\s*\.page-breadcrumbs-list/)
+  })
+})

@@ -8795,7 +8795,6 @@ button.property-gallery-image {
   font-size: var(--font-size-sm);
 }
 
-.page-breadcrumbs-back:hover,
 .page-breadcrumbs-list {
   display: flex;
   flex-wrap: wrap;

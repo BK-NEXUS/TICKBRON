@@ -864,3 +864,17 @@
     flex: 1 1 100%;
   }
 }
+
+/* The Back button of every page: large enough to find and to tap (the installed Android app has no browser Back button) */
+.page-breadcrumbs .page-breadcrumbs-back {
+  min-height: 44px;
+  padding-inline: var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  border-color: var(--color-gold-dark);
+}
+
+.page-breadcrumbs-back-arrow {
+  font-size: 1.3em;
+  line-height: 1;
+}

@@ -114,8 +114,8 @@ export function Breadcrumbs() {
 
   return (
     <div className="page-breadcrumbs container">
-      <button type="button" className="btn btn-ghost btn-sm" onClick={handleBack} aria-label={t('crumb.back')}>
-        ← {t('crumb.back')}
+      <button type="button" className="btn btn-secondary page-breadcrumbs-back" onClick={handleBack} aria-label={t('crumb.back')}>
+        <span className="page-breadcrumbs-back-arrow" aria-hidden="true">←</span> {t('crumb.back')}
       </button>
       <nav aria-label={t('crumb.trail')}>
         <ol className="page-breadcrumbs-list">
