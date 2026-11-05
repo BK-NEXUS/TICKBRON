@@ -20,6 +20,8 @@ import { propertyFromPrice } from '../utils/price'
 import { PropertyLocationMap } from '../components/PropertyLocationMap'
 import { useI18n } from '../i18n/I18nContext'
 import { PriceNote } from '../components/PriceNote'
+import { ErrorState } from '../components/ErrorState'
+import { SearchX } from 'lucide-react'
 
 /**
  * PropertyDetailPage component for displaying detailed property information
@@ -104,9 +106,20 @@ export function PropertyDetailPage() {
     return (
       <div className="property-detail-page property-detail-page--loading">
         <div className="container">
-          <div className="loading-state" role="status" aria-live="polite">
-            <div className="loading-spinner"></div>
-            <p>{t('property.loading')}</p>
+          <p className="sr-only" role="status" aria-live="polite">{t('property.loading')}</p>
+          {/* The shape of the page, so the content does not jump when it arrives */}
+          <div className="property-detail-skeleton" aria-hidden="true">
+            <div className="skeleton skeleton-title"></div>
+            <div className="skeleton skeleton-gallery"></div>
+            <div className="property-detail-skeleton-columns">
+              <div className="property-detail-skeleton-main">
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-text"></div>
+              </div>
+              <div className="skeleton skeleton-booking-card"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -117,17 +130,15 @@ export function PropertyDetailPage() {
     return (
       <div className="property-detail-page property-detail-page--error">
         <div className="container">
-          <div className="error-state" role="alert" aria-live="assertive">
-            <h1>{t('property.notFoundTitle')}</h1>
-            <p>{error ? ('text' in error ? error.text : t(error.key)) : t('property.notFoundText')}</p>
-            <button 
-              className="btn btn-primary"
-              onClick={() => navigate('/search')}
-              aria-label={t('property.backToSearchLabel')}
-            >
-              {t('property.backToSearch')}
-            </button>
-          </div>
+          <ErrorState
+            headingLevel={1}
+            icon={<SearchX size={40} />}
+            title={t('property.notFoundTitle')}
+            message={error ? ('text' in error ? error.text : t(error.key)) : t('property.notFoundText')}
+            ctaText={t('property.backToSearch')}
+            ctaLabel={t('property.backToSearchLabel')}
+            onCta={() => navigate('/search')}
+          />
         </div>
       </div>
     )

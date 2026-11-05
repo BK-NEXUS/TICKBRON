@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { SlidersHorizontal } from 'lucide-react'
+import { SearchX, SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 import { propertyAdapter, Property, SearchParams, FilterOptions } from '../adapters/propertyAdapter'
 import type { PromotedProperty } from '../adapters/promotionAdapter'
@@ -14,6 +14,8 @@ import { areaFromUrl, areaToUrl } from '../utils/searchArea'
 import { ShowOnMapCard } from '../components/ShowOnMapCard'
 import { SearchForm } from '../components/SearchForm'
 import { useI18n } from '../i18n/I18nContext'
+import { ErrorState } from '../components/ErrorState'
+import { EmptyState } from '../components/EmptyState'
 import {
   EMPTY_FILTERS, FilterState, filtersFromUrl, filtersToSearchParams, rememberSearch, writeFiltersToUrl,
 } from '../utils/searchFilters'
@@ -243,30 +245,22 @@ export function SearchResultsPage() {
 
               {/* Error State */}
               {loadingState === 'error' && (
-                <div className="search-results-error" role="alert">
-                  <h2>{t('search.errorTitle')}</h2>
-                  <p>{error ?? t('search.errorLoad')}</p>
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={() => window.location.reload()}
-                  >
-                    {t('search.tryAgain')}
-                  </button>
-                </div>
+                <ErrorState
+                  title={t('search.errorTitle')}
+                  message={error ?? t('search.errorLoad')}
+                  onRetry={() => window.location.reload()}
+                />
               )}
 
               {/* Empty State */}
               {loadingState === 'success' && properties.length === 0 && (
-                <div className="search-results-empty" role="status">
-                  <h2>{t('search.emptyTitle')}</h2>
-                  <p>{t('search.emptyText')}</p>
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={handleClearFilters}
-                  >
-                    {t('search.clearFilters')}
-                  </button>
-                </div>
+                <EmptyState
+                  icon={<SearchX size={40} />}
+                  title={t('search.emptyTitle')}
+                  message={t('search.emptyText')}
+                  ctaText={t('search.clearFilters')}
+                  onClick={handleClearFilters}
+                />
               )}
 
               {/* Results Grid */}

@@ -180,6 +180,10 @@ describe('SearchResultsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('No properties found')).toBeInTheDocument()
     })
+    // The same empty screen as favorites and bookings: an icon, a title, a hint and one clear action
+    expect(document.querySelector('.empty-state .empty-state-icon')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No properties found' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Clear Filters' })).toBeInTheDocument()
   })
 
   it('displays error state when search fails', async () => {
@@ -204,6 +208,7 @@ describe('SearchResultsPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Unable to load properties')).toBeInTheDocument()
+      expect(document.querySelector('.empty-state-icon--error')).toBeInTheDocument()
     })
   })
 

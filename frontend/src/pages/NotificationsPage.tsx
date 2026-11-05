@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState'
 import { notificationAdapter, type AppNotification } from '../adapters/notificationAdapter'
 import { notificationText } from '../utils/notificationText'
 import { NOTIFICATIONS_CHANGED } from '../hooks/useNotificationCount'
+import { ErrorState } from '../components/ErrorState'
 
 /** Only an unread notice does something when pressed (it gets marked as read), so only that one is a button. */
 function NoticeRow({ notice, onOpen, children }: { notice: AppNotification; onOpen: () => void; children: ReactNode }) {
@@ -115,10 +116,7 @@ export function NotificationsPage() {
     return (
       <div className="notifications-page">
         <div className="container">
-          <div className="error-state" role="alert" aria-live="assertive">
-            <p>{error}</p>
-            <button onClick={() => void load()} className="btn btn-primary">{t('common.tryAgain')}</button>
-          </div>
+          <ErrorState message={error} onRetry={() => void load()} />
         </div>
       </div>
     )

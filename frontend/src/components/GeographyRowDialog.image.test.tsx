@@ -6,11 +6,14 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { GeographyRowDialog } from './GeographyRowDialog'
 import { I18nProvider } from '../i18n/I18nContext'
 import { adminGeographyAdapter } from '../adapters/adminGeographyAdapter'
+import { readImageSize } from '../utils/imageSize'
 
 vi.mock('../adapters/adminGeographyAdapter', () => ({
   adminGeographyAdapter: { create: vi.fn(), update: vi.fn() },
 }))
+vi.mock('../utils/imageSize', () => ({ readImageSize: vi.fn() }))
 const api = vi.mocked(adminGeographyAdapter)
+const sizeOf = vi.mocked(readImageSize)
 
 const png = (name = 'flag.png') => new File(['x'], name, { type: 'image/png' })
 const names = { name_uz: 'Turkiya', name_ru: 'Турция', name_en: 'Turkey' }
@@ -68,7 +71,7 @@ describe('GeographyRowDialog picture', () => {
     renderDialog({ kind: 'regions', parentId: 1 })
     const dialog = screen.getByRole('dialog')
     fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [new File(['x'], 'a.bmp', { type: 'image/bmp' })] } })
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Use a JPG, PNG, WebP or GIF picture.')
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Use a JPG, PNG or WebP picture.')
     fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.png', { type: 'image/png' })] } })
     expect(within(dialog).getByRole('alert')).toHaveTextContent('The picture is larger than 10 MB.')
     expect(within(dialog).queryByRole('img', { name: 'Preview' })).not.toBeInTheDocument()
@@ -104,5 +107,35 @@ describe('GeographyRowDialog picture', () => {
     fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [file] } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(api.update).toHaveBeenCalledWith('countries', 3, { ...names, image: file }))
+  })
+
+  it('writes the size to use under the picture box, in pixels', () => {
+    renderDialog()
+    const hint = screen.getByTestId('image-requirements')
+    expect(hint).toHaveTextContent('1200 × 900 px (4:3)')
+    expect(hint).toHaveTextContent('800 × 600 px')
+    expect(hint).toHaveTextContent('JPG, PNG or WebP, up to 10 MB')
+  })
+
+  it('drops a picture that is too small and says which size to use', async () => {
+    sizeOf.mockResolvedValue({ width: 600, height: 450 })
+    renderDialog({ kind: 'regions', parentId: 1 })
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [png()] } })
+    // Reading the picture and the screen update are two steps; a busy machine needs more than the default second
+    const alert = await within(dialog).findByRole('alert', {}, { timeout: 4000 })
+    expect(alert).toHaveTextContent('The picture is too small (600 × 450 px)')
+    expect(alert).toHaveTextContent('at least 800 × 600 px')
+    // The preview is cleared by an effect one render after the message appears
+    await waitFor(() => expect(within(dialog).queryByRole('img', { name: 'Preview' })).not.toBeInTheDocument())
+  })
+
+  it('keeps a picture of a good size', async () => {
+    sizeOf.mockResolvedValue({ width: 1200, height: 900 })
+    renderDialog({ kind: 'regions', parentId: 1 })
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Picture'), { target: { files: [png()] } })
+    expect(await within(dialog).findByRole('img', { name: 'Preview' }, { timeout: 4000 })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
   })
 })

@@ -7,20 +7,14 @@ hotel-owner role.
 from datetime import timedelta
 
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from common.dates import business_today
+from common.testing import image_upload
 from partner.tests.geography_helpers import uzbek_location
 from permissions.models import Role
 from properties.models import DateInventory, Property, PropertyType, RatePlan, RoomType
 from users.models import User
-
-GIF_1X1 = (
-    b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
-    b'\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
-    b'\x02\x4c\x01\x00\x3b'
-)
 
 
 @pytest.fixture
@@ -106,7 +100,7 @@ def create_requests(inv):
             'price': '60.00', 'currency': 'USD', 'is_available': True,
         }, 'json'),
         (f"/api/v1/partner/properties/{inv['property'].id}/photos/", {
-            'photo': SimpleUploadedFile('photo.gif', GIF_1X1, content_type='image/gif'),
+            'photo': image_upload(name='photo.jpg'),
             'photo_type': 'exterior',
         }, 'multipart'),
     ]

@@ -4,6 +4,7 @@ import { House } from 'lucide-react'
 import { Property } from '../adapters/propertyAdapter'
 import { propertyDisplayName } from '../utils/propertyName'
 import { PhotoLightbox } from './PhotoLightbox'
+import { SoftImage } from './SoftImage'
 
 interface PropertyGalleryProps {
   property: Property
@@ -75,7 +76,8 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
             aria-label={t('gallery.openFullScreen')}
             onClick={() => setLightboxOpen(true)}
           >
-            <img
+            <SoftImage
+              key={displayImages[currentIndex].photo}
               data-testid="gallery-main-image"
               className="property-gallery-photo"
               src={displayImages[currentIndex].photo}
@@ -112,7 +114,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
               aria-label={t('gallery.view', { number: index + 1 })}
               aria-pressed={index === currentIndex}
             >
-              <img className="property-gallery-thumbnail-image" src={image.photo} alt="" loading="lazy" />
+              <SoftImage className="property-gallery-thumbnail-image" src={image.photo} alt="" loading="lazy" />
             </button>
           ))}
         </div>

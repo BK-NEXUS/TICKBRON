@@ -25,7 +25,7 @@ BASE = '/api/v1/admin-panel/geography'
 def picture():
     """A new country or region needs a picture (plan .ai/PLAN_GEO_IMAGES.md)."""
     buffer = io.BytesIO()
-    Image.new('RGB', (40, 30), (200, 30, 30)).save(buffer, format='PNG')
+    Image.new('RGB', (1200, 900), (200, 30, 30)).save(buffer, format='PNG')
     return SimpleUploadedFile('picture.png', buffer.getvalue(), content_type='image/png')
 
 

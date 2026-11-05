@@ -19,7 +19,8 @@ from django.utils import timezone
 
 from admin_panel.models import AdminAccessLog
 from common.dates import business_today
-from common.storage import image_upload_error
+from common.image_rules import AD_BANNER, image_upload_error
+from common.images import shrink_upload
 from geography.models import Region
 from promotions.models import AdRenewal, Promotion, PromotionPhoto
 from properties.models import Property
@@ -304,7 +305,7 @@ def _audit_photo(actor, action, promotion, photo):
 
 def add_photo(*, actor, promotion, photo):
     """Put one picture on an ad that can still change: at most MAX_PHOTOS, a real image, shown in upload order."""
-    error = image_upload_error(photo)
+    error = image_upload_error(photo, AD_BANNER)
     if error:
         raise PromotionError('bad_image', error)
     with transaction.atomic():
@@ -315,7 +316,8 @@ def add_photo(*, actor, promotion, photo):
         if live.count() >= MAX_PHOTOS:
             raise PromotionError('too_many_photos', f'An ad can have at most {MAX_PHOTOS} photos')
         order = (live.aggregate(top=Max('display_order'))['top'] or 0) + 1
-        row = PromotionPhoto.objects.create(promotion=promotion, photo=photo, display_order=order)
+        row = PromotionPhoto.objects.create(
+            promotion=promotion, photo=shrink_upload(photo, AD_BANNER.max_side), display_order=order)
         _audit_photo(actor, 'promotion_photo_add', promotion, row)
     return row
 

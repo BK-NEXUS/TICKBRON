@@ -20,6 +20,7 @@ export function PartnerPhotosManagement({ propertyId }: PartnerPhotosManagementP
   }), [propertyId])
   return (
     <PartnerPhotoManager
+      imageKind="hotel"
       api={api} max={MAX_PHOTOS} idPrefix="partner-photos" titleKey="photos.title" emptyHintKey="photos.emptyHint"
     />
   )

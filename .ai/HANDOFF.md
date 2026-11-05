@@ -3431,8 +3431,45 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - When the device loses the internet the whole app is covered by a friendly screen: TICKBRON's own picture (the sleeping hotel in a night cap with two palms, clouds and a "no signal" badge, drawn in SVG, follows the light/dark theme; it moves: the hotel breathes, palms sway, a "zZ" floats up, a sleep bubble swells at its nose, the badge pulses, the windows and stars twinkle, the lamp glows, clouds drift; touching the picture makes the hotel jump awake for a moment. All motion is switched off for people who asked for less motion), a short text and a "Try again" button (`OfflineScreen`, `useOnlineStatus`, i18n keys `offline.*`). It goes away by itself when the connection returns; "Try again" asks the server (`/healthz/`) because the browser can be wrong about being online.
 - Not done: opening the site for the first time with no internet at all (needs the installable-site step, a service worker); that comes with the PWA and the Android app after the server is up.
 
+  fix-partner-soft-delete-1
 ## Owner DELETE is a soft delete (2026-11-04)
 
 - `DELETE /partner/properties|rooms|rates/{id}/` used to erase the row: with bookings it ended in a 500 (bookings point at the hotel, room type and rate plan with PROTECT), without bookings the hotel's rooms and rates were lost for good. Now `partner.views.SoftDeleteDestroyMixin` hides the record (`is_deleted`) and answers 204; bookings keep their links. Tests: `partner/tests/test_partner_delete.py`. The old `test_hotel_owner_can_delete_own_property` said "soft delete" but asserted a hard delete; it now checks `is_deleted` and the 404.
 - `frontend/src/styles/refresh.test.ts` read `refresh.css` with Windows CRLF line ends and failed on a Windows checkout only; the test now turns CRLF into LF before matching (no assertion changed).
 - Found, not fixed: a soft-deleted hotel with upcoming bookings stays bookable for those guests' cancel flow but no rule tells the owner about them; `inventory` and `room-inventory` DELETE still erase rows; commission can be confirmed paid before the 7-day no-show window ends, so a later approved no-show changes the gross after the snapshot (`partner/commission.py`); `tell_booked` stores the in-app notices inside the booking transaction without a savepoint (`bookings/notices.py`); `common/managers.py` `SoftDeleteManager` is unused although `backend/CLAUDE.md` says soft-deleted rows are filtered by default.
+
+## Tunnel demo, Status wording and filters (2026-11-04)
+
+- `scripts/demo-tunnel.ps1` shows the project to one outside person through ngrok (see `.ai/LOCAL_NGROK.md`). `DB_HOST=127.0.0.1` in `.env.dev.example`: with `localhost` every API call on Windows took 2.1 s (IPv6 first), now 0.06 s.
+- Status (admin): the Status API was probed with 374 requests (every endpoint, period and filter, admin and owners): no error, the filters change the numbers correctly. Found in the screens instead: the Status section and the old registrations tab were both called "Статистика"/"Statistika" (the registrations tab is now `admin.tabRegistrations`), and status columns were headed with the section name `partner.status` (now `status.statusCol`, five places). The hotels list got the Country and Hotel status filters (they were in the API only), also in the CSV export, and shows the hotel status in words.
+- `vitest.config.ts` sets `VITE_API_BASE_URL` for the tests: an empty value in `frontend/.env.local` (what the tunnel needs) made 8 dashboard tests fail.
+- Found, not fixed: the country filter lists the first 20 countries of the Status list; both language catalogs are in one 91 kB (gzip) chunk, loading only the chosen language would save about 60 kB; the sign-in and sign-up e-mail codes need a real mail server before an outside person can register (EMAIL_HOST, or the codes must be switched off for the test).
+
+## Showcase data and the hotel map pin (2026-11-04)
+
+- Local database only (not in git): 2 super admins, 2 staff, 5 hotel owners, 10 guests (`...@tickbron.demo`, random passwords), 5 invented hotels with full data (3 languages, policies, amenities, 3 room types, 3 rate plans each with prices in every currency, 120 days of inventory, past stays with approved reviews, two upcoming bookings), 3 ads, 25 amenities in 6 categories. All names, addresses, phones and texts are invented; the 216 pictures (hotels, rooms, 22 regions, 3 countries, ad banners) are drawn by a script, no real photographs.
+- Fixed: the pin on the hotel page used Leaflet's default image file, which the build cannot find (`/property/marker-icon.png` 404), so the map showed no pin; the pin is now drawn by `PropertyLocationMap` (`.map-pin-dot`).
+- Found, not fixed: the country "IS / istonya" in the geography list looks like a test entry; its tile shows a black picture on the home page.
+
+  image-rules-1
+## Picture size rules (2026-11-05)
+
+- Every picture upload now has a rule: hotel and room photos at least 1200 x 800 px (4:3 to 16:9, best 1600 x 1067), ad banners at least 1600 x 600 px (16:9 to 16:5, best 1920 x 720), country and region pictures at least 800 x 600 px (6:5 to 9:5, best 1200 x 900); JPEG, PNG or WebP only, 10 MB. A picture outside the rule is refused with the sizes to use (uz, ru, en). Backend: `common/image_rules.py` (one place), used by the owner photo serializers, the geography serializers and `promotions/service.py`; ad banners and place pictures are now also shrunk and cleaned of camera data; the stored extension follows the real format. Frontend: `ImageRequirements` under every upload box writes the sizes in pixels, and the browser refuses a wrong picture before sending (`utils/imageRules.ts`, `utils/imageFile.ts`, `utils/imageSize.ts`). Contract: `.ai/API_CONTRACT.md`.
+- Tests that uploaded tiny pictures (partner photos and rooms, geography, ads) now use `common/testing.image_upload` for a picture of a valid size. Three assertions changed because the rule changed, none was weakened: a GIF is no longer accepted (the ad and owner photo tests use a JPEG and expect `.jpg`), and the client check no longer lists GIF.
+- Fixed on the way: the Content-Security-Policy inside `frontend/index.html` had no `blob:` in `img-src`, so the preview of a chosen picture was blocked in the browser (the servers' policies in `deploy/` already allow it); `deployCsp.test.ts` keeps them in step.
+- Found, not fixed: in the admin panel, after "Add administrator" is opened the other tabs do not switch away from it until "Cancel" is pressed.z
+## Design round 1 (2026-11-05)
+
+- Frontend only, no API or backend change. The hotel page shows the shape of the page while it loads (title, gallery, text lines, booking card) instead of a lone spinner; "Where to?" on the home page shows four card placeholders. The search results already had skeleton cards.
+- `SoftImage` (`components/SoftImage.tsx`) fades a picture in once it has loaded (hotel cards, gallery, "Where to?" pictures); a cached or failed picture is shown at once, the grey behind it is the container's colour.
+- Motion: the skeleton shimmer and the fade run only for visitors who allow motion (`prefers-reduced-motion: no-preference`); before this the shimmer ran for everyone.
+- Phone (up to 767 px): the price and the "Book" button of the hotel page now stay in view above the bottom menu (they used to sit after all the text); one column layout so a sticky element can follow the page, `--mobile-nav-height` in `refresh.css` is the height of the floating bottom menu. Desktop is unchanged (grid, sticky side card). Checked in the browser at 390 and 1440 px.
+- Found, not fixed: the side card's rating line reads `property.rating`, which the hotel API does not send (the reviews block shows the rating); the skeleton colour is low in contrast on the dark theme.
+
+## Design round 2: empty and error screens (2026-11-05)
+
+- Frontend only. New `ErrorState` (icon, title, what happened, "Try Again" and/or a way out) next to the existing `EmptyState`; both use one look: the icon sits in a round soft badge (red for a failure), the buttons stack on a phone. The plain "text and a button" failure blocks of Bookings, Favorites, Notifications, the booking page, the hotel page (not found), search results and the reviews block now use it; the empty search result uses `EmptyState` with a search icon and "Clear Filters". New text `state.errorTitle` (uz, ru, en) for pages without their own title.
+- Not changed: the 404 page (already has its own big "404" design), the many one-line empty hints in the admin and owner tables, the offline screen.
+- Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).
+master
+   master

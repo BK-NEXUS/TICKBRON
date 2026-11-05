@@ -6,12 +6,13 @@ import { useStatusPeriod } from '../hooks/useStatusPeriod'
 import { saveBlob } from '../utils/saveBlob'
 
 vi.mock('../adapters/statusAdapter', () => ({
-  statusAdapter: { getAdminHotels: vi.fn(), exportAdminHotels: vi.fn() },
+  statusAdapter: { getAdminHotels: vi.fn(), exportAdminHotels: vi.fn(), getCountries: vi.fn() },
 }))
 vi.mock('../utils/saveBlob', () => ({ saveBlob: vi.fn() }))
 
 const getHotels = vi.mocked(statusAdapter.getAdminHotels)
 const exportHotels = vi.mocked(statusAdapter.exportAdminHotels)
+const getCountries = vi.mocked(statusAdapter.getCountries)
 
 const HOTEL = {
   rank: 1, id: 11, name: 'Alpha Hotel', city: 'Tashkent', region_id: 3, region: 'Tashkent', country_code: 'UZ',
@@ -44,6 +45,11 @@ describe('AdminStatusHotels', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     getHotels.mockResolvedValue(pageOf([HOTEL, UNRATED]))
+    getCountries.mockResolvedValue(pageOf([
+      { code: 'UZ', name_en: 'Uzbekistan', name_ru: 'Узбекистан', name_uz: 'Oʻzbekiston' },
+      { code: 'KZ', name_en: 'Kazakhstan', name_ru: 'Казахстан', name_uz: 'Qozogʻiston' },
+      { code: null, name_en: 'Unspecified', name_ru: 'Не указано', name_uz: 'Koʻrsatilmagan' },
+    ]))
   })
 
   it('lists hotels with the R12a numbers, per-currency revenue and thousand separators', async () => {
@@ -133,6 +139,54 @@ describe('AdminStatusHotels', () => {
 
     await waitFor(() => expect(saveBlob).toHaveBeenCalled())
     expect(exportHotels).toHaveBeenCalledWith({ period: 'all', search: 'alp', ordering: '-guests' }, 'csv')
+  })
+
+  it('filters by the hotel status, from the first page, in the list and in the CSV export', async () => {
+    exportHotels.mockResolvedValue({ data: { blob: new Blob(['x']), filename: 'status_hotels.csv' }, error: null })
+    render(<Harness />)
+    await screen.findByRole('button', { name: 'Alpha Hotel' })
+
+    const select = screen.getByLabelText('Hotel status')
+    expect(Array.from(select.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value))
+      .toEqual(['', 'draft', 'pending_approval', 'active', 'suspended', 'rejected'])
+    fireEvent.change(select, { target: { value: 'suspended' } })
+
+    await waitFor(() => expect(getHotels).toHaveBeenLastCalledWith(
+      { period: 'all', search: '', page: 1, ordering: '-bookings', status: 'suspended' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    await waitFor(() => expect(exportHotels).toHaveBeenCalledWith(
+      { period: 'all', search: '', ordering: '-bookings', status: 'suspended' }, 'csv'))
+  })
+
+  it('filters by country, listing the countries that have hotels, and clears the filter again', async () => {
+    render(<Harness />)
+    await screen.findByRole('button', { name: 'Alpha Hotel' })
+
+    const select = screen.getByLabelText('Country')
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'Uzbekistan' })).toBeInTheDocument())
+    expect(within(select).queryByRole('option', { name: 'Unspecified' })).not.toBeInTheDocument()
+    fireEvent.change(select, { target: { value: 'KZ' } })
+    await waitFor(() => expect(getHotels).toHaveBeenLastCalledWith(
+      { period: 'all', search: '', page: 1, ordering: '-bookings', country: 'KZ' }))
+
+    fireEvent.change(select, { target: { value: '' } })
+    await waitFor(() => expect(getHotels).toHaveBeenLastCalledWith(
+      { period: 'all', search: '', page: 1, ordering: '-bookings' }))
+  })
+
+  it('still lists hotels when the countries cannot be loaded', async () => {
+    getCountries.mockRejectedValue(new Error('offline'))
+    render(<Harness />)
+
+    expect(await screen.findByRole('button', { name: 'Alpha Hotel' })).toBeInTheDocument()
+    expect(within(screen.getByLabelText('Country')).getAllByRole('option')).toHaveLength(1)
+  })
+
+  it('shows the hotel status in words, not as the raw code', async () => {
+    render(<Harness />)
+    const row = (await screen.findByRole('button', { name: 'Alpha Hotel' })).closest('tr') as HTMLElement
+    expect(within(row).getByText('Active')).toBeInTheDocument()
+    expect(within(row).queryByText('active')).not.toBeInTheDocument()
   })
 
   it('opens a hotel from its name', async () => {

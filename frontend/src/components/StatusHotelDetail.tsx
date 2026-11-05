@@ -22,7 +22,7 @@ interface StatusHotelDetailProps {
 const TEXT_KEYS = textKeys({
   loading: 'status.loading2',
   location: 'property.location',
-  status: 'partner.status',
+  status: 'status.statusCol',
   registered: 'status.registered',
   owner: 'status.owner',
   ownerPhone: 'status.ownerPhone',

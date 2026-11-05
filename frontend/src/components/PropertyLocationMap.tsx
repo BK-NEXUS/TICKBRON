@@ -13,6 +13,8 @@ interface PropertyLocationMapProps {
 }
 
 const ZOOM = 15
+// Drawn by the app: Leaflet's own pin is an image file whose address the build breaks, so the hotel page showed no pin
+const PIN = L.divIcon({ html: '<span class="map-pin-dot"></span>', className: 'map-pin-icon', iconSize: undefined })
 
 /** A small map of the property page with one pin where the hotel is. Nothing when there is no location. */
 export function PropertyLocationMap({ latitude, longitude, name }: PropertyLocationMapProps) {
@@ -27,7 +29,7 @@ export function PropertyLocationMap({ latitude, longitude, name }: PropertyLocat
     const map = L.map(containerRef.current, { center: [lat, lng], zoom: ZOOM, zoomControl: false, scrollWheelZoom: false })
     L.control.zoom({ zoomInTitle: t('map.zoomIn'), zoomOutTitle: t('map.zoomOut') }).addTo(map)
     addBaseLayers(map, { group: t('map.layerGroup'), street: t('map.layerStreet'), satellite: t('map.layerSatellite') })
-    L.marker([lat, lng], { title: name, alt: name, keyboard: false }).addTo(map)
+    L.marker([lat, lng], { icon: PIN, title: name, alt: name, keyboard: false }).addTo(map)
     return () => { map.remove() }
     // Titles follow the language the next time the map is drawn; the pin and tiles do not depend on it
     // eslint-disable-next-line react-hooks/exhaustive-deps
