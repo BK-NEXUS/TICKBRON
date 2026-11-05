@@ -70,6 +70,14 @@ describe('Breadcrumbs', () => {
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
   })
 
+  it('the Back button is a full-size bordered button (the installed Android app has no browser Back), its arrow is decoration', () => {
+    renderAt(['/support'])
+    const back = screen.getByRole('button', { name: 'Back' })
+    expect(back).toHaveClass('btn', 'btn-secondary', 'page-breadcrumbs-back')
+    expect(back).not.toHaveClass('btn-sm')
+    expect(back.querySelector('.page-breadcrumbs-back-arrow')).toHaveAttribute('aria-hidden', 'true')
+  })
+
   it.each([
     ['/forgot-password', 'Reset your password'],
     ['/reset-password', 'Choose a new password'],
