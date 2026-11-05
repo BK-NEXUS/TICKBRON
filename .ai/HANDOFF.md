@@ -3474,6 +3474,7 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 master
    master
 
+    android-pwa-1
 ## Android app preparation: installable site (2026-11-05)
 
 - Frontend only, no API change. The site is now an installable web app: `frontend/public/manifest.webmanifest` (name TICKBRON, standalone, cream theme), icons `public/brand/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (made by `frontend/tools/make_pwa_icons.py`), `<link rel="manifest">` in `index.html`.
@@ -3483,3 +3484,10 @@ master
 - Servers: both `deploy/Caddyfile` and `deploy/nginx.conf.example` already serve the new files as they are (static files first, `no-cache` on the page, so a new `sw.js` is picked up). Nothing to change; after deploy open `/manifest.webmanifest`, `/sw.js` and `/.well-known/assetlinks.json` once to see they answer 200 (not the home page).
 - Not verified in this session: the service worker registering in a real browser (the in-app browser refuses to fetch a worker script from the local preview; the behaviour is covered by unit tests of `sw.js` and `registerServiceWorker`). Check it on the real server (Chrome DevTools -> Application, or Lighthouse "installable").
 - Not built on purpose: an in-site "Install app" button (Chrome offers installation itself, and in the Android app it would be pointless).
+    
+## Bigger Back button (2026-11-05)
+
+- Frontend only. The "← Back" button at the top left of every page (`Breadcrumbs.tsx`) was a small see-through ghost button. It is now a full secondary button with a gold border, 44px high, larger text and arrow (`.page-breadcrumbs-back` in `refresh.css`); the Android app has no browser Back button, so this one has to be easy to find and tap. Behaviour unchanged.
+- Fixed on the way: `index.css` grouped `.page-breadcrumbs-back:hover` with the trail list styles by mistake; it would have turned the button into a flex list on hover.
+- Seen on a 390px phone in the dark theme (ru); not looked at on a 1440px screen in this session.
+    master
