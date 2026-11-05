@@ -3473,3 +3473,13 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).
 master
    master
+
+## Android app preparation: installable site (2026-11-05)
+
+- Frontend only, no API change. The site is now an installable web app: `frontend/public/manifest.webmanifest` (name TICKBRON, standalone, cream theme), icons `public/brand/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (made by `frontend/tools/make_pwa_icons.py`), `<link rel="manifest">` in `index.html`.
+- `public/sw.js` is a deliberately tiny service worker (registered in the built site only, `src/pwa/registerServiceWorker.ts`): it only answers a page visit with `public/offline.html` (uz/ru/en) when there is no internet. It never touches the API, assets, photos or sign-in, so nothing private or stale is ever cached.
+- `public/.well-known/assetlinks.json` ties the site to the Android app `com.tickbron.app` (the fingerprint is the app's own signing key). The day the app is on Google Play, add the "App signing key" SHA-256 from Play Console to the same list.
+- The Android app itself lives outside this repo (a Trusted Web Activity shell around `https://tickbron.com`, no code of its own): `D:\TICKBRON-ANDROID` on Kolya's computer, see `.ai/ANDROID.md`.
+- Servers: both `deploy/Caddyfile` and `deploy/nginx.conf.example` already serve the new files as they are (static files first, `no-cache` on the page, so a new `sw.js` is picked up). Nothing to change; after deploy open `/manifest.webmanifest`, `/sw.js` and `/.well-known/assetlinks.json` once to see they answer 200 (not the home page).
+- Not verified in this session: the service worker registering in a real browser (the in-app browser refuses to fetch a worker script from the local preview; the behaviour is covered by unit tests of `sw.js` and `registerServiceWorker`). Check it on the real server (Chrome DevTools -> Application, or Lighthouse "installable").
+- Not built on purpose: an in-site "Install app" button (Chrome offers installation itself, and in the Android app it would be pointless).

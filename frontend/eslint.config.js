@@ -24,6 +24,11 @@ export default tseslint.config(
     },
   },
   {
+    // The service worker runs in its own scope (self, caches), not in a page
+    files: ['public/sw.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
     // The site only; the Playwright tests in e2e/ have a fixture argument called `use`, which is not a React hook
     files: ['src/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },

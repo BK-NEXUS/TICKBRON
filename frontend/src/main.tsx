@@ -12,9 +12,12 @@ import './styles/surfaces.css'
 import './styles/refresh.css'
 import './styles/panels.css'
 import './styles/chat.css'
+import { registerServiceWorker } from './pwa/registerServiceWorker'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 )
+
+window.addEventListener('load', () => void registerServiceWorker())
