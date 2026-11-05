@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 
 from partner.serializers import MAX_PHOTOS_PER_ROOM_TYPE
 from permissions.models import Role
+from common.testing import image_upload
 from properties.models import Property, PropertyType, RoomPhoto, RoomType
 
 User = get_user_model()
@@ -52,8 +53,8 @@ class RoomPhotoTests(TestCase):
             property=prop, name=name, slug=name.lower(), base_occupancy=2, max_occupancy=2, base_price=50,
             currency='USD', total_rooms=3)
 
-    def _upload(self, url=None, name='bed.gif', content=GIF, **extra):
-        image = SimpleUploadedFile(name, content, content_type='image/gif')
+    def _upload(self, url=None, name='bed.jpg', content=None, **extra):
+        image = image_upload(name=name) if content is None else SimpleUploadedFile(name, content, content_type='image/gif')
         return self.client.post(url or self.url, {'photo': image, 'photo_type': 'bedroom', **extra}, format='multipart')
 
     def _photo(self, room=None, **fields):
@@ -102,9 +103,9 @@ class RoomPhotoTests(TestCase):
 
     def test_uploaded_file_name_is_random_not_the_clients(self):
         self.client.force_authenticate(self.owner)
-        response = self._upload(name='my private name.gif')
+        response = self._upload(name='my private name.jpg')
         stored = RoomPhoto.objects.get(pk=response.data['id']).photo.name
-        self.assertRegex(stored, r'/[0-9a-f]{32}\.gif$')
+        self.assertRegex(stored, r'/[0-9a-f]{32}\.jpg$')
         self.assertNotIn('private', stored)
 
     def test_upload_to_another_owners_room_is_404(self):

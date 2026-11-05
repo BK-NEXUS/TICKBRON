@@ -3,6 +3,9 @@ import type { ChangeEvent } from 'react'
 import { useI18n } from '../i18n/I18nContext'
 import type { PhotoApi, PropertyPhoto } from '../adapters/partnerAdapter'
 import type { MessageKey } from '../i18n/messages/en'
+import { ImageRequirements } from './ImageRequirements'
+import { imageProblem } from '../utils/imageFile'
+import type { ImageRuleKind } from '../utils/imageRules'
 
 interface PartnerPhotoManagerProps {
   /** The calls for one hotel or one room type */
@@ -11,13 +14,15 @@ interface PartnerPhotoManagerProps {
   max: number
   /** Unique on the page: the id of the file input and of the heading */
   idPrefix: string
+  /** Which size rule the pictures follow (hotel photos or room photos) */
+  imageKind: ImageRuleKind
   titleKey: MessageKey
   emptyHintKey: MessageKey
   headingLevel?: 2 | 3
 }
 
 /** Photos of one hotel or one room type: upload several, make one the cover, caption, delete. */
-export function PartnerPhotoManager({ api, max, idPrefix, titleKey, emptyHintKey, headingLevel = 2 }: PartnerPhotoManagerProps) {
+export function PartnerPhotoManager({ api, max, idPrefix, imageKind, titleKey, emptyHintKey, headingLevel = 2 }: PartnerPhotoManagerProps) {
   const { t } = useI18n()
   const Heading = `h${headingLevel}` as const
   const [photos, setPhotos] = useState<PropertyPhoto[]>([])
@@ -56,6 +61,11 @@ export function PartnerPhotoManager({ api, max, idPrefix, titleKey, emptyHintKey
     void run(async () => {
       const errors: string[] = []
       for (const file of files) {
+        const problem = await imageProblem(file, imageKind)
+        if (problem) {
+          errors.push(t('photos.uploadFailed', { name: file.name, error: t(problem.key, problem.params) }))
+          continue
+        }
         const { error } = await api.upload({ photo: file, photo_type: 'other' })
         if (error) errors.push(t('photos.uploadFailed', { name: file.name, error }))
       }
@@ -109,13 +119,13 @@ export function PartnerPhotoManager({ api, max, idPrefix, titleKey, emptyHintKey
           id={`${idPrefix}-input`}
           className="sr-only"
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/png,image/webp"
           multiple
           aria-label={t('photos.add')}
           disabled={busy || photos.length >= max}
           onChange={handleUpload}
         />
-        <span className="field-hint">{t('photos.help')}</span>
+        <ImageRequirements kind={imageKind} />
         {busy && <span role="status" aria-live="polite">{t('photos.uploading')}</span>}
       </div>
 

@@ -7,6 +7,8 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { PartnerRoomsManagement } from './PartnerRoomsManagement'
 import { partnerAdapter } from '../adapters/partnerAdapter'
 
+// jsdom cannot decode a picture: every chosen photo is reported as 1600 x 1067, a size the room rule accepts
+vi.mock('../utils/imageSize', () => ({ readImageSize: vi.fn().mockResolvedValue({ width: 1600, height: 1067 }) }))
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     getRoomTypes: vi.fn(), createRoomType: vi.fn(), updateRoomType: vi.fn(),
@@ -95,7 +97,8 @@ describe('PartnerRoomsManagement photos', () => {
     await openCreateForm()
     fillRoom()
     fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [image('bed.png'), image('bath.png')] } })
-    expect(screen.getByText('2 of 20 photos chosen')).toBeInTheDocument()
+    // The size of each picture is read first, so the queue fills a moment after the choice
+    expect(await screen.findByText('2 of 20 photos chosen', {}, { timeout: 4000 })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Room Type' }))
 
@@ -111,7 +114,7 @@ describe('PartnerRoomsManagement photos', () => {
     fillRoom()
     fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [image('bed.png'), image('bath.png')] } })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove bed.png' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove bed.png' }, { timeout: 4000 }))
     fireEvent.click(screen.getByRole('button', { name: 'Create Room Type' }))
 
     await waitFor(() => expect(adapter.uploadRoomPhoto).toHaveBeenCalledTimes(1))
@@ -135,6 +138,7 @@ describe('PartnerRoomsManagement photos', () => {
     await openCreateForm()
     fillRoom()
     fireEvent.change(screen.getByLabelText('Add photos'), { target: { files: [image('bed.png'), image('huge.png')] } })
+    await screen.findByText('2 of 20 photos chosen', {}, { timeout: 4000 })
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Room Type' }))
 

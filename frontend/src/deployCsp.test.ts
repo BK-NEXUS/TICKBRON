@@ -30,6 +30,11 @@ describe('the Content-Security-Policy of the deploy files', () => {
     expect(sources).toContain(satelliteOrigin)
   })
 
+  it('the policy inside index.html lets the picture previews through (blob:), as the policies of the servers do', () => {
+    expect(imageSources('frontend/index.html', /http-equiv="Content-Security-Policy"/)).toContain('blob:')
+    expect(imageSources('deploy/Caddyfile', /Content-Security-Policy "default-src 'self'/)).toContain('blob:')
+  })
+
   it('the release checklist starting point lists the satellite host too', () => {
     expect(imageSources('.ai/RELEASE_CHECKLIST.md', /^\s*`default-src 'self'; script-src 'self'/)).toContain(satelliteOrigin)
   })

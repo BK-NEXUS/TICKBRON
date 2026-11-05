@@ -17,7 +17,7 @@ ADMIN = '/api/v1/admin-panel/geography'
 PUBLIC = '/api/v1/geography'
 
 
-def picture(name='flag.png', size=(40, 30), color=(200, 30, 30), fmt='PNG'):
+def picture(name='flag.png', size=(1200, 900), color=(200, 30, 30), fmt='PNG'):
     buffer = io.BytesIO()
     Image.new('RGB', size, color).save(buffer, format=fmt)
     return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{fmt.lower()}')
@@ -168,3 +168,33 @@ class TestMultipartKeepsRowsVisible:
         assert response.status_code == 200
         country.refresh_from_db()
         assert country.is_active is True
+
+
+@pytest.mark.django_db
+class TestPictureSizeRules:
+    """A country or region picture follows the "where to" card: at least 800 x 600 px, a shape from 6:5 to 9:5."""
+
+    def test_a_picture_that_is_too_small_is_refused_and_creates_nothing(self, client):
+        response = client.post(f'{ADMIN}/countries/', {**COUNTRY, 'image': picture(size=(600, 450))}, format='multipart')
+        assert response.status_code == 400
+        text = str(response.data['error']['details']['image'])
+        assert 'too small' in text and '600 x 450' in text and 'at least 800 x 600 px' in text and '1200 x 900 px' in text
+        assert not Country.objects.filter(code='XC').exists()
+
+    def test_a_picture_of_the_wrong_shape_is_refused(self, client, country):
+        body = {'country': country.pk, 'name_uz': 'Sharq', 'name_ru': 'Восток', 'name_en': 'East'}
+        response = client.post(f'{ADMIN}/regions/', {**body, 'image': picture(size=(1200, 1200))}, format='multipart')
+        assert response.status_code == 400
+        assert 'wrong shape' in str(response.data['error']['details']['image'])
+        assert not Region.objects.filter(name_en='East').exists()
+
+    def test_a_gif_is_refused(self, client):
+        response = client.post(f'{ADMIN}/countries/', {**COUNTRY, 'image': picture('a.gif', fmt='GIF')}, format='multipart')
+        assert response.status_code == 400
+        assert 'not a JPG, PNG or WebP' in str(response.data['error']['details']['image'])
+
+    def test_a_large_picture_is_stored_shrunk(self, client):
+        response = client.post(f'{ADMIN}/countries/', {**COUNTRY, 'image': picture(size=(3200, 2400))}, format='multipart')
+        assert response.status_code == 201, response.data
+        with Image.open(Country.objects.get(code='XC').image.path) as stored:
+            assert stored.size == (1600, 1200)

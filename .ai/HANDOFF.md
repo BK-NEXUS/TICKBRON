@@ -3444,6 +3444,13 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Fixed: the pin on the hotel page used Leaflet's default image file, which the build cannot find (`/property/marker-icon.png` 404), so the map showed no pin; the pin is now drawn by `PropertyLocationMap` (`.map-pin-dot`).
 - Found, not fixed: the country "IS / istonya" in the geography list looks like a test entry; its tile shows a black picture on the home page.
 
+  image-rules-1
+## Picture size rules (2026-11-05)
+
+- Every picture upload now has a rule: hotel and room photos at least 1200 x 800 px (4:3 to 16:9, best 1600 x 1067), ad banners at least 1600 x 600 px (16:9 to 16:5, best 1920 x 720), country and region pictures at least 800 x 600 px (6:5 to 9:5, best 1200 x 900); JPEG, PNG or WebP only, 10 MB. A picture outside the rule is refused with the sizes to use (uz, ru, en). Backend: `common/image_rules.py` (one place), used by the owner photo serializers, the geography serializers and `promotions/service.py`; ad banners and place pictures are now also shrunk and cleaned of camera data; the stored extension follows the real format. Frontend: `ImageRequirements` under every upload box writes the sizes in pixels, and the browser refuses a wrong picture before sending (`utils/imageRules.ts`, `utils/imageFile.ts`, `utils/imageSize.ts`). Contract: `.ai/API_CONTRACT.md`.
+- Tests that uploaded tiny pictures (partner photos and rooms, geography, ads) now use `common/testing.image_upload` for a picture of a valid size. Three assertions changed because the rule changed, none was weakened: a GIF is no longer accepted (the ad and owner photo tests use a JPEG and expect `.jpg`), and the client check no longer lists GIF.
+- Fixed on the way: the Content-Security-Policy inside `frontend/index.html` had no `blob:` in `img-src`, so the preview of a chosen picture was blocked in the browser (the servers' policies in `deploy/` already allow it); `deployCsp.test.ts` keeps them in step.
+- Found, not fixed: in the admin panel, after "Add administrator" is opened the other tabs do not switch away from it until "Cancel" is pressed.z
 ## Design round 1 (2026-11-05)
 
 - Frontend only, no API or backend change. The hotel page shows the shape of the page while it loads (title, gallery, text lines, booking card) instead of a lone spinner; "Where to?" on the home page shows four card placeholders. The search results already had skeleton cards.
@@ -3457,3 +3464,4 @@ The owner asked for lists of people and hotels that can be narrowed by the first
 - Frontend only. New `ErrorState` (icon, title, what happened, "Try Again" and/or a way out) next to the existing `EmptyState`; both use one look: the icon sits in a round soft badge (red for a failure), the buttons stack on a phone. The plain "text and a button" failure blocks of Bookings, Favorites, Notifications, the booking page, the hotel page (not found), search results and the reviews block now use it; the empty search result uses `EmptyState` with a search icon and "Clear Filters". New text `state.errorTitle` (uz, ru, en) for pages without their own title.
 - Not changed: the 404 page (already has its own big "404" design), the many one-line empty hints in the admin and owner tables, the offline screen.
 - Found, not fixed: the admin and owner panels still show failures as one plain line in many tabs; the shimmer colour of skeletons is low in contrast on the dark theme (round 1).
+master

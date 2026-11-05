@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from common.dates import business_today
 from common.money import SUPPORTED_BASE_CURRENCIES, is_valid_unit, is_whole_som
-from common.storage import image_upload_error
+from common.image_rules import HOTEL_PHOTO, ROOM_PHOTO, image_upload_error
 from common.images import shrink_upload
 from common.validators import validate_free_text
 from geography.serializers import GeographyRefsMixin
@@ -701,6 +701,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
     field that points at the hotel or room type the photo belongs to.
     """
     parent_field = None
+    rule = None  # the size rule of this kind of photo (common/image_rules.py)
     photo_url = serializers.SerializerMethodField()
 
     def get_photo_url(self, obj):
@@ -721,7 +722,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
         if not photos.filter(is_primary=True).exists():
             validated_data['is_primary'] = True
         # The client's file name is never used: stored paths are public and must not be guessable.
-        upload = validated_data['photo'] = shrink_upload(validated_data['photo'])
+        upload = validated_data['photo'] = shrink_upload(validated_data['photo'], self.rule.max_side)
         extension = os.path.splitext(upload.name)[1].lower()
         upload.name = f'{uuid.uuid4().hex}{extension}'
         return super().create(validated_data)
@@ -732,10 +733,10 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
 
     def validate_photo(self, value):
         """
-        Enforce the size/extension/content-type rules from model.clean() here too,
-        since DRF's create/update flow never calls full_clean().
+        Enforce the picture rules here: DRF's create/update flow never calls full_clean(), and the model's own check
+        knows nothing about the sizes the site shows well.
         """
-        error_message = image_upload_error(value)
+        error_message = image_upload_error(value, self.rule)
         if error_message:
             raise serializers.ValidationError(error_message)
         return value
@@ -743,6 +744,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
 
 class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
     """Serializer for property photo management by hotel-owners (only photos of their own properties)."""
+    rule = HOTEL_PHOTO
     parent_field = 'property'
 
     class Meta:
@@ -766,6 +768,7 @@ class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
 
 class PartnerRoomPhotoSerializer(PartnerPhotoSerializer):
     """Serializer for room photo management by hotel-owners (the view only hands over their own room types)."""
+    rule = ROOM_PHOTO
     parent_field = 'room_type'
 
     class Meta:

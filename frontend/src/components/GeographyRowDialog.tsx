@@ -1,9 +1,10 @@
 import { cleanPlaceName } from '../utils/inputFilters'
-import { ChangeEvent, FormEvent, useEffect, useId, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useId, useState, useRef } from 'react'
 import { useI18n } from '../i18n/I18nContext'
 import { adminGeographyAdapter, type AdminGeographyRow, type GeographyKind } from '../adapters/adminGeographyAdapter'
 import { DialogModal } from './DialogModal'
-import { imageFileError } from '../utils/imageFile'
+import { imageFileError, imageProblem } from '../utils/imageFile'
+import { ImageRequirements } from './ImageRequirements'
 
 const NAME_FIELDS = ['name_uz', 'name_ru', 'name_en'] as const
 
@@ -29,6 +30,7 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [image, setImage] = useState<File | null>(null)
+  const chosen = useRef<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const hasPicture = kind !== 'cities'
   const currentPicture = row && 'image_url' in row ? row.image_url : null
@@ -42,9 +44,17 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
 
   const handlePicture = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
+    chosen.current = file
     const problem = file ? imageFileError(file) : null
     setImage(problem ? null : file)
     setError(problem ? t(problem) : null)
+    if (!file || problem) return
+    // The size is read after the type and file size are known to be fine; a wrong size drops the picture again
+    void imageProblem(file, 'place').then(sizeProblem => {
+      if (!sizeProblem || chosen.current !== file) return
+      setImage(null)
+      setError(t(sizeProblem.key, sizeProblem.params))
+    })
   }
 
   const parentField = kind === 'regions' ? { country: parentId as number } : kind === 'cities' ? { region: parentId as number } : {}
@@ -99,9 +109,9 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
         {hasPicture && (
           <div className="form-group geography-picture">
             <label htmlFor={`${id}-image`}>{t('geoAdmin.field.image')}</label>
-            <input id={`${id}-image`} className="form-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+            <input id={`${id}-image`} className="form-input" type="file" accept="image/jpeg,image/png,image/webp"
               onChange={handlePicture} />
-            <span className="field-hint">{t('geoAdmin.imageHelp')}</span>
+            <ImageRequirements kind="place" />
             {(preview || currentPicture) && (
               <img className="geography-picture-preview" src={preview ?? currentPicture ?? ''} alt={t('geoAdmin.imagePreview')} />
             )}

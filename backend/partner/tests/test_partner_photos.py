@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from permissions.models import Role
+from common.testing import image_upload
 from properties.models import Property, PropertyPhoto, PropertyType
 
 User = get_user_model()
@@ -46,8 +47,8 @@ class OwnerPhotoTests(TestCase):
             address_line1='1 Main St', city='Tashkent', country='Uzbekistan', base_price=100, currency='USD',
         )
 
-    def _upload(self, url=None, name='front.gif', **extra):
-        image = SimpleUploadedFile(name, GIF, content_type='image/gif')
+    def _upload(self, url=None, name='front.jpg', **extra):
+        image = image_upload(name=name)
         return self.client.post(url or self.url, {'photo': image, 'photo_type': 'exterior', **extra}, format='multipart')
 
     def _photo(self, prop=None, **fields):
@@ -99,9 +100,9 @@ class OwnerPhotoTests(TestCase):
 
     def test_uploaded_file_name_is_random_not_the_clients(self):
         self.client.force_authenticate(self.owner)
-        response = self._upload(name='my private name.gif')
+        response = self._upload(name='my private name.jpg')
         stored = PropertyPhoto.objects.get(pk=response.data['id']).photo.name
-        self.assertRegex(stored, rf'^properties/{self.prop.id}/photos/[0-9a-f]{{32}}\.gif$')
+        self.assertRegex(stored, rf'^properties/{self.prop.id}/photos/[0-9a-f]{{32}}\.jpg$')
         self.assertNotIn('private', stored)
 
     def test_upload_to_another_owners_property_is_404(self):

@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useI18n } from '../i18n/I18nContext'
+import { ImageRequirements } from './ImageRequirements'
+import { imageProblem } from '../utils/imageFile'
 
 interface RoomPhotoQueueProps {
   files: File[]
@@ -12,6 +14,7 @@ interface RoomPhotoQueueProps {
 /** Photos chosen while the room type is not saved yet: they are uploaded right after it is created. */
 export function RoomPhotoQueue({ files, onChange, max, disabled }: RoomPhotoQueueProps) {
   const { t } = useI18n()
+  const [problems, setProblems] = useState<string[]>([])
   const previews = useMemo(
     () => files.map(file => (typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : '')),
     [files],
@@ -20,10 +23,18 @@ export function RoomPhotoQueue({ files, onChange, max, disabled }: RoomPhotoQueu
     if (typeof URL.revokeObjectURL === 'function') previews.forEach(url => url && URL.revokeObjectURL(url))
   }, [previews])
 
-  const handlePick = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePick = async (event: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? [])
     event.target.value = ''
-    onChange([...files, ...picked].slice(0, max))
+    const fits: File[] = []
+    const refused: string[] = []
+    for (const file of picked) {
+      const problem = await imageProblem(file, 'room')
+      if (problem) refused.push(t('photos.uploadFailed', { name: file.name, error: t(problem.key, problem.params) }))
+      else fits.push(file)
+    }
+    setProblems(refused)
+    if (fits.length > 0) onChange([...files, ...fits].slice(0, max))
   }
 
   return (
@@ -34,14 +45,20 @@ export function RoomPhotoQueue({ files, onChange, max, disabled }: RoomPhotoQueu
           id="room-photo-queue-input"
           className="sr-only"
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/png,image/webp"
           multiple
           aria-label={t('photos.add')}
           disabled={disabled || files.length >= max}
           onChange={handlePick}
         />
         <span className="field-hint">{t('roomForm.queueHint')}</span>
+        <ImageRequirements kind="room" />
       </div>
+      {problems.length > 0 && (
+        <div className="alert alert-error" role="alert">
+          {problems.map(message => <p key={message}>{message}</p>)}
+        </div>
+      )}
       {files.length > 0 && (
         <>
           <p className="partner-photos-count">{t('roomForm.queued', { count: files.length, max })}</p>

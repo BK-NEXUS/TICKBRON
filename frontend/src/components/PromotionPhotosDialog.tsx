@@ -4,7 +4,8 @@ import { DialogModal as Modal } from './DialogModal'
 import { useI18n } from '../i18n/I18nContext'
 import { promotionAdapter, type AdPhoto, type AdminPromotion } from '../adapters/promotionAdapter'
 import { MAX_AD_PHOTOS } from '../utils/adPhotos'
-import { imageFileError } from '../utils/imageFile'
+import { imageProblem } from '../utils/imageFile'
+import { ImageRequirements } from './ImageRequirements'
 import { promotionErrorKey } from '../utils/promotionErrors'
 
 interface PromotionPhotosDialogProps {
@@ -37,9 +38,9 @@ export function PromotionPhotosDialog({ promotion, canEdit, justCreated = false,
     setBusy(true)
     const problems: string[] = []
     for (const file of files) {
-      const wrong = imageFileError(file)
+      const wrong = await imageProblem(file, 'ad')
       if (wrong) {
-        problems.push(t('promoAdmin.photosUploadFailed', { name: file.name, error: t(wrong) }))
+        problems.push(t('promoAdmin.photosUploadFailed', { name: file.name, error: t(wrong.key, wrong.params) }))
         continue
       }
       const result = await promotionAdapter.uploadPromotionPhoto(promotion.id, file)
@@ -71,13 +72,14 @@ export function PromotionPhotosDialog({ promotion, canEdit, justCreated = false,
             id="promotion-photos-input"
             className="sr-only"
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             aria-label={t('promoAdmin.photosAdd')}
             disabled={busy || photos.length >= MAX_AD_PHOTOS}
             onChange={upload}
           />
-          <span className="field-hint">{t('promoAdmin.photosHelp')}</span>
+          <ImageRequirements kind="ad" />
+          <span className="field-hint">{t('promoAdmin.photosCropHint')}</span>
           {busy && <span role="status" aria-live="polite">{t('promoAdmin.photosLoading')}</span>}
         </div>
       ) : (
