@@ -14,7 +14,8 @@ from properties.models import Property, PropertyType, Amenity, AmenityCategory, 
 from bookings.models import Booking, BookingItem
 from admin_panel.models import InternalNote
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone as dt_timezone
+from unittest import mock
 from django.utils import timezone
 
 User = get_user_model()
@@ -1375,6 +1376,17 @@ class AdminCustomerDetailTests(TestCase):
         bookings = response.data['bookings']
         self.assertEqual(len(bookings), 1)
         self.assertEqual(bookings[0]['status'], 'confirmed')
+
+    def test_upcoming_follows_the_business_day_not_the_utc_day(self):
+        """At 21:00 UTC it is already 02:00 of the next day in Tashkent: a stay that began that day is no longer upcoming."""
+        Booking.objects.filter(pk=self.booking_confirmed.pk).update(check_in=date(2026, 11, 10), check_out=date(2026, 11, 12))
+        self.client.force_authenticate(user=self.super_admin)
+        at = datetime(2026, 11, 10, 21, 0, tzinfo=dt_timezone.utc)
+        with mock.patch('django.utils.timezone.now', return_value=at):
+            response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=upcoming')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['bookings'], [])
 
     def test_customer_detail_filters_completed_bookings(self):
         """Test that customer detail can filter completed bookings."""

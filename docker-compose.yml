@@ -3,8 +3,16 @@
 #   docker compose up -d --build
 # Step by step with checks: .ai/DEPLOY_DOCKER.md. Only Caddy is open to the internet (ports 80 and 443).
 
+# Docker keeps every log line for good unless told otherwise: three files of 10 MB at most per service, the oldest dropped
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
+    logging: *logging
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -20,6 +28,7 @@ services:
       retries: 10
 
   redis:
+    logging: *logging
     image: redis:7-alpine
     restart: unless-stopped
     # Kept on disk, so the waiting background tasks survive a restart. The memory is capped; when it is full only keys
@@ -35,6 +44,7 @@ services:
 
   # Runs once at every start, before the app: applies new database changes
   migrate:
+    logging: *logging
     build: ./backend
     image: tickbron-backend
     env_file: .env
@@ -44,6 +54,7 @@ services:
         condition: service_healthy
 
   web:
+    logging: *logging
     image: tickbron-backend
     restart: unless-stopped
     env_file: .env
@@ -64,6 +75,7 @@ services:
 
   # Background tasks: e-mails, Telegram notices, exchange rates
   worker:
+    logging: *logging
     image: tickbron-backend
     restart: unless-stopped
     env_file: .env
@@ -78,6 +90,7 @@ services:
 
   # The scheduler (exchange rates twice a day, ...): exactly ONE copy must run, never scale this service
   beat:
+    logging: *logging
     image: tickbron-backend
     restart: unless-stopped
     env_file: .env
@@ -89,6 +102,7 @@ services:
         condition: service_healthy
 
   caddy:
+    logging: *logging
     build:
       context: ./frontend
       args:
