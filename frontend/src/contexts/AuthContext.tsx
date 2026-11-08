@@ -31,6 +31,7 @@ interface AuthContextType {
     first_name?: string
     last_name?: string
     phone_number?: string
+    sms_notifications?: boolean
     whatsapp?: string
     telegram?: string
     preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
@@ -127,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     first_name?: string
     last_name?: string
     phone_number?: string
+    sms_notifications?: boolean
     whatsapp?: string
     telegram?: string
     preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'

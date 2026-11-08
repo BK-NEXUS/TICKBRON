@@ -38,3 +38,22 @@ class Message(models.Model):
 
     def __str__(self):
         return f'Message {self.pk} conversation:{self.conversation_id}'
+
+
+class SmsDelivery(models.Model):
+    """One SMS the site tried to send to a user: the daily limits count these rows. No number and no text are kept."""
+    CHAT_REPLY = 'chat_reply'
+    SENT = 'sent'
+    FAILED = 'failed'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
+    kind = models.CharField(max_length=20, default=CHAT_REPLY)
+    status = models.CharField(max_length=10, choices=[(SENT, 'Sent'), (FAILED, 'Failed')])
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'chat_sms_deliveries'
+        indexes = [models.Index(fields=['user', 'created_at'], name='chat_sms_user_time_idx')]
+
+    def __str__(self):
+        return f'SmsDelivery {self.pk} user:{self.user_id} {self.status}'

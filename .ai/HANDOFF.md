@@ -3491,3 +3491,11 @@ master
 - Fixed on the way: `index.css` grouped `.page-breadcrumbs-back:hover` with the trail list styles by mistake; it would have turned the button into a flex list on hover.
 - Seen on a 390px phone in the dark theme (ru); not looked at on a 1440px screen in this session.
     master
+
+## SMS when the team answers (2026-11-08, plan `.ai/PLAN_SMS_CHAT.md`)
+
+- Backend: `common/sms.py` (`send_sms`, only a `console` backend that logs a masked number; a real provider is one more entry in `_BACKENDS` once the owner has an account), `users.User.sms_notifications` (migration `users/0012`), `chat.SmsDelivery` (migration `chat/0002`: user, kind, status, time; no number, no text), `chat/notify.py` (`send_reply_sms`, limits, one Telegram alert per 6 hours when the daily cap is reached). Settings `SMS_ENABLED` (default False), `SMS_BACKEND`, `SMS_PER_USER_PER_DAY` 3, `SMS_MIN_GAP_MINUTES` 10, `SMS_DAILY_LIMIT` 300 (rolling 24 hours); examples in the three env example files.
+- Frontend: profile page shows the choice and has a checkbox with a hint (uz/ru/en); the value is sent only when it changed.
+- Both migrations were run forwards, backwards and forwards again; `makemigrations --check` is clean.
+- Not done, on purpose: a real provider (needs the owner's account, token and approved sender name), retries of a failed SMS (a failure is recorded as `failed`), the checkbox at sign-up (profile only), a language by user (the line is Uzbek), SMS for bookings, a hotel-to-guest chat. The master switch is off, so nothing changes on a server until `SMS_ENABLED=true` and a provider exists.
+- Found, not fixed: a local PostgreSQL service on this computer holds port 5432 with another password than `backend/.env`, so tests run against a Docker database on port 5433 (`DB_PORT=5433`).

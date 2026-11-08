@@ -64,3 +64,10 @@ describe('the Back button at the top of every page', () => {
     expect(index).not.toMatch(/\.page-breadcrumbs-back:hover,\s*\.page-breadcrumbs-list/)
   })
 })
+
+describe('the SMS consent box in the profile form', () => {
+  it('has a 44px tap target and a readable hint underneath', () => {
+    expect(refresh).toMatch(/\.profile-form-checkbox \{[^}]*min-height: 44px/)
+    expect(refresh).toMatch(/\.profile-form-hint \{[^}]*color: var\(--color-text-secondary\)/)
+  })
+})

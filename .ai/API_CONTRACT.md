@@ -1378,3 +1378,9 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 - Everywhere: JPEG, PNG or WebP only (found with Pillow in the file; the `Content-Type` header and the file name are not trusted; GIF and SVG are refused), at most 10 MB, at most 40 000 000 pixels. The stored file name ends with what the file really is (`.jpg`, `.png`, `.webp`).
 - The shape is judged as the picture is shown (the camera's turn flag is applied first).
 - A refused picture answers 400 with the text in the page language (uz, ru, en): the picture's size, the smallest size, the recommended size and the types. Hotel and room photos: `{"photo": ["..."]}`; country and region: `error.details.image`; ad banner: `{"error": "...", "code": "bad_image"}`.
+
+## SMS consent: `sms_notifications` (plan PLAN_SMS_CHAT.md)
+
+- `GET /api/v1/auth/me/` and the answer of `PATCH /api/v1/auth/me/update/` now carry `sms_notifications` (boolean, default `false`).
+- `PATCH /api/v1/auth/me/update/` accepts `sms_notifications` (boolean; anything else is 400). A user changes only their own value. There is no other way to change it.
+- Meaning: when the support team answers in the chat and the user has not read an earlier answer, the server may text the user's `phone_number` one fixed line with a link to `/support` (never the message). It happens only when `SMS_ENABLED` is on, the account is active, has a number and the value is `true`, and the limits allow (see HANDOFF "SMS when the team answers").

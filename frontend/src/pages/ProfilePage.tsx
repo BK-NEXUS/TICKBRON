@@ -20,6 +20,7 @@ export function ProfilePage() {
     telegram: user?.telegram || '',
     preferred_contact_method: user?.preferred_contact_method || 'email',
   })
+  const [smsOn, setSmsOn] = useState(Boolean(user?.sms_notifications))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -33,6 +34,7 @@ export function ProfilePage() {
       telegram: user?.telegram || '',
       preferred_contact_method: user?.preferred_contact_method || 'email',
     })
+    setSmsOn(Boolean(user?.sms_notifications))
     setIsEditing(true)
     setError(null)
     setSuccess(false)
@@ -60,8 +62,9 @@ export function ProfilePage() {
       setError(t('auth.errPhone'))
       return
     }
-    const changes: Partial<typeof editForm> = { ...editForm, phone_number: phone }
+    const changes: Partial<typeof editForm> & { sms_notifications?: boolean } = { ...editForm, phone_number: phone }
     if (!phone) delete changes.phone_number
+    if (smsOn !== Boolean(user?.sms_notifications)) changes.sms_notifications = smsOn
 
     setSaving(true)
     try {
@@ -169,6 +172,10 @@ export function ProfilePage() {
                   {t(`profile.contact.${user.preferred_contact_method || 'email'}`)}
                 </p>
               </div>
+              <div className="profile-field">
+                <label className="profile-field-label">{t('profile.sms')}</label>
+                <p className="profile-field-value">{user.sms_notifications ? t('profile.smsOn') : t('profile.smsOff')}</p>
+              </div>
             </div>
 
             {isEditing && (
@@ -260,6 +267,19 @@ export function ProfilePage() {
                       <option value="whatsapp">{t('profile.contact.whatsapp')}</option>
                       <option value="telegram">{t('profile.contact.telegram')}</option>
                     </select>
+                  </div>
+                  <div className="profile-form-field">
+                    <label htmlFor="sms_notifications" className="profile-form-checkbox">
+                      <input
+                        id="sms_notifications"
+                        type="checkbox"
+                        checked={smsOn}
+                        onChange={e => setSmsOn(e.target.checked)}
+                        aria-describedby="sms_notifications_hint"
+                      />
+                      {t('profile.sms')}
+                    </label>
+                    <p id="sms_notifications_hint" className="profile-form-hint">{t('profile.smsHint')}</p>
                   </div>
                   <div className="profile-form-actions">
                     <button
