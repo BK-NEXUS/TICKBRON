@@ -64,11 +64,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name',
-                  'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
+                  'phone_number', 'sms_notifications', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
                   'email_verified', 'two_factor_enabled', 'two_factor_setup_required', 'is_staff', 'is_superuser', 'role']
-        # phone_number is legacy data: shown, never written
-        read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
+        # phone_number is legacy data: shown, never written; the SMS consent is changed only through UserUpdateSerializer
+        read_only_fields = ['id', 'phone_number', 'sms_notifications', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_full_name(self, obj):
         return obj.get_full_name()
@@ -169,7 +169,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['full_name', 'first_name', 'last_name', 'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method']
+        fields = ['full_name', 'first_name', 'last_name', 'phone_number', 'sms_notifications', 'whatsapp', 'telegram',
+                  'preferred_contact_method']
         extra_kwargs = {
             'full_name': {'required': False, 'validators': [validate_person_name]},
             'first_name': {'validators': [validate_person_name]},

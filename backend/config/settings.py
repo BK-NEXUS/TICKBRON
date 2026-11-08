@@ -441,6 +441,13 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'TICKBRON <no-reply@tickbron.com>')
+# Which service sends SMS: 'console' only writes a line to the log (development, tests). A real provider is added later.
+SMS_BACKEND = os.getenv('SMS_BACKEND', 'console')
+# The master switch: SMS is sent only when this is true AND the user agreed. Limits keep the cost bounded (rolling 24 hours).
+SMS_ENABLED = os.getenv('SMS_ENABLED', 'False').lower() == 'true'
+SMS_PER_USER_PER_DAY = int(os.getenv('SMS_PER_USER_PER_DAY', '3'))
+SMS_MIN_GAP_MINUTES = int(os.getenv('SMS_MIN_GAP_MINUTES', '10'))
+SMS_DAILY_LIMIT = int(os.getenv('SMS_DAILY_LIMIT', '300'))
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 # Where the team hears of a new chat message (empty = the team is not mailed; the admin tab still shows the badge)
 SUPPORT_NOTIFY_EMAIL = os.getenv('SUPPORT_NOTIFY_EMAIL', '')

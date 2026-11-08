@@ -68,6 +68,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     # Legacy, read-only: nothing in the app collects or verifies a number any more (accounts are
     # e-mail only). Blank is stored as NULL; not unique, old accounts may share a number.
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    # Consent to an SMS when the support team answers (plan .ai/PLAN_SMS_CHAT.md): off until the user turns it on
+    sms_notifications = models.BooleanField(default=False)
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
