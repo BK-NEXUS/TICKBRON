@@ -498,6 +498,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'promotions.tasks.end_expired_promotions',
         'schedule': crontab(hour=0, minute=10),
     },
+    # Expired sign-in sessions are rows in the database that nothing else removes, 03:30 Asia/Tashkent
+    'clear-expired-sessions': {
+        'task': 'common.tasks.clear_expired_sessions',
+        'schedule': crontab(hour=3, minute=30),
+    },
 }
 
 # Exchange rates (R6). Thresholds come from the environment; see currency/cbu.py

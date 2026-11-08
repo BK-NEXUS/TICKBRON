@@ -92,6 +92,13 @@ class TestCompose:
             if name != 'migrate':
                 assert service['restart'] == 'unless-stopped', name
 
+    def test_every_service_caps_its_log_files(self, compose):
+        # Docker keeps every log line for good by default: after some months the server disk would be full
+        for name, service in compose['services'].items():
+            logging = service.get('logging', {})
+            assert logging.get('driver') == 'json-file', name
+            assert logging['options']['max-size'] and logging['options']['max-file'], name
+
     def test_every_variable_the_compose_file_reads_is_in_the_env_example(self):
         # ${NAME} without a default; `$${NAME}` is the container's own variable and ${NAME:-x} has a default
         used = set(re.findall(r'(?<!\$)\$\{([A-Z_]+)\}', COMPOSE.read_text()))

@@ -31,6 +31,7 @@ from admin_panel.audit import AuditedModelViewSetMixin
 from accounts.notifications import notify
 from admin_panel.models import AdminAccessLog, InternalNote
 from common.alphabet import DISPLAY_NAME, hotels_with_letter, letter_from, letter_q, people_with_letter
+from common.dates import business_today
 from common.request import object_body
 from common.security_log import log_security_event
 from admin_panel.serializers import (
@@ -739,7 +740,7 @@ def admin_customer_detail(request, customer_id):
     if booking_filter == 'upcoming':
         bookings = bookings.filter(
             status='confirmed',
-            check_in__gte=timezone.now().date()
+            check_in__gte=business_today()
         )
     elif booking_filter == 'completed':
         bookings = bookings.filter(status='completed')

@@ -3499,3 +3499,11 @@ master
 - Both migrations were run forwards, backwards and forwards again; `makemigrations --check` is clean.
 - Not done, on purpose: a real provider (needs the owner's account, token and approved sender name), retries of a failed SMS (a failure is recorded as `failed`), the checkbox at sign-up (profile only), a language by user (the line is Uzbek), SMS for bookings, a hotel-to-guest chat. The master switch is off, so nothing changes on a server until `SMS_ENABLED=true` and a provider exists.
 - Found, not fixed: a local PostgreSQL service on this computer holds port 5432 with another password than `backend/.env`, so tests run against a Docker database on port 5433 (`DB_PORT=5433`).
+
+## Review for future problems (2026-11-08)
+
+- Read-through of the risky parts (sign-in codes, booking creation and locking, state machine, production settings, uploads, permissions) plus a scan of the whole code base for dangerous calls, raw SQL, `any`, unsafe links and personal data in logs: nothing unsafe found. All 224 API operations were called as visitor, guest, owner and admin: no 5xx, no role reached what it must not.
+- Fixed: expired sign-in sessions were never deleted (Django keeps them in the database): new nightly task `common.tasks.clear_expired_sessions`, 03:30 Asia/Tashkent, in `CELERY_BEAT_SCHEDULE`.
+- Fixed: the admin customer page "upcoming bookings" filter compared with the UTC date; between 19:00 and 24:00 UTC (00:00-05:00 in Tashkent) a stay that had already begun still counted as upcoming. It now uses `common.dates.business_today()`.
+- Fixed: Docker kept every log line for good (no rotation), so the server disk would fill over months. Every service in `docker-compose.yml` now keeps three files of 10 MB at most.
+- Found, not fixed: the OpenAPI schema does not list some query parameters (`quote`, `reviews/public`, `reviews/property_scores`, `bookings/lookup` takes `reference_code`); `accounts` notifications `unread` list has no limit (the list is short in practice); no account deletion (Apple and Google ask for it); a professional penetration test is still to be done before real traffic.
