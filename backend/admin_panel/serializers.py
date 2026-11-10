@@ -8,7 +8,7 @@ from django.db import transaction
 from common.validators import validate_person_name
 from rest_framework import serializers
 from partner.models import OwnerPlace
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from geography.serializers import REF_FIELDS, check_geography
 from properties.models import Property, Amenity, AmenityCategory
 from properties.serializers import PropertyTypeSerializer, AmenityCategorySerializer
@@ -35,7 +35,7 @@ class AdminPropertySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'owner', 'owner_email', 'owner_name', 'property_type', 'status',
             'max_guests', 'bedrooms', 'bathrooms', 'address_line1', 'address_line2',
-            'city', 'state', 'postal_code', 'country', 'country_ref', 'region_ref', 'city_ref',
+            'city', 'state', 'postal_code', 'country', 'country_ref', 'region_ref',
             'latitude', 'longitude',
             'base_price', 'currency', 'full_address', 'approved_at', 'approved_by',
             'rejection_reason', 'created_at', 'updated_at'
@@ -64,7 +64,7 @@ class AdminPropertyApproveSerializer(serializers.Serializer):
 
 class AdminPropertyRegionSerializer(serializers.Serializer):
     """
-    Location of a property. Send geography refs (country_ref, region_ref, city_ref; all three
+    Location of a property. Send geography refs (country_ref, region_ref; both
     null clears them) or, for older clients, `state`: the region text (blank clears it, so the
     property is grouped as "Unspecified" in the Status section). Refs win when both are sent.
     Needs the property in the serializer context.
@@ -73,7 +73,6 @@ class AdminPropertyRegionSerializer(serializers.Serializer):
         max_length=100, allow_blank=True, allow_null=True, trim_whitespace=True, required=False)
     country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), allow_null=True, required=False)
     region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), allow_null=True, required=False)
-    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), allow_null=True, required=False)
 
     def validate_state(self, value):
         return value or None
@@ -203,17 +202,16 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
 
     Super-admin only endpoint for direct hotel-owner account creation.
     """
-    # Where the owner's hotels will appear: all three are required and must fit together
+    # Where the owner's hotels will appear: both are required and must fit together
     country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), write_only=True)
     region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
-    city_ref = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
 
     # What the site takes from each booking of this owner: the super admin must decide it on creation
     commission_percent = serializers.DecimalField(
         max_digits=5, decimal_places=2, min_value=0, max_value=100, write_only=True)
 
     class Meta(AccountCreateSerializer.Meta):
-        fields = AccountCreateSerializer.Meta.fields + ['country_ref', 'region_ref', 'city_ref', 'commission_percent']
+        fields = AccountCreateSerializer.Meta.fields + ['country_ref', 'region_ref', 'commission_percent']
 
     def validate(self, data):
         data = super().validate(data)
@@ -231,7 +229,6 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
         place = {
             'country': validated_data.pop('country_ref'),
             'region': validated_data.pop('region_ref'),
-            'city': validated_data.pop('city_ref'),
         }
 
         # Get or create hotel-owner role

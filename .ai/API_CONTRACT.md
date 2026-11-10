@@ -1384,3 +1384,11 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 - `GET /api/v1/auth/me/` and the answer of `PATCH /api/v1/auth/me/update/` now carry `sms_notifications` (boolean, default `false`).
 - `PATCH /api/v1/auth/me/update/` accepts `sms_notifications` (boolean; anything else is 400). A user changes only their own value. There is no other way to change it.
 - Meaning: when the support team answers in the chat and the user has not read an earlier answer, the server may text the user's `phone_number` one fixed line with a link to `/support` (never the message). It happens only when `SMS_ENABLED` is on, the account is active, has a number and the value is `true`, and the limits allow (see HANDOFF "SMS when the team answers").
+
+## Geography: the city level is removed (2026-11-10, plan PLAN_GEO_REMOVE_CITY.md)
+
+- The dictionary has two levels: country and region. `GET /api/v1/geography/countries/` and `/countries/{code}/regions/` are unchanged. `GET /api/v1/geography/regions/{id}/cities/` and every `/api/v1/admin-panel/geography/cities/` route answer 404.
+- A hotel (`/partner/properties/`): `country_ref` and `region_ref` are the ids from the dictionary and are required on create (the region must lie in the country; both must be active). `city` is now **plain text typed by the owner**: required on create (not blank, at most 100 characters), writable on update. `state` and `country` stay read-only copies of the English names of the region and the country. `city_ref` is gone from requests and answers (a client that still sends it is ignored).
+- `GET /partner/assigned-place/` answers `{country_ref, region_ref}`; `POST /admin-panel/users/create-hotel-owner/` takes `country_ref` and `region_ref` (both required, they must fit together) and no `city_ref`.
+- `PATCH /admin-panel/properties/{id}/region/` takes `country_ref` and `region_ref` (both null clears them). Advertising (`/admin-panel/promotions/`): the place limit is `country_ref` and `region_ref`; `city_ref` is gone. Status answers have no `city_id`.
+- The admin list of regions has no `city_count`. Search and suggestions match the typed town as text, the region and the country in uz/ru/en.

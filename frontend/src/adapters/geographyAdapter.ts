@@ -26,11 +26,6 @@ export interface GeographyRegion extends GeographyNames {
   image_url: string | null
 }
 
-export interface GeographyCity extends GeographyNames {
-  id: number
-  hotel_count: number
-}
-
 type Result<T> = { data: T | null; error: string | null }
 
 /** The name in the page language; English when that name is blank. */
@@ -59,10 +54,6 @@ export class GeographyAdapter {
 
   getRegions(countryCode: string): Promise<Result<GeographyRegion[]>> {
     return this.get(`/api/v1/geography/countries/${encodeURIComponent(countryCode)}/regions/`)
-  }
-
-  getCities(regionId: number): Promise<Result<GeographyCity[]>> {
-    return this.get(`/api/v1/geography/regions/${regionId}/cities/`)
   }
 }
 

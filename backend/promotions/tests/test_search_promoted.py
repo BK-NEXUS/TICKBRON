@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from common.dates import business_today
 from promotions import service
-from promotions.tests.helpers import make_hotel, make_owner, make_promotion, make_superadmin, uz_city
+from promotions.tests.helpers import make_hotel, make_owner, make_promotion, make_superadmin, uz_region
 
 pytestmark = pytest.mark.django_db
 URL = '/api/v1/properties/search/'
@@ -114,12 +114,12 @@ def test_at_most_eight_banners_highest_priority_first():
     assert ids == [h.pk for h in reversed(hotels)][:8]
 
 
-def test_promotion_scoped_to_a_city_needs_a_hotel_there():
-    city = uz_city()
-    inside = make_hotel(make_owner('in@example.com'), name='In', city_ref=city)
+def test_promotion_scoped_to_a_region_needs_a_hotel_there():
+    region = uz_region()
+    inside = make_hotel(make_owner('in@example.com'), name='In', region_ref=region)
     outside = make_hotel(make_owner('out@example.com'), name='Out')
-    make_promotion(inside, city_ref=city)
-    make_promotion(outside, city_ref=city)
+    make_promotion(inside, region_ref=region)
+    make_promotion(outside, region_ref=region)
     assert promoted_ids(search()) == [inside.pk]
 
 

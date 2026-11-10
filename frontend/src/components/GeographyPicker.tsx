@@ -3,7 +3,6 @@ import { useI18n } from '../i18n/I18nContext'
 import {
   geographyAdapter,
   geographyName,
-  type GeographyCity,
   type GeographyCountry,
   type GeographyRegion,
 } from '../adapters/geographyAdapter'
@@ -11,14 +10,12 @@ import {
 export interface GeographyValue {
   country_ref: number | null
   region_ref: number | null
-  city_ref: number | null
 }
 
 /** Names of the chosen rows in the page language ('' = nothing chosen), for summaries. */
 export interface GeographyLabels {
   country: string
   region: string
-  city: string
 }
 
 interface GeographyPickerProps {
@@ -76,7 +73,7 @@ function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | nul
   }
 }
 
-/** Country > Region > City dropdowns from the public geography dictionary, names in the page language. */
+/** Country > Region dropdowns from the public geography dictionary, names in the page language. */
 export function GeographyPicker({ value, onChange, onLabels, disabled = false, required = false }: GeographyPickerProps) {
   const { t, language } = useI18n()
   const id = useId()
@@ -87,10 +84,6 @@ export function GeographyPicker({ value, onChange, onLabels, disabled = false, r
     countryCode ? () => geographyAdapter.getRegions(countryCode) : null,
     `regions:${countryCode}`,
   )
-  const cities = useList<GeographyCity>(
-    value.region_ref !== null ? () => geographyAdapter.getCities(value.region_ref as number) : null,
-    `cities:${value.region_ref}`,
-  )
 
   const nameOf = (items: Array<{ id: number } & Record<'name_uz' | 'name_ru' | 'name_en', string>>, id: number | null) => {
     const row = items.find(item => item.id === id)
@@ -99,30 +92,27 @@ export function GeographyPicker({ value, onChange, onLabels, disabled = false, r
   const labels = {
     country: nameOf(countries.items, value.country_ref),
     region: nameOf(regions.items, value.region_ref),
-    city: nameOf(cities.items, value.city_ref),
   }
   useEffect(() => {
     onLabels?.(labels)
     // only when a name really changes; `onLabels` is rebuilt on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [labels.country, labels.region, labels.city])
+  }, [labels.country, labels.region])
 
   const emit = (next: GeographyValue) => onChange(next, {
     country: nameOf(countries.items, next.country_ref),
     region: nameOf(regions.items, next.region_ref),
-    city: nameOf(cities.items, next.city_ref),
   })
 
   const parse = (raw: string) => (raw === '' ? null : Number(raw))
-  const failed = countries.failed || regions.failed || cities.failed
+  const failed = countries.failed || regions.failed
   const retry = useCallback(() => {
     if (countries.failed) countries.reload()
     if (regions.failed) regions.reload()
-    if (cities.failed) cities.reload()
-  }, [countries, regions, cities])
+  }, [countries, regions])
 
   const select = (
-    field: 'country' | 'region' | 'city',
+    field: 'country' | 'region',
     label: string,
     current: number | null,
     items: Array<{ id: number } & Record<'name_uz' | 'name_ru' | 'name_en', string>>,
@@ -147,17 +137,12 @@ export function GeographyPicker({ value, onChange, onLabels, disabled = false, r
     </div>
   )
 
-  const noCities = value.region_ref !== null && !cities.loading && !cities.failed && cities.items.length === 0
-
   return (
     <div className="geography-picker">
       {select('country', t('geo.country'), value.country_ref, countries.items, countries.loading,
-        next => emit({ country_ref: next, region_ref: null, city_ref: null }))}
+        next => emit({ country_ref: next, region_ref: null }))}
       {select('region', t('geo.region'), value.region_ref, regions.items, value.country_ref === null || regions.loading,
-        next => emit({ country_ref: value.country_ref, region_ref: next, city_ref: null }))}
-      {select('city', t('geo.city'), value.city_ref, cities.items, value.region_ref === null || cities.loading,
-        next => emit({ ...value, city_ref: next }))}
-      {noCities && <p className="geography-picker-hint">{t('geo.noCities')}</p>}
+        next => emit({ country_ref: value.country_ref, region_ref: next }))}
       {failed && (
         <p role="alert" className="geography-picker-error">
           {t('geo.loadFailed')}{' '}

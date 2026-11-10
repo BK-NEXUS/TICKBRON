@@ -9,7 +9,7 @@ from admin_panel.models import AdminAccessLog
 from common.dates import business_today
 from promotions.models import Promotion, PromotionDailyStat
 from promotions.tests.helpers import (
-    make_guest, make_hotel, make_owner, make_promotion, make_staff, make_superadmin, uz_city)
+    make_guest, make_hotel, make_owner, make_promotion, make_staff, make_superadmin, uz_region)
 
 pytestmark = pytest.mark.django_db
 A = '/api/v1/admin-panel'
@@ -34,7 +34,7 @@ def staff():
 
 @pytest.fixture
 def hotel():
-    return make_hotel(make_owner('o@example.com'), name='Registan Plaza', city_ref=uz_city())
+    return make_hotel(make_owner('o@example.com'), name='Registan Plaza', region_ref=uz_region())
 
 
 def listed_ids(client, **query):
@@ -94,10 +94,11 @@ class TestCreate:
         assert AdminAccessLog.objects.filter(action='promotion_create').count() == 1
 
     def test_scope_is_saved(self, admin, hotel):
-        city = uz_city()
-        response = admin.post(f'{A}/promotions/', payload(hotel, city_ref=city.pk), format='json')
+        region = uz_region()
+        response = admin.post(f'{A}/promotions/', payload(hotel, region_ref=region.pk), format='json')
         assert response.status_code == 201
-        assert response.json()['city_ref'] == city.pk
+        assert response.json()['region_ref'] == region.pk
+        assert 'city_ref' not in response.json()
 
     def test_overlap_is_400_with_code(self, admin, hotel):
         admin.post(f'{A}/promotions/', payload(hotel), format='json')
@@ -111,7 +112,7 @@ class TestCreate:
 
     @pytest.mark.parametrize('field,value', [
         ('property', 999999), ('property', 'x'), ('start_date', 'tomorrow'), ('priority', 'high'),
-        ('price_amount', 'abc'), ('city_ref', 999999)])
+        ('price_amount', 'abc'), ('region_ref', 999999)])
     def test_invalid_input_is_400(self, admin, hotel, field, value):
         body = payload(hotel)
         body[field] = value
@@ -190,7 +191,7 @@ class TestList:
 
     def test_scope_mismatch_is_marked_blocked(self, admin):
         outside = make_hotel(make_owner('c@example.com'), name='Out')
-        make_promotion(outside, city_ref=uz_city())
+        make_promotion(outside, region_ref=uz_region())
         assert admin.get(f'{A}/promotions/').json()['results'][0]['blocked_reason'] == 'outside_scope'
 
     def test_deleted_promotions_are_hidden(self, admin, hotel):

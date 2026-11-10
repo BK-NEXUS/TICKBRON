@@ -7,7 +7,7 @@ import { nameTheHotel, settle } from '../test/utils'
 vi.mock('../adapters/partnerAdapter', () => ({
   partnerAdapter: {
     createProperty: vi.fn(),
-    getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null }),
+    getAssignedPlace: vi.fn().mockResolvedValue({ data: { country_ref: 1, region_ref: 10 }, error: null }),
     getPropertyTypes: vi.fn().mockResolvedValue({
       data: [{ id: 7, name: 'Apartment', slug: 'apartment' }, { id: 3, name: 'Hotel', slug: 'hotel' }],
       error: null,
@@ -20,7 +20,6 @@ vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
   geographyAdapter: {
     getCountries: vi.fn().mockResolvedValue({ data: [{ id: 1, code: 'UZ', currency: 'UZS', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotel_count: 1 }], error: null }),
     getRegions: vi.fn().mockResolvedValue({ data: [{ id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1 }], error: null }),
-    getCities: vi.fn().mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null }),
   },
 }))
 
@@ -37,7 +36,8 @@ describe('PartnerPropertyWizard property type', () => {
     fireEvent.click(screen.getByText('Next'))
     await screen.findByText('Location Details')
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
+    fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'Chilanzar' } })
     fireEvent.click(screen.getByText('Next'))
     await screen.findByText('Amenities & Features')
     fireEvent.click(screen.getByText('Next'))

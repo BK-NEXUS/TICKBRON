@@ -39,8 +39,6 @@ class Promotion(BaseModel):
         'geography.Country', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     region_ref = models.ForeignKey(
         'geography.Region', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
-    city_ref = models.ForeignKey(
-        'geography.City', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
 
     price_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     price_currency = models.CharField(max_length=3, default='UZS')

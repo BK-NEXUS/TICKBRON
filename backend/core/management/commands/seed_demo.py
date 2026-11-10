@@ -17,7 +17,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from geography.mapping import map_properties
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from permissions.models import Role
 from properties.models import (
     DateInventory, Property, PropertyTranslation, PropertyType, RatePlan, RoomType,
@@ -92,7 +92,7 @@ class Command(BaseCommand):
             users = self._seed_users()
             properties = self._seed_properties(owner=users['owner'], approver=users['admin'])
             # Geography refs from the text location (only these demo properties)
-            map_properties(Property, Country, Region, City,
+            map_properties(Property, Country, Region,
                            queryset=Property.objects.filter(pk__in=[prop.pk for prop, _ in properties]))
             demo_rate = self._seed_demo_rate()
 

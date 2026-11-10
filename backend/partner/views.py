@@ -481,12 +481,11 @@ def partner_booking_arrived(request, booking_id):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_assigned_place(request):
-    """The place the super admin gave this account: {country_ref, region_ref, city_ref}, all null when none."""
+    """The place the super admin gave this account: {country_ref, region_ref}, both null when none."""
     place = OwnerPlace.objects.filter(owner=request.user).first()
     return Response({
         'country_ref': place.country_id if place else None,
         'region_ref': place.region_id if place else None,
-        'city_ref': place.city_id if place else None,
     })
 
 

@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from rest_framework.test import APIClient
 
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from users.models import User
 
 ADMIN = '/api/v1/admin-panel/geography'
@@ -124,12 +124,6 @@ class TestRegionPicture:
         assert stored.startswith('geography/regions/')
         assert response.data['image_url'].endswith(stored)
 
-    def test_cities_have_no_picture_field(self, client, country):
-        region = Region.objects.create(country=country, name_uz='R', name_ru='Р', name_en='R')
-        response = client.post(f'{ADMIN}/cities/', {'region': region.pk, 'name_uz': 'C', 'name_ru': 'С', 'name_en': 'C'}, format='json')
-        assert response.status_code == 201
-        assert 'image_url' not in response.data
-
 
 @pytest.mark.django_db
 class TestPublicPictures:
@@ -147,12 +141,6 @@ class TestPublicPictures:
         region.image.save('r.png', picture(), save=True)
         rows = APIClient().get(f'{PUBLIC}/countries/{country.code}/regions/').data
         assert rows[0]['image_url'].endswith(region.image.name)
-
-    def test_cities_list_is_unchanged(self, client, country):
-        region = Region.objects.create(country=country, name_uz='R', name_ru='Р', name_en='R')
-        City.objects.create(region=region, name_uz='C', name_ru='С', name_en='C')
-        rows = APIClient().get(f'{PUBLIC}/regions/{region.pk}/cities/').data
-        assert 'image_url' not in rows[0]
 
 
 @pytest.mark.django_db

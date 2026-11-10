@@ -98,7 +98,7 @@ class TestCountries:
 
     def test_hotels_without_a_country_are_grouped_as_unspecified(self, get, status_world):
         gamma = status_world['hotels']['gamma']
-        type(gamma).objects.filter(pk=gamma.pk).update(country_ref=None, region_ref=None, city_ref=None)
+        type(gamma).objects.filter(pk=gamma.pk).update(country_ref=None, region_ref=None)
 
         rows = {row['code']: row for row in get(f'{S}/countries/').data['results']}
         assert rows['UZ']['hotels'] == 2

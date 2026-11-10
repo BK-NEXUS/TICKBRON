@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { DestinationsPage } from './DestinationsPage'
 import { I18nProvider } from '../i18n/I18nContext'
@@ -7,7 +7,7 @@ import { geographyAdapter } from '../adapters/geographyAdapter'
 
 vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../adapters/geographyAdapter')>()),
-  geographyAdapter: { getCountries: vi.fn(), getRegions: vi.fn(), getCities: vi.fn() },
+  geographyAdapter: { getCountries: vi.fn(), getRegions: vi.fn() },
 }))
 
 const place = (id: number, en: string, uz: string, ru: string, hotel_count: number) =>
@@ -33,41 +33,31 @@ describe('DestinationsPage', () => {
     api.getRegions.mockResolvedValue({ data: [
       place(10, 'Samarkand', 'Samarqand', 'Самарканд', 3),
       place(11, 'Bukhara', 'Buxoro', 'Бухара', 0),
-    ], error: null })
-    api.getCities.mockResolvedValue({ data: [
-      place(100, 'Samarkand', 'Samarqand', 'Самарканд', 2),
-      place(101, 'Shahrisabz', 'Shahrisabz', 'Шахрисабз', 1),
+      place(12, 'Khorezm', 'Xorazm', 'Хорезм', 1),
     ], error: null })
   })
 
-  it('lists the cities that have hotels, grouped by country, linking to a search for the city', async () => {
+  it('lists the regions that have hotels, grouped by country, linking to a search for the region', async () => {
     renderPage('en')
-    const link = await screen.findByRole('link', { name: /Shahrisabz/ })
-    expect(link).toHaveAttribute('href', '/search?destination=Shahrisabz')
+    const link = await screen.findByRole('link', { name: /Khorezm/ })
+    expect(link).toHaveAttribute('href', '/search?destination=Khorezm')
     expect(screen.getByRole('heading', { name: 'Uzbekistan' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /^Samarkand/ })).toHaveTextContent('2 properties')
+    expect(screen.getByRole('link', { name: /^Samarkand/ })).toHaveTextContent('3 properties')
+    expect(screen.queryByRole('link', { name: /Bukhara/ })).not.toBeInTheDocument()
   })
 
   it('asks only for the places that have hotels', async () => {
     renderPage('en')
-    await screen.findByRole('link', { name: /Shahrisabz/ })
+    await screen.findByRole('link', { name: /Khorezm/ })
     expect(api.getRegions).toHaveBeenCalledTimes(1)
     expect(api.getRegions).toHaveBeenCalledWith('UZ')
-    expect(api.getCities).toHaveBeenCalledTimes(1)
-    expect(api.getCities).toHaveBeenCalledWith(10)
   })
 
   it('shows names in the page language and searches by that name', async () => {
     renderPage('ru')
-    const link = await screen.findByRole('link', { name: /Шахрисабз/ })
-    expect(link).toHaveAttribute('href', `/search?destination=${encodeURIComponent('Шахрисабз')}`)
+    const link = await screen.findByRole('link', { name: /Хорезм/ })
+    expect(link).toHaveAttribute('href', `/search?destination=${encodeURIComponent('Хорезм')}`)
     expect(screen.getByRole('heading', { name: 'Узбекистан' })).toBeInTheDocument()
-  })
-
-  it('shows the region next to the city', async () => {
-    renderPage('en')
-    const link = await screen.findByRole('link', { name: /Shahrisabz/ })
-    expect(within(link).getByText(/Samarkand/)).toBeInTheDocument()
   })
 
   it('shows a loading state, then the empty state when no place has hotels', async () => {
@@ -78,7 +68,7 @@ describe('DestinationsPage', () => {
   })
 
   it('shows an error when a list cannot be loaded', async () => {
-    api.getCities.mockResolvedValue({ data: null, error: 'boom' })
+    api.getRegions.mockResolvedValue({ data: null, error: 'boom' })
     renderPage('en')
     expect(await screen.findByRole('alert')).toHaveTextContent('boom')
   })

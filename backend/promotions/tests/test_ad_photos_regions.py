@@ -14,7 +14,7 @@ from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
 from common.testing import image_upload
-from geography.models import City
+from geography.models import Region
 from promotions import service
 from promotions.models import Promotion, PromotionPhoto
 from promotions.tests.helpers import make_guest, make_hotel, make_owner, make_promotion, make_staff, make_superadmin
@@ -186,17 +186,17 @@ class TestBannerPhotos:
         assert [url.split('/')[-1] for url in self.banner()['promo_photos']] == ['h.gif']
 
 
-def city_of(region_name):
-    return City.objects.filter(region__name_en=region_name).first()
+def region_of(region_name):
+    return Region.objects.filter(name_en=region_name).first()
 
 
 class TestRegionPanel:
     @pytest.fixture
     def world(self):
         owner = make_owner('o@example.com')
-        samarkand = make_hotel(owner, name='Samarkand Inn', city_ref=city_of('Samarkand'))
-        bukhara = make_hotel(owner, name='Bukhara Inn', city_ref=city_of('Bukhara'))
-        waiting = make_hotel(owner, name='Samarkand Later', city_ref=city_of('Samarkand'))
+        samarkand = make_hotel(owner, name='Samarkand Inn', region_ref=region_of('Samarkand'))
+        bukhara = make_hotel(owner, name='Bukhara Inn', region_ref=region_of('Bukhara'))
+        waiting = make_hotel(owner, name='Samarkand Later', region_ref=region_of('Samarkand'))
         return {
             'running': make_promotion(samarkand), 'bukhara': make_promotion(bukhara),
             'future': make_promotion(waiting, start_offset=10), 'samarkand': samarkand, 'bukhara_hotel': bukhara,
@@ -229,7 +229,7 @@ class TestRegionPanel:
         assert unpaid.pk
 
     def test_busiest_regions_come_first(self, admin, world):
-        make_promotion(make_hotel(make_owner('o3@example.com'), name='Second', city_ref=city_of('Bukhara')), start_offset=0)
+        make_promotion(make_hotel(make_owner('o3@example.com'), name='Second', region_ref=region_of('Bukhara')), start_offset=0)
 
         names = [row['name_en'] for row in admin.get(f'{A}/promotions/regions/').json()]
 

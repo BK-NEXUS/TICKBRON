@@ -1,6 +1,9 @@
 """
-Map the old free-text location of properties (country / state / city) to the
-Geography dictionary (country_ref / region_ref / city_ref).
+Map the old free-text location of properties (country / state) to the
+Geography dictionary (country_ref / region_ref).
+
+The city dictionary no longer exists. `city_model` is accepted only for the old data migration
+properties/0013, which runs while the city table still does.
 
 Matching is trimmed, case-insensitive and apostrophe-insensitive, against the uz, ru
 and en names plus the aliases in geography/data.py. A value that does not match
@@ -46,7 +49,7 @@ def _names(row, aliases):
 class GeographyIndex:
     """All dictionary rows, indexed by normalized name."""
 
-    def __init__(self, country_model, region_model, city_model):
+    def __init__(self, country_model, region_model, city_model=None):
         self.countries = {}
         for country in country_model.objects.all():
             for key in _names(country, [country.code, *COUNTRY_ALIASES.get(country.code, [])]):
@@ -63,7 +66,9 @@ class GeographyIndex:
                 self.loose_regions.setdefault(key, set()).add(region)
         self.cities = {}
         centres = set()
-        for city in city_model.objects.select_related('region__country').order_by('region_id', 'sort_order', 'id'):
+        cities = () if city_model is None else city_model.objects.select_related('region__country').order_by(
+            'region_id', 'sort_order', 'id')
+        for city in cities:
             keys = _names(city, CITY_ALIASES.get(city.slug, []))
             for key in keys:
                 self.cities.setdefault(key, set()).add(city)
@@ -98,9 +103,9 @@ class GeographyIndex:
         return country, region, city
 
 
-def map_properties(property_model, country_model, region_model, city_model, dry_run=False, queryset=None):
+def map_properties(property_model, country_model, region_model, city_model=None, dry_run=False, queryset=None):
     """
-    Fill country_ref / region_ref / city_ref from the text fields where they are empty.
+    Fill country_ref / region_ref from the text fields where they are empty (city_ref too when a city model is given).
 
     Takes the model classes so a data migration can pass its historical models.
     `queryset` limits the run to some properties (e.g. the ones a seed command made).
@@ -129,12 +134,16 @@ def map_properties(property_model, country_model, region_model, city_model, dry_
             report['region'] += count
         else:
             report['unmatched_region'][f'{country.name_en} / {state_text or "(empty)"}'] += count
-        if city is not None:
-            report['city'] += count
-        else:
-            report['unmatched_city'][f'{country.name_en} / {city_text or "(empty)"}'] += count
+        if city_model is not None:
+            if city is not None:
+                report['city'] += count
+            else:
+                report['unmatched_city'][f'{country.name_en} / {city_text or "(empty)"}'] += count
         if not dry_run:
-            rows.update(country_ref=country, region_ref=region, city_ref=city)
+            places = {'country_ref': country, 'region_ref': region}
+            if city_model is not None:
+                places['city_ref'] = city
+            rows.update(**places)
     return report
 
 
@@ -142,9 +151,9 @@ def format_report(report, dry_run=False):
     lines = [
         f"Geography mapping{' (dry run, nothing written)' if dry_run else ''}: "
         f"{report['properties']} properties, {report['already_mapped']} already mapped.",
-        f"  matched: country {report['country']}, region {report['region']}, city {report['city']}",
+        f"  matched: country {report['country']}, region {report['region']}",
     ]
-    for level in ('country', 'region', 'city'):
+    for level in ('country', 'region'):
         unmatched = report[f'unmatched_{level}']
         if unmatched:
             lines.append(f'  left NULL ({level}):')

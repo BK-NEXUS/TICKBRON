@@ -54,10 +54,11 @@ export interface CreatePropertyRequest {
   bathrooms: number
   address_line1: string
   address_line2?: string
-  /** Geography ids (the old text fields country/state/city are read-only copies) */
+  /** The town, typed by the owner */
+  city: string
+  /** Geography ids (the old text fields country/state are read-only copies) */
   country_ref: number
   region_ref: number
-  city_ref: number
   postal_code?: string
   latitude?: number
   longitude?: number
@@ -81,9 +82,9 @@ export interface UpdatePropertyRequest {
   bathrooms?: number
   address_line1?: string
   address_line2?: string
+  city?: string
   country_ref?: number
   region_ref?: number
-  city_ref?: number
   postal_code?: string
   latitude?: number
   longitude?: number
@@ -403,7 +404,6 @@ export interface OwnerPromotionsPage {
 export interface AssignedPlace {
   country_ref: number | null
   region_ref: number | null
-  city_ref: number | null
 }
 
 export interface UploadPhotoRequest {

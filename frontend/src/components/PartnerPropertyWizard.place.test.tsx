@@ -19,7 +19,6 @@ vi.mock('../adapters/geographyAdapter', async importOriginal => ({
   geographyAdapter: {
     getCountries: vi.fn().mockResolvedValue({ data: [{ id: 1, code: 'UZ', currency: 'UZS', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotel_count: 1, image_url: null }], error: null }),
     getRegions: vi.fn().mockResolvedValue({ data: [{ id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1, image_url: null }], error: null }),
-    getCities: vi.fn().mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null }),
   },
 }))
 
@@ -40,26 +39,28 @@ describe('PartnerPropertyWizard assigned place', () => {
   })
 
   it('shows the assigned place, locked, with a note', async () => {
-    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null })
+    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10 }, error: null })
     render(<PartnerPropertyWizard />)
     await settle()
     nameTheHotel()
     await toLocationStep()
     expect(await screen.findByText('The place of your hotels is set by the administrator.')).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
     expect(screen.getByLabelText('Country')).toBeDisabled()
     expect(screen.getByLabelText('Region')).toBeDisabled()
-    expect(screen.getByLabelText('City')).toBeDisabled()
+    // The town is typed by the owner even when the place is set by the administrator
+    expect(screen.getByLabelText('City *')).toBeEnabled()
   })
 
   it('creates the hotel in the assigned place without picking anything', async () => {
-    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10, city_ref: 100 }, error: null })
+    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: 1, region_ref: 10 }, error: null })
     render(<PartnerPropertyWizard />)
     await settle()
     nameTheHotel()
     await toLocationStep()
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
-    await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('100'))
+    await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
+    fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'Chilanzar' } })
     fireEvent.click(screen.getByText('Next'))
     await screen.findByText('Amenities & Features')
     fireEvent.click(screen.getByText('Next'))
@@ -67,12 +68,12 @@ describe('PartnerPropertyWizard assigned place', () => {
     fireEvent.click(screen.getByText('Next'))
     fireEvent.click(await screen.findByRole('button', { name: /Create Property|Submit/i }))
     await waitFor(() => expect(api.createProperty).toHaveBeenCalledWith(expect.objectContaining({
-      country_ref: 1, region_ref: 10, city_ref: 100,
+      country_ref: 1, region_ref: 10, city: 'Chilanzar',
     })))
   })
 
   it('an owner without an assigned place still picks the place', async () => {
-    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: null, region_ref: null, city_ref: null }, error: null })
+    api.getAssignedPlace.mockResolvedValue({ data: { country_ref: null, region_ref: null }, error: null })
     render(<PartnerPropertyWizard />)
     await settle()
     nameTheHotel()

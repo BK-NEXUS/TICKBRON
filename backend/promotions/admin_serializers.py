@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from promotions import service
 from promotions.models import Promotion, PromotionPhoto
 from properties.models import Property
@@ -16,8 +16,6 @@ class PromotionWriteFields(serializers.Serializer):
         queryset=Country.objects.filter(is_deleted=False), allow_null=True)
     region_ref = serializers.PrimaryKeyRelatedField(
         queryset=Region.objects.filter(is_deleted=False), allow_null=True)
-    city_ref = serializers.PrimaryKeyRelatedField(
-        queryset=City.objects.filter(is_deleted=False), allow_null=True)
     price_amount = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
     price_currency = serializers.CharField(max_length=3)
     note = serializers.CharField(allow_blank=True, trim_whitespace=False)
@@ -28,7 +26,7 @@ class PromotionCreateSerializer(PromotionWriteFields):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ('priority', 'country_ref', 'region_ref', 'city_ref', 'price_amount', 'price_currency', 'note'):
+        for name in ('priority', 'country_ref', 'region_ref', 'price_amount', 'price_currency', 'note'):
             self.fields[name].required = False
 
 
@@ -74,7 +72,7 @@ class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = [
-            'id', 'property', 'start_date', 'end_date', 'priority', 'country_ref', 'region_ref', 'city_ref',
+            'id', 'property', 'start_date', 'end_date', 'priority', 'country_ref', 'region_ref',
             'price_amount', 'price_currency', 'note', 'paid', 'paid_at', 'status', 'cancelled_reason',
             'is_shown_now', 'blocked_reason', 'total_impressions', 'total_clicks', 'photos', 'photos_count', 'created_at',
         ]

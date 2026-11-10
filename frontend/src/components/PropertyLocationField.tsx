@@ -5,22 +5,21 @@ import { GeographyPicker, type GeographyValue } from './GeographyPicker'
 
 interface PropertyLocationFieldProps {
   propertyId: number
-  /** Saved location; all three null = "Unspecified" */
+  /** Saved location; both null = "Unspecified" */
   location: GeographyValue
   onSaved?: (location: GeographyValue) => void
 }
 
 const keyOf = (propertyId: number, location: GeographyValue) =>
-  `${propertyId}:${location.country_ref}:${location.region_ref}:${location.city_ref}`
+  `${propertyId}:${location.country_ref}:${location.region_ref}`
 
 const sameLocation = (a: GeographyValue, b: GeographyValue) =>
-  a.country_ref === b.country_ref && a.region_ref === b.region_ref && a.city_ref === b.city_ref
+  a.country_ref === b.country_ref && a.region_ref === b.region_ref
 
-/** A location is whole (all three ids) or cleared (none): the backend refuses anything in between. */
-const isComplete = (value: GeographyValue) =>
-  (value.country_ref === null) === (value.region_ref === null) && (value.region_ref === null) === (value.city_ref === null)
+/** A location is whole (both ids) or cleared (none): the backend refuses anything in between. */
+const isComplete = (value: GeographyValue) => (value.country_ref === null) === (value.region_ref === null)
 
-/** Admin: set a property's country, region and city, used by Status (country > region > hotel). */
+/** Admin: set a property's country and region, used by Status (country > region > hotel). */
 export function PropertyLocationField({ propertyId, location, onSaved }: PropertyLocationFieldProps) {
   const { t } = useI18n()
   const [saved, setSaved] = useState(location)

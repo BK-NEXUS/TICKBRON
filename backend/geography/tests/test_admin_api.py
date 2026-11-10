@@ -1,7 +1,7 @@
 """
 Super-admin geography CRUD (Geography plan G3) under /api/v1/admin-panel/geography/:
 
-    countries/, regions/, cities/   list (search, filters), create, retrieve, update, delete
+    countries/, regions/            list (search, filters), create, retrieve, update, delete (no cities since 2026-11-10)
     {kind}/reorder/                 POST {"ids": [...]} sets sort_order by position
 
 Hide/show is PATCH {"is_active": false}. Rows in use cannot be deleted (PROTECT), only hidden.
@@ -15,7 +15,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from rest_framework.test import APIClient
 
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -51,18 +51,17 @@ def world(db):
     country = Country.objects.create(code='XA', name_uz='Xland', name_ru='Иксландия', name_en='Xland',
                                      currency='USD')
     region = Region.objects.create(country=country, name_uz='Sharq', name_ru='Восток', name_en='East')
-    city = City.objects.create(region=region, name_uz='Poytaxt', name_ru='Столица', name_en='Capital')
-    return country, region, city
+    return country, region
 
 
 def use(world):
-    """Put a property on the world's city, so nothing in it can be deleted."""
-    country, region, city = world
+    """Put a property on the world's region, so nothing in it can be deleted."""
+    country, region = world
     owner = User.objects.create_user(email='owner@example.com', password='OwnerPassword#123')
     hotel_type, _ = PropertyType.objects.get_or_create(slug='hotel', defaults={'name': 'Hotel'})
     return Property.objects.create(
         owner=owner, property_type=hotel_type, max_guests=2, address_line1='1 Main St',
-        base_price=Decimal('50.00'), status='active', country_ref=country, region_ref=region, city_ref=city)
+        base_price=Decimal('50.00'), status='active', country_ref=country, region_ref=region)
 
 
 @pytest.mark.django_db
@@ -111,7 +110,7 @@ class TestCountries:
         assert country.is_active is True
 
     def test_edit_names_keeps_the_stable_fields(self, client, world):
-        country, region, _ = world
+        country, region = world
         response = client.patch(f'{BASE}/countries/{country.id}/', {'name_en': 'Xlandia'}, format='json')
         assert response.status_code == 200 and response.data['name_en'] == 'Xlandia'
         response = client.patch(f'{BASE}/regions/{region.id}/', {'name_en': 'Orient'}, format='json')
@@ -161,7 +160,7 @@ class TestRegions:
         assert client.post(f'{BASE}/regions/', data, format='json').status_code == 400
 
     def test_the_parent_cannot_be_changed(self, client, world):
-        country, region, _ = world
+        country, region = world
         other = Country.objects.create(code='XB', name_uz='B', name_ru='Б', name_en='Bland', currency='USD')
         response = client.patch(f'{BASE}/regions/{region.id}/', {'country': other.id}, format='json')
         assert response.status_code == 400
@@ -172,37 +171,12 @@ class TestRegions:
         for term in ('East', 'восто', 'sharq'):
             assert client.get(f'{BASE}/regions/', {'search': term}).data['count'] == 1, term
 
-    def test_delete_with_cities_or_properties_is_409_otherwise_204(self, client, world):
-        country, region, city = world
+    def test_delete_with_properties_is_409_otherwise_204(self, client, world):
+        country, region = world
+        use(world)
         assert client.delete(f'{BASE}/regions/{region.id}/').status_code == 409
         spare = Region.objects.create(country=country, name_uz='S', name_ru='С', name_en='Spare')
         assert client.delete(f'{BASE}/regions/{spare.id}/').status_code == 204
-
-
-@pytest.mark.django_db
-class TestCities:
-
-    def test_create_and_filter_by_region(self, client, world):
-        _, region, _ = world
-        response = client.post(f'{BASE}/cities/', {
-            'region': region.id, 'name_uz': 'Port', 'name_ru': 'Порт', 'name_en': 'Port',
-        }, format='json')
-        assert response.status_code == 201, response.data
-        assert response.data['slug'] == 'xa-east-port'
-        rows = client.get(f'{BASE}/cities/', {'region': region.id}).data['results']
-        assert sorted(r['name_en'] for r in rows) == ['Capital', 'Port']
-
-    def test_delete_city_in_use_is_409_and_hiding_it_works(self, client, world):
-        _, _, city = world
-        use(world)
-        assert client.delete(f'{BASE}/cities/{city.id}/').status_code == 409
-        assert City.objects.filter(pk=city.pk).exists()
-        assert client.patch(f'{BASE}/cities/{city.id}/', {'is_active': False}, format='json').status_code == 200
-
-    def test_delete_unused_city_is_204(self, client, world):
-        _, region, _ = world
-        spare = City.objects.create(region=region, name_uz='S', name_ru='С', name_en='Spare')
-        assert client.delete(f'{BASE}/cities/{spare.id}/').status_code == 204
 
 
 @pytest.mark.django_db
@@ -229,10 +203,6 @@ class TestReorder:
         east.refresh_from_db()
         assert east.sort_order == 0
 
-    def test_works_for_countries_and_cities(self, client, world):
-        country, region, city = world
-        other = City.objects.create(region=region, name_uz='O', name_ru='О', name_en='Other')
-        assert client.post(f'{BASE}/cities/reorder/', {'ids': [other.id, city.id]}, format='json').status_code == 200
-        other.refresh_from_db()
-        assert other.sort_order < City.objects.get(pk=city.pk).sort_order
+    def test_works_for_countries(self, client, world):
+        country = world[0]
         assert client.post(f'{BASE}/countries/reorder/', {'ids': [country.id]}, format='json').status_code == 200

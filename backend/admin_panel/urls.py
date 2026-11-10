@@ -14,7 +14,7 @@ from promotions import admin_views as promotion_views
 from promotions import renewal_views
 from partner import commission_views
 from currency.views import exchange_rate_accept, exchange_rate_list, exchange_rate_status
-from geography.admin_views import AdminCityViewSet, AdminCountryViewSet, AdminRegionViewSet
+from geography.admin_views import AdminCountryViewSet, AdminRegionViewSet
 from admin_panel.status import (
     status_countries, status_hotel_detail, status_hotels, status_hotels_flat, status_overview, status_regions,
     status_user_detail, status_users,
@@ -42,7 +42,6 @@ router.APIRootView = AdminAPIRootView
 router.register(r'properties', AdminPropertyViewSet, basename='admin-property')
 router.register(r'geography/countries', AdminCountryViewSet, basename='admin-geo-country')
 router.register(r'geography/regions', AdminRegionViewSet, basename='admin-geo-region')
-router.register(r'geography/cities', AdminCityViewSet, basename='admin-geo-city')
 router.register(r'amenities/categories', AdminAmenityCategoryViewSet, basename='admin-amenity-category')
 router.register(r'amenities', AdminAmenityViewSet, basename='admin-amenity')
 

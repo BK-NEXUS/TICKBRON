@@ -5,7 +5,6 @@ import {
   adminGeographyAdapter,
   type AdminCountry,
   type AdminGeographyRow,
-  type AdminRegion,
   type GeographyKind,
 } from '../adapters/adminGeographyAdapter'
 import { geographyName } from '../adapters/geographyAdapter'
@@ -14,11 +13,10 @@ import { GeographyRowDialog } from './GeographyRowDialog'
 
 const SEARCH_DELAY_MS = 300
 
-/** Super-admin: the Country > Region > City dictionary (hide, rename, reorder, add, delete when unused). */
+/** Super-admin: the Country > Region dictionary (hide, rename, reorder, add, delete when unused). */
 export function AdminGeography() {
   const { t, language } = useI18n()
   const [country, setCountry] = useState<AdminCountry | null>(null)
-  const [region, setRegion] = useState<AdminRegion | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [rows, setRows] = useState<AdminGeographyRow[] | null>(null)
@@ -29,8 +27,8 @@ export function AdminGeography() {
   const [dialog, setDialog] = useState<{ row?: AdminGeographyRow } | null>(null)
   const [toDelete, setToDelete] = useState<AdminGeographyRow | null>(null)
 
-  const kind: GeographyKind = region ? 'cities' : country ? 'regions' : 'countries'
-  const parentId = region?.id ?? country?.id ?? null
+  const kind: GeographyKind = country ? 'regions' : 'countries'
+  const parentId = country?.id ?? null
   const nameOf = (row: AdminGeographyRow) => geographyName(row, language)
 
   useEffect(() => {
@@ -42,12 +40,12 @@ export function AdminGeography() {
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)
-    const params = region ? { search, region: region.id } : country ? { search, country: country.id } : { search }
+    const params = country ? { search, country: country.id } : { search }
     const result = await adminGeographyAdapter.list(kind, params)
     if (result.data) setRows(result.data.results)
     else setLoadFailed(true)
     setLoading(false)
-  }, [kind, search, country, region])
+  }, [kind, search, country])
 
   useEffect(() => {
     void load()
@@ -57,16 +55,14 @@ export function AdminGeography() {
     setSearchInput('')
     setSearch('')
     setRows(null)
-    if (kind === 'countries') setCountry(row as AdminCountry)
-    else setRegion(row as AdminRegion)
+    setCountry(row as AdminCountry)
   }
 
-  const goTo = (level: 'root' | 'country') => {
+  const goToRoot = () => {
     setSearchInput('')
     setSearch('')
     setRows(null)
-    setRegion(null)
-    if (level === 'root') setCountry(null)
+    setCountry(null)
   }
 
   const runAction = async (action: () => Promise<{ error: string | null }>) => {
@@ -110,15 +106,12 @@ export function AdminGeography() {
       <p className="admin-view-subtitle">{t('geoAdmin.subtitle')}</p>
 
       <nav className="geography-trail" aria-label={t('geoAdmin.title')}>
-        {country || region ? (
-          <button type="button" className="btn btn-link" onClick={() => goTo('root')}>{t('geoAdmin.root')}</button>
+        {country ? (
+          <button type="button" className="btn btn-link" onClick={goToRoot}>{t('geoAdmin.root')}</button>
         ) : (
           <span>{t('geoAdmin.root')}</span>
         )}
-        {country && (region
-          ? <button type="button" className="btn btn-link" onClick={() => goTo('country')}>{nameOf(country)}</button>
-          : <span>{nameOf(country)}</span>)}
-        {region && <span>{nameOf(region)}</span>}
+        {country && <span>{nameOf(country)}</span>}
       </nav>
 
       <h3 className="admin-section-title">{t(`geoAdmin.kind.${kind}`)}</h3>
@@ -147,10 +140,10 @@ export function AdminGeography() {
           <table className="customers-table geography-table">
             <thead>
               <tr>
-                {kind !== 'cities' && <th>{t('geoAdmin.col.picture')}</th>}
+                <th>{t('geoAdmin.col.picture')}</th>
                 <th>{t('geoAdmin.col.name')}</th>
                 {kind === 'countries' && <th>{t('geoAdmin.col.code')}</th>}
-                {kind !== 'cities' && <th>{t('geoAdmin.col.children')}</th>}
+                {kind === 'countries' && <th>{t('geoAdmin.col.children')}</th>}
                 <th>{t('geoAdmin.col.hotels')}</th>
                 <th>{t('geoAdmin.col.status')}</th>
                 <th>{t('geoAdmin.col.actions')}</th>
@@ -159,19 +152,17 @@ export function AdminGeography() {
             <tbody>
               {list.map((row, index) => {
                 const name = nameOf(row)
-                const children = 'region_count' in row ? row.region_count : 'city_count' in row ? row.city_count : null
+                const children = 'region_count' in row ? row.region_count : null
                 return (
                   <tr key={row.id}>
-                    {kind !== 'cities' && (
-                      <td data-label={t('geoAdmin.col.picture')}>
-                        {'image_url' in row && row.image_url
-                          ? <img className="geography-thumb" src={row.image_url} alt={t('geoAdmin.imageOf', { name })} loading="lazy" />
-                          : <span className="geography-thumb geography-thumb--empty" aria-label={t('geoAdmin.noImage')} />}
-                      </td>
-                    )}
+                    <td data-label={t('geoAdmin.col.picture')}>
+                      {'image_url' in row && row.image_url
+                        ? <img className="geography-thumb" src={row.image_url} alt={t('geoAdmin.imageOf', { name })} loading="lazy" />
+                        : <span className="geography-thumb geography-thumb--empty" aria-label={t('geoAdmin.noImage')} />}
+                    </td>
                     <td data-label={t('geoAdmin.col.name')}>{name}</td>
                     {kind === 'countries' && <td data-label={t('geoAdmin.col.code')}>{'code' in row ? row.code : ''}</td>}
-                    {kind !== 'cities' && <td data-label={t('geoAdmin.col.children')}>{children}</td>}
+                    {kind === 'countries' && <td data-label={t('geoAdmin.col.children')}>{children}</td>}
                     <td data-label={t('geoAdmin.col.hotels')}>{row.hotel_count}</td>
                     <td data-label={t('geoAdmin.col.status')}>
                       <span className={`status-badge status-badge--${row.is_active ? 'active' : 'cancelled'}`}>
@@ -180,7 +171,7 @@ export function AdminGeography() {
                     </td>
                     <td data-label={t('geoAdmin.col.actions')}>
                       <div className="table-actions">
-                        {kind !== 'cities' && (
+                        {kind === 'countries' && (
                           <button type="button" className="btn btn-secondary btn-sm" aria-label={t('geoAdmin.openRow', { name })}
                             onClick={() => open(row)}>{t('geoAdmin.openBtn')}</button>
                         )}

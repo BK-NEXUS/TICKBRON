@@ -85,11 +85,6 @@ describe('GeographyRowDialog picture', () => {
     expect(api.create).not.toHaveBeenCalled()
   })
 
-  it('cities have no picture field', () => {
-    renderDialog({ kind: 'cities', parentId: 10 })
-    expect(screen.queryByLabelText('Picture')).not.toBeInTheDocument()
-  })
-
   const row = { id: 3, ...names, is_active: true, sort_order: 0, hotel_count: 0, code: 'TR', currency: 'TRY', region_count: 0, image_url: '/media/geography/countries/a.png' }
 
   it('editing shows the current picture and sends no image when none is chosen', async () => {

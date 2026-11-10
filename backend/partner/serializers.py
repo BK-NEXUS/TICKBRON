@@ -143,7 +143,7 @@ class AssignedPlaceMixin:
         attrs = super().validate(attrs)
         place = OwnerPlace.objects.filter(owner=self.context['request'].user).first()
         if place is not None:
-            assigned = {'country_ref': place.country_id, 'region_ref': place.region_id, 'city_ref': place.city_id}
+            assigned = {'country_ref': place.country_id, 'region_ref': place.region_id}
             wrong = {
                 field: _('Your hotels are placed by the administrator and cannot be moved.')
                 for field, row_id in assigned.items() if field in attrs and attrs[field].pk != row_id
@@ -226,14 +226,14 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
         fields = [
             'id', 'name', 'translations', 'property_type', 'status', 'max_guests', 'bedrooms', 'bathrooms',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'country_ref', 'region_ref', 'city_ref',
+            'country_ref', 'region_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'full_address', 'created_at', 'updated_at'
         ]
-        # status is set by admin moderation (approve/suspend), never by the owner. The text location
-        # (city / state / country) is derived from the Geography refs (English names) and read-only.
-        read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
+        # status is set by admin moderation (approve/suspend), never by the owner. The text state and
+        # country are derived from the Geography refs (English names) and read-only; the town (city) is typed.
+        read_only_fields = ['id', 'owner', 'status', 'state', 'country', 'created_at', 'updated_at']
         extra_kwargs = PROPERTY_LIMITS
 
     def get_full_address(self, obj) -> str:
@@ -264,8 +264,8 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
         model = Property
         fields = [
             'id', 'translations', 'property_type', 'max_guests', 'bedrooms', 'bathrooms',
-            'address_line1', 'address_line2', 'postal_code',
-            'country_ref', 'region_ref', 'city_ref',
+            'address_line1', 'address_line2', 'city', 'postal_code',
+            'country_ref', 'region_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'
         ]

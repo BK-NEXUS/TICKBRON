@@ -341,7 +341,7 @@ def status_hotel_detail(request, property_id):
             'id': prop.id, 'name': prop.name, 'status': prop.status, 'address': prop.get_full_address(),
             'city': prop.city, 'region': prop.region, 'country': prop.country,
             'country_code': prop.country_ref.code if prop.country_ref else None,
-            'region_id': prop.region_ref_id, 'city_id': prop.city_ref_id,
+            'region_id': prop.region_ref_id,
             'registered_at': prop.created_at,
             'owner': {'id': owner.id, 'name': owner.get_full_name(), 'email': owner.email,
                       'phone': owner.phone_number},
@@ -695,7 +695,7 @@ def rating_expression():
 def hotel_search_q(term):
     in_translations = PropertyTranslation.objects.filter(name__icontains=term, is_deleted=False).values('property_id')
     return (Q(id__in=in_translations) | Q(address_line1__icontains=term) | Q(city__icontains=term)
-            | names_filter('city_ref__', term) | names_filter('region_ref__', term)
+            | names_filter('region_ref__', term)
             | names_filter('country_ref__', term) | Q(country_ref__code__iexact=term) | Q(country__icontains=term))
 
 

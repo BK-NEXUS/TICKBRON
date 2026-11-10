@@ -1,5 +1,5 @@
 """
-Geography dictionary: Country > Region > City.
+Geography dictionary: Country > Region (the town of a hotel is plain text on the hotel).
 
 Names are stored in Uzbek (Latin), Russian and English; the frontend picks the
 language. Rows in use are never deleted (PROTECT): hide them with is_active=False.
@@ -82,23 +82,4 @@ class Region(GeoName):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(f'{self.country.code}-{self.name_en}')
-        super().save(*args, **kwargs)
-
-
-class City(GeoName):
-    region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name='cities')
-    # Stable key (e.g. "uz-khorezm-region-khiva"): set once, never changed by a rename
-    slug = models.SlugField(max_length=250, unique=True, blank=True)
-
-    class Meta:
-        db_table = 'geo_cities'
-        ordering = ['sort_order', 'name_en']
-        verbose_name_plural = 'Cities'
-        constraints = [
-            models.UniqueConstraint(fields=['region', 'name_en'], name='geo_city_unique_name_en'),
-        ]
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(f'{self.region.slug}-{self.name_en}')
         super().save(*args, **kwargs)

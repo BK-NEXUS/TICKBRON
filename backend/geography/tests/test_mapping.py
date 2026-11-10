@@ -1,5 +1,6 @@
 """
-Mapping the old text location of properties to the Geography dictionary (Geography plan G2).
+Mapping the old text location of properties to the Geography dictionary (Geography plan G2; the city level was
+removed 2026-11-10, so only country and region are mapped from the text: the town stays text).
 Uses the initial data loaded by migration geography/0002.
 """
 from decimal import Decimal
@@ -7,7 +8,7 @@ from decimal import Decimal
 import pytest
 
 from geography.mapping import GeographyIndex, format_report, map_properties, normalize
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -26,7 +27,7 @@ def make(db):
 
 
 def run(dry_run=False):
-    return map_properties(Property, Country, Region, City, dry_run=dry_run)
+    return map_properties(Property, Country, Region, dry_run=dry_run)
 
 
 def refs(prop):
@@ -34,7 +35,6 @@ def refs(prop):
     return (
         prop.country_ref.code if prop.country_ref else None,
         prop.region_ref.name_en if prop.region_ref else None,
-        prop.city_ref.name_en if prop.city_ref else None,
     )
 
 
@@ -47,63 +47,61 @@ def test_normalize():
 @pytest.mark.django_db
 class TestMapProperties:
 
-    @pytest.mark.parametrize('country,state,city,expected', [
-        ('Uzbekistan', 'Tashkent', 'Tashkent', ('UZ', 'Tashkent', 'Tashkent')),
-        (' uzbekistan ', None, 'samarkand', ('UZ', 'Samarkand', 'Samarkand')),
-        ("O'zbekiston", 'Buxoro viloyati', 'Buxoro', ('UZ', 'Bukhara', 'Bukhara')),
-        ('Ozbekiston', '', 'Xiva', ('UZ', 'Khorezm', 'Khiva')),
-        ('Узбекистан', 'Ферганская область', 'Коканд', ('UZ', 'Fergana', 'Kokand')),
-        ('UZ', 'Samarkand', None, ('UZ', 'Samarkand', None)),
-        ('Kazakhstan', 'Almaty', 'Almaty', ('KZ', 'Almaty City', 'Almaty')),
-        ('Türkiye', None, 'Cappadocia', ('TR', 'Nevsehir Province', 'Goreme')),
-        ('Turkey', 'Istanbul', 'Istanbul', ('TR', 'Istanbul Province', 'Istanbul')),
+    @pytest.mark.parametrize('country,state,expected', [
+        ('Uzbekistan', 'Tashkent', ('UZ', 'Tashkent')),
+        (' uzbekistan ', 'Samarkand', ('UZ', 'Samarkand')),
+        ("O'zbekiston", 'Buxoro viloyati', ('UZ', 'Bukhara')),
+        ('Узбекистан', 'Ферганская область', ('UZ', 'Fergana')),
+        ('UZ', None, ('UZ', None)),
+        ('Kazakhstan', 'Almaty', ('KZ', 'Almaty City')),
+        ('Türkiye', None, ('TR', None)),
+        ('Turkey', 'Istanbul', ('TR', 'Istanbul Province')),
     ])
-    def test_matches_names_aliases_and_languages(self, make, country, state, city, expected):
-        prop = make(country, city or 'Somewhere', state)
-        if city is None:
-            Property.objects.filter(pk=prop.pk).update(city='')
+    def test_matches_names_aliases_and_languages(self, make, country, state, expected):
+        prop = make(country, 'Somewhere', state)
         run()
         assert refs(prop) == expected
 
-    def test_the_city_decides_the_region(self, make):
-        # A state that does not fit the city ("Tashkent" is the city, Chirchiq is in Tashkent Region): the city settles it
-        prop = make('Uzbekistan', 'Chirchiq', state='Tashkent')
+    def test_the_typed_town_is_never_touched(self, make):
+        prop = make('Uzbekistan', 'My Own Town', state='Samarkand')
         run()
-        assert refs(prop) == ('UZ', 'Tashkent Region', 'Chirchiq')
+        prop.refresh_from_db()
+        assert prop.city == 'My Own Town'
 
     def test_unknown_values_stay_null_and_are_reported(self, make):
         make('Atlantis', 'Poseidonia')
         make('Atlantis', 'Poseidonia')
-        unknown_city = make('Uzbekistan', 'Nowhere', state='Nowhere')
+        unknown_region = make('Uzbekistan', 'Somewhere', state='Nowhere')
         report = run()
 
-        assert refs(unknown_city) == ('UZ', None, None)
+        assert refs(unknown_region) == ('UZ', None)
         assert report['properties'] == 3
-        assert (report['country'], report['region'], report['city']) == (1, 0, 0)
+        assert (report['country'], report['region']) == (1, 0)
         assert report['unmatched_country'] == {'Atlantis': 2}
-        assert report['unmatched_city'] == {'Uzbekistan / Nowhere': 1}
+        assert report['unmatched_region'] == {'Uzbekistan / Nowhere': 1}
+        assert 'city' not in report['unmatched_region']
         text = format_report(report)
-        assert 'Atlantis' in text and 'left NULL' in text
+        assert 'Atlantis' in text and 'left NULL' in text and 'city' not in text
 
-    def test_a_city_of_another_country_is_not_used(self, make):
-        prop = make('Kazakhstan', 'Samarkand')
+    def test_a_region_of_another_country_is_not_used(self, make):
+        prop = make('Kazakhstan', 'Somewhere', state='Samarkand')
         run()
-        assert refs(prop) == ('KZ', None, None)
+        assert refs(prop) == ('KZ', None)
 
     def test_dry_run_writes_nothing(self, make):
-        prop = make('Uzbekistan', 'Tashkent')
+        prop = make('Uzbekistan', 'Somewhere', state='Tashkent')
         report = run(dry_run=True)
-        assert report['city'] == 1
-        assert refs(prop) == (None, None, None)
+        assert report['region'] == 1
+        assert refs(prop) == (None, None)
         assert 'dry run' in format_report(report, dry_run=True)
 
     def test_existing_refs_are_kept_and_a_second_run_changes_nothing(self, make):
-        prop = make('Uzbekistan', 'Tashkent')
-        khiva = City.objects.get(name_en='Khiva')
-        prop.country_ref, prop.region_ref, prop.city_ref = khiva.region.country, khiva.region, khiva
+        prop = make('Uzbekistan', 'Somewhere', state='Tashkent')
+        khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
+        prop.country_ref, prop.region_ref = khorezm.country, khorezm
         prop.save()
         run()
-        assert refs(prop) == ('UZ', 'Khorezm', 'Khiva')
+        assert refs(prop) == ('UZ', 'Khorezm')
         assert run()['already_mapped'] == 1
 
 
@@ -137,22 +135,15 @@ class TestOldRegionTexts:
         ('Fergana Region', 'Fergana'),
         ('Republic of Karakalpakstan', 'Republic of Karakalpakstan'),
     ])
-    def test_region_text_without_a_city(self, state, expected):
-        country, region, city = GeographyIndex(Country, Region, City).match('Uzbekistan', state, None)
+    def test_region_text(self, state, expected):
+        country, region, city = GeographyIndex(Country, Region).match('Uzbekistan', state, None)
         assert (country.code, region.name_en, city) == ('UZ', expected, None)
 
     def test_tashkent_and_tashkent_region_are_two_regions(self):
         regions = Region.objects.filter(country__code='UZ', name_en__in=['Tashkent', 'Tashkent Region'])
         assert regions.count() == 2
 
-    @pytest.mark.parametrize('state,city,expected_region', [
-        ('Tashkent', 'Tashkent', 'Tashkent'),
-        ('Tashkent City', 'Tashkent', 'Tashkent'),
-        ('Tashkent Region', 'Chirchiq', 'Tashkent Region'),
-        ('Tashkent', 'Chirchiq', 'Tashkent Region'),  # the city wins over a state that does not fit it
-        ('Samarkand Region', 'Samarkand', 'Samarkand'),
-        ('Samarkand Region', 'Urgut', 'Samarkand'),
-    ])
-    def test_region_and_city_together(self, state, city, expected_region):
-        _, region, found = GeographyIndex(Country, Region, City).match('Uzbekistan', state, city)
-        assert (region.name_en, found.name_en) == (expected_region, city)
+    def test_the_town_text_no_longer_decides_the_region(self):
+        # With the city dictionary gone, a state that does not fit the town is not "corrected" by the town
+        _, region, city = GeographyIndex(Country, Region).match('Uzbekistan', 'Tashkent', 'Chirchiq')
+        assert (region.name_en, city) == ('Tashkent', None)

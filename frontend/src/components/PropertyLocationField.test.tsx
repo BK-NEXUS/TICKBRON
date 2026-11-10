@@ -15,23 +15,16 @@ vi.mock('../adapters/geographyAdapter', async (importOriginal) => ({
       { id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1 },
       { id: 11, name_uz: 'Samarqand', name_ru: 'Самарканд', name_en: 'Samarkand', hotel_count: 1 },
     ], error: null }),
-    getCities: vi.fn().mockImplementation(async (regionId: number) => ({
-      data: regionId === 10
-        ? [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }]
-        : [{ id: 110, name_uz: 'Samarqand', name_ru: 'Самарканд', name_en: 'Samarkand', hotel_count: 1 }],
-      error: null,
-    })),
   },
 }))
 
 const setLocation = vi.mocked(statusAdapter.setPropertyLocation)
-const none = { country_ref: null, region_ref: null, city_ref: null }
-const tashkent = { country_ref: 1, region_ref: 10, city_ref: 100 }
-// The three lists load independently: wait until the saved location shows in all three
+const none = { country_ref: null, region_ref: null }
+const tashkent = { country_ref: 1, region_ref: 10 }
+// The two lists load independently: wait until the saved location shows in both
 const tashkentLoaded = () => waitFor(() => {
   expect(screen.getByLabelText('Country')).toHaveValue('1')
   expect(screen.getByLabelText('Region')).toHaveValue('10')
-  expect(screen.getByLabelText('City')).toHaveValue('100')
 })
 const saveButton = () => screen.getByRole('button', { name: 'Save location' })
 
@@ -55,21 +48,26 @@ describe('PropertyLocationField', () => {
     expect(saveButton()).toBeDisabled()
   })
 
-  it('saves the new country, region and city ids', async () => {
-    setLocation.mockResolvedValue({ data: { id: 1, ...tashkent, region_ref: 11, city_ref: 110 }, error: null })
+  it('saves the new country and region ids', async () => {
+    setLocation.mockResolvedValue({ data: { id: 1, ...tashkent, region_ref: 11 }, error: null })
     const onSaved = vi.fn()
     render(<PropertyLocationField propertyId={1} location={tashkent} onSaved={onSaved} />)
     await tashkentLoaded()
 
     fireEvent.change(screen.getByLabelText('Region'), { target: { value: '11' } })
-    expect(saveButton()).toBeDisabled() // the city is cleared, a half location cannot be saved
-    await screen.findByRole('option', { name: 'Samarkand', hidden: false })
-    fireEvent.change(await screen.findByLabelText('City'), { target: { value: '110' } })
     fireEvent.click(saveButton())
 
     expect(await screen.findByRole('status')).toHaveTextContent('Location saved')
-    expect(setLocation).toHaveBeenCalledWith(1, { country_ref: 1, region_ref: 11, city_ref: 110 })
-    expect(onSaved).toHaveBeenCalledWith({ country_ref: 1, region_ref: 11, city_ref: 110 })
+    expect(setLocation).toHaveBeenCalledWith(1, { country_ref: 1, region_ref: 11 })
+    expect(onSaved).toHaveBeenCalledWith({ country_ref: 1, region_ref: 11 })
+  })
+
+  it('does not save a half location (a country without a region)', async () => {
+    render(<PropertyLocationField propertyId={1} location={tashkent} />)
+    await tashkentLoaded()
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Region'), { target: { value: '' } })
+    expect(saveButton()).toBeDisabled()
   })
 
   it('clearing the country clears the location (Unspecified)', async () => {
@@ -91,8 +89,6 @@ describe('PropertyLocationField', () => {
     await screen.findByRole('option', { name: 'Uzbekistan' })
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
     fireEvent.change(await screen.findByLabelText('Region'), { target: { value: '10' } })
-    await screen.findByRole('option', { name: 'Chilanzar' })
-    fireEvent.change(screen.getByLabelText('City'), { target: { value: '100' } })
     fireEvent.click(saveButton())
 
     expect(await screen.findByRole('alert')).toHaveTextContent('does not belong')
@@ -104,8 +100,6 @@ describe('PropertyLocationField', () => {
     await screen.findByRole('option', { name: 'Uzbekistan' })
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
     fireEvent.change(await screen.findByLabelText('Region'), { target: { value: '10' } })
-    await screen.findByRole('option', { name: 'Chilanzar' })
-    fireEvent.change(screen.getByLabelText('City'), { target: { value: '100' } })
     fireEvent.click(saveButton())
     await screen.findByRole('status')
 

@@ -3,7 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from common.dates import business_today
-from geography.models import City
+from geography.models import Region
 from permissions.models import Role
 from promotions.models import Promotion
 from properties.models import Property, PropertyTranslation, PropertyType
@@ -27,26 +27,25 @@ def make_guest(email='guest@example.com'):
     return User.objects.create_user(email=email, password='Pass12345!', full_name='Guest')
 
 
-def make_hotel(owner, name='Alpha', status='active', city_ref=None, base_price=500000):
+def make_hotel(owner, name='Alpha', status='active', region_ref=None, base_price=500000):
     hotel_type, _ = PropertyType.objects.get_or_create(name='Hotel', slug='hotel')
     prop = Property.objects.create(
         owner=owner, property_type=hotel_type, status=status, max_guests=2, bedrooms=1, bathrooms=1,
         address_line1=f'1 {name} Street', city='Samarkand', country='Uzbekistan', base_price=base_price,
-        currency='UZS', city_ref=city_ref,
-        region_ref=city_ref.region if city_ref else None,
-        country_ref=city_ref.region.country if city_ref else None,
+        currency='UZS', region_ref=region_ref,
+        country_ref=region_ref.country if region_ref else None,
     )
     PropertyTranslation.objects.create(property=prop, language='en', name=name)
     return prop
 
 
-def uz_city(name_en='Samarkand'):
-    return City.objects.filter(region__country__code='UZ', name_en=name_en).first() or City.objects.filter(
-        region__country__code='UZ').first()
+def uz_region(name_en='Samarkand'):
+    return Region.objects.filter(country__code='UZ', name_en=name_en).first() or Region.objects.filter(
+        country__code='UZ').first()
 
 
-def other_country_city():
-    return City.objects.exclude(region__country__code='UZ').first()
+def other_country_region():
+    return Region.objects.exclude(country__code='UZ').first()
 
 
 def make_promotion(prop, start_offset=0, days=7, paid=True, status='active', priority=0, **extra):

@@ -28,7 +28,7 @@ from django.utils import timezone
 from bookings.models import Booking, BookingItem
 from common.money import quantize
 from geography.mapping import GeographyIndex
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType, RatePlan, RoomType
 from users.models import User
@@ -140,7 +140,7 @@ class Command(BaseCommand):
             slug='hotel', defaults={'name': 'Hotel', 'description': 'Hotels and guesthouses'},
         )
         registered = timezone.make_aware(datetime.combine(today - timedelta(days=400), time(9)))
-        geography = GeographyIndex(Country, Region, City)
+        geography = GeographyIndex(Country, Region)
         hotels = []
         for number, (country, region, city, name, address, price, currency) in enumerate(DEMO_HOTELS, start=1):
             owner = self._demo_user(
@@ -162,11 +162,11 @@ class Command(BaseCommand):
                 },
             )
             # Geography refs from the dictionary; the hotel without a region keeps only its country
-            country_ref, region_ref, city_ref = geography.match(country, region, city)
+            country_ref, region_ref, _city = geography.match(country, region, city)
             if region is None:
-                region_ref = city_ref = None
-            prop.country_ref, prop.region_ref, prop.city_ref = country_ref, region_ref, city_ref
-            prop.save(update_fields=['country_ref', 'region_ref', 'city_ref', 'updated_at'])
+                region_ref = None
+            prop.country_ref, prop.region_ref = country_ref, region_ref
+            prop.save(update_fields=['country_ref', 'region_ref', 'updated_at'])
             # Back-date the registration so "since" and monthly series look real
             Property.objects.filter(pk=prop.pk).update(created_at=registered + timedelta(days=number))
             PropertyTranslation.objects.update_or_create(

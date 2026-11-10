@@ -47,16 +47,16 @@ describe('AdminGeographyAdapter', () => {
 
   it('edits and hides a row with PATCH', async () => {
     fetchMock.mockResolvedValue(ok({ id: 5, is_active: false }))
-    await adapter.update('cities', 5, { is_active: false })
+    await adapter.update('regions', 5, { is_active: false })
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('http://test-api/api/v1/admin-panel/geography/cities/5/')
+    expect(url).toBe('http://test-api/api/v1/admin-panel/geography/regions/5/')
     expect(init.method).toBe('PATCH')
     expect(JSON.parse(init.body)).toEqual({ is_active: false })
   })
 
   it('deletes a row; 409 (in use) is reported as inUse so the screen can suggest hiding it', async () => {
     fetchMock.mockResolvedValueOnce(ok(null, 204))
-    expect(await adapter.remove('cities', 5)).toEqual({ error: null, inUse: false })
+    expect(await adapter.remove('regions', 5)).toEqual({ error: null, inUse: false })
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
 
     fetchMock.mockResolvedValueOnce(fail(409, { error: { message: 'In use' } }))
@@ -104,7 +104,7 @@ describe('AdminGeographyAdapter', () => {
 
   it('still sends JSON when there is no picture', async () => {
     fetchMock.mockResolvedValue(ok({ id: 7 }))
-    await adapter.update('cities', 3, { name_en: 'Capital' })
+    await adapter.update('regions', 3, { name_en: 'Capital' })
     const [, init] = fetchMock.mock.calls[0]
     expect(init.body).toBe(JSON.stringify({ name_en: 'Capital' }))
     expect(init.headers['Content-Type']).toBe('application/json')

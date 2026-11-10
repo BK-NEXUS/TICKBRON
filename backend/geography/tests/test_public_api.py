@@ -3,9 +3,8 @@ Public geography API (Geography plan G3):
 
     GET /api/v1/geography/countries/
     GET /api/v1/geography/countries/{code}/regions/
-    GET /api/v1/geography/regions/{id}/cities/
 
-Active rows only, all three names in every row, hotel counts from one annotated query.
+(The cities list was removed 2026-11-10.) Active rows only, all three names in every row, hotel counts from one annotated query.
 """
 from decimal import Decimal
 
@@ -14,7 +13,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -27,18 +26,16 @@ def world(db):
                                      currency='USD')
     east = Region.objects.create(country=country, name_uz='Sharq', name_ru='Восток', name_en='East', sort_order=1)
     west = Region.objects.create(country=country, name_uz='G\'arb', name_ru='Запад', name_en='West', sort_order=2)
-    capital = City.objects.create(region=east, name_uz='Poytaxt', name_ru='Столица', name_en='Capital', sort_order=1)
-    port = City.objects.create(region=east, name_uz='Port', name_ru='Порт', name_en='Port', sort_order=2)
-    return {'country': country, 'east': east, 'west': west, 'capital': capital, 'port': port}
+    return {'country': country, 'east': east, 'west': west}
 
 
-def make_property(owner, n, country=None, region=None, city=None, **extra):
+def make_property(owner, n, country=None, region=None, **extra):
     hotel_type, _ = PropertyType.objects.get_or_create(slug='hotel', defaults={'name': 'Hotel'})
     fields = dict(status='active', is_active=True)
     fields.update(extra)
     return Property.objects.create(
         owner=owner, property_type=hotel_type, max_guests=2, address_line1=f'{n} Main St',
-        base_price=Decimal('50.00'), country_ref=country, region_ref=region, city_ref=city, **fields)
+        base_price=Decimal('50.00'), country_ref=country, region_ref=region, **fields)
 
 
 @pytest.fixture
@@ -72,11 +69,11 @@ class TestCountries:
 
     def test_hotel_count_counts_only_public_properties_and_ignores_hidden_ones(self, world, owner):
         c = world
-        make_property(owner, 1, c['country'], c['east'], c['capital'])
-        make_property(owner, 2, c['country'], c['east'], c['port'])
-        make_property(owner, 3, c['country'], c['east'], c['port'], status='pending_approval')
-        make_property(owner, 4, c['country'], c['east'], c['port'], is_active=False)
-        make_property(owner, 5, c['country'], c['east'], c['port'], is_deleted=True)
+        make_property(owner, 1, c['country'], c['east'])
+        make_property(owner, 2, c['country'], c['east'])
+        make_property(owner, 3, c['country'], c['east'], status='pending_approval')
+        make_property(owner, 4, c['country'], c['east'], is_active=False)
+        make_property(owner, 5, c['country'], c['east'], is_deleted=True)
         row = next(r for r in get('/countries/').data if r['code'] == 'XA')
         assert row['hotel_count'] == 2
 
@@ -95,7 +92,7 @@ class TestRegions:
     def test_lists_active_regions_of_the_country_with_counts(self, world, owner):
         c = world
         Region.objects.create(country=c['country'], name_uz='H', name_ru='С', name_en='Hidden', is_active=False)
-        make_property(owner, 1, c['country'], c['east'], c['capital'])
+        make_property(owner, 1, c['country'], c['east'])
         response = get('/countries/XA/regions/')
         assert response.status_code == 200
         assert [r['name_en'] for r in response.data] == ['East', 'West']
@@ -112,27 +109,12 @@ class TestRegions:
 
 
 @pytest.mark.django_db
-class TestCities:
-
-    def test_lists_active_cities_of_the_region_with_counts(self, world, owner):
-        c = world
-        City.objects.create(region=c['east'], name_uz='H', name_ru='С', name_en='Hidden', is_active=False)
-        make_property(owner, 1, c['country'], c['east'], c['port'])
-        response = get(f"/regions/{c['east'].id}/cities/")
-        assert response.status_code == 200
-        assert [r['name_en'] for r in response.data] == ['Capital', 'Port']
-        assert [r['hotel_count'] for r in response.data] == [0, 1]
-
-    def test_unknown_hidden_region_or_hidden_country_is_404(self, world):
-        c = world
-        assert get('/regions/999999/cities/').status_code == 404
-        Region.objects.filter(pk=c['east'].pk).update(is_active=False)
-        assert get(f"/regions/{c['east'].id}/cities/").status_code == 404
-        Region.objects.filter(pk=c['east'].pk).update(is_active=True)
-        Country.objects.filter(pk=c['country'].pk).update(is_active=False)
-        assert get(f"/regions/{c['east'].id}/cities/").status_code == 404
+class TestReadOnlyAndNoCities:
 
     def test_read_only(self, world):
         client = APIClient()
-        for url in ('/countries/', '/countries/XA/regions/', f"/regions/{world['east'].id}/cities/"):
+        for url in ('/countries/', '/countries/XA/regions/'):
             assert client.post(f'{BASE}{url}', {}, format='json').status_code == 405
+
+    def test_there_is_no_list_of_cities(self, world):
+        assert get(f"/regions/{world['east'].id}/cities/").status_code == 404

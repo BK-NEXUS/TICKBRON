@@ -59,12 +59,12 @@ def geography_dictionary(request, django_db_blocker):
 
         with django_db_blocker.unblock():
             from geography.data import load_geography
-            from geography.models import City, Country, Region
+            from geography.models import Country, Region
 
             # A previous TransactionTestCase can empty the dictionary.
             # Reload it only when it is genuinely empty.
             if not Country.objects.exists():
-                load_geography(Country, Region, City)
+                load_geography(Country, Region)
 
     yield
 

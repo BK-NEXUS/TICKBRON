@@ -12,7 +12,7 @@ interface PartnerPropertyWizardProps {
   onCancel?: () => void
 }
 
-type PropertyForm = Omit<CreatePropertyRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'translations'>
+type PropertyForm = Omit<CreatePropertyRequest, 'country_ref' | 'region_ref' | 'translations'>
 
 type WizardStep = 'basic' | 'location' | 'amenities' | 'pricing' | 'confirm'
 
@@ -22,15 +22,15 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [location, setLocation] = useState<GeographyValue>({ country_ref: null, region_ref: null, city_ref: null })
-  const [locationLabels, setLocationLabels] = useState<GeographyLabels>({ country: '', region: '', city: '' })
+  const [location, setLocation] = useState<GeographyValue>({ country_ref: null, region_ref: null })
+  const [locationLabels, setLocationLabels] = useState<GeographyLabels>({ country: '', region: '' })
   // The super admin may have given this account a place: then it is preset and cannot be changed here
   const [placeLocked, setPlaceLocked] = useState(false)
 
   useEffect(() => {
     let current = true
     void partnerAdapter.getAssignedPlace().then(({ data }) => {
-      if (current && data && data.country_ref !== null && data.region_ref !== null && data.city_ref !== null) {
+      if (current && data && data.country_ref !== null && data.region_ref !== null) {
         setLocation(data)
         setPlaceLocked(true)
       }
@@ -58,6 +58,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     bathrooms: 1,
     address_line1: '',
     address_line2: '',
+    city: '',
     postal_code: '',
     latitude: undefined,
     longitude: undefined,
@@ -132,7 +133,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
           setError(t('partner.regionIsRequired'))
           return false
         }
-        if (location.city_ref === null) {
+        if (!formData.city.trim()) {
           setError(t('partner.cityIsRequired'))
           return false
         }
@@ -183,7 +184,6 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
         translations: hotelTextsToApi(texts),
         country_ref: location.country_ref as number,
         region_ref: location.region_ref as number,
-        city_ref: location.city_ref as number,
       })
       
       if (response.error) {
@@ -309,6 +309,18 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   value={formData.address_line2}
                   onChange={(e) => handleInputChange('address_line2', e.target.value)}
                   className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="city">{t('partner.city')}</label>
+                <input
+                  id="city"
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  className="form-input"
+                  aria-required="true"
+                  maxLength={100}
                 />
               </div>
               <GeographyPicker
@@ -477,7 +489,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 <h3>{t('property.location')}</h3>
                 <p><strong>{t('partner.address')}</strong> {formData.address_line1}</p>
                 {formData.address_line2 && <p><strong>{t('partner.addressLine22')}</strong> {formData.address_line2}</p>}
-                <p><strong>{t('partner.city2')}</strong> {locationLabels.city}</p>
+                <p><strong>{t('partner.city2')}</strong> {formData.city}</p>
                 <p><strong>{t('partner.state')}</strong> {locationLabels.region}</p>
                 {formData.postal_code && <p><strong>{t('partner.postalCode2')}</strong> {formData.postal_code}</p>}
                 <p><strong>{t('partner.country2')}</strong> {locationLabels.country}</p>

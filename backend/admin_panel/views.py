@@ -181,7 +181,7 @@ def admin_property_region(request, property_id):
     Set the location of a property (Status section: country > region > hotel).
 
     Request Body (either form):
-        country_ref, region_ref, city_ref: Geography ids (all three null clears them)
+        country_ref, region_ref: Geography ids (both null clears them)
         state: region name; blank or null clears it ("Unspecified"); older clients only
 
     Only the location changes; every other field in the body is ignored.
@@ -192,13 +192,13 @@ def admin_property_region(request, property_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     data = serializer.validated_data
-    refs = [name for name in ('country_ref', 'region_ref', 'city_ref') if name in data]
+    refs = [name for name in ('country_ref', 'region_ref') if name in data]
     if refs:
         for name in refs:
             setattr(property, name, data[name])
-        if all(data.get(name) is None for name in refs) and len(refs) == 3:
+        if all(data.get(name) is None for name in refs) and len(refs) == 2:
             property.state = None
-        # Property.save() copies the English names of the refs into country / state / city
+        # Property.save() copies the English names of the refs into country / state
         property.save()
     else:
         property.state = data['state']
@@ -304,7 +304,7 @@ def admin_create_hotel_owner(request):
         first_name: First name (required)
         last_name: Last name (required)
         phone_number: Phone number (required)
-        country_ref, region_ref, city_ref: the place of the owner's hotels (required, must fit together)
+        country_ref, region_ref: the place of the owner's hotels (required, must fit together)
         commission_percent: what the site takes from each booking, 0 to 100 (required)
         password: Initial password (required, min 8 characters)
         password_confirm: Password confirmation (required)

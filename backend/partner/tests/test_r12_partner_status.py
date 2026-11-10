@@ -192,7 +192,7 @@ class TestRegionRank:
             Property.objects.create(
                 owner=status_world['owners'][1], property_type=alpha.property_type, status='active', max_guests=2,
                 address_line1=f'{n} Rank Street', country_ref=alpha.country_ref, region_ref=alpha.region_ref,
-                city_ref=alpha.city_ref, city='Tashkent', base_price=1, currency='USD')
+                city='Tashkent', base_price=1, currency='USD')
 
     def rank(self, status_world, hotel, **params):
         owner = status_world['owners'][0]
