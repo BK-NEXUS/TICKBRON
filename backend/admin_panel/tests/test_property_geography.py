@@ -52,13 +52,13 @@ def refs(*rows):
 @pytest.mark.django_db
 class TestAdminSetsGeography:
 
-    def test_sets_both_and_syncs_the_text_fields_and_leaves_the_town(self, staff, prop, world):
+    def test_sets_both_and_syncs_the_text_fields(self, staff, prop, world):
         response = patch(staff, prop.id, refs(world['xland'], world['east']))
         assert response.status_code == 200, response.data
         assert (response.data['country_ref'], response.data['region_ref']) == (world['xland'].id, world['east'].id)
         assert 'city_ref' not in response.data
         prop.refresh_from_db()
-        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'Chirchiq')
+        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'East')
 
     def test_the_admin_can_fix_the_country_too(self, staff, prop, world):
         patch(staff, prop.id, refs(world['xland'], world['east']))

@@ -1,14 +1,14 @@
-# Run TICKBRON on your computer and show it through ngrok
+# TICKBRON'dı óz kompyuterińizde isletip, ngrok arqalı kórsetiw
 
-One ngrok tunnel to the frontend dev server is enough. The page and the API share one address: the dev server (Vite) forwards `/api` and `/media` to the backend, so there are no cookie, CORS or mixed-content problems.
+Frontend dev server'ine bir ngrok tunnel jetkilikli. Bet hám API bir mánzilde boladı: dev server (Vite) `/api` hám `/media`'nı backend'ke jiberedi, sonıń ushın cookie, CORS yamasa mixed-content mashqalaları bolmaydı.
 
-## One command (Windows)
-`powershell -ExecutionPolicy Bypass -File scripts\demo-tunnel.ps1` starts the database (Docker), builds and serves the site, starts ngrok, puts the tunnel address into `CSRF_TRUSTED_ORIGINS` of `backend/.env`, starts the backend and prints the address for the tester. `-Stop` stops all of it. Needs the one-time setup below (the script uses `backendenv`). The built site (not `npm run dev`) is served, because the dev server sends hundreds of small files, which is slow through a tunnel.
-Use `DB_HOST=127.0.0.1`, not `localhost`, in `backend/.env`: on Windows `localhost` is tried as IPv6 first and every new database connection waited 2 seconds (each API answer took 2.1 s instead of 0.06 s).
+## Bir buyrıq (Windows)
+`powershell -ExecutionPolicy Bypass -File scripts\demo-tunnel.ps1` database'di (Docker) iske túsiredi, saytıń build'in qurıp xızmet etedi, ngrok'ti iske túsiredi, tunnel mánzilin `backend/.env` ishindegi `CSRF_TRUSTED_ORIGINS`'ke qoyadı, backend'ti iske túsiredi hám testlewshi ushın mánzildi shıǵaradı. `-Stop` hámmesin toqtatadı. Tómendegi bir martalıq sazlawdı talap etedi. Qurılǵan sayt (`npm run dev` emes) xızmet etiledi, sebebi dev server júzlegen kishi fayl jiberedi hám tunnel arqalı ol ásta.
+`backend/.env` ishinde `DB_HOST=127.0.0.1` jazıń, `localhost` emes: Windows'ta `localhost` aldın IPv6 menen sınalıp, hár jańa database baylanısı 2 sekund kútip turdı (hár API juwabı 0.06 s orniǵa 2.1 s aldı).
 
-## One-time setup
-1. Install PostgreSQL, Redis, Python 3.13, Node 22 and [ngrok](https://ngrok.com/download); run `ngrok config add-authtoken <your token>` once.
-2. Database (once): create the user and database named in `backend/.env.dev.example` (`tickbron_user` / `tickbron`).
+## Bir martalıq sazlaw
+1. PostgreSQL, Redis, Python 3.13, Node 22 hám [ngrok](https://ngrok.com/download) ornatıń; bir ret `ngrok config add-authtoken <sizdiń token>` isletiń.
+2. Database (bir ret): `backend/.env.dev.example` ishinde atalǵan user hám database jaratıń (`tickbron_user` / `tickbron`).
 3. Backend:
    ```
    cd backend
@@ -17,48 +17,41 @@ Use `DB_HOST=127.0.0.1`, not `localhost`, in `backend/.env`: on Windows `localho
    cp .env.dev.example .env
    python manage.py migrate
    python manage.py seed_property_types
-   python manage.py createsuperuser                    # your administrator
+   python manage.py createsuperuser                    # sizdiń administratorıńız
    ```
-   Optional demo hotels and accounts (only works with DEBUG on): `python manage.py seed_demo`.
+   Iqtıyarıy demo mehmanxanalar hám akkauntlar (tek DEBUG qosılǵanda isleydi): `python manage.py seed_demo`.
 4. Frontend:
    ```
    cd frontend
    npm ci
    cp .env.example .env.local
    ```
-   In `frontend/.env.local` set the line `VITE_API_BASE_URL=` to an **empty value** (nothing after `=`).
+   `frontend/.env.local` ishinde `VITE_API_BASE_URL=` qatarın **bos mánis** etip qoyıń (`=` den keyin hesh nárse).
 
-## Every time
-Four terminals:
+## Hár ret
+Tórt terminal:
 ```
-redis-server                                         # 1 (skip if it runs as a service)
+redis-server                                         # 1 (service retinde islese, ótkizip jiberiń)
 cd backend && source venv/bin/activate && python manage.py runserver     # 2
-cd frontend && npm run dev                           # 3  (port 3000)
+cd frontend && npm run dev                           # 3  (3000 port)
 ngrok http 3000                                      # 4
 ```
-ngrok prints an address like `https://abc-123.ngrok-free.app`. Then:
-1. In `backend/.env` put that address (with `https://`, no slash at the end) in `CSRF_TRUSTED_ORIGINS` after the two local ones, for example `CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://abc-123.ngrok-free.app`. Also set `FRONTEND_URL` to it when you want links in the mails (printed in the backend console) to point there.
-2. Restart the backend (step 2). A free ngrok address changes each time you start ngrok, so repeat this; a reserved (static) domain from the ngrok dashboard avoids it.
-3. Open the ngrok address. The first visit shows an ngrok notice page: press "Visit Site".
+ngrok `https://abc-123.ngrok-free.app` sıyaqlı mánzil shıǵaradı. Keyin:
+1. `backend/.env` ishinde sol mánzildi (`https://` penen, sońında slash joq) `CSRF_TRUSTED_ORIGINS`'ke eki local mánzilden keyin qosıń, mısalı `CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://abc-123.ngrok-free.app`. Mail'lerdegi siltemeler (backend console'ǵa shıǵadı) sonda bariwın qalasańız, `FRONTEND_URL`'di de sonday qoyıń.
+2. Backend'ti qayta iske túsiriń (2-qádem). Biypul ngrok mánzili hár ngrok iske túskende ózgeredi, sonıń ushın qaytalań; ngrok dashboard'tan alınǵan turaqlı (static) domen buǵan jol bermeydi.
+3. ngrok mánzilin ashıń. Birinshi kirisiw ngrok eskertiw betin kórsetedi: "Visit Site" basıń.
 
-The dev server accepts the hosts `*.ngrok-free.app`, `*.ngrok-free.dev`, `*.ngrok.app`, `*.ngrok.dev` and `*.ngrok.io`. If it still says "Blocked request", add your host to `TUNNEL_HOSTS` in `frontend/vite.config.ts`.
+Dev server `*.ngrok-free.app`, `*.ngrok-free.dev`, `*.ngrok.app`, `*.ngrok.dev` hám `*.ngrok.io` host'ların qabıl etedi. Ele de "Blocked request" desse, óz host'ıńızdı `frontend/vite.config.ts` ishindegi `TUNNEL_HOSTS`'ke qosıń.
 
-## A steadier demo (no hot reload)
+## Turaqlıraq demo (hot reload joq)
 ```
 cd frontend && npm run build && npm run preview -- --port 3000
 ```
-`preview` serves the built site and forwards `/api` and `/media` the same way; the build reads `frontend/.env.local` too (keep `VITE_API_BASE_URL=` empty).
+`preview` qurılǵan saytqa xızmet etedi hám `/api` menen `/media`'nı sonday jiberedi; build `frontend/.env.local`'dı da oqıydı (`VITE_API_BASE_URL=` bos qaldırıń).
 
-## Problems
-- **Login or any form says "CSRF Failed"**: the ngrok address is missing in `CSRF_TRUSTED_ORIGINS`, or the backend was not restarted after you added it.
-- **Photos do not show**: the backend must run with `DEBUG=True` (it serves `/media/` then) and `npm run dev` must be restarted after `vite.config.ts` changed.
-- **"Too many requests" (429)**: everybody behind the tunnel looks like one visitor; the dev file already raises the limits. Login and sign-up have their own stricter limit per address; wait a minute.
-- **Page works but updates do not appear without a reload**: hot reload may not pass through the tunnel; reload the page.
-- Anyone with the ngrok address can use your site and, if you created a demo administrator, sign in as it: stop ngrok when you are done and never use the demo accounts' known passwords with a tunnel open (create your own administrator instead).
-
-## Using Claude Code in your terminal
-1. Install it: `npm install -g @anthropic-ai/claude-code` (Node 18+), or follow https://docs.claude.com/en/docs/claude-code.
-2. Go to the project folder and start it: `cd TICKBRON && claude`. Sign in when it asks.
-3. It reads `CLAUDE.md` (and `backend/CLAUDE.md`) by itself, so it knows the rules of the project: tests first, no secrets in git, work on a feature branch, push after each commit.
-4. Useful: `git pull` before you start; ask for one task at a time ("fix X, test first"); `/clear` between tasks; `/help` lists the commands. It asks before running commands or changing files unless you allow it.
-5. Never paste real passwords or keys into the chat; they belong in `backend/.env`, which git ignores.
+## Mashqalalar (Problems)
+- **Login yamasa qálegen forma "CSRF Failed" deydi**: ngrok mánzili `CSRF_TRUSTED_ORIGINS`'te joq, yamasa qosqannan keyin backend qayta iske túsirilmegen.
+- **Súwretler kórinbeydi**: backend `DEBUG=True` penen isleýi kerek (sonda `/media/`'nı ózi beredi) hám `vite.config.ts` ózgergennen keyin `npm run dev` qayta iske túsiriliwi kerek.
+- **"Too many requests" (429)**: tunnel artındaǵı hámme bir kelushi bolıp kórinedi; dev fayl limitlerdi ózi kóteredi. Login hám dizimnen ótiwdiń hár mánzil boyınsha óz qatań limiti bar; bir minut kútiń.
+- **Bet isleydi, biraq jańalanıwlar qayta júklemesten kórinbeydi**: hot reload tunnel arqalı ótpewi múmkin; betti qayta júkleń.
+- ngrok mánzilin biletuǵın hár kim saytıńızdan paydalana aladı hám, eger demo administrator jaratqan bolsańız, sol retinde kire aladı: pitkende ngrok'ti toqtatıń hám tunnel ashıq waqıtta demo akkauntlardıń belgili parolların hesh qashan paydalanbań (ornına óz administratorıńızdı jaratıń).

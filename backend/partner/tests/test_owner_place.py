@@ -1,7 +1,7 @@
 """
 The place of a hotel-owner account (plan .ai/PLAN_GEO_IMAGES.md, step 3; city level removed 2026-11-10): the super
-admin picks country > region when creating the account; the owner's hotels are created in that place (the town is
-typed by the owner) and cannot be moved by the owner.
+admin picks country > region when creating the account; the owner's hotels are created in that place
+(there is no town or district) and cannot be moved by the owner.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -80,7 +80,7 @@ def hotel_type(db):
 
 def property_body(hotel_type, **location):
     return {'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1, 'address_line1': '1 Main St',
-            'city': 'Capital Town', 'translations': {'en': {'name': 'Test Hotel'}}, 'base_price': '70.00',
+            'translations': {'en': {'name': 'Test Hotel'}}, 'base_price': '70.00',
             'currency': 'USD', **location}
 
 

@@ -1,8 +1,9 @@
 """
-Partner property writes use the Geography dictionary (Geography plan G4, city level removed 2026-11-10):
-country_ref and region_ref ids are required on create and validated (active, region inside country). The old
-text fields country / state are filled from the English names by Property.save() and are not input; the town
-(city) is plain text typed by the owner, required on create.
+Partner property writes use the Geography dictionary (Geography plan G4; no town or district below the region
+since 2026-11-10): country_ref and region_ref ids are required on create and validated (active, region inside
+country). The text fields country / state / city are read-only copies: Property.save() fills them from the
+English names of the country and the region (the "city" copy is the region's name, so every screen that shows a
+place keeps working). The owner types no town.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -52,7 +53,7 @@ def world(db):
 def payload(hotel_type, world, **overrides):
     data = {
         'property_type': hotel_type.id, 'max_guests': 2, 'bedrooms': 1, 'bathrooms': 1,
-        'address_line1': '1 Main St', 'city': 'Capital Town', 'base_price': '70.00', 'currency': 'USD',
+        'address_line1': '1 Main St', 'base_price': '70.00', 'currency': 'USD',
         'translations': {'en': {'name': 'Test Hotel'}},
         'country_ref': world['xland'].id, 'region_ref': world['east'].id,
     }
@@ -63,37 +64,32 @@ def payload(hotel_type, world, **overrides):
 @pytest.mark.django_db
 class TestCreate:
 
-    def test_creates_with_refs_and_a_typed_town_and_fills_country_and_region_text(self, client, hotel_type, world):
+    def test_creates_with_refs_and_fills_the_country_region_and_place_text(self, client, hotel_type, world):
         response = client.post(URL, payload(hotel_type, world), format='json')
         assert response.status_code == 201, response.data
         prop = Property.objects.get(address_line1='1 Main St')
         assert (prop.country_ref_id, prop.region_ref_id) == (world['xland'].id, world['east'].id)
-        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'Capital Town')
+        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'East')
 
-    def test_the_old_country_and_state_text_sent_by_the_client_do_not_win(self, client, hotel_type, world):
-        response = client.post(URL, payload(hotel_type, world, state='Nowhere', country='Atlantis'), format='json')
+    def test_the_old_text_sent_by_the_client_does_not_win_over_the_refs(self, client, hotel_type, world):
+        response = client.post(
+            URL, payload(hotel_type, world, state='Nowhere', country='Atlantis', city='Poseidonia'), format='json')
         assert response.status_code == 201, response.data
         prop = Property.objects.get(address_line1='1 Main St')
-        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'Capital Town')
+        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'East')
 
     def test_a_city_reference_is_ignored_because_there_is_no_city_dictionary(self, client, hotel_type, world):
         response = client.post(URL, payload(hotel_type, world, city_ref=1), format='json')
         assert response.status_code == 201, response.data
         assert 'city_ref' not in response.data
 
-    @pytest.mark.parametrize('missing', ['country_ref', 'region_ref', 'city'])
-    def test_all_three_are_required(self, client, hotel_type, world, missing):
+    @pytest.mark.parametrize('missing', ['country_ref', 'region_ref'])
+    def test_both_are_required(self, client, hotel_type, world, missing):
         data = payload(hotel_type, world)
         del data[missing]
         response = client.post(URL, data, format='json')
         assert response.status_code == 400
         assert missing in details(response)
-        assert not Property.objects.exists()
-
-    @pytest.mark.parametrize('blank', ['', '   '])
-    def test_the_town_cannot_be_blank(self, client, hotel_type, world, blank):
-        response = client.post(URL, payload(hotel_type, world, city=blank), format='json')
-        assert response.status_code == 400 and 'city' in details(response)
         assert not Property.objects.exists()
 
     def test_null_is_rejected(self, client, hotel_type, world):
@@ -122,7 +118,7 @@ class TestUpdate:
     @pytest.fixture
     def prop(self, owner, hotel_type, world):
         return Property.objects.create(
-            owner=owner, property_type=hotel_type, max_guests=2, address_line1='1 Main St', city='Capital Town',
+            owner=owner, property_type=hotel_type, max_guests=2, address_line1='1 Main St',
             base_price=70, country_ref=world['xland'], region_ref=world['east'])
 
     def test_move_to_another_region_in_the_same_country(self, client, prop, world):
@@ -130,16 +126,13 @@ class TestUpdate:
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
         assert prop.region_ref_id == world['west'].id
-        assert (prop.state, prop.city) == ('West', 'Capital Town')
+        assert (prop.state, prop.city) == ('West', 'West')
 
-    def test_the_town_can_be_changed(self, client, prop):
-        response = client.patch(f'{URL}{prop.id}/', {'city': 'Harbour Town'}, format='json')
+    def test_a_town_sent_on_an_edit_changes_nothing(self, client, prop):
+        response = client.patch(f'{URL}{prop.id}/', {'city': 'Harbour Town', 'max_guests': 3}, format='json')
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
-        assert prop.city == 'Harbour Town'
-
-    def test_the_town_cannot_be_blanked(self, client, prop):
-        assert client.patch(f'{URL}{prop.id}/', {'city': ''}, format='json').status_code == 400
+        assert (prop.city, prop.max_guests) == ('East', 3)
 
     def test_changing_only_the_country_is_rejected(self, client, prop, world):
         response = client.patch(f'{URL}{prop.id}/', {'country_ref': world['yland'].id}, format='json')
@@ -150,10 +143,10 @@ class TestUpdate:
         response = client.patch(f'{URL}{prop.id}/', {'max_guests': 5}, format='json')
         assert response.status_code == 200, response.data
 
-    def test_refs_and_the_town_are_in_the_response(self, client, prop, world):
+    def test_refs_and_the_place_text_are_in_the_response(self, client, prop, world):
         data = client.get(f'{URL}{prop.id}/').data
         assert (data['country_ref'], data['region_ref'], data['city']) == (
-            world['xland'].id, world['east'].id, 'Capital Town')
+            world['xland'].id, world['east'].id, 'East')
         assert 'city_ref' not in data
 
     def test_cannot_clear_a_ref(self, client, prop):
@@ -169,12 +162,12 @@ class TestUpdate:
         }, format='json')
         assert response.status_code == 200, response.data
         legacy.refresh_from_db()
-        assert (legacy.country, legacy.state, legacy.city) == ('Xland', 'East', 'Somewhere')
+        assert (legacy.country, legacy.state, legacy.city) == ('Xland', 'East', 'East')
 
 
 @pytest.mark.django_db
 class TestOldTextIsNotInput:
-    """The old wizard sent country / state text instead of ids; since 2026-10-19 only the ids count (the town stays text)."""
+    """The old wizard sent country / state text instead of ids; since 2026-10-19 only the ids count."""
 
     @pytest.fixture
     def uz(self, db):
@@ -201,29 +194,29 @@ class TestOldTextIsNotInput:
             assert field in details(response)
         assert not Property.objects.exists()
 
-    def test_the_ids_decide_and_the_country_and_state_text_sent_with_them_is_ignored(self, client, hotel_type, uz):
+    def test_the_ids_decide_and_the_text_sent_with_them_is_ignored(self, client, hotel_type, uz):
         response = client.post(URL, self.payload(
             hotel_type, country_ref=uz['country'].id, region_ref=uz['samarkand'].id,
             country='Atlantis', state='Nowhere', city='Registan Town'), format='json')
         assert response.status_code == 201, response.data
         prop = Property.objects.get(address_line1='1 Main St')
         assert prop.region_ref_id == uz['samarkand'].id
-        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Samarkand', 'Registan Town')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Samarkand', 'Samarkand')
 
-    def test_country_text_on_an_edit_changes_nothing_but_the_town_does_change(self, client, owner, hotel_type, uz):
+    def test_text_on_an_edit_changes_nothing(self, client, owner, hotel_type, uz):
         prop = Property.objects.create(
             owner=owner, property_type=hotel_type, max_guests=2, address_line1='5 Edit St', base_price=50,
-            city='Tashkent', country_ref=uz['country'], region_ref=uz['tashkent'])
+            country_ref=uz['country'], region_ref=uz['tashkent'])
         prop.refresh_from_db()
         response = client.patch(f'{URL}{prop.id}/', {'city': 'Samarkand', 'country': 'Kazakhstan', 'max_guests': 3},
                                 format='json')
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
-        assert (prop.city, prop.country, prop.max_guests) == ('Samarkand', 'Uzbekistan', 3)
+        assert (prop.city, prop.country, prop.max_guests) == ('Tashkent', 'Uzbekistan', 3)
 
     def test_the_response_shows_the_text_copies(self, client, hotel_type, uz):
         response = client.post(URL, self.payload(
-            hotel_type, country_ref=uz['country'].id, region_ref=uz['tashkent'].id, city='Tashkent'), format='json')
+            hotel_type, country_ref=uz['country'].id, region_ref=uz['tashkent'].id), format='json')
         assert response.status_code == 201, response.data
         shown = client.get(f"{URL}{Property.objects.get().id}/").data
         assert (shown['country'], shown['state'], shown['city']) == ('Uzbekistan', 'Tashkent', 'Tashkent')

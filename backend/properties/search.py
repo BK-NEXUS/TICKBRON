@@ -485,7 +485,7 @@ class PropertySearchService:
     def _apply_location_search(self, queryset, location):
         """
         Apply location-based search: names in all three languages through the Geography refs,
-        plus the text fields (the town the owner typed is only text).
+        plus the text fields (the only location unmapped properties have).
         """
         return queryset.filter(
             geography_name_filter(location) |
@@ -699,7 +699,7 @@ class PropertySearchService:
 
         # Places (region, country) that have public hotels, named in whichever language matched
         # what was typed; so the suggestion finds the same hotels when it is searched for.
-        # The town is text typed by the owner; properties never mapped to a country fall back to their text.
+        # Properties never mapped to the dictionary fall back to their text city / country.
         public = Property.objects.filter(is_active=True, is_deleted=False, status='active')
         suggestions = []
 

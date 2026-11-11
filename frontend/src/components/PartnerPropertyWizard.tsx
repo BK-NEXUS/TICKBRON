@@ -58,7 +58,6 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     bathrooms: 1,
     address_line1: '',
     address_line2: '',
-    city: '',
     postal_code: '',
     latitude: undefined,
     longitude: undefined,
@@ -131,10 +130,6 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
         }
         if (location.region_ref === null) {
           setError(t('partner.regionIsRequired'))
-          return false
-        }
-        if (!formData.city.trim()) {
-          setError(t('partner.cityIsRequired'))
           return false
         }
         return validateCoordinates()
@@ -311,18 +306,6 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                   className="form-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="city">{t('partner.city')}</label>
-                <input
-                  id="city"
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="form-input"
-                  aria-required="true"
-                  maxLength={100}
-                />
-              </div>
               <GeographyPicker
                 value={location}
                 required
@@ -489,7 +472,6 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
                 <h3>{t('property.location')}</h3>
                 <p><strong>{t('partner.address')}</strong> {formData.address_line1}</p>
                 {formData.address_line2 && <p><strong>{t('partner.addressLine22')}</strong> {formData.address_line2}</p>}
-                <p><strong>{t('partner.city2')}</strong> {formData.city}</p>
                 <p><strong>{t('partner.state')}</strong> {locationLabels.region}</p>
                 {formData.postal_code && <p><strong>{t('partner.postalCode2')}</strong> {formData.postal_code}</p>}
                 <p><strong>{t('partner.country2')}</strong> {locationLabels.country}</p>

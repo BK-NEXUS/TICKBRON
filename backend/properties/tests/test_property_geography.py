@@ -1,7 +1,7 @@
 """
 Property.country_ref / region_ref (Geography plan G2, city level removed 2026-11-10): the old text fields
-country / state are filled from the English names whenever the refs are set, so older code that reads the text
-keeps working. The town (city) is plain text and is never touched by the refs.
+country / state / city are filled from the English names whenever the refs are set (the city copy is the name of
+the region), so older code that reads the text keeps working.
 """
 from decimal import Decimal
 
@@ -33,12 +33,12 @@ class TestPropertyGeographyRefs:
         prop.refresh_from_db()
         assert (prop.country, prop.state, prop.city) == ('old country', 'old state', 'old city')
 
-    def test_country_and_state_text_follow_the_refs_and_the_town_is_left_alone(self, prop):
+    def test_country_state_and_city_text_follow_the_refs(self, prop):
         khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
         prop.country_ref, prop.region_ref = khorezm.country, khorezm
         prop.save()
         prop.refresh_from_db()
-        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'old city')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khorezm')
 
     def test_only_the_refs_that_are_set_are_copied(self, prop):
         khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
@@ -52,7 +52,7 @@ class TestPropertyGeographyRefs:
         prop.country_ref, prop.region_ref = khorezm.country, khorezm
         prop.save(update_fields=['country_ref', 'region_ref'])
         prop.refresh_from_db()
-        assert (prop.country, prop.state) == ('Uzbekistan', 'Khorezm')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khorezm')
 
     def test_a_region_in_use_cannot_be_deleted(self, prop):
         khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')

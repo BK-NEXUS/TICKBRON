@@ -140,7 +140,7 @@ class PartnerRatePlanViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         return RatePlan.objects.filter(
             room_type__property__owner=self.request.user,
             is_deleted=False
-        ).select_related('room_type__property')
+        ).select_related('room_type__property').prefetch_related('prices')
 
 
 class PartnerDateInventoryViewSet(viewsets.ModelViewSet):

@@ -28,17 +28,17 @@ def test_a_large_photo_is_scaled_down_to_the_longest_side_and_is_smaller():
     assert max(image.size) == MAX_SIDE
     assert image.size == (MAX_SIDE, 1200)  # the shape stays 4:3
     assert shrunk.size < original.size / 3
-    assert image.format == 'JPEG'
+    assert image.format == 'WEBP'
 
 
 def test_a_small_picture_is_not_enlarged():
     assert opened(shrink_upload(picture(size=(800, 600)))).size == (800, 600)
 
 
-def test_the_file_name_and_type_stay_the_same():
+def test_a_jpeg_is_stored_as_webp_with_a_matching_name_and_type():
     shrunk = shrink_upload(picture(name='front.jpg'))
-    assert shrunk.name == 'front.jpg'
-    assert shrunk.content_type == 'image/jpeg'
+    assert shrunk.name == 'front.webp'
+    assert shrunk.content_type == 'image/webp'
 
 
 def test_hidden_camera_data_is_dropped_and_the_turn_is_applied():
@@ -53,14 +53,17 @@ def test_hidden_camera_data_is_dropped_and_the_turn_is_applied():
     assert b'PrivateCameraMaker' not in shrunk.read()
 
 
-def test_a_png_with_transparency_stays_a_png_with_transparency():
-    shrunk = shrink_upload(picture(size=(2400, 1200), fmt='PNG', mode='RGBA', name='logo.png'))
-    image = opened(shrunk)
-    assert image.format == 'PNG' and image.mode == 'RGBA'
+def test_a_png_with_transparency_becomes_webp_and_keeps_its_transparency():
+    buffer = io.BytesIO()
+    Image.new('RGBA', (2400, 1200), (200, 30, 30, 0)).save(buffer, format='PNG')  # fully transparent
+    logo = SimpleUploadedFile('logo.png', buffer.getvalue(), content_type='image/png')
+    image = opened(shrink_upload(logo))
+    assert image.format == 'WEBP' and image.mode == 'RGBA'
+    assert image.getpixel((0, 0))[3] == 0
     assert max(image.size) == MAX_SIDE
 
 
-def test_webp_and_gif_keep_their_format():
+def test_webp_and_gif_keep_their_format():  # a GIF may be animated, so it is left alone
     assert opened(shrink_upload(picture(fmt='WEBP', name='a.webp'))).format == 'WEBP'
     assert opened(shrink_upload(picture(size=(10, 10), fmt='GIF', mode='P', name='a.gif'))).format == 'GIF'
 
@@ -76,6 +79,7 @@ def test_the_longest_side_can_be_chosen_per_kind_of_picture():
 
 
 def test_the_stored_name_ends_with_what_the_file_really_is():
-    assert shrink_upload(picture(fmt='PNG', name='holiday.jpg')).name == 'holiday.png'
+    assert shrink_upload(picture(fmt='PNG', name='holiday.jpg')).name == 'holiday.webp'
     assert shrink_upload(picture(fmt='WEBP', name='front.png')).name == 'front.webp'
-    assert shrink_upload(picture(fmt='JPEG', name='scan.JPEG')).name == 'scan.jpg'
+    assert shrink_upload(picture(fmt='JPEG', name='scan.JPEG')).name == 'scan.webp'
+    assert shrink_upload(picture(size=(10, 10), fmt='GIF', mode='P', name='a.png')).name == 'a.gif'

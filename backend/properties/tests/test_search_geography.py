@@ -1,7 +1,7 @@
 """
 Search and suggestions match location names in all three languages through the
-Geography refs (country and region), match the town typed by the owner as text, and still fall back to the
-old text fields for unmapped rows (Geography plan G4, city level removed 2026-11-10).
+Geography refs (country and region) and still fall back to the old text fields (country, state, city) for
+unmapped rows (Geography plan G4, city level removed 2026-11-10).
 
 "Toshkent", "Ташкент" and "Tashkent" must find the same hotel.
 """
@@ -28,9 +28,9 @@ def hotel_type(db):
     return PropertyType.objects.create(name='Hotel', slug='hotel')
 
 
-def make(owner, hotel_type, n, region=None, town='Hometown', **extra):
-    """A public hotel in a dictionary region (by English name) with a typed town, or with text-only location."""
-    fields = dict(status='active', max_guests=2, address_line1=f'{n} Main St', base_price=Decimal('60.00'), city=town)
+def make(owner, hotel_type, n, region=None, **extra):
+    """A public hotel in a dictionary region (by English name), or with text-only location."""
+    fields = dict(status='active', max_guests=2, address_line1=f'{n} Main St', base_price=Decimal('60.00'))
     if region:
         row = Region.objects.select_related('country').get(country__code='UZ', name_en=region)
         fields.update(country_ref=row.country, region_ref=row)
@@ -75,13 +75,6 @@ class TestSearchAcrossLanguages:
         found = ids(APIClient().get(SEARCH, {'location': term}))
         assert khiva.id in found and samarkand.id not in found
 
-    @pytest.mark.parametrize('param', ['location', 'q'])
-    def test_the_town_typed_by_the_owner_is_found_as_text(self, owner, hotel_type, param):
-        khiva = make(owner, hotel_type, 1, region='Khorezm', town='Khiva')
-        other = make(owner, hotel_type, 2, region='Khorezm', town='Urgench')
-        found = ids(APIClient().get(SEARCH, {param: 'khiva'}))
-        assert khiva.id in found and other.id not in found
-
     def test_unmapped_hotels_are_still_found_by_their_text_fields(self, owner, hotel_type):
         old = legacy(owner, hotel_type, 1, city='Atlantis', country='Elsewhere')
         assert old.id in ids(APIClient().get(SEARCH, {'location': 'Atlantis'}))
@@ -93,8 +86,8 @@ class TestSearchAcrossLanguages:
         assert tashkent.id in ids(APIClient().get(SEARCH, {'location': 'Ташкент'}))
 
     def test_no_duplicate_rows_when_several_names_match(self, owner, hotel_type):
-        tashkent = make(owner, hotel_type, 1, region='Tashkent', town='Tashkent')
-        # "Tash" matches the region, its text copy and the typed town at once
+        tashkent = make(owner, hotel_type, 1, region='Tashkent')
+        # "Tash" matches the region and its text copies at once
         assert ids(APIClient().get(SEARCH, {'location': 'Tash'})).count(tashkent.id) == 1
         assert ids(APIClient().get(SEARCH, {'q': 'Tash'})).count(tashkent.id) == 1
 
@@ -127,15 +120,13 @@ class TestSuggestions:
         assert self.get('Ташкент') == []
         assert self.get('Samar') == []
 
-    def test_the_typed_town_and_unmapped_text_are_suggested(self, owner, hotel_type):
-        make(owner, hotel_type, 1, region='Khorezm', town='Khiva')
-        legacy(owner, hotel_type, 2, city='Atlantis', country='Elsewhere')
-        assert 'Khiva' in self.get('Khiv')
+    def test_unmapped_text_is_still_suggested(self, owner, hotel_type):
+        legacy(owner, hotel_type, 1, city='Atlantis', country='Elsewhere')
         assert 'Atlantis' in self.get('Atlan')
 
     def test_no_duplicates_and_the_limit_holds(self, owner, hotel_type):
-        make(owner, hotel_type, 1, region='Tashkent', town='Tashkent')
-        make(owner, hotel_type, 2, region='Tashkent', town='Tashkent')
+        make(owner, hotel_type, 1, region='Tashkent')
+        make(owner, hotel_type, 2, region='Tashkent')
         suggestions = self.get('Tashkent')
         assert len(suggestions) == len(set(suggestions))
         response = APIClient().get(SUGGEST, {'q': 'a', 'limit': 3})

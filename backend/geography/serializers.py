@@ -53,8 +53,8 @@ class GeographyRefsMixin:
     """
     Partner-style rule: refs are required on create and can be changed, not cleared.
 
-    The old text fields country / state are not input (they are read-only copies of the English
-    names, filled by Property.save()); only the ids count. The town (city) is plain text typed by the owner.
+    The old text fields country / state / city are not input (they are read-only copies of the English
+    names, filled by Property.save()); only the ids count. There is no town or district below the region.
     """
 
     def validate(self, attrs):

@@ -37,7 +37,6 @@ describe('PartnerPropertyWizard property type', () => {
     await screen.findByText('Location Details')
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
     await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
-    fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'Chilanzar' } })
     fireEvent.click(screen.getByText('Next'))
     await screen.findByText('Amenities & Features')
     fireEvent.click(screen.getByText('Next'))

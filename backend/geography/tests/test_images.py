@@ -56,7 +56,7 @@ class TestCountryPicture:
         response = client.post(f'{ADMIN}/countries/', {**COUNTRY, 'image': picture('my private flag.png')}, format='multipart')
         assert response.status_code == 201, response.data
         stored = Country.objects.get(code='XC').image.name
-        assert stored.startswith('geography/countries/') and stored.endswith('.png')
+        assert stored.startswith('geography/countries/') and stored.endswith('.webp')
         assert 'private' not in stored
         assert response.data['image_url'].endswith(stored)
         assert 'image' not in response.data or not isinstance(response.data['image'], str)

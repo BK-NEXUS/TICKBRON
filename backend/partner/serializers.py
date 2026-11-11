@@ -231,9 +231,9 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'full_address', 'created_at', 'updated_at'
         ]
-        # status is set by admin moderation (approve/suspend), never by the owner. The text state and
-        # country are derived from the Geography refs (English names) and read-only; the town (city) is typed.
-        read_only_fields = ['id', 'owner', 'status', 'state', 'country', 'created_at', 'updated_at']
+        # status is set by admin moderation (approve/suspend), never by the owner. The text location
+        # (city / state / country) is derived from the Geography refs (English names) and read-only.
+        read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
         extra_kwargs = PROPERTY_LIMITS
 
     def get_full_address(self, obj) -> str:
@@ -264,7 +264,7 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
         model = Property
         fields = [
             'id', 'translations', 'property_type', 'max_guests', 'bedrooms', 'bathrooms',
-            'address_line1', 'address_line2', 'city', 'postal_code',
+            'address_line1', 'address_line2', 'postal_code',
             'country_ref', 'region_ref',
             'latitude', 'longitude', 'base_price', 'currency', 'total_area', 'floor_number',
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating'

@@ -4,6 +4,8 @@ from datetime import date, datetime, timezone
 from unittest import mock
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from admin_panel.models import AdminAccessLog
@@ -239,6 +241,20 @@ class TestAdminList:
         ids = [item['id'] for item in client_of(make_staff()).get(LIST_URL).data['results']]
 
         assert guest.id not in ids and ids == [world.id]
+
+    def test_the_number_of_queries_does_not_grow_with_the_number_of_owners(self, world, guest, django_assert_max_num_queries):
+        staff = client_of(make_staff())
+        with CaptureQueriesContext(connection) as one:
+            assert staff.get(LIST_URL).status_code == 200
+        for number in range(8):
+            extra = make_owner(f'more{number}@example.com')
+            set_rate(extra, '3.00')
+            make_booking(guest, make_hotel(extra, name=f'Hotel {number}'), date(2026, 4, 3), '500.00', currency='USD')
+
+        with django_assert_max_num_queries(len(one) + 1):
+            response = staff.get(LIST_URL)
+
+        assert len(response.data['results']) == 9
 
     def test_an_owner_without_a_percent_is_listed_with_no_percent(self):
         lonely = make_owner('lonely@example.com')

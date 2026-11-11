@@ -25,13 +25,12 @@ const goToLocationStep = async () => {
   await screen.findByText('Location Details')
 }
 
-/** Pick Uzbekistan > Tashkent and type the town Chilanzar in the location step. */
+/** Pick Uzbekistan > Tashkent in the location step. */
 async function pickLocation() {
   await screen.findByRole('option', { name: 'Uzbekistan' })
   fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
   await screen.findByRole('option', { name: 'Tashkent' })
   fireEvent.change(screen.getByLabelText('Region'), { target: { value: '10' } })
-  fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'Chilanzar' } })
 }
 
 describe('PartnerPropertyWizard', () => {
@@ -161,13 +160,14 @@ describe('PartnerPropertyWizard', () => {
       expect(mockOnSuccess).toHaveBeenCalledWith({ id: 1, city: 'Tashkent' })
     })
     const sent = vi.mocked(partnerAdapter.createProperty).mock.calls.at(-1)![0]
-    expect(sent).toMatchObject({ country_ref: 1, region_ref: 10, city: 'Chilanzar' })
+    expect(sent).toMatchObject({ country_ref: 1, region_ref: 10 })
+    expect(sent).not.toHaveProperty('city')
     expect(sent).not.toHaveProperty('city_ref')
     expect(sent).not.toHaveProperty('country')
     expect(sent).not.toHaveProperty('state')
   })
 
-  it('does not leave the location step until country, region and the town are given', async () => {
+  it('does not leave the location step until country and region are chosen', async () => {
     render(<PartnerPropertyWizard />)
     await settle()
     nameTheHotel()
@@ -179,7 +179,7 @@ describe('PartnerPropertyWizard', () => {
     expect(screen.getByText('Location Details')).toBeInTheDocument()
   })
 
-  it('asks for the town when country and region are chosen but the town is empty', async () => {
+  it('asks for the region when a country is chosen but the region is not', async () => {
     render(<PartnerPropertyWizard />)
     await settle()
     nameTheHotel()
@@ -187,10 +187,8 @@ describe('PartnerPropertyWizard', () => {
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
     await screen.findByRole('option', { name: 'Uzbekistan' })
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
-    await screen.findByRole('option', { name: 'Tashkent' })
-    fireEvent.change(screen.getByLabelText('Region'), { target: { value: '10' } })
     fireEvent.click(screen.getByText('Next'))
-    expect(await screen.findByRole('alert')).toHaveTextContent('City is required')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Region is required')
     expect(screen.getByText('Location Details')).toBeInTheDocument()
   })
 
@@ -257,7 +255,7 @@ describe('PartnerPropertyWizard', () => {
       expect(screen.getByText('39.654823, 66.97567')).toBeInTheDocument()
       fireEvent.click(screen.getByText('Create Property'))
       await waitFor(() => expect(partnerAdapter.createProperty).toHaveBeenLastCalledWith(
-        expect.objectContaining({ latitude: 39.654823, longitude: 66.97567, city: 'Chilanzar' })))
+        expect.objectContaining({ latitude: 39.654823, longitude: 66.97567, region_ref: 10 })))
     })
 
     it('asks for both coordinates or neither', async () => {

@@ -1,34 +1,42 @@
-# Saytni ochishdan oldin nima qolgan
+# Saytti iske túsiriwden aldın ne qaldı (2026-11-11 jańalandı)
 
-Holat: kod tayyor (backend 3263 va frontend 2145 test o'tgan, Docker sozlamasi master'da). Sayt hali hech qaysi serverda ishga tushirilmagan.
+Jaǵday: kod tayar (backend 4114 hám frontend 2520 test ótken, Docker sazlaması master'de, Android APK tayar). Sayt ele hesh qaysı server'de iske túsirilmegen.
 
-## 1. Server va domen (egasi + men birga)
-- [ ] Domenni ahost.uz'dan olish.
-- [ ] Server olish (Linux, Docker o'rnatiladi). Qadamlar: `.ai/DEPLOY_DOCKER.md`.
-- [ ] Domenda `@` va `www` uchun A yozuvlari server IP'siga.
-- [ ] `.env` to'ldirish (`deploy/docker.env.example` dan), parollarni o'zgartirish. `.env` hech qachon gitga qo'yilmaydi.
-- [ ] `docker compose up -d --build`, birinchi administratorni yaratish.
-- [ ] Haqiqiy HTTPS sertifikati olinganini tekshirish (hali sinalmagan).
-- [ ] Backup'ni (`deploy/backup.sh`) har kun ishlaydigan qilish va bir marta qayta tiklab ko'rish.
+## 1. Server hám domen (iyesi + biz birge)
+- [x] Domen `tickbron.com` satıp alındı.
+- [ ] Server alıw (Linux, Docker ornatıladı). Qádemler: `.ai/DEPLOY_DOCKER.md`.
+- [ ] Domende `@` hám `www` ushın A jazıwları server IP'sine.
+- [ ] `.env` toltırıw (`deploy/docker.env.example`'den), parollardı ózgertiw. `.env` hesh qashan git'ke qoyılmaydı.
+- [ ] `docker compose up -d --build`, birinshi administratordı jaratıw.
+- [ ] Haqıyqıy HTTPS sertifikat alınǵanın tekseriw (ele sınalmaǵan).
+- [ ] Backup'tı (`deploy/backup.sh`) hár kún isleytuǵın etiw hám bir ret qayta tiklap kóriw.
+- [ ] `TWO_FACTOR_KEY` nusqasın database backup'tan bólek saqlaw.
 
-## 2. Xat va xabarlar (egasi qaror qiladi)
-- [ ] SMTP provayderi: parol tiklash va bron xatlari uchun. Hozir xat ketmaydi.
-- [ ] `SUPPORT_NOTIFY_EMAIL`: murojaatlar kimga borishi.
-- [ ] Telegram bot (kerak bo'lsa).
+## 2. Xat hám xabarlar (iyesi qarar etedi)
+- [ ] SMTP provayder (Brevo): parol tiklew, kirisiw kodları hám bron xatları ushın. Mail islemese hesh kim dizimnen óte almaydı. `no-reply@tickbron.com` jiberiwshisin hám domendi tastıyıqlaw (DNS jazıwları).
+- [ ] `SUPPORT_NOTIFY_EMAIL`: murojaatlar kimge baradı.
+- [ ] Telegram bot (kerek bolsa).
+- [ ] SMS provayder (Eskiz.uz yamasa basqa): akkaunt, token, jiberiwshi atı. Tayar bolǵanda `SMS_ENABLED=true` (`.ai/PLAN_SMS_CHAT.md`).
 
-## 3. Xarita
-- [ ] Sun'iy yo'ldosh qatlami hozir Esri bepul xizmatida ("yengil foydalanish"). Haqiqiy trafikdan oldin kalitli provayder tanlash.
+## 3. Mobil ilovalar
+- [x] Android qabıqshası (TWA) hám APK/AAB tayar (`D:\TICKBRON-ANDROID`); sayt ornatılatuǵın (PWA) etildi.
+- [ ] Server'den keyin APK'nı telefonda sınaw (`.ai/ANDROID.md`).
+- [ ] Google Play Console: ilova jaratıw, `.aab` júklew, "App signing key" SHA-256'nı `frontend/public/.well-known/assetlinks.json`'ge qosıw.
+- [ ] Play hám Apple ushın májbúriy: hesabın óshiriw funksiyası, maxfiylik siyasatı beti, "Data safety" forması, tekseriwshi ushın demo akkaunt.
+- [ ] iOS ilova (Mac yamasa bulıtlı Mac, Apple Developer akkaunt, $99/jıl).
 
-## 4. Biznes va huquq (egasi)
-- [ ] Haqiqiy aloqa ma'lumotlari (telefon, manzil, e-pochta).
-- [ ] Yurist ko'rigi: foydalanish shartlari, maxfiylik siyosati.
+## 4. Karta
+- [ ] Sun'iy joldas qatlamı házir Esri biypul xızmetinde ("jeńil paydalanıw"). Haqıyqıy trafikten aldın kilt'li provayder tańlaw.
+
+## 5. Biznes hám huqıq (iyesi)
+- [ ] Haqıyqıy baylanıs maǵlıwmatları (telefon, mánzil, e-pochta).
+- [ ] Yurist kóriwi: paydalanıw shártleri, maxfiylik siyasatı.
 - [ ] Komissiya modeli.
-- [ ] To'lov tizimi: bor-yo'qligini va kerakligini aniqlash.
+- [ ] Buyırtpashı menen jazba kelisim (narx, tólem tártibi, koddıń huqıqı, qollap-quwatlaw).
 
-## 5. Matnlar
-- [ ] uz va ru matnlarni ona tilida so'zlashuvchi o'qib chiqishi.
+## 6. Tekstler
+- [ ] uz, ru hám qaraqalpaq tekstlerdi ana tilinde sóylewshiniń oqıp shıǵıwı (bul hújjetlerdiń qaraqalpaqshası da).
 
-## 6. GitHub'da ochiq
-- [ ] #106 (QA hisoboti) ni ko'rib chiqish.
-- [ ] 10 ta Dependabot PR: qaysilari xavfsiz bo'lsa, men bittaga yig'ib beraman.
-- [ ] Ixtiyoriy: CI'da Docker image'larni yig'ish va brauzer testlarini har tunda ishga tushirish.
+## 7. GitHub'te ashıq
+- [ ] Dependabot PR'lar: qaysısı qáwipsiz bolsa, birewge jıynap beriw.
+- [ ] Iqtıyarıy: CI'de Docker image'lerdi qurıw hám brauzer testlerin hár keshe isletiw.

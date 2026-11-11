@@ -48,8 +48,7 @@ describe('PartnerPropertyWizard assigned place', () => {
     await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
     expect(screen.getByLabelText('Country')).toBeDisabled()
     expect(screen.getByLabelText('Region')).toBeDisabled()
-    // The town is typed by the owner even when the place is set by the administrator
-    expect(screen.getByLabelText('City *')).toBeEnabled()
+    expect(screen.queryByLabelText('City *')).not.toBeInTheDocument()
   })
 
   it('creates the hotel in the assigned place without picking anything', async () => {
@@ -60,7 +59,6 @@ describe('PartnerPropertyWizard assigned place', () => {
     await toLocationStep()
     fireEvent.change(screen.getByLabelText('Address Line 1 *'), { target: { value: '123 Test St' } })
     await waitFor(() => expect(screen.getByLabelText('Region')).toHaveValue('10'))
-    fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'Chilanzar' } })
     fireEvent.click(screen.getByText('Next'))
     await screen.findByText('Amenities & Features')
     fireEvent.click(screen.getByText('Next'))
@@ -68,7 +66,7 @@ describe('PartnerPropertyWizard assigned place', () => {
     fireEvent.click(screen.getByText('Next'))
     fireEvent.click(await screen.findByRole('button', { name: /Create Property|Submit/i }))
     await waitFor(() => expect(api.createProperty).toHaveBeenCalledWith(expect.objectContaining({
-      country_ref: 1, region_ref: 10, city: 'Chilanzar',
+      country_ref: 1, region_ref: 10,
     })))
   })
 

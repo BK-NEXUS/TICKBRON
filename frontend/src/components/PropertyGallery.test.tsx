@@ -150,6 +150,14 @@ describe('PropertyGallery', () => {
       expect(mainImage()).toHaveAttribute('alt', 'Test Property, photo 1')
     })
 
+    it('loads the first photo at once and the thumbnails lazily', () => {
+      render(<PropertyGallery property={mockProperty} />)
+      expect(mainImage()).not.toHaveAttribute('loading', 'lazy')
+      expect(mainImage()).toHaveAttribute('fetchpriority', 'high')
+      const thumbnails = screen.getAllByLabelText(/View image/)
+      thumbnails.forEach(button => expect(button.querySelector('img')).toHaveAttribute('loading', 'lazy'))
+    })
+
     it('thumbnails are small images of the photos', () => {
       render(<PropertyGallery property={mockProperty} />)
       const thumbnails = screen.getAllByLabelText(/View image/)

@@ -333,7 +333,14 @@ class NotificationViewSetTest(TestCase):
         """Test getting unread notifications."""
         response = self.client.get('/api/v1/me/notifications/unread/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
+
+    def test_unread_notifications_come_in_pages_of_twenty(self):
+        for _ in range(24):
+            Notification.objects.create(user=self.user, title='More', message='More', is_read=False)
+        first = self.client.get('/api/v1/me/notifications/unread/').data
+        second = self.client.get('/api/v1/me/notifications/unread/?page=2').data
+        self.assertEqual((first['count'], len(first['results']), len(second['results'])), (25, 20, 5))
 
     def test_mark_notification_as_read(self):
         """Test marking notification as read."""

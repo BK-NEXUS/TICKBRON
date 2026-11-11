@@ -7,6 +7,9 @@ from django.core.management.base import BaseCommand
 from common.images import shrink_upload
 from properties.models import PropertyPhoto, RoomPhoto
 
+# A file is rewritten only when it gets at least 5% smaller, so a second run does not keep re-encoding the same photos
+WORTH_REWRITING = 0.95
+
 
 class Command(BaseCommand):
     help = 'Shrink stored hotel and room photos. Reports only; add --apply to change the files (same names).'
@@ -25,8 +28,8 @@ class Command(BaseCommand):
                 with storage.open(name, 'rb') as handle:
                     original = handle.read()
                 upload = SimpleUploadedFile(name, original, content_type=mimetypes.guess_type(name)[0] or '')
-                smaller = shrink_upload(upload).read()
-                if len(smaller) >= len(original):
+                smaller = shrink_upload(upload, keep_format=True).read()
+                if len(smaller) > len(original) * WORTH_REWRITING:
                     continue
                 shrinkable += 1
                 if apply:

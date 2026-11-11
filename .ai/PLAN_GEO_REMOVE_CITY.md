@@ -1,6 +1,6 @@
 # PLAN: remove the city level of the geography (Country > Region stays)
 
-Status: DRAFT 2026-11-10. No code changed. It drops a database table and columns (a migration, data is lost), so the owner must approve it before any code is written.
+Status: APPROVED 2026-11-10; the owner then chose "no town at all" (open question 1 below): see "Decision of 2026-11-11". No code changed. It drops a database table and columns (a migration, data is lost), so the owner must approve it before any code is written.
 
 ## What the owner decided (2026-11-10)
 - Keep the country ("respublika") and the region ("viloyat") as dictionaries.
@@ -42,8 +42,11 @@ Reversal recreates the empty table and the empty nullable columns (the structure
 ## Work list (about one working day)
 Backend: models and three migrations, serializers (partner, admin, promotions, geography), views and routes, search, Status, mapping and the commands, demo data, `conftest.py` loader. Frontend: pickers, hotel wizard, owner account form, admin Geography, adapters, "Where to?" and destinations, status places, i18n. Tests: the helper and the 45 files.
 
-## Open questions for the owner
-1. The town text stays as a typed, required field of the hotel (recommended). Or no town at all, only the address line?
+## Decision of 2026-11-11 (owner)
+No town and no district at all: a hotel has country, region and the address line, nothing else. The first version of this change (a typed town) was replaced: `Property.city` stays only as a read-only text copy that `Property.save()` fills with the English name of the region (like `state`), so every screen that shows a place (reviews, bookings, favourites, cards, map, admin lists) keeps working and the owner types nothing.
+
+## Open questions for the owner (answered)
+1. ~~The town text stays as a typed, required field of the hotel (recommended). Or no town at all, only the address line?~~ No town at all (above).
 2. Qoraqalpog'iston stays a region like the others (Nukus is then just a typed town).
 3. OK to drop the city data of the existing hotels (as answered), and for a server that already holds real hotels, a `pg_dump` is taken first.
 

@@ -70,7 +70,7 @@ class TestAdPhotos:
         assert (first.status_code, second.status_code) == (201, 201)
         assert second.json()['display_order'] > first.json()['display_order']
         stored = PromotionPhoto.objects.get(pk=second.json()['id']).photo.name
-        assert stored.startswith(f'promotions/{promo.pk}/') and stored.endswith('.jpg')
+        assert stored.startswith(f'promotions/{promo.pk}/') and stored.endswith('.webp')
         assert 'private' not in stored
 
     def test_an_ad_holds_at_most_ten_photos(self, admin, promo):
@@ -143,7 +143,7 @@ class TestAdPhotos:
         listed = admin.get(f'{A}/promotions/').json()['results'][0]
 
         assert [photo['id'] for photo in row['photos']] == [keep]
-        assert row['photos'][0]['photo_url'].endswith('.jpg')
+        assert row['photos'][0]['photo_url'].endswith('.webp')
         assert listed['photos_count'] == 1
 
 

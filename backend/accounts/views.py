@@ -313,8 +313,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def unread(self, request):
         """Get unread notifications for the current user."""
         unread = self.get_queryset().filter(is_read=False)
-        serializer = self.get_serializer(unread, many=True)
-        return Response(serializer.data)
+        page = self.paginate_queryset(unread)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):

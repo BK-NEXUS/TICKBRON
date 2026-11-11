@@ -45,6 +45,14 @@ def run(*args):
     return out.getvalue()
 
 
+def test_apply_keeps_the_format_of_the_old_file_because_the_name_stays(stored):
+    hotel_photo, _ = stored
+    run('--apply')
+    hotel_photo.refresh_from_db()
+    with hotel_photo.photo.open('rb') as handle:
+        assert Image.open(io.BytesIO(handle.read())).format == 'JPEG'
+
+
 def test_report_only_by_default(stored):
     hotel_photo, _ = stored
     before = size_of(hotel_photo)

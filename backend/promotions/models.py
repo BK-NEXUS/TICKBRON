@@ -55,7 +55,11 @@ class Promotion(BaseModel):
     class Meta:
         db_table = 'promotions'
         ordering = ['-start_date', '-id']
-        indexes = [models.Index(fields=['property', 'start_date', 'end_date'], name='promo_prop_dates_idx')]
+        indexes = [
+            models.Index(fields=['property', 'start_date', 'end_date'], name='promo_prop_dates_idx'),
+            # The advertising shown now: status and the date window
+            models.Index(fields=['status', 'start_date', 'end_date'], name='promo_status_dates_idx'),
+        ]
 
     def __str__(self):
         return f'Promotion {self.pk} property:{self.property_id} {self.start_date}..{self.end_date}'

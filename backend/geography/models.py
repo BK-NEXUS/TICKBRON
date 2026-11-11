@@ -1,5 +1,5 @@
 """
-Geography dictionary: Country > Region (the town of a hotel is plain text on the hotel).
+Geography dictionary: Country > Region (there is no town or district below the region).
 
 Names are stored in Uzbek (Latin), Russian and English; the frontend picks the
 language. Rows in use are never deleted (PROTECT): hide them with is_active=False.
