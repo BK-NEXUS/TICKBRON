@@ -36,7 +36,7 @@ EDITABLE_STATUSES = (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE, Promot
 CURRENCY_RE = re.compile(r'^[A-Z]{3}$')
 # The only fields update_promotion accepts: hotel, status and payment can never be changed through it
 UPDATABLE_FIELDS = frozenset({
-    'start_date', 'end_date', 'priority', 'country_ref', 'region_ref', 'city_ref',
+    'start_date', 'end_date', 'priority', 'country_ref', 'region_ref',
     'price_amount', 'price_currency', 'note'})
 
 
@@ -83,14 +83,10 @@ def _check_values(priority, price_amount, price_currency, note):
         raise PromotionError('note_too_long', f'Note is longer than {MAX_NOTE} characters')
 
 
-def _check_scope(country, region, city):
-    """A place limit must be consistent: the chosen city lies in the chosen region, the region in the country."""
-    if city and region and city.region_id != region.pk:
-        raise PromotionError('bad_scope', 'City is not in the chosen region')
+def _check_scope(country, region):
+    """A place limit must be consistent: the chosen region lies in the chosen country."""
     if region and country and region.country_id != country.pk:
         raise PromotionError('bad_scope', 'Region is not in the chosen country')
-    if city and country and city.region.country_id != country.pk:
-        raise PromotionError('bad_scope', 'City is not in the chosen country')
 
 
 def _check_overlap(property_id, start, end, exclude_pk=None):
@@ -115,7 +111,7 @@ def _lock_promotion(promotion):
 
 
 def create_promotion(*, actor, property, start_date, end_date, priority=0, country_ref=None, region_ref=None,
-                     city_ref=None, price_amount=None, price_currency='UZS', note=''):
+                     price_amount=None, price_currency='UZS', note=''):
     """
     Create an unpaid promotion (status `scheduled`). It is shown only after mark_paid() and only inside its dates.
     The hotel row is locked while checking, so two admins creating at the same moment cannot both pass.
@@ -124,13 +120,13 @@ def create_promotion(*, actor, property, start_date, end_date, priority=0, count
     note = (note or '').strip()
     _check_dates(start_date, end_date, business_today(), check_start_in_past=True)
     _check_values(priority, price_amount, price_currency, note)
-    _check_scope(country_ref, region_ref, city_ref)
+    _check_scope(country_ref, region_ref)
     with transaction.atomic():
         _lock_property(property.pk)
         _check_overlap(property.pk, start_date, end_date)
         promotion = Promotion.objects.create(
             property=property, start_date=start_date, end_date=end_date, priority=priority,
-            country_ref=country_ref, region_ref=region_ref, city_ref=city_ref, price_amount=price_amount,
+            country_ref=country_ref, region_ref=region_ref, price_amount=price_amount,
             price_currency=price_currency, note=note, created_by=actor)
         _audit(actor, 'promotion_create', promotion)
     return promotion
@@ -156,7 +152,7 @@ def update_promotion(promotion, *, actor, **changes):
         _check_dates(promotion.start_date, promotion.end_date, business_today(),
                      check_start_in_past=promotion.start_date != old_start)
         _check_values(promotion.priority, promotion.price_amount, promotion.price_currency, promotion.note)
-        _check_scope(promotion.country_ref, promotion.region_ref, promotion.city_ref)
+        _check_scope(promotion.country_ref, promotion.region_ref)
         _check_overlap(promotion.property_id, promotion.start_date, promotion.end_date, exclude_pk=promotion.pk)
         promotion.save()
         _audit(actor, 'promotion_update', promotion)
@@ -221,7 +217,6 @@ def _scope_matches_property():
     return (
         (Q(country_ref__isnull=True) | Q(country_ref_id=F('property__country_ref_id')))
         & (Q(region_ref__isnull=True) | Q(region_ref_id=F('property__region_ref_id')))
-        & (Q(city_ref__isnull=True) | Q(city_ref_id=F('property__city_ref_id')))
     )
 
 
@@ -255,7 +250,7 @@ def blocked_reason(promotion):
     prop = promotion.property
     if prop.is_deleted or not prop.is_active or prop.status != 'active':
         return 'hotel_not_active'
-    for ref in ('country_ref', 'region_ref', 'city_ref'):
+    for ref in ('country_ref', 'region_ref'):
         wanted = getattr(promotion, f'{ref}_id')
         if wanted is not None and wanted != getattr(prop, f'{ref}_id'):
             return 'outside_scope'

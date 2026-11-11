@@ -14,7 +14,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from common import public_cache
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 
 PUBLIC_PROPERTY = Q(properties__is_active=True, properties__is_deleted=False, properties__status='active')
 NAME_FIELDS = ('name_uz', 'name_ru', 'name_en')
@@ -52,15 +52,3 @@ def region_list(request, code):
         return _rows(Region.objects.filter(country=country, is_active=True), 'image')
 
     return Response(public_cache.remember(request, 'regions', build))
-
-
-@extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def city_list(request, region_id):
-    """Active cities of an active region in an active country."""
-    def build():
-        region = get_object_or_404(Region, pk=region_id, is_active=True, country__is_active=True)
-        return _rows(City.objects.filter(region=region, is_active=True))
-
-    return Response(public_cache.remember(request, 'cities', build))

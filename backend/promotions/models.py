@@ -39,8 +39,6 @@ class Promotion(BaseModel):
         'geography.Country', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     region_ref = models.ForeignKey(
         'geography.Region', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
-    city_ref = models.ForeignKey(
-        'geography.City', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
 
     price_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     price_currency = models.CharField(max_length=3, default='UZS')
@@ -57,7 +55,11 @@ class Promotion(BaseModel):
     class Meta:
         db_table = 'promotions'
         ordering = ['-start_date', '-id']
-        indexes = [models.Index(fields=['property', 'start_date', 'end_date'], name='promo_prop_dates_idx')]
+        indexes = [
+            models.Index(fields=['property', 'start_date', 'end_date'], name='promo_prop_dates_idx'),
+            # The advertising shown now: status and the date window
+            models.Index(fields=['status', 'start_date', 'end_date'], name='promo_status_dates_idx'),
+        ]
 
     def __str__(self):
         return f'Promotion {self.pk} property:{self.property_id} {self.start_date}..{self.end_date}'

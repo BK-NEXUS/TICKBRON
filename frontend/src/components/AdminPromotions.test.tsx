@@ -34,7 +34,6 @@ function promo(id: number, extra: Partial<AdminPromotion> = {}): AdminPromotion 
     priority: 10,
     country_ref: null,
     region_ref: null,
-    city_ref: null,
     price_amount: '2500000.00',
     price_currency: 'UZS',
     note: '',

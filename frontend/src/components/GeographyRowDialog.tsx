@@ -32,7 +32,6 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
   const [image, setImage] = useState<File | null>(null)
   const chosen = useRef<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const hasPicture = kind !== 'cities'
   const currentPicture = row && 'image_url' in row ? row.image_url : null
 
   useEffect(() => {
@@ -57,13 +56,13 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
     })
   }
 
-  const parentField = kind === 'regions' ? { country: parentId as number } : kind === 'cities' ? { region: parentId as number } : {}
+  const parentField = kind === 'regions' ? { country: parentId as number } : {}
   const picture = image ? { image } : {}
   const createBody = kind === 'countries' ? { code, currency, ...names, ...picture } : { ...parentField, ...names, ...picture }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (hasPicture && !row && !image) {
+    if (!row && !image) {
       setError(t('geoAdmin.errImageRequired'))
       return
     }
@@ -106,17 +105,15 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
               onChange={e => setNames(prev => ({ ...prev, [field]: cleanPlaceName(e.target.value) }))} />
           </div>
         ))}
-        {hasPicture && (
-          <div className="form-group geography-picture">
-            <label htmlFor={`${id}-image`}>{t('geoAdmin.field.image')}</label>
-            <input id={`${id}-image`} className="form-input" type="file" accept="image/jpeg,image/png,image/webp"
-              onChange={handlePicture} />
-            <ImageRequirements kind="place" />
-            {(preview || currentPicture) && (
-              <img className="geography-picture-preview" src={preview ?? currentPicture ?? ''} alt={t('geoAdmin.imagePreview')} />
-            )}
-          </div>
-        )}
+        <div className="form-group geography-picture">
+          <label htmlFor={`${id}-image`}>{t('geoAdmin.field.image')}</label>
+          <input id={`${id}-image`} className="form-input" type="file" accept="image/jpeg,image/png,image/webp"
+            onChange={handlePicture} />
+          <ImageRequirements kind="place" />
+          {(preview || currentPicture) && (
+            <img className="geography-picture-preview" src={preview ?? currentPicture ?? ''} alt={t('geoAdmin.imagePreview')} />
+          )}
+        </div>
         {error && <p role="alert" className="geography-picker-error">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>{t('geoAdmin.cancel')}</button>

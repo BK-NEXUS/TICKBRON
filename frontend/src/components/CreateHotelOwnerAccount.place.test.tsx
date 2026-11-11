@@ -1,5 +1,5 @@
 /**
- * The super admin chooses where the hotels of a new account will appear (country > region > city).
+ * The super admin chooses where the hotels of a new account will appear (country > region).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
@@ -12,7 +12,6 @@ vi.mock('../adapters/geographyAdapter', async importOriginal => ({
   geographyAdapter: {
     getCountries: vi.fn().mockResolvedValue({ data: [{ id: 1, code: 'UZ', currency: 'UZS', name_uz: 'Oʻzbekiston', name_ru: 'Узбекистан', name_en: 'Uzbekistan', hotel_count: 1, image_url: null }], error: null }),
     getRegions: vi.fn().mockResolvedValue({ data: [{ id: 10, name_uz: 'Toshkent', name_ru: 'Ташкент', name_en: 'Tashkent', hotel_count: 1, image_url: null }], error: null }),
-    getCities: vi.fn().mockResolvedValue({ data: [{ id: 100, name_uz: 'Chilonzor', name_ru: 'Чиланзар', name_en: 'Chilanzar', hotel_count: 1 }], error: null }),
   },
 }))
 
@@ -31,8 +30,6 @@ async function pickPlace() {
   fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
   await screen.findByRole('option', { name: 'Tashkent' })
   fireEvent.change(screen.getByLabelText('Region'), { target: { value: '10' } })
-  await screen.findByRole('option', { name: 'Chilanzar' })
-  fireEvent.change(screen.getByLabelText('City'), { target: { value: '100' } })
 }
 
 describe('CreateHotelOwnerAccount place', () => {
@@ -52,25 +49,24 @@ describe('CreateHotelOwnerAccount place', () => {
     expect(adminAdapter.createHotelOwner).not.toHaveBeenCalled()
   })
 
-  it('refuses a half-chosen place (country and region, no city)', async () => {
+  it('refuses a half-chosen place (a country, no region)', async () => {
     render(<CreateHotelOwnerAccount />)
     fillAccount()
     await screen.findByRole('option', { name: 'Uzbekistan' })
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: '1' } })
     await screen.findByRole('option', { name: 'Tashkent' })
-    fireEvent.change(screen.getByLabelText('Region'), { target: { value: '10' } })
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Choose where the hotel will appear')
     expect(adminAdapter.createHotelOwner).not.toHaveBeenCalled()
   })
 
-  it('sends the three place ids with the account', async () => {
+  it('sends the two place ids with the account', async () => {
     render(<CreateHotelOwnerAccount />)
     fillAccount()
     await pickPlace()
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }))
     await waitFor(() => expect(adminAdapter.createHotelOwner).toHaveBeenCalledWith(expect.objectContaining({
-      email: 'owner@example.com', country_ref: 1, region_ref: 10, city_ref: 100,
+      email: 'owner@example.com', country_ref: 1, region_ref: 10,
     })))
   })
 

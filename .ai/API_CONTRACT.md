@@ -728,7 +728,7 @@ Status: READY
   - Request: { is_read }
   - Response: Updated notification object
   - Automatically sets read_at when marking as read
-- GET `/api/v1/me/notifications/unread/` - Get unread notifications
+- GET `/api/v1/me/notifications/unread/` - Get unread notifications, paginated like the other lists (`count`, `next`, `previous`, `results`; 20 per page, `?page=2`; since 2026-11-11, before it was a plain array)
   - Auth: Session-based (required)
   - Response: Array of unread notification objects
 - POST `/api/v1/me/notifications/mark_all_read/` - Mark all notifications as read
@@ -1375,7 +1375,7 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 | Ad banner (`POST /admin-panel/promotions/{id}/photos/`) | 1600 x 600 px | 16:9 to 16:5 | 1920 x 720 (8:3) | at most 2400 px long side, EXIF removed |
 | Country / region picture (`image` of `/admin-panel/geography/countries|regions/`) | 800 x 600 px | 6:5 to 9:5 | 1200 x 900 (4:3) | at most 1600 px, EXIF removed |
 
-- Everywhere: JPEG, PNG or WebP only (found with Pillow in the file; the `Content-Type` header and the file name are not trusted; GIF and SVG are refused), at most 10 MB, at most 40 000 000 pixels. The stored file name ends with what the file really is (`.jpg`, `.png`, `.webp`).
+- Everywhere: JPEG, PNG or WebP only (found with Pillow in the file; the `Content-Type` header and the file name are not trusted; GIF and SVG are refused), at most 10 MB, at most 40 000 000 pixels. Since 2026-11-11 a JPEG or PNG is stored as WebP (`.webp`, transparency kept) and a GIF stays `.gif`; the stored file name ends with what the file really is.
 - The shape is judged as the picture is shown (the camera's turn flag is applied first).
 - A refused picture answers 400 with the text in the page language (uz, ru, en): the picture's size, the smallest size, the recommended size and the types. Hotel and room photos: `{"photo": ["..."]}`; country and region: `error.details.image`; ad banner: `{"error": "...", "code": "bad_image"}`.
 
@@ -1384,3 +1384,11 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 - `GET /api/v1/auth/me/` and the answer of `PATCH /api/v1/auth/me/update/` now carry `sms_notifications` (boolean, default `false`).
 - `PATCH /api/v1/auth/me/update/` accepts `sms_notifications` (boolean; anything else is 400). A user changes only their own value. There is no other way to change it.
 - Meaning: when the support team answers in the chat and the user has not read an earlier answer, the server may text the user's `phone_number` one fixed line with a link to `/support` (never the message). It happens only when `SMS_ENABLED` is on, the account is active, has a number and the value is `true`, and the limits allow (see HANDOFF "SMS when the team answers").
+
+## Geography: the city level is removed (2026-11-10, plan PLAN_GEO_REMOVE_CITY.md)
+
+- The dictionary has two levels: country and region. `GET /api/v1/geography/countries/` and `/countries/{code}/regions/` are unchanged. `GET /api/v1/geography/regions/{id}/cities/` and every `/api/v1/admin-panel/geography/cities/` route answer 404.
+- A hotel (`/partner/properties/`): `country_ref` and `region_ref` are the ids from the dictionary and are required on create (the region must lie in the country; both must be active). There is **no town or district input**: `city`, `state` and `country` are read-only copies, filled by the server with the English names of the region (`city` and `state`) and of the country; a client that sends them is ignored. `city_ref` is gone from requests and answers (ignored too).
+- `GET /partner/assigned-place/` answers `{country_ref, region_ref}`; `POST /admin-panel/users/create-hotel-owner/` takes `country_ref` and `region_ref` (both required, they must fit together) and no `city_ref`.
+- `PATCH /admin-panel/properties/{id}/region/` takes `country_ref` and `region_ref` (both null clears them). Advertising (`/admin-panel/promotions/`): the place limit is `country_ref` and `region_ref`; `city_ref` is gone. Status answers have no `city_id`.
+- The admin list of regions has no `city_count`. Search and suggestions match the region and the country in uz/ru/en and the old text fields of hotels that have no dictionary rows.

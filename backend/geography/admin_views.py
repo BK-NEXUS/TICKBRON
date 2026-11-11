@@ -1,7 +1,7 @@
 """
 Super-admin geography API (Geography plan G3), mounted at /api/v1/admin-panel/geography/.
 
-Countries, regions and cities: list (search, filters, hidden rows included), create, edit,
+Countries and regions: list (search, filters, hidden rows included), create, edit,
 hide/show (PATCH is_active) and reorder. A row in use cannot be deleted (PROTECT): 409, hide it instead.
 """
 from django.core.files.storage import default_storage
@@ -19,9 +19,9 @@ from admin_panel.models import AdminAccessLog
 from admin_panel.views import IsSuperAdmin
 from common.parsers import SafeJSONParser
 from geography.admin_serializers import (
-    AdminCitySerializer, AdminCountrySerializer, AdminRegionSerializer, search_filter,
+    AdminCountrySerializer, AdminRegionSerializer, search_filter,
 )
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from django.utils.translation import gettext as _
 
 PUBLIC_PROPERTY = Q(properties__is_active=True, properties__is_deleted=False, properties__status='active')
@@ -65,7 +65,7 @@ class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
                 instance.delete()
         except ProtectedError:
             return Response(
-                {'error': _('This row is in use (it has regions, cities or properties). Hide it instead.')},
+                {'error': _('This row is in use (it has regions or properties). Hide it instead.')},
                 status=status.HTTP_409_CONFLICT,
             )
         if image_name:
@@ -115,18 +115,5 @@ class AdminRegionViewSet(BaseGeographyViewSet):
 
     def get_queryset(self):
         return Region.objects.annotate(
-            city_count=Count('cities', distinct=True),
-            hotel_count=Count('properties', filter=PUBLIC_PROPERTY, distinct=True),
-        ).order_by('sort_order', 'name_en')
-
-
-class AdminCityViewSet(BaseGeographyViewSet):
-    serializer_class = AdminCitySerializer
-    audit_level = 'city'
-    model = City
-    parent_param = 'region'
-
-    def get_queryset(self):
-        return City.objects.annotate(
             hotel_count=Count('properties', filter=PUBLIC_PROPERTY, distinct=True),
         ).order_by('sort_order', 'name_en')

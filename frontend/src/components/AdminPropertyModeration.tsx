@@ -257,7 +257,7 @@ export function AdminPropertyModeration() {
 
                 <PropertyLocationField
                   propertyId={property.id}
-                  location={{ country_ref: property.country_ref ?? null, region_ref: property.region_ref ?? null, city_ref: property.city_ref ?? null }}
+                  location={{ country_ref: property.country_ref ?? null, region_ref: property.region_ref ?? null }}
                   onSaved={location => setProperties(prev => prev.map(p => p.id === property.id ? { ...p, ...location } : p))}
                 />
 

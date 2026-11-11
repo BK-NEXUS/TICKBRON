@@ -1,22 +1,22 @@
-# CLIENT DECISIONS needed (sent to the client as a Word file, 2026-10-12)
+# CLIENT DECISIONS (buyırtpashıdan kerek qararlar; Word fayl retinde jiberilgen, 2026-10-12)
 
-Status: ANSWERED in part (2026-10-12, by the owner). Recommendations are mine.
+Jaǵday: bólekshe JUWAP ALINǴAN (2026-10-12, iyesi tárepinen). Usınıslar - meniki. Keyin onlayn tólem alıp taslandı (naqd tólem, `PLAN_CASH_ONLY.md`), sonıń ushın qaytarıw (refund) haqqındaǵı punktler tariyxıy.
 
-## Answers received
-1. Cancelling a paid booking: option A (by rate plan); the refund is 50%. Open points: does 50% apply at any time before check-in, and is there a free-cancellation window? Default until told otherwise: 50% at any time, a rate plan may override percent and window.
-2. Who refunds: not decided by the owner, asked for advice. My advice: super-admin only, reason mandatory (cancellation and no-show refunds become automatic rules, so manual refunds are exceptions).
-3. No-show: option A (keep 50%, 7 days, staff decide).
-4. VIP: option B (a flag on the room type, set by the hotel owner, approved by an admin). No separate search filter was chosen.
-5. NEW and undecided: how hotels are paid. The owner has no plan yet: either each hotel registers its own card/merchant (like Uzum Market sellers) and money goes to it, or all money goes to the platform account and the admin pays the hotels monthly. My advice: platform account first, monthly payouts (one provider contract, simple refunds); needs commission, a per-hotel balance ledger, monthly statement, "paid" records and CSV, owner balance screen. Needs an accountant/lawyer opinion on holding third-party funds. Needs its own approved plan before any code.
+## Alınǵan juwaplar
+1. Tólengen bronnı biykar etiw: A variant (rate plan boyınsha); qaytarıw 50%. Ashıq punktler: 50% kelip jetiwden aldın qálegen waqıtta qollanılama, hám biypul biykar etiw aynası barma. Aytılmaǵansha standart: qálegen waqıtta 50%, rate plan procent hám aynanı ózgerte aladı.
+2. Kim qaytaradı: iyesi qarar etpedi, másláhát soradı. Meniń másláhátim: tek super-admin, sebep májbúriy (biykar etiw hám no-show qaytarıwları avtomat qaǵıydalarǵa aylanadı, sonıń ushın qolda qaytarıwlar - istisna).
+3. No-show: A variant (50% qaldırıw, 7 kún, staff qarar etedi).
+4. VIP: B variant (xona túrindegi flag, mehmanxana iyesi qoyadı, admin tastıyıqlaydı). Bólek izlew filtri tańlanbadı.
+5. JAŃA hám qarar etilmegen: mehmanxanalarǵa qalay tólenedi. Iyesiniń házirge jobası joq: yamasa hár mehmanxana óz kartasın/merchant'ın dizimnen ótkeredi (Uzum Market satıwshıları sıyaqlı) hám pul oǵan baradı, yamasa pútkil pul platforma akkauntına baradı hám admin mehmanxanalarǵa aylıq tóleydi. Meniń másláhátim: aldın platforma akkaunti, aylıq tólewler (bir provayder shártnaması, ápiwayı qaytarıwlar); komissiya, hár mehmanxananıń balans ledger'i, aylıq esabat, "tólengen" jazıwları hám CSV, iyesiniń balans ekranı kerek. Úshinshi tárep qarjısın uslaw boyınsha buxgalter/yurist pikiri kerek. Hár qanday koddan aldın óz tastıyıqlanǵan jobası kerek.
 
-## Original questions
+## Dáslepki sorawlar
 
-| # | Decision | Today | Options | Recommendation | Answer |
+| # | Qarar | Házir | Variantlar | Usınıs | Juwap |
 |---|---|---|---|---|---|
-| 1 | Cancelling a paid booking (N-16) | The guest can cancel any non-terminal booking at any time; inventory is released (`Booking.cancel_booking`); no refund is created (staff can refund by hand) | A by rate plan: free-cancellation deadline + refund percent; B one rule for all; C no cancellation after payment | A, default 100% refund until 48 h before check-in, then 0%, per rate plan; amount computed on the backend | |
-| 2 | Who may refund (N-14) | Any `is_staff` user creates a refund (`payments/views.py:327`); retry/mark-done are super-admin only | A super-admin only; B staff up to a limit, above that super-admin; C all staff but reason mandatory and logged | B, reason always mandatory; audit logging is added anyway (step 2a) | |
-| 3 | "Kelmadi" (no-show) rules | Owner reports within 7 days (`NO_SHOW_REPORT_WINDOW_DAYS`), staff decide, guest gets 50% (`NO_SHOW_REFUND_PERCENT`) | A keep; B other percent/window | A first, review after real cases | |
-| 4 | VIP room | No such concept | A price tier; B room-type flag set by owner, approved by admin; C bundle of extra services; D search filter and list | B + D; services later | |
-| 5 | Other | n/a | commission and payment model; map service (Google/Yandex/OpenStreetMap); logo files; Telegram bot token; discount types (R10b); register form fields (client asked for name, phone, email: is a password needed?) | n/a | |
+| 1 | Tólengen bronnı biykar etiw (N-16) | Mehmanlar hár qanday juwmaqlanbaǵan bronnı qálegen waqıtta biykar ete aladı; inventory bosatıladı (`Booking.cancel_booking`); qaytarıw jaratılmaydı (staff qolda qaytara aladı) | A rate plan boyınsha: biypul biykar etiw deadline + qaytarıw procenti; B hámme ushın bir qaǵıyda; C tólemnen keyin biykar etiw joq | A, standart 100% qaytarıw kelip jetiwden 48 saat aldınǵa shekem, keyin 0%, hár rate plan boyınsha; summa backend'te esaplanadı | |
+| 2 | Kim qaytarıwı múmkin (N-14) | Qálegen `is_staff` paydalanıwshı refund jaratadı (`payments/views.py:327`); retry/mark-done tek super-admin | A tek super-admin; B staff shekke shekem, odan joqarı super-admin; C hámme staff, biraq sebep májbúriy hám jazıladı | B, sebep hár waqıt májbúriy; audit log qosıladı (2a qádem) | |
+| 3 | "Kelmadi" (no-show) qaǵıydaları | Iyesi 7 kún ishinde xabarlaydı (`NO_SHOW_REPORT_WINDOW_DAYS`), staff qarar etedi, mehman 50% aladı (`NO_SHOW_REFUND_PERCENT`) | A qaldırıw; B basqa procent/mudet | Aldın A, haqıyqıy jaǵdaylardan keyin qaytadan kóriw | |
+| 4 | VIP xona | Bunday túsinik joq | A baha dárejesi; B xona túri flag'ı iyesi qoyadı, admin tastıyıqlaydı; C qosımsha xızmetler toplamı; D izlew filtri hám dizim | B + D; xızmetler keyinirek | |
+| 5 | Basqa | n/a | komissiya hám tólem modeli; karta xızmeti (Google/Yandex/OpenStreetMap); logo fayllar; Telegram bot token; arzanlatıw túrleri (R10b); dizimnen ótiw forması maydanları (buyırtpashı at, telefon, email soradı: parol kerekpe?) | n/a | |
 
-What each answer changes in the code is planned in `.ai/PLAN_*.md` when the answer arrives (money rules need an approved plan first).
+Hár juwap koddı neni ózgertetuǵını juwap kelgende `.ai/PLAN_*.md` ishinde jobalastırıladı (pul qaǵıydaları aldın tastıyıqlanǵan joba talap etedi).

@@ -18,7 +18,7 @@ interface CreateHotelOwnerAccountProps {
   onCancel?: () => void
 }
 
-const NO_PLACE: GeographyValue = { country_ref: null, region_ref: null, city_ref: null }
+const NO_PLACE: GeographyValue = { country_ref: null, region_ref: null }
 
 export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }: CreateHotelOwnerAccountProps) {
   const { t } = useI18n()
@@ -27,7 +27,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
   // What the site takes from each booking of a new owner (required), and which rights a new administrator gets
   const [commissionPercent, setCommissionPercent] = useState('')
   const [role, setRole] = useState<'staff' | 'super_admin'>('staff')
-  const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'commission_percent'>>({
+  const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'commission_percent'>>({
     email: '',
     first_name: '',
     last_name: '',
@@ -50,7 +50,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
   }
 
   const validateForm = (): string | null => {
-    if (!isAdmin && (place.country_ref === null || place.region_ref === null || place.city_ref === null)) return t('admin.errPlace')
+    if (!isAdmin && (place.country_ref === null || place.region_ref === null)) return t('admin.errPlace')
     if (!isAdmin && !(PERCENT_FORMAT.test(commissionPercent.trim()) && Number(commissionPercent) <= 100)) return t('admin.errCommission')
     if (!formData.email.trim()) return t('admin.errEmail')
     if (!formData.first_name.trim()) return t('admin.errFirstName')
@@ -87,7 +87,6 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
           ...formData,
           country_ref: place.country_ref as number,
           region_ref: place.region_ref as number,
-          city_ref: place.city_ref as number,
           commission_percent: commissionPercent.trim(),
         })
       

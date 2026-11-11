@@ -75,16 +75,28 @@ def _percent_for(rates, month):
     return chosen
 
 
-def _booking_rows(owner):
-    rows = (Booking.objects.filter(counted_q(), property__owner=owner)
-            .annotate(month=TruncMonth('check_in')).values('month', 'currency')
+def _booking_rows(owner_ids):
+    """{owner id: {month: {'bookings', 'gross'}}} for all the owners in one query."""
+    rows = (Booking.objects.filter(counted_q(), property__owner_id__in=owner_ids)
+            .annotate(month=TruncMonth('check_in')).values('property__owner_id', 'month', 'currency')
             .annotate(bookings=Count('id'), amount=Sum('total_price')))
-    months = defaultdict(lambda: {'bookings': 0, 'gross': {}})
+    by_owner = defaultdict(lambda: defaultdict(lambda: {'bookings': 0, 'gross': {}}))
     for row in rows:
-        entry = months[row['month']]
+        entry = by_owner[row['property__owner_id']][row['month']]
         entry['bookings'] += row['bookings']
         entry['gross'][row['currency']] = row['amount']
-    return months
+    return by_owner
+
+
+def _load(owner_ids):
+    """The percents, the booked figures and the paid months of all the owners: three queries, whatever their number."""
+    rates = defaultdict(list)
+    for rate in CommissionRate.objects.filter(owner_id__in=owner_ids).order_by('effective_from'):
+        rates[rate.owner_id].append(rate)
+    paid = defaultdict(dict)
+    for payment in CommissionPayment.objects.filter(owner_id__in=owner_ids):
+        paid[payment.owner_id][payment.month] = payment
+    return rates, _booking_rows(owner_ids), paid
 
 
 def _paid_of(payment):
@@ -108,10 +120,9 @@ def _year_rows(months):
             for year, entry in sorted(years.items(), reverse=True)]
 
 
-def _month_rows(owner, today):
-    rates = list(CommissionRate.objects.filter(owner=owner).order_by('effective_from'))
-    booked = _booking_rows(owner)
-    paid = {payment.month: payment for payment in CommissionPayment.objects.filter(owner=owner)}
+def _month_rows(owner_id, loaded, today):
+    all_rates, all_booked, all_paid = loaded
+    rates, booked, paid = all_rates[owner_id], all_booked[owner_id], all_paid[owner_id]
     wanted = set(booked) | {month_start(today)}
     rows = []
     for first in sorted(wanted, reverse=True):
@@ -135,7 +146,7 @@ def _public_month(row):
 def statement(owner):
     """Everything the owner's commission screen and the staff detail screen show."""
     today = business_today()
-    rows, rates = _month_rows(owner, today)
+    rows, rates = _month_rows(owner.id, _load([owner.id]), today)
     old_enough = owner.date_joined.date() <= today - timedelta(days=YEAR_DAYS)
     return {
         'percent': _money(rates[-1].percent) if rates else None,
@@ -145,10 +156,20 @@ def statement(owner):
     }
 
 
-def list_summary(owner):
-    """One row of the staff list: the percent, this month, and the commission of ended months not yet confirmed."""
+def list_summaries(owners):
+    """{owner id: row of the staff list} for the owners of one page, with the database asked three times in all."""
+    loaded = _load([owner.id for owner in owners])
     today = business_today()
-    rows, rates = _month_rows(owner, today)
+    return {owner.id: _summary(*_month_rows(owner.id, loaded, today), today) for owner in owners}
+
+
+def list_summary(owner):
+    """The row of one owner (the same figures as in `list_summaries`)."""
+    return list_summaries([owner])[owner.id]
+
+
+def _summary(rows, rates, today):
+    """One row of the staff list: the percent, this month, and the commission of ended months not yet confirmed."""
     this_month = next(row for row in rows if row['first'] == month_start(today))
     unpaid = defaultdict(Decimal)
     for row in rows:
@@ -180,7 +201,7 @@ def confirm_paid(owner, first, actor):
     today = business_today()
     if first >= month_start(today):
         raise CommissionError('not_ended', _('This month has not ended yet.'))
-    rows, _rates = _month_rows(owner, today)
+    rows, _rates = _month_rows(owner.id, _load([owner.id]), today)
     row = next((item for item in rows if item['first'] == first), None)
     if row is None or row['commission_by_currency'] is None:
         raise CommissionError('no_percent', _('There is no commission percent for this month.'))

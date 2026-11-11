@@ -74,9 +74,9 @@ def partner_commission(request):
     return Response(commission.statement(request.user))
 
 
-def owner_row(owner):
+def owner_row(owner, summary):
     return {'id': owner.id, 'name': owner.get_full_name() or owner.email, 'email': owner.email,
-            'phone_number': owner.phone_number, **commission.list_summary(owner)}
+            'phone_number': owner.phone_number, **summary}
 
 
 @extend_schema(responses=OpenApiTypes.OBJECT)
@@ -93,7 +93,8 @@ def admin_commission_list(request):
             | Q(properties__translations__name__icontains=term, properties__is_deleted=False)).distinct()
     paginator = OwnerListPagination()
     page = paginator.paginate_queryset(owners, request)
-    return paginator.get_paginated_response([owner_row(owner) for owner in page])
+    summaries = commission.list_summaries(page)
+    return paginator.get_paginated_response([owner_row(owner, summaries[owner.id]) for owner in page])
 
 
 @extend_schema(responses=OpenApiTypes.OBJECT, operation_id='v1_admin_panel_commission_detail')

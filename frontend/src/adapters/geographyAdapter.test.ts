@@ -40,10 +40,8 @@ describe('GeographyAdapter', () => {
     expect(mockFetch.mock.calls[0][0]).toBe('http://test-api/api/v1/geography/countries/UZ/regions/')
   })
 
-  it('loads the cities of a region by its id', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] })
-    await adapter.getCities(7)
-    expect(mockFetch.mock.calls[0][0]).toBe('http://test-api/api/v1/geography/regions/7/cities/')
+  it('has no list of cities any more', () => {
+    expect('getCities' in adapter).toBe(false)
   })
 
   it('returns the API error message', async () => {

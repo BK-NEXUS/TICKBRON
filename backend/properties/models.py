@@ -96,13 +96,12 @@ class Property(BaseModel):
     country = models.CharField(max_length=100, db_index=True)
 
     # Geography dictionary. When set, save() copies their English names into the text
-    # fields above, so code that still reads country/state/city keeps working.
+    # fields country, state and city above (the city copy is the region's name: there is no town or district below
+    # the region), so code that still reads them keeps working.
     country_ref = models.ForeignKey(
         'geography.Country', on_delete=models.PROTECT, null=True, blank=True, related_name='properties')
     region_ref = models.ForeignKey(
         'geography.Region', on_delete=models.PROTECT, null=True, blank=True, related_name='properties')
-    city_ref = models.ForeignKey(
-        'geography.City', on_delete=models.PROTECT, null=True, blank=True, related_name='properties')
 
     # Geolocation
     latitude = models.DecimalField(
@@ -178,10 +177,9 @@ class Property(BaseModel):
             self.country = self.country_ref.name_en
         if self.region_ref_id:
             self.state = self.region_ref.name_en
-        if self.city_ref_id:
-            self.city = self.city_ref.name_en
+            self.city = self.region_ref.name_en
         update_fields = kwargs.get('update_fields')
-        if update_fields is not None and {'country_ref', 'region_ref', 'city_ref'} & set(update_fields):
+        if update_fields is not None and {'country_ref', 'region_ref'} & set(update_fields):
             kwargs['update_fields'] = set(update_fields) | {'country', 'state', 'city'}
         super().save(*args, **kwargs)
 

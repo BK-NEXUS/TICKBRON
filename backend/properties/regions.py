@@ -2,8 +2,7 @@
 Region of a property.
 
 The region is stored in the existing `Property.state` field (the partner wizard
-labels it "State/Region"). Geography levels for now: country (text) > region > hotel.
-A full Country > Region > City dictionary is a later phase.
+labels it "State/Region"). Geography levels: country > region > hotel (the town is plain text).
 """
 from django.db.models import CharField, Case, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce, Lower, NullIf, Trim

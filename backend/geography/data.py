@@ -1,6 +1,7 @@
 """
-Initial geography data: Uzbekistan in full (14 first-level regions), plus the regions
-and cities of Kazakhstan and Turkey used by the demo data and a few major ones.
+Initial geography data: Uzbekistan in full (14 first-level regions), plus the regions of Kazakhstan
+and Turkey used by the demo data and a few major ones. The city lists stay only for the old migration
+geography/0002, which loads them while the city table still exists; the loader skips them otherwise.
 
 NOTE: the Uzbek (Latin) and Russian names below need a review by native speakers.
 
@@ -160,13 +161,13 @@ def city_slug(region_slug_value, name_en):
     return slugify(f'{region_slug_value}-{name_en}')
 
 
-def load_geography(country_model, region_model, city_model):
+def load_geography(country_model, region_model, city_model=None):
     """
     Create the initial rows that do not exist yet; never change existing ones.
 
     Takes the model classes so a data migration can pass its historical models
     (which do not run the models' own save(): codes and slugs are set here).
-    Returns (countries, regions, cities) created.
+    Returns (countries, regions, cities) created; cities stays 0 without a city model.
     """
     created = [0, 0, 0]
     for country_order, spec in enumerate(GEOGRAPHY, start=1):
@@ -186,7 +187,7 @@ def load_geography(country_model, region_model, city_model):
                           'sort_order': region_order * 10},
             )
             created[1] += was_created
-            for city_order, (c_uz, c_ru, c_en) in enumerate(cities, start=1):
+            for city_order, (c_uz, c_ru, c_en) in enumerate(cities if city_model is not None else (), start=1):
                 _, was_created = city_model.objects.get_or_create(
                     slug=city_slug(region.slug, c_en),
                     defaults={'region': region, 'name_uz': c_uz, 'name_ru': c_ru, 'name_en': c_en,

@@ -1,14 +1,14 @@
 """
-Property.country_ref / region_ref / city_ref (Geography plan G2): the old text fields
-country / state / city are filled from the English names whenever the refs are set,
-so older code that reads the text keeps working.
+Property.country_ref / region_ref (Geography plan G2, city level removed 2026-11-10): the old text fields
+country / state / city are filled from the English names whenever the refs are set (the city copy is the name of
+the region), so older code that reads the text keeps working.
 """
 from decimal import Decimal
 
 import pytest
 from django.db.models import ProtectedError
 
-from geography.models import City
+from geography.models import Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -27,29 +27,36 @@ def prop(db):
 class TestPropertyGeographyRefs:
 
     def test_refs_are_optional(self, prop):
-        assert (prop.country_ref, prop.region_ref, prop.city_ref) == (None, None, None)
+        assert (prop.country_ref, prop.region_ref) == (None, None)
         # Without refs the text is left as it is
         prop.save()
         prop.refresh_from_db()
         assert (prop.country, prop.state, prop.city) == ('old country', 'old state', 'old city')
 
-    def test_text_fields_follow_the_refs(self, prop):
-        khiva = City.objects.get(name_en='Khiva')
-        prop.country_ref, prop.region_ref, prop.city_ref = khiva.region.country, khiva.region, khiva
+    def test_country_state_and_city_text_follow_the_refs(self, prop):
+        khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
+        prop.country_ref, prop.region_ref = khorezm.country, khorezm
         prop.save()
         prop.refresh_from_db()
-        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khiva')
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khorezm')
 
     def test_only_the_refs_that_are_set_are_copied(self, prop):
-        khiva = City.objects.get(name_en='Khiva')
-        prop.country_ref = khiva.region.country
+        khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
+        prop.country_ref = khorezm.country
         prop.save()
         prop.refresh_from_db()
         assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'old state', 'old city')
 
-    def test_a_city_in_use_cannot_be_deleted(self, prop):
-        khiva = City.objects.get(name_en='Khiva')
-        prop.city_ref = khiva
+    def test_saving_only_the_ref_fields_also_saves_the_copied_text(self, prop):
+        khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
+        prop.country_ref, prop.region_ref = khorezm.country, khorezm
+        prop.save(update_fields=['country_ref', 'region_ref'])
+        prop.refresh_from_db()
+        assert (prop.country, prop.state, prop.city) == ('Uzbekistan', 'Khorezm', 'Khorezm')
+
+    def test_a_region_in_use_cannot_be_deleted(self, prop):
+        khorezm = Region.objects.get(country__code='UZ', name_en='Khorezm')
+        prop.region_ref = khorezm
         prop.save()
         with pytest.raises(ProtectedError):
-            khiva.delete()
+            khorezm.delete()

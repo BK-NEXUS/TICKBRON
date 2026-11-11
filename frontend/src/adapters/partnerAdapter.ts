@@ -57,7 +57,6 @@ export interface CreatePropertyRequest {
   /** Geography ids (the old text fields country/state/city are read-only copies) */
   country_ref: number
   region_ref: number
-  city_ref: number
   postal_code?: string
   latitude?: number
   longitude?: number
@@ -83,7 +82,6 @@ export interface UpdatePropertyRequest {
   address_line2?: string
   country_ref?: number
   region_ref?: number
-  city_ref?: number
   postal_code?: string
   latitude?: number
   longitude?: number
@@ -403,7 +401,6 @@ export interface OwnerPromotionsPage {
 export interface AssignedPlace {
   country_ref: number | null
   region_ref: number | null
-  city_ref: number | null
 }
 
 export interface UploadPhotoRequest {

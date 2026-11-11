@@ -80,6 +80,7 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
               key={displayImages[currentIndex].photo}
               data-testid="gallery-main-image"
               className="property-gallery-photo"
+              fetchPriority="high"
               src={displayImages[currentIndex].photo}
               alt={displayImages[currentIndex].alt_text || t('gallery.alt', { name, number: currentIndex + 1 })}
             />

@@ -23,7 +23,7 @@ from django.utils import timezone
 from bookings.models import Booking, BookingItem
 from common.dates import business_today
 from geography.mapping import GeographyIndex
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from permissions.models import Role
 from properties.models import (
     Amenity, AmenityCategory, DateInventory, Property, PropertyAmenity, PropertyPhoto,
@@ -89,20 +89,20 @@ class Command(BaseCommand):
         amenities = [Amenity.objects.get_or_create(
             slug=name.lower().replace(' ', '-'), defaults={'name': name, 'category': category, 'is_searchable': True})[0]
             for name in AMENITIES]
-        geography = GeographyIndex(Country, Region, City)
-        refs = {city: geography.match(country, region, city) for country, region, city, _ in CITIES}
+        geography = GeographyIndex(Country, Region)
+        refs = {city: geography.match(country, region, city)[:2] for country, region, city, _ in CITIES}
 
         properties = []
         for n in range(count):
             country, region, city, currency = CITIES[n % len(CITIES)]
             price = Decimal(rng.randrange(40, 160, 5)) if currency == 'USD' else Decimal(rng.randrange(300, 1500, 25) * 1000)
-            country_ref, region_ref, city_ref = refs[city]
+            country_ref, region_ref = refs[city]
             properties.append(Property(
                 owner=owners[n % len(owners)], property_type=hotel_type, status='active', is_active=True,
                 max_guests=3, bedrooms=1, bathrooms=1, address_line1=f'{n + 1} {rng.choice(WORDS)} Street',
                 city=city, state=region, country=country, base_price=price, currency=currency,
                 has_wifi=True, approved_at=timezone.now(),
-                country_ref=country_ref, region_ref=region_ref, city_ref=city_ref,
+                country_ref=country_ref, region_ref=region_ref,
             ))
         Property.objects.bulk_create(properties, batch_size=500)
         created = list(Property.objects.filter(address_line1__regex=r'^\d+ \w+ Street$', owner__in=owners).order_by('id'))

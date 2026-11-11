@@ -1,6 +1,6 @@
 """
-Admins fix a property's location with geography refs (Geography plan G4):
-PATCH /api/v1/admin-panel/properties/{id}/region/ with country_ref, region_ref, city_ref.
+Admins fix a property's location with geography refs (Geography plan G4, city level removed 2026-11-10):
+PATCH /api/v1/admin-panel/properties/{id}/region/ with country_ref, region_ref.
 The old { "state": "..." } body keeps working until the frontend has moved.
 Access (staff only) is covered by test_access_matrix.py.
 """
@@ -9,7 +9,7 @@ from decimal import Decimal
 import pytest
 from rest_framework.test import APIClient
 
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -24,13 +24,9 @@ def world(db):
     xland = Country.objects.create(code='XA', name_uz='Xland', name_ru='Иксландия', name_en='Xland', currency='USD')
     east = Region.objects.create(country=xland, name_uz='Sharq', name_ru='Восток', name_en='East')
     west = Region.objects.create(country=xland, name_uz="G'arb", name_ru='Запад', name_en='West')
-    capital = City.objects.create(region=east, name_uz='Poytaxt', name_ru='Столица', name_en='Capital')
-    harbour = City.objects.create(region=west, name_uz='Port', name_ru='Порт', name_en='Harbour')
     yland = Country.objects.create(code='XB', name_uz='Yland', name_ru='Игрекландия', name_en='Yland', currency='USD')
     south = Region.objects.create(country=yland, name_uz='Janub', name_ru='Юг', name_en='South')
-    town = City.objects.create(region=south, name_uz='Shahar', name_ru='Город', name_en='Town')
-    return {'xland': xland, 'east': east, 'west': west, 'capital': capital, 'harbour': harbour,
-            'yland': yland, 'south': south, 'town': town}
+    return {'xland': xland, 'east': east, 'west': west, 'yland': yland, 'south': south}
 
 
 @pytest.fixture
@@ -50,58 +46,55 @@ def patch(user, prop_id, data):
 
 
 def refs(*rows):
-    return dict(zip(('country_ref', 'region_ref', 'city_ref'), (row.id for row in rows)))
+    return dict(zip(('country_ref', 'region_ref'), (row.id for row in rows)))
 
 
 @pytest.mark.django_db
 class TestAdminSetsGeography:
 
-    def test_sets_all_three_and_syncs_the_text_fields(self, staff, prop, world):
-        response = patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
+    def test_sets_both_and_syncs_the_text_fields(self, staff, prop, world):
+        response = patch(staff, prop.id, refs(world['xland'], world['east']))
         assert response.status_code == 200, response.data
-        assert (response.data['country_ref'], response.data['region_ref'], response.data['city_ref']) == (
-            world['xland'].id, world['east'].id, world['capital'].id)
+        assert (response.data['country_ref'], response.data['region_ref']) == (world['xland'].id, world['east'].id)
+        assert 'city_ref' not in response.data
         prop.refresh_from_db()
-        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'Capital')
+        assert (prop.country, prop.state, prop.city) == ('Xland', 'East', 'East')
 
-    def test_the_admin_can_fix_country_and_city_too(self, staff, prop, world):
-        patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
-        response = patch(staff, prop.id, refs(world['yland'], world['south'], world['town']))
+    def test_the_admin_can_fix_the_country_too(self, staff, prop, world):
+        patch(staff, prop.id, refs(world['xland'], world['east']))
+        response = patch(staff, prop.id, refs(world['yland'], world['south']))
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
-        assert (prop.country_ref_id, prop.region_ref_id, prop.city_ref_id) == (
-            world['yland'].id, world['south'].id, world['town'].id)
+        assert (prop.country_ref_id, prop.region_ref_id) == (world['yland'].id, world['south'].id)
 
-    def test_null_for_all_three_clears_the_location(self, staff, prop, world):
-        patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
-        response = patch(staff, prop.id, {'country_ref': None, 'region_ref': None, 'city_ref': None})
+    def test_null_for_both_clears_the_location(self, staff, prop, world):
+        patch(staff, prop.id, refs(world['xland'], world['east']))
+        response = patch(staff, prop.id, {'country_ref': None, 'region_ref': None})
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
-        assert (prop.country_ref_id, prop.region_ref_id, prop.city_ref_id) == (None, None, None)
+        assert (prop.country_ref_id, prop.region_ref_id, prop.state) == (None, None, None)
 
     def test_partial_null_is_400(self, staff, prop, world):
-        patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
-        assert patch(staff, prop.id, {'city_ref': None}).status_code == 400
+        patch(staff, prop.id, refs(world['xland'], world['east']))
+        assert patch(staff, prop.id, {'region_ref': None}).status_code == 400
 
     def test_mismatching_rows_are_400_and_nothing_changes(self, staff, prop, world):
-        response = patch(staff, prop.id, refs(world['xland'], world['south'], world['town']))
-        assert response.status_code == 400
-        response = patch(staff, prop.id, refs(world['xland'], world['east'], world['harbour']))
+        response = patch(staff, prop.id, refs(world['xland'], world['south']))
         assert response.status_code == 400
         prop.refresh_from_db()
         assert prop.country_ref_id is None and prop.country == 'Uzbekistan'
 
     def test_hidden_rows_cannot_be_chosen(self, staff, prop, world):
-        City.objects.filter(pk=world['capital'].pk).update(is_active=False)
-        assert patch(staff, prop.id, refs(world['xland'], world['east'], world['capital'])).status_code == 400
+        Region.objects.filter(pk=world['east'].pk).update(is_active=False)
+        assert patch(staff, prop.id, refs(world['xland'], world['east'])).status_code == 400
 
     def test_partial_body_is_merged_with_the_current_location(self, staff, prop, world):
-        patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
-        # region and city are in the same country, so the country can stay out of the body
-        response = patch(staff, prop.id, {'region_ref': world['west'].id, 'city_ref': world['harbour'].id})
+        patch(staff, prop.id, refs(world['xland'], world['east']))
+        # the new region is in the same country, so the country can stay out of the body
+        response = patch(staff, prop.id, {'region_ref': world['west'].id})
         assert response.status_code == 200, response.data
         prop.refresh_from_db()
-        assert prop.city == 'Harbour'
+        assert prop.state == 'West'
 
     def test_the_legacy_state_body_still_works(self, staff, prop):
         response = patch(staff, prop.id, {'state': '  Tashkent Region '})
@@ -109,11 +102,11 @@ class TestAdminSetsGeography:
         prop.refresh_from_db()
         assert prop.state == 'Tashkent Region'
 
-    def test_the_property_list_and_detail_show_the_refs(self, staff, prop, world):
-        patch(staff, prop.id, refs(world['xland'], world['east'], world['capital']))
+    def test_the_property_detail_shows_the_refs(self, staff, prop, world):
+        patch(staff, prop.id, refs(world['xland'], world['east']))
         client = APIClient()
         client.force_authenticate(user=staff)
         detail = client.get(f'/api/v1/admin-panel/properties/{prop.id}/')
         assert detail.status_code == 200
-        assert (detail.data['country_ref'], detail.data['region_ref'], detail.data['city_ref']) == (
-            world['xland'].id, world['east'].id, world['capital'].id)
+        assert (detail.data['country_ref'], detail.data['region_ref']) == (world['xland'].id, world['east'].id)
+        assert 'city_ref' not in detail.data

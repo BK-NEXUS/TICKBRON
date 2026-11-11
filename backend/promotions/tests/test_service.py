@@ -9,7 +9,7 @@ from promotions import service
 from promotions.models import Promotion
 from promotions.service import PromotionError
 from promotions.tests.helpers import (
-    make_hotel, make_owner, make_promotion, make_superadmin, other_country_city, uz_city)
+    make_hotel, make_owner, make_promotion, make_superadmin, other_country_region, uz_region)
 
 pytestmark = pytest.mark.django_db
 
@@ -21,7 +21,7 @@ def admin():
 
 @pytest.fixture
 def hotel():
-    return make_hotel(make_owner(), city_ref=uz_city())
+    return make_hotel(make_owner(), region_ref=uz_region())
 
 
 def create(admin, hotel, start=0, days=7, **kw):
@@ -100,16 +100,16 @@ class TestCreate:
         assert list(service.shown_now()) == []
 
     def test_scope_refs_must_agree(self, admin, hotel):
-        city = uz_city()
-        foreign = other_country_city()
+        region = uz_region()
+        foreign = other_country_region()
         with pytest.raises(PromotionError) as err:
-            create(admin, hotel, country_ref=foreign.region.country, city_ref=city)
+            create(admin, hotel, country_ref=foreign.country, region_ref=region)
         assert err.value.code == 'bad_scope'
 
     def test_consistent_scope_is_saved(self, admin, hotel):
-        city = uz_city()
-        promo = create(admin, hotel, country_ref=city.region.country, region_ref=city.region, city_ref=city)
-        assert promo.city_ref_id == city.pk
+        region = uz_region()
+        promo = create(admin, hotel, country_ref=region.country, region_ref=region)
+        assert promo.region_ref_id == region.pk
 
 
 class TestOverlap:
@@ -254,11 +254,11 @@ class TestShownNow:
         assert list(service.shown_now()) == []
 
     def test_scope_limits_to_matching_hotels(self):
-        city = uz_city()
-        inside = make_hotel(make_owner('a@example.com'), name='In', city_ref=city)
+        region = uz_region()
+        inside = make_hotel(make_owner('a@example.com'), name='In', region_ref=region)
         outside = make_hotel(make_owner('b@example.com'), name='Out')
-        scoped = make_promotion(inside, city_ref=city)
-        make_promotion(outside, city_ref=city)
+        scoped = make_promotion(inside, region_ref=region)
+        make_promotion(outside, region_ref=region)
         assert list(service.shown_now()) == [scoped]
 
     def test_explicit_date_argument(self, hotel):

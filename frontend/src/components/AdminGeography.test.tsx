@@ -16,11 +16,8 @@ const COUNTRIES = [
   { id: 2, code: 'KZ', currency: 'KZT', ...names('Kazakhstan', 'Qozogʻiston', 'Казахстан'), is_active: false, sort_order: 1, region_count: 0, hotel_count: 0 },
 ]
 const REGIONS = [
-  { id: 10, country: 1, slug: 'tashkent', ...names('Tashkent', 'Toshkent', 'Ташкент'), is_active: true, sort_order: 0, city_count: 1, hotel_count: 3 },
-  { id: 11, country: 1, slug: 'samarkand', ...names('Samarkand', 'Samarqand', 'Самарканд'), is_active: true, sort_order: 1, city_count: 0, hotel_count: 0 },
-]
-const CITIES = [
-  { id: 100, region: 10, slug: 'chilanzar', ...names('Chilanzar', 'Chilonzor', 'Чиланзар'), is_active: true, sort_order: 0, hotel_count: 2 },
+  { id: 10, country: 1, slug: 'tashkent', ...names('Tashkent', 'Toshkent', 'Ташкент'), is_active: true, sort_order: 0, hotel_count: 3 },
+  { id: 11, country: 1, slug: 'samarkand', ...names('Samarkand', 'Samarqand', 'Самарканд'), is_active: true, sort_order: 1, hotel_count: 0 },
 ]
 /** A new country or region needs a picture (plan PLAN_GEO_IMAGES.md) */
 const PICTURE = new File(['x'], 'picture.png', { type: 'image/png' })
@@ -39,7 +36,7 @@ describe('AdminGeography', () => {
     localStorage.clear()
     vi.resetAllMocks()
     api.list.mockImplementation((async (kind: string) =>
-      kind === 'countries' ? page(COUNTRIES) : kind === 'regions' ? page(REGIONS) : page(CITIES)) as never)
+      kind === 'countries' ? page(COUNTRIES) : page(REGIONS)) as never)
     api.update.mockResolvedValue({ data: {} as never, error: null })
     api.create.mockResolvedValue({ data: {} as never, error: null })
     api.reorder.mockResolvedValue({ data: {}, error: null })
@@ -65,19 +62,14 @@ describe('AdminGeography', () => {
     expect(labels).toEqual(headers)
   })
 
-  it('opens a country to see its regions, then a region to see its cities, with a way back', async () => {
+  it('opens a country to see its regions, which are the last level, with a way back', async () => {
     renderScreen()
     fireEvent.click(await screen.findByRole('button', { name: 'Open Uzbekistan' }))
     expect(await screen.findByText('Tashkent')).toBeInTheDocument()
     expect(api.list).toHaveBeenLastCalledWith('regions', { search: '', country: 1 })
+    expect(screen.queryByRole('button', { name: /^Open Tashkent/ })).not.toBeInTheDocument()
+    expect(api.list).not.toHaveBeenCalledWith('cities', expect.anything())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Tashkent' }))
-    expect(await screen.findByText('Chilanzar')).toBeInTheDocument()
-    expect(api.list).toHaveBeenLastCalledWith('cities', { search: '', region: 10 })
-    expect(screen.queryByRole('button', { name: /^Open Chilanzar/ })).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Uzbekistan' }))
-    expect(await screen.findByText('Samarkand')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'All countries' }))
     expect(await screen.findByText('Kazakhstan')).toBeInTheDocument()
   })

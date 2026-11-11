@@ -15,7 +15,7 @@ from decimal import Decimal
 import pytest
 
 from bookings.models import Booking
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType
 from users.models import User
@@ -45,10 +45,9 @@ def status_world(db):
     def hotel(owner, name, country_code, region_en, city_en, currency='USD'):
         country = Country.objects.get(code=country_code)
         region = Region.objects.get(country=country, name_en=region_en) if region_en else None
-        city = City.objects.get(region=region, name_en=city_en) if city_en and region else None
         prop = Property.objects.create(
             owner=owner, property_type=hotel_type, status='active', max_guests=2,
-            address_line1=f'1 {name} Street', country_ref=country, region_ref=region, city_ref=city,
+            address_line1=f'1 {name} Street', country_ref=country, region_ref=region,
             city=city_en or '', base_price=Decimal('50.00'), currency=currency,
         )
         PropertyTranslation.objects.create(property=prop, language='en', name=name)
