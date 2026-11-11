@@ -3531,3 +3531,9 @@ master
 - Cache: `common/public_cache.py` already covers the public pages; nothing more added (quotes and counters must stay live).
 - Libraries: every backend and frontend dependency is used (checked by import); `@vitest/ui` is only for `vitest --ui` by hand.
 - Found, not fixed: old JPEG/PNG files are not converted to WebP (`shrink_photos` keeps their format because the file name stays).
+
+## SMS removed, e-mail only (2026-11-11)
+- The owner decided: no SMS from the site. The reply of the support team reaches the user by **e-mail** (this already existed in `chat/notify.py` and did not depend on any consent). Removed: `common/sms.py`, the SMS part of `chat/notify.py`, the model `SmsDelivery`, the column `users.sms_notifications`, the `SMS_*` settings and env examples, the SMS box in the profile (page, adapter and context types, i18n keys `profile.sms*`, CSS of the box).
+- Migrations (new, reversible, tested in `chat/tests/test_no_sms.py`): `chat/0003_remove_sms`, `users/0013_remove_sms`. Take a `pg_dump` before migrating, as always.
+- Deleted tests (they tested the removed feature): `common/tests/test_sms.py`, `chat/tests/test_sms_notice.py`, `users/tests/test_sms_opt_in.py`, the SMS block of `ProfilePage.test.tsx` and the SMS-box check of `designRound.test.ts`. New: `chat/tests/test_no_sms.py`, and a "no SMS" block in `ProfilePage.test.tsx`. `chat/tests/test_notify.py` (the e-mail notices) is unchanged.
+- Found, not fixed: the notification flag `sent_via_sms` (always `false`) and the legacy `phone_number` column are still there.

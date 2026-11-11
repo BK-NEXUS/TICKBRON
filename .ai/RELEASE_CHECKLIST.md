@@ -357,9 +357,9 @@ E2E'ni qalay isletiw (`frontend/playwright.config.ts`): backend `seed_demo` hám
 
 ## Sońǵı qosımshalar (2026-11)
 
-- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** 2026-11'de qosılǵan migration'lar: `users/0012` hám `chat/0002` (SMS roziligi hám `SmsDelivery`, qosımsha), `partner/0004`, `promotions/0004`, `properties/0017`, `geography/0005`, `admin_panel/0019` (shahar pogʻonasın alıp taslaw: `geo_cities` kestesi hám `city_ref` baǵanaları óshedi, qaytarıw tek dúzilistı tiklaydı).
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** 2026-11'de qosılǵan migration'lar: `users/0012` hám `chat/0002` (SMS roziligi hám `SmsDelivery`, qosımsha) hám olardı alıp taslaytuǵın `users/0013` hám `chat/0003` (SMS joq, qaytarıladı), `partner/0004`, `promotions/0004`, `properties/0017`, `geography/0005`, `admin_panel/0019` (shahar pogʻonasın alıp taslaw: `geo_cities` kestesi hám `city_ref` baǵanaları óshedi, qaytarıw tek dúzilistı tiklaydı).
 - [ ] Geografiya: tek mámleket hám region. Mehmanxanada shahar yamasa tuman maydanı joq (`PLAN_GEO_REMOVE_CITY.md`).
-- [ ] SMS: `SMS_ENABLED=False` (standart), `SMS_BACKEND=console`. Haqıyqıy provayder ulanǵanda: `SMS_BACKEND`, token (tek `.env`'de), limitler `SMS_PER_USER_PER_DAY`, `SMS_MIN_GAP_MINUTES`, `SMS_DAILY_LIMIT`. Paydalanıwshı tek profilinde rozilik bergennen keyin SMS aladı.
+- [ ] SMS joq: sayt SMS jibermeydi, qollap-quwatlaw juwabı paydalanıwshıǵa tek e-mail menen baradı (`SMS_*` sazlamaları alıp taslandı).
 - [ ] Beat: kúnine bir ret `common.tasks.clear_expired_sessions` (03:30 Asia/Tashkent) ótken kirisiw sessiyaların óshiredi; onsız `django_session` kestesi toqtawsız ósedi.
 - [ ] Docker log'lar hár xızmet ushın eń kóp 3 x 10 MB (`docker-compose.yml`).
 - [ ] Android hám PWA: `/manifest.webmanifest`, `/sw.js`, `/.well-known/assetlinks.json` óz mazmunın qaytaradı; Play'dan "App signing key" SHA-256 `assetlinks.json`'ge qosıladı (`.ai/ANDROID.md`).

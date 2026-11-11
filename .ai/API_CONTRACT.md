@@ -1379,11 +1379,11 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 - The shape is judged as the picture is shown (the camera's turn flag is applied first).
 - A refused picture answers 400 with the text in the page language (uz, ru, en): the picture's size, the smallest size, the recommended size and the types. Hotel and room photos: `{"photo": ["..."]}`; country and region: `error.details.image`; ad banner: `{"error": "...", "code": "bad_image"}`.
 
-## SMS consent: `sms_notifications` (plan PLAN_SMS_CHAT.md)
+## SMS removed (2026-11-11, plan PLAN_SMS_CHAT.md is closed)
 
-- `GET /api/v1/auth/me/` and the answer of `PATCH /api/v1/auth/me/update/` now carry `sms_notifications` (boolean, default `false`).
-- `PATCH /api/v1/auth/me/update/` accepts `sms_notifications` (boolean; anything else is 400). A user changes only their own value. There is no other way to change it.
-- Meaning: when the support team answers in the chat and the user has not read an earlier answer, the server may text the user's `phone_number` one fixed line with a link to `/support` (never the message). It happens only when `SMS_ENABLED` is on, the account is active, has a number and the value is `true`, and the limits allow (see HANDOFF "SMS when the team answers").
+- The site sends no SMS. `sms_notifications` is gone from `GET /api/v1/auth/me/` and from `PATCH /api/v1/auth/me/update/` (a sent `sms_notifications` is ignored like any unknown field). The table `chat_sms_deliveries` and the column `users.sms_notifications` are dropped (migrations `chat/0003_remove_sms`, `users/0013_remove_sms`, reversible: going back brings an empty table and `false` values).
+- When the support team answers and the user has not read an earlier answer, the user gets **one e-mail** with a link to `/support` (never the message). That did not change.
+- Still there, unused: `phone_number` (stored only) and the notification flag `sent_via_sms` (always `false`).
 
 ## Geography: the city level is removed (2026-11-10, plan PLAN_GEO_REMOVE_CITY.md)
 

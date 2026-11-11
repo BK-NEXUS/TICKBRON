@@ -878,24 +878,3 @@
   font-size: 1.3em;
   line-height: 1;
 }
-
-/* The SMS consent box of the profile form: a 44px tap target, the hint below it in the secondary text colour */
-.profile-form-checkbox {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  min-height: 44px;
-  cursor: pointer;
-}
-
-.profile-form-checkbox input {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.profile-form-hint {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}

@@ -8,7 +8,6 @@ Hámmesi master'ge birlestirilgen: input qaǵıydaları, telefon nomeri, naqd br
 ## 1. Iyesi usınıwı kerek
 - Hosting: server, domen (`tickbron.com` satıp alınǵan), TLS sertifikat, Caddy yamasa nginx (`NUM_PROXIES`, `USE_X_FORWARDED_PROTO`), Postgres, Redis, Celery worker HAM beat.
 - E-mail SMTP (`EMAIL_*`, `FRONTEND_URL`): parol tiklew hám kirisiw kodları ushın (mail islemese, hesh kim dizimnen óte almaydı). Telegram bot token + chat id alert'ler ushın.
-- SMS provayder (Eskiz.uz, Play Mobile yamasa basqa): akkaunt, token, tastıyıqlanǵan jiberiwshi atı. Bul bolmaǵansha SMS isleymeydi.
 - Qararlar: mehmanlar mehmanxanada naqd tólegeni ushın komissiya qalay alınadı; logo fayllar.
 - Tekseriwler: yurist (kelip jetiw qaǵıydası ("sol waqıtta kelmeseńiz taǵı 2 saat kútemiz, sonda bron biykar etiledi"), "Reklama", paydalanıw shártleri, maxfiylik siyasatı); barlıq uz/ru/qaraqalpaq tekstler boyınsha ana tilinde sóylewshi.
 - 2026-10-23 qarar etildi: mehmanda eń kóp 2 kelesi bron boladı hám olardıń sanaları hesh qashan kesilispeydi; mehmanxana bugin hám erteńgi kelip jetiw dizimin tolıq telefon menen kóredi (`bookings/views.py` ishindegi `MAX_UPCOMING_BOOKINGS_PER_GUEST`).
