@@ -587,48 +587,23 @@ describe('ProfilePage', () => {
   })
 })
 
-describe('ProfilePage: SMS when the team answers', () => {
-  const signedInAs = (user: typeof mockUser & { sms_notifications?: boolean }, updateProfile = vi.fn()) => {
-    mockUseAuth.mockReturnValue({ user, isAuthenticated: true, isLoading: false, updateProfile })
-    return updateProfile
-  }
-
+describe('ProfilePage: no SMS', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseAuth.mockReturnValue({ user: mockUser, isAuthenticated: true, isLoading: false, updateProfile: vi.fn() })
   })
 
-  it('shows that it is off when the user has not agreed', () => {
-    signedInAs(mockUser)
+  it('shows no SMS setting and the edit form has no SMS box', () => {
     renderWithRouter(<ProfilePage />)
-    expect(screen.getByText('SMS when the team answers')).toBeInTheDocument()
-    expect(screen.getByText('Off')).toBeInTheDocument()
-  })
-
-  it('shows that it is on when the user agreed', () => {
-    signedInAs({ ...mockUser, sms_notifications: true })
-    renderWithRouter(<ProfilePage />)
-    expect(screen.getByText('On')).toBeInTheDocument()
-  })
-
-  it('offers an unticked box with a hint in the edit form', () => {
-    signedInAs(mockUser)
-    renderWithRouter(<ProfilePage />)
+    expect(screen.queryByText(/SMS/)).toBeNull()
     fireEvent.click(screen.getByText('Edit Profile'))
-    expect(screen.getByRole('checkbox', { name: 'SMS when the team answers' })).not.toBeChecked()
-    expect(screen.getByText(/never contains the message/)).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(screen.queryByText(/SMS/)).toBeNull()
   })
 
-  it('sends the choice when it is changed', async () => {
-    const updateProfile = signedInAs(mockUser, vi.fn().mockResolvedValue({ success: true, user: mockUser }))
-    renderWithRouter(<ProfilePage />)
-    fireEvent.click(screen.getByText('Edit Profile'))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'SMS when the team answers' }))
-    fireEvent.click(screen.getByText('Save Changes'))
-    await waitFor(() => expect(updateProfile).toHaveBeenCalledWith(expect.objectContaining({ sms_notifications: true })))
-  })
-
-  it('does not send the choice when it was left as it was', async () => {
-    const updateProfile = signedInAs(mockUser, vi.fn().mockResolvedValue({ success: true, user: mockUser }))
+  it('never sends an SMS choice when saving', async () => {
+    const updateProfile = vi.fn().mockResolvedValue({ success: true, user: mockUser })
+    mockUseAuth.mockReturnValue({ user: mockUser, isAuthenticated: true, isLoading: false, updateProfile })
     renderWithRouter(<ProfilePage />)
     fireEvent.click(screen.getByText('Edit Profile'))
     fireEvent.click(screen.getByText('Save Changes'))
