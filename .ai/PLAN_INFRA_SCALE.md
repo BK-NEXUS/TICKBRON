@@ -1,7 +1,14 @@
 # PLAN_INFRA_SCALE: backup, server almastırıw, S3 hám load balancer
 
-Jaǵdayı: **PLAN, iyesiniń tastıyıǵın kútip atır.** Tastıyıq kelmeyinshe kod ózgertilmeydi (bul item database hám qáwipsizlikke tiyisli).
+Jaǵdayı: **A hám B fazaları TASTIYIQLANǴAN (2026-11-12).** C-F tastıyıq kútedi.
 Sána: 2026-11-11. Dálil: `docker-compose.yml`, `deploy/backup.sh`, `deploy/Caddyfile`, `backend/gunicorn.conf.py`, `.ai/PERFORMANCE_REPORT.md`.
+
+## 0. Iyesiniń qararları (2026-11-12)
+- Server: **AWS, `eu-central-1` (Frankfurt)**, bir `t3.medium`; load balancer **házir joq**. Jergilikli huqıqıy qarar (maǵlıwmat qayerde saqlanıwı) yurist penen anıqlanadı, kerek bolsa kóshiriledi (B fazası).
+- Backup ombarı: AWS S3, **basqa region** (`eu-west-1` yamasa `eu-north-1`), shifrlanǵan, bólek bucket.
+- Saqlaw: **14 kún + 8 hápte + 6 ay** (sazlanadı: `KEEP_DAILY`, `KEEP_WEEKLY`, `KEEP_MONTHLY`).
+- Qosımsha: kúndelik toliq nusqadan tısqarı **úzliksiz arxivlew** (PostgreSQL WAL, `pgBackRest` yamasa `WAL-G`): hár ózgeris S3 ke barıp turadı, qálegen sekundqa qaytıw múmkin. Bul A2 bólegi, haqıyqıy serverde sınap kórip qosıladı.
+- Orınlanıwı: **A1** (kúndelik shifrlanǵan sırtqı nusqa, saqlaw qaǵıydası, Telegram eskertiw, tekseriw skripti) hám **B** (kóshiriw qollanbası) házir; A2 (WAL) serverden keyin.
 
 ## 1. Házirgi jaǵday (tekserilgen)
 

@@ -81,7 +81,7 @@ Onıń nusqasın database backup'larınan bólek saqlań: onsız ózi qoyılǵan
 
 `.env` parollardı saqlaydı: ol git'te joq, chat yamasa e-mail arqalı jibermeń. Ilova náshar yamasa joq sazlama menen iske túspeydi hám qaysısın aytadı (`docker compose logs migrate`).
 
-SMS (`SMS_ENABLED=False`) standart halda óshirilgen: jaqın arada haqıyqıy SMS provayder ulanǵanǵa shekem usılay qaldırıń (`.ai/PLAN_SMS_CHAT.md`).
+Sayt SMS jibermeydi: qollap-quwatlaw juwabı paydalanıwshıǵa tek e-mail menen baradı (SMS 2026-11-11 de alıp taslandı).
 
 ## 5-qádem. Iske túsiriw
 
@@ -143,7 +143,23 @@ crontab -e
 30 3 * * *  sh /home/<user>/tickbron/deploy/backup.sh >> /home/<user>/backup.log 2>&1
 ```
 
-Sol server'degi backup server menen birge joǵaladı: `backups/` papkasın hár kúni basqa mashinaǵa yamasa bulut diskke de kóshirip turıń.
+Sol server'degi backup server menen birge joǵaladı, sol sebepli skript **sırtqı nusqa** da jiberedi (shifrlanǵan, `restic` penen, AWS S3 ke, server turǵan regionnan basqa regionda):
+
+```
+sudo apt install restic
+cp deploy/offsite.env.example deploy/offsite.env
+chmod 600 deploy/offsite.env
+nano deploy/offsite.env            # bucket, RESTIC_PASSWORD, AWS kilt'ler, KEEP_*, Telegram
+set -a; . deploy/offsite.env; set +a; restic init      # tek birinshi ret
+sh deploy/backup.sh                # sınap kóriw: "Offsite copy done" shıǵıwı kerek
+```
+
+- `deploy/offsite.env` git'te joq. `RESTIC_PASSWORD` ti **eki jerde** saqlań (parol menejeri hám qaǵazda): onsız nusqalardı hesh kim tiklep almaydı.
+- AWS user tek usı bucket'ke **jazıw** huqıqına iye bolsın (óshiriw huqıqısız); bucket private, versioning yoq.
+- Saqlaw: 14 kún + 8 hápte + 6 ay (`KEEP_DAILY`, `KEEP_WEEKLY`, `KEEP_MONTHLY`).
+- Nusqa sátsiz bolsa Telegram'ǵa xabar baradı (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`); local nusqa saqlanıp qaladı.
+- **Aydıń bir ret tekseriń** nusqa haqıyqattan tiklenetuǵının: `sh deploy/verify_backup.sh` (repository tekseriledi, eń jańa nusqa waqtınsha papkaǵa tiklenedi, súwret arxivi hám database dump oqıladı).
+- Jaqın keleshekte: kúndelik toliq nusqadan tısqarı úzliksiz arxivlew (PostgreSQL WAL) qosıladı, `PLAN_INFRA_SCALE.md` A2 bólegi.
 
 ### Tiklew (Restore)
 
