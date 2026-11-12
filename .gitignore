@@ -9,3 +9,5 @@ backups/
 dump.rdb
 *.rdb
 node_modules/
+
+deploy/offsite.env

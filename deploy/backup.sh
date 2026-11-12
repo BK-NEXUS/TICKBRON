@@ -2,8 +2,9 @@
 # Backup of the Docker setup: the database and the uploaded photos, into ./backups/ (older than 14 days are deleted).
 # Run it from anywhere on the server:   sh deploy/backup.sh
 # Every night (the owner's server, `crontab -e`):   30 3 * * *  sh /home/tickbron/tickbron/deploy/backup.sh
-# Copy ./backups/ to ANOTHER machine or a cloud disk as well: a backup on the same server dies with the server.
-# Getting a backup back: .ai/DEPLOY_DOCKER.md ("Restore").
+# A backup on the same server dies with the server, so the script also sends an encrypted copy to a place outside it
+# when deploy/offsite.env exists (see deploy/offsite.env.example). Without that file only the local copy is made.
+# Getting a backup back: .ai/DEPLOY_DOCKER.md ("Restore"). Moving to another server: .ai/MOVE_SERVER.md.
 set -eu
 # A database dump holds personal data: only the owner may read what this script writes
 umask 077
@@ -14,9 +15,30 @@ db="backups/db-$stamp.dump"
 media="backups/media-$stamp.tar.gz"
 mkdir -p backups
 
+# The optional settings of the outside copy and of the failure notice (plain KEY=value lines, written by the owner)
+if [ -f deploy/offsite.env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . deploy/offsite.env
+  set +a
+fi
+
+# Tells the team on Telegram when a night's backup failed. The token goes to curl on standard input, never on the
+# command line (where any user of the server could read it). A failing notice must not hide the real failure.
+tell_team() {
+  [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_ALERT_CHAT_ID:-}" ] || return 0
+  printf 'url = "https://api.telegram.org/bot%s/sendMessage"\ndata-urlencode = "chat_id=%s"\ndata-urlencode = "text=TICKBRON: the nightly backup failed (%s). Check the server."\n' \
+    "$TELEGRAM_BOT_TOKEN" "$TELEGRAM_ALERT_CHAT_ID" "$(hostname)" | curl -fsS -m 20 --config - >/dev/null 2>&1 || true
+}
+
 # Whatever way the script ends, a half-written backup must not stay and look like a good one
-done_ok=0
-trap '[ "$done_ok" = 1 ] || rm -f "$db" "$media" "backups/media-$stamp.tar"' EXIT
+local_ok=0
+all_ok=0
+finish() {
+  [ "$local_ok" = 1 ] || rm -f "$db" "$media" "backups/media-$stamp.tar"
+  [ "$all_ok" = 1 ] || tell_team
+}
+trap finish EXIT
 
 # The database: one file that pg_restore can read
 docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$db"
@@ -33,8 +55,23 @@ for file in "$db" "$media"; do
   fi
 done
 
-# Only a finished backup may delete the old ones
-done_ok=1
+# Only a finished local backup may delete the old ones
+local_ok=1
 find backups -name 'db-*.dump' -mtime +14 -delete
 find backups -name 'media-*.tar.gz' -mtime +14 -delete
 echo "Backup done: $db and $media"
+
+# The copy outside the server: encrypted and de-duplicated by restic, old copies thinned out as 14 daily, 8 weekly and
+# 6 monthly (change KEEP_* in deploy/offsite.env). If this fails the local backup stays, but the run fails loudly.
+if [ -n "${RESTIC_REPOSITORY:-}" ]; then
+  if ! restic backup "$db" "$media" --tag tickbron >/dev/null; then
+    echo "Backup failed: the offsite copy could not be made" >&2
+    exit 1
+  fi
+  if ! restic forget --keep-daily "${KEEP_DAILY:-14}" --keep-weekly "${KEEP_WEEKLY:-8}" --keep-monthly "${KEEP_MONTHLY:-6}" --prune >/dev/null; then
+    echo "Backup failed: the offsite copy was made but old copies could not be removed" >&2
+    exit 1
+  fi
+  echo "Offsite copy done"
+fi
+all_ok=1

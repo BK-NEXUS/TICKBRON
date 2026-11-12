@@ -3537,3 +3537,11 @@ master
 - Migrations (new, reversible, tested in `chat/tests/test_no_sms.py`): `chat/0003_remove_sms`, `users/0013_remove_sms`. Take a `pg_dump` before migrating, as always.
 - Deleted tests (they tested the removed feature): `common/tests/test_sms.py`, `chat/tests/test_sms_notice.py`, `users/tests/test_sms_opt_in.py`, the SMS block of `ProfilePage.test.tsx` and the SMS-box check of `designRound.test.ts`. New: `chat/tests/test_no_sms.py`, and a "no SMS" block in `ProfilePage.test.tsx`. `chat/tests/test_notify.py` (the e-mail notices) is unchanged.
 - Found, not fixed: the notification flag `sent_via_sms` (always `false`) and the legacy `phone_number` column are still there.
+
+## Backup outside the server and moving guide (2026-11-12, plan PLAN_INFRA_SCALE.md phases A1 and B)
+- Owner decisions: AWS `eu-central-1`, one `t3.medium`, no load balancer for now; backups to an S3 bucket in another region, encrypted, kept 14 daily + 8 weekly + 6 monthly.
+- `deploy/backup.sh`: after the local dump and photo archive, with `deploy/offsite.env` present it runs `restic backup` and `restic forget --keep-daily/--keep-weekly/--keep-monthly --prune`. A failed night exits non-zero, keeps the local files and tells the team on Telegram (token passed to curl on standard input, never on the command line). Without the file nothing changes.
+- New: `deploy/verify_backup.sh` (restic check, restore of the newest copy, gzip test, `pg_restore --list`), `deploy/offsite.env.example`, `.ai/MOVE_SERVER.md` (moving to another server, step by step, with the way back); `deploy/offsite.env` is in `.gitignore`. `.ai/DEPLOY_DOCKER.md` backup section updated (it also no longer mentions SMS).
+- Tests: `common/tests/test_backup_offsite.py`, `common/tests/test_backup_verify.py` (fake docker, restic and curl). `test_backup_script.py` is unchanged.
+- Not done yet (on purpose): A2, continuous archiving of the database (WAL, `pgBackRest` or `WAL-G`) because it needs a real server to test; phases C to F wait for the owner.
+- Needs the owner: the AWS account and buckets, the write-only AWS user, `RESTIC_PASSWORD` kept in two places, a lawyer's answer on where personal data may be stored.
