@@ -399,11 +399,8 @@ msgstr "Родительский элемент изменить нельзя."
 msgid "This country already has a region with this name."
 msgstr "В этой стране уже есть регион с таким названием."
 
-msgid "This region already has a city with this name."
-msgstr "В этом регионе уже есть город с таким названием."
-
-msgid "This row is in use (it has regions, cities or properties). Hide it instead."
-msgstr "Эта запись используется (у неё есть регионы, города или объекты). Скройте её вместо удаления."
+msgid "This row is in use (it has regions or properties). Hide it instead."
+msgstr "Эта запись используется (у неё есть регионы или объекты). Скройте её вместо удаления."
 
 msgid "Exchange rate not found"
 msgstr "Курс валюты не найден"

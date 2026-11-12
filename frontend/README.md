@@ -1,146 +1,122 @@
 # TICKBRON Frontend
 
-React + TypeScript + Vite frontend application for TICKBRON short-term rental platform.
+TICKBRON mehmanxana bronlaw platforması ushın React + TypeScript + Vite frontend ilovası.
 
 ## Tech Stack
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **Vitest** - Testing framework
-- **Testing Library** - Component testing
+- **React 19** - UI kitapxanası
+- **TypeScript** - Tip qáwipsizligi
+- **Vite** - Build quralı hám dev server
+- **React Router** - Client tárepindegi routing
+- **Vitest** - Testlew framework'i
+- **Testing Library** - Komponentlerdi testlew
+- **Leaflet** - Kartalar
 
-## Prerequisites
+## Aldın ala talaplar (Prerequisites)
 
-- Node.js 18+ 
-- npm, yarn, or pnpm
+- Node.js 22 (18+ de isleydi)
+- npm
 
-## Installation
+## Ornatıw (Installation)
 
 ```bash
-# Install dependencies
-npm install
-# or
-yarn install
-# or
-pnpm install
+npm ci
 ```
 
 ## Development
 
 ```bash
-# Start development server
+# Development server'di iske túsiriw
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Ilova `http://localhost:3000` mánzilinde ashıladı. `/api` sorawları backend'ke (`http://localhost:8000`) proxy arqalı jiberiledi, sonıń ushın `VITE_API_BASE_URL` bos qaldırıladı (cookie hám CSRF bir domen menen isleydi).
 
 ## Build
 
 ```bash
-# Build for production
 npm run build
-# or
-yarn build
-# or
-pnpm build
 ```
+Build aldın `tsc` penen tip tekseredi.
 
-## Testing
+## Testlew
 
 ```bash
-# Run tests
+# Testlerdi isletiw
 npm run test
-# or
-yarn test
-# or
-pnpm test
 
-# Run tests with UI
+# UI menen
 npm run test:ui
-# or
-yarn test:ui
-# or
-pnpm test:ui
 
-# Run tests with coverage
+# Coverage menen
 npm run test:coverage
-# or
-yarn test:coverage
-# or
-pnpm test:coverage
 ```
+Windows'ta test worker'ler qulap qalsa: `npx vitest run --maxWorkers=6`.
 
-## Linting
+## Lint
 
 ```bash
-# Run ESLint
 npm run lint
-# or
-yarn lint
-# or
-pnpm lint
 ```
 
-## Project Structure
+## Proekt dúzilisi (Project Structure)
 
 ```
 frontend/
-├── public/              # Static assets
+├── public/              # Statik fayllar (logo, manifest, service worker, assetlinks)
 ├── src/
-│   ├── components/      # Reusable UI components
-│   ├── layout/          # Layout components
-│   ├── pages/           # Page components
-│   ├── styles/          # Global styles and CSS
-│   ├── types/           # TypeScript type definitions
-│   ├── utils/           # Utility functions
-│   ├── test/            # Test configuration
-│   ├── App.tsx          # Root component
-│   └── main.tsx         # Application entry point
-├── index.html           # HTML template
-├── package.json         # Dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-├── vite.config.ts       # Vite configuration
-└── README.md            # This file
+│   ├── adapters/        # Backend API menen baylanıs
+│   ├── components/      # Qayta paydalanılatuǵın UI komponentler
+│   ├── i18n/            # Awdarmalar (uz, ru, en)
+│   ├── layout/          # Layout komponentler
+│   ├── pages/           # Bet komponentler
+│   ├── styles/          # Global stiller hám CSS
+│   ├── types/           # TypeScript tip anıqlamaları
+│   ├── utils/           # Járdemshi funkciyalar
+│   ├── test/            # Test sazlamaları
+│   ├── App.tsx          # Root komponent
+│   └── main.tsx         # Ilovanıń kirisiw noqatı
+├── index.html           # HTML úlgisi
+├── package.json         # Dependency'ler hám script'ler
+├── tsconfig.json        # TypeScript sazlamaları
+├── vite.config.ts       # Vite sazlamaları
+└── README.md            # Usı fayl
 ```
 
-## Environment Variables
+## Environment variable'lar
 
-Create a `.env` file based on `.env.example`:
+`.env.example` tiykarında `.env` jaratıń (kóbinese kerek emes):
 
 ```bash
 cp .env.example .env
 ```
 
-## API Integration
+## API menen integraciya
 
-The frontend is configured to proxy API requests to the backend:
+Frontend API sorawların backend'ke proxy etedi:
 
-- Development: `http://localhost:8000/api/v1`
-- Production: Configured via `VITE_API_BASE_URL`
+- Development: Vite proxy arqalı `http://localhost:8000/api/v1`
+- Production: `VITE_API_BASE_URL` arqalı sazlanadı (Docker build'te saytıń óz domeni)
 
-Note: API endpoints are not yet implemented. The frontend structure is ready for integration when backend APIs become available.
+Barlıq API contract `.ai/API_CONTRACT.md` faylında jazılǵan.
 
-## Security Considerations
+## Qáwipsizlik (Security Considerations)
 
-- Session-based authentication with secure cookies (HttpOnly, Secure, SameSite)
-- CSRF protection enabled
-- No JWT storage in localStorage
-- Environment variables for sensitive configuration
-- Content Security Policy headers (to be configured in production)
+- Session tiykarındaǵı authentication, qáwipsiz cookie'ler menen (HttpOnly, Secure, SameSite)
+- CSRF qorǵawı qosılǵan
+- localStorage'de JWT saqlanbaydı
+- Sezimtal sazlamalar environment variable'larda
+- Content Security Policy header'leri server tárepinen beriledi (`deploy/Caddyfile`, `deploy/nginx.conf.example`)
 
-## Browser Support
+## Brauzerlerdi qollap-quwatlaw (Browser Support)
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+- Chrome (sońǵı)
+- Firefox (sońǵı)
+- Safari (sońǵı)
+- Edge (sońǵı)
 
-## Contributing
+Ilova Android'te Chrome arqalı ornatılatuǵın PWA retinde de isleydi (`public/manifest.webmanifest`).
 
-This is part of the TICKBRON project. Follow the checkpoint protocol in `.ai/` for development workflow.
+## Qatnasıw (Contributing)
+
+Bul TICKBRON proektiniń bir bólegi. Jumıs tártibi ushın `.ai/` papkasındaǵı `README.md` faylın oqıń.

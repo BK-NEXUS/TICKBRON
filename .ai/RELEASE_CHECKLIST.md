@@ -1,180 +1,182 @@
 # TICKBRON Backend Release Checklist
 
+Esletpe: bul dizim tariyxıy jazıwlardı (checkpoint'ler, R-itemler) saqlaydı. Eń sońǵı jaǵday hám iske túsiriw tártibi ushın `.ai/LAUNCH_DAY.md`, `.ai/LAUNCH_TODO.md` hám `.ai/DEPLOY_DOCKER.md` qarań. Eń tómende "Sońǵı qosımshalar (2026-11)" bólimi bar.
+
 ## Backend Main Plan (Checkpoints 1-20)
-**Status:** READY
-**Date:** 2026-09-21
-**Owner:** Kolya
+**Jaǵday:** TAYAR
+**Sana:** 2026-09-21
+**Iyesi:** Kolya
 
-## Test Results
-- **Full Test Suite:** 568 tests passed, 2 skipped
-- **Test Coverage:** All core functionality tested
-- **Test Execution Time:** ~2:49 minutes
-- **Test Environment:** Django 4.2.7, Python 3.13.1, pytest 9.1.1
+## Test nátiyjeleri
+- **Tolıq test suite:** 568 test ótti, 2 ótkizip jiberildi
+- **Test qamtıwı:** Barlıq tiykarǵı funkciyalar testlengen
+- **Test isletiw waqtı:** ~2:49 minut
+- **Test ortalıǵı:** Django 4.2.7, Python 3.13.1, pytest 9.1.1
 
-## Migration Status
-- **Fresh Database Migration:** ✅ CLEAN
-- **Migration Files Applied:** 27 migrations across 12 apps
-- **Latest Migration:** payments.0002_alter_paymentauditlog_action
-- **Missing Migrations:** None
-- **Data Loss Risk:** None (only added new choice to existing field)
+## Migration jaǵdayı
+- **Taza database migration:** ✅ TAZA
+- **Qollanılǵan migration fayllar:** 12 app boyınsha 27 migration
+- **Sońǵı migration:** payments.0002_alter_paymentauditlog_action
+- **Joq migration'lar:** Joq
+- **Maǵlıwmat joǵalıw qáwipi:** Joq (barlıq maydanǵa tek jańa tańlaw qosıldı)
 
-## OpenAPI Schema Status
-- **Generation:** ✅ SUCCESSFUL
-- **Output File:** schema.yml
-- **Warnings:** 43 (17 unique) - non-critical type hints and serializer warnings
-- **Errors:** 68 (17 unique) - graceful fallback for APIViews without serializers
-- **Coverage:** All implemented endpoints documented
+## OpenAPI Schema jaǵdayı
+- **Jaratıw:** ✅ TABISLI
+- **Shıǵıs fayl:** schema.yml
+- **Eskertiwler:** 43 (17 biregey) - kritik emes tip hám serializer eskertiwleri
+- **Qátelikler:** 68 (17 biregey) - serializer'siz APIView'ler ushın tınısh almastırıw
+- **Qamtıw:** Barlıq iske asırılǵan endpoint'ler hújjetlestirilgen
 
-## Concurrency Check
-- **Booking Engine Tests:** ✅ 24 tests passed
-- **Double-Booking Prevention:** ✅ Confirmed
-- **Transaction Safety:** ✅ Confirmed
-- **State Machine Integrity:** ✅ Confirmed
+## Bir waqıtta islew (Concurrency) tekseriwi
+- **Bron dvigateli testleri:** ✅ 24 test ótti
+- **Eki ret bronlawdıń aldın alıw:** ✅ Tastıyıqlandı
+- **Transaction qáwipsizligi:** ✅ Tastıyıqlandı
+- **State machine putinligi:** ✅ Tastıyıqlandı
 
-## Permission Boundary Sweep
-### Role-based Access Control
-- **Anonymous Users:** ✅ Cannot access authenticated endpoints (403 returned)
-- **Regular Users:** ✅ Cannot access admin/partner endpoints (403 returned)
-- **Hotel-Owner Role:** ✅ Scoped to own properties only (404 for other properties)
-- **Staff Users:** ✅ Can access admin endpoints but cannot create hotel-owner accounts (403)
-- **Super-Admin:** ✅ Full admin access
+## Ruxsat shegaraların tekseriw (Permission Boundary Sweep)
+### Rolge tiykarlanǵan kirisiw (RBAC)
+- **Anonim paydalanıwshılar:** ✅ Autentifikaciya talap etetuǵın endpoint'lerge kire almaydı (403 qaytadı)
+- **Ápiwayı paydalanıwshılar:** ✅ Admin/partner endpoint'lerge kire almaydı (403 qaytadı)
+- **Hotel-Owner roli:** ✅ Tek óz mehmanxanaları menen shegaralanǵan (basqa mehmanxanalar ushın 404)
+- **Staff paydalanıwshılar:** ✅ Admin endpoint'lerge kire aladı, biraq hotel-owner akkauntın jarata almaydı (403)
+- **Super-Admin:** ✅ Tolıq admin kirisiwi
 
-### Data Isolation
-- **Partner API:** ✅ Hotel-owners can only see/manage their own properties, rooms, rates
-- **Payment API:** ✅ Users can only see their own payment transactions (queryset filtering)
-- **Account API:** ✅ Users can only access their own favorites, reviews, history
-- **Booking API:** ✅ Users can only access their own bookings
-- **Admin API:** ✅ Staff/super-admin have appropriate scoping
+### Maǵlıwmat izolyaciyası
+- **Partner API:** ✅ Hotel-owner'ler tek óz mehmanxanaların, xonaların, rate'lerin kóre hám basqara aladı
+- **Payment API:** ✅ Paydalanıwshılar tek óz tólem tranzakciyaların kóredi (queryset filtrlew)
+- **Account API:** ✅ Paydalanıwshılar tek óz sevimlilerine, sharıhlarına, tariyxına kire aladı
+- **Booking API:** ✅ Paydalanıwshılar tek óz bronlarına kire aladı
+- **Admin API:** ✅ Staff/super-admin tiyisli shegaralanıwǵa iye
 
-### Permission Tests Coverage
-- **partner/tests/test_partner_api.py:** 13 permission boundary tests
-- **admin_panel/tests/test_admin_api.py:** 4 permission boundary tests
-- **accounts/tests/test_views.py:** 3 permission boundary tests
-- **bookings/tests/test_views.py:** 4 permission boundary tests
-- **users/tests/test_views.py:** Authentication required by default
-- **payments/tests/test_views.py:** User isolation via queryset filtering
+### Ruxsat testleriniń qamtıwı
+- **partner/tests/test_partner_api.py:** 13 ruxsat shegarası testi
+- **admin_panel/tests/test_admin_api.py:** 4 ruxsat shegarası testi
+- **accounts/tests/test_views.py:** 3 ruxsat shegarası testi
+- **bookings/tests/test_views.py:** 4 ruxsat shegarası testi
+- **users/tests/test_views.py:** Authentication standart boyınsha kerek
+- **payments/tests/test_views.py:** Queryset arqalı paydalanıwshı izolyaciyası
 
-## Security Review Confirmation
+## Qáwipsizlik kóriwin tastıyıqlaw
 ### Checkpoint 04 (Auth Security)
-- ✅ Password complexity (12+ characters, complexity validation)
-- ✅ Account lockout after 5 failed attempts (30-minute duration)
-- ✅ Disposable email rejection
-- ✅ IP tracking for login attempts
-- ✅ Session-based authentication with secure cookies
+- ✅ Parol quramalılıǵı (12+ belgi, quramalılıq tekseriwi)
+- ✅ 5 sәtsiz urınıstan keyin akkaunt qulıplanadı (30 minut)
+- ✅ Waqıtsha e-mail'lerdi biykarlaw
+- ✅ Kirisiw urınısları ushın IP baqlaw
+- ✅ Qáwipsiz cookie'ler menen session tiykarındaǵı authentication
 
 ### Checkpoint 15 (Payment Security)
-- ✅ Webhook signature validation (Payme HMAC-SHA256, Click MD5)
-- ✅ Timestamp validation (5-minute window)
-- ✅ Replay attack prevention (duplicate event ID rejection)
-- ✅ Idempotency support (duplicate key detection)
-- ✅ No raw card data storage (tokens/references only)
-- ✅ Audit trail (PaymentAuditLog)
+- ✅ Webhook imza tekseriw (Payme HMAC-SHA256, Click MD5)
+- ✅ Waqıt tekseriw (5 minut aynası)
+- ✅ Replay hújimniń aldın alıw (qaytalanǵan event ID biykarlanadı)
+- ✅ Idempotency qollap-quwatlawı (qaytalanǵan kilt anıqlaw)
+- ✅ Karta maǵlıwmatı saqlanbaydı (tek token/siltemeler)
+- ✅ Audit izi (PaymentAuditLog)
 
 ### Checkpoint 18 (Partner Security)
-- ✅ Hotel-owner role-based access control
-- ✅ Property ownership scoping (owners can only access their own properties)
-- ✅ Role-based endpoint protection
-- ✅ Admin moderation endpoints for property approval
+- ✅ Hotel-owner rolge tiykarlanǵan kirisiw
+- ✅ Mehmanxana iyeligi shegaralawı (iyeler tek óz mehmanxanalarına kire aladı)
+- ✅ Rolge tiykarlanǵan endpoint qorǵawı
+- ✅ Mehmanxananı tastıyıqlaw ushın admin moderaciya endpoint'leri
 
 ### Checkpoint 19 (Rate Limiting Security)
-- ✅ Login endpoint: 10 requests per minute per IP
-- ✅ Registration endpoint: 5 requests per minute per IP
-- ✅ Payment initiation: 20 requests per minute per user
-- ✅ Property search: 100 requests per minute per IP
-- ✅ OTP endpoint: Not yet applicable (checkpoint 21 not implemented)
-- ✅ Test mode detection to prevent test failures
+- ✅ Login endpoint: IP boyınsha minutına 10 soraw
+- ✅ Registration endpoint: IP boyınsha minutına 5 soraw
+- ✅ Payment initiation: paydalanıwshı boyınsha minutına 20 soraw
+- ✅ Property search: IP boyınsha minutına 100 soraw
+- ✅ OTP endpoint: házirge qollanılmaydı (checkpoint 21 iske asırılmaǵan)
+- ✅ Test rejimin anıqlaw (testlerdiń qulawınıń aldın alıw)
 
-## Environment Variables for Production
+## Production ushın Environment Variable'lar
 
-### Critical Security Variables (MUST BE SET)
-- `SECRET_KEY` - Django secret key (generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
-- `DEBUG` - Set to `False` in production
-- `ALLOWED_HOSTS` - Comma-separated list of allowed hostnames (e.g., `tickbron.com`)
+### Kritik qáwipsizlik ózgeriwshileri (MÁJBÚRIY QOYILIWI KEREK)
+- `SECRET_KEY` - Django secret key (mınaw menen jasań: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
+- `DEBUG` - Production'da `False` qoyıń
+- `ALLOWED_HOSTS` - Ruxsat etilgen host atlarınıń vergul menen ayırılǵan dizimi (mısalı `tickbron.com`)
 
-### Database Configuration
-- `DB_NAME` - Database name
-- `DB_USER` - Database user
-- `DB_PASSWORD` - Database password
-- `DB_HOST` - Database host
-- `DB_PORT` - Database port
-- `DB_SSLMODE` - PostgreSQL SSL mode (default: `prefer`)
+### Database sazlaması
+- `DB_NAME` - Database atı
+- `DB_USER` - Database paydalanıwshısı
+- `DB_PASSWORD` - Database paroli
+- `DB_HOST` - Database host'ı
+- `DB_PORT` - Database porti
+- `DB_SSLMODE` - PostgreSQL SSL rejimi (standart: `prefer`)
 
-### CORS and Security
-- `CSRF_TRUSTED_ORIGINS` - Comma-separated list of trusted origins
-- `CORS_ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
-- `SECURE_SSL_REDIRECT` - Set to `True` for HTTPS enforcement
-- `SESSION_COOKIE_SECURE` - Set to `True` for secure cookies
-- `CSRF_COOKIE_SECURE` - Set to `True` for secure CSRF cookies
-- `SECURE_HSTS_SECONDS` - HSTS max-age (default: 31536000)
-- `SECURE_HSTS_INCLUDE_SUBDOMAINS` - Set to `True`
-- `SECURE_HSTS_PRELOAD` - Set to `True`
-- `SECURE_CONTENT_TYPE_NOSNIFF` - Set to `True`
-- `SECURE_BROWSER_XSS_FILTER` - Set to `True`
-- `X_FRAME_OPTIONS` - Frame options (default: `DENY`)
+### CORS hám qáwipsizlik
+- `CSRF_TRUSTED_ORIGINS` - Isenimli origin'lerdiń vergul menen ayırılǵan dizimi
+- `CORS_ALLOWED_ORIGINS` - Ruxsat etilgen CORS origin'lerdiń vergul menen ayırılǵan dizimi
+- `SECURE_SSL_REDIRECT` - HTTPS májbúrlew ushın `True` qoyıń
+- `SESSION_COOKIE_SECURE` - Qáwipsiz cookie'ler ushın `True` qoyıń
+- `CSRF_COOKIE_SECURE` - Qáwipsiz CSRF cookie'ler ushın `True` qoyıń
+- `SECURE_HSTS_SECONDS` - HSTS max-age (standart: 31536000)
+- `SECURE_HSTS_INCLUDE_SUBDOMAINS` - `True` qoyıń
+- `SECURE_HSTS_PRELOAD` - `True` qoyıń
+- `SECURE_CONTENT_TYPE_NOSNIFF` - `True` qoyıń
+- `SECURE_BROWSER_XSS_FILTER` - `True` qoyıń
+- `X_FRAME_OPTIONS` - Frame variantları (standart: `DENY`)
 
-### Redis/Celery Configuration
-- `REDIS_HOST` - Redis host (default: `localhost`)
-- `REDIS_PORT` - Redis port (default: `6379`)
-- `REDIS_DB` - Redis database number (default: `0`)
-- `CELERY_BROKER_URL` - Celery broker URL (default: `redis://localhost:6379/0`)
-- `CELERY_RESULT_BACKEND` - Celery result backend (default: `redis://localhost:6379/0`)
+### Redis/Celery sazlaması
+- `REDIS_HOST` - Redis host'ı (standart: `localhost`)
+- `REDIS_PORT` - Redis porti (standart: `6379`)
+- `REDIS_DB` - Redis database nomeri (standart: `0`)
+- `CELERY_BROKER_URL` - Celery broker URL (standart: `redis://localhost:6379/0`)
+- `CELERY_RESULT_BACKEND` - Celery result backend (standart: `redis://localhost:6379/0`)
 
 ### Rate Limiting
 
 ### Monitoring
 
-## Payments
-There are no online payments: guests pay cash at the hotel (`.ai/PLAN_CASH_ONLY.md`). The payment settings (`PAYMENT_TEST_MODE`, Payme, Click, Visa keys) no longer exist, so there is nothing to configure. Old payment rows stay in the database as history.
+## Tólemler (Payments)
+Onlayn tólem joq: mehmanlar mehmanxanada naqd tóleydi (`.ai/PLAN_CASH_ONLY.md`). Tólem sazlamaları (`PAYMENT_TEST_MODE`, Payme, Click, Visa kilt'leri) endi joq, sonıń ushın sazlaytuǵın hesh nárse joq. Eski tólem qatarları tariyx retinde database'de qaladı.
 
-## Deployment Readiness
-- ✅ All migrations apply cleanly from scratch
-- ✅ Full test suite passes
-- ✅ Permission boundaries enforced
-- ✅ Security measures in place
-- ✅ Rate limiting configured
-- ✅ OpenAPI schema documented
-- ⚠️ SMS provider not yet implemented (checkpoint 21)
+## Joylastırıwǵa tayarlıq
+- ✅ Barlıq migration'lar nolden taza qollanıladı
+- ✅ Tolıq test suite ótedi
+- ✅ Ruxsat shegaraları saqlanadı
+- ✅ Qáwipsizlik sharaları bar
+- ✅ Rate limiting sazlanǵan
+- ✅ OpenAPI schema hújjetlestirilgen
+- ⚠️ SMS provayder ele iske asırılmaǵan (checkpoint 21; qarań `.ai/PLAN_SMS_CHAT.md`)
 
 ## Release Notes
-- Backend main plan (checkpoints 1-20) is complete
-- All core functionality implemented and tested
-- Permission system properly scoped
-- Security measures comprehensive
-- Rate limiting protects sensitive endpoints
-- Clean migration history
-- Comprehensive test coverage
+- Backend tiykarǵı jobası (checkpoint'ler 1-20) pitti
+- Barlıq tiykarǵı funkciyalar iske asırılǵan hám testlengen
+- Ruxsat sisteması durıs shegaralanǵan
+- Qáwipsizlik sharaları keń
+- Rate limiting sezimtal endpoint'lerdi qorǵaydı
+- Taza migration tariyxı
+- Keń test qamtıwı
 
-## Next Steps
-1. Configure all security variables for production
-2. Set up production database (PostgreSQL recommended)
-3. Configure Redis for Celery
-4. Set up SMS provider when checkpoint 21 is implemented
-5. Perform production deployment testing
-6. Configure monitoring and logging
+## Keyingi qádemler
+1. Production ushın barlıq qáwipsizlik ózgeriwshilerin sazlań
+2. Production database'di qurıń (PostgreSQL usınıs etiledi)
+3. Celery ushın Redis'ti sazlań
+4. Checkpoint 21 iske asırılǵanda SMS provayderdi sazlań
+5. Production joylastırıwın sınań
+6. Monitoring hám logging sazlań
 
-## Known Limitations
-- SMS functionality not yet implemented (checkpoint 21)
-- Some OpenAPI warnings for type hints (non-critical)
-- Admin endpoints use APIViews without serializers (graceful fallback handling)
+## Belgili sheklewler (Known Limitations)
+- SMS funkciyası ele iske asırılmaǵan (checkpoint 21)
+- Tip hint'ler ushın bazı OpenAPI eskertiwleri (kritik emes)
+- Admin endpoint'ler serializer'siz APIView'ler paydalanadı (tınısh almastırıw)
 
-## Blockers
-None - Backend is ready for deployment with proper configuration.
+## Tosqınlıqlar (Blockers)
+Joq - Backend durıs sazlama menen joylastırıwǵa tayar.
 
-## Security headers (R4, 2026-10-03)
+## Qáwipsizlik header'leri (R4, 2026-10-03)
 
-What the Django app sends on every API response (`common/middleware.py` SecurityHeadersMiddleware, `django.middleware.security.SecurityMiddleware`, `XFrameOptionsMiddleware`; `config/settings.py:185-200`):
+Django ilovası hár API juwapta ne jiberedi (`common/middleware.py` SecurityHeadersMiddleware, `django.middleware.security.SecurityMiddleware`, `XFrameOptionsMiddleware`; `config/settings.py:185-200`):
 
-| Header | Value | Set by |
+| Header | Mánis | Kim qoyadı |
 |---|---|---|
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` (HTTPS requests only) | Django SecurityMiddleware + SecurityHeadersMiddleware (env `SECURE_HSTS_*`) |
-| `X-Content-Type-Options` | `nosniff` | both |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` (tek HTTPS sorawlar) | Django SecurityMiddleware + SecurityHeadersMiddleware (env `SECURE_HSTS_*`) |
+| `X-Content-Type-Options` | `nosniff` | ekewi de |
 | `X-Frame-Options` | `DENY` | XFrameOptionsMiddleware (env `X_FRAME_OPTIONS`) |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | SecurityHeadersMiddleware |
 | `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | SecurityHeadersMiddleware |
-| `Cross-Origin-Opener-Policy` | `same-origin` | Django default |
-| Cookies | session + csrftoken: `HttpOnly`, `SameSite=Lax`, `Secure` when DEBUG is off | settings |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Django standartı |
+| Cookie'ler | session + csrftoken: `HttpOnly`, `SameSite=Lax`, DEBUG óshirilgende `Secure` | settings |
 
-What the web server (nginx or similar, in front of both the SPA and `/api/`) must add, because the SPA's HTML/JS/CSS never pass through Django. For `/api/` it must also forward the client address and scheme, and overwrite (never append to) what the client sent:
+Web server (nginx yamasa uqsas, SPA hám `/api/` aldında turatuǵın) ne qosıwı kerek, sebebi SPA'nıń HTML/JS/CSS'i Django arqalı ótpeydi. `/api/` ushın ol klient mánzilin hám scheme'ni de jiberiwi, hám klient jibergenin almastırıwı (hesh qashan qosıp qoymaw) kerek:
 
 ```
 proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -182,173 +184,183 @@ proxy_set_header X-Forwarded-Proto $scheme;
 proxy_set_header Host              $host;
 ```
 
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response (add `preload` only after submitting the domain to hstspreload.org); redirect all `http://` to `https://` (or set `SECURE_SSL_REDIRECT=True` in Django and `SECURE_PROXY_SSL_HEADER` for the proxy).
-- `Content-Security-Policy` for the SPA, starting point (fonts are self-hosted since 930214a; the map tile host `tile.openstreetmap.org` is listed below since the search map and the location picker, and add payment provider hosts when Payme/Click are integrated):
+- Hár HTTPS juwapta `Strict-Transport-Security: max-age=31536000; includeSubDomains` (`preload`'nı tek domendi hstspreload.org'qa jibergennen keyin qosıń); barlıq `http://`'ti `https://`'ke jiberiń (yamasa Django'da `SECURE_SSL_REDIRECT=True` hám proxy ushın `SECURE_PROXY_SSL_HEADER`).
+- SPA ushın `Content-Security-Policy`, baslanıw nuqtası (shriftler 930214a'dan beri ózinde saqlanadı; karta tile host'ı `tile.openstreetmap.org` tómende kórsetilgen, sebebi izlew kartası hám orın tańlaǵısh bar, hám Payme/Click integraciyalanǵanda tólem provayder host'larin qosıń):
   `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`
-- Map privacy: the browser loads map tiles straight from OpenStreetMap, so OSM sees the visitor's IP address and the area viewed; the privacy policy (legal texts) must say so. The OSM tile policy needs the visible attribution (set in `components/mapTiles.ts`) and is meant for light use; plan a tile provider or own tile server before heavy traffic.
-- Clickjacking: `frame-ancestors 'none'` in the CSP above, plus `X-Frame-Options: DENY` for older browsers (SPA responses).
-- `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on SPA and `/media/` responses.
-- `/media/` (uploaded photos): serve with `Content-Disposition: inline`, the image MIME type from the file extension only (jpg/png/gif/webp), `nosniff`, no script execution, and no directory listing.
-- Remove `Server` / `X-Powered-By` version banners; limit request body size. A complete reference file is `deploy/nginx.conf.example` (1 MB for JSON, 12 MB only for photo upload). Django also refuses a JSON body over 4 MB and an upload over 12 MB (413) from the Content-Length header.
-- Install runtime dependencies from `backend/requirements.txt`; `requirements-dev.txt` (tests, linters) is for development and CI only. CI is `.github/workflows/ci.yml` (tests, lint, build, `pip-audit`, `npm audit --omit=dev`).
+- Karta maxfiyligi: brauzer karta tile'lerin tikkeley OpenStreetMap'tan júkleydi, sonıń ushın OSM kelushiniń IP mánzilin hám kórilgen aymaqtı kóredi; maxfiylik siyasatı (huqıqıy tekstler) bunı aytıwı kerek. OSM tile siyasatı kórinetuǵın atribuciyanı talap etedi (`components/mapTiles.ts` ishinde qoyılǵan) hám jeńil paydalanıw ushın; awır trafikten aldın tile provayderdi yamasa óz tile server'in jobalań.
+- Clickjacking: joqarıdaǵı CSP ishinde `frame-ancestors 'none'`, hám eski brauzerler ushın `X-Frame-Options: DENY` (SPA juwapları).
+- SPA hám `/media/` juwaplarında `X-Content-Type-Options: nosniff` hám `Referrer-Policy: strict-origin-when-cross-origin`.
+- `/media/` (júklengen súwretler): `Content-Disposition: inline` penen, tek fayl keńeytpesinen súwret MIME túri (jpg/png/gif/webp), `nosniff`, script isletiw joq hám dizim kórsetiw joq.
+- `Server` / `X-Powered-By` versiya jazıwların alıp taslań; request body ólshemin shekleń. Tolıq úlgi fayl `deploy/nginx.conf.example` (JSON ushın 1 MB, tek súwret júklew ushın 12 MB). Django da 4 MB'tan úlken JSON body'di hám 12 MB'tan úlken júklewdi (413) Content-Length header'inen biykarlaydı.
+- Runtime dependency'lerdi `backend/requirements.txt`'ten ornatıń; `requirements-dev.txt` (testler, linter'ler) tek development hám CI ushın. CI - `.github/workflows/ci.yml` (testler, lint, build, `pip-audit`, `npm audit --omit=dev`).
 
-## Production checklist (R4, 2026-10-03)
+## Production dizimi (R4, 2026-10-03)
 
-### Environment variables (the app refuses to start without the starred ones being safe)
-- [ ] `DEBUG=False` (the app also refuses `DEBUG=True` when `ALLOWED_HOSTS` lists a public domain)
-- [ ] `FRONTEND_URL`* the https:// address of the site (reset links point to it) and `EMAIL_HOST`* (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`): password reset e-mails are sent through it. A Celery worker must run, the mail is sent by a task
-- [ ] `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID`: alerts for locked accounts and server errors (empty = no alerts; add the bot to the chat first)
-- [ ] `SECRET_KEY`* random, 50+ characters (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), not the `.env.example` value
-- [ ] `ALLOWED_HOSTS`* real host names, no `*`
-- [ ] `CORS_ALLOWED_ORIGINS`* and `CSRF_TRUSTED_ORIGINS`* `https://` origins of the SPA only
-- [ ] `SECURE_SSL_REDIRECT=True`* (refused otherwise)
-- [ ] `NUM_PROXIES`* must be set explicitly: 0 = no proxy, 1 = one nginx/load balancer that appends to `X-Forwarded-For`. Unset or wrong, every visitor shares one IP (login throttle, lockout and promotion counters collapse, anyone can lock any known email)
-- [ ] `USE_X_FORWARDED_PROTO=True`* whenever `NUM_PROXIES` > 0 (nginx must overwrite `X-Forwarded-Proto`); without it Django sees http, the https redirect loops and HSTS is never sent
-- [ ] `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`* stay True (default); `USE_REDIS_CACHE`* stays True (default)
-- [ ] `SECURE_HSTS_PRELOAD` stays False until the owner decides to submit the domain to hstspreload.org (hard to undo); `SESSION_COOKIE_AGE` defaults to 7 days
-- [ ] `DB_*` with `DB_SSLMODE`* = `require`, `verify-ca` or `verify-full` if the database is on another host (the app refuses `disable`, `allow`, `prefer`)
-- [ ] `REDIS_URL` / `CELERY_*` (cache must be shared Redis: throttles and login lockout live there)
-- [ ] `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` left at defaults unless measured
+### Environment variable'lar (juldızshalıları qáwipsiz bolmasa ilova iske túspeydi)
+- [ ] `DEBUG=False` (`ALLOWED_HOSTS` ashıq domendi kórsetse, ilova `DEBUG=True`'ni da biykarlaydı)
+- [ ] `FRONTEND_URL`* saytıń https:// mánzili (tiklew siltemeleri oǵan baradı) hám `EMAIL_HOST`* (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`): parol tiklew e-mail'leri sol arqalı jiberiledi. Celery worker isleýi kerek, mail tapsırma arqalı jiberiledi
+- [ ] `TELEGRAM_BOT_TOKEN` hám `TELEGRAM_ALERT_CHAT_ID`: qulıplanǵan akkaunt hám server qátelerine alert'ler (bos = alert joq; aldın bot'tı chat'ke qosıń)
+- [ ] `SECRET_KEY`* tosınnan, 50+ belgi (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`), `.env.example` mánisi emes
+- [ ] `ALLOWED_HOSTS`* haqıyqıy host atları, `*` joq
+- [ ] `CORS_ALLOWED_ORIGINS`* hám `CSRF_TRUSTED_ORIGINS`* tek SPA'nıń `https://` origin'leri
+- [ ] `SECURE_SSL_REDIRECT=True`* (basqasha biykarlanadı)
+- [ ] `NUM_PROXIES`* anıq qoyılıwı kerek: 0 = proxy joq, 1 = `X-Forwarded-For`'ǵa qosatuǵın bir nginx/load balancer. Qoyılmasa yamasa qáte bolsa, hár kelushi bir IP bolıp kórinedi (login throttle, lockout hám promotion esaplawıshları qulaydı, qálegen adam qálegen belgili email'di qulıplay aladı)
+- [ ] `USE_X_FORWARDED_PROTO=True`* `NUM_PROXIES` > 0 bolsa hámme waqıt (nginx `X-Forwarded-Proto`'nı almastırıwı kerek); onsız Django http dep kóredi, https redirect aylanıp qaladı hám HSTS hesh qashan jiberilmeydi
+- [ ] `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`* True qaladı (standart); `USE_REDIS_CACHE`* True qaladı (standart)
+- [ ] `SECURE_HSTS_PRELOAD` iyesi domendi hstspreload.org'qa jiberiwdi qarar etkenshe False qaladı (qaytarıwı qıyın); `SESSION_COOKIE_AGE` standart 7 kún
+- [ ] `DB_*`, database basqa host'ta bolsa `DB_SSLMODE`* = `require`, `verify-ca` yamasa `verify-full` (ilova `disable`, `allow`, `prefer`'di biykarlaydı)
+- [ ] `REDIS_URL` / `CELERY_*` (cache ortaq Redis bolıwı kerek: throttle'lar hám login lockout sonda jasaydı)
+- [ ] `THROTTLE_ANON_RATE` / `THROTTLE_USER_RATE` ólshenbegenshe standart qaladı
 
-### Test modes off
-- [ ] `SMS_TEST_MODE=False`* (True returns OTP codes in responses)
-- [ ] `scripts/checkpoint_checks/*.py` scripts and `scripts/smoke_test.py` are never run against production (they enable test modes)
+### Test rejimleri óshirilgen
+- [ ] `SMS_TEST_MODE=False`* (True OTP kodlardı juwaplarda qaytaradı)
+- [ ] `scripts/checkpoint_checks/*.py` script'leri hám `scripts/smoke_test.py` hesh qashan production'ǵa qarsı isletilmeydi (olar test rejimlerin qosadı)
 
-### Property types
-- [ ] `python manage.py seed_property_types` was run on the new server (without it the owner's "add a hotel" form has no type to choose)
+### Property type'lar
+- [ ] Jańa server'de `python manage.py seed_property_types` isletildi (onsız iyeniń "mehmanxana qosıw" formasında tańlaytuǵın túr joq)
 
-### Demo data
-- [ ] Never run `seed_demo` / `seed_demo_stats` in production (they refuse when DEBUG is off)
-- [ ] If the production database was ever copied from a dev database, delete every `*@tickbron.demo` account and the demo hotels before launch: `User.objects.filter(email__endswith='@tickbron.demo')`
+### Demo maǵlıwmatlar
+- [ ] Production'da hesh qashan `seed_demo` / `seed_demo_stats` isletpeń (DEBUG óshirilgende olar bas tartadı)
+- [ ] Production database eger qashan da dev database'den kóshirilgen bolsa, iske túsiwden aldın hár `*@tickbron.demo` akkauntın hám demo mehmanxanalardı óshiriń: `User.objects.filter(email__endswith='@tickbron.demo')`
 
-### HTTPS and server headers
-- [ ] Valid TLS certificate, HTTP→HTTPS redirect, HSTS (see "Security headers" above)
-- [ ] CSP, frame-ancestors, nosniff, Referrer-Policy on SPA responses; safe `/media/` serving
-- [ ] `/api/docs/`, `/api/redoc/`, `/api/schema/` blocked at the proxy or limited to staff (SECURITY_REVIEW L-2)
+### HTTPS hám server header'leri
+- [ ] Jaramlı TLS sertifikat, HTTP→HTTPS redirect, HSTS (joqarıdaǵı "Qáwipsizlik header'leri" qarań)
+- [ ] SPA juwaplarında CSP, frame-ancestors, nosniff, Referrer-Policy; qáwipsiz `/media/` xızmeti
+- [ ] `/api/docs/`, `/api/redoc/`, `/api/schema/` proxy'de bloklanǵan yamasa tek staff ushın (SECURITY_REVIEW L-2)
 
 ### Database
-- [ ] Application DB user with least privilege: owner of the `tickbron` schema objects only for migrations; at runtime CONNECT + SELECT/INSERT/UPDATE/DELETE on app tables, no SUPERUSER / CREATEDB / CREATEROLE (CREATEDB is needed only by the test runner on dev machines)
-- [ ] Daily `pg_dump -Fc` backups kept off the server (e.g. 14 daily + 8 weekly), restore tested at least once; backup before every migration
-- [ ] `python manage.py migrate` and `python manage.py check --deploy` (must print "no issues") on each release
+- [ ] Eń az huqıqlı ilova DB paydalanıwshısı: `tickbron` schema obyektleriniń iyesi tek migration ushın; runtime'da CONNECT + app kesteleri boyınsha SELECT/INSERT/UPDATE/DELETE, SUPERUSER / CREATEDB / CREATEROLE joq (CREATEDB tek dev mashinalardaǵı test runner ushın kerek)
+- [ ] Hár kúngi `pg_dump -Fc` backup'lar server'den tısqarıda saqlanadı (mısalı 14 kúnlik + 8 háptelik), tiklew keminde bir ret sınalǵan; hár migration'dan aldın backup
+- [ ] Hár release'te `python manage.py migrate` hám `python manage.py check --deploy` ("no issues" shıǵarıwı kerek)
 
-### Real credentials still missing (owner decision / contracts)
-- [ ] Eskiz (SMS for OTP): API credentials and sender id; until then OTP login cannot work in production (`SMS_TEST_MODE` must stay False)
-
-
-## Currency and exchange rates (R6, 2026-10-03)
-
-Hotels are priced in USD or UZS; guests are always charged in UZS (Payme and Click take only UZS). A USD hotel cannot be booked until an exchange rate exists (503 `exchange_rate_unavailable`, nothing reserved).
-
-### First deploy (once)
-- [ ] Backup first: `pg_dump -Fc` (the R6 migrations add the booking charge snapshot and backfill every existing booking)
-- [ ] `python manage.py migrate`. The first R6 migration (`currency.0001`) STOPS with nothing changed if any property, room type or rate plan is priced in a currency other than USD/UZS, and lists them. Fix those rows (decide the real USD or UZS price with the hotel owner), then run `migrate` again.
-- [ ] `python manage.py fetch_exchange_rates` right after the migration: stores today's CBU USD rate so USD hotels can be booked at once. It prints the rate, or why it failed. The server must reach `https://cbu.uz` (outbound HTTPS).
-- [ ] Celery **beat** and a worker are running: `currency.tasks.fetch_exchange_rates` runs daily at 09:00 and 18:00 Asia/Tashkent (`CELERY_BEAT_SCHEDULE`), with 3 retries 10 minutes apart.
-- [ ] Check `GET /api/v1/admin-panel/exchange-rates/status/` as a super-admin: `rate` set, `stale: false`, `last_error: null`.
-
-### Manual "fetch rate now"
-- `python manage.py fetch_exchange_rates` (same code as the scheduled task; safe to run any time, the same CBU date is stored once).
-
-### Settings (environment, defaults shown)
-- `FX_STALE_AFTER_DAYS=3`: an older rate is still used but marked `stale: true` (quote, booking, status) and logged as a warning.
-- `FX_MAX_CHANGE=0.10`: a new rate more than 10% away from the current one is stored as `rejected` and not used until a super-admin accepts it (`POST /api/v1/admin-panel/exchange-rates/{id}/accept/`, written to the admin audit log with the old and new rate).
-- `FX_MIN_RATE=1000`, `FX_MAX_RATE=100000`: accepted range of so'm per USD; anything outside is rejected.
-- `FX_FETCH_TIMEOUT=10` (seconds).
-
-### When the rate is stale or missing
-- [ ] Look at `last_error` in the status endpoint (network, CBU answer format, rejected jump), run `fetch_exchange_rates` by hand, and if a correct rate was rejected for a real jump, accept it as super-admin.
-
-### Unverified before production (R6, 2026-10-05)
-Payment amount units, as implemented in `backend/payments/adapters.py`:
-- Payme: tiyin (1 so'm = 100 tiyin). Confirmed in Payme's own Merchant API documentation ("Сумма платежа (в тийинах)").
-- Click: so'm as a decimal number ("1000.00"). **NOT verified** from Click's own documentation; the only source so far is the amount format used in Click's integration library. Treat it as an assumption.
-
-Before any real payment, each item below must be tested end to end in the provider's sandbox with real merchant credentials (none of this is verified yet):
-- [ ] Click amount unit (so'm vs tiyin) on create, prepare/complete webhooks and refund.
-- [ ] Payme partial-refund rules (allowed at all, how many times, minimum amount, what the webhook sends).
-- [ ] Click partial-refund rules (same questions).
-- [ ] The Payme adapter end to end: create, webhook signature and amount check, full refund, partial refund, failure and retry.
-- [ ] The Click adapter end to end: the same steps.
-
-## Business date and auto-completion (R12 phase 1, 2026-10-05)
-
-- [ ] `TIME_ZONE` stays `UTC`. `BUSINESS_TIME_ZONE` (env, default `Asia/Tashkent`) decides "today" for booking check-in, statistics and auto-completion. Hotels in other countries use the same business date for now.
-- [ ] **Celery beat, a worker and Redis must run in production.** `CELERY_TIMEZONE = BUSINESS_TIME_ZONE`: beat times in `CELERY_BEAT_SCHEDULE` are Tashkent times (exchange rates 09:00 and 18:00, auto-completion 00:05). Without beat, confirmed stays never become completed and the Status "stayed" numbers stay at 0.
-- [ ] **Backup first: `pg_dump -Fc` before `migrate`, every time.** R12 phase 1 migrations: `bookings/0009` (auto-completion run history), `payments/0003` (Refund table), `payments/0004` (backfills a `succeeded` Refund for every `refunded` / `partially_refunded` payment; its reverse deletes only those rows), `admin_panel/0006` (audit actions), `accounts/0002` (notification `code` / `params`). All reversible.
-- [ ] Once after deploy: `python manage.py complete_finished_stays --dry-run` (prints how many past stays are still `confirmed`), then without `--dry-run` (completes them; nothing touches pending, cancelled or no_show).
-- [ ] Check `GET /api/v1/admin-panel/auto-completion/status/` as a super-admin the next morning: `last_run.finished_at` after 00:05 Tashkent, `failed: 0`, `waiting: 0`.
-
-## Refunds (R12 phase 1, 2026-10-06)
-
-- [ ] **Partial refunds with Payme, Click and Visa are NOT verified** (`SUPPORTS_PARTIAL_REFUND = None` in `payments/adapters.py`). Until a partial refund has been tested in each provider's sandbox, every partial refund skips the provider and is stored as `needs_manual`: staff pay it by hand and close it with `POST /api/v1/admin-panel/refunds/{id}/mark-done/` (`provider_reference` required). After a successful sandbox test, set `SUPPORTS_PARTIAL_REFUND = True` on that adapter only (with a test).
-- [ ] Full refunds call the provider after the refund row is committed. A provider failure leaves the refund `failed`; super-admins retry it from `GET /api/v1/admin-panel/refunds/needs-attention/`.
-- [ ] Someone on staff checks the needs-attention list daily (failed, needs_manual, pending for more than an hour).
-- [ ] `migrate` prints `Refund backfill: N refund row(s) created, M payment(s) skipped`. Skipped = a `partially_refunded` payment without an audit row (amount unknown, never invented) or audit amounts above the payment: check each one by hand and record its refund with the real amount.
-
-## No-show reports and refund (R12b, 2026-10-07)
-
-- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** R12b migrations: `bookings/0010` (NoShowReport, `Booking.no_show_refund_percent`; existing bookings get 0), `admin_panel/0008` (audit actions). Both reversible.
-- [ ] **Partial refunds are unverified with Payme, Click and Visa.** A no-show refund is 50% of the payment, so in real mode it is stored as `needs_manual` and staff pay it by hand (see Refunds above). Verify each provider's partial refund in its sandbox before turning it on.
-- [ ] **A lawyer must review the refund wording** shown to guests (`no_show_refund_statement`, in every language) and the owner/staff texts before launch; the 50% promise is a contract term.
-- [ ] Settings to confirm: `NO_SHOW_REFUND_PERCENT` (50), `NO_SHOW_REPORT_WINDOW_DAYS` (7), `NO_SHOW_FLAG_*`, `THROTTLE_NO_SHOW_REPORT_RATE` (20/hour).
+### Ele joq haqıyqıy akkauntlar (iyesi qararı / shártnamalar)
+- [ ] Eskiz (OTP ushın SMS): API credentials hám sender id; sol waqıtqa shekem production'da OTP login isley almaydı (`SMS_TEST_MODE` False qalıwı kerek)
 
 
-## Hotel promotions (R10, 2026-10-09)
+## Valyuta hám valyuta kursları (R6, 2026-10-03)
 
-- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** R10 migrations: `promotions/0001` (two new tables) and `admin_panel/0009` (audit actions). Both reversible; no existing table gets a column.
-- [ ] **Celery beat must be running** (task `promotions.tasks.end_expired_promotions`, 00:10 Asia/Tashkent). Without it statuses in the admin list stay stale; guests are still served correctly (computed from dates).
-- [ ] **Redis must be the cache in production** (`USE_REDIS_CACHE`): view and click counts are deduplicated there. With a failing cache nothing is counted (a warning `Promotion counter skipped` is logged).
-- [ ] A lawyer confirms the exact "Reklama" label wording and advertising-law requirements in Uzbekistan (the frontend label is an i18n key).
-- [ ] Prices, invoices and refunds for advertising are handled outside the platform; the super-admin records `mark-paid` and the agreed price.
+Mehmanxanalar USD yamasa UZS'te bahalanadı; mehmanlardan hámme waqıt UZS alınadı (Payme hám Click tek UZS qabıl etedi). Valyuta kursı bolmaǵansha USD mehmanxananı bronlaw múmkin emes (503 `exchange_rate_unavailable`, hesh nárse rezerv etilmeydi).
+
+### Birinshi joylastırıw (bir ret)
+- [ ] Aldın backup: `pg_dump -Fc` (R6 migration'ları bron alıw snapshot'ın qosadı hám hár bar bronnı toltıradı)
+- [ ] `python manage.py migrate`. Birinshi R6 migration'ı (`currency.0001`) hesh nárse ózgertpesten TOQTAYDI, eger qálegen property, room type yamasa rate plan USD/UZS'ten basqa valyutada bahalanǵan bolsa, hám olardı dizimleydi. Sol qatarlardı túzetiń (haqıyqıy USD yamasa UZS bahasın mehmanxana iyesi menen anıqlań), keyin `migrate`'ti qayta isletiń.
+- [ ] Migration'nan soń dárhal `python manage.py fetch_exchange_rates`: búgingi CBU USD kursın saqlaydı, USD mehmanxanalar birden bronlanıwı múmkin. Ol kursın yamasa nege islemegenin shıǵaradı. Server `https://cbu.uz`'ge shıǵa alıwı kerek (outbound HTTPS).
+- [ ] Celery **beat** hám worker isleydi: `currency.tasks.fetch_exchange_rates` hár kúni Asia/Tashkent waqtı menen 09:00 hám 18:00'de isleydi (`CELERY_BEAT_SCHEDULE`), 10 minut aralıqlı 3 qayta urınıs penen.
+- [ ] `GET /api/v1/admin-panel/exchange-rates/status/`'ti super-admin retinde tekseriń: `rate` bar, `stale: false`, `last_error: null`.
+
+### Qolda "kursın házir alıw"
+- `python manage.py fetch_exchange_rates` (rejelestirilgen tapsırma menen birdey kod; qálegen waqıtta qáwipsiz, birdey CBU sanası bir ret saqlanadı).
+
+### Sazlamalar (environment, standart mánisler)
+- `FX_STALE_AFTER_DAYS=3`: eski kurs ele de isletiledi, biraq `stale: true` dep belgilenedi (quote, bron, status) hám warning retinde jazıladı.
+- `FX_MAX_CHANGE=0.10`: házirgi kurstan 10% artıq parıq qılatuǵın jańa kurs `rejected` retinde saqlanadı hám super-admin qabıllamaǵansha isletilmeydi (`POST /api/v1/admin-panel/exchange-rates/{id}/accept/`, eski hám jańa kurs penen admin audit log'qa jazıladı).
+- `FX_MIN_RATE=1000`, `FX_MAX_RATE=100000`: USD ushın so'm shegarası; sırtqısı biykarlanadı.
+- `FX_FETCH_TIMEOUT=10` (sekund).
+
+### Kurs eskirgende yamasa joq bolǵanda
+- [ ] Status endpoint'inde `last_error`'ǵa qarań (tarmaq, CBU juwap formatı, biykarlanǵan sekirik), `fetch_exchange_rates`'ti qolda isletiń, hám haqıyqıy sekirik sebepli durıs kurs biykarlanǵan bolsa, super-admin retinde qabıllań.
+
+### Production'dan aldın tekserilmegen (R6, 2026-10-05)
+Tólem summa birlikleri, `backend/payments/adapters.py` ishinde iske asırılǵanday:
+- Payme: tiyin (1 so'm = 100 tiyin). Payme'niń óz Merchant API hújjetinde tastıyıqlanǵan ("Сумма платежа (в тийинах)").
+- Click: onlıq san retinde so'm ("1000.00"). Click'tiń óz hújjetinen TEKSERILMEGEN; házirge birden-bir derek - Click integraciya kitapxanasındaǵı summa formatı. Boljaw dep esaplań.
+
+Hár qanday haqıyqıy tólemnen aldın, tómendegi hár punkt provayderdiń sandbox'ında haqıyqıy merchant credentials penen tolıq sınalıwı kerek (házirge hesh biri tekserilmegen):
+- [ ] Click summa birligi (so'm yamasa tiyin): create, prepare/complete webhook'lar hám refund.
+- [ ] Payme bólekshe qaytarıw qaǵıydaları (ulıwma ruxsat etilgen be, neshe ret, eń kem summa, webhook ne jiberedi).
+- [ ] Click bólekshe qaytarıw qaǵıydaları (sol sorawlar).
+- [ ] Payme adapter tolıq: create, webhook imza hám summa tekseriw, tolıq qaytarıw, bólekshe qaytarıw, qátelik hám qayta urınıs.
+- [ ] Click adapter tolıq: sol qádemler.
+
+## Biznes sanası hám avtomat tamamlaw (R12 phase 1, 2026-10-05)
+
+- [ ] `TIME_ZONE` `UTC` qaladı. `BUSINESS_TIME_ZONE` (env, standart `Asia/Tashkent`) bron check-in, statistika hám avtomat tamamlaw ushın "búgin"'di anıqlaydı. Basqa mámleketlerdegi mehmanxanalar házirge birdey biznes sanasın paydalanadı.
+- [ ] **Production'da Celery beat, worker hám Redis isleýi kerek.** `CELERY_TIMEZONE = BUSINESS_TIME_ZONE`: `CELERY_BEAT_SCHEDULE` ishindegi beat waqıtları Toshkent waqtı (valyuta kursları 09:00 hám 18:00, avtomat tamamlaw 00:05). Beat bolmasa tastıyıqlanǵan jasawlar hesh qashan tamamlanbaydı hám Status "stayed" sanları 0'de qaladı.
+- [ ] **Aldın backup: hár ret `migrate`'den aldın `pg_dump -Fc`.** R12 phase 1 migration'ları: `bookings/0009` (avtomat tamamlaw isletiw tariyxı), `payments/0003` (Refund kestesi), `payments/0004` (hár `refunded` / `partially_refunded` tólem ushın `succeeded` Refund qatarın toltıradı; onıń reverse'i tek sol qatarlardı óshiredi), `admin_panel/0006` (audit actionlar), `accounts/0002` (notification `code` / `params`). Hámmesi qaytarıladı.
+- [ ] Joylastırıwdan keyin bir ret: `python manage.py complete_finished_stays --dry-run` (ele `confirmed` bolǵan ótken jasawlar sanın shıǵaradı), keyin `--dry-run`'sız (olardı tamamlaydı; pending, cancelled yamasa no_show'ǵa tiymeydi).
+- [ ] Erteńine tańda super-admin retinde `GET /api/v1/admin-panel/auto-completion/status/`'ti tekseriń: `last_run.finished_at` Toshkent waqtı menen 00:05'ten keyin, `failed: 0`, `waiting: 0`.
+
+## Qaytarıwlar (Refunds) (R12 phase 1, 2026-10-06)
+
+- [ ] **Payme, Click hám Visa menen bólekshe qaytarıw TEKSERILMEGEN** (`payments/adapters.py` ishinde `SUPPORTS_PARTIAL_REFUND = None`). Hár provayderdiń sandbox'ında bólekshe qaytarıw sınalmaǵansha, hár bólekshe qaytarıw provayderdi ótkizip jiberedi hám `needs_manual` retinde saqlanadı: staff qolda tóleydi hám onı `POST /api/v1/admin-panel/refunds/{id}/mark-done/` menen jabadı (`provider_reference` májbúriy). Sandbox testi tabıslı bolǵannan keyin, tek sol adapter'de `SUPPORTS_PARTIAL_REFUND = True` qoyıń (test penen).
+- [ ] Tolıq qaytarıwlar refund qatarı commit etilgennen keyin provayderdi shaqıradı. Provayder qátesi refund'tı `failed` qaldıradı; super-admin'ler onı `GET /api/v1/admin-panel/refunds/needs-attention/`'den qayta isletedi.
+- [ ] Staff'tan birew hár kúni needs-attention dizimin tekseredi (failed, needs_manual, bir saattan artıq pending).
+- [ ] `migrate` `Refund backfill: N refund row(s) created, M payment(s) skipped` dep shıǵaradı. Skipped = audit qatarı joq `partially_refunded` tólem (summa belgisiz, hesh qashan oylap tabılmaydı) yamasa tólemnen artıq audit summaları: hárbirin qolda tekseriń hám haqıyqıy summa menen qaytarıwın jazıń.
+
+## No-show esabatlar hám qaytarıw (R12b, 2026-10-07)
+
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** R12b migration'ları: `bookings/0010` (NoShowReport, `Booking.no_show_refund_percent`; bar bronlar 0 aladı), `admin_panel/0008` (audit actionlar). Ekewi de qaytarıladı.
+- [ ] **Payme, Click hám Visa menen bólekshe qaytarıw tekserilmegen.** No-show qaytarıw tólemniń 50%'i, sonıń ushın haqıyqıy rejimde `needs_manual` retinde saqlanadı hám staff qolda tóleydi (joqarıdaǵı Refunds qarań). Qosıwdan aldın hár provayderdiń bólekshe qaytarıwın onıń sandbox'ında tekseriń.
+- [ ] **Yurist mehmanlarǵa kórsetiletuǵın qaytarıw tekstin** (`no_show_refund_statement`, hár tilde) hám iyesi/staff tekstlerin iske túsiwden aldın tekseriwi kerek; 50% wáde - shártnama sharttı.
+- [ ] Tastıyıqlaw ushın sazlamalar: `NO_SHOW_REFUND_PERCENT` (50), `NO_SHOW_REPORT_WINDOW_DAYS` (7), `NO_SHOW_FLAG_*`, `THROTTLE_NO_SHOW_REPORT_RATE` (20/hour).
 
 
-## "Kelmadi" screens (R12b frontend, 2026-10-10)
+## Mehmanxana promotion'ları (R10, 2026-10-09)
 
-- [ ] **A lawyer must review the guest-facing refund sentence** (`no_show_refund_statement` in uz, ru, en) and the owner and staff dialog texts (`noShow.*`, `noShowAdmin.*`) before launch.
-- [ ] Open client decisions that change this feature: who pays the provider fee, whether it applies to non-refundable rates, whether the hotel keeps the money or TICKBRON refunds from it.
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** R10 migration'ları: `promotions/0001` (eki jańa keste) hám `admin_panel/0009` (audit actionlar). Ekewi de qaytarıladı; bar kestege maydan qosılmaydı.
+- [ ] **Celery beat isleýi kerek** (tapsırma `promotions.tasks.end_expired_promotions`, 00:10 Asia/Tashkent). Onsız admin dizimindegi statuslar eskirip qaladı; mehmanlarǵa dál tuwrı kórsetiledi (sanalardan esaplanadı).
+- [ ] **Production'da cache Redis bolıwı kerek** (`USE_REDIS_CACHE`): kóriw hám click sanları sonda dublikattan tazalanadı. Cache islemese hesh nárse sanalmaydı (`Promotion counter skipped` warning jazıladı).
+- [ ] Yurist "Reklama" belgisiniń dál tekstin hám Ózbekstandaǵı reklama huqıqı talaplarin tastıyıqlaydı (frontend belgisi - i18n kilt).
+- [ ] Reklama bahaları, invoice'ler hám qaytarıwlar platformadan tısqarıda islenedi; super-admin `mark-paid` hám kelisilgen bahanı jazadı.
 
 
-## Final pass (R15, 2026-10-18)
+## "Kelmadi" ekranları (R12b frontend, 2026-10-10)
 
-Results on the code of this date (`master` after PR #54, plus the E2E changes of the R15 PR):
-- **Backend:** `pytest --create-db`: 3153 passed, 0 failed (41 min 32 s), `makemigrations --check` clean.
-- **Frontend:** `npm test` 170 files, 1954 tests passed; `npm run lint` clean; `npm run build` clean (first load 85 KB app + 59 KB React, gzip).
-- **E2E against the real stack** (seed_demo + seed_demo_stats, Chromium): 29 of 29 passed (25 in the full run; the 3 crawls and promotions J5 passed in a second run after two environment fixes below). The crawl visits every page as guest, owner and admin at 1440px and 390px: no 404, dead button or console error.
-- **Load test** (R14, `.ai/PERFORMANCE_REPORT.md`): 200 users, 0 failures, server-side p95 search 163 ms, booking 36 ms.
+- [ ] **Yurist mehmanlarǵa kórsetiletuǵın qaytarıw gápin** (`no_show_refund_statement` uz, ru, en) hám iyesi menen staff dialog tekstlerin (`noShow.*`, `noShowAdmin.*`) iske túsiwden aldın tekseriwi kerek.
+- [ ] Bul funkciyanı ózgertetuǵın ashıq buyırtpashı qararları: provayder haqısın kim tóleydi, qaytarılmaytuǵın tariflerge qollanıladı ma, mehmanxana pulǵa iye bolama yamasa TICKBRON odan qaytaradı.
 
-How to run the E2E (`frontend/playwright.config.ts`): backend with `seed_demo` and `seed_demo_stats`, `THROTTLE_ANON_RATE` and `THROTTLE_USER_RATE` very high, and the per-IP limits switched off (they are fixed: search 100/min, promotions 60/min, login 10/min; the E2E sends everything from one address), frontend `npm run dev` on port 3000, then `npm run test:e2e`. `E2E_CHROMIUM_PATH` points to a Chromium when Playwright's own is not installed. The crawl answers the OpenStreetMap tiles itself, so it needs no internet.
 
-### Before the first production start (everything added since the first checklist)
-- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** Migrations added since 2026-10-10, all additive or reversible: `bookings/0011` and `properties/0014` (free cancellation: rate-plan terms, cancellation snapshot on bookings, refund reason `cancel`), `properties/0015` (`RoomType.is_vip`), `admin_panel/0010`, `0011` (audit actions, IP, payment reads), `users/0007`-`0009` (unique verified phone, hashed codes, SMS login columns dropped). No migration came with R12 additions, R14 or R15.
-- [ ] New library **XlsxWriter 3.2.9** (Excel export, `requirements.txt`); `pip install -r requirements.txt` on the server.
-- [ ] CBU exchange rates are loaded (R6 section above); a hotel priced in USD or EUR refuses bookings with 503 `exchange_rate_unavailable` until a rate exists.
-- [ ] Map tiles come from `tile.openstreetmap.org` (CSP `img-src`, privacy note above): the guest's browser contacts OpenStreetMap on pages with a map. Decide whether the OSM usage policy fits the expected traffic or a paid tile provider is needed.
-- [ ] Satellite pictures come from Esri's World Imagery (`server.arcgisonline.com`, also in the CSP `img-src`, and the credit is shown on the map). Esri's terms cover light use: before real traffic, take a satellite provider with a key (for example MapTiler or Mapbox) and set `VITE_SATELLITE_TILE_URL` and `VITE_SATELLITE_ATTRIBUTION` in the frontend build, then put that provider's host in the CSP. Google's pictures cannot be used outside Google's own map.
-- [ ] Size the server from the load test (`.ai/LOAD_TEST.md`): set `WEB_WORKERS` (about one per core) and `WEB_THREADS` in `.env`, plan at least 4 dedicated cores, and run the same Locust file on the real server before the advertisement.
-- [ ] Lawyer review of the refund wording (cancellation and no-show) and the "Reklama" label, as listed above.
+## Sońǵı tekseriw (R15, 2026-10-18)
 
-### Open decisions of the owner
-- UZS/USD selector on the front end: the backend sends no USD price. Add `base_price_usd_approx` or remove the selector?
-- Remove the free-text location compatibility fields from the property API (kept for the old front end)?
-- Redis search cache and image thumbnails were left out on purpose (R14 report); thumbnails belong to the "owners upload photos" feature, which does not exist yet.
+Usı sanadaǵı koddaǵı nátiyjeler (PR #54 den keyingi `master`, hám R15 PR'diń E2E ózgerisleri):
+- **Backend:** `pytest --create-db`: 3153 ótti, 0 qulaǵan (41 min 32 s), `makemigrations --check` taza.
+- **Frontend:** `npm test` 170 fayl, 1954 test ótti; `npm run lint` taza; `npm run build` taza (birinshi júklew 85 KB app + 59 KB React, gzip).
+- **Haqıyqıy stack'ke qarsı E2E** (seed_demo + seed_demo_stats, Chromium): 29 den 29 ótti (tolıq isletiwde 25; 3 crawl hám promotions J5 tómendegi eki ortalıq túzetiwinen keyin ekinshi isletiwde ótti). Crawl hár betti mehman, iyesi hám admin retinde 1440px hám 390px'te kóredi: 404 joq, ólik tugme yamasa console qáteligi joq.
+- **Load test** (R14, `.ai/PERFORMANCE_REPORT.md`): 200 paydalanıwshı, 0 qátelik, server tárepinde p95 izlew 163 ms, bronlaw 36 ms.
 
-### Found, not fixed (see HANDOFF for each)
-- Owners cannot upload photos; photos are not served by a media route in development.
-- The guest bookings list is not paginated (owner decision, R14 report).
-- Provider partial refunds are unverified (Payme, Click, Visa).
-- The new R12 cards and the Excel buttons, and the VIP badge, were checked by tests only, not by eye at 390px and 1440px (the crawl does load the pages and finds no errors).
+E2E'ni qalay isletiw (`frontend/playwright.config.ts`): backend `seed_demo` hám `seed_demo_stats` penen, `THROTTLE_ANON_RATE` hám `THROTTLE_USER_RATE` júdá joqarı, hám hár IP boyınsha limitler óshirilgen (olar bekitilgen: izlew 100/min, promotions 60/min, login 10/min; E2E hámmesin bir mánzilden jiberedi), frontend 3000 portta `npm run dev`, keyin `npm run test:e2e`. Playwright'tiń óz Chromium'ı ornatılmaǵan bolsa, `E2E_CHROMIUM_PATH` Chromium'ǵa qaratıladı. Crawl OpenStreetMap tile'lerine ózi juwap beredi, sonıń ushın internet kerek emes.
 
-## Prices in four currencies (R16, 2026-10-19)
+### Birinshi production iske túsiwden aldın (birinshi dizimnen beri qosılǵan hámme nárse)
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** 2026-10-10'dan beri qosılǵan migration'lar, hámmesi qosımsha yamasa qaytarıladı: `bookings/0011` hám `properties/0014` (biypul biykar etiw: rate-plan shártleri, bronlarda biykar etiw snapshot'ı, refund sebebi `cancel`), `properties/0015` (`RoomType.is_vip`), `admin_panel/0010`, `0011` (audit actionlar, IP, tólem oqıwları), `users/0007`-`0009` (biregey tastıyıqlanǵan telefon, hash'lengen kodlar, SMS login baǵanaları óshirildi). R12 qosımshaları, R14 yamasa R15 menen migration kelmegen.
+- [ ] Jańa kitapxana **XlsxWriter 3.2.9** (Excel eksport, `requirements.txt`); server'de `pip install -r requirements.txt`.
+- [ ] CBU valyuta kursları júklengen (joqarıdaǵı R6 bólimi); USD yamasa EUR'da bahalanǵan mehmanxana kurs bolmaǵansha 503 `exchange_rate_unavailable` menen bronlawdı biykarlaydı.
+- [ ] Karta tile'leri `tile.openstreetmap.org`'dan keledi (CSP `img-src`, joqarıdaǵı maxfiylik eskertpesi): mehmannıń brauzeri kartalı betlerde OpenStreetMap penen baylanısadı. OSM paydalanıw siyasatı kútilgen trafikke jaraydı ma, yamasa pullı tile provayder kerekpe, qarar etiń.
+- [ ] Sun'iy joldas súwretleri Esri World Imagery'den keledi (`server.arcgisonline.com`, CSP `img-src`'te de, hám karta ústinde atribuciya kórsetiledi). Esri shártleri jeńil paydalanıwdı qamtıydı: haqıyqıy trafikten aldın kilt'li joldas provayderdi alıń (mısalı MapTiler yamasa Mapbox) hám frontend build'te `VITE_SATELLITE_TILE_URL` hám `VITE_SATELLITE_ATTRIBUTION`'dı qoyıń, keyin sol provayderdiń host'ın CSP'ge qosıń. Google súwretlerin Google'dıń óz kartasınan tısqarıda paydalanıp bolmaydı.
+- [ ] Server'di load test'ten ólsheń (`.ai/LOAD_TEST.md`): `.env` ishinde `WEB_WORKERS` (shama menen hár yadroǵa bir) hám `WEB_THREADS` qoyıń, keminde 4 arnawlı yadro jobalań, hám reklamadan aldın haqıyqıy server'de sol Locust faylın isletiń.
+- [ ] Qaytarıw tekstlerin (biykar etiw hám no-show) hám "Reklama" belgisin yurist tekseriwi, joqarıda dizimlengenindey.
 
-- [ ] **Backup first: `pg_dump -Fc` before `migrate`.** Migration `properties/0016` adds the table `rate_plan_prices` (additive, reversible).
-- [ ] `RATE_PLAN_PRICES_REQUIRED` is true (the default): owners must enter the price in USD, UZS, KZT and RUB for every rate plan, and an old plan cannot be edited until they do. Existing plans keep working; their other currencies show as converted (≈) until the owner enters them. Tell owners before launch.
-- [ ] The CBU fetch now also stores KZT and RUB; check `GET /admin-panel/exchange-rates/status/` shows all three currencies fresh after the first run.
-- [ ] Guests pay in so'm: when the owner entered a so'm price, that exact price is charged; otherwise the CBU conversion. Paying in tenge, rubles or dollars needs a provider that takes them (not confirmed).
+### Iyesiniń ashıq qararları
+- Frontend'te UZS/USD tańlaǵısh: backend USD baha jibermeydi. `base_price_usd_approx` qosıladı yamasa tańlaǵısh alıp taslanadı?
+- Property API'den erkin tekstli orın sáykeslik maydanların alıp taslaw (eski frontend ushın saqlanǵan)?
+- Redis izlew cache hám súwret thumbnail'leri ataylap qaldırılǵan (R14 esabatı); thumbnail'ler "iyeler súwret júkleydi" funkciyasına tiyisli.
 
-## Cash bookings (stage 2 of PLAN_CASH_ONLY, 2026-10-22)
-- [ ] Backup first (`pg_dump -Fc`): migration `bookings/0012_cash_arrival` adds two columns and confirms `pending` bookings still inside their 15-minute window.
-- [ ] Celery **beat** and a worker run: `bookings.tasks.cancel_unarrived_bookings` every 10 minutes cancels a confirmed booking whose guest is not marked "arrived" `ARRIVAL_GRACE_HOURS` (default 2) after the arrival time. Without beat nothing is ever cancelled.
-- [ ] Hotels are told to press "Guest arrived" in Status > arrivals; otherwise guests who did come are cancelled.
-- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (2, `bookings/views.py`, decided 2026-10-23) and the no-overlap rule are the only brake on one account taking rooms without paying.
+### Belgili, biraq túzetilmegen (hárbirin HANDOFF'ta qarań)
+- Iyeler súwret júkley almaydı; development'te súwretler media route arqalı berilmeydi.
+- Mehmannıń bronlar dizimi bet-betke bólinbegen (iyesi qararı, R14 esabatı).
+- Provayderlerdiń bólekshe qaytarıwları tekserilmegen (Payme, Click, Visa).
+- Jańa R12 kartaları hám Excel tugmeleri hám VIP badge 390px hám 1440px'te kózge emes, tek testler menen tekserilgen (crawl betlerdi júkleydi hám qátelik tappaydı).
 
-- [ ] Deploying with Docker: follow `.ai/DEPLOY_DOCKER.md` (compose file, Caddyfile with automatic HTTPS, nightly `deploy/backup.sh` and a copy of the backups to another machine).
+## Tórt valyutadaǵı bahalar (R16, 2026-10-19)
+
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** `properties/0016` migration'ı `rate_plan_prices` kestesin qosadı (qosımsha, qaytarıladı).
+- [ ] `RATE_PLAN_PRICES_REQUIRED` true (standart): iyeler hár rate plan ushın USD, UZS, KZT hám RUB bahasın kiritiwi kerek, hám eski plan olar kiritilmegenshe ózgertilmeydi. Bar planlar islewin dawam etedi; olardıń basqa valyutaları iyesi kiritkenshe konvertaciya (≈) retinde kórinedi. Iske túsiwden aldın iyelerge aytıń.
+- [ ] CBU alıwı endi KZT hám RUB'nı da saqlaydı; birinshi isletiwden keyin `GET /admin-panel/exchange-rates/status/` úsh valyutanıń da taza ekenin kórsetetuǵının tekseriń.
+- [ ] Mehmanlar so'mda tóleydi: iyesi so'm bahasın kiritken bolsa, sol dál baha alınadı; basqasha CBU konvertaciyası. Tenge, rubl yamasa dollarda tólew olardı qabıl etetuǵın provayderdi talap etedi (tastıyıqlanbaǵan).
+
+## Naqd bronlar (PLAN_CASH_ONLY 2-basqıshı, 2026-10-22)
+- [ ] Aldın backup (`pg_dump -Fc`): `bookings/0012_cash_arrival` migration'ı eki baǵana qosadı hám ele 15 minutlıq aynası ishindegi `pending` bronlardı tastıyıqlaydı.
+- [ ] Celery **beat** hám worker isleydi: `bookings.tasks.cancel_unarrived_bookings` hár 10 minutta, mehmanı "arrived" dep belgilenbegen tastıyıqlanǵan bronnı kelip jetiw waqtınan `ARRIVAL_GRACE_HOURS` (standart 2) keyin biykar etedi. Beat bolmasa hesh nárse hesh qashan biykar etilmeydi.
+- [ ] Mehmanxanalarǵa Status > arrivals ishinde "Guest arrived" basıwın aytıń; basqasha haqıyqatında kelgen mehmanlar biykar etiledi.
+- [ ] `MAX_UPCOMING_BOOKINGS_PER_GUEST` (2, `bookings/views.py`, 2026-10-23 qarar etilgen) hám kesilispew qaǵıydası - bir akkauntnıń tólemey xonalardı alıwına birden-bir tosqınlıq.
+
+- [ ] Docker menen joylastırıw: `.ai/DEPLOY_DOCKER.md`'ni orınlań (compose fayl, avtomat HTTPS penen Caddyfile, hár keshelik `deploy/backup.sh` hám backup'lardı basqa mashinaǵa kóshiriw).
+
+## Sońǵı qosımshalar (2026-11)
+
+- [ ] **Aldın backup: `migrate`'den aldın `pg_dump -Fc`.** 2026-11'de qosılǵan migration'lar: `users/0012` hám `chat/0002` (SMS roziligi hám `SmsDelivery`, qosımsha) hám olardı alıp taslaytuǵın `users/0013` hám `chat/0003` (SMS joq, qaytarıladı), `partner/0004`, `promotions/0004`, `properties/0017`, `geography/0005`, `admin_panel/0019` (shahar pogʻonasın alıp taslaw: `geo_cities` kestesi hám `city_ref` baǵanaları óshedi, qaytarıw tek dúzilistı tiklaydı).
+- [ ] Geografiya: tek mámleket hám region. Mehmanxanada shahar yamasa tuman maydanı joq (`PLAN_GEO_REMOVE_CITY.md`).
+- [ ] SMS joq: sayt SMS jibermeydi, qollap-quwatlaw juwabı paydalanıwshıǵa tek e-mail menen baradı (`SMS_*` sazlamaları alıp taslandı).
+- [ ] Beat: kúnine bir ret `common.tasks.clear_expired_sessions` (03:30 Asia/Tashkent) ótken kirisiw sessiyaların óshiredi; onsız `django_session` kestesi toqtawsız ósedi.
+- [ ] Docker log'lar hár xızmet ushın eń kóp 3 x 10 MB (`docker-compose.yml`).
+- [ ] Android hám PWA: `/manifest.webmanifest`, `/sw.js`, `/.well-known/assetlinks.json` óz mazmunın qaytaradı; Play'dan "App signing key" SHA-256 `assetlinks.json`'ge qosıladı (`.ai/ANDROID.md`).
+- [ ] Play hám Apple ushın áli kerek: ilovada hesabın óshiriw, maxfiylik siyasatı beti, tekseriwshi ushın demo akkaunt.

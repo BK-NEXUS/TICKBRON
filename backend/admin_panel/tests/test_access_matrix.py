@@ -82,7 +82,7 @@ PROMOTION_WRITES = [
 # Geography dictionary management (G3): super-admin only, staff get 403 too
 GEOGRAPHY_ENDPOINTS = [
     (method, f'{A}/geography/{kind}/{suffix}')
-    for kind in ('countries', 'regions', 'cities')
+    for kind in ('countries', 'regions')
     for method, suffix in (
         ('get', ''), ('post', ''), ('post', 'reorder/'),
         ('get', '1/'), ('put', '1/'), ('patch', '1/'), ('delete', '1/'),

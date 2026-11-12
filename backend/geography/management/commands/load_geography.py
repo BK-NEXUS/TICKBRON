@@ -1,5 +1,5 @@
 """
-Load the initial Country > Region > City data (geography/data.py).
+Load the initial Country > Region data (geography/data.py).
 
     python manage.py load_geography
 
@@ -11,16 +11,16 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from geography.data import load_geography
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 
 
 class Command(BaseCommand):
-    help = 'Load the initial Geography data (countries, regions, cities); idempotent'
+    help = 'Load the initial Geography data (countries, regions); idempotent'
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            countries, regions, cities = load_geography(Country, Region, City)
+            countries, regions, _cities = load_geography(Country, Region)
         self.stdout.write(self.style.SUCCESS(
-            f'Geography loaded: {countries} countries, {regions} regions, {cities} cities created '
-            f'({Country.objects.count()} / {Region.objects.count()} / {City.objects.count()} in total).'
+            f'Geography loaded: {countries} countries, {regions} regions created '
+            f'({Country.objects.count()} / {Region.objects.count()} in total).'
         ))

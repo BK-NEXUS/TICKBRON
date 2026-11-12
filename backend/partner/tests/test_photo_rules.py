@@ -42,7 +42,7 @@ class TestPhotoRules:
         settings.MEDIA_ROOT = tmp_path
         response = post_photo(owner, inventory, kind, image_upload(1600, 1067, fmt='PNG', name='holiday.jpg'))
         assert response.status_code == 201, response.data
-        assert model.objects.get().photo.name.endswith('.png')
+        assert model.objects.get().photo.name.endswith('.webp')
 
     def test_the_refusal_is_said_in_the_page_language(self, owner, inventory, settings, tmp_path, kind, model):
         settings.MEDIA_ROOT = tmp_path

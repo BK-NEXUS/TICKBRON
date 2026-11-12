@@ -105,7 +105,7 @@ class RoomPhotoTests(TestCase):
         self.client.force_authenticate(self.owner)
         response = self._upload(name='my private name.jpg')
         stored = RoomPhoto.objects.get(pk=response.data['id']).photo.name
-        self.assertRegex(stored, r'/[0-9a-f]{32}\.jpg$')
+        self.assertRegex(stored, r'/[0-9a-f]{32}\.webp$')
         self.assertNotIn('private', stored)
 
     def test_upload_to_another_owners_room_is_404(self):

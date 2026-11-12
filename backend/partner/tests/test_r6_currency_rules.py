@@ -8,7 +8,7 @@ from datetime import timedelta
 import pytest
 
 from common.dates import business_today
-from geography.models import City
+from geography.models import Region
 from partner.tests.geography_helpers import uzbek_location
 from partner.tests.test_property_create_access import client_for, inventory, owner, owner_role  # noqa: F401
 
@@ -40,18 +40,18 @@ class TestPropertyCurrency:
         assert response.data['currency'] == 'UZS'
 
     def test_a_country_whose_currency_is_not_supported_defaults_to_usd(self, owner, inventory):
-        city = City.objects.select_related('region__country').filter(region__country__code='TR').first()
-        payload = _property_payload(inventory, country_ref=city.region.country_id, region_ref=city.region_id,
-                                    city_ref=city.id, base_price='70.00')
+        region = Region.objects.select_related('country').filter(country__code='TR').first()
+        payload = _property_payload(inventory, country_ref=region.country_id, region_ref=region.id,
+                                    base_price='70.00')
         response = client_for(owner).post(f'{P}/properties/', payload, format='json')
         assert response.status_code == 201, response.data
         assert response.data['currency'] == 'USD'
 
     def test_a_country_with_a_supported_currency_defaults_to_it(self, owner, inventory):
         """R16: tenge and ruble are supported, so a Kazakh hotel starts in tenge."""
-        city = City.objects.select_related('region__country').filter(region__country__code='KZ').first()
-        payload = _property_payload(inventory, country_ref=city.region.country_id, region_ref=city.region_id,
-                                    city_ref=city.id, base_price='35000')
+        region = Region.objects.select_related('country').filter(country__code='KZ').first()
+        payload = _property_payload(inventory, country_ref=region.country_id, region_ref=region.id,
+                                    base_price='35000')
         response = client_for(owner).post(f'{P}/properties/', payload, format='json')
         assert response.status_code == 201, response.data
         assert response.data['currency'] == 'KZT'

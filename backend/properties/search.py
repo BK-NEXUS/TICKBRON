@@ -48,13 +48,13 @@ def card_prices_prefetch(prefix=''):
             is_active=True, is_deleted=False).prefetch_related('prices'))))
 
 
-GEOGRAPHY_LEVELS = ('city_ref', 'region_ref', 'country_ref')
+GEOGRAPHY_LEVELS = ('region_ref', 'country_ref')
 GEOGRAPHY_LANGUAGES = ('uz', 'ru', 'en')
 MAX_SEARCH_WORDS = 8
 
 
 def geography_name_filter(term):
-    """Q matching the term in the uz/ru/en name of the property's city, region or country (via the refs)."""
+    """Q matching the term in the uz/ru/en name of the property's region or country (via the refs)."""
     query = Q()
     for level in GEOGRAPHY_LEVELS:
         for language in GEOGRAPHY_LANGUAGES:
@@ -485,7 +485,7 @@ class PropertySearchService:
     def _apply_location_search(self, queryset, location):
         """
         Apply location-based search: names in all three languages through the Geography refs,
-        plus the old text fields (the only location unmapped properties have).
+        plus the text fields (the only location unmapped properties have).
         """
         return queryset.filter(
             geography_name_filter(location) |
@@ -697,8 +697,8 @@ class PropertySearchService:
         if not query or len(query) < 2:
             return []
 
-        # Places (city, region, country) that have public hotels, named in whichever language
-        # matched what was typed; so the suggestion finds the same hotels when it is searched for.
+        # Places (region, country) that have public hotels, named in whichever language matched
+        # what was typed; so the suggestion finds the same hotels when it is searched for.
         # Properties never mapped to the dictionary fall back to their text city / country.
         public = Property.objects.filter(is_active=True, is_deleted=False, status='active')
         suggestions = []
@@ -713,7 +713,7 @@ class PropertySearchService:
                 field = f'{level}__name_{language}'
                 add(public.filter(**{f'{field}__icontains': query}).order_by(field)
                     .values_list(field, flat=True).distinct()[:limit])
-        add(public.filter(city_ref__isnull=True, city__icontains=query)
+        add(public.filter(city__icontains=query)
             .order_by('city').values_list('city', flat=True).distinct()[:limit])
         add(public.filter(country_ref__isnull=True, country__icontains=query)
             .order_by('country').values_list('country', flat=True).distinct()[:limit])

@@ -1,63 +1,63 @@
-# Putting TICKBRON on a server with Docker
+# TICKBRON'dı Docker menen serverge qoyıw
 
-This is the step-by-step for one Linux server (the owner's own server, a rented VPS or an AWS EC2 machine: the steps are the same). Every step says how to check it worked. The files: `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `deploy/Caddyfile`, `deploy/docker.env.example`, `deploy/backup.sh`.
+Bul bir Linux server ushın qádem-qádem nusqaw (iyesiniń óz server'i, jalǵa alınǵan VPS yamasa AWS EC2 mashinası: qádemler birdey). Hár qádemde onıń isleǵenin qalay tekseriw aytılǵan. Fayllar: `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `deploy/Caddyfile`, `deploy/docker.env.example`, `deploy/backup.sh`.
 
-## What runs
+## Ne isleydi (What runs)
 
-| Container | What it does | Open to the internet |
+| Container | Ne isleydi | Internetke ashıq |
 |---|---|---|
-| `caddy` | The web server: the site, `/api/`, the photos; gets the HTTPS certificate by itself | yes, ports 80 and 443 |
-| `web` | The API (Django, gunicorn) | no |
-| `worker` | Background tasks: e-mails, Telegram notices, exchange rates | no |
-| `beat` | The scheduler (exchange rates twice a day). Exactly one copy, never scale it | no |
-| `migrate` | Runs once at every start: applies new database changes, then stops | no |
-| `db` | PostgreSQL 16 (data in the `pgdata` volume) | no |
-| `redis` | Redis (cache, throttles, the task queue; `redisdata` volume) | no |
+| `caddy` | Web server: sayt, `/api/`, súwretler; HTTPS sertifikatın ózi aladı | awa, 80 hám 443 portlar |
+| `web` | API (Django, gunicorn) | yaq |
+| `worker` | Fon tapsırmaları: e-mail'ler, Telegram xabarları, valyuta kursları, ótken sessiyalardı tazalaw | yaq |
+| `beat` | Rejelestiriwshi (kúnine eki ret valyuta kursı hám t.b.). Tap bir nusqa, hesh qashan kóbeytpeń | yaq |
+| `migrate` | Hár iske túskende bir ret isleydi: jańa database ózgerislerin qollaydı, sonda toqtaydı | yaq |
+| `db` | PostgreSQL 16 (maǵlıwmatlar `pgdata` volume'da) | yaq |
+| `redis` | Redis (cache, throttle'lar, tapsırma náwbeti; `redisdata` volume) | yaq |
 
-Data that must survive: the volumes `pgdata` (database), `media` (uploaded photos) and `caddy_data` (HTTPS certificates). Stopping or rebuilding containers does not touch them; `docker compose down -v` DELETES them: never type that on the real server.
+Saqlanıwı shárt maǵlıwmatlar: `pgdata` (database), `media` (júklengen súwretler) hám `caddy_data` (HTTPS sertifikatlar) volume'ları. Container'lardı toqtatıw yamasa qayta qurıw olarǵa tiymeydi; `docker compose down -v` olardı ÓSHIREDI: haqıyqıy server'de hesh qashan jazbań. Hár container'dıń log fayllari eń kóp 3 x 10 MB (`docker-compose.yml`), sonıń ushın disk log'lardan toltpaydı.
 
-## What you need
+## Ne kerek
 
-- A Linux server, Ubuntu 22.04 or 24.04, at least 2 CPU, 4 GB RAM (2 GB works for a start), 40 GB disk, and a user with `sudo`.
-- The domain with a DNS record pointing at the server (step 1).
-- Mail settings (SMTP host, user, password) from any mail service, for password reset and notices.
-- The code on the server (step 3).
+- Linux server, Ubuntu 22.04 yamasa 24.04, keminde 2 CPU, 4 GB RAM (baslanıw ushın 2 GB da boladı), 40 GB disk hám `sudo` huqıqlı paydalanıwshı.
+- Server'ge bağıtlanǵan DNS jazıwlı domen (1-qádem).
+- Qálegen mail xızmetinen mail sazlamaları (SMTP host, user, password): parol tiklew hám kirisiw kodları ushın.
+- Server'degi kod (3-qádem).
 
-## Step 1. The domain (ahost.uz)
+## 1-qádem. Domen (ahost.uz)
 
-In the domain's DNS panel add two **A** records, both with the server's public IP address:
-- `@` (the bare name `tickbron.com`)
+Domenniń DNS panelinde eki **A** jazıw qosıń, ekewi de server'diń ashıq IP mánzili menen:
+- `@` (taza at `tickbron.com`)
 - `www`
 
-Check, from your own computer (it can take from minutes up to a few hours): `nslookup tickbron.com` must show the server's IP. Do this before step 5: the certificate can only be issued when the name already points at the server.
+Óz kompyuterińizden tekseriń (bir neshe minuttan bir neshe saatqa shekem ketiwi múmkin): `nslookup tickbron.com` server IP'sin kórsetiwi kerek. Buni 5-qádemnen aldın isleń: sertifikat tek at server'ge qarap turǵanda beriledi.
 
-### IPv6 (optional, later)
+### IPv6 (ıqtıyarıy, keyinirek)
 
-The site works with IPv4 only, which every visitor can reach. IPv6 is an extra: add an **AAAA** record (`@` and `www`) with the server's public IPv6 address **only after** this check passes, because Docker can hide the visitor's real address behind its own:
+Sayt tek IPv4 penen isleydi, oǵan hár kelushi kire aladı. IPv6 - qosımsha: **AAAA** jazıwdı (`@` hám `www`) server'diń IPv6 mánzili menen **tek** usı tekseriw ótkennen **keyin** qosıń, sebebi Docker kelushiniń haqıyqıy mánzilin óz mánzili artında jasırıwı múmkin:
 
-1. Visit the site over IPv6 only (for example `curl -6 https://tickbron.com/healthz/` from a computer with IPv6, or an online "IPv6 only" tester) with the AAAA record already set.
-2. `docker compose logs caddy | tail`: the line of that request must show your real IPv6 address. If it shows a Docker address (`172.` or `fd00:`), remove the AAAA record again: every IPv6 visitor would then look like one visitor to the limits and the login lock.
+1. Saytqa tek IPv6 arqalı kiriń (mısalı IPv6 bar kompyuterden `curl -6 https://tickbron.com/healthz/` yamasa onlayn "IPv6 only" tester), AAAA jazıw qoyılǵannan keyin.
+2. `docker compose logs caddy | tail`: sol soraw qatarında sizdiń haqıyqıy IPv6 mánzilińiz kóriniwi kerek. Docker mánzili (`172.` yamasa `fd00:`) kórinse, AAAA jazıwdı qaytadan óshiriń: sonda hár IPv6 kelushi limit'lerge hám kirisiw qulıpına bir kelushi bolıp kórinedi.
 
-What the app does by itself: it stores and shows IPv6 addresses (audit log, last login), and the limits (login, register, anonymous API, ad view counting, login lock) count an IPv6 visitor by its /64 block, because a provider gives one connection a whole block and the visitor can change address inside it. IPv4 is counted per address as before. Caddy needs no setting for IPv6.
+Ilova óz aldına ne isleydi: IPv6 mánzillerdi saqlaydı hám kórsetedi (audit log, sońǵı kirisiw), hám limit'ler (kirisiw, dizimnen ótiw, anonim API, reklama kóriw sanaw, kirisiw qulıpı) IPv6 kelushini /64 blogı boyınsha sanaydı, sebebi provayder bir baylanısqa pútkil blok beredi hám kelushi blok ishinde mánzilin ózgerte aladı. IPv4 burınǵıday hár mánzil boyınsha sanaladı. Caddy ushın IPv6 sazlaması kerek emes.
 
-## Step 2. Prepare the server
+## 2-qádem. Server'di tayarlaw
 
 ```
 sudo apt update && sudo apt -y upgrade
 sudo apt -y install ufw git
 sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443 && sudo ufw enable
 curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER      # log out and in again after this
-docker compose version              # must print a version
+sudo usermod -aG docker $USER      # bunnan keyin shıǵıp qayta kiriń
+docker compose version              # versiya shıǵarıwı kerek
 ```
 
-The firewall lets in only SSH, 80 and 443. The database and Redis are not published on the server at all.
+Firewall tek SSH, 80 hám 443'ke ruxsat beredi. Database hám Redis server'de ulıwma ashılmaydı.
 
-## Step 3. Get the code
+## 3-qádem. Kodtı alıw
 
-Either `git clone <repository address> tickbron && cd tickbron` (the repository is private: use a deploy key or an access token), or copy the folder from your computer (`scp`/`rsync`). Everything below runs inside this folder.
+Yamasa `git clone <repository mánzili> tickbron && cd tickbron` (repository jabıq: deploy key yamasa access token paydalanıń), yamasa papkanı kompyuterińizden kóshiriń (`scp`/`rsync`). Tómendegi hámme ámel usı papka ishinde isleydi.
 
-## Step 4. Fill in the settings
+## 4-qádem. Sazlamalardı toltırıw
 
 ```
 cp deploy/docker.env.example .env
@@ -65,124 +65,127 @@ chmod 600 .env
 nano .env
 ```
 
-Change every value that says `CHANGE_ME`, and `DOMAIN`, `ALLOWED_HOSTS`, `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `DEFAULT_FROM_EMAIL` to the real domain. Make the secret key with:
+`CHANGE_ME` jazılǵan hár mánisti, hám `DOMAIN`, `ALLOWED_HOSTS`, `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `DEFAULT_FROM_EMAIL`'di haqıyqıy domenge ózgertiń. Jasırın kilt'ti (secret key) mınaw menen jasań:
 
 ```
 docker compose run --rm --no-deps web python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
 ```
 
-Make the key that seals the administrators' two-step sign-in secrets (`TWO_FACTOR_KEY`) with:
+Administratorlardıń eki basqıshlı kirisiw sırların qorǵaytuǵın kilt'ti (`TWO_FACTOR_KEY`) mınaw menen jasań:
 
 ```
 docker compose run --rm --no-deps web python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Keep a copy of it apart from the database backups: without it nobody can use the authenticator codes already set up, a leaked database alone is no use to a thief. Two-step sign-in is required for administrators and staff when `DEBUG=False`.
+Onıń nusqasın database backup'larınan bólek saqlań: onsız ózi qoyılǵan authenticator kodlardı hesh kim paydalana almaydı, al tek database aǵıp ketse, urı oǵan paydalana almaydı. `DEBUG=False` waqtında administratorlar hám staff ushın eki basqıshlı kirisiw májbúriy.
 
-`.env` holds passwords: it is not in git, do not send it by chat or e-mail. The app refuses to start with a weak or missing setting and says which one (`docker compose logs migrate`).
+`.env` parollardı saqlaydı: ol git'te joq, chat yamasa e-mail arqalı jibermeń. Ilova náshar yamasa joq sazlama menen iske túspeydi hám qaysısın aytadı (`docker compose logs migrate`).
 
-## Step 5. Start
+SMS (`SMS_ENABLED=False`) standart halda óshirilgen: jaqın arada haqıyqıy SMS provayder ulanǵanǵa shekem usılay qaldırıń (`.ai/PLAN_SMS_CHAT.md`).
+
+## 5-qádem. Iske túsiriw
 
 ```
 docker compose up -d --build
-docker compose ps          # every line "Up", db/redis/web "(healthy)"; migrate is gone (it finished)
+docker compose ps          # hár qatar "Up", db/redis/web "(healthy)"; migrate joq (pitti)
 ```
 
-The first start builds the images (a few minutes). Then open `https://your-domain`: the site must load with a valid certificate. If not, see "Problems".
+Birinshi iske túsiriw image'lerdi qurıp aladı (bir neshe minut). Keyin `https://sizdiń-domen` ashıń: sayt durıs sertifikat penen júklenwi kerek. Bolmasa "Mashqalalar" bólimin qarań.
 
-## Step 6. The first administrator
+## 6-qádem. Birinshi administrator
 
 ```
-docker compose exec -e DJANGO_SUPERUSER_PASSWORD='a-long-password' web python manage.py createsuperuser --noinput --email you@your-domain
+docker compose exec -e DJANGO_SUPERUSER_PASSWORD='uzın-parol' web python manage.py createsuperuser --noinput --email siz@sizdiń-domen
 ```
 
-Then add the property types (hotel, hostel, guest house, apartment, resort). A new server has none, and an owner cannot add a hotel without one. Safe to run again:
+Keyin mehmanxana túrlerin qosıń (hotel, hostel, guest house, apartment, resort). Jańa server'de olar joq hám iyesi túrsiz mehmanxana qosa almaydı. Qayta isletiw qáwipsiz:
 
 ```
 docker compose exec web python manage.py seed_property_types
 ```
 
-Sign in at `https://your-domain/login` with that e-mail. The first sign-in sends the administrator to the two-step setup page: install an authenticator app on the phone (Google Authenticator, Microsoft Authenticator, Authy or 2FAS), scan the picture, type the 6-digit code, and keep the 10 backup codes on paper. Hotel owner accounts are created by this administrator in the admin panel. Do NOT run `seed_demo` on the real server (it is for development and refuses to run without DEBUG).
+`https://sizdiń-domen/login` betinde sol e-mail menen kiriń. Birinshi kirisiw administratordı eki basqıshlı sazlaw betine alıp baradı: telefonǵa authenticator ilovasın ornatıń (Google Authenticator, Microsoft Authenticator, Authy yamasa 2FAS), súwretti skanerleń, 6 xanalı kodtı jazıń hám 10 zapas kodtı qaǵazda saqlań. Mehmanxana iyesiniń akkauntların usı administrator admin panelde jaratadı. Haqıyqıy server'de `seed_demo`'nı ISLETPEŃ (ol development ushın hám DEBUG bolmasa isletpeydi).
 
-## Step 7. Prepare the data and check the mail (before anyone else comes)
+## 7-qádem. Maǵlıwmatlardı tayarlaw hám mail'di tekseriw (basqa adam kelmesten aldın)
 
-A new server has no exchange rate, no mail test and no amenities. Do these once, in this order:
+Jańa server'de valyuta kursı, mail sınawı hám amenity'ler joq. Usılardı bir ret, usı tártipte islań:
 
-1. **Exchange rate.** Hotels priced in dollars cannot be booked until the first rate of the central bank is stored (the daily task only runs at 09:00 and 18:00 Tashkent time). The server must reach the internet:
+1. **Valyuta kursı.** Dollarda bahalanǵan mehmanxanalardı orayılıq bank kursı saqlanǵanǵa shekem bronlaw múmkin emes (kúndelik tapsırma tek Toshkent waqtı menen 09:00 hám 18:00'de isleydi). Server internetke shıǵa alıwı kerek:
    ```
    docker compose exec web python manage.py fetch_exchange_rates
    ```
-   It prints `USD: <rate> UZS for <date>`. If it says "fetch failed", check that the server can open `https://cbu.uz`.
-2. **Mail.** Sign-up and sign-in of guests and hotel owners need a mailed six-digit code, and password reset needs the same mail: if the mail does not work nobody can sign up or sign in. Send a test mail to yourself:
+   Ol `USD: <kurs> UZS for <sana>` dep shıǵaradı. "fetch failed" desse, server `https://cbu.uz`'dı ashıp alatuǵının tekseriń.
+2. **Mail.** Mehmanlar hám mehmanxana iyeleriniń dizimnen ótiwi hám kirisiwi mail menen kelgen altı xanalı kodtı talap etedi, hám parol tiklew de sol mail'di talap etedi: mail islemese, hesh kim dizimnen óte almaydı hám kire almaydı. Ózińizge sınaw maili jiberiń:
    ```
-   docker compose exec web python manage.py sendtestemail you@your-address.com
+   docker compose exec web python manage.py sendtestemail siz@sizdiń-mánzil.com
    ```
-   It must arrive within a minute (look in the spam folder too). A personal Gmail account sends about 500 mails a day; use a mail service with a big daily limit (Brevo, SendGrid, Mailgun, Amazon SES) and set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` and `DEFAULT_FROM_EMAIL` in `.env`, then `docker compose up -d web worker`.
-3. **Amenities** (wifi, parking, breakfast and so on): sign in as the administrator, open the admin panel, "Amenities", and add the ones hotels can tick. Without them the hotel form and the search filter have nothing to offer.
-4. **Try it as a stranger would**, with your own second e-mail address: sign up on the site (the code arrives by mail), sign out, sign in (a code again), ask for a password reset. Then as the administrator create a hotel-owner account (it asks for the commission percent), sign in as that owner in a private window, add a hotel and approve it in the admin panel, and book it from the guest account.
-5. **Alerts** (optional): `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALERT_CHAT_ID` in `.env` send locked-account and server-error alerts to a Telegram chat.
+   Ol bir minut ishinde kelwi kerek (spam papkasın da qarań). Jeke Gmail account kúnine shama menen 500 mail jiberedi; kúndelik limiti úlken mail xızmetin paydalanıń (Brevo, SendGrid, Mailgun, Amazon SES) hám `.env` ishinde `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` hám `DEFAULT_FROM_EMAIL`'di qoyıń, keyin `docker compose up -d web worker`.
+3. **Amenity'ler** (wifi, parking, nashta hám t.b.): administrator retinde kiriń, admin panel, "Amenities" bólimin ashıń hám mehmanxanalar belgilewi múmkin bolǵanların qosıń. Olarsız mehmanxana forması hám izlew filtrinde usınıs etiwge hesh nárse joq.
+4. **Bóten adam sıyaqlı sınań**, ekinshi e-mail mánzilińiz menen: saytta dizimnen óting (kod mail menen keledi), shıǵıń, qaytadan kiriń (qaytadan kod), parol tiklewdi sorań. Keyin administrator retinde mehmanxana iyesi akkauntın jaratıń (ol komissiya procentin soraydı), jabıq oynada sol iyesi retinde kiriń, mehmanxana qosıń hám admin panelde tastıyıqlań, hám mehmanlıq akkauntınan bronlań.
+5. **Alert'ler** (ıqtıyarıy): `.env` ishindegi `TELEGRAM_BOT_TOKEN` hám `TELEGRAM_ALERT_CHAT_ID` qulıplanǵan akkaunt hám server qátesi alert'lerin Telegram chat'ke jiberedi.
+6. **Android hám PWA** (saytıńız ashılǵannan keyin): bul úsh mánzil óz mazmunın kórsetiwi kerek (bas bet HTML'i emes): `https://sizdiń-domen/manifest.webmanifest`, `https://sizdiń-domen/sw.js`, `https://sizdiń-domen/.well-known/assetlinks.json`. Keyin `.ai/ANDROID.md` boyınsha APK'nı telefonda sınań.
 
-## Update to a new version
+## Jańa versiyaǵa jańalaw
 
 ```
-sh deploy/backup.sh                 # always first
+sh deploy/backup.sh                 # hámme waqıt birinshi
 git pull
-docker compose up -d --build        # new database changes are applied by `migrate` automatically
+docker compose up -d --build        # jańa database ózgerislerin `migrate` avtomat qollaydı
 docker compose ps
 ```
 
-## Backups
+## Backup'lar
 
-`sh deploy/backup.sh` writes the database and the photos into `backups/` and removes files older than 14 days. Run it every night:
+`sh deploy/backup.sh` database hám súwretlerdi `backups/` ishine jazadı hám 14 kúnnen eski fayllardı óshiredi. Hár keshe isletiń:
 
 ```
 crontab -e
 30 3 * * *  sh /home/<user>/tickbron/deploy/backup.sh >> /home/<user>/backup.log 2>&1
 ```
 
-A backup on the same server is lost with the server: copy `backups/` to another machine or a cloud disk every day too.
+Sol server'degi backup server menen birge joǵaladı: `backups/` papkasın hár kúni basqa mashinaǵa yamasa bulut diskke de kóshirip turıń.
 
-### Restore
+### Tiklew (Restore)
 
 ```
-# the database (from the file you choose)
+# database (óziń tańlaǵan fayldan)
 docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < backups/db-YYYYMMDD-HHMMSS.dump
-# the photos
+# súwretler
 docker compose cp backups/media-YYYYMMDD-HHMMSS.tar.gz web:/tmp/m.tgz
 docker compose exec -T web tar xzf /tmp/m.tgz -C /app
 ```
 
-A restore was tried on a test copy of this setup (a deleted user came back, a deleted photo came back and was served again).
+Tiklew usı sazlamanıń test nusqasında sınalǵan (óshirilgen paydalanıwshı qaytıp keldi, óshirilgen súwret qaytıp keldi hám qayta berildi).
 
-## Look at it
+## Kóriw
 
-- `docker compose ps`: what runs and whether it is healthy.
-- `docker compose logs -f web` (or `worker`, `beat`, `caddy`, `db`): what happens now; Ctrl+C leaves.
-- `curl -s https://your-domain/api/v1/properties/search/ | head -c 200`: the API answers.
+- `docker compose ps`: ne isleydi hám dene-sawlıǵı qanday.
+- `docker compose logs -f web` (yamasa `worker`, `beat`, `caddy`, `db`): házir ne bolıp atır; Ctrl+C shıǵadı.
+- `curl -s https://sizdiń-domen/api/v1/properties/search/ | head -c 200`: API juwap beredi.
 
-## Problems
+## Mashqalalar (Problems)
 
-- **The certificate is not issued / the browser warns**: the DNS name does not point at the server yet (step 1), or ports 80/443 are closed (step 2). `docker compose logs caddy` says which. Caddy retries by itself.
-- **`migrate` or `web` stops at start**: `docker compose logs migrate` names the setting that is wrong or missing (the app checks its production settings).
-- **400 "DisallowedHost" / the API refuses**: `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` or `CORS_ALLOWED_ORIGINS` in `.env` do not match the domain (they take the domain exactly, `https://` in the last two). After editing `.env`: `docker compose up -d`.
-- **The site calls the wrong address**: the address of the API is built into the site. After changing `DOMAIN` run `docker compose up -d --build`.
-- **No e-mails**: the SMTP values in `.env`; `docker compose logs worker` shows the errors.
-- **An administrator lost the phone (and the backup codes)**: another super admin opens the user list in the admin panel and presses "Reset two-step sign-in" on that account (needs the super admin's own current code). If it is the last super admin, on the server: `docker compose exec web python manage.py reset_2fa their@email`. The account sets it up again at its next sign-in.
-- **Disk full**: `docker system df`; old images: `docker image prune`. Never `docker volume prune` on the real server.
+- **Sertifikat berilmeydi / brauzer eskertedi**: DNS at server'ge házirge shekem qaramaydı (1-qádem), yamasa 80/443 portlar jabıq (2-qádem). `docker compose logs caddy` qaysısın aytadı. Caddy ózi qayta uriǵadı.
+- **`migrate` yamasa `web` iske túskende toqtaydı**: `docker compose logs migrate` qáte yamasa joq sazlamanı ataydı (ilova production sazlamaların tekseredi).
+- **400 "DisallowedHost" / API bas tartadı**: `.env` ishindegi `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` yamasa `CORS_ALLOWED_ORIGINS` domenge sáykes kelmeydi (olar domendi dál aladı, sońǵı ekewinde `https://` menen). `.env` ózgergennen keyin: `docker compose up -d`.
+- **Sayt qáte mánzilge soraw jiberedi**: API mánzili saytqa qurılǵan. `DOMAIN` ózgergennen keyin `docker compose up -d --build` isletiń.
+- **E-mail'ler joq**: `.env` ishindegi SMTP mánisleri; `docker compose logs worker` qátelerdi kórsetedi.
+- **Administrator telefonın (hám zapas kodların) joǵaltsa**: basqa super admin admin panelde paydalanıwshılar dizimin ashıp, sol akkauntta "Reset two-step sign-in" basadı (super adminniń óz házirgi kodı kerek). Eger ol sońǵı super admin bolsa, server'de: `docker compose exec web python manage.py reset_2fa olardıń@email`. Akkaunt keyingi kirisiwde qaytadan sazlaydı.
+- **Disk tolıp qaldı**: `docker system df`; eski image'ler: `docker image prune`. Haqıyqıy server'de hesh qashan `docker volume prune` jazbań.
 
-## Security notes
+## Qáwipsizlik eskertpeleri (Security notes)
 
-- Only SSH, 80 and 443 are open. Use SSH keys, switch password login off, keep the server updated (`sudo apt install unattended-upgrades`).
-- `.env` is `chmod 600` and only on the server. The images contain no secret (`.dockerignore`).
-- The app runs as a normal user in its container, not as root.
-- One server is one point of failure: the backups above are the way back. For two servers or automatic failover a different setup (for example Kubernetes or AWS ECS) is needed; the same images can be used.
+- Tek SSH, 80 hám 443 ashıq. SSH key paydalanıń, parol menen kiriwdi óshiriń, server'di jańalap turıń (`sudo apt install unattended-upgrades`).
+- `.env` `chmod 600` hám tek server'de. Image'lerde hesh qanday jasırın maǵlıwmat joq (`.dockerignore`).
+- Ilova óz container'inde ápiwayı paydalanıwshı retinde isleydi, root retinde emes.
+- Bir server - bir ǵana sınıq noqat: joqarıdaǵı backup'lar qaytıwdıń jolı. Eki server yamasa avtomat almasıw ushın basqa sazlama kerek (mısalı Kubernetes yamasa AWS ECS); sol image'lerdi paydalanıw múmkin.
 
-## Trying it on a computer first
+## Aldın kompyuterde sınap kóriw
 
-Set `DOMAIN=localhost`, `ALLOWED_HOSTS=localhost`, the three https:// addresses to `https://localhost:8443`, `HTTP_PORT=8080`, `HTTPS_PORT=8443` in `.env`, then `docker compose up -d --build` and open `https://localhost:8443` (the browser warns about the local certificate: that is expected here only).
+`.env` ishinde `DOMAIN=localhost`, `ALLOWED_HOSTS=localhost`, úsh https:// mánzilin `https://localhost:8443`, `HTTP_PORT=8080`, `HTTPS_PORT=8443` qoyıń, keyin `docker compose up -d --build` hám `https://localhost:8443` ashıń (brauzer local sertifikat haqqında eskertedi: bul jerde tek sol kútiledi).
 
-## Known limits
+## Belgili sheklewler (Known limits)
 
-- Not run on a real server with a real domain yet: everything above was run in a test environment (all containers, the API, the size limits, the headers, backup and restore), but the real certificate and real mail were not.
-- The satellite pictures need a provider with a key before real traffic (`.ai/RELEASE_CHECKLIST.md`).
-- The files are the same on AWS: an EC2 machine plus the steps above. For photos on S3 and the database on RDS (more safety, more cost) the settings (`STORAGE_TYPE`, `DB_HOST`) exist, but that variant was not built or tried.
+- Haqıyqıy domenli haqıyqıy server'de házirge shekem isletilmegen: joqarıdaǵı hámmesi test ortalıǵında isletilgen (hámme container'ler, API, ólshem limitleri, header'ler, backup hám tiklew), biraq haqıyqıy sertifikat hám haqıyqıy mail emes.
+- Sun'iy joldas súwretleri haqıyqıy trafikten aldın kilt'li provayderdi talap etedi (`.ai/RELEASE_CHECKLIST.md`).
+- Fayllar AWS'te de birdey: EC2 mashinası hám joqarıdaǵı qádemler. Súwretler S3'te hám database RDS'te bolıwı ushın (kóbirek qáwipsizlik, kóbirek xarejet) sazlamalar (`STORAGE_TYPE`, `DB_HOST`) bar, biraq ol variant qurılmaǵan hám sınalmaǵan.

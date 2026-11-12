@@ -13,7 +13,6 @@ export interface User {
   last_name: string
   full_name: string
   phone_number?: string
-  sms_notifications?: boolean
   whatsapp?: string
   telegram?: string
   preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'
@@ -48,7 +47,6 @@ export interface UpdateProfileRequest {
   first_name?: string
   last_name?: string
   phone_number?: string
-  sms_notifications?: boolean
   whatsapp?: string
   telegram?: string
   preferred_contact_method?: 'phone' | 'whatsapp' | 'telegram' | 'email'

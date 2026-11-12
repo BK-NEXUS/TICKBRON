@@ -47,7 +47,6 @@ export interface AdminPromotion {
   priority: number
   country_ref: number | null
   region_ref: number | null
-  city_ref: number | null
   price_amount: string | null
   price_currency: string
   note: string

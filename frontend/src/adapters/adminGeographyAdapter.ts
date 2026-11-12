@@ -6,7 +6,7 @@ import type { GeographyNames } from './geographyAdapter'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 
-export type GeographyKind = 'countries' | 'regions' | 'cities'
+export type GeographyKind = 'countries' | 'regions'
 
 interface RowBase extends GeographyNames {
   id: number
@@ -25,23 +25,15 @@ export interface AdminCountry extends RowBase {
 export interface AdminRegion extends RowBase {
   country: number
   slug: string
-  city_count: number
   image_url: string | null
 }
 
-export interface AdminCity extends RowBase {
-  region: number
-  slug: string
-}
-
-export type AdminGeographyRow = AdminCountry | AdminRegion | AdminCity
+export type AdminGeographyRow = AdminCountry | AdminRegion
 
 export interface GeographyListParams {
   search?: string
   /** Regions of this country id */
   country?: number
-  /** Cities of this region id */
-  region?: number
 }
 
 /** Fields of a create or edit; the parent and the code of an existing row cannot change. */
@@ -49,9 +41,8 @@ export interface GeographyWrite extends Partial<GeographyNames> {
   code?: string
   currency?: string
   country?: number
-  region?: number
   is_active?: boolean
-  /** Countries and regions only: required when adding, optional when editing */
+  /** Required when adding, optional when editing */
   image?: File
 }
 
@@ -90,7 +81,7 @@ export class AdminGeographyAdapter {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== '') query.set(key, String(value))
     }
-    return this.send<Paginated<K extends 'countries' ? AdminCountry : K extends 'regions' ? AdminRegion : AdminCity>>(
+    return this.send<Paginated<K extends 'countries' ? AdminCountry : AdminRegion>>(
       this.url(kind, `?${query}`))
   }
 

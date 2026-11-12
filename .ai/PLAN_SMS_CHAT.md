@@ -1,5 +1,7 @@
 # PLAN: SMS when support answers a user (and the base for other SMS later)
 
+**CLOSED 2026-11-11: the owner decided the site sends no SMS; the support reply reaches the user by e-mail only. All SMS code, settings, the consent box and the tables were removed. The text below is history.**
+
 Status: DRAFT 2026-11-08. No code changed. It touches money (SMS cost), personal data (phone numbers) and a migration, so the owner must approve it before any code is written.
 
 ## What the owner asked

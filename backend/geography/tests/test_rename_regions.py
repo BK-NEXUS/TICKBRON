@@ -11,7 +11,7 @@ import pytest
 from django.apps import apps
 
 from geography.data import GEOGRAPHY, RENAMED_UZ_REGIONS, load_geography
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from properties.models import Property, PropertyType
 from users.models import User
 
@@ -68,14 +68,13 @@ class TestRename:
         owner = User.objects.create_user(email='owner@example.com', password='x')
         hotel = PropertyType.objects.create(name='Hotel', slug='hotel')
         samarkand = region('Samarkand Region')
-        city = City.objects.get(region=samarkand, name_en='Samarkand')
         prop = Property.objects.create(
             owner=owner, property_type=hotel, max_guests=2, address_line1='1 Main St', base_price=50,
-            country_ref=samarkand.country, region_ref=samarkand, city_ref=city)
+            country_ref=samarkand.country, region_ref=samarkand)
         Property.objects.filter(pk=prop.pk).update(state='Samarkand Region')
         other = Property.objects.create(
             owner=owner, property_type=hotel, max_guests=2, address_line1='2 Main St', base_price=50,
-            country_ref=samarkand.country, region_ref=samarkand, city_ref=city)
+            country_ref=samarkand.country, region_ref=samarkand)
         Property.objects.filter(pk=other.pk).update(state='My own text')
 
         migration.forward(apps, None)
@@ -117,10 +116,10 @@ class TestLoadGeographyKeepsFindingRenamedRows:
 
     def test_load_geography_after_the_rename_creates_no_duplicates(self, old_names):
         migration.forward(apps, None)
-        before = (Country.objects.count(), Region.objects.count(), City.objects.count())
-        created = load_geography(Country, Region, City)
+        before = (Country.objects.count(), Region.objects.count())
+        created = load_geography(Country, Region)
         assert created == (0, 0, 0)
-        assert (Country.objects.count(), Region.objects.count(), City.objects.count()) == before
+        assert (Country.objects.count(), Region.objects.count()) == before
 
     def test_a_fresh_install_gets_the_new_names_and_the_old_slugs(self, db):
         assert region('Samarkand').slug == 'uz-samarkand-region'

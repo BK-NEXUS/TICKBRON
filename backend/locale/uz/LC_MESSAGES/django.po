@@ -563,11 +563,8 @@ msgstr "Yuqori darajani o'zgartirib bo'lmaydi."
 msgid "This country already has a region with this name."
 msgstr "Bu davlatda shu nomli viloyat allaqachon bor."
 
-msgid "This region already has a city with this name."
-msgstr "Bu viloyatda shu nomli shahar allaqachon bor."
-
-msgid "This row is in use (it has regions, cities or properties). Hide it instead."
-msgstr "Bu yozuv ishlatilmoqda (viloyatlar, shaharlar yoki mehmonxonalari bor). Uni o'chirish o'rniga yashiring."
+msgid "This row is in use (it has regions or properties). Hide it instead."
+msgstr "Bu yozuv ishlatilmoqda (viloyatlari yoki mehmonxonalari bor). Uni o'chirish o'rniga yashiring."
 
 msgid "Exchange rate not found"
 msgstr "Valyuta kursi topilmadi"

@@ -107,6 +107,8 @@ class Review(BaseModel):
             models.Index(fields=['property', 'created_at']),
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['overall_rating']),
+            # Public reviews of one hotel, newest first
+            models.Index(fields=['property', 'status', 'created_at'], name='review_prop_status_idx'),
         ]
 
     def __str__(self):

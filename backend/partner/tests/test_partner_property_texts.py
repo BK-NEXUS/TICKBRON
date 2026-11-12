@@ -6,7 +6,7 @@ Default rule: name, description and address change at once, no new approval; sta
 import pytest
 from rest_framework.test import APIClient
 
-from geography.models import City
+from geography.models import Region
 from partner.models import OwnerPlace
 from partner.tests.geography_helpers import uzbek_location
 from permissions.models import Role
@@ -171,13 +171,13 @@ def test_a_guest_is_refused(owner, client_of, hotel_type):
 
 
 def test_a_changed_place_is_still_refused(owner, client_of, hotel_type):
-    bukhara = City.objects.select_related('region__country').get(region__country__code='UZ', name_en='Bukhara')
-    OwnerPlace.objects.create(owner=owner, country=bukhara.region.country, region=bukhara.region, city=bukhara)
+    bukhara = Region.objects.select_related('country').get(country__code='UZ', name_en='Bukhara')
+    OwnerPlace.objects.create(owner=owner, country=bukhara.country, region=bukhara)
     prop = make_property(owner, hotel_type)
-    other = City.objects.select_related('region__country').get(region__country__code='UZ', name_en='Samarkand')
+    other = Region.objects.select_related('country').get(country__code='UZ', name_en='Samarkand')
     response = client_of(owner).patch(
         f'{URL}{prop.id}/',
-        {'translations': TEXTS, 'country_ref': other.region.country_id, 'region_ref': other.region_id, 'city_ref': other.id},
+        {'translations': TEXTS, 'country_ref': other.country_id, 'region_ref': other.id},
         format='json')
     assert response.status_code == 400
     assert prop.translations.count() == 0

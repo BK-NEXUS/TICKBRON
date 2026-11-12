@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from common.image_rules import PLACE_PICTURE, image_upload_error
 from common.images import shrink_upload
-from geography.models import City, Country, Region
+from geography.models import Country, Region
 from django.utils.translation import gettext as _
 
 
@@ -89,13 +89,12 @@ class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, ser
     image_url = serializers.SerializerMethodField()
     # A multipart form that leaves out a checkbox means False to DRF; a new row stays visible unless hidden on purpose
     is_active = serializers.BooleanField(required=False, default=True)
-    city_count = serializers.IntegerField(read_only=True)
     hotel_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Region
         fields = ['id', 'country', 'slug', 'name_uz', 'name_ru', 'name_en', 'image', 'image_url', 'is_active',
-                  'sort_order', 'city_count', 'hotel_count']
+                  'sort_order', 'hotel_count']
         read_only_fields = ['slug', 'sort_order']
         extra_kwargs = {'image': {'write_only': True}}
         validators = []  # the name is checked below, so a clash is a plain 400 with a clear message
@@ -109,29 +108,6 @@ class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, ser
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
             raise serializers.ValidationError({'name_en': _('This country already has a region with this name.')})
-        return attrs
-
-
-class AdminCitySerializer(_ParentImmutableMixin, _NamesMixin, serializers.ModelSerializer):
-    parent_field = 'region'
-    hotel_count = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = City
-        fields = ['id', 'region', 'slug', 'name_uz', 'name_ru', 'name_en', 'is_active', 'sort_order',
-                  'hotel_count']
-        read_only_fields = ['slug', 'sort_order']
-        validators = []
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        region = attrs.get('region') or getattr(self.instance, 'region', None)
-        name = attrs.get('name_en') or getattr(self.instance, 'name_en', None)
-        duplicates = City.objects.filter(region=region, name_en__iexact=name)
-        if self.instance is not None:
-            duplicates = duplicates.exclude(pk=self.instance.pk)
-        if duplicates.exists():
-            raise serializers.ValidationError({'name_en': _('This region already has a city with this name.')})
         return attrs
 
 

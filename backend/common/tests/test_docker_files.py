@@ -28,6 +28,21 @@ CADDYFILE = REPO / 'deploy' / 'Caddyfile'
 NGINX_EXAMPLE = REPO / 'deploy' / 'nginx.conf.example'
 
 
+class TestIsolationHeaders:
+    """The site is never framed or opened by a window of another site, and its files are not read cross-site."""
+
+    @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
+    def test_other_sites_get_no_handle_on_the_page_or_its_files(self, path):
+        text = path.read_text()
+        assert re.search(r'Cross-Origin-Opener-Policy"?\s+"?same-origin', text)
+        assert re.search(r'Cross-Origin-Resource-Policy"?\s+"?same-origin', text)
+
+    def test_every_nginx_block_that_sets_headers_repeats_them(self):
+        # nginx drops the headers of the server block in a location that has its own add_header
+        text = NGINX_EXAMPLE.read_text()
+        assert text.count('add_header Cross-Origin-Opener-Policy') == text.count('add_header X-Frame-Options')
+
+
 class TestBrowserCaching:
     """Thousands of visitors must not download the same built files again on every page."""
 

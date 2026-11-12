@@ -1,4 +1,4 @@
-"""Starting a signed-in session after a successful password or SMS login."""
+"""Starting a signed-in session after a successful password login."""
 import logging
 
 from django.contrib.auth import login

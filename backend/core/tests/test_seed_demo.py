@@ -44,7 +44,7 @@ class TestSeedDemo:
         assert all(p.status == 'active' and p.approved_at is not None for p in properties)
         assert all(p.translations.filter(language='en').exists() for p in properties)
         # Mapped to the Geography dictionary
-        assert sorted(properties.values_list('city_ref__name_en', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
+        assert sorted(properties.values_list('region_ref__name_en', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
         assert set(properties.values_list('country_ref__code', flat=True)) == {'UZ'}
 
         today = timezone.localdate()

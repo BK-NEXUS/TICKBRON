@@ -25,7 +25,6 @@ export interface AdminProperty {
   country: string
   country_ref?: number | null
   region_ref?: number | null
-  city_ref?: number | null
   latitude?: number
   longitude?: number
   base_price: number
@@ -75,13 +74,12 @@ export interface CreateHotelOwnerRequest {
   /** Where the owner's hotels will appear (Geography ids) */
   country_ref: number
   region_ref: number
-  city_ref: number
   /** What the site takes from each booking of this owner, "0" to "100" */
   commission_percent: string
 }
 
 /** The body of a new administrator: no place and no commission; `role` is the only thing that sets the rights */
-export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'city_ref' | 'commission_percent'> & {
+export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'commission_percent'> & {
   role: 'staff' | 'super_admin'
 }
 

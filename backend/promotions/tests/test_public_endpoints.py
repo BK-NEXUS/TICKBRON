@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from common.dates import business_today
 from promotions.models import PromotionDailyStat
-from promotions.tests.helpers import make_hotel, make_owner, make_promotion, uz_city, other_country_city
+from promotions.tests.helpers import make_hotel, make_owner, make_promotion, uz_region, other_country_region
 
 pytestmark = pytest.mark.django_db
 HOME = '/api/v1/promotions/home/'
@@ -55,10 +55,10 @@ class TestHome:
         assert results[0]['promotion_id'] > results[-1]['promotion_id']
 
     def test_country_filter(self):
-        uz, foreign = uz_city(), other_country_city()
-        local = make_promotion(make_hotel(make_owner('l@example.com'), name='Local', city_ref=uz))
-        make_promotion(make_hotel(make_owner('f@example.com'), name='Foreign', city_ref=foreign))
-        body = visitor().get(HOME, {'country': uz.region.country_id}).json()
+        uz, foreign = uz_region(), other_country_region()
+        local = make_promotion(make_hotel(make_owner('l@example.com'), name='Local', region_ref=uz))
+        make_promotion(make_hotel(make_owner('f@example.com'), name='Foreign', region_ref=foreign))
+        body = visitor().get(HOME, {'country': uz.country_id}).json()
         assert [item['promotion_id'] for item in body['results']] == [local.pk]
 
     @pytest.mark.parametrize('value', ['abc', '-1', '0'])
