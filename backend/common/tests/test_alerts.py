@@ -1,4 +1,4 @@
-"""Telegram alerts (OWASP A09-4): the right events produce one message, nothing else does."""
+"""Telegram eskertiwleri (OWASP A09-4): durıs waqıyalar bir xabar payda etedi, basqa hesh nárse emes."""
 import json
 import logging
 import urllib.error
@@ -25,7 +25,7 @@ def configured(settings):
 
 @pytest.fixture
 def queued():
-    """The Celery task is replaced, so a test sees what would be sent."""
+    """Celery task almastırılǵan, sol sebepli test ne jiberilgenin kóredi."""
     with mock.patch('common.tasks.send_telegram_message.delay') as delay:
         yield delay
 

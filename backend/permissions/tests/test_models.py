@@ -1,5 +1,5 @@
 """
-Tests for permission and role models.
+Ruxsat hám rol model leri ushın testler.
 """
 import pytest
 from django.test import TestCase
@@ -8,10 +8,10 @@ from permissions.models import Role, Permission, RolePermission
 
 
 class TestRoleModel(TestCase):
-    """Test cases for Role model."""
+    """Role modeli ushın test jaǵdayları."""
 
     def test_create_role(self):
-        """Test creating a role."""
+        """Rol jaratıwdı testlew."""
         role = Role.objects.create(
             name='Customer',
             description='Regular customer role'
@@ -23,19 +23,19 @@ class TestRoleModel(TestCase):
         assert role.is_active is True
 
     def test_role_str_representation(self):
-        """Test string representation of Role."""
+        """Role tiń qatar kórinisin testlew."""
         role = Role.objects.create(name='Admin')
         assert str(role) == 'Admin'
 
     def test_role_unique_name(self):
-        """Test that role name is unique."""
+        """Rol atı unikal ekenin testlew."""
         Role.objects.create(name='UniqueRole')
 
         with pytest.raises(IntegrityError):
             Role.objects.create(name='UniqueRole')
 
     def test_system_role_protection(self):
-        """Test that system roles can be marked."""
+        """Sistema rolleri belgilene alatuǵının testlew."""
         role = Role.objects.create(
             name='SystemAdmin',
             is_system_role=True
@@ -45,10 +45,10 @@ class TestRoleModel(TestCase):
 
 
 class TestPermissionModel(TestCase):
-    """Test cases for Permission model."""
+    """Permission modeli ushın test jaǵdayları."""
 
     def test_create_permission(self):
-        """Test creating a permission."""
+        """Ruxsat jaratıwdı testlew."""
         permission = Permission.objects.create(
             name='View Properties',
             codename='view_properties',
@@ -62,7 +62,7 @@ class TestPermissionModel(TestCase):
         assert permission.description == 'Can view property listings'
 
     def test_permission_str_representation(self):
-        """Test string representation of Permission."""
+        """Permission niń qatar kórinisin testlew."""
         permission = Permission.objects.create(
             name='View Properties',
             codename='view_properties',
@@ -72,7 +72,7 @@ class TestPermissionModel(TestCase):
         assert str(permission) == 'properties.view_properties'
 
     def test_permission_str_without_module(self):
-        """Test string representation without module."""
+        """Modulsiz qatar kórinisin testlew."""
         permission = Permission.objects.create(
             name='General Access',
             codename='general_access'
@@ -81,7 +81,7 @@ class TestPermissionModel(TestCase):
         assert str(permission) == 'general_access'
 
     def test_permission_unique_codename(self):
-        """Test that permission codename is unique."""
+        """Ruxsat codename i unikal ekenin testlew."""
         Permission.objects.create(
             name='Test Permission',
             codename='test_permission'
@@ -95,10 +95,10 @@ class TestPermissionModel(TestCase):
 
 
 class TestRolePermissionModel(TestCase):
-    """Test cases for RolePermission model."""
+    """RolePermission modeli ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.role = Role.objects.create(name='Customer')
         self.permission = Permission.objects.create(
             name='View Properties',
@@ -107,7 +107,7 @@ class TestRolePermissionModel(TestCase):
         )
 
     def test_create_role_permission(self):
-        """Test creating role-permission relationship."""
+        """Rol-ruxsat baylanısın jaratıwdı testlew."""
         role_permission = RolePermission.objects.create(
             role=self.role,
             permission=self.permission
@@ -117,7 +117,7 @@ class TestRolePermissionModel(TestCase):
         assert role_permission.permission == self.permission
 
     def test_role_permission_str_representation(self):
-        """Test string representation of RolePermission."""
+        """RolePermission niń qatar kórinisin testlew."""
         role_permission = RolePermission.objects.create(
             role=self.role,
             permission=self.permission
@@ -127,7 +127,7 @@ class TestRolePermissionModel(TestCase):
         assert str(role_permission) == expected
 
     def test_role_permission_unique_constraint(self):
-        """Test that role-permission combination is unique."""
+        """Rol-ruxsat kombinaciyası unikal ekenin testlew."""
         RolePermission.objects.create(
             role=self.role,
             permission=self.permission
@@ -140,13 +140,13 @@ class TestRolePermissionModel(TestCase):
             )
 
     def test_role_inherits_base_model(self):
-        """Test that RolePermission inherits from BaseModel."""
+        """RolePermission BaseModel den miras alatuǵının testlew."""
         role_permission = RolePermission.objects.create(
             role=self.role,
             permission=self.permission
         )
 
-        # Check BaseModel fields
+        # BaseModel maydanların tekseriw
         assert hasattr(role_permission, 'created_at')
         assert hasattr(role_permission, 'updated_at')
         assert hasattr(role_permission, 'is_deleted')

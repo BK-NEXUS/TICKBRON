@@ -1,5 +1,5 @@
 """
-Tests for the custom DRF exception handler.
+Óz DRF exception handler i ushın testler.
 """
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
@@ -8,7 +8,7 @@ from common.exception_handlers import custom_exception_handler
 
 
 class CustomExceptionHandlerTest(TestCase):
-    """Tests for custom_exception_handler."""
+    """custom_exception_handler ushın testler."""
 
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -17,7 +17,7 @@ class CustomExceptionHandlerTest(TestCase):
         return {'request': self.factory.get('/'), 'view': None}
 
     def test_dict_validation_error_uses_uniform_format(self):
-        """A field-keyed ValidationError (the common case) already worked."""
+        """Maydan kiltli ValidationError (keń tarqalǵan jaǵday) aldınan isleytuǵın edi."""
         exc = ValidationError({'non_field_errors': ['Something is wrong.']})
 
         response = custom_exception_handler(exc, self._context())
@@ -29,10 +29,9 @@ class CustomExceptionHandlerTest(TestCase):
 
     def test_string_validation_error_does_not_500(self):
         """
-        A ValidationError raised with a plain string produces a bare list in
-        response.data (not a dict). The handler's fallback wrapping used to
-        call response.data.get(...) unconditionally and crash with
-        AttributeError, turning a 400 into an unhandled 500.
+        Ápiwayı qatar menen kóterilgen ValidationError response.data da tuwrı dizim (dict emes)
+        payda etedi. Handler diń zapas oraw ı response.data.get(...) di shártsiz shaqırar edi hám
+        AttributeError menen qulap, 400 di islenbegen 500 ge aylandırar edi.
         """
         exc = ValidationError('This property is already in your favorites.')
 
@@ -44,7 +43,7 @@ class CustomExceptionHandlerTest(TestCase):
         self.assertIn('This property is already in your favorites.', response.data['error']['message'])
 
     def test_list_validation_error_does_not_500(self):
-        """A ValidationError raised with a plain list must also be handled uniformly."""
+        """Ápiwayı dizim menen kóterilgen ValidationError de izbe-iz islenwi kerek."""
         exc = ValidationError(['First problem.', 'Second problem.'])
 
         response = custom_exception_handler(exc, self._context())
@@ -55,7 +54,7 @@ class CustomExceptionHandlerTest(TestCase):
         self.assertIn('Second problem.', response.data['error']['message'])
 
     def test_field_errors_make_a_readable_message(self):
-        """QA F7: the message was a Python dump ({'category': [ErrorDetail(string=...)]}); details stay as they were."""
+        """QA F7: xabar Python dump edi ({'category': [ErrorDetail(string=...)]}); details burınǵıday qaladı."""
         exc = ValidationError({'category': ['This field is required.'], 'name': ['Too long.', 'Bad.']})
 
         response = custom_exception_handler(exc, self._context())

@@ -1,5 +1,5 @@
 """
-Tests for security-sensitive settings defaults.
+Qáwipsizlikke tiyisli sazlamalardıń ádetdegileri ushın testler.
 """
 import os
 import subprocess
@@ -8,8 +8,8 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
-# Variables that must come from each test, not from the developer's shell or
-# from pytest itself (PYTEST_CURRENT_TEST makes settings think it is a test run)
+# Hár testten kelwi kerek ózgeriwshiler, programmistiń shellinen yamasa pytest tiń
+# ózinen emes (PYTEST_CURRENT_TEST sazlamalarǵa bul test isleniwi dep oylatadı)
 ISOLATED_ENV_VARS = (
     'USE_REDIS_CACHE', 'NUM_PROXIES', 'PYTEST_CURRENT_TEST',
     'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE', 'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE',
@@ -18,8 +18,8 @@ ISOLATED_ENV_VARS = (
     'TWO_FACTOR_REQUIRED_FOR_ADMINS', 'TWO_FACTOR_KEY',
 )
 
-# Load settings in a clean interpreter with .env loading disabled, so the
-# values reflect the code defaults rather than the developer's .env file.
+# Sazlamalardı taza interpretator da .env júklewi óshirilgen halda júklew, sonda
+# mánisler programmistiń .env faylın emes, koddıń ádetdegilerin kórsetedi.
 LOAD_SETTINGS = (
     "import dotenv; dotenv.load_dotenv = lambda *a, **k: None\n"
     "import django; django.setup()\n"
@@ -44,12 +44,12 @@ def _cache_backend(**env_overrides):
     return _load_settings("settings.CACHES['default']['BACKEND']", **env_overrides)
 
 
-# Must pass the production startup checks (core/tests/test_r4_production_config.py)
+# Production iske túsiriw tekseriwlerinen ótiwi kerek (core/tests/test_r4_production_config.py)
 PRODUCTION_ENV = {
     'DEBUG': 'False', 'SECRET_KEY': 'test-secret-key-' + 'x' * 40, 'ALLOWED_HOSTS': 'example.com',
     'CORS_ALLOWED_ORIGINS': 'https://example.com', 'CSRF_TRUSTED_ORIGINS': 'https://example.com',
     'NUM_PROXIES': '1', 'USE_X_FORWARDED_PROTO': 'True', 'SECURE_SSL_REDIRECT': 'True',
-    'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # password reset links and mail
+    'FRONTEND_URL': 'https://example.com', 'EMAIL_HOST': 'smtp.example.com',  # parol tiklew silteme leri hám e-mail
     'TWO_FACTOR_REQUIRED_FOR_ADMINS': 'True', 'TWO_FACTOR_KEY': 'D7eMmWkvKa9v2OeQIO0bLAKuod5UPZ9jR1n2vge7atk=',
 }
 
@@ -64,7 +64,8 @@ def test_debug_uses_local_memory_cache_by_default():
 
 def test_cache_backend_can_be_chosen_explicitly():
     assert _cache_backend(DEBUG='True', USE_REDIS_CACHE='True') == 'django_redis.cache.RedisCache'
-    # N-19: production refuses USE_REDIS_CACHE=False (see test_r4_production_config), so the switch is local-only
+    # N-19: production USE_REDIS_CACHE=False dan bas tartadı (qarań test_r4_production_config), sol sebepli almastırǵısh tek
+    # jergilikli
     assert _cache_backend(DEBUG='True', USE_REDIS_CACHE='False') == \
         'django.core.cache.backends.locmem.LocMemCache'
 
@@ -82,12 +83,13 @@ def test_production_cookies_are_secure_by_default():
 
 
 def test_debug_cookies_are_not_secure_by_default():
-    # Local development runs over plain http
+    # Jergilikli development ápiwayı http menen isleydi
     assert _secure_cookies(DEBUG='True') == 'False False'
 
 
 def test_cookie_security_can_be_set_explicitly():
-    # N-19: production refuses insecure cookies (see test_r4_production_config), so only DEBUG may turn them off
+    # N-19: production qáwipsiz emes cookie lerden bas tartadı (qarań test_r4_production_config), sol sebepli tek DEBUG olardı
+    # óshire aladı
     assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='False', CSRF_COOKIE_SECURE='False') == \
         'False False'
     assert _secure_cookies(DEBUG='True', SESSION_COOKIE_SECURE='True', CSRF_COOKIE_SECURE='True') == \
@@ -99,10 +101,10 @@ def _throttle_rates(**env_overrides):
 
 
 def test_anonymous_browsing_limit_allows_normal_use():
-    # One property page makes ~6 anonymous requests; 100/hour blocked visitors after ~15 pages (E2E BUG 7)
-    # R12b: the no_show_report scope joined the throttle rates; anon and user are unchanged
-    # N-7: the booking_create scope joined the rates; anon and user are still unchanged
-    # The support chat added the chat_send and chat_poll scopes; the others are unchanged
+    # Bir mehmanxana beti ~6 anonim soraw isleydi; saatına 100 ~15 betten keyin kelwshilerdi tostı (E2E BUG 7)
+    # R12b: no_show_report shegi throttle dárejelerine qosıldı; anon hám user ózgermedi
+    # N-7: booking_create shegi dárejelerge qosıldı; anon hám user ele ózgermedi
+    # Qollap-quwatlaw chatı chat_send hám chat_poll shekin qostı; qalǵanları ózgermedi
     assert _throttle_rates() == (
         "{'anon': '2000/hour', 'user': '1000/hour', 'booking_create': '30/hour', "
         "'no_show_report': '20/hour', 'chat_send': '20/min', 'chat_poll': '90/min'}"
@@ -114,7 +116,7 @@ def test_anonymous_limit_can_be_set_from_the_environment():
 
 
 def test_user_limit_can_be_set_from_the_environment():
-    # The E2E crawl loads every page as the demo accounts many times
+    # E2E crawl hár betti demo akkauntlar sıyaqlı kóp ret júkleydi
     assert "'user': '100000/hour'" in _throttle_rates(THROTTLE_USER_RATE='100000/hour')
 
 
@@ -152,7 +154,7 @@ def test_test_database_suffix_refuses_unsafe_characters():
 
 
 def test_hsts_preload_is_off_by_default():
-    # Preload is hard to undo, so the owner opts in explicitly (N-6)
+    # Preload tı qaytarıw qıyın, sol sebepli iye anıq tańlaydı (N-6)
     assert _load_settings('settings.SECURE_HSTS_PRELOAD') == 'False'
     assert _load_settings('settings.SECURE_HSTS_PRELOAD', SECURE_HSTS_PRELOAD='True') == 'True'
 

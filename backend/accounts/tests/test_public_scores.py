@@ -1,5 +1,5 @@
 """
-Property rating scores are public (E2E BUG 9: anonymous visitors got 403 and a red error block).
+Mehmanxana reyting bahaları ashıq (E2E BUG 9: anonim kelwshiler 403 hám qızıl qátelik blokın aldı).
 """
 from decimal import Decimal
 
@@ -31,7 +31,7 @@ class TestPublicPropertyScores(TestCase):
         response = self.client.get(SCORES_URL, {'property_id': self.property.id})
 
         assert response.status_code == 200
-        # Only approved reviews count
+        # Tek tastıyıqlanǵan sharhlar esaplanadı
         assert response.data['total_reviews'] == 1
         assert response.data['average_rating'] == 4
 

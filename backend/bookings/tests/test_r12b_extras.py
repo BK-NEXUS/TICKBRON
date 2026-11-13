@@ -1,4 +1,4 @@
-"""R12 phase 3: two approvals at once decide once; the OpenAPI schema still builds without collisions."""
+"""R12 3-basqısh: birdey waqıtta eki tastıyıqlaw bir márte sheshedi; OpenAPI schema ele qaqtıǵıssız quriladı."""
 import io
 import threading
 

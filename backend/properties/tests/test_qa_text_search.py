@@ -1,4 +1,4 @@
-"""QA: a multi-word search must match properties that contain every word, not any one of them."""
+"""QA: bir neshe sózli izlew sózlerdiń hámmesin óz ishine alǵan mehmanxanalarǵa sáykes kelwi kerek, birewine emes."""
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -30,7 +30,7 @@ class MultiWordSearchTests(TestCase):
         assert self._ids('Pricey Street') == {self.pricey.id}
 
     def test_words_may_match_different_fields(self):
-        # "Street" is in the address, "Khiva" in the city
+        # "Street" mánzilde, "Khiva" qalada
         assert self._ids('Street Khiva') == {self.quiet.id}
 
     def test_a_single_word_still_matches_every_property_containing_it(self):
@@ -41,7 +41,7 @@ class MultiWordSearchTests(TestCase):
 
 
 class ManyWordSearchCostTests(MultiWordSearchTests):
-    """A05-1: one anonymous request with hundreds of words must not build one join per word."""
+    """A05-1: júzlegen sózli bir anonim soraw hár sózge bir join qurmawı kerek."""
 
     def _joins(self, query):
         queryset = self.service._apply_text_search(self.service.base_queryset, query)

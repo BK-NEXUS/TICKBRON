@@ -1,5 +1,5 @@
 """
-Tests for user serializers.
+Paydalanıwshı serializer leri ushın testler.
 """
 from django.test import TestCase
 from users.models import User
@@ -7,10 +7,10 @@ from users.serializers import UserSerializer, UserRegistrationSerializer, UserLo
 
 
 class TestUserSerializer(TestCase):
-    """Test cases for UserSerializer."""
+    """UserSerializer ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -19,7 +19,7 @@ class TestUserSerializer(TestCase):
         )
 
     def test_user_serializer_basic(self):
-        """Test basic UserSerializer functionality."""
+        """Ápiwayı UserSerializer funkciyasın testlew."""
         serializer = UserSerializer(self.user)
         data = serializer.data
 
@@ -27,10 +27,10 @@ class TestUserSerializer(TestCase):
         assert data['first_name'] == 'Test'
         assert data['last_name'] == 'User'
         assert data['full_name'] == 'Test User'
-        assert 'password' not in data  # Password should not be serialized
+        assert 'password' not in data  # Parol serializaciya etilmewi kerek
 
     def test_user_serializer_full_name_method(self):
-        """Test get_full_name method in serializer."""
+        """Serializer degi get_full_name metodın testlew."""
         serializer = UserSerializer(self.user)
         data = serializer.data
 
@@ -38,10 +38,10 @@ class TestUserSerializer(TestCase):
 
 
 class TestUserRegistrationSerializer(TestCase):
-    """Test cases for UserRegistrationSerializer."""
+    """UserRegistrationSerializer ushın test jaǵdayları."""
 
     def test_valid_registration(self):
-        """Test valid user registration with simplified fields."""
+        """Ápiwayılastırılǵan maydanlar menen jaramlı paydalanıwshı dizimin testlew."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
@@ -56,11 +56,11 @@ class TestUserRegistrationSerializer(TestCase):
         user = serializer.save()
         assert user.email == 'newuser@example.com'
         assert user.full_name == 'New User'
-        assert user.phone_number == '+998901234567'  # stored in E.164 form (was: not stored, accounts were e-mail only)
+        assert user.phone_number == '+998901234567'  # E.164 formatında saqlanadı (burın saqlanbaytuǵın edi)
         assert user.check_password('SecureP@ssw0rd123')
 
     def test_password_mismatch(self):
-        """Test registration with mismatched passwords."""
+        """Parollar sáykes kelmegen dizimdi testlew."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
@@ -74,7 +74,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'password' in serializer.errors
 
     def test_password_too_short(self):
-        """Test registration with short password (less than 8 characters)."""
+        """Qısqa parol (8 belgiden kem) menen dizimdi testlew."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
@@ -87,7 +87,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'password' in serializer.errors
 
     def test_missing_required_fields(self):
-        """Test registration with missing required fields (full_name)."""
+        """Májbúriy maydanlar (full_name) joq dizimdi testlew."""
         data = {
             'email': 'newuser@example.com',
             'password': 'SecureP@ssw0rd123',
@@ -100,7 +100,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert 'full_name' in serializer.errors
 
     def test_optional_first_name_last_name(self):
-        """Test that first_name and last_name are optional."""
+        """first_name hám last_name ıqtıyarıy ekenin testlew."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
@@ -118,7 +118,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert user.last_name is None
 
     def test_registration_with_contact_fields(self):
-        """Test registration with optional contact fields."""
+        """Iqtıyarıy baylanıs maydanları menen dizimdi testlew."""
         data = {
             'email': 'newuser@example.com',
             'full_name': 'New User',
@@ -139,7 +139,7 @@ class TestUserRegistrationSerializer(TestCase):
         assert user.preferred_contact_method == 'whatsapp'
 
     def test_user_serializer_includes_contact_fields(self):
-        """Test UserSerializer includes new contact fields."""
+        """UserSerializer jańa baylanıs maydanların óz ishine alatuǵının testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -160,10 +160,10 @@ class TestUserRegistrationSerializer(TestCase):
 
 
 class TestUserLoginSerializer(TestCase):
-    """Test cases for UserLoginSerializer."""
+    """UserLoginSerializer ushın test jaǵdayları."""
 
     def test_valid_login_data(self):
-        """Test valid login data."""
+        """Jaramlı kiriw maǵlıwmatın testlew."""
         data = {
             'email': 'test@example.com',
             'password': 'testpass123'
@@ -173,7 +173,7 @@ class TestUserLoginSerializer(TestCase):
         assert serializer.is_valid()
 
     def test_missing_email(self):
-        """Test login with missing email."""
+        """Email joq kiriwdi testlew."""
         data = {
             'password': 'testpass123'
         }
@@ -183,7 +183,7 @@ class TestUserLoginSerializer(TestCase):
         assert 'email' in serializer.errors
 
     def test_missing_password(self):
-        """Test login with missing password."""
+        """Parol joq kiriwdi testlew."""
         data = {
             'email': 'test@example.com'
         }
@@ -193,7 +193,7 @@ class TestUserLoginSerializer(TestCase):
         assert 'password' in serializer.errors
 
     def test_invalid_email_format(self):
-        """Test login with invalid email format."""
+        """Jaramsız email formatı menen kiriwdi testlew."""
         data = {
             'email': 'invalid-email',
             'password': 'testpass123'
@@ -205,10 +205,10 @@ class TestUserLoginSerializer(TestCase):
 
 
 class TestUserUpdateSerializer(TestCase):
-    """Test cases for UserUpdateSerializer."""
+    """UserUpdateSerializer ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -217,7 +217,7 @@ class TestUserUpdateSerializer(TestCase):
         )
 
     def test_update_full_name(self):
-        """Test updating full name."""
+        """Tolıq atın jańalawdı testlew."""
         data = {'full_name': 'Updated Name'}
         serializer = UserUpdateSerializer(self.user, data=data, partial=True)
         assert serializer.is_valid()
@@ -226,7 +226,7 @@ class TestUserUpdateSerializer(TestCase):
         assert updated_user.full_name == 'Updated Name'
 
     def test_update_contact_fields(self):
-        """Test updating contact fields."""
+        """Baylanıs maydanların jańalawdı testlew."""
         data = {
             'whatsapp': '+998917654321',
             'telegram': '@newtelegram',
@@ -241,12 +241,12 @@ class TestUserUpdateSerializer(TestCase):
         assert updated_user.preferred_contact_method == 'whatsapp'
 
     def test_partial_update(self):
-        """Test partial update (only some fields)."""
+        """Bólekshe jańalawdı (tek keybir maydanlar) testlew."""
         data = {'whatsapp': '+998917654321'}
         serializer = UserUpdateSerializer(self.user, data=data, partial=True)
         assert serializer.is_valid()
 
         updated_user = serializer.save()
         assert updated_user.whatsapp == '+998917654321'
-        assert updated_user.full_name == 'Test User'  # Unchanged
-        assert updated_user.phone_number == '+998901234567'  # Unchanged
+        assert updated_user.full_name == 'Test User'  # Ózgermegen
+        assert updated_user.phone_number == '+998901234567'  # Ózgermegen

@@ -1,4 +1,4 @@
-"""Cash at the hotel (.ai/PLAN_CASH_ONLY.md stage 3): the online payment API and its settings are gone."""
+"""Mehmanxanada naqd (.ai/PLAN_CASH_ONLY.md 3-basqısh): onlayn tólem API ı hám onıń sazlamaları joq."""
 import pytest
 from django.conf import settings
 from rest_framework.test import APIClient

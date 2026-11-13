@@ -1,9 +1,9 @@
 """
-R12 phase 3: the no-show report workflow (the hotel reports, staff decide).
+R12 3-basqısh: no-show esabat process i (mehmanxana xabarlaydı, staff sheshedi).
 
-Owner: POST /partner/bookings/{id}/no-show-report/, GET /partner/no-show-reports/,
+Iye: POST /partner/bookings/{id}/no-show-report/, GET /partner/no-show-reports/,
 POST /partner/no-show-reports/{id}/withdraw/.
-Staff: GET /admin-panel/no-show-reports/ (+ detail), POST .../{id}/approve|reject|reverse/.
+Staff: GET /admin-panel/no-show-reports/ (+ tolıq maǵlıwmat), POST .../{id}/approve|reject|reverse/.
 """
 from datetime import timedelta
 
@@ -50,7 +50,7 @@ class TestCreateReport:
         data = response.data
         assert data['status'] == 'pending' and data['booking_id'] == booking.id
         assert data['booking_reference'] == booking.confirmation_code
-        # a pending report changes nothing on the booking
+        # kútip turǵan esabat bronda hesh nárseni ózgertpeydi
         booking.refresh_from_db()
         assert booking.status == 'confirmed'
 
@@ -79,17 +79,17 @@ class TestCreateReport:
 
     def test_window_after_check_out(self, world, settings):
         settings.NO_SHOW_REPORT_WINDOW_DAYS = 7
-        # check-out exactly 7 days ago: last day inside the window
+        # shıǵıw dál 7 kún aldın: oynanıń ishindegi sońǵı kún
         inside = past_stay(world, days_ago_check_in=9, nights=2, status='completed')
         assert report(world, inside).status_code == 201
-        # check-out 8 days ago: closed
+        # shıǵıw 8 kún aldın: jabıq
         outside = past_stay(world, days_ago_check_in=10, nights=2, status='completed')
         response = report(world, outside)
         assert response.status_code == 400 and response.data['code'] == 'window_closed'
 
     def test_window_follows_the_setting(self, world, settings):
         settings.NO_SHOW_REPORT_WINDOW_DAYS = 2
-        booking = past_stay(world, days_ago_check_in=6, nights=2, status='completed')  # check-out 4 days ago
+        booking = past_stay(world, days_ago_check_in=6, nights=2, status='completed')  # shıǵıw 4 kún aldın
         assert report(world, booking).data['code'] == 'window_closed'
 
     @pytest.mark.parametrize('comment', ['', 'too short', 'x' * 501, None])
@@ -163,7 +163,7 @@ class TestCreateReport:
         assert report(world, booking).status_code == 404
 
     def test_staff_do_not_report_other_hotels_bookings(self, world):
-        # IsHotelOwner lets staff in, but they only ever see hotels they own
+        # IsHotelOwner staff tı kirgizedi, biraq olar tek óz mehmanxanaların kóredi
         assert report(world, past_stay(world), user=world['staff']).status_code == 404
 
     def test_guest_cannot_report(self, world):
@@ -273,7 +273,7 @@ class TestStaffQueue:
 
     def test_pending_first_oldest_first(self, world, django_capture_on_commit_callbacks):
         ids = [report(world, past_stay(world)).data['id'] for _ in range(3)]
-        approve(world, ids[0], django_capture_on_commit_callbacks)         # the oldest, now decided
+        approve(world, ids[0], django_capture_on_commit_callbacks)         # eń eskisi, endi sheshilgen
         rows = client_for(world['staff']).get(f'{A}/no-show-reports/').data['results']
         assert [row['id'] for row in rows] == [ids[1], ids[2], ids[0]]
 
@@ -411,7 +411,7 @@ class TestReverse:
 
     def test_approved_to_rejected_restores_the_booking(
             self, world, django_capture_on_commit_callbacks):
-        booking = past_stay(world)     # check-out in the past -> back to completed
+        booking = past_stay(world)     # shıǵıw ótken -> qaytadan completed
         report_id = report(world, booking).data['id']
         approve(world, report_id, django_capture_on_commit_callbacks)
         with django_capture_on_commit_callbacks(execute=True):
@@ -420,7 +420,7 @@ class TestReverse:
         booking.refresh_from_db()
         assert booking.status == 'completed'
         assert AdminAccessLog.objects.filter(action='no_show_report_reverse').count() == 1
-        # the guest is not notified a second time
+        # mehman ekinshi ret xabarlanbaydı
         assert Notification.objects.filter(code='no_show_marked_no_refund').count() == 1
 
     def test_reverse_before_check_out_goes_back_to_confirmed(self, world, django_capture_on_commit_callbacks):
@@ -509,14 +509,14 @@ class TestFutureNightsAreReleased:
                                          available_rooms=3, booked_rooms=booked)
 
     def test_approval_releases_only_nights_after_today(self, world, django_capture_on_commit_callbacks):
-        start = world['today'] - timedelta(days=1)             # 4 nights: 2 past or today, 2 future
+        start = world['today'] - timedelta(days=1)             # 4 tún: 2 ótken yamasa búgin, 2 keleshek
         booking = make_stay(world['prop'], world['guest'], start, nights=4, room=world['room'],
                             rate=world['rate'], rooms=2)
         self._inventory(world, start, 4, booked=2)
         report_id = report(world, booking).data['id']
         approve(world, report_id, django_capture_on_commit_callbacks)
         booked = {row.date: row.booked_rooms for row in RoomInventory.objects.all()}
-        assert booked[start] == 2 and booked[start + timedelta(days=1)] == 2      # yesterday, today: kept
+        assert booked[start] == 2 and booked[start + timedelta(days=1)] == 2      # keshe, búgin: saqlanǵan
         assert booked[start + timedelta(days=2)] == 0 and booked[start + timedelta(days=3)] == 0
 
     def test_a_finished_stay_changes_no_inventory(self, world, django_capture_on_commit_callbacks):
@@ -542,7 +542,7 @@ class TestFutureNightsAreReleased:
         self._inventory(world, start, 3, booked=1)
         report_id = report(world, booking).data['id']
         approve(world, report_id, django_capture_on_commit_callbacks)
-        RoomInventory.objects.filter(date=start + timedelta(days=2)).update(booked_rooms=3)   # sold out again
+        RoomInventory.objects.filter(date=start + timedelta(days=2)).update(booked_rooms=3)   # qaytadan satılıp bolǵan
         response = decide(world, report_id, 'reverse', comment='Mistake: the guest did arrive.')
         assert response.status_code == 400 and response.data['code'] == 'inventory_unavailable'
         assert NoShowReport.objects.get().status == 'approved'
@@ -593,7 +593,7 @@ class TestAbuseFlag:
             report(world, booking, user=owner)
 
     def _normal_traffic(self, world, count):
-        """Plenty of ordinary stays at the other hotel (no reports) so the platform average is small."""
+        """Basqa mehmanxanada kóp ápiwayı turıwlar (esabatsız), sol sebepli platforma ortashası kishi."""
         for _ in range(count):
             make_stay(world['other_prop'], world['guest'], world['today'] - timedelta(days=5), status='completed',
                       room=world['other_room'], rate=world['other_rate'])
@@ -621,7 +621,7 @@ class TestAbuseFlag:
         assert self.flagged(world) == {world['prop'].id: False}
 
     def test_minimum_rate_floor(self, world, settings):
-        # 5 reports in 60 bookings = 8.3 %: well above 3x the platform average (1.9 %) but below the 10 % floor
+        # 60 bronda 5 esabat = 8.3 %: platforma ortashasınıń (1.9 %) 3 eseden jaqsı joqarı, biraq 10 % shekten tómen
         self._normal_traffic(world, 200)
         self._reports(world, 5)
         for _ in range(55):
@@ -632,7 +632,7 @@ class TestAbuseFlag:
         assert self.flagged(world) == {world['prop'].id: True}
 
     def test_similar_rates_are_not_flagged(self, world):
-        # both hotels report at the same rate: nobody is 3x the average
+        # eki mehmanxana da birdey dárejede xabarlaydı: hesh kim ortashadan 3 ese emes
         self._reports(world, 5)
         self._reports(world, 5, prop=world['other_prop'], room=world['other_room'], rate=world['other_rate'],
                       owner=world['other_owner'])

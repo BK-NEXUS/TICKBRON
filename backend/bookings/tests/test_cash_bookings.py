@@ -1,7 +1,7 @@
 """
-Cash at the hotel (plan .ai/PLAN_CASH_ONLY.md stage 2): a booking is confirmed at once, the guest says
-when they will arrive, the hotel marks "guest arrived", and a confirmed booking whose guest has not
-arrived 2 hours after the given time is cancelled and the room is released.
+Mehmanxanada naqd (reje .ai/PLAN_CASH_ONLY.md 2-basqısh): bron birden tastıyıqlanadı, mehmann
+qashan keletuǵının aytadı, mehmanxana "mehmann keldi" dep belgileydi, hám mehmannıń aytqan
+waqıttan keyin 2 saat kelmegen tastıyıqlanǵan bron biykar etiledi hám xona bosatıladı.
 """
 from datetime import date, datetime, time, timedelta
 import zoneinfo
@@ -28,7 +28,7 @@ def tashkent(day, hour, minute=0):
 
 
 class CashFixture(APITestCase):
-    """The hotel of the booking view tests, owned by a real hotel owner (not the guest)."""
+    """Bron view testleriniń mehmanxanası, haqıyqıy mehmanxana iyesine tiyisli (mehmanǵa emes)."""
 
     def setUp(self):
         test_views.BookingViewTests.setUp(self)
@@ -65,7 +65,7 @@ class CreateTests(CashFixture):
         self.assertTrue(response.data['arrival_deadline'].startswith(f'{self.check_in.isoformat()}T12:30:00'))
         booking = Booking.objects.get()
         self.assertEqual((booking.status, booking.payment_status), ('confirmed', 'pending'))
-        self.assertIsNone(booking.expires_at)  # no payment window any more
+        self.assertIsNone(booking.expires_at)  # endi tólem oynası joq
 
     def test_a_closed_night_is_refused_with_a_code_for_translation(self):
         DateInventory.objects.filter(rate_plan=self.rate_plan, date=self.check_in).update(is_available=False)
@@ -113,7 +113,7 @@ class CreateTests(CashFixture):
         Booking.objects.filter(pk=second.pk).update(arrived_at=datetime.now(tz=TASHKENT))
         self.assertEqual(BookingViewSet._pending_cap_reached(self.user), False)
         Booking.objects.filter(pk__in=list(Booking.objects.values_list('pk', flat=True))).update(check_out=date.today() - timedelta(days=1))
-        self.assertFalse(BookingViewSet._pending_cap_reached(self.user))  # stays that are over do not count
+        self.assertFalse(BookingViewSet._pending_cap_reached(self.user))  # pitip ketken turıwlar esaplanbaydı
 
 
 class ArrivalRulesTests(TestCase):
@@ -170,7 +170,7 @@ class MarkArrivedTests(CashFixture):
         Booking.objects.filter(pk=booking.pk).update(check_in=date.today())
         self.assertEqual(self.owner_client(self.other_owner).post(self.url(booking), format='json').status_code, 404)
         self.assertEqual(self.client.post(self.url(booking), format='json').status_code, 403)
-        self.assertEqual(APIClient().post(self.url(booking), format='json').status_code, 403)  # anonymous: session auth
+        self.assertEqual(APIClient().post(self.url(booking), format='json').status_code, 403)  # anonim: session auth
         self.assertIsNone(Booking.objects.get(pk=booking.pk).arrived_at)
 
     def test_a_cancelled_booking_cannot_be_marked(self):
@@ -241,7 +241,7 @@ class AutoCancelTests(CashFixture):
 
     def test_one_failing_booking_does_not_stop_the_others(self):
         first = self.make('10:00')
-        # the same nights for a second booking need another guest: one guest cannot overlap his own stays
+        # ekinshi bron ushın sol túnler basqa mehmandı talap etedi: bir mehmann óz turıwın kesistire almaydı
         self.client.force_authenticate(user=User.objects.create_user(
             email='second-guest@example.com', password='GuestPass#123', phone_number='+998901112288'))
         second = self.make('10:00')
@@ -269,7 +269,8 @@ class AutoCancelTests(CashFixture):
 
 
 class PendingBookingsAtDeployTests(CashFixture):
-    """Migration 0012: pending bookings still inside their payment window are confirmed; expired ones are left to the expiry task."""
+    """0012 migration: tólem oynası ishindegi kútip turǵan bronlar tastıyıqlanadı; múddeti ótkenler múddet taskına
+    qaldırıladı."""
 
     def test_only_bookings_inside_their_window_are_confirmed(self):
         from importlib import import_module

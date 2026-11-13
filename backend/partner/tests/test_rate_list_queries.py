@@ -1,5 +1,5 @@
-"""The owner's list of rate plans asks the database a fixed number of times, however many plans there are
-(each plan's prices in the four currencies are loaded together, not one plan at a time)."""
+"""Iyeniń rate plan lar dizimi database ge belgili sanda soraw beredi, plan qansha bolsa da
+(hár plannıń tórt valyutadaǵı bahaları birge júklenedi, birewlep emes)."""
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext

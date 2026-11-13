@@ -1,4 +1,4 @@
-"""QA: free-text booking fields have a length limit (a 200 KB 'special request' was accepted)."""
+"""QA: erkin tekst bron maydanlarında uzınlıq shegi bar (200 KB 'arnawlı soraw' qabıllandı)."""
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -8,7 +8,7 @@ from bookings.tests import test_views
 
 class BookingTextLimitTests(APITestCase):
     def setUp(self):
-        test_views.BookingViewTests.setUp(self)  # the hotel fixture of the booking view tests
+        test_views.BookingViewTests.setUp(self)  # bron view testleriniń mehmanxana fixture si
         self.client.force_authenticate(user=self.user)
 
     def _book(self, **extra):
@@ -52,11 +52,11 @@ class BookingTextLimitTests(APITestCase):
         response = self.client.post(f'/api/v1/bookings/{booking_id}/cancel/', {'cancellation_reason': 'r' * 1001}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Booking.objects.get(pk=booking_id).status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
+        self.assertEqual(Booking.objects.get(pk=booking_id).status, 'confirmed')  # mehmanxanada naqd: bron API birden tastıyıqlaydı (burın 'pending')
 
 
 class BookingPhoneTests(APITestCase):
-    """The guest's phone is required: the booking's own number, else the account's (plan PLAN_CASH_ONLY stage 1)."""
+    """Mehmannıń telefonı májbúriy: bronnıń óz nomeri, bolmasa akkauntıki (reje PLAN_CASH_ONLY 1-basqısh)."""
 
     def setUp(self):
         test_views.BookingViewTests.setUp(self)

@@ -1,5 +1,5 @@
 """
-Tests for TICKBRON booking expiry management command.
+TICKBRON bron múddetin ótkeriw management command ı ushın testler.
 """
 from django.test import TestCase
 from django.core.management import call_command
@@ -14,11 +14,11 @@ from currency.testing import make_usd_rate
 
 
 class BookingExpiryCommandTests(TestCase):
-    """Test cases for booking expiry management command."""
+    """Bron múddetin ótkeriw management command ı ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        """Test maǵlıwmatın tayarlaw."""
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         self.user = User.objects.create_user(
             email='test@example.com',
             password='TestPassword123!',
@@ -68,7 +68,7 @@ class BookingExpiryCommandTests(TestCase):
             is_active=True
         )
 
-        # Create date inventory for test dates
+        # Test sanaları ushın date inventory jaratıw
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
 
@@ -86,8 +86,8 @@ class BookingExpiryCommandTests(TestCase):
             current_date += timedelta(days=1)
 
     def test_process_expired_bookings_command(self):
-        """Test the management command processes expired bookings."""
-        # Create booking
+        """Management command múddeti ótken bronlardı islewin testlew."""
+        # Bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -98,28 +98,28 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Manually set expiry to past
+        # Múddetin qolda ótkenge qoyıw
         past_time = timezone.now() - timedelta(minutes=30)
         booking.expires_at = past_time
         booking.save(update_fields=['expires_at'])
 
-        # Run the command
+        # Command ı isletiw
         out = StringIO()
         call_command('process_expired_bookings', stdout=out)
 
-        # Check output
+        # Shıǵıwdı tekseriw
         output = out.getvalue()
         self.assertIn('Found 1 expired booking(s) to process', output)
         self.assertIn('Successfully processed 1/1 expired booking(s)', output)
 
-        # Verify booking was expired
+        # Bronnıń múddeti ótkenin tekseriw
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'cancelled')
         self.assertEqual(booking.cancellation_reason, 'Booking expired - payment not completed within time limit')
 
     def test_process_expired_bookings_dry_run(self):
-        """Test the management command in dry-run mode."""
-        # Create booking
+        """Management command ın dry-run rejiminde testlew."""
+        # Bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -130,27 +130,27 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Manually set expiry to past
+        # Múddetin qolda ótkenge qoyıw
         past_time = timezone.now() - timedelta(minutes=30)
         booking.expires_at = past_time
         booking.save(update_fields=['expires_at'])
 
-        # Run the command with dry-run
+        # Command ı dry-run penen isletiw
         out = StringIO()
         call_command('process_expired_bookings', '--dry-run', stdout=out)
 
-        # Check output
+        # Shıǵıwdı tekseriw
         output = out.getvalue()
         self.assertIn('Dry run mode', output)
         self.assertIn(booking.confirmation_code, output)
 
-        # Verify booking was NOT expired
+        # Bronnıń múddeti ótpegenin tekseriw
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'pending')
 
     def test_process_expired_bookings_no_expired(self):
-        """Test the management command when no expired bookings exist."""
-        # Create booking with future expiry
+        """Múddeti ótken bron joq bolǵanda management command ın testlew."""
+        # Keleshek múddetli bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -161,21 +161,21 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Run the command
+        # Command ı isletiw
         out = StringIO()
         call_command('process_expired_bookings', stdout=out)
 
-        # Check output
+        # Shıǵıwdı tekseriw
         output = out.getvalue()
         self.assertIn('No expired bookings to process', output)
 
-        # Verify booking is still pending
+        # Bron ele pending ekenin tekseriw
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'pending')
 
     def test_process_expired_bookings_verbose(self):
-        """Test the management command with verbose output."""
-        # Create booking
+        """Management command ın keńeytilgen shıǵıw menen testlew."""
+        # Bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -186,23 +186,23 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Manually set expiry to past
+        # Múddetin qolda ótkenge qoyıw
         past_time = timezone.now() - timedelta(minutes=30)
         booking.expires_at = past_time
         booking.save(update_fields=['expires_at'])
 
-        # Run the command with verbose
+        # Command ı verbose penen isletiw
         out = StringIO()
         call_command('process_expired_bookings', '--verbose', stdout=out)
 
-        # Check output includes detailed information
+        # Shıǵıw tolıq maǵlıwmattı óz ishine alǵanın tekseriw
         output = out.getvalue()
         self.assertIn(booking.confirmation_code, output)
         self.assertIn(str(booking.id), output)
 
     def test_process_expired_bookings_multiple(self):
-        """Test processing multiple expired bookings."""
-        # Create multiple bookings
+        """Múddeti ótken kóp bronlardı islewdi testlew."""
+        # Bir neshe bron jaratıw
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -213,7 +213,7 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Create inventory for second booking
+        # Ekinshi bron ushın inventory jaratıw
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
 
@@ -240,7 +240,7 @@ class BookingExpiryCommandTests(TestCase):
             guest_count=2
         )
 
-        # Set both to expired
+        # Ekewin de múddeti ótken etip qoyıw
         past_time = timezone.now() - timedelta(minutes=30)
         booking1.expires_at = past_time
         booking1.save(update_fields=['expires_at'])
@@ -248,16 +248,16 @@ class BookingExpiryCommandTests(TestCase):
         booking2.expires_at = past_time
         booking2.save(update_fields=['expires_at'])
 
-        # Run the command
+        # Command ı isletiw
         out = StringIO()
         call_command('process_expired_bookings', stdout=out)
 
-        # Check output
+        # Shıǵıwdı tekseriw
         output = out.getvalue()
         self.assertIn('Found 2 expired booking(s) to process', output)
         self.assertIn('Successfully processed 2/2 expired booking(s)', output)
 
-        # Verify both were expired
+        # Ekewiniń de múddeti ótkenin tekseriw
         booking1.refresh_from_db()
         booking2.refresh_from_db()
         self.assertEqual(booking1.status, 'cancelled')

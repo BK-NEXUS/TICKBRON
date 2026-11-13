@@ -1,5 +1,5 @@
 """
-Tests for accounts views.
+accounts view leri ushın testler.
 """
 from django.db import connection
 from django.test import TestCase
@@ -16,10 +16,10 @@ User = get_user_model()
 
 
 class FavoriteViewSetTest(TestCase):
-    """Test cases for FavoriteViewSet."""
+    """FavoriteViewSet ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
@@ -48,7 +48,7 @@ class FavoriteViewSetTest(TestCase):
         )
 
     def test_create_favorite(self):
-        """Test creating a favorite."""
+        """Favorit jaratıwdı testlew."""
         data = {
             'property': self.property.id,
             'notes': 'Great property!'
@@ -59,14 +59,14 @@ class FavoriteViewSetTest(TestCase):
         self.assertEqual(Favorite.objects.first().user, self.user)
 
     def test_list_favorites(self):
-        """Test listing user favorites."""
+        """Paydalanıwshı favorit lerin dizimlewdi testlew."""
         Favorite.objects.create(user=self.user, property=self.property)
         response = self.client.get('/api/v1/me/favorites/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_delete_favorite(self):
-        """Test deleting a favorite."""
+        """Favorittı óshiriwdi testlew."""
         favorite = Favorite.objects.create(user=self.user, property=self.property)
         response = self.client.delete(f'/api/v1/me/favorites/{favorite.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -74,14 +74,14 @@ class FavoriteViewSetTest(TestCase):
         self.assertTrue(favorite.is_deleted)
 
     def test_favorite_count(self):
-        """Test getting favorite count."""
+        """Favorit sanın alıwdı testlew."""
         Favorite.objects.create(user=self.user, property=self.property)
         response = self.client.get('/api/v1/me/favorites/count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
 
     def test_cannot_favorite_inactive_property(self):
-        """Test that inactive properties cannot be favorited."""
+        """Aktiv emes mehmanxanalardı favorit etip bolmaytuǵının testlew."""
         self.property.is_active = False
         self.property.save()
 
@@ -90,7 +90,7 @@ class FavoriteViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_cannot_repoint_favorite_to_another_property(self):
-        """L-4: PATCH must not bypass the checks that create applies to the property."""
+        """L-4: PATCH jaratıw mehmanxanaǵa qollanatuǵın tekseriwlerdi aylanıp ótpewi kerek."""
         other = Property.objects.create(
             owner=self.user, property_type=self.property_type, status='draft', is_active=False,
             max_guests=2, bedrooms=1, bathrooms=1, address_line1='9 Hidden St',
@@ -117,7 +117,7 @@ class FavoriteViewSetTest(TestCase):
         self.assertEqual(favorite.notes, 'quiet room')
 
     def test_can_re_favorite_after_removing(self):
-        """Removing then re-adding the same property must not 500 (audit #27)."""
+        """Sol mehmanxananı alıp taslap qayta qosıw 500 bermewi kerek (audit #27)."""
         data = {'property': self.property.id, 'notes': 'first time'}
         first_response = self.client.post('/api/v1/me/favorites/', data, format='json')
         self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
@@ -134,11 +134,11 @@ class FavoriteViewSetTest(TestCase):
         favorite = Favorite.objects.get(user=self.user, property=self.property)
         self.assertFalse(favorite.is_deleted)
         self.assertEqual(favorite.notes, 'second time')
-        # Re-adding restores the existing row rather than creating a duplicate
+        # Qayta qosıw dublikat jaratpay, bar qatardı tiklaydı
         self.assertEqual(Favorite.objects.filter(user=self.user, property=self.property).count(), 1)
 
     def test_cannot_favorite_already_favorited_property_twice(self):
-        """A second, non-deleted favorite for the same property is rejected, not a 500."""
+        """Sol mehmanxana ushın ekinshi, óshirilmegen favorit biykar etiledi, 500 emes."""
         Favorite.objects.create(user=self.user, property=self.property)
 
         response = self.client.post('/api/v1/me/favorites/', {'property': self.property.id}, format='json')
@@ -147,7 +147,7 @@ class FavoriteViewSetTest(TestCase):
 
 
 class FavoritePropertyNameTest(TestCase):
-    """The favorites list carries each property's translations, loaded in one query."""
+    """Favorit ler dizimi hár mehmanxananıń awdarmaların alıp júredi, bir query de júklengen."""
 
     def setUp(self):
         self.client = APIClient()
@@ -197,10 +197,10 @@ class FavoritePropertyNameTest(TestCase):
 
 
 class ReviewViewSetTest(TestCase):
-    """Test cases for ReviewViewSet."""
+    """ReviewViewSet ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
@@ -240,7 +240,7 @@ class ReviewViewSetTest(TestCase):
         )
 
     def test_create_review_for_completed_booking(self):
-        """Test creating a review for a completed booking (a booking is required)."""
+        """Juwmaqlanǵan bron ushın sharh jaratıwdı testlew (bron májbúriy)."""
         data = {
             'property': self.property.id,
             'booking': self.booking.id,
@@ -252,7 +252,7 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_eligible_properties(self):
-        """Test getting eligible properties for review."""
+        """Sharh jaza alatuǵın mehmanxanalardı alıwdı testlew."""
         response = self.client.get('/api/v1/me/reviews/eligible_properties/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['eligible_properties']), 1)
@@ -260,7 +260,7 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(response.data['eligible_properties'][0]['property_city'], 'Test City')
 
     def test_eligible_properties_excludes_reviewed(self):
-        """Test that reviewed properties are excluded from eligible list."""
+        """Sharh jazılǵan mehmanxanalar múmkin dizimnen shıǵarılıwın testlew."""
         Review.objects.create(
             user=self.user,
             property=self.property,
@@ -273,8 +273,8 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(len(response.data['eligible_properties']), 0)
 
     def test_property_scores(self):
-        """Test getting property review scores."""
-        # Create approved reviews
+        """Mehmanxana sharh bahaların alıwdı testlew."""
+        # Tastıyıqlanǵan sharhlardı jaratıw
         Review.objects.create(
             user=self.user,
             property=self.property,
@@ -289,23 +289,23 @@ class ReviewViewSetTest(TestCase):
         self.assertEqual(response.data['average_rating'], 5.0)
 
     def test_property_scores_no_reviews(self):
-        """Test property scores when no reviews exist."""
+        """Sharh joq bolǵanda mehmanxana bahaların testlew."""
         response = self.client.get(f'/api/v1/me/reviews/property_scores/?property_id={self.property.id}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_reviews'], 0)
         self.assertIsNone(response.data['average_rating'])
 
     def test_property_scores_invalid_property_id(self):
-        """A non-numeric property_id must return 400, not 500 (audit #28)."""
+        """San emes property_id 400 qaytarıwı kerek, 500 emes (audit #28)."""
         response = self.client.get('/api/v1/me/reviews/property_scores/?property_id=abc')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class NotificationViewSetTest(TestCase):
-    """Test cases for NotificationViewSet."""
+    """NotificationViewSet ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
@@ -324,13 +324,13 @@ class NotificationViewSetTest(TestCase):
         )
 
     def test_list_notifications(self):
-        """Test listing user notifications."""
+        """Paydalanıwshı bildiriwlerin dizimlewdi testlew."""
         response = self.client.get('/api/v1/me/notifications/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_unread_notifications(self):
-        """Test getting unread notifications."""
+        """Oqılmaǵan bildiriwlerdi alıwdı testlew."""
         response = self.client.get('/api/v1/me/notifications/unread/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
@@ -343,14 +343,14 @@ class NotificationViewSetTest(TestCase):
         self.assertEqual((first['count'], len(first['results']), len(second['results'])), (25, 20, 5))
 
     def test_mark_notification_as_read(self):
-        """Test marking notification as read."""
+        """Bildiriwdi oqılǵan dep belgilewdi testlew."""
         response = self.client.patch(f'/api/v1/me/notifications/{self.notification.id}/', {'is_read': True})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
         self.assertTrue(self.notification.is_read)
 
     def test_mark_all_read(self):
-        """Test marking all notifications as read."""
+        """Barlıq bildiriwlerdi oqılǵan dep belgilewdi testlew."""
         Notification.objects.create(
             user=self.user,
             notification_type='payment',
@@ -364,14 +364,14 @@ class NotificationViewSetTest(TestCase):
         self.assertEqual(response.data['marked_as_read'], 2)
 
     def test_notification_count(self):
-        """Test getting notification counts."""
+        """Bildiriw sanların alıwdı testlew."""
         response = self.client.get('/api/v1/me/notifications/count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total'], 1)
         self.assertEqual(response.data['unread'], 1)
 
     def test_cannot_create_notification_via_api(self):
-        """Test that notifications cannot be created via API."""
+        """Bildiriwlerdi API arqalı jaratıp bolmaytuǵının testlew."""
         data = {
             'notification_type': 'booking',
             'priority': 'normal',
@@ -383,10 +383,10 @@ class NotificationViewSetTest(TestCase):
 
 
 class AccountHistoryViewSetTest(TestCase):
-    """Test cases for AccountHistoryViewSet."""
+    """AccountHistoryViewSet ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
@@ -403,36 +403,36 @@ class AccountHistoryViewSetTest(TestCase):
         )
 
     def test_list_account_history(self):
-        """Test listing account history."""
+        """Akkaunt tariyxın dizimlewdi testlew."""
         response = self.client.get('/api/v1/me/history/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_recent_history(self):
-        """Test getting recent history."""
+        """Eń sońǵı tariyxtı alıwdı testlew."""
         response = self.client.get('/api/v1/me/history/recent/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_recent_history_invalid_limit(self):
-        """A non-numeric limit must return 400, not 500 (audit #28)."""
+        """San emes limit 400 qaytarıwı kerek, 500 emes (audit #28)."""
         response = self.client.get('/api/v1/me/history/recent/?limit=abc')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_recent_history_negative_limit(self):
-        """A negative limit must return 400, not a slice error (audit #28)."""
+        """Teris limit 400 qaytarıwı kerek, slice qátesi emes (audit #28)."""
         response = self.client.get('/api/v1/me/history/recent/?limit=-5')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_history_stats(self):
-        """Test getting history statistics."""
+        """Tariyx statistikasın alıwdı testlew."""
         response = self.client.get('/api/v1/me/history/stats/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_entries'], 1)
         self.assertEqual(len(response.data['action_counts']), 1)
 
     def test_cannot_create_history_via_api(self):
-        """Test that history cannot be created via API (read-only)."""
+        """Tariyxtı API arqalı jaratıp bolmaytuǵının testlew (tek oqıw)."""
         data = {
             'action': 'login',
             'description': 'Test'

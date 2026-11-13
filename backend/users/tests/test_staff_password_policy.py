@@ -1,7 +1,8 @@
 """
-Administrators and staff follow the same password rule as everybody else: at least 8 characters with a letter,
-a digit and a special character (the owner dropped the longer staff rule: people forget such passwords).
-It holds where a staff password is set: adding an administrator, changing it, and the reset link.
+Administratorlar hám staff basqalar menen birdey parol qaǵıydasına ámel etedi: keminde 8 belgi, háripti,
+sandı hám arnawlı belgini óz ishine alıwı kerek (iye uzınıraq staff qaǵıydasın alıp taslaǵan: adamlar bunday parollardı
+umıtadı).
+Ol staff parolı qoyılatuǵın jerlerde isleydi: administrator qosıw, ózgertiw hám tiklew siltemesi.
 """
 import pytest
 from django.contrib.auth.tokens import default_token_generator

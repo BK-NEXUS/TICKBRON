@@ -1,6 +1,6 @@
 """
-QA finding F12: the status endpoints answered 200 with the default period when the dates were
-sent without period=custom, so a typo looked like a result. Now it is a 400.
+QA tabılması F12: status endpoint leri sanalar period=custom siz jiberilgende ádetdegi dáwir menen 200 menen juwap berdi,
+sol sebepli jazıwdaǵı qátelik nátiyjedey kórindi. Endi ol 400.
 """
 import pytest
 from rest_framework.test import APIClient

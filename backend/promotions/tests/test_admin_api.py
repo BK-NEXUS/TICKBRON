@@ -1,4 +1,4 @@
-"""Super-admin promotion API: find a hotel, create and manage promotions, read statistics."""
+"""Super-admin reklama API ı: mehmanxananı tabıw, reklama jaratıw hám basqarıw, statistikanı oqıw."""
 from datetime import timedelta
 from functools import partial
 

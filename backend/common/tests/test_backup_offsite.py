@@ -1,7 +1,8 @@
-"""The nightly backup also goes to a place outside the server (encrypted with restic, plan .ai/PLAN_INFRA_SCALE.md, phase A1).
+"""Túngi backup sonday-aq serverden sırtqı jerge de baradı (restic penen shifrlanǵan, reje .ai/PLAN_INFRA_SCALE.md, A1
+bólegi).
 
-It is switched on by deploy/offsite.env. The script runs against a fake `docker`, a fake `restic` and a fake `curl`
-that write what they were asked to do into a log file.
+Ol deploy/offsite.env penen qosıladı. Skript jalǵan `docker`, jalǵan `restic` hám jalǵan `curl` ǵa qarsı isleydi,
+olar ne soralǵanın log faylǵa jazadı.
 """
 import os
 import shutil
@@ -18,7 +19,8 @@ echo "restic $*" >> "$FAKE_LOG"
 [ -n "$FAKE_RESTIC_FAIL" ] && { echo "restic: unable to open the repository" >&2; exit 1; }
 exit 0
 """
-# curl is given its settings on standard input (a token must not show in the process list), so the fake logs both
+# curl ge sazlamaları standart kirisiw arqalı beriledi (token process dizimde kórinbewi kerek), sol sebepli jalǵan eki jaqtı da
+# jazadı
 FAKE_CURL = """#!/bin/sh
 echo "curl $*" >> "$FAKE_LOG"
 cat >> "$FAKE_LOG"

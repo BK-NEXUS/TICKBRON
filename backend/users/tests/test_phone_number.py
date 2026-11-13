@@ -1,7 +1,7 @@
 """
-The phone number is back (plan .ai/PLAN_CASH_ONLY.md stage 1): required at sign-up, in the profile,
-for an admin-created hotel-owner account and in a booking. It is only stored: no SMS, no code, no
-verification, no uniqueness rule.
+Telefon nomeri qaytıp keldi (reje .ai/PLAN_CASH_ONLY.md 1-basqısh): dizimnen ótkende, profilde,
+admin jaratqan mehmanxana iyesi akkaunti ushın hám bronda májbúriy. Ol tek saqlanadı: SMS joq, kod joq,
+tastıyıqlaw joq, unikallıq qaǵıydası joq.
 """
 import pytest
 from rest_framework.test import APIClient

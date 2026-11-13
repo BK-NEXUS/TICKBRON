@@ -1,5 +1,5 @@
 """
-Tests for property search functionality.
+Mehmanxana izlew funkciyası ushın testler.
 """
 from django.db import connection
 from django.test import TestCase
@@ -19,10 +19,10 @@ User = get_user_model()
 
 
 class PropertySearchServiceTest(TestCase):
-    """Test cases for PropertySearchService."""
+    """PropertySearchService ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -58,7 +58,7 @@ class PropertySearchServiceTest(TestCase):
             is_searchable=True
         )
 
-        # Create test properties
+        # Test mehmanxanaların jaratıw
         self.property1 = Property.objects.create(
             owner=self.user,
             property_type=self.property_type,
@@ -107,7 +107,7 @@ class PropertySearchServiceTest(TestCase):
             currency='USD'
         )
 
-        # Add translations
+        # Awdarmalardı qosıw
         PropertyTranslation.objects.create(
             property=self.property1,
             language='en',
@@ -122,7 +122,7 @@ class PropertySearchServiceTest(TestCase):
             description='Large villa with beautiful views'
         )
 
-        # Add amenities to properties
+        # Mehmanxanalarǵa amenity lerdi qosıw
         PropertyAmenity.objects.create(
             property=self.property1,
             amenity=self.wifi_amenity,
@@ -144,7 +144,7 @@ class PropertySearchServiceTest(TestCase):
         self.search_service = PropertySearchService()
 
     def test_basic_text_search(self):
-        """Test basic text search functionality."""
+        """Ápiwayı tekst izlewdi testlew."""
         search_params = {'q': 'Tashkent'}
         results = self.search_service.search(search_params)
 
@@ -152,18 +152,18 @@ class PropertySearchServiceTest(TestCase):
         self.assertEqual(len(results['results']), results['count'])
 
     def test_geographic_search(self):
-        """Test geographic search with coordinates."""
+        """Koordinatalar menen geografiyalıq izlewdi testlew."""
         search_params = {
             'lat': 41.2995,
             'lng': 69.2401,
-            'radius': 50  # 50km radius
+            'radius': 50  # 50 km radius
         }
         results = self.search_service.search(search_params)
 
         self.assertGreater(results['count'], 0)
 
     def test_price_filtering(self):
-        """Test price range filtering."""
+        """Baha aralıǵı boyınsha filterlewdi testlew."""
         search_params = {
             'min_price': 40.00,
             'max_price': 80.00
@@ -175,7 +175,7 @@ class PropertySearchServiceTest(TestCase):
             self.assertLessEqual(property.base_price, 80.00)
 
     def test_amenity_filtering(self):
-        """Test amenity filtering."""
+        """Amenity boyınsha filterlewdi testlew."""
         search_params = {
             'amenities': [self.wifi_amenity.id]
         }
@@ -184,7 +184,7 @@ class PropertySearchServiceTest(TestCase):
         self.assertGreater(results['count'], 0)
 
     def test_guest_filtering(self):
-        """Test guest capacity filtering."""
+        """Mehmanlar sıyımlılıǵı boyınsha filterlewdi testlew."""
         search_params = {
             'min_guests': 3,
             'max_guests': 6
@@ -196,7 +196,7 @@ class PropertySearchServiceTest(TestCase):
             self.assertLessEqual(property.max_guests, 6)
 
     def test_property_type_filtering(self):
-        """Test property type filtering."""
+        """Mehmanxana túri boyınsha filterlewdi testlew."""
         search_params = {
             'property_type': self.property_type.id
         }
@@ -207,7 +207,7 @@ class PropertySearchServiceTest(TestCase):
             self.assertEqual(property.property_type_id, self.property_type.id)
 
     def test_date_filtering(self):
-        """Test date availability filtering."""
+        """Sana boyınsha bos orın filterlewin testlew."""
         check_in = (timezone.now() + timedelta(days=7)).strftime('%Y-%m-%d')
         check_out = (timezone.now() + timedelta(days=10)).strftime('%Y-%m-%d')
 
@@ -217,11 +217,11 @@ class PropertySearchServiceTest(TestCase):
         }
         results = self.search_service.search(search_params)
 
-        # Should return properties (basic implementation)
+        # Mehmanxanalardı qaytarıwı kerek (ápiwayı iske asırıw)
         self.assertGreaterEqual(results['count'], 0)
 
     def test_sorting_by_price_asc(self):
-        """Test sorting by price ascending."""
+        """Baha boyınsha ósiw tártibinde tártiplewdi testlew."""
         search_params = {
             'sort': 'price_asc'
         }
@@ -232,7 +232,7 @@ class PropertySearchServiceTest(TestCase):
             self.assertEqual(prices, sorted(prices))
 
     def test_sorting_by_price_desc(self):
-        """Test sorting by price descending."""
+        """Baha boyınsha kemeyiw tártibinde tártiplewdi testlew."""
         search_params = {
             'sort': 'price_desc'
         }
@@ -243,7 +243,7 @@ class PropertySearchServiceTest(TestCase):
             self.assertEqual(prices, sorted(prices, reverse=True))
 
     def test_pagination(self):
-        """Test pagination functionality."""
+        """Betlew (pagination) funkciyasın testlew."""
         search_params = {
             'page': 1,
             'page_size': 2
@@ -255,7 +255,7 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('previous', results)
 
     def test_empty_results(self):
-        """Test search with no matching results."""
+        """Sáykes nátiyje joq izlewdi testlew."""
         search_params = {
             'q': 'NonExistentCity123456'
         }
@@ -265,15 +265,15 @@ class PropertySearchServiceTest(TestCase):
         self.assertEqual(len(results['results']), 0)
 
     def test_search_suggestions(self):
-        """Test search suggestions for autocomplete."""
+        """Avtotolıqtırıw ushın izlew usınıslarını testlew."""
         suggestions = self.search_service.get_search_suggestions('Tash')
 
         self.assertIsInstance(suggestions, list)
         self.assertGreater(len(suggestions), 0)
 
     def test_search_params_validation_query_too_long(self):
-        """Test validation error for query that's too long."""
-        search_params = {'q': 'a' * 501}  # 501 characters (max is 500)
+        """Sorawdıń júdá uzın bolıwı ushın validaciya qátesin testlew."""
+        search_params = {'q': 'a' * 501}  # 501 belgi (eń kóbi 500)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -281,8 +281,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('too long', str(context.exception))
 
     def test_search_params_validation_location_too_long(self):
-        """Test validation error for location that's too long."""
-        search_params = {'location': 'a' * 201}  # 201 characters (max is 200)
+        """Jaylasıwdıń júdá uzın bolıwı ushın validaciya qátesin testlew."""
+        search_params = {'location': 'a' * 201}  # 201 belgi (eń kóbi 200)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -290,8 +290,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('too long', str(context.exception))
 
     def test_search_params_validation_invalid_latitude(self):
-        """Test validation error for invalid latitude."""
-        search_params = {'lat': 91.0, 'lng': 0.0}  # Invalid latitude (> 90)
+        """Jaramsız latitude ushın validaciya qátesin testlew."""
+        search_params = {'lat': 91.0, 'lng': 0.0}  # Jaramsız latitude (> 90)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -299,8 +299,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('latitude', str(context.exception).lower())
 
     def test_search_params_validation_invalid_longitude(self):
-        """Test validation error for invalid longitude."""
-        search_params = {'lat': 0.0, 'lng': 181.0}  # Invalid longitude (> 180)
+        """Jaramsız longitude ushın validaciya qátesin testlew."""
+        search_params = {'lat': 0.0, 'lng': 181.0}  # Jaramsız longitude (> 180)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -308,8 +308,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('longitude', str(context.exception).lower())
 
     def test_search_params_validation_invalid_radius(self):
-        """Test validation error for invalid radius."""
-        search_params = {'lat': 0.0, 'lng': 0.0, 'radius': 101}  # Invalid radius (> 100)
+        """Jaramsız radius ushın validaciya qátesin testlew."""
+        search_params = {'lat': 0.0, 'lng': 0.0, 'radius': 101}  # Jaramsız radius (> 100)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -317,7 +317,7 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('radius', str(context.exception).lower())
 
     def test_search_params_validation_negative_price(self):
-        """Test validation error for negative price."""
+        """Teris baha ushın validaciya qátesin testlew."""
         search_params = {'min_price': -10.0}
 
         with self.assertRaises(ValueError) as context:
@@ -326,7 +326,7 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('price', str(context.exception).lower())
 
     def test_search_params_validation_invalid_guest_range(self):
-        """Test validation error for invalid guest range."""
+        """Jaramsız mehmanlar aralıǵı ushın validaciya qátesin testlew."""
         search_params = {'min_guests': 10, 'max_guests': 5}  # min > max
 
         with self.assertRaises(ValueError) as context:
@@ -335,8 +335,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('guest', str(context.exception).lower())
 
     def test_search_params_validation_too_many_amenities(self):
-        """Test validation error for too many amenities."""
-        search_params = {'amenities': list(range(21))}  # 21 amenities (max is 20)
+        """Amenity lerdiń kóp bolıwı ushın validaciya qátesin testlew."""
+        search_params = {'amenities': list(range(21))}  # 21 amenity (eń kóbi 20)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -344,8 +344,8 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('amenities', str(context.exception).lower())
 
     def test_search_params_validation_invalid_page_size(self):
-        """Test validation error for invalid page size."""
-        search_params = {'page_size': 101}  # Invalid page size (> 100)
+        """Jaramsız bet ólshemi ushın validaciya qátesin testlew."""
+        search_params = {'page_size': 101}  # Jaramsız bet ólshemi (> 100)
 
         with self.assertRaises(ValueError) as context:
             self.search_service.search(search_params)
@@ -353,7 +353,7 @@ class PropertySearchServiceTest(TestCase):
         self.assertIn('page size', str(context.exception).lower())
 
     def test_search_response_includes_pagination_metadata(self):
-        """Test that search response includes new pagination metadata."""
+        """Izlew juwabında jańa pagination metadata sı bar ekenin testlew."""
         search_params = {'page': 1, 'page_size': 2}
         results = self.search_service.search(search_params)
 
@@ -364,54 +364,54 @@ class PropertySearchServiceTest(TestCase):
         self.assertEqual(results['page_size'], 2)
 
     def test_text_search_word_splitting(self):
-        """Test that text search splits query into words for better matching."""
-        search_params = {'q': 'Modern Apartment'}  # Two words
+        """Tekst izlew jaqsıraq sáykeslik ushın sorawdı sózlerge bóletuǵının testlew."""
+        search_params = {'q': 'Modern Apartment'}  # Eki sóz
         results = self.search_service.search(search_params)
 
-        # Should find property with both "Modern" and "Apartment" in description
+        # Description ında "Modern" hám "Apartment" ekewi de bar mehmanxananı tabıwı kerek
         self.assertGreater(results['count'], 0)
 
     def test_text_search_sanitization(self):
-        """Test that text search sanitizes dangerous characters without breaking functionality."""
-        # Test that the sanitization doesn't break the search
+        """Tekst izlew qáwipli belgilerdi funkciyanı buzbastan tazalaytuǵının testlew."""
+        # Tazalaw izlewdi buzbaytuǵının testlew
         search_params = {'q': 'Tashkent'}
         results = self.search_service.search(search_params)
 
-        # Should work normally
+        # Ádettegidey islewi kerek
         self.assertGreater(results['count'], 0)
 
-        # Test that dangerous characters are handled gracefully
+        # Qáwipli belgiler duris islenetuǵının testlew
         dangerous_query = '<script>alert("test")</script>'
         sanitized_query = dangerous_query.replace('<', '').replace('>', '').replace('"', '').replace("'", '')
 
-        # After sanitization, the dangerous characters should be removed
+        # Tazalawdan keyin qáwipli belgiler alıp taslanıwı kerek
         self.assertNotIn('<', sanitized_query)
         self.assertNotIn('>', sanitized_query)
         self.assertNotIn('"', sanitized_query)
         self.assertNotIn("'", sanitized_query)
 
     def test_empty_query_handling(self):
-        """Test that empty query is handled gracefully."""
+        """Bos sorawdıń duris islenetuǵının testlew."""
         search_params = {'q': ''}
         results = self.search_service.search(search_params)
 
-        # Should return all properties (no filter applied)
+        # Barlıq mehmanxanalardı qaytarıwı kerek (filter qollanılmaydı)
         self.assertGreater(results['count'], 0)
 
     def test_short_query_handling(self):
-        """Test that very short queries are handled."""
-        search_params = {'q': 'a'}  # Single character
+        """Júdá qısqa sorawlardıń islenetuǵının testlew."""
+        search_params = {'q': 'a'}  # Bir belgi
         results = self.search_service.search(search_params)
 
-        # Should handle gracefully (may return no results due to 2-char minimum)
+        # Duris islewi kerek (eń kemi 2 belgi shárti sebepli nátiyje bolmawı múmkin)
         self.assertIsInstance(results['count'], int)
 
 
 class PropertySearchEndpointTest(TestCase):
-    """Test cases for property search API endpoint."""
+    """Mehmanxana izlew API endpoint i ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data and API client."""
+        """Test maǵlıwmatın hám API client ti tayarlaw."""
         self.client = APIClient()
 
         self.user = User.objects.create_user(
@@ -451,7 +451,7 @@ class PropertySearchEndpointTest(TestCase):
         )
 
     def test_search_endpoint_success(self):
-        """Test successful search request."""
+        """Tabıslı izlew sorawın testlew."""
         response = self.client.get('/api/v1/properties/search/', {'q': 'Tashkent'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -459,7 +459,7 @@ class PropertySearchEndpointTest(TestCase):
         self.assertIn('results', response.data)
 
     def test_search_endpoint_query_parameters(self):
-        """Test search with various query parameters."""
+        """Túrli soraw parametrleri menen izlewdi testlew."""
         response = self.client.get('/api/v1/properties/search/', {
             'q': 'Tashkent',
             'min_price': 40,
@@ -472,7 +472,7 @@ class PropertySearchEndpointTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_search_endpoint_filter_combinations(self):
-        """Test search with multiple filters combined."""
+        """Birge qollanılǵan kóp filter menen izlewdi testlew."""
         response = self.client.get('/api/v1/properties/search/', {
             'q': 'Tashkent',
             'min_price': 40,
@@ -483,7 +483,7 @@ class PropertySearchEndpointTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_search_endpoint_sorting(self):
-        """Test search with different sorting options."""
+        """Túrli tártiplew variantları menen izlewdi testlew."""
         sorting_options = ['relevance', 'price_asc', 'price_desc', 'rating', 'distance']
 
         for sort_option in sorting_options:
@@ -493,7 +493,7 @@ class PropertySearchEndpointTest(TestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_search_endpoint_pagination(self):
-        """Test search pagination."""
+        """Izlew betlewin testlew."""
         response = self.client.get('/api/v1/properties/search/', {
             'page': 1,
             'page_size': 5
@@ -504,23 +504,23 @@ class PropertySearchEndpointTest(TestCase):
         self.assertIn('previous', response.data)
 
     def test_search_endpoint_public_access(self):
-        """Test that search endpoint is publicly accessible."""
+        """Izlew endpoint i ashıq qol jetimli ekenin testlew."""
         response = self.client.get('/api/v1/properties/search/', {'q': 'Tashkent'})
 
-        # Should work without authentication
+        # Autentifikaciyasız islewi kerek
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_search_endpoint_invalid_parameters(self):
-        """Test search with invalid parameters."""
+        """Jaramsız parametrler menen izlewdi testlew."""
         response = self.client.get('/api/v1/properties/search/', {
-            'min_price': -10,  # Invalid negative price
-            'max_guests': 0    # Invalid guest count
+            'min_price': -10,  # Jaramsız teris baha
+            'max_guests': 0    # Jaramsız mehman sanı
         })
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_search_suggestions_endpoint(self):
-        """Test search suggestions endpoint."""
+        """Izlew usınısları endpoint in testlew."""
         response = self.client.get('/api/v1/properties/search/suggestions/', {'q': 'Tash'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -528,25 +528,25 @@ class PropertySearchEndpointTest(TestCase):
         self.assertIsInstance(response.data['suggestions'], list)
 
     def test_search_endpoint_validation_invalid_amenity_count(self):
-        """Test endpoint validation for too many amenities (service layer)."""
-        # Serializer may not catch amenity count, service layer should
+        """Amenity lerdiń kóp bolıwı ushın endpoint validaciyasın testlew (servis qatlamı)."""
+        # Serializer amenity sanın tutpawı múmkin, servis qatlamı tutıwı kerek
         amenities_list = ','.join([str(i) for i in range(21)])
         response = self.client.get('/api/v1/properties/search/', {'amenities': amenities_list})
 
-        # Service layer validation should catch this
+        # Servis qatlamı validaciyası buni tutıwı kerek
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
     def test_search_endpoint_validation_invalid_date_format(self):
-        """Test endpoint validation for invalid date format."""
+        """Jaramsız sana formatı ushın endpoint validaciyasın testlew."""
         response = self.client.get('/api/v1/properties/search/', {'check_in': 'invalid-date'})
 
-        # Serializer should catch this
+        # Serializer buni tutıwı kerek
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
     def test_search_endpoint_response_includes_pagination_metadata(self):
-        """Test that endpoint response includes new pagination metadata."""
+        """Endpoint juwabında jańa pagination metadata sı bar ekenin testlew."""
         response = self.client.get('/api/v1/properties/search/', {'page': 1, 'page_size': 10})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -555,21 +555,21 @@ class PropertySearchEndpointTest(TestCase):
         self.assertIn('total_pages', response.data)
 
     def test_search_endpoint_invalid_amenities_format(self):
-        """Test endpoint with invalid amenities format."""
+        """Jaramsız amenity formatı menen endpoint ti testlew."""
         response = self.client.get('/api/v1/properties/search/', {'amenities': 'invalid,format'})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
     def test_search_endpoint_geographic_coordinates_required(self):
-        """Test that both lat and lng are required for geographic search."""
+        """Geografiyalıq izlew ushın lat hám lng ekewi de kerek ekenin testlew."""
         response = self.client.get('/api/v1/properties/search/', {'lat': 41.2995})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
     def test_search_endpoint_standardized_error_response(self):
-        """Test that error responses follow standardized format."""
+        """Qátelik juwapları standart formatqa say ekenin testlew."""
         response = self.client.get('/api/v1/properties/search/', {'min_price': -10})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -577,7 +577,7 @@ class PropertySearchEndpointTest(TestCase):
         self.assertIn('details', response.data)
 
     def test_search_endpoint_internal_error_does_not_leak_details(self):
-        """An unexpected internal error from the search service must not leak str(e) (audit #24)."""
+        """Izlew servisindegi kútilmegen ishki qátelik str(e) di sırtqa shıǵarmawı kerek (audit #24)."""
         from unittest.mock import patch
 
         secret = "psycopg2.errors.SyntaxError: near 'internal-query-fragment'"
@@ -588,7 +588,7 @@ class PropertySearchEndpointTest(TestCase):
         self.assertNotIn(secret, str(response.data))
 
     def test_search_suggestions_endpoint_internal_error_does_not_leak_details(self):
-        """An unexpected internal error from suggestions must not leak str(e) (audit #24)."""
+        """Usınıslardaǵı kútilmegen ishki qátelik str(e) di sırtqa shıǵarmawı kerek (audit #24)."""
         from unittest.mock import patch
 
         secret = "psycopg2.OperationalError: connection to internal-db-host failed"
@@ -600,7 +600,7 @@ class PropertySearchEndpointTest(TestCase):
 
 
 class PropertySearchTranslationsTest(TestCase):
-    """Search results carry the property's translations (its name) without an N+1."""
+    """Izlew nátiyjeleri mehmanxananıń awdarmaların (atın) N+1 siz alıp júredi."""
 
     def setUp(self):
         self.client = APIClient()
@@ -653,13 +653,13 @@ class PropertySearchTranslationsTest(TestCase):
 
 
 class PropertySearchIntegrationTest(TestCase):
-    """Integration test for complete search workflow."""
+    """Tolıq izlew process i ushın integraciya testi."""
 
     def setUp(self):
-        """Set up comprehensive test data."""
+        """Keń kólemli test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create user
+        # Paydalanıwshını jaratıw
         self.user = User.objects.create_user(
             email='integration@example.com',
             password='testpass123',
@@ -667,14 +667,14 @@ class PropertySearchIntegrationTest(TestCase):
             last_name='Test'
         )
 
-        # Create property type
+        # Mehmanxana túrin jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
             description='Apartment property type'
         )
 
-        # Create amenity category and amenities
+        # Amenity kategoriyasın hám amenity lerdi jaratıw
         self.amenity_category = AmenityCategory.objects.create(
             name='Kitchen',
             slug='kitchen',
@@ -689,7 +689,7 @@ class PropertySearchIntegrationTest(TestCase):
             is_searchable=True
         )
 
-        # Create multiple properties with different characteristics
+        # Túrli qásiyetli kóp mehmanxananı jaratıw
         for i in range(5):
             property = Property.objects.create(
                 owner=self.user,
@@ -721,12 +721,12 @@ class PropertySearchIntegrationTest(TestCase):
             )
 
     def test_complete_search_workflow(self):
-        """Test complete search workflow from API to results."""
-        # Step 1: Get search suggestions
+        """API den nátiyjege shekem tolıq izlew process in testlew."""
+        # 1-qadam: izlew usınıslarını alıw
         suggestions_response = self.client.get('/api/v1/properties/search/suggestions/', {'q': 'Tash'})
         self.assertEqual(suggestions_response.status_code, status.HTTP_200_OK)
 
-        # Step 2: Perform search with filters
+        # 2-qadam: filterler menen izlewdi islew
         search_response = self.client.get('/api/v1/properties/search/', {
             'q': 'Tashkent',
             'min_price': 30,
@@ -742,7 +742,7 @@ class PropertySearchIntegrationTest(TestCase):
         self.assertIn('count', search_response.data)
         self.assertIn('results', search_response.data)
 
-        # Step 3: Verify result structure
+        # 3-qadam: nátiyje dúzilisin tekseriw
         if search_response.data['count'] > 0:
             first_result = search_response.data['results'][0]
             self.assertIn('id', first_result)

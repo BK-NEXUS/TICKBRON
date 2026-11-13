@@ -1,6 +1,7 @@
-"""A NUL character is never a 500: %00 in a query string is refused first, anywhere else the exception handler answers 400.
+"""NUL belgisi hesh qashan 500 emes: query string degi %00 aldın biykar etiledi, basqa jerde exception handler 400 menen
+juwap beredi.
 
-PostgreSQL cannot store or search for it, so without this a search box or an unchecked text field answers 500.
+PostgreSQL onı saqlay da, izley de almaydı, sol sebepli bunsız izlew qutısı yamasa tekserilmegen tekst maydanı 500 beredi.
 """
 import json
 
@@ -31,7 +32,7 @@ class TestQueryString:
 
 
 class TestJsonBody:
-    """A NUL in a body is answered by the field checks or, failing that, by the exception handler: never a 500."""
+    """Denedegi NUL maydan tekseriwleri yamasa, bolmasa, exception handler tárepinen juwap aladı: hesh qashan 500 emes."""
 
     def post(self, raw):
         return client().post('/api/v1/auth/login/', data=raw, content_type='application/json')
@@ -66,7 +67,8 @@ def test_any_other_value_error_is_still_a_server_error():
 
 
 class TestCorsHeaders:
-    """The 400 for %00 must carry the CORS headers, or a browser on another origin shows a CORS error instead of the 400."""
+    """%00 ushın 400 CORS header lerin alıp júriwi kerek, bolmasa basqa origin degi brauzer 400 ornına CORS qátesin
+    kórsetedi."""
 
     def test_the_refusal_carries_the_cors_headers(self, settings):
         settings.CORS_ALLOWED_ORIGINS = ['http://localhost:3000']

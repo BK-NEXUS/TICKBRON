@@ -1,14 +1,14 @@
 """
-Security review script for accounts app (Checkpoint 17).
+accounts app ushın qáwipsizlik tekseriw skripti (Checkpoint 17).
 
-This script performs a comprehensive security review of the accounts app,
-including favorites, reviews, notifications, and account history functionality.
+Bul skript accounts app ın, yaǵnıy favorites, sholıwlar, xabarlandırıwlar hám akkaunt
+tariyxı funkciyasın tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 
 import sys
 import os
 
-# Setup Django
+# Django dı tayarlaw
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -21,7 +21,7 @@ from users.models import User
 
 
 def check_account_security():
-    """Perform comprehensive security review of accounts app."""
+    """accounts app ın tolıq qáwipsizlik tekseriwinen ótkeriw."""
 
     print("=" * 80)
     print("ACCOUNTS APP SECURITY REVIEW - CHECKPOINT 17")
@@ -31,7 +31,7 @@ def check_account_security():
     passed_checks = 0
     failed_checks = 0
 
-    # 1. Authentication and Authorization
+    # 1. Autentifikaciya hám avtorizaciya
     print("\n1. AUTHENTICATION AND AUTHORIZATION")
     print("-" * 80)
 
@@ -67,7 +67,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] AccountHistoryViewSet authentication check failed")
 
-    # 2. User Isolation
+    # 2. Paydalanıwshılardı ajıratıw
     print("\n2. USER ISOLATION")
     print("-" * 80)
 
@@ -103,7 +103,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Account history user isolation check failed")
 
-    # 3. Input Validation
+    # 3. Kiriwdi tekseriw
     print("\n3. INPUT VALIDATION")
     print("-" * 80)
 
@@ -131,7 +131,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Booking status validation check failed")
 
-    # 4. Access Control
+    # 4. Qol jetimlilikti basqarıw
     print("\n4. ACCESS CONTROL")
     print("-" * 80)
 
@@ -159,7 +159,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Staff review access check failed")
 
-    # 5. Data Integrity
+    # 5. Maǵlıwmat putinligi
     print("\n5. DATA INTEGRITY")
     print("-" * 80)
 
@@ -187,7 +187,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Soft delete functionality check failed")
 
-    # 6. Audit Trail
+    # 6. Audit jazbası
     print("\n6. AUDIT TRAIL")
     print("-" * 80)
 
@@ -207,7 +207,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Review history logging check failed")
 
-    # 7. Database Security
+    # 7. Database qáwipsizligi
     print("\n7. DATABASE SECURITY")
     print("-" * 80)
 
@@ -227,7 +227,7 @@ def check_account_security():
         failed_checks += 1
         print("[FAIL] Soft delete filtering check failed")
 
-    # Summary
+    # Juwmaq
     print("\n" + "=" * 80)
     print("SECURITY REVIEW SUMMARY")
     print("=" * 80)
@@ -241,7 +241,7 @@ def check_account_security():
 
 
 def check_viewset_authentication(viewset_class):
-    """Check if viewset requires authentication."""
+    """Viewset autentifikaciyanı talap etetuǵının tekseriw."""
     try:
         from rest_framework.permissions import IsAuthenticated
         return IsAuthenticated in viewset_class.permission_classes
@@ -250,9 +250,9 @@ def check_viewset_authentication(viewset_class):
 
 
 def check_user_isolation_favorites():
-    """Check that favorites are isolated by user."""
+    """Favorites paydalanıwshı boyınsha ajıratılǵanın tekseriw."""
     try:
-        # Check that queryset filters by user
+        # Queryset paydalanıwshı boyınsha filterlengenin tekseriw
         factory = RequestFactory()
         request = factory.get('/api/v1/me/favorites/')
 
@@ -261,16 +261,16 @@ def check_user_isolation_favorites():
         viewset.request = request
         viewset.request.user = user
 
-        # This should filter by user in the actual implementation
+        # Bul haqıyqıy iske asırıwda paydalanıwshı boyınsha filterlewi kerek
         return True
     except Exception:
         return False
 
 
 def check_user_isolation_reviews():
-    """Check that reviews are isolated by user."""
+    """Sholıwlar paydalanıwshı boyınsha ajıratılǵanın tekseriw."""
     try:
-        # Check that queryset filters by user for non-staff
+        # Queryset staff emes paydalanıwshılar ushın paydalanıwshı boyınsha filterlengenin tekseriw
         from accounts.views import ReviewViewSet
         factory = RequestFactory()
         request = factory.get('/api/v1/me/reviews/')
@@ -286,7 +286,7 @@ def check_user_isolation_reviews():
 
 
 def check_user_isolation_notifications():
-    """Check that notifications are isolated by user."""
+    """Xabarlandırıwlar paydalanıwshı boyınsha ajıratılǵanın tekseriw."""
     try:
         factory = RequestFactory()
         request = factory.get('/api/v1/me/notifications/')
@@ -302,7 +302,7 @@ def check_user_isolation_notifications():
 
 
 def check_user_isolation_history():
-    """Check that account history is isolated by user."""
+    """Akkaunt tariyxı paydalanıwshı boyınsha ajıratılǵanın tekseriw."""
     try:
         factory = RequestFactory()
         request = factory.get('/api/v1/me/history/')
@@ -318,12 +318,12 @@ def check_user_isolation_history():
 
 
 def check_rating_validation():
-    """Check that review ratings are validated (1-5)."""
+    """Sholıw reytingleri tekserilgenin (1-5) tekseriw."""
     try:
         from django.core.validators import MinValueValidator, MaxValueValidator
         from accounts.models import Review
 
-        # Check model validators
+        # Model validatorların tekseriw
         overall_field = Review._meta.get_field('overall_rating')
         validators = overall_field.validators
 
@@ -336,40 +336,40 @@ def check_rating_validation():
 
 
 def check_property_status_validation():
-    """Check that property status is validated."""
+    """Mehmanxana status ı tekserilgenin tekseriw."""
     try:
         pass
-        # The serializer should validate property status
+        # Serializer mehmanxana status ın tekseriwi kerek
         return True
     except Exception:
         return False
 
 
 def check_booking_status_validation():
-    """Check that booking status is validated for reviews."""
+    """Sholıwlar ushın bron status ı tekserilgenin tekseriw."""
     try:
         pass
-        # The serializer should validate booking status
+        # Serializer bron status ın tekseriwi kerek
         return True
     except Exception:
         return False
 
 
 def check_notification_creation_blocked():
-    """Check that direct notification creation is blocked."""
+    """Xabarlandırıwdı tuwrıdan-tuwrı jaratıw bloklanǵanın tekseriw."""
     try:
         from accounts.views import NotificationViewSet
-        # Check that create method is overridden to block
+        # Create metodı bloklaw ushın qayta anıqlanǵanın tekseriw
         return hasattr(NotificationViewSet, 'create')
     except Exception:
         return False
 
 
 def check_history_read_only():
-    """Check that account history is read-only."""
+    """Akkaunt tariyxı tek oqıw ushın ekenin tekseriw."""
     try:
         from accounts.views import AccountHistoryViewSet
-        # Should be ReadOnlyModelViewSet
+        # ReadOnlyModelViewSet bolıwı kerek
         from rest_framework.viewsets import ReadOnlyModelViewSet
         return issubclass(AccountHistoryViewSet, ReadOnlyModelViewSet)
     except Exception:
@@ -377,17 +377,17 @@ def check_history_read_only():
 
 
 def check_staff_review_access():
-    """Check that staff can access all reviews."""
+    """Staff barlıq sholıwlarǵa qol jetkere alatuǵının tekseriw."""
     try:
         pass
-        # ViewSet should have different queryset for staff
+        # ViewSet te staff ushın basqa queryset bolıwı kerek
         return True
     except Exception:
         return False
 
 
 def check_favorite_unique_constraint():
-    """Check favorite unique constraint."""
+    """Favorite unikal constraint in tekseriw."""
     try:
         from accounts.models import Favorite
         unique_together = Favorite._meta.unique_together
@@ -397,7 +397,7 @@ def check_favorite_unique_constraint():
 
 
 def check_review_unique_constraint():
-    """Check review unique constraint."""
+    """Sholıw unikal constraint in tekseriw."""
     try:
         from accounts.models import Review
         unique_together = Review._meta.unique_together
@@ -407,12 +407,12 @@ def check_review_unique_constraint():
 
 
 def check_soft_delete_functionality():
-    """Check soft delete functionality."""
+    """Soft delete funkciyasın tekseriw."""
     try:
         from accounts.models import Favorite, Review, Notification, AccountHistory
         from common.models import BaseModel
 
-        # All should inherit from BaseModel which has soft delete
+        # Barlıǵı soft delete bar BaseModel den miras alıwı kerek
         return (issubclass(Favorite, BaseModel) and
                 issubclass(Review, BaseModel) and
                 issubclass(Notification, BaseModel) and
@@ -422,31 +422,31 @@ def check_soft_delete_functionality():
 
 
 def check_account_history_logging():
-    """Check account history logging."""
+    """Akkaunt tariyxın jazıwdı tekseriw."""
     try:
         from accounts.views import FavoriteViewSet
-        # Check that account history is created in perform_create
+        # Akkaunt tariyxı perform_create de jaratılǵanın tekseriw
         return hasattr(FavoriteViewSet, 'perform_create')
     except Exception:
         return False
 
 
 def check_review_history_logging():
-    """Check review history logging."""
+    """Sholıw tariyxın jazıwdı tekseriw."""
     try:
         from accounts.views import ReviewViewSet
-        # Check that account history is created in perform_create
+        # Akkaunt tariyxı perform_create de jaratılǵanın tekseriw
         return hasattr(ReviewViewSet, 'perform_create')
     except Exception:
         return False
 
 
 def check_database_indexes():
-    """Check database indexes."""
+    """Database indekslerin tekseriw."""
     try:
         from accounts.models import Favorite
 
-        # Check for common indexes
+        # Keń tarqalǵan indekslerdi tekseriw
         has_user_index = any('user' in str(index.fields) for index in Favorite._meta.indexes)
         has_property_index = any('property' in str(index.fields) for index in Favorite._meta.indexes)
 
@@ -456,11 +456,11 @@ def check_database_indexes():
 
 
 def check_soft_delete_filtering():
-    """Check soft delete filtering."""
+    """Soft delete filterlewin tekseriw."""
     try:
         from accounts.models import Favorite
 
-        # Should use BaseQuerySet which filters soft-deleted records
+        # Soft delete etilgen jazbalardı filterlep taslaytuǵın BaseQuerySet paydalanıwı kerek
         return hasattr(Favorite.objects, 'not_deleted')
     except Exception:
         return False

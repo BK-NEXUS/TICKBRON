@@ -1,13 +1,13 @@
 """
-backend/.env.example lists every environment variable the settings read, so a new server is
-configured from the file and not by reading the code. Optional ones may stay commented out.
+backend/.env.example sazlamalar oqıytuǵın hár environment ózgeriwshisin dizimleydi, sol sebepli jańa server
+koddı oqımastan fayl boyınsha sazlanadı. Ixtıyarıylar komentariyada qalıwı múmkin.
 """
 import re
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 SETTINGS_FILES = ['config/settings.py', 'config/logging_config.py']
-# Read by the test run itself, not something an operator sets
+# Test isleniwiniń ózi oqıydı, operator belgilemeytuǵın nárse
 TEST_ONLY = {'PYTEST_CURRENT_TEST', 'TICKBRON_TEST_DB_SUFFIX'}
 
 

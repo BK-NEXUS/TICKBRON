@@ -1,8 +1,8 @@
 """
-Hostile input never produces a 500: every endpoint, every role, bodies and query strings of the wrong shape.
+Qarsılasıwshı kirisiwi hesh qashan 500 payda etpeydi: hár endpoint, hár rol, qáte formadaǵı denelar hám query string ler.
 
-A 500 is a bug even when the caller is malicious: the site says "something broke" instead of the real reason,
-and the error log fills up. Wrong input must come back as a 4xx (usually 400) with a message.
+500 shaqırıwshı jaman niyetli bolsa da qátelik: sayt haqıyqıy sebep ornına "nárse buzıldı" deydi,
+hám qátelik logı tolıp ketedi. Qáte kirisiw xabarı menen 4xx (kóbinese 400) retinde qaytıwı kerek.
 """
 import pytest
 
@@ -10,7 +10,7 @@ from core.tests.test_r4_permission_matrix import ENDPOINTS, ROLES, clients  # no
 
 WRITE = ('post', 'put', 'patch')
 
-# Field names the API reads, all set to the same wrong value in one body
+# API oqıytuǵın maydan atları, hámmesi bir denede birdey qáte mánisge qoyılǵan
 FIELDS = (
     'id', 'email', 'name', 'password', 'password_confirm', 'code', 'status', 'comment', 'reason', 'text', 'message', 'title',
     'price', 'price_map', 'base_price', 'amount', 'currency', 'check_in', 'check_out', 'date', 'start_date', 'end_date',
@@ -43,7 +43,7 @@ def _server_errors(client, method, path, bodies):
     client.raise_request_exception = False
     problems = []
     for body in bodies:
-        # format='json' needs a JSON-serialisable body; NaN-like floats are sent as plain numbers by the encoder
+        # format='json' JSON ǵa aylanatuǵın dene kerek; NaN sıyaqlı float lar encoder arqalı ápiwayı sanlar retinde jiberiledi
         try:
             response = getattr(client, method)(path, body, format='json')
         except ValueError:
@@ -84,7 +84,7 @@ def test_wrong_query_strings_never_cause_a_server_error(clients, method, path): 
 
 @pytest.mark.django_db
 def test_the_second_step_of_the_login_reads_a_wrong_body_as_nothing(clients):  # noqa: F811
-    # the hostile-body test above cannot reach this: the password step has to be done first
+    # joqarıdaǵı qarsılasıwshı dene testi oǵan jete almaydı: aldın parol qádemi islewi kerek
     from users import two_factor
     from users.models import User
 

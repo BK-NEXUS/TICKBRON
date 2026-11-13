@@ -1,8 +1,9 @@
 """
-R12 phase 2: admin Status additions - flat hotels list, one guest's detail, hotel detail
-series + reconciliation, CSV export, consistency between users and hotels.
+R12 2-basqısh: admin Status qosımshaları - tegis mehmanxanalar dizimi, bir mehmannıń tolıq maǵlıwmatı, mehmanxana tolıq
+maǵlıwmatı
+seriyası + sáykeslestiriw, CSV eksport, paydalanıwshılar hám mehmanxanalar arasındaǵı izbe-izlik.
 
-Data: the status_world fixture (status_fixtures.py) plus bookings written here.
+Maǵlıwmat: status_world fixture si (status_fixtures.py) hám usı jerde jazılǵan bronlar.
 """
 import csv
 import io
@@ -65,7 +66,7 @@ class TestFlatHotelsList:
         assert money(alpha['revenue']) == {'USD': '150.00'}
         assert money(alpha['booking_value']) == {'USD': '450.00'}
         assert alpha['rating'] is None
-        # gamma: only a no-show (never a counted booking, never revenue)
+        # gamma: tek no-show (hesh qashan counted bron emes, hesh qashan dáramat emes)
         assert (rows[3]['bookings'], money(rows[3]['revenue'])) == (0, {})
 
     @pytest.mark.parametrize('ordering', ['price', 'name', '--bookings', 'revenue_uzs'])
@@ -102,10 +103,10 @@ class TestFlatHotelsList:
         assert get(f'{S}/hotels/', ordering='nights').status_code == 200
 
     @pytest.mark.parametrize('term, expected', [
-        ('alpha', ['alpha']),                 # hotel name
-        ('chirch', ['gamma']),                # city
-        ('KZ', ['delta']),                    # country code
-        ('Казах', ['delta']),                 # country name, Russian
+        ('alpha', ['alpha']),                 # mehmanxana atı
+        ('chirch', ['gamma']),                # qala
+        ('KZ', ['delta']),                    # mámleket kodı
+        ('Казах', ['delta']),                 # mámleket atı, russhada
         ('almaty city', ['delta']),           # region name
     ])
     def test_search(self, get, status_world, term, expected):
@@ -176,7 +177,7 @@ class TestUserDetail:
         assert [(row['id'], row['bookings'], row['stayed'], row['nights'], row['guests'], money(row['spent']))
                 for row in data['hotels']] == [(h['alpha'].id, 2, 1, 2, 2, {'USD': '150.00'})]
         history = data['history']
-        # every status except soft-deleted, newest check-in first
+        # soft-delete etilgennen basqa hár status, eń jańa kiriw birinshi
         assert history['count'] == 2
         first = history['results'][0]
         assert (first['check_in'], first['status'], first['hotel']['name'], first['total_price']) == \
@@ -232,7 +233,7 @@ class TestUsersRanking:
         assert csv_rows[0] == ['rank', 'id', 'full_name', 'phone', 'email', 'bookings', 'guests', 'nights',
                                'total_spent', 'last_booking_date']
         assert len(csv_rows) == 4
-        # the phone starts with "+": neutralised for spreadsheets
+        # telefon "+" den baslanadı: elektron kesteler ushın neytrallastırılǵan
         assert csv_rows[1][3] == "'+998903330002"
 
 
@@ -262,7 +263,7 @@ class TestHotelDetailAdditions:
 
 @pytest.mark.django_db
 class TestConsistency:
-    """For one period, the sum over all users == the sum over all hotels."""
+    """Bir dáwir ushın barlıq paydalanıwshılar jıyındısı == barlıq mehmanxanalar jıyındısı."""
 
     @pytest.mark.parametrize('period', ['all', '2026', '2026-04', '2025'])
     def test_users_and_hotels_add_up(self, get, status_world, period):
@@ -299,7 +300,7 @@ class TestQueryCountIsConstant:
     @pytest.mark.parametrize('n', [5, 50])
     def test_hotels_list(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
-        # UZS revenue, the list, revenue, booking value (the revenue sort is done on the list, so no COUNT query)
+        # UZS dáramatı, dizim, dáramat, bron mánisi (dáramat tártiplewi dizimde isleniledi, sol sebepli COUNT query joq)
         with django_assert_max_num_queries(7):
             assert get(f'{S}/hotels/', ordering='-revenue').status_code == 200
 
@@ -307,7 +308,8 @@ class TestQueryCountIsConstant:
     def test_user_detail(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
         g1 = status_world['guests'][0]
-        # user, history (count, page), totals (counts, revenue x2, value), per hotel, hotel names, spent (x2), audit insert
+        # paydalanıwshı, tariyx (san, bet), jıynaqlar (sanlar, dáramat x2, mánis), hár mehmanxana, mehmanxana atları,
+        # sarıplanǵanı (x2), audit qosıw
         with django_assert_max_num_queries(15):
             assert get(f'{S}/users/{g1.id}/').status_code == 200
 
@@ -315,7 +317,7 @@ class TestQueryCountIsConstant:
     def test_hotel_detail(self, get, status_world, n, django_assert_max_num_queries):
         self._grow(status_world, n)
         beta = status_world['hotels']['beta']
-        # hotel, totals (4), series (span, counts, revenue x2), reconciliation, years,
-        # monthly (3)
+        # mehmanxana, jıynaqlar (4), seriya (aralıq, sanlar, dáramat x2), sáykeslestiriw, jıllar,
+        # ayliq (3)
         with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{beta.id}/').status_code == 200

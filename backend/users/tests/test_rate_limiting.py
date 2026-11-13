@@ -1,5 +1,5 @@
 """
-Tests for rate limiting on authentication endpoints.
+Autentifikaciya endpoint lerindegi rate limiting ushın testler.
 """
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
@@ -10,13 +10,13 @@ User = get_user_model()
 
 
 class LoginRateLimitingTest(TestCase):
-    """Tests for login endpoint rate limiting - 10 requests per minute per IP."""
+    """Kiriw endpoint i rate limiting i ushın testler - hár IP ge minutına 10 soraw."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = Client()
 
-        # Create a test user
+        # Test paydalanıwshısın jaratıw
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpassword123',
@@ -25,19 +25,19 @@ class LoginRateLimitingTest(TestCase):
         )
 
     def test_login_endpoint_works(self):
-        """Test that login endpoint works with valid credentials."""
+        """Kiriw endpoint i jaramlı credential ler menen islewin testlew."""
         response = self.client.post('/api/v1/auth/login/', {
             'email': 'test@example.com',
             'password': 'testpassword123'
         })
 
-        # Should return 200 for valid credentials
+        # Jaramlı credential ler ushın 200 qaytarıwı kerek
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
 
     @patch('users.throttles.TESTING', False)
     def test_login_rate_limit_triggers(self):
-        """Test that login rate limit triggers after 10 requests."""
-        # Make 11 login attempts (limit is 10/min)
+        """Kiriw rate limit i 10 sorawdan keyin iske túsetuǵının testlew."""
+        # 11 kiriw urınısın islew (shek minutına 10)
         responses = []
         for i in range(11):
             response = self.client.post('/api/v1/auth/login/', {
@@ -46,13 +46,13 @@ class LoginRateLimitingTest(TestCase):
             })
             responses.append(response.status_code)
 
-        # At least one should be rate limited (429)
+        # Keminde biri rate limit lengen (429) bolıwı kerek
         self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, responses,
                      "Expected rate limit (429) to trigger after 10 login attempts")
 
 
 class LoggedInSessionRateLimitingTest(TestCase):
-    """A throwaway account must not lift the login and register limits."""
+    """Bir ret qollanılatuǵın akkaunt kiriw hám dizimnen ótiw shekterin kóterpewi kerek."""
 
     def setUp(self):
         self.client = Client()
@@ -80,14 +80,14 @@ class LoggedInSessionRateLimitingTest(TestCase):
 
 
 class RegisterRateLimitingTest(TestCase):
-    """Tests for registration endpoint rate limiting - 5 requests per minute per IP."""
+    """Dizimnen ótiw endpoint i rate limiting i ushın testler - hár IP ge minutına 5 soraw."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = Client()
 
     def test_register_endpoint_works(self):
-        """Test that registration endpoint works."""
+        """Dizimnen ótiw endpoint i islewin testlew."""
         response = self.client.post('/api/v1/auth/register/', {
             'email': 'newuser@example.com',
             'password': 'testpassword123',
@@ -96,25 +96,25 @@ class RegisterRateLimitingTest(TestCase):
             'last_name': 'User'
         })
 
-        # Should return 201 for valid registration
+        # Jaramlı dizimnen ótiw ushın 201 qaytarıwı kerek
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
 
     def test_register_rate_limiting_decorator_present(self):
-        """Test that registration has rate limiting configured."""
-        # Import the view to check throttle_classes
+        """Dizimnen ótiwde rate limiting sazlanǵanın testlew."""
+        # throttle_classes tekseriw ushın view di import etiw
         from rest_framework.throttling import AnonRateThrottle
 
-        # Check that the view has throttle_classes decorator
-        # Since register is a function, we verify by checking the actual throttling behavior
-        # The RegisterRateThrottle class should exist and be an AnonRateThrottle
+        # View de throttle_classes decorator ı barlıǵın tekseriw
+        # Register funkciya bolǵanı ushın, haqıyqıy throttling minez-qulqın tekseremiz
+        # RegisterRateThrottle klası bar hám AnonRateThrottle bolıwı kerek
         from users.throttles import RegisterRateThrottle
         self.assertTrue(issubclass(RegisterRateThrottle, AnonRateThrottle))
         self.assertEqual(RegisterRateThrottle.rate, '5/min')
 
     @patch('users.throttles.TESTING', False)
     def test_register_rate_limit_triggers(self):
-        """Test that registration rate limit triggers after 5 requests."""
-        # Make 6 registration attempts (limit is 5/min)
+        """Dizimnen ótiw rate limit i 5 sorawdan keyin iske túsetuǵının testlew."""
+        # 6 dizimnen ótiw urınısın islew (shek minutına 5)
         responses = []
         for i in range(6):
             response = self.client.post('/api/v1/auth/register/', {
@@ -125,9 +125,9 @@ class RegisterRateLimitingTest(TestCase):
                 'last_name': str(i)
             })
             responses.append(response.status_code)
-            # Logout to ensure next request is anonymous (registration auto-logs in)
+            # Keyingi soraw anonim bolıwı ushın shıǵıw (dizimnen ótiw avtomatik kiritedi)
             self.client.post('/api/v1/auth/logout/')
 
-        # At least one should be rate limited (429)
+        # Keminde biri rate limit lengen (429) bolıwı kerek
         self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, responses,
                      "Expected rate limit (429) to trigger after 5 registration attempts")

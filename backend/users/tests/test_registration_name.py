@@ -1,4 +1,4 @@
-"""QA finding F9: sign-up with an empty name created the account with the e-mail address as the name."""
+"""QA tabılması F9: atı bos dizimnen ótiw akkauntti email mánzilin at etip jaratatuǵın edi."""
 import pytest
 from django.core.cache import cache
 from rest_framework.test import APIClient

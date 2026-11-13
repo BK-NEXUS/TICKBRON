@@ -1,9 +1,9 @@
 """
-Migration properties/0013 maps the text location of properties to Geography refs
-(Geography plan G2), and its reverse clears them.
+properties/0013 migration mehmanxanalardıń tekst jaylasıwın Geography ref lerine sáykeslestiredi
+(Geography reje G2), hám onıń qaytıwı olardı tazalaydı.
 
-Runs the real migration executor against the test database, so it migrates the schema
-back and forth and truncates tables as it goes. Run it apart from the normal suite:
+Haqıyqıy migration executor di test database ge qarsı isletedi, sol sebepli sxemanı
+alǵa-artqa kóshiredi hám kestelerdi bosatıp baradı. Onı ádettegi suite ten bólek isletiń:
 
     pytest --create-db properties/tests/test_geography_migration.py
 """
@@ -15,8 +15,9 @@ from django.test import TransactionTestCase
 
 
 class Migrate0012To0013(TransactionTestCase):
-    # No serialized_rollback: an earlier TransactionTestCase flush re-creates content types with new
-    # keys, so restoring the creation-time snapshot collides. conftest reloads Geography instead.
+    # serialized_rollback joq: aldınǵı TransactionTestCase flush ı content type lerdi jańa
+    # kilt ler menen qayta jaratadı, sol sebepli jaratılǵan waqıttaǵı snapshot ti tiklew qaqtıǵısadı. conftest ornına
+    # Geografiyanı qayta júkleydi.
     migrate_from = [
         ('properties', '0012_property_geography_refs'),
         ('geography', '0002_initial_data'),
@@ -34,7 +35,7 @@ class Migrate0012To0013(TransactionTestCase):
         executor.migrate(self.migrate_from)
         executor.loader.build_graph()
         self.old_apps = executor.loader.project_state(self.migrate_from).apps
-        # TransactionTestCase flushed the tables: load the dictionary again (idempotent)
+        # TransactionTestCase kestelerdi flush etti: sózlikti qayta júkleń (idempotent)
         from geography.data import load_geography
         load_geography(*(self.old_apps.get_model('geography', name) for name in ('Country', 'Region', 'City')))
 
@@ -71,12 +72,12 @@ class Migrate0012To0013(TransactionTestCase):
         Property = new_apps.get_model('properties', 'Property')
 
         row = Property.objects.select_related('country_ref', 'region_ref', 'city_ref').get(pk=khiva)
-        # The region is asserted by its slug (the stable key): at geography 0002 its English name is
-        # still "Khorezm Region" (0003 renames it later), or "Khorezm" when a flush made load_geography
-        # recreate it, so the name depends on what ran before this test
+        # Region óziniń slug ı (turaqlı kilt) boyınsha tekseriledi: geography 0002 de onıń inglizsha atı
+        # ele "Khorezm Region" (0003 keyin qayta ataydı), yamasa flush load_geography di qayta jaratqanda "Khorezm",
+        # sol sebepli at usı testten aldın ne islengenine baylanıslı
         self.assertEqual((row.country_ref.code, row.region_ref.slug, row.city_ref.name_en),
                          ('UZ', 'uz-khorezm-region', 'Khiva'))
-        # The text fields are not changed by the migration
+        # Tekst maydanlar migration tárepinen ózgertilmeydi
         self.assertEqual((row.country, row.state, row.city), ("O'zbekiston", 'Xorazm viloyati', 'Xiva'))
         row = Property.objects.select_related('city_ref').get(pk=tashkent)
         self.assertEqual(row.city_ref.name_en, 'Tashkent')

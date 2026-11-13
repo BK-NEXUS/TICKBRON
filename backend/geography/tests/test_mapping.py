@@ -1,7 +1,7 @@
 """
-Mapping the old text location of properties to the Geography dictionary (Geography plan G2; the city level was
-removed 2026-11-10, so only country and region are mapped from the text: the town stays text).
-Uses the initial data loaded by migration geography/0002.
+Mehmanxanalardıń eski tekst jaylasıwın Geography sózligine sáykeslestiriw (Geography reje G2; qala dárejesi
+2026-11-10 de alıp taslandı, sol sebepli tekstten tek mámleket hám region sáykeslestiriledi: qala tekst bolıp qaladı).
+geography/0002 migration júkleǵen dáslepki maǵlıwmattı paydalanadı.
 """
 from decimal import Decimal
 
@@ -108,9 +108,9 @@ class TestMapProperties:
 @pytest.mark.django_db
 class TestOldRegionTexts:
     """
-    The English region names lost their "Region" / "City" words (migration geography/0003), but the
-    old text values must still map to the right regions. "Tashkent" (the city) and "Tashkent Region"
-    are two regions.
+    Inglizsha region atları "Region" / "City" sózlerin joǵaltı (geography/0003 migration), biraq
+    eski tekst mánisler ele durıs regionlarǵa sáykes keliwi kerek. "Tashkent" (qala) hám "Tashkent Region"
+    eki region.
     """
 
     @pytest.mark.parametrize('state,expected', [
@@ -144,6 +144,6 @@ class TestOldRegionTexts:
         assert regions.count() == 2
 
     def test_the_town_text_no_longer_decides_the_region(self):
-        # With the city dictionary gone, a state that does not fit the town is not "corrected" by the town
+        # Qala sózligi joq bolǵanda, qalaǵa sıymaytuǵın state qala menen "túzetilmeydi"
         _, region, city = GeographyIndex(Country, Region).match('Uzbekistan', 'Tashkent', 'Chirchiq')
         assert (region.name_en, city) == ('Tashkent', None)

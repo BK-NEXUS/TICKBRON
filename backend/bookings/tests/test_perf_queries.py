@@ -1,4 +1,4 @@
-"""R14: the number of queries of the booking lists does not grow with the number of bookings."""
+"""R14: bron dizimleriniń query sanı bron sanı menen ósip ketpeydi."""
 from datetime import timedelta
 from decimal import Decimal
 
@@ -36,7 +36,7 @@ def queries_of(client, url):
 
 class GuestBookingListQueryCountTests(APITestCase):
     def setUp(self):
-        test_views.BookingViewTests.setUp(self)  # property, room type and rate plan of the booking tests
+        test_views.BookingViewTests.setUp(self)  # bron testleriniń mehmanxanası, xona túri hám rate plan ı
         self.client.force_authenticate(user=self.user)
 
     def test_the_list_costs_the_same_for_one_booking_and_for_many(self):
@@ -62,7 +62,7 @@ class PartnerBookingListQueryCountTests(APITestCase):
     def setUp(self):
         test_views.BookingViewTests.setUp(self)
         role, _ = Role.objects.get_or_create(name='hotel-owner', defaults={'description': 'Hotel owner'})
-        self.user.role = role  # the booking tests make this user the property owner
+        self.user.role = role  # bron testleri bul paydalanıwshını mehmanxana iyesi etedi
         self.user.save()
         self.client.force_authenticate(user=self.user)
 

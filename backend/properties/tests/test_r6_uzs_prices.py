@@ -1,8 +1,8 @@
 """
-R6 decision D: search results and property pages show an informational price in so'm
-(`base_price_uzs_approx`, the name says it is approximate) next to the base price. One
-rate lookup per request, never one per property. What a guest pays always comes from
-the booking snapshot, not from this field.
+R6 D sheshimi: izlew nátiyjeleri hám mehmanxana betleri tiykarǵı baha janında somda maǵlıwmat bahasın
+(`base_price_uzs_approx`, atı onıń shama ekenin aytadı) kórsetedi. Hár sorawǵa bir
+kurs izlew, hesh qashan hár mehmanxanaǵa emes. Mehman neni tóleytuǵını hárdayım bron
+snapshot ınan keledi, bul maydannan emes.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -17,7 +17,7 @@ from currency.models import ExchangeRate
 from properties.models import Property, PropertyType
 from users.models import User
 
-# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+# R6: bul testler valyuta kurslarin ózleri basqaradı (kurs joq, eskirgen, alıw, qabıllaw)
 pytestmark = pytest.mark.no_default_exchange_rate
 
 

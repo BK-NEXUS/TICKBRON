@@ -1,7 +1,7 @@
 """
-QA finding F5: the owner forms accepted values that make no sense (a rate plan with min 10 and max 2
-nights, a room for 2 guests with 4 as the usual number, 0 or 100000 rooms, a free hotel, 999 bathrooms,
-nights in the past, more rooms on a night than the room type has). The API answers 400 naming the field.
+QA tabılması F5: iye formaları mánissiz mánislerdi qabıllaytuǵın edi (min 10 hám max 2 túnlik rate plan,
+ádettegi sanı 4 bolǵan 2 mehmanlıq xona, 0 yamasa 100000 xona, tegin mehmanxana, 999 hammam,
+ótken waqıttaǵı túnler, túnde xona túrinde barınan kóp xona). API maydandı atap 400 menen juwap beredi.
 """
 from datetime import timedelta
 
@@ -23,7 +23,7 @@ def payload_of(inventory, index, **overrides):
 
 
 def refused(response):
-    """The fields the 400 names."""
+    """400 ataytuǵın maydanlar."""
     return response.data['error']['details']
 
 

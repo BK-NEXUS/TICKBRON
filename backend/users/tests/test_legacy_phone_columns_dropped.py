@@ -1,7 +1,7 @@
 """
-Stage 2 of removing SMS login: the unused columns and the unique-when-verified constraint are
-gone (migration 0009). The phone number itself stays as plain legacy data, and the migration
-can be reversed.
+SMS arqalı kiriwdi alıp taslawdıń 2-basqıshı: paydalanılmaytuǵın baǵanalar hám tastıyıqlanǵanda-unikal
+constraint alıp taslandı (migration 0009). Telefon nomeri óziniń eski ápiwayı maǵlıwmat retinde qaladı,
+hám migration di qaytarıw múmkin.
 """
 import pytest
 from django.db import connection
@@ -59,7 +59,7 @@ class TestMigration0009(TransactionTestCase):
         return executor.loader.project_state(targets).apps
 
     def tearDown(self):
-        # Leave the schema at the newest users migration for the tests that follow
+        # Keyingi testler ushın sxemanı eń sońǵı users migration inde qaldırıw
         executor = MigrationExecutor(connection)
         executor.loader.build_graph()
         executor.migrate(executor.loader.graph.leaf_nodes('users'))

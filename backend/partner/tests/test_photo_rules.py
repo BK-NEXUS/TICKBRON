@@ -1,4 +1,5 @@
-"""A hotel or room photo that is too small, the wrong shape or not a JPEG, PNG or WebP is refused with the sizes to use."""
+"""Kishi, qáte formadaǵı yamasa JPEG, PNG yamasa WebP bolmaǵan mehmanxana yamasa xona súwreti paydalanıw kerek ólshemler
+menen biykar etiledi."""
 import pytest
 
 from common.testing import image_upload

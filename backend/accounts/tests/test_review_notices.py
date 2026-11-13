@@ -1,4 +1,4 @@
-"""The people of a review are told when staff decide on it: the guest about the decision, the owner about a new review."""
+"""Staff sharhqa qarar bergende sharhtıń adamlarına aytıladı: mehmanǵa qarar haqqında, iyege jańa sharh haqqında."""
 from decimal import Decimal
 
 import pytest

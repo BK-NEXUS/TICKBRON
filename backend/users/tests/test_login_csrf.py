@@ -1,9 +1,9 @@
 """
-N-8 / L-3: login, register and the OTP endpoints need a CSRF token even for anonymous callers.
+N-8 / L-3: kiriw, dizimnen ótiw hám OTP endpoint lerine anonim sorawlarda da CSRF token kerek.
 
-DRF only checks CSRF for a request that already has a session, so a cross-site form could
-log a victim into the attacker's account (login CSRF): the victim's later bookings and
-saved details would land in the attacker's account.
+DRF CSRF di tek session i bar sorawlar ushın tekseredi, sol sebepli basqa saytdan forma
+jábirleniwshini hújimshiniń akkauntına kirgize aladı (login CSRF): jábirleniwshiniń keyingi
+bronları hám saqlanǵan maǵlıwmatları hújimshiniń akkauntına túsedi.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -16,7 +16,7 @@ PHONE = '+998901112299'
 
 @pytest.fixture
 def browser():
-    """A client that enforces CSRF like a real browser."""
+    """CSRF di haqıyqıy brauzerdey májbúrleytuǵın client."""
     return APIClient(enforce_csrf_checks=True)
 
 

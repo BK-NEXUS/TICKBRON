@@ -1,12 +1,12 @@
 """
-Shared data for the Status endpoint tests (admin and partner).
+Status endpoint testleri ushın ortaq maǵlıwmat (admin hám partner).
 
-Hotels are placed with the Geography dictionary refs (the Status API groups by them).
+Mehmanxanalar Geography sózligi ref leri menen jaylastırılǵan (Status API sol boyınsha toparlaydı).
 
-Uzbekistan (UZ)
+Ózbekstan (UZ)
   Tashkent: Alpha Hotel (USD), Beta Hotel (USD)
-  (no region)  : Gamma Hotel (USD)
-Kazakhstan (KZ)
+  (region joq)  : Gamma Hotel (USD)
+Qazaqstan (KZ)
   Almaty City  : Delta Hotel (KZT)
 """
 from datetime import date
@@ -22,7 +22,7 @@ from users.models import User
 
 
 def make_booking(guest, prop, check_in, price, status='confirmed', currency=None, nights=1):
-    """A booking; revenue is the total price of the completed ones (cash at the hotel)."""
+    """Bron; dáramat juwmaqlanǵanlardıń jámi bahası (mehmanxanada naqd)."""
     return Booking.objects.create(
         guest=guest, property=prop, status=status, payment_status='paid',
         check_in=check_in, check_out=date.fromordinal(check_in.toordinal() + nights),
@@ -65,14 +65,14 @@ def status_world(db):
 
     g1, g2, g3 = guest(1, 'Aziz', 'Karimov'), guest(2, 'Madina', 'Nazarova'), guest(3, 'Timur', 'Bekov')
 
-    # Counted (confirmed or completed)
+    # Esaplanadı (tastıyıqlanǵan yamasa juwmaqlanǵan)
     make_booking(g1, alpha, date(2026, 3, 5), '100.00')
     make_booking(g1, alpha, date(2026, 4, 10), '150.00', status='completed')
     make_booking(g2, alpha, date(2026, 4, 12), '200.00')
     make_booking(g2, beta, date(2025, 11, 20), '80.00', status='completed')
     make_booking(g3, beta, date(2026, 4, 1), '60.00', currency='EUR')
     make_booking(g3, delta, date(2026, 4, 2), '50000.00')
-    # Not counted
+    # Esaplanbaydı
     make_booking(g3, alpha, date(2026, 4, 3), '999.00', status='pending')
     make_booking(g3, alpha, date(2026, 4, 4), '999.00', status='cancelled')
     make_booking(g3, gamma, date(2026, 4, 5), '999.00', status='no_show')

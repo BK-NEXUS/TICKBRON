@@ -1,4 +1,5 @@
-"""?letter= on the lists of people and hotels: users, customers, hotels, the status lists, the commission list."""
+"""Adamlar hám mehmanxanalar dizimlerinde ?letter=: paydalanıwshılar, mijozlar, mehmanxanalar, status dizimleri, komissiya
+dizimi."""
 from datetime import date
 
 import pytest
@@ -50,7 +51,7 @@ class TestUsersList:
         response = client_of(staff).get(f'{A}/users/')
 
         assert response.status_code == 200
-        assert response.data['count'] == 60 + len(people) + 1  # + the staff account itself
+        assert response.data['count'] == 60 + len(people) + 1  # + staff akkauntınıń ózi
         assert len(response.data['results']) == 50
         assert response.data['next']
 

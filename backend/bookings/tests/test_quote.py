@@ -1,6 +1,6 @@
 """
-GET /api/v1/properties/{id}/quote/ prices a stay with the same code that
-charges for it, so the total shown before booking is the amount charged.
+GET /api/v1/properties/{id}/quote/ turıwdı onı alatuǵın birdey kod penen
+bahalaydı, sol sebepli bronnan aldın kórsetilgen jámi alınatuǵın summa.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -35,7 +35,7 @@ def stay(db):
     days = {}
     for offset in range(10):
         day = start + timedelta(days=offset)
-        # Night 2 is a "weekend" night with its own price; night 3 uses the base price
+        # 2-tún óz bahası bar "dem alıs" túni; 3-tún tiykarǵı bahanı paydalanadı
         price = {2: Decimal('69.00'), 3: None}.get(offset, Decimal('60.00'))
         days[offset] = DateInventory.objects.create(
             rate_plan=rate, date=day, available_rooms=3, booked_rooms=0,
@@ -60,14 +60,14 @@ def quote(stay, first, last, rooms=None):
 class TestQuote:
 
     def test_one_night_is_priced_with_that_nights_price(self, stay):
-        response = quote(stay, 2, 3)  # the 69.00 night alone
+        response = quote(stay, 2, 3)  # tek 69.00 tún
         assert response.status_code == 200, response.data
         assert response.data['number_of_nights'] == 1
         assert response.data['total_price'] == '69.00'
         assert response.data['currency'] == 'USD'
 
     def test_total_is_the_sum_of_each_nights_own_price(self, stay):
-        response = quote(stay, 1, 4)  # 60 + 69 + base 60
+        response = quote(stay, 1, 4)  # 60 + 69 + tiykarǵı 60
         assert response.status_code == 200
         assert response.data['number_of_nights'] == 3
         assert [n['price'] for n in response.data['nights']] == ['60.00', '69.00', '60.00']
@@ -78,7 +78,7 @@ class TestQuote:
         assert response.data['total_price'] == '378.00'
 
     def test_quote_equals_the_amount_charged(self, stay):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         shown = quote(stay, 1, 4).data['total_price']
         booking = Booking.create_booking(
             guest=stay['guest'], property_obj=stay['property'], room_type=stay['room'],
@@ -96,8 +96,8 @@ class TestQuote:
         assert f'{closed} is not available' in str(response.data['details']['availability'])
 
     def test_sold_out_night_is_named(self, stay):
-        # RoomInventory is what the engine gates room count on (audit #31);
-        # DateInventory keeps price and rate rules.
+        # RoomInventory xona sanın sistema basqaratuǵın qatar (audit #31);
+        # DateInventory baha hám rate qaǵıydaların saqlaydı.
         RoomInventory.objects.create(
             room_type=stay['room'], date=stay['start'] + timedelta(days=2),
             available_rooms=3, booked_rooms=3,

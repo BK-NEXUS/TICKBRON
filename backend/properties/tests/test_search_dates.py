@@ -1,5 +1,5 @@
 """
-Property search with a date range (E2E BUG 1: check_in/check_out returned 500).
+Sana aralıǵı menen mehmanxana izlew (E2E BUG 1: check_in/check_out 500 qaytarǵan edi).
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -17,7 +17,7 @@ SEARCH_URL = '/api/v1/properties/search/'
 
 class TestSearchWithDates(TestCase):
     def setUp(self):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxana tek baha bar bolǵanda ǵana bronlanadı
         owner = User.objects.create_user(email='owner@example.com', password='x')
         hotel = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
@@ -30,7 +30,7 @@ class TestSearchWithDates(TestCase):
 
     def test_search_with_check_in_and_check_out_returns_results(self):
         check_in = timezone.localdate() + timedelta(days=3)
-        # Search with dates only returns properties open on every night (Phase 2 item 2)
+        # Tek sanalar menen izlew hár túnde ashıq mehmanxanalardı ǵana qaytaradı (2-basqısh 2-punkt)
         room_type = RoomType.objects.create(
             property=self.property, name='Double', slug='double', base_price=Decimal('60.00'),
         )
@@ -62,11 +62,10 @@ class TestSearchWithDates(TestCase):
 
     def test_search_excludes_a_room_type_actually_sold_out_via_another_rate_plan(self):
         """
-        3.4 (audit #31): RoomInventory is the real, shared-per-room-type room count since
-        3.3; DateInventory's own available_rooms/booked_rooms columns are stale, the
-        booking engine stopped writing them. Search must not show a property bookable
-        through a rate plan whose one physical room was actually sold through a
-        different rate plan on the same room type.
+        3.4 (audit #31): 3.3 ten beri RoomInventory xona túri ushın ortaq haqıyqıy xona sanı;
+        DateInventory diń óz available_rooms/booked_rooms baǵanaları eskirgen, bron sisteması olardı
+        jazbaydı. Izlew bir fizikalıq xonası sol xona túriniń basqa rate plan ı arqalı satılǵan
+        rate plan arqalı mehmanxananı bronlanatuǵın dep kórsetpewi kerek.
         """
         from bookings.models import Booking
 

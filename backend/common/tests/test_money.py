@@ -1,6 +1,6 @@
 """
-R6: money rules (common/money.py). UZS is whole so'm, USD is cents, both
-ROUND_HALF_UP; conversion to UZS rounds the stay total once; floats are refused.
+R6: pul qaǵıydaları (common/money.py). UZS pútin som, USD sent, ekewi de
+ROUND_HALF_UP; UZS ke konvertaciya turıw jámin bir márte jumalaqlaydı; float lar qabıllanbaydı.
 """
 from decimal import Decimal
 
@@ -65,7 +65,7 @@ def test_floats_and_unknown_currencies_are_refused():
 def test_conversion_rounds_the_total_once():
     rate = Decimal('11772.95')
     nights = [Decimal('33.33'), Decimal('33.33'), Decimal('33.34')]
-    # Rounding each night first gives 392 392 + 392 392 + 392 510 = 1 177 294, one so'm short
+    # Aldın hár túndi jumalaqlaw 392 392 + 392 392 + 392 510 = 1 177 294 beredi, bir som kem
     assert sum(to_uzs(n, rate) for n in nights) == Decimal('1177294')
     assert to_uzs(sum(nights), rate) == Decimal('1177295')
 

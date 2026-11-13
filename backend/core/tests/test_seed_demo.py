@@ -1,5 +1,5 @@
 """
-Tests for the seed_demo management command (local demo data).
+seed_demo management command ı ushın testler (jergilikli demo maǵlıwmat).
 """
 from io import StringIO
 
@@ -32,7 +32,7 @@ class TestSeedDemo:
         assert admin.is_superuser and admin.is_staff
         assert owner.role.name == 'hotel-owner' and not owner.is_staff
         assert guest.role is None and not guest.is_staff
-        # Credentials are printed so the developer can log in
+        # Programmist kire alıwı ushın kirisiw maǵlıwmatı basıp shıǵarıladı
         for user in (admin, owner, guest):
             assert user.email in output
 
@@ -43,7 +43,7 @@ class TestSeedDemo:
         assert sorted(properties.values_list('city', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
         assert all(p.status == 'active' and p.approved_at is not None for p in properties)
         assert all(p.translations.filter(language='en').exists() for p in properties)
-        # Mapped to the Geography dictionary
+        # Geografiya sózligine baylanıstırılǵan
         assert sorted(properties.values_list('region_ref__name_en', flat=True)) == ['Bukhara', 'Samarkand', 'Tashkent']
         assert set(properties.values_list('country_ref__code', flat=True)) == {'UZ'}
 
@@ -85,9 +85,9 @@ def test_refuses_to_run_without_debug(settings):
 
 
 @pytest.mark.django_db
-@pytest.mark.no_default_exchange_rate  # the seed stores a demo rate only when none exists
+@pytest.mark.no_default_exchange_rate  # seed demo kursın tek ele joq bolǵanda saqlaydı
 class TestSeedDemoExchangeRate:
-    """R6: the demo hotels are priced in USD, so a local database needs a rate to book them."""
+    """R6: demo mehmanxanalar USD de bahalanǵan, sol sebepli jergilikli database ge olardı bronlaw ushın kurs kerek."""
 
     @pytest.fixture(autouse=True)
     def debug_on(self, settings):
@@ -103,7 +103,7 @@ class TestSeedDemoExchangeRate:
         assert rate is not None and rate.source == 'demo'
         assert 'fetch_exchange_rates' in output
         run_seed()
-        # one demo rate each for dollars, tenge and roubles, and a second run adds none
+        # dollar, tenge hám rubl ushın bir-birden demo kurs, hám ekinshi isleniw hesh qanday qospaydı
         assert ExchangeRate.objects.filter(source='demo').count() == 3
 
     def test_demo_rates_for_every_currency_the_site_shows(self):
@@ -134,5 +134,5 @@ class TestSeedDemoExchangeRate:
         ExchangeRate.objects.create(currency='USD', rate=Decimal('11772.95'), nominal=1, source='cbu.uz',
                                     status='accepted', rate_date=tashkent_today())
         run_seed()
-        # the real dollar rate is not replaced or doubled by a demo one (tenge and roubles still get demo rates)
+        # haqıyqıy dollar kursı demo kurs penen almastırılmaydı yamasa eki ese bolmaydı (tenge hám rubl ele demo kurs aladı)
         assert not ExchangeRate.objects.filter(currency='USD', source='demo').exists()

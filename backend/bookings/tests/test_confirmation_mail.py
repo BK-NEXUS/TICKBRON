@@ -1,4 +1,4 @@
-"""The guest's e-mail after a booking is a full confirmation: hotel, dates, room, arrival rule, the sum, how to pay."""
+"""Bronnan keyingi mehmannıń e-mail ı tolıq tastıyıqlaw: mehmanxana, sanalar, xona, keliw qaǵıydası, summa, qalay tólew."""
 from decimal import Decimal
 from unittest import mock
 

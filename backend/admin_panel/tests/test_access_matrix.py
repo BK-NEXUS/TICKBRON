@@ -1,9 +1,9 @@
 """
-Access matrix for every /api/v1/admin-panel/ endpoint.
+Hár /api/v1/admin-panel/ endpoint i ushın kirisiw matricası.
 
-anonymous -> 401/403, regular user -> 403, hotel owner -> 403, staff -> allowed
-(super-admin only for creating hotel owners). Also: hotel owners are not
-customers, and the users list reports their role.
+anonim -> 401/403, ápiwayı paydalanıwshı -> 403, mehmanxana iyesi -> 403, staff -> ruxsat
+(mehmanxana iyelerin jaratıw tek super-admin). Sonday-aq: mehmanxana iyeleri
+mijoz emes, hám paydalanıwshılar dizimi olardıń rolin kórsetedi.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -13,10 +13,10 @@ from users.models import User
 
 A = '/api/v1/admin-panel'
 
-# (method, url) for every admin endpoint. Object ids do not need to exist:
-# permissions are checked before the object is looked up.
+# Hár admin endpoint ushın (method, url). Obyekt id leri bolıwı shárt emes:
+# ruxsatlar obyekt izlenbesten aldın tekseriledi.
 ADMIN_ENDPOINTS = [
-    ('get', f'{A}/'),  # router root
+    ('get', f'{A}/'),  # router tamırı
     ('get', f'{A}/users/'),
     ('get', f'{A}/customers/'),
     ('get', f'{A}/customers/1/'),
@@ -57,7 +57,7 @@ ADMIN_ENDPOINTS = [
     ('post', f'{A}/no-show-reports/1/approve/'),
     ('post', f'{A}/no-show-reports/1/reject/'),
     ('post', f'{A}/no-show-reports/1/reverse/'),
-    ('get', f'{A}/promotions/'),  # R10 reads: staff may look
+    ('get', f'{A}/promotions/'),  # R10 oqıwlar: staff kóre aladı
     ('get', f'{A}/promotions/1/'),
     ('get', f'{A}/promotions/1/stats/'),
     ('get', f'{A}/chat/conversations/'),
@@ -68,7 +68,7 @@ ADMIN_ENDPOINTS = [
     ('get', f'{A}/promotion-hotels/?q=ab'),
 ]
 SUPERADMIN_ONLY = [('post', f'{A}/users/create-hotel-owner/')]
-# R10 promotions: every change is super-admin only, staff get 403 too
+# R10 reklamalar: hár ózgeris tek super-admin, staff ta 403 aladı
 PROMOTION_WRITES = [
     ('post', f'{A}/promotions/'),
     ('post', f'{A}/promotions/1/photos/'),
@@ -79,7 +79,7 @@ PROMOTION_WRITES = [
     ('post', f'{A}/promotions/1/cancel/'),
     ('post', f'{A}/promotions/1/mark-paid/'),
 ]
-# Geography dictionary management (G3): super-admin only, staff get 403 too
+# Geografiya sózligin basqarıw (G3): tek super-admin, staff ta 403 aladı
 GEOGRAPHY_ENDPOINTS = [
     (method, f'{A}/geography/{kind}/{suffix}')
     for kind in ('countries', 'regions')
@@ -138,7 +138,7 @@ class TestAdminPanelAccessMatrix:
 
     @pytest.mark.parametrize('method,url', ADMIN_ENDPOINTS)
     def test_staff_is_let_through(self, accounts, method, url):
-        # 400/404 are fine here (empty body, ids that do not exist); only 401/403 are not
+        # 400/404 bul jerde mashqala emes (bos dene, joq id ler); tek 401/403 emes
         assert call(accounts['staff'], method, url).status_code not in (401, 403)
 
     @pytest.mark.parametrize('method,url', GEOGRAPHY_ENDPOINTS)
@@ -154,12 +154,12 @@ class TestAdminPanelAccessMatrix:
     def test_only_super_admin_creates_hotel_owners(self, accounts):
         method, url = SUPERADMIN_ONLY[0]
         assert call(accounts['staff'], method, url).status_code == 403
-        assert call(accounts['superadmin'], method, url).status_code == 400  # empty body
+        assert call(accounts['superadmin'], method, url).status_code == 400  # bos dene
 
 
 @pytest.mark.django_db
 class TestOwnersAreNotCustomers:
-    """E2E: hotel owners were listed as customers and shown with role USER."""
+    """E2E: mehmanxana iyeleri mijoz retinde dizimlendi hám USER roli menen kórsetildi."""
 
     def test_customers_directory_lists_only_customers(self, accounts):
         response = call(accounts['staff'], 'get', f'{A}/customers/')
@@ -172,11 +172,11 @@ class TestOwnersAreNotCustomers:
 
     def test_users_list_reports_the_role_of_each_account(self, accounts):
         response = call(accounts['staff'], 'get', f'{A}/users/')
-        by_email = {row['email']: row for row in response.data['results']}  # a page at a time since 2026-11-01
+        by_email = {row['email']: row for row in response.data['results']}  # 2026-11-01 ten beri bir waqıtta bir bet
 
         assert by_email['owner@example.com']['role'] == 'hotel-owner'
         assert by_email['guest@example.com']['role'] is None
         assert by_email['admin@example.com']['is_superuser'] is True
         assert by_email['staff@example.com']['is_superuser'] is False
-        # role_name stays for existing clients
+        # role_name bar klientler ushın qaladı
         assert by_email['owner@example.com']['role_name'] == 'hotel-owner'

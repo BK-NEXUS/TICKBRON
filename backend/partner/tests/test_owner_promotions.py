@@ -1,4 +1,4 @@
-"""The hotel owner sees the ads of their own hotels: how they run, how many people saw and clicked, and the renewal question."""
+"""Mehmanxana iyesi óz mehmanxanalarınıń reklamaların kóredi: qalay isleydi, neshe adam kórdi hám basdı, hám jańalaw sorawı."""
 from datetime import timedelta
 
 import pytest

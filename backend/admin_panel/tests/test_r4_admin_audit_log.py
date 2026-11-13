@@ -1,11 +1,11 @@
 """
-R4 / audit #21: admin access audit log.
+R4 / audit #21: admin kirisiw audit logı.
 
-Every time staff open customer data (customer list, a customer profile, a support
-lookup by booking reference, the user list, the Status users list) one row is
-written: who, what, which customer/booking id, when. Only ids are stored, never
-copies of personal data. Rows cannot be changed or deleted, and only staff can
-read them through GET /api/v1/admin-panel/audit-log/.
+Staff mijoz maǵlıwmatın ashqan hár waqıtta (mijozlar dizimi, mijoz profili, bron reference i boyınsha
+qollap-quwatlaw izlewi, paydalanıwshılar dizimi, Status paydalanıwshılar dizimi) bir qatar
+jazıladı: kim, ne, qaysı mijoz/bron id si, qashan. Tek id ler saqlanadı, hesh qashan jeke maǵlıwmat
+nusqası emes. Qatarlardı ózgertip yamasa óshirip bolmaydı, hám tek staff
+olardı GET /api/v1/admin-panel/audit-log/ arqalı oqıy aladı.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -99,7 +99,7 @@ class TestLogHoldsIdsOnly:
 
     def test_fields_are_ids_action_and_time(self):
         names = {f.name for f in AdminAccessLog._meta.get_fields()}
-        # ip_address (A09-7) is the staff member's own source address, not customer data
+        # ip_address (A09-7) staff aǵzasınıń óz derek mánzili, mijoz maǵlıwmatı emes
         assert names == {'id', 'actor_id', 'action', 'target_user_id', 'target_booking_id', 'details', 'ip_address',
                          'created_at'}
 
@@ -112,8 +112,8 @@ class TestLogHoldsIdsOnly:
         'free text',
     ])
     def test_details_accept_only_listed_non_personal_facts(self, people, details):
-        # R6 added `details` for non-personal facts (currency, rates, row ids). Anything
-        # else (a phone, an email, a search term, nested data) is refused, nothing is stored.
+        # R6 jeke emes faktlar (valyuta, kurslar, qatar id leri) ushın `details` qostı. Basqa hár nárse
+        # (telefon, e-mail, izlew sózi, ishki maǵlıwmat) biykar etiledi, hesh nárse saqlanbaydı.
         with pytest.raises(ValueError):
             AdminAccessLog.record(people['staff'], 'exchange_rate_accept', details=details)
         assert not AdminAccessLog.objects.exists()

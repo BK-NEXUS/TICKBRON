@@ -1,4 +1,5 @@
-"""Chat with the TICKBRON team: the account's own thread, the team's inbox, unread counts, rules and limits."""
+"""TICKBRON komandası menen chat: akkauntıń óz thread i, komandanıń kiriwshi qutısı, oqılmaǵan sanlar, qaǵıydalar hám
+shekler."""
 from unittest.mock import patch
 
 import pytest

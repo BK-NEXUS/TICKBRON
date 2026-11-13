@@ -1,13 +1,12 @@
 """
-R4 security review: permission matrix for EVERY endpoint and role.
+R4 qáwipsizlik tekseriwi: HÁR endpoint hám rol ushın ruxsat matricası.
 
-The routes come from Django's URL resolver, so a new endpoint is covered (and
-must be classified in ACCESS below) without anyone remembering to add it.
-For each route and HTTP method, every role outside the allowed set must get
-401/403, and every role inside it must get past the permission check (any
-status except 401/403) without a server error. Object ids do not exist
-(999999), so nothing is changed; the ownership (IDOR) side is covered by the
-per-app access tests and test_r4_idor.py.
+Route lar Django nıń URL resolver inen keledi, sol sebepli jańa endpoint qaplanadı (hám
+tómendegi ACCESS ke klassifikaciya etiliwi kerek), hesh kim qosıwdı este tutpastan.
+Hár route hám HTTP metod ushın ruxsat etilgen toplamnan tısqarıdaǵı hár rol
+401/403 alıwı kerek, hám ishindegi hár rol ruxsat tekseriwinen (401/403 den basqa qálegen
+status) server qátelik siz ótiwi kerek. Obyekt id leri joq (999999), sol sebepli hesh nárse ózgermeydi;
+iyelik (IDOR) tárepi hár app tıń kirisiw testleri hám test_r4_idor.py de qaplanǵan.
 """
 import re
 
@@ -26,39 +25,39 @@ OWNER = {'owner', 'staff', 'superadmin'}
 STAFF = {'staff', 'superadmin'}
 SUPERADMIN = {'superadmin'}
 
-# First matching (regex on the URL path, methods or None for all) wins.
+# Birinshi sáykes kelgen (URL jolında regex, metodlar yamasa hámmesi ushın None) jeńedi.
 ACCESS = [
-    (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventory, staff only outside DEBUG
-    (r'^/(healthz|readyz)/$', None, PUBLIC),  # A09: probes for the load balancer, no data
+    (r'^/api/(schema|docs|redoc)/$', None, STAFF),  # L-2: endpoint inventarı, DEBUG sırtında tek staff
+    (r'^/(healthz|readyz)/$', None, PUBLIC),  # A09: load balancer ushın tekseriwler, maǵlıwmat joq
     (r'^/api/v1/auth/(register|register/verify|register/resend|login|login/email-code|login/email-code/resend|logout|csrf|password-reset/request|password-reset/confirm|login/2fa)/$', None, PUBLIC),
     (r'^/api/v1/auth/(me|refresh|me/update|password/change|2fa/setup|2fa/confirm)/$', None, AUTHENTICATED),
     (r'^/api/v1/properties/', None, PUBLIC),
     (r'^/api/v1/geography/', None, PUBLIC),
-    (r'^/api/v1/promotions/', None, PUBLIC),  # R10: home carousel and click counter
-    (r'^/api/v1/me/reviews/(property_scores|public)/$', None, PUBLIC),  # approved reviews of a hotel
+    (r'^/api/v1/promotions/', None, PUBLIC),  # R10: bas bet karuseli hám klik sanaǵıshı
+    (r'^/api/v1/me/reviews/(property_scores|public)/$', None, PUBLIC),  # mehmanxananıń tastıyıqlanǵan sharhları
     (r'^/api/v1/me/', None, AUTHENTICATED),
-    (r'^/api/v1/chat/', None, AUTHENTICATED),  # support chat: the account's own thread
+    (r'^/api/v1/chat/', None, AUTHENTICATED),  # qollap-quwatlaw chatı: akkauntıń óz thread i
     (r'^/api/v1/bookings/', None, AUTHENTICATED),
-    (r'^/api/v1/$', None, AUTHENTICATED),  # bookings router root
+    (r'^/api/v1/$', None, AUTHENTICATED),  # bron router tamırı
     (r'^/api/v1/partner/', None, OWNER),
     (r'^/api/v1/admin-panel/geography/', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/create-hotel-owner/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/create-admin/$', None, SUPERADMIN),
     (r'^/api/v1/admin-panel/users/\d+/2fa-reset/$', None, SUPERADMIN),
-    (r'^/api/v1/admin-panel/commission/\d+/rate/$', None, SUPERADMIN),  # the percent is the super admin's decision
+    (r'^/api/v1/admin-panel/commission/\d+/rate/$', None, SUPERADMIN),  # procent super admin niń sheshimi
     (r'^/api/v1/admin-panel/exchange-rates/(status|\d+/accept)/$', None, SUPERADMIN),  # R6
     (r'^/api/v1/admin-panel/auto-completion/status/$', None, SUPERADMIN),  # R12
-    (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: changes
+    (r'^/api/v1/admin-panel/promotions/', ('post', 'patch', 'put', 'delete'), SUPERADMIN),  # R10: ózgerisler
     (r'^/api/v1/admin-panel/$', None, STAFF),
     (r'^/api/v1/admin-panel/(amenities|audit-log|bookings|chat|commission|customers|exchange-rates|no-show-reports'
      r'|promotion-hotels|promotions|properties|reviews|statistics|status|users)/', None, STAFF),
 ]
 
-# Allowed roles that still get 403 by design, not because of a permission check
+# Ruxsat etilgen rollar ele dizayn boyınsha 403 aladı, ruxsat tekseriwinen emes
 FORBIDDEN_BY_DESIGN = {
-    ('post', '/api/v1/me/notifications/'),  # notifications are created by the system only
-    ('post', '/api/v1/auth/login/2fa/'),  # open to all, but 401 until the password step of the same session was done
-    ('post', '/api/v1/auth/login/email-code/'),  # same: 401 until the password step of the same session was done
+    ('post', '/api/v1/me/notifications/'),  # bildiriwlerdi tek sistema jaratadı
+    ('post', '/api/v1/auth/login/2fa/'),  # hámmege ashıq, biraq sol session dıń parol qádemi islenbegenshe 401
+    ('post', '/api/v1/auth/login/email-code/'),  # sol sıyaqlı: sol session dıń parol qádemi islenbegenshe 401
     ('post', '/api/v1/auth/login/email-code/resend/'),
 }
 
@@ -114,8 +113,8 @@ def _allowed(method, path):
 
 
 def test_new_admin_routes_are_not_silently_staff_level():
-    # A06/A01: a catch-all rule made every new /admin-panel/ route pass at staff level unnoticed,
-    # even one that moves money. A new family must be added to ACCESS with an explicit tier.
+    # A06/A01: hámmesin qaplaytuǵın qaǵıyda hár jańa /admin-panel/ route ın staff dárejesinde ún-túnsiz ótkizdi,
+    # pulǵa tiyetuǵının da. Jańa topar ACCESS ke anıq dárejesi menen qosılıwı kerek.
     catch_all = [pattern for pattern, methods, _ in ACCESS if pattern == r'^/api/v1/admin-panel/' and methods is None]
     assert not catch_all
 

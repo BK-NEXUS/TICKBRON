@@ -1,4 +1,4 @@
-"""The web server's size is set from the environment, so a bigger machine only needs a number changed in .env."""
+"""Web serverdiń ólshemi environment ten belgilenedi, sol sebepli úlken mashinaǵa .env te tek bir sandı ózgertiw kerek."""
 import runpy
 from pathlib import Path
 
@@ -18,12 +18,12 @@ def load(monkeypatch, **env):
 def test_defaults_suit_a_small_server(monkeypatch):
     config = load(monkeypatch)
     assert (config['workers'], config['threads'], config['timeout']) == (3, 4, 30)
-    assert config['keepalive'] == 125  # longer than the proxy's 2 minutes of idle upstream connections
+    assert config['keepalive'] == 125  # proxy diń 2 minutlıq bos upstream ulanıwlarınan uzın
     assert config['bind'] == '0.0.0.0:8000'
 
 
 def test_processes_are_not_replaced_unless_asked_to_because_a_replacement_resets_open_connections(monkeypatch):
-    # Measured with 3000 visitors: replacing a process every 10,000 requests cut some connections and slowed the others
+    # 3000 kelwshi menen ólshengen: hár 10,000 sorawda process di almastırıw ayırım ulanıwlardı úzdi hám basqaların sekinletti
     config = load(monkeypatch)
     assert config['max_requests'] == 0
     assert load(monkeypatch, WEB_MAX_REQUESTS='500')['max_requests'] == 500
@@ -55,4 +55,4 @@ def test_a_bad_number_stops_the_start_instead_of_running_with_a_wrong_size(monke
 def test_the_image_starts_gunicorn_with_this_file():
     dockerfile = (CONFIG.parent / 'Dockerfile').read_text()
     assert '"-c", "gunicorn.conf.py"' in dockerfile
-    assert '"--workers"' not in dockerfile  # the number lives in the config file only
+    assert '"--workers"' not in dockerfile  # san tek konfiguraciya faylında turadı

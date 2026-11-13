@@ -1,6 +1,6 @@
 """
-The search parameter rules, case by case: what is accepted, how it is cleaned, and the exact
-message of every refusal. The service is checked directly, without a database.
+Izlew parametrleri qaǵıydaları, jaǵday boyınsha: ne qabıllanadı, qalay tazalanadı hám hár bir
+bas tartıwdıń dál xabarı. Servis database siz tuwrıdan-tuwrı tekseriledi.
 """
 from datetime import date
 
@@ -11,7 +11,7 @@ from properties.search import PropertySearchService
 
 @pytest.fixture(scope='module')
 def validate():
-    service = PropertySearchService.__new__(PropertySearchService)  # no queryset needed for validation
+    service = PropertySearchService.__new__(PropertySearchService)  # validaciya ushın queryset kerek emes
     return service._validate_search_params
 
 

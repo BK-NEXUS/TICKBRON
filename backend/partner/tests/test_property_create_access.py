@@ -1,8 +1,7 @@
 """
-Only hotel owners (accounts created by a super-admin) and staff can create or
-change properties. A regular registered user gets 403 on every endpoint that
-writes a Property or anything under it, and cannot give themselves the
-hotel-owner role.
+Tek mehmanxana iyeleri (super-admin jaratqan akkauntlar) hám staff mehmanxanalardı jarata yamasa
+ózgerte aladı. Ápiwayı dizimnen ótken paydalanıwshı Property ge yamasa onıń astındaǵı qálegen
+nárseni jazatuǵın hár endpoint te 403 aladı, hám ózine mehmanxana iyesi rolin bere almaydı.
 """
 from datetime import timedelta
 
@@ -75,7 +74,7 @@ def client_for(user):
 
 
 def create_requests(inv):
-    """(url, payload, format) for every partner endpoint that creates something."""
+    """Nárse jaratatuǵın hár partner endpoint ushın (url, payload, format)."""
     tomorrow = (business_today() + timedelta(days=1)).isoformat()
     return [
         ('/api/v1/partner/properties/', {
@@ -206,7 +205,7 @@ class TestRoleCannotBeSelfAssigned:
 
 @pytest.mark.django_db
 class TestMeExposesRole:
-    """The frontend shows partner entry points only to hotel owners and staff."""
+    """Frontend partner kirisiw noqatların tek mehmanxana iyelerine hám staff qa kórsetedi."""
 
     def test_hotel_owner_sees_their_role(self, owner):
         response = client_for(owner).get('/api/v1/auth/me/')

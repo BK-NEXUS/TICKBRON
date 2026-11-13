@@ -1,5 +1,5 @@
 """
-Two admins promoting the same hotel at the same moment: exactly one wins (PostgreSQL row lock).
+Eki admin birdey waqıtta bir mehmanxananı reklamalaydı: dál biri jeńedi (PostgreSQL qatar qulıpı).
 
     pytest --create-db promotions/tests/test_concurrency.py
 """

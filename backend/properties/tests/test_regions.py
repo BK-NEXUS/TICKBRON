@@ -1,9 +1,9 @@
 """
-Region of a property (Status plan S1).
+Mehmanxananıń regionı (Status reje S1).
 
-The region is the existing `Property.state` field ("State/Region" in the partner
-wizard). Hotels without one are grouped as "Unspecified" by the Status views.
-`backfill_regions_from_city` fills it where the city makes the region obvious.
+Region bar `Property.state` maydanı (partner wizard da "State/Region"). Regionı joq
+mehmanxanalar Status view lerinde "Unspecified" retinde toparlanadı.
+`backfill_regions_from_city` onı qala regionnı anıq etken jerde toltıradı.
 """
 from decimal import Decimal
 

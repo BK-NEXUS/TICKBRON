@@ -1,6 +1,6 @@
 """
-Admin Status overview: GET /admin-panel/status/overview/ (.ai/PLAN_STATUS_V2.md). Access: test_access_matrix.py.
-Data: the status_world fixture (status_fixtures.py).
+Admin Status sholıwı: GET /admin-panel/status/overview/ (.ai/PLAN_STATUS_V2.md). Kirisiw: test_access_matrix.py.
+Maǵlıwmat: status_world fixture si (status_fixtures.py).
 """
 from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
@@ -37,7 +37,7 @@ def test_totals_and_insights_cover_the_whole_platform(get, status_world):
 
     assert response.status_code == 200
     totals = response.data['totals']
-    # alpha 3, beta 1, delta 1 counted in 2026; pending, cancelled, no-show and deleted ones are not
+    # 2026 de alpha 3, beta 1, delta 1 counted; pending, biykar etilgen, no-show hám óshirilgenler emes
     assert (totals['bookings'], totals['guests'], totals['stayed']) == (5, 5, 1)
     assert money(totals['revenue']) == {'USD': '150.00'}
     insights = response.data['insights']
@@ -74,7 +74,7 @@ def test_month_comparison_uses_the_platform_scope(get, status_world):
 def test_new_users_are_guests_registered_in_the_month_and_period(get, status_world):
     data = get(period='all').data
 
-    # three guests and two owners registered just now; the staff account does not count
+    # úsh mehman hám eki iye házir ǵana dizimnen ótti; staff akkaunt esaplanbaydı
     assert data['new_users']['current_month'] == 5
     assert data['new_users']['previous_month'] == 0
     assert data['new_users']['in_period'] is None
@@ -118,7 +118,7 @@ def test_bad_input_is_a_400(get, params):
 
 
 def test_new_users_are_counted_by_business_date_not_by_utc_date(get):
-    # 20:00 UTC on 31 March is already 1 April 01:00 in Tashkent: it belongs to April
+    # 31-mart 20:00 UTC Tashkent te endi 1-aprel 01:00: ol aprelge tiyisli
     late = User.objects.create_user(email='late@example.com', password='GuestPassword#123')
     User.objects.filter(pk=late.pk).update(date_joined=datetime(2026, 3, 31, 20, 0, tzinfo=dt_timezone.utc))
 

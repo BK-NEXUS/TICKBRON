@@ -1,4 +1,4 @@
-"""`promoted` key of /properties/search/: only paid, running promotions of hotels that match the query."""
+"""/properties/search/ tiń `promoted` kilti: tek sorawǵa sáykes mehmanxanalardıń tólengen, isleytuǵın reklamaları."""
 from datetime import timedelta
 
 import pytest

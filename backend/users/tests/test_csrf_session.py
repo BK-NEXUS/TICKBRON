@@ -1,6 +1,6 @@
 """
-GET /auth/csrf/ also says whether the session is logged in, so the SPA only asks
-/auth/me/ when there is a session (no 401 console error for every anonymous page view).
+GET /auth/csrf/ session kirgenin de aytadı, sol sebepli SPA /auth/me/ dan tek session
+bar bolǵanda soraydı (hár anonim bet kóriwi ushın 401 console qátesi joq).
 """
 from django.test import TestCase
 from rest_framework.test import APIClient

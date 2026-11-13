@@ -1,7 +1,7 @@
-"""deploy/verify_backup.sh proves the outside copy can really be restored: restic checks the repository, the newest copy
-is restored into a temporary folder, the photo archive is a valid gzip file and PostgreSQL can read the dump.
+"""deploy/verify_backup.sh sırtqı nusqa haqıyqatında tiklenetuǵının dálillaydı: restic repository di tekseredi, eń jańa nusqa
+waqtınsha papkaǵa tiklenedi, súwret arxivi jaramlı gzip fayl hám PostgreSQL dump tı oqıy aladı.
 
-Run against a fake `restic` (it "restores" two files) and a fake `docker` (stands for pg_restore --list).
+Jalǵan `restic` (ol eki fayldı "tikleydi") hám jalǵan `docker` (pg_restore --list ornında) ǵa qarsı isleydi.
 """
 import gzip
 import os

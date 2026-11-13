@@ -1,6 +1,6 @@
 """
-R12 phase 2: owner Status additions - hotel detail, series, reconciliation, arrivals, CSV.
-Data: the status_world fixture (admin_panel/tests/status_fixtures.py).
+R12 2-basqısh: iye Status qosımshaları - mehmanxana tolıq maǵlıwmatı, seriya, sáykeslestiriw, keliwler, CSV.
+Maǵlıwmat: status_world fixture si (admin_panel/tests/status_fixtures.py).
 """
 import csv
 import io
@@ -78,7 +78,7 @@ class TestArrivals:
         make_booking(g2, hotels['beta'], today + timedelta(days=1), '100.00')
         make_booking(g2, hotels['alpha'], today, '100.00', status='pending')
         make_booking(g2, hotels['alpha'], today, '100.00', status='cancelled')
-        make_booking(g2, hotels['delta'], today, '100.00')                     # another owner's hotel
+        make_booking(g2, hotels['delta'], today, '100.00')                     # basqa iyeniń mehmanxanası
         return a
 
     def test_today(self, status_world):
@@ -91,7 +91,7 @@ class TestArrivals:
         assert (row['id'], row['reference'], row['guest_name'], row['special_requests']) == \
             (a.id, a.confirmation_code, 'Aziz Karimov', 'Late arrival')
         assert (row['property']['name'], row['rooms'], row['nights'], row['guests']) == ('Alpha Hotel', 1, 1, 1)
-        # a hotel taking cash needs the whole number to call a late guest (owner decision 2026-10-23)
+        # naqd alatuǵın mehmanxanaǵa keshikken mehmanǵa qońıraw etiw ushın tolıq nomer kerek (iyeniń qararı 2026-10-23)
         assert row['phone'] == '+998 90 333-12-34'
         assert 'phone_last4' not in row
         assert 'email' not in str(row)
@@ -146,7 +146,8 @@ class TestReconciliationCsv:
             for j in range(i):
                 make_booking(status_world['guests'][0], status_world['hotels']['beta'],
                              business_today() - timedelta(days=j + 1), '10.00', status='completed')
-            # +3 for the month comparison, lead days and repeat guests (Status v2); +1 for the guest ratings of all hotels
+            # ay salıstırıwı, aldınan kúnler hám qaytıp kelgen mehmanlar ushın +3 (Status v2); barlıq mehmanxanalardıń mehmanlar
+            # bahaları ushın +1
             with django_assert_max_num_queries(25):
                 assert get_as(owner1, f'{P}/').status_code == 200
 
@@ -183,7 +184,7 @@ class TestInsights:
 
 @pytest.mark.django_db
 class TestRegionRank:
-    """Owner's anonymous rank among the active hotels of the region, by counted bookings."""
+    """Iyeniń regiondaǵı aktiv mehmanxanalar arasındaǵı anonim orni, counted bronlar boyınsha."""
 
     def _more_hotels(self, status_world, count):
         from properties.models import Property
@@ -203,15 +204,15 @@ class TestRegionRank:
         assert self.rank(status_world, status_world['hotels']['alpha'], period='2026') is None
 
     def test_position_and_count_from_five_hotels(self, status_world):
-        self._more_hotels(status_world, 3)   # 5 hotels
+        self._more_hotels(status_world, 3)   # 5 mehmanxana
         alpha, beta = status_world['hotels']['alpha'], status_world['hotels']['beta']
-        # 2026: alpha has 3 counted bookings, beta 1, the three new ones 0
+        # 2026: alpha da 3 counted bron, beta da 1, úsh jańada 0
         assert self.rank(status_world, alpha, period='2026') == {'position': 1, 'of': 5}
         assert self.rank(status_world, beta, period='2026') == {'position': 2, 'of': 5}
 
     def test_ties_share_the_position(self, status_world):
         self._more_hotels(status_world, 3)
-        # 2025: only beta has a counted booking; alpha and the new hotels tie at 0 and share position 2
+        # 2025: tek beta da counted bron bar; alpha hám jańa mehmanxanalar 0 de teń hám 2-orındı bóliskenledi
         assert self.rank(status_world, status_world['hotels']['beta'], period='2025') == {'position': 1, 'of': 5}
         assert self.rank(status_world, status_world['hotels']['alpha'], period='2025') == {'position': 2, 'of': 5}
 

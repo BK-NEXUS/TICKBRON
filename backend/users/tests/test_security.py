@@ -1,5 +1,5 @@
 """
-Tests for user security features (login throttling, account lockout, etc.).
+Paydalanıwshı qáwipsizlik funkciyaları ushın testler (kiriwdi tezlikti sheklew, akkauntti bloklaw h.t.b.).
 """
 from django.test import TestCase
 from django.utils import timezone
@@ -8,10 +8,10 @@ from users.models import User
 
 
 class TestUserSecurity(TestCase):
-    """Test cases for user security features."""
+    """Paydalanıwshı qáwipsizlik funkciyaları ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test user."""
+        """Test paydalanıwshısın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='StrongP@ssw0rd123',
@@ -20,25 +20,25 @@ class TestUserSecurity(TestCase):
         )
 
     def test_is_account_locked_when_not_locked(self):
-        """Test that account is not locked by default."""
+        """Akkaunt ádetde bloklanbaǵanın testlew."""
         assert self.user.is_account_locked() is False
 
     def test_is_account_locked_when_locked(self):
-        """Test that account is locked when lock time is in future."""
+        """Bloklaw waqtı keleshekte bolsa akkaunt bloklanǵanın testlew."""
         self.user.account_locked_until = timezone.now() + timedelta(minutes=30)
         self.user.save()
 
         assert self.user.is_account_locked() is True
 
     def test_is_account_locked_when_expired(self):
-        """Test that account is not locked when lock time has passed."""
+        """Bloklaw waqtı ótip ketken bolsa akkaunt bloklanbaǵanın testlew."""
         self.user.account_locked_until = timezone.now() - timedelta(minutes=1)
         self.user.save()
 
         assert self.user.is_account_locked() is False
 
     def test_increment_failed_login(self):
-        """Test incrementing failed login attempts."""
+        """Sátsiz kiriw urınıwları sanın arttırıwdı testlew."""
         initial_attempts = self.user.failed_login_attempts
 
         self.user.increment_failed_login()
@@ -48,7 +48,7 @@ class TestUserSecurity(TestCase):
         assert self.user.last_failed_login is not None
 
     def test_account_lockout_after_account_failure_limit(self):
-        """The account-wide lock needs many failures (per-IP locks handle the rest)."""
+        """Pútkil akkaunt boyınsha bloklawǵa kóp sátsizlik kerek (qalǵanın hár IP boyınsha bloklaw isleydi)."""
         for _ in range(User.ACCOUNT_FAILURE_LIMIT - 1):
             self.user.increment_failed_login()
         self.user.refresh_from_db()
@@ -61,7 +61,7 @@ class TestUserSecurity(TestCase):
         assert self.user.is_account_locked() is True
 
     def test_reset_failed_login(self):
-        """Test resetting failed login attempts."""
+        """Sátsiz kiriw urınıwların nolge túsiriwdi testlew."""
         self.user.failed_login_attempts = 3
         self.user.account_locked_until = timezone.now() + timedelta(minutes=30)
         self.user.save()
@@ -74,7 +74,7 @@ class TestUserSecurity(TestCase):
         assert self.user.account_locked_until is None
 
     def test_login_ip_storage(self):
-        """Test that login IP is stored."""
+        """Kiriw IP si saqlanatuǵının testlew."""
         ip_address = '192.168.1.1'
         self.user.last_login_ip = ip_address
         self.user.save()
@@ -83,7 +83,7 @@ class TestUserSecurity(TestCase):
         assert self.user.last_login_ip == ip_address
 
     def test_email_verification_fields(self):
-        """Test email verification fields exist."""
+        """Email tastıyıqlaw maydanları barlıǵın testlew."""
         assert hasattr(self.user, 'email_verified')
         assert hasattr(self.user, 'email_verification_token')
         assert hasattr(self.user, 'email_verification_sent_at')
@@ -93,7 +93,7 @@ class TestUserSecurity(TestCase):
         assert self.user.email_verification_sent_at is None
 
     def test_two_factor_fields(self):
-        """Test 2FA fields exist."""
+        """2FA maydanları barlıǵın testlew."""
         assert hasattr(self.user, 'two_factor_enabled')
         assert hasattr(self.user, 'two_factor_secret')
         assert hasattr(self.user, 'two_factor_backup_codes')

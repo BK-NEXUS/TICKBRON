@@ -1,4 +1,4 @@
-"""The alphabet filter helpers: which names land under which letter."""
+"""Alfavit filter járdemshileri: qaysı atlar qaysı háripke túsedi."""
 import pytest
 from django.test import RequestFactory
 from rest_framework.exceptions import ValidationError

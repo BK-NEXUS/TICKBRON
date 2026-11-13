@@ -1,9 +1,9 @@
 """
-R6 migrations bookings 0006-0008: existing bookings get a 'legacy' charge snapshot in
-their own currency, and the Status money totals (grouped per currency) do not move.
+R6 migration lar bookings 0006-0008: bar bronlar óz valyutasında 'legacy' alınatuǵın summa snapshot ın aladı,
+hám Status pul jıynaqları (hár valyuta boyınsha) ózgermeydi.
 
-Runs the real migration executor against the test database (schema goes back and
-forth), like properties/tests/test_room_inventory_migration.py.
+Haqıyqıy migration executor di test database ge qarsı isletedi (sxema alǵa-artqa júredi),
+properties/tests/test_room_inventory_migration.py sıyaqlı.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -17,7 +17,7 @@ from bookings.stats import metric_totals, revenue_by
 
 
 def _others_without_bookings_after(graph, bookings_node):
-    """Newest node of every other app whose dependencies stop at `bookings_node` or earlier."""
+    """`bookings_node` yamasa onnan aldın toqtaytuǵın dependency lardı bar hár basqa app tıń eń jańa node ı."""
     allowed = set(graph.forwards_plan(bookings_node))
     others = []
     for leaf in graph.leaf_nodes():
@@ -35,13 +35,13 @@ def _others_without_bookings_after(graph, bookings_node):
 
 
 class MigrateBookingSnapshot(TransactionTestCase):
-    # No serialized_rollback (see test_room_inventory_migration.py)
+    # serialized_rollback joq (qarań test_room_inventory_migration.py)
 
     def setUp(self):
         super().setUp()
         executor = MigrationExecutor(connection)
-        # Every other app stays on its latest migration that does not need a bookings migration
-        # after 0005 (R12: payments/0003 depends on bookings/0009), so the historical models match
+        # Hár basqa app 0005 ten keyin bookings migration ın talap etpeytuǵın eń sońǵı migration ında qaladı
+        # (R12: payments/0003 bookings/0009 ǵa baylanıslı), sol sebepli tariyxıy model ler sáykes keledi
         others = _others_without_bookings_after(executor.loader.graph, ('bookings', '0005_status_indexes'))
         self.migrate_from = others + [('bookings', '0005_status_indexes')]
         self.migrate_to = others + [('bookings', '0008_charge_snapshot_required')]
@@ -79,7 +79,7 @@ class MigrateBookingSnapshot(TransactionTestCase):
                                       base_price=Decimal('600000'), currency='UZS')
         day = timezone.localdate() - timedelta(days=30)
         rows = [(usd, 'USD', '100.00', 'completed'), (usd, 'USD', '50.50', 'confirmed'),
-                (usd, 'EUR', '80.00', 'completed'),        # old demo booking in EUR
+                (usd, 'EUR', '80.00', 'completed'),        # EUR degi eski demo bron
                 (uzs, 'UZS', '700000.00', 'completed'), (uzs, 'UZS', '1300000.00', 'cancelled')]
         for i, (prop, currency, total, booking_status) in enumerate(rows):
             Booking.objects.create(

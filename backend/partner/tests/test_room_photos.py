@@ -1,4 +1,5 @@
-"""Owner photos of a room type: list, upload, change, delete, cover rules, limits, what the room list and the guest page show."""
+"""Xona túriniń iye súwretleri: dizimlew, júklew, ózgertiw, óshiriw, muqaba qaǵıydaları, shekler, xona dizimi hám mehman beti
+ne kórsetedi."""
 import shutil
 import tempfile
 
@@ -63,7 +64,7 @@ class RoomPhotoTests(TestCase):
     def detail(self, photo, room=None):
         return f'/api/v1/partner/rooms/{(room or self.room).id}/photos/{photo.id}/'
 
-    # list
+    # dizim
     def test_owner_lists_own_room_photos_in_order(self):
         second = self._photo(display_order=2)
         first = self._photo(display_order=1)
@@ -86,7 +87,7 @@ class RoomPhotoTests(TestCase):
         self.client.force_authenticate(self.owner)
         self.assertEqual(self.client.get(self.url).data, [])
 
-    # upload
+    # júklew
     def test_first_photo_becomes_cover_and_next_one_does_not(self):
         self.client.force_authenticate(self.owner)
         first = self._upload()
@@ -128,7 +129,7 @@ class RoomPhotoTests(TestCase):
         self.assertIn('photo', response.data)
         self.assertEqual(RoomPhoto.objects.filter(room_type=self.room).count(), MAX_PHOTOS_PER_ROOM_TYPE)
 
-    # change
+    # ózgertiw
     def test_owner_changes_caption_and_type(self):
         photo = self._photo()
         self.client.force_authenticate(self.owner)
@@ -173,7 +174,7 @@ class RoomPhotoTests(TestCase):
         self.client.force_authenticate(self.owner)
         self.assertEqual(self.client.patch(self.detail(foreign_photo), {'caption': 'x'}, format='json').status_code, 404)
 
-    # delete
+    # óshiriw
     def test_delete_soft_deletes(self):
         photo = self._photo()
         self.client.force_authenticate(self.owner)
@@ -200,7 +201,7 @@ class RoomPhotoTests(TestCase):
         self.client.force_authenticate(self.guest)
         self.assertEqual(self.client.delete(self.detail(photo)).status_code, status.HTTP_403_FORBIDDEN)
 
-    # what the room list shows
+    # xona dizimi ne kórsetedi
     def test_room_list_says_how_many_photos_a_room_has_and_which_one_is_the_cover(self):
         self._photo(is_primary=True, display_order=0)
         self._photo(display_order=1)

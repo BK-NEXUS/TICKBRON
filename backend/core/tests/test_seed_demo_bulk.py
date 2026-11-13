@@ -1,4 +1,4 @@
-"""seed_demo_bulk (R14): demo data at volume for performance measurements, local development only."""
+"""seed_demo_bulk (R14): ónimdarlıq ólshewleri ushın úlken kólemdegi demo maǵlıwmat, tek jergilikli development."""
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -19,7 +19,7 @@ def test_creates_the_requested_volume():
     assert Property.objects.filter(translations__description__startswith='[BULK]').distinct().count() == 10
     assert User.objects.filter(email__startswith='bulk-guest-').count() == 3
     assert Booking.objects.filter(special_requests__startswith='[BULK]').count() == 20
-    # 10 hotels x 2 room types x 5 days, and 2 rate plans per room type
+    # 10 mehmanxana x 2 xona túri x 5 kún, hám hár xona túrine 2 rate plan
     assert RoomInventory.objects.count() == 100
     assert DateInventory.objects.count() == 200
 

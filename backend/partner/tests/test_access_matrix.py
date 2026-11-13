@@ -1,7 +1,7 @@
 """
-Access matrix for every /api/v1/partner/ endpoint.
+Hár /api/v1/partner/ endpoint i ushın kirisiw matricası.
 
-anonymous -> 401/403, regular user -> 403, hotel owner -> only their own data.
+anonim -> 401/403, ápiwayı paydalanıwshı -> 403, mehmanxana iyesi -> tek óz maǵlıwmatı.
 """
 from datetime import date, timedelta
 
@@ -18,8 +18,8 @@ from currency.models import ExchangeRate
 
 P = '/api/v1/partner'
 
-# (method, url) for every partner endpoint. Ids do not need to exist:
-# permissions are checked before the object is looked up.
+# Hár partner endpoint ushın (method, url). Id lerdiń bolıwı shárt emes:
+# ruxsatlar obyekt izlenbesten aldın tekseriledi.
 PARTNER_ENDPOINTS = [('get', f'{P}/'), ('get', f'{P}/bookings/'), ('post', f'{P}/properties/1/photos/'),
                      ('get', f'{P}/rooms/1/photos/'), ('post', f'{P}/rooms/1/photos/'), ('delete', f'{P}/rooms/1/photos/1/'),
                      ('get', f'{P}/status/'), ('get', f'{P}/status/hotels/1/'),  # R12
@@ -96,7 +96,7 @@ def make_hotel(owner, city, guest):
         rooms=1, note='Booking.com', created_by=owner,
     )
     if not ExchangeRate.objects.exists():
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
     booking = Booking.create_booking(
         guest=guest, property_obj=prop, room_type=room, rate_plan=rate,
         check_in=check_in, check_out=check_in + timedelta(days=1), guest_count=1,
@@ -141,7 +141,7 @@ class TestHotelOwnerSeesOnlyOwnData:
         response = call(two_owners['alice'], 'get', f'{P}/{resource}/')
         assert response.status_code == 200
         if resource == 'room-inventory':
-            # the booking in make_hotel() also creates its own RoomInventory row (check_in)
+            # make_hotel() degi bron óziniń RoomInventory qatarın da jaratadı (check_in)
             assert two_owners['alice_hotel'][key].id in [row['id'] for row in results(response)]
             assert two_owners['bob_hotel'][key].id not in [row['id'] for row in results(response)]
         else:
@@ -155,7 +155,7 @@ class TestHotelOwnerSeesOnlyOwnData:
         alice, bob_obj = two_owners['alice'], two_owners['bob_hotel'][key]
         url = f'{P}/{resource}/{bob_obj.id}/'
         assert call(alice, 'get', url).status_code == 404
-        if resource != 'blocks':  # blocks has no PATCH/PUT at all (405 regardless of ownership)
+        if resource != 'blocks':  # bloklarda PATCH/PUT joq (iyelikke qaramastan 405)
             assert call(alice, 'patch', url, {'available_rooms': 1} if resource == 'room-inventory'
                          else {'currency': 'UZS'}).status_code == 404
         assert call(alice, 'delete', url).status_code == 404

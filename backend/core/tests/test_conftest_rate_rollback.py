@@ -1,7 +1,7 @@
 """
-The default USD rate (conftest.default_exchange_rate) must live inside the test's own transaction.
-Written outside it, a test that gets the database only through a fixture would leave a committed rate row
-behind and break the exchange-rate tests that run later.
+Ádetdegi USD kursı (conftest.default_exchange_rate) testtiń óz transaction ı ishinde bolıwı kerek.
+Onnan sırtında jazılsa, database di tek fixture arqalı alatuǵın test commit qılınǵan kurs qatarın
+qaldırıp, keyin isleytuǵın valyuta kursı testlerin buzar edi.
 """
 import pytest
 

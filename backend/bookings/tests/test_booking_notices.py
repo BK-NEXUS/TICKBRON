@@ -1,4 +1,4 @@
-"""After a booking is made or cancelled the guest and the hotel owner are told: in the site's list and by e-mail."""
+"""Bron jasalǵannan yamasa biykar etilgennen keyin mehmanǵa hám mehmanxana iyesine aytıladı: saytiń dizimi hám e-mail arqalı."""
 from unittest import mock
 
 from django.core import mail
@@ -61,7 +61,7 @@ class BookingNoticeTests(CashFixture):
         with self.captureOnCommitCallbacks(execute=True):
             response = self.book()
         self.assertEqual(response.status_code, 201, response.data)
-        self.assertLess(time.monotonic() - started, 10)  # the default retries take 20 s or more
+        self.assertLess(time.monotonic() - started, 10)  # ádettegi qayta urınıwlar 20 s yamasa kóbirek aladı
 
     def test_the_task_ignores_a_booking_that_is_gone(self):
         self.assertIsNone(send_booking_notice.run(999999, 'owner_new'))

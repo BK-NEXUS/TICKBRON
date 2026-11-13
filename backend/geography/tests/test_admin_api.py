@@ -1,11 +1,12 @@
 """
-Super-admin geography CRUD (Geography plan G3) under /api/v1/admin-panel/geography/:
+/api/v1/admin-panel/geography/ astında super-admin geografiya CRUD ı (Geography reje G3):
 
-    countries/, regions/            list (search, filters), create, retrieve, update, delete (no cities since 2026-11-10)
-    {kind}/reorder/                 POST {"ids": [...]} sets sort_order by position
+    countries/, regions/            dizim (izlew, filterler), jaratıw, oqıw, jańalaw, óshiriw (2026-11-10 den beri qala
+joq)
+    {kind}/reorder/                 POST {"ids": [...]} sort_order di orın boyınsha belgileydi
 
-Hide/show is PATCH {"is_active": false}. Rows in use cannot be deleted (PROTECT), only hidden.
-Who may call what is in test_access_matrix.py.
+Jasırıw/kórsetiw PATCH {"is_active": false}. Paydalanılıp atırǵan qatardı óshirip bolmaydı (PROTECT), tek jasırıladı.
+Kim neni shaqıra alatuǵını test_access_matrix.py de.
 """
 import io
 from decimal import Decimal
@@ -23,7 +24,7 @@ BASE = '/api/v1/admin-panel/geography'
 
 
 def picture():
-    """A new country or region needs a picture (plan .ai/PLAN_GEO_IMAGES.md)."""
+    """Jańa mámleket yamasa regionǵa súwret kerek (reje .ai/PLAN_GEO_IMAGES.md)."""
     buffer = io.BytesIO()
     Image.new('RGB', (1200, 900), (200, 30, 30)).save(buffer, format='PNG')
     return SimpleUploadedFile('picture.png', buffer.getvalue(), content_type='image/png')
@@ -55,7 +56,7 @@ def world(db):
 
 
 def use(world):
-    """Put a property on the world's region, so nothing in it can be deleted."""
+    """Mehmanxananı dúnyanıń regionına qoyıw, sol sebepli onıń ishindegi hesh nárseni óshirip bolmaydı."""
     country, region = world
     owner = User.objects.create_user(email='owner@example.com', password='OwnerPassword#123')
     hotel_type, _ = PropertyType.objects.get_or_create(slug='hotel', defaults={'name': 'Hotel'})
@@ -115,7 +116,7 @@ class TestCountries:
         assert response.status_code == 200 and response.data['name_en'] == 'Xlandia'
         response = client.patch(f'{BASE}/regions/{region.id}/', {'name_en': 'Orient'}, format='json')
         region.refresh_from_db()
-        assert (region.name_en, region.slug) == ('Orient', 'xa-east')  # the slug is set once
+        assert (region.name_en, region.slug) == ('Orient', 'xa-east')  # slug bir márte belgilenedi
 
     def test_search_matches_any_language_and_the_code(self, client, world):
         for term in ('Xland', 'иксл', 'XA', 'xa'):
@@ -132,7 +133,7 @@ class TestCountries:
         spare = Country.objects.create(code='XB', name_uz='B', name_ru='Б', name_en='Bland', currency='USD')
         assert client.delete(f'{BASE}/countries/{spare.id}/').status_code == 204
         assert not Country.objects.filter(code='XB').exists()
-        response = client.delete(f'{BASE}/countries/{world[0].id}/')  # has a region
+        response = client.delete(f'{BASE}/countries/{world[0].id}/')  # regionı bar
         assert response.status_code == 409
         assert Country.objects.filter(code='XA').exists()
 

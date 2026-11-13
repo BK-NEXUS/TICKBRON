@@ -1,8 +1,8 @@
 """
-Real concurrency tests for booking state transitions (audit #18).
+Bron status ótiwleri ushın haqıyqıy birdey waqıtlılıq testleri (audit #18).
 
-These need PostgreSQL: SQLite has no row-level locks and serializes writers,
-so the races cannot happen there. Run with the PostgreSQL settings from .env:
+Bular PostgreSQL talap etedi: SQLite te qatar dárejesindegi qulıplar joq hám jazıwshılardı izbe-iz etedi,
+sol sebepli jarıslar onda bolıp bolmaydı. .env degi PostgreSQL sazlamaları menen isletiń:
 
     pytest --create-db bookings/tests/test_concurrency.py
 """
@@ -23,9 +23,9 @@ from currency.testing import make_usd_rate
 
 def run_concurrently(*calls):
     """
-    Start every call at the same moment in its own thread and DB connection.
+    Hár shaqırıwdı birdey waqıtta óz thread inde hám DB ulanıwında baslaw.
 
-    Returns one ('ok', result) or ('error', exception) tuple per call.
+    Hár shaqırıw ushın bir ('ok', result) yamasa ('error', exception) tuple qaytaradı.
     """
     barrier = threading.Barrier(len(calls))
     results = [None] * len(calls)
@@ -34,7 +34,7 @@ def run_concurrently(*calls):
         try:
             barrier.wait(timeout=10)
             results[index] = ('ok', call())
-        except Exception as exc:  # collected and asserted by the test
+        except Exception as exc:  # test jıynap tekseredi
             results[index] = ('error', exc)
         finally:
             connection.close()
@@ -49,10 +49,10 @@ def run_concurrently(*calls):
 
 
 class BookingConcurrencyTests(TransactionTestCase):
-    """Two requests act on the same booking at the same time."""
+    """Eki soraw birdey waqıtta bir bronǵa háreket etedi."""
 
     def setUp(self):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
 
         self.user = User.objects.create_user(phone_number='+998901112233', email='race@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
@@ -74,12 +74,12 @@ class BookingConcurrencyTests(TransactionTestCase):
             rate_plan=self.rate_plan, date=self.day, available_rooms=5, booked_rooms=0,
             price=Decimal('100.00'), currency='USD', is_available=True
         )
-        # Two bookings hold the night, so a double release shows up as 0 instead
-        # of tripping the booked_rooms >= 0 check constraint
+        # Eki bron túndi ustap turadı, sol sebepli qos bosatıw booked_rooms >= 0 check constraint in buzbastan
+        # 0 retinde kórinedi
         self.other_booking = self._book()
         self.booking = self._book()
-        # RoomInventory is what the engine gates and updates room count on (audit
-        # #31); the first _book() call above created this row (default: total_rooms)
+        # RoomInventory xona sanın sistema basqaratuǵın hám jańalaytuǵın qatar (audit
+        # #31); joqarıdaǵı birinshi _book() shaqırıwı bul qatardı jaratqan (ádetde: total_rooms)
         self.room_inventory = RoomInventory.objects.get(room_type=self.room_type, date=self.day)
         assert self._booked_rooms() == 2
 
@@ -93,7 +93,7 @@ class BookingConcurrencyTests(TransactionTestCase):
         return RoomInventory.objects.get(pk=self.room_inventory.pk).booked_rooms
 
     def _stale_copies(self, count=2):
-        """Independent in-memory copies loaded before the race, as two requests would have."""
+        """Jarıstan aldın júklengen ǵárezsiz jaddaǵı nusqalar, eki soraw alǵanday."""
         return [Booking.objects.get(pk=self.booking.pk) for _ in range(count)]
 
     @staticmethod
@@ -125,7 +125,7 @@ class BookingConcurrencyTests(TransactionTestCase):
         assert self._booked_rooms() == 1
 
     def test_last_room_cannot_be_sold_twice(self):
-        RoomInventory.objects.filter(pk=self.room_inventory.pk).update(available_rooms=3)  # 2 held, 1 left
+        RoomInventory.objects.filter(pk=self.room_inventory.pk).update(available_rooms=3)  # 2 ustap tur, 1 qaldı
 
         results = run_concurrently(self._book, self._book)
 
@@ -136,13 +136,13 @@ class BookingConcurrencyTests(TransactionTestCase):
 
 class RoomInventoryConcurrencyTests(TransactionTestCase):
     """
-    A physical room is one RoomInventory row shared by every rate plan of its
-    room type (audit #31): two rate plans racing for the same last room must
-    not both win.
+    Fizikalıq xona óz xona túriniń hár rate plan ı ortaq paydalanatuǵın bir RoomInventory
+    qatarı (audit #31): sońǵı bir xona ushın jarısatuǵın eki rate plan ekewi de
+    jeńip ketpewi kerek.
     """
 
     def setUp(self):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
 
         self.user = User.objects.create_user(phone_number='+998901112233', email='race-two-rate-plans@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
@@ -151,7 +151,7 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
             max_guests=4, bedrooms=1, bathrooms=1, city='Tashkent', country='Uzbekistan',
             base_price=Decimal('100.00'), currency='USD'
         )
-        # One physical room, sold through two rate plans (the audit #31 repro)
+        # Bir fizikalıq xona, eki rate plan arqalı satılatuǵın (audit #31 qaytalaw)
         self.room_type = RoomType.objects.create(
             property=self.property, name='Standard', slug='standard', base_occupancy=2,
             max_occupancy=4, base_price=Decimal('100.00'), currency='USD', total_rooms=1
@@ -193,7 +193,7 @@ class RoomInventoryConcurrencyTests(TransactionTestCase):
 
 
 class PendingCapRaceTests(TransactionTestCase):
-    """A06-3: parallel requests of one account cannot all pass the pending-bookings check."""
+    """A06-3: bir akkauntıń paralel sorawları kútip turǵan bron tekseriwinen hámmesi ótip ala almaydı."""
 
     def setUp(self):
         make_usd_rate()
@@ -232,13 +232,13 @@ class PendingCapRaceTests(TransactionTestCase):
         }, format='json').status_code
 
     def test_parallel_creates_never_exceed_the_cap(self):
-        from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # was MAX_PENDING_BOOKINGS_PER_GUEST
+        from bookings.views import MAX_UPCOMING_BOOKINGS_PER_GUEST  # MAX_PENDING_BOOKINGS_PER_GUEST edi
 
-        # eight different nights, so only the limit (not the overlap rule) can refuse them
+        # segiz túrli tún, sol sebepli tek shek (kesilisiw qaǵıydası emes) olardı biykar ete aladı
         results = run_concurrently(*[lambda night=night: self.book_nights(night) for night in range(8)])
 
         assert [r for r in results if r[0] == 'error'] == []
-        upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bookings are confirmed at once
+        upcoming = Booking.objects.filter(guest=self.user, status='confirmed').count()  # bronlar birden tastıyıqlanadı
         assert upcoming == MAX_UPCOMING_BOOKINGS_PER_GUEST, [r[1] for r in results]
 
     def test_parallel_creates_for_the_same_nights_book_them_once(self):

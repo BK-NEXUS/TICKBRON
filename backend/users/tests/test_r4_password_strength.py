@@ -1,10 +1,10 @@
 """
-R4 security review: password rules are enforced on every API that sets a password.
+R4 qáwipsizlik tekseriwi: parol qaǵıydaları parol qoyatuǵın hár bir API da májbúrlenedi.
 
-Before, registration and the super-admin "create hotel owner" endpoint only
-checked min_length=12, so 'aaaaaaaaaaaa' or 'password1234' were accepted.
-AUTH_PASSWORD_VALIDATORS (including users.validators.StrongPasswordValidator)
-now run on both.
+Burın dizimnen ótiw hám super-admin "mehmanxana iyesin jaratıw" endpoint i tek
+min_length=12 di tekseretuǵın edi, sol sebepli 'aaaaaaaaaaaa' yamasa 'password1234' qabıllanatuǵın edi.
+AUTH_PASSWORD_VALIDATORS (users.validators.StrongPasswordValidator di qosqanda)
+endi ekewinde de isleydi.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -16,11 +16,11 @@ REGISTER_URL = '/api/v1/auth/register/'
 CREATE_OWNER_URL = '/api/v1/admin-panel/users/create-hotel-owner/'
 
 WEAK_PASSWORDS = [
-    'aaaaaaaaaaaa',        # one character repeated
-    'password1234',        # common
-    'tickbronhotel',       # lowercase letters only
-    '847261930475',        # digits only
-    'Tashkent2026stay',    # no special character
+    'aaaaaaaaaaaa',        # bir belgi qaytalanǵan
+    'password1234',        # keń tarqalǵan
+    'tickbronhotel',       # tek kishi háripler
+    '847261930475',        # tek sanlar
+    'Tashkent2026stay',    # arnawlı belgi joq
 ]
 STRONG_PASSWORD = 'Tashkent#Stay2026'
 
@@ -75,8 +75,8 @@ def _create_owner(client, password, n):
     return client.post(CREATE_OWNER_URL, {
         'email': f'owner{n}@example.com', 'first_name': 'Hotel', 'last_name': 'Owner',
         'password': password, 'password_confirm': password,
-        **uzbek_location('Tashkent'),  # a new account needs a place
-        'phone_number': '+998901112233',  # a new account needs a phone number
+        **uzbek_location('Tashkent'),  # jańa akkauntqa orın kerek
+        'phone_number': '+998901112233',  # jańa akkauntqa telefon nomeri kerek
     }, format='json')
 
 

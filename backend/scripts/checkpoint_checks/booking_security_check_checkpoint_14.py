@@ -1,15 +1,15 @@
 """
-Security Review Script for Checkpoint 14 - Booking Expiry, Cancellation, and Inventory Restoration
+Checkpoint 14 qáwipsizlik tekseriw skripti - Bronnıń múddeti pitiwi, biykar etiw hám inventory di tiklew
 
-This script performs a comprehensive security review of the booking expiry implementation
-including deterministic state transitions and inventory restoration.
+Bul skript bron múddeti pitiwin iske asırıwdı, sonıń ishinde anıq (deterministic) status
+ótiwlerin hám inventory di tiklewdi tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 
 import os
 import sys
 import django
 
-# Setup Django
+# Django dı tayarlaw
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 os.environ.setdefault('ALLOWED_HOSTS', 'testserver,localhost,127.0.0.1')
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -27,10 +27,10 @@ User = get_user_model()
 
 
 class BookingExpirySecurityCheck(TestCase):
-    """Security checks for booking expiry implementation."""
+    """Bron múddeti pitiwi iske asırılıwı ushın qáwipsizlik tekseriwleri."""
 
     def setUp(self):
-        """Set up test data for security checks."""
+        """Qáwipsizlik tekseriwleri ushın test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='security@example.com',
             password='SecurePassword123!',
@@ -87,7 +87,7 @@ class BookingExpirySecurityCheck(TestCase):
             is_active=True
         )
 
-        # Create date inventory
+        # Date inventory di jaratıw
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
 
@@ -107,8 +107,8 @@ class BookingExpirySecurityCheck(TestCase):
         self.client = Client()
 
     def test_01_expiry_field_is_properly_indexed(self):
-        """Test that expiry field is properly indexed for performance."""
-        # Check that the model has the expiry field
+        """Múddet maydanı ónimdarlıq ushın durıs indekslengenin testlew."""
+        # Modelde múddet maydanı barlıǵın tekseriw
         from bookings.models import Booking as BookingModel
         booking = BookingModel(
             guest=self.user,
@@ -123,12 +123,12 @@ class BookingExpirySecurityCheck(TestCase):
         )
         self.assertTrue(hasattr(booking, 'expires_at'))
 
-        # Check that the field is db_index=True in the model
+        # Maydan modelde db_index=True ekenin tekseriw
         field = BookingModel._meta.get_field('expires_at')
         self.assertTrue(field.db_index, "Expiry field should be indexed")
 
     def test_02_expiry_timestamp_auto_generated(self):
-        """Test that expiry timestamp is automatically generated for pending bookings."""
+        """Kútip turǵan bronlar ushın múddet waqıtı avtomatik jaratılatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -140,14 +140,14 @@ class BookingExpirySecurityCheck(TestCase):
         )
 
         self.assertIsNotNone(booking.expires_at)
-        # Check that expiry is approximately 15 minutes from creation
+        # Múddet jaratılǵannan shama menen 15 minut keyin ekenin tekseriw
         expected_expiry = booking.created_at + timedelta(minutes=15)
         time_difference = abs((booking.expires_at - expected_expiry).total_seconds())
-        self.assertLess(time_difference, 5)  # Allow 5 seconds variance
+        self.assertLess(time_difference, 5)  # 5 sekund parıqqa ruxsat
 
     def test_03_expiry_only_for_pending_bookings(self):
-        """Test that expiry is only set for pending bookings."""
-        # Create a pending booking
+        """Múddet tek kútip turǵan bronlar ushın qoyılatuǵının testlew."""
+        # Kútip turǵan bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -161,14 +161,14 @@ class BookingExpirySecurityCheck(TestCase):
         self.assertEqual(booking.status, 'pending')
         self.assertIsNotNone(booking.expires_at)
 
-        # Cancel the booking
+        # Bronnı biykar etiw
         booking.cancel_booking('Test cancellation')
 
-        # Update to confirmed status (simulating payment)
+        # Confirmed status ına jańalaw (tólemdi uqsatıw)
         booking.status = 'confirmed'
         booking.save()
 
-        # Create another booking that goes straight to confirmed
+        # Tuwrıdan-tuwrı confirmed ǵa ótetuǵın taǵı bir bron jaratıw
         booking2 = Booking(
             guest=self.user,
             property=self.property,
@@ -183,11 +183,11 @@ class BookingExpirySecurityCheck(TestCase):
         )
         booking2.save()
 
-        # Confirmed bookings should not auto-generate expiry
+        # Confirmed bronlarǵa múddet avtomatik jaratılmawı kerek
         self.assertIsNone(booking2.expires_at)
 
     def test_04_expiry_transaction_safety(self):
-        """Test that expiry operations are transaction-safe."""
+        """Múddet islemleri tranzakciya-qáwipsiz ekenin testlew."""
         from django.db import transaction
 
         booking = Booking.create_booking(
@@ -200,23 +200,23 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Get initial inventory state
+        # Inventory diń dáslepki jaǵdayın alıw
         initial_inventory = list(DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
 
-        # Try to expire with forced rollback
+        # Májbúriy qaytarıw menen múddetin pitkeriwge urınıw
         try:
             with transaction.atomic():
                 booking.expire_booking()
-                # Force rollback
+                # Qaytarıwdı májbúrlew
                 raise ValueError("Test rollback")
         except ValueError:
             pass
 
-        # Check inventory remains unchanged after rollback
+        # Qaytarıwdan keyin inventory ózgermey qalǵanın tekseriw
         final_inventory = list(DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
@@ -227,7 +227,7 @@ class BookingExpirySecurityCheck(TestCase):
             self.assertEqual(initial.booked_rooms, final.booked_rooms)
 
     def test_05_expiry_inventory_restoration_accuracy(self):
-        """Test that expiry accurately restores inventory."""
+        """Múddet pitiwi inventory di anıq tiklewin testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -238,16 +238,16 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Get inventory after booking
+        # Bronlawdan keyingi inventory di alıw
         booked_after_booking = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
         ).first().booked_rooms
 
-        # Expire the booking
+        # Bronnıń múddetin pitkeriw
         booking.expire_booking()
 
-        # Check that inventory was restored
+        # Inventory tiklengenin tekseriw
         booked_after_expiry = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
@@ -256,8 +256,8 @@ class BookingExpirySecurityCheck(TestCase):
         self.assertEqual(booked_after_expiry, booked_after_booking - 1)
 
     def test_06_expiry_status_validation(self):
-        """Test that expiry can only happen for pending bookings."""
-        # Create and confirm a booking
+        """Múddet pitiwi tek kútip turǵan bronlar ushın bolatuǵının testlew."""
+        # Bronnı jaratıw hám tastıyıqlaw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -271,7 +271,7 @@ class BookingExpirySecurityCheck(TestCase):
         booking.status = 'confirmed'
         booking.save()
 
-        # Try to expire confirmed booking (should fail)
+        # Confirmed bronnıń múddetin pitkeriwge urınıw (sátsiz bolıwı kerek)
         from django.core.exceptions import ValidationError
         with self.assertRaises(ValidationError) as context:
             booking.expire_booking()
@@ -279,7 +279,7 @@ class BookingExpirySecurityCheck(TestCase):
         self.assertIn('status', context.exception.message_dict)
 
     def test_07_expiry_cancellation_reason_integrity(self):
-        """Test that expiry sets proper cancellation reason."""
+        """Múddet pitiwi durıs biykar etiw sebebin qoyatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -297,8 +297,8 @@ class BookingExpirySecurityCheck(TestCase):
         self.assertIsNotNone(booking.cancelled_at)
 
     def test_08_deterministic_state_transitions(self):
-        """Test that state transitions are deterministic and well-defined."""
-        # Test pending -> cancelled (expiry)
+        """Status ótiwleri anıq (deterministic) hám jaqsı anıqlanǵanın testlew."""
+        # pending -> cancelled (múddet pitiwi) di testlew
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -313,7 +313,7 @@ class BookingExpirySecurityCheck(TestCase):
         booking1.expire_booking()
         self.assertEqual(booking1.status, 'cancelled')
 
-        # Test pending -> cancelled (user cancellation)
+        # pending -> cancelled (paydalanıwshı biykar etiwi) di testlew
         booking2 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -328,7 +328,7 @@ class BookingExpirySecurityCheck(TestCase):
         booking2.cancel_booking('User cancelled')
         self.assertEqual(booking2.status, 'cancelled')
 
-        # Test that cancelled cannot be cancelled again
+        # Biykar etilgen bronnıń taǵı biykar etilmeytuǵının testlew
         from django.core.exceptions import ValidationError
         with self.assertRaises(ValidationError):
             booking1.cancel_booking('Try again')
@@ -337,8 +337,8 @@ class BookingExpirySecurityCheck(TestCase):
             booking1.expire_booking()
 
     def test_09_process_expired_bookings_safety(self):
-        """Test that process_expired_bookings handles errors gracefully."""
-        # Create multiple bookings
+        """process_expired_bookings qátelerdi durıs islewin testlew."""
+        # Bir neshe bronnı jaratıw
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -349,7 +349,7 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Create inventory for second booking
+        # Ekinshi bron ushın inventory jaratıw
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
 
@@ -376,7 +376,7 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Set both to expired
+        # Ekewin de múddeti pitken etip qoyıw
         past_time = timezone.now() - timedelta(minutes=30)
         booking1.expires_at = past_time
         booking1.save(update_fields=['expires_at'])
@@ -384,23 +384,23 @@ class BookingExpirySecurityCheck(TestCase):
         booking2.expires_at = past_time
         booking2.save(update_fields=['expires_at'])
 
-        # Process expired bookings
+        # Múddeti pitken bronlardı islew
         processed_count = Booking.process_expired_bookings()
 
         self.assertEqual(processed_count, 2)
 
-        # Verify both were expired
+        # Ekewiniń de múddeti pitkenin tekseriw
         booking1.refresh_from_db()
         booking2.refresh_from_db()
         self.assertEqual(booking1.status, 'cancelled')
         self.assertEqual(booking2.status, 'cancelled')
 
     def test_10_expiry_field_not_exposed_to_manipulation(self):
-        """Test that expiry field cannot be manipulated through API."""
-        # Login as user
+        """Múddet maydanın API arqalı ózgertip bolmaytuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Create booking
+        # Bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -411,18 +411,18 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Try to update expiry through API (should not be allowed)
+        # Múddetti API arqalı jańalawǵa urınıw (ruxsat berilmewi kerek)
         data = {
             'expires_at': '2099-12-31T23:59:59Z'
         }
 
         response = self.client.put(f'/api/v1/bookings/{booking.id}/', data, content_type='application/json')
-        # Should return 405 Method Not Allowed or 403/400
+        # 405 Method Not Allowed yamasa 403/400 qaytarıwı kerek
         self.assertIn(response.status_code, [405, 403, 400])
 
     def test_11_concurrent_expiry_safety(self):
-        """Test that concurrent expiry operations are safe through status validation."""
-        # Create booking
+        """Bir waqıttaǵı múddet pitiriw islemleri status tekseriwi arqalı qáwipsiz ekenin testlew."""
+        # Bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -433,27 +433,27 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # First expiry should succeed
+        # Birinshi múddet pitiriw tabıslı bolıwı kerek
         booking.expire_booking()
         self.assertEqual(booking.status, 'cancelled')
 
-        # Second expiry attempt should fail due to status validation
+        # Ekinshi múddet pitiriw urınısı status tekseriwi sebepli sátsiz bolıwı kerek
         from django.core.exceptions import ValidationError
         with self.assertRaises(ValidationError) as context:
             booking.expire_booking()
 
         self.assertIn('status', context.exception.message_dict)
 
-        # Verify booking remains cancelled
+        # Bron biykar etilgen qalpında qalǵanın tekseriw
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'cancelled')
 
     def test_12_management_command_authentication(self):
-        """Test that management command requires proper setup."""
+        """Management command durıs sazlawdı talap etetuǵının testlew."""
         from django.core.management import call_command
         from io import StringIO
 
-        # Create expired booking
+        # Múddeti pitken bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -468,7 +468,7 @@ class BookingExpirySecurityCheck(TestCase):
         booking.expires_at = past_time
         booking.save(update_fields=['expires_at'])
 
-        # Run command in dry-run mode (should work without auth as it's a management command)
+        # Command dı dry-run rejiminde islew (management command bolǵanı ushın auth siz islewi kerek)
         out = StringIO()
         call_command('process_expired_bookings', '--dry-run', stdout=out)
 
@@ -476,8 +476,8 @@ class BookingExpirySecurityCheck(TestCase):
         self.assertIn('Dry run mode', output)
 
     def test_13_inventory_restoration_for_multiple_nights(self):
-        """Test that expiry restores inventory for multiple nights accurately."""
-        # Create booking for 3 nights
+        """Múddet pitiwi bir neshe tún ushın inventory di anıq tiklewin testlew."""
+        # 3 tún ushın bron jaratıw
         check_in = date.today() + timedelta(days=30)
         check_out = date.today() + timedelta(days=33)
 
@@ -504,7 +504,7 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Verify inventory was booked for 3 nights
+        # Inventory 3 tún ushın bronlanǵanın tekseriw
         inventory_records = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=check_in,
@@ -515,16 +515,16 @@ class BookingExpirySecurityCheck(TestCase):
         for inventory in inventory_records:
             self.assertEqual(inventory.booked_rooms, 1)
 
-        # Expire the booking
+        # Bronnıń múddetin pitkeriw
         booking.expire_booking()
 
-        # Verify inventory was restored for all 3 nights
+        # Inventory barlıq 3 tún ushın tiklengenin tekseriw
         for inventory in inventory_records:
             inventory.refresh_from_db()
             self.assertEqual(inventory.booked_rooms, 0)
 
     def test_14_expiry_time_reasonable_default(self):
-        """Test that expiry time uses reasonable default (15 minutes)."""
+        """Múddet waqıtı maqul ádettegi mánisti (15 minut) paydalanatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -535,14 +535,14 @@ class BookingExpirySecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Check that expiry is reasonable (not too short, not too long)
+        # Múddet maqul ekenin (júdá qısqa emes, júdá uzın emes) tekseriw
         time_until_expiry = (booking.expires_at - booking.created_at).total_seconds()
-        self.assertGreater(time_until_expiry, 60)  # At least 1 minute
-        self.assertLess(time_until_expiry, 3600)  # Less than 1 hour
-        self.assertAlmostEqual(time_until_expiry, 900, delta=5)  # Approximately 15 minutes
+        self.assertGreater(time_until_expiry, 60)  # Keminde 1 minut
+        self.assertLess(time_until_expiry, 3600)  # 1 saattan kem
+        self.assertAlmostEqual(time_until_expiry, 900, delta=5)  # Shama menen 15 minut
 
     def test_15_booking_status_integrity_after_expiry(self):
-        """Test that booking status and related fields maintain integrity after expiry."""
+        """Bron status ı hám baylanıslı maydanlar múddet pitkennen keyin putinligin saqlaytuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -557,9 +557,9 @@ class BookingExpirySecurityCheck(TestCase):
 
         booking.expire_booking()
 
-        # Check status integrity
+        # Status putinligin tekseriw
         self.assertEqual(booking.status, 'cancelled')
-        self.assertEqual(booking.payment_status, original_payment_status)  # Payment status unchanged
+        self.assertEqual(booking.payment_status, original_payment_status)  # Tólem status ı ózgermegen
         self.assertIsNotNone(booking.cancelled_at)
         self.assertIsNotNone(booking.cancellation_reason)
         self.assertEqual(booking.guest, self.user)
@@ -567,7 +567,7 @@ class BookingExpirySecurityCheck(TestCase):
 
 
 def run_security_checks():
-    """Run all security checks and report results."""
+    """Barlıq qáwipsizlik tekseriwlerin islew hám nátiyjelerdi bildiriw."""
     from django.test.runner import DiscoverRunner
 
     runner = DiscoverRunner(verbosity=2)

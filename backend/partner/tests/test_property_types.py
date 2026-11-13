@@ -1,4 +1,4 @@
-"""The owner's "add a hotel" form needs every property type, also the ones that have no hotel yet."""
+"""Iyeniń "mehmanxana qosıw" formasına hár mehmanxana túri kerek, ele mehmanxanası joqları da."""
 import pytest
 from rest_framework.test import APIClient
 
@@ -8,8 +8,8 @@ from users.models import User
 
 URL = '/api/v1/partner/property-types/'
 
-# The marker (not only the `db` fixture) puts the test in its transaction before conftest's default exchange rate is
-# written; without it the rate stays in the database and breaks the "no rate yet" search tests that run later
+# Belgi (tek `db` fixture emes) testti conftest tiń ádetdegi valyuta kursı jazılmastan aldın transaction ına qoyadı;
+# onsız kurs database de qalıp, keyin isleytuǵın "ele kurs joq" izlew testlerin buzadı
 pytestmark = pytest.mark.django_db
 
 

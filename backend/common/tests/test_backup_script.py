@@ -1,6 +1,8 @@
-"""deploy/backup.sh must fail loudly and leave no half-written file when the database or the photos cannot be saved.
+"""deploy/backup.sh database yamasa súwretlerdi saqlap bolmaǵanda dawıslı túrde sátsiz bolıwı hám yarım jazılǵan fayl
+qaldırmawı kerek.
 
-It runs under /bin/sh (dash on Ubuntu, which has no `pipefail`), against a fake `docker` that succeeds or fails on demand.
+Ol /bin/sh (Ubuntu degi dash, onda `pipefail` joq) astında, talap boyınsha tabıslı yamasa sátsiz bolatuǵın jalǵan `docker`
+ǵa qarsı isleydi.
 """
 import os
 import shutil
@@ -22,7 +24,7 @@ esac
 
 @pytest.fixture
 def server(tmp_path):
-    """A copy of the repo layout the script expects (deploy/backup.sh one level below the project root) and a fake docker."""
+    """Skript kútetuǵın repo dúzilisiniń nusqası (deploy/backup.sh proekt tamırınan bir dárejege tómen) hám jalǵan docker."""
     (tmp_path / 'deploy').mkdir()
     shutil.copy(REPO / 'deploy' / 'backup.sh', tmp_path / 'deploy' / 'backup.sh')
     bin_dir = tmp_path / 'bin'
@@ -79,7 +81,7 @@ def test_when_the_database_dump_fails_the_run_fails_and_keeps_nothing(server):
 
 
 def test_the_backup_files_can_only_be_read_by_their_owner(server):
-    # a database dump holds personal data
+    # database dump jeke maǵlıwmattı saqlaydı
     run(server)
 
     for path in (server / 'backups').iterdir():

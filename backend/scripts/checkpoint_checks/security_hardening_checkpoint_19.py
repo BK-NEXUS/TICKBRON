@@ -1,14 +1,14 @@
 """
-Security review and hardening for Checkpoint 19.
+Checkpoint 19 ushın qáwipsizlik tekseriwi hám bekkemlew.
 
-This script performs security checks and provides recommendations
-for TICKBRON backend security hardening.
+Bul skript qáwipsizlik tekseriwlerin ótkeredi hám TICKBRON backend qáwipsizligin
+bekkemlew boyınsha usınıslar beredi.
 """
 import os
 import sys
 from pathlib import Path
 
-# Add backend to path
+# Backend ti jolǵa qosıw
 backend_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_path))
 
@@ -23,7 +23,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 def check_security_settings():
-    """Check security settings configuration."""
+    """Qáwipsizlik sazlamaları konfiguraciyasın tekseriw."""
     print("=== Security Settings Review ===")
 
     checks = {
@@ -44,7 +44,7 @@ def check_security_settings():
 
 
 def check_middleware_configuration():
-    """Check middleware configuration."""
+    """Middleware konfiguraciyasın tekseriw."""
     print("=== Middleware Configuration Review ===")
 
     required_middleware = [
@@ -67,7 +67,7 @@ def check_middleware_configuration():
 
 
 def check_cors_configuration():
-    """Check CORS configuration."""
+    """CORS konfiguraciyasın tekseriw."""
     print("=== CORS Configuration Review ===")
 
     cors_origins = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
@@ -85,7 +85,7 @@ def check_cors_configuration():
 
 
 def check_rate_limiting():
-    """Check rate limiting configuration."""
+    """Rate limiting konfiguraciyasın tekseriw."""
     print("=== Rate Limiting Review ===")
 
     rate_limit_enabled = getattr(settings, 'RATELIMIT_ENABLE', True)
@@ -105,7 +105,7 @@ def check_rate_limiting():
 
 
 def check_permission_classes():
-    """Check permission classes in DRF."""
+    """DRF degi ruxsat klasslarin tekseriw."""
     print("=== Permission Classes Review ===")
 
     default_permissions = settings.REST_FRAMEWORK.get('DEFAULT_PERMISSION_CLASSES', [])
@@ -121,7 +121,7 @@ def check_permission_classes():
 
 
 def check_logging_configuration():
-    """Check logging configuration."""
+    """Logging konfiguraciyasın tekseriw."""
     print("=== Logging Configuration Review ===")
 
     logging_config = getattr(settings, 'LOGGING', {})
@@ -140,7 +140,7 @@ def check_logging_configuration():
 
 
 def check_database_security():
-    """Check database security settings."""
+    """Database qáwipsizligi sazlamaların tekseriw."""
     print("=== Database Security Review ===")
 
     db_config = settings.DATABASES.get('default', {})
@@ -157,7 +157,7 @@ def check_database_security():
 
 
 def check_password_security():
-    """Check password security settings."""
+    """Parol qáwipsizligi sazlamaların tekseriw."""
     print("=== Password Security Review ===")
 
     password_validators = settings.AUTH_PASSWORD_VALIDATORS
@@ -166,12 +166,12 @@ def check_password_security():
     for validator in password_validators:
         print(f"  - {validator['NAME']}")
 
-    # Check minimum length
+    # Eń kem uzınlıqtı tekseriw
     for validator in password_validators:
         if 'MinimumLengthValidator' in validator['NAME']:
             min_length = validator.get('OPTIONS', {}).get('min_length', 8)
             print(f"  Minimum Password Length: {min_length}")
-            # 8 characters with a letter, a digit and a special character is the owner's rule for everybody (2026-10-29)
+            # Háriptiń, sannıń hám arnawlı belginiń bar 8 belgi - hámme ushın iyeniń qaǵıydası (2026-10-29)
             if min_length >= 8:
                 print("  [PASS] Strong password requirement")
             else:
@@ -181,7 +181,7 @@ def check_password_security():
 
 
 def main():
-    """Run all security checks."""
+    """Barlıq qáwipsizlik tekseriwlerin islew."""
     print("\n" + "="*50)
     print("TICKBRON Security Review - Checkpoint 19")
     print("="*50 + "\n")

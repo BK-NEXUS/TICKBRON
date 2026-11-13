@@ -1,10 +1,10 @@
 """
-A01 (OWASP 2025) access-control details found by the audit:
+A01 (OWASP 2025) audit tapqan kirisiwdi basqarıw mayda-shúyde máseleleri:
 
-- favorites exposed hotels that are not published (draft, pending, rejected, suspended)
-- the public hotel page returned the owner's and the approving staff member's user ids and the rejection reason
-- the public availability returned the partner's internal day notes and had no limit on the date range
-- "that booking id does not exist" and "that booking is someone else's" gave different answers
+- favorit ler járiyalanbaǵan mehmanxanalardı kórsetip qoydı (qaralama, kútip turǵan, biykar etilgen, toqtatılǵan)
+- ashıq mehmanxana beti iyeniń hám tastıyıqlaǵan staff aǵzasınıń paydalanıwshı id lerin hám biykar etiw sebebin qaytardı
+- ashıq bos orınlar partnerdiń ishki kún jazbaların qaytardı hám sana aralıǵında shek joq edi
+- "bunday bron id joq" hám "bul bron basqa birewdiki" túrli juwap berdi
 """
 from datetime import timedelta
 from decimal import Decimal

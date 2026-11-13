@@ -1,5 +1,5 @@
 """
-Tests for seed_demo_stats: DEMO data for the Status sections (local development only).
+seed_demo_stats ushın testler: Status bólimleri ushın DEMO maǵlıwmat (tek jergilikli development).
 """
 from datetime import timedelta
 from io import StringIO
@@ -66,19 +66,19 @@ class TestSeedDemoStats:
         assert set(hotels.values_list('country', flat=True)) == {'Uzbekistan', 'Kazakhstan', 'Turkey'}
         regions = set(hotels.exclude(state__isnull=True).exclude(state='').values_list('state', flat=True))
         assert len(regions) >= 4
-        # At least one hotel has no region, so the "Unspecified" group shows up
+        # Keminde bir mehmanxananıń regionı joq, sol sebepli "Unspecified" topar payda boladı
         assert hotels.filter(state__isnull=True).exists()
         assert all(h.owner.role.name == 'hotel-owner' for h in hotels.select_related('owner__role'))
         assert hotels.values('owner').distinct().count() == 12
         assert all(h.translations.filter(language='en').exists() for h in hotels)
-        # Geography refs: every hotel has its country; the one without a region has no region
+        # Geografiya ref leri: hár mehmanxananıń mámleketi bar; regionı joq mehmanxananıń regionı joq
         assert not hotels.filter(country_ref__isnull=True).exists()
         no_region = hotels.get(state__isnull=True)
         assert (no_region.country_ref.code, no_region.region_ref) == ('TR', None)
         silk = hotels.select_related('region_ref').get(translations__name='Silk Road Plaza Hotel')
         assert (silk.region_ref.name_en, silk.city) == ('Tashkent', 'Tashkent')
         assert hotels.exclude(pk=no_region.pk).filter(region_ref__isnull=True).count() == 0
-        # The printed demo password works
+        # Basıp shıǵarılǵan demo parol isleydi
         assert User.objects.get(email='stats-owner-01@tickbron.demo').check_password('DemoStats#2026')
         assert User.objects.get(email='stats-guest-60@tickbron.demo').check_password('DemoStats#2026')
 
@@ -92,7 +92,7 @@ class TestSeedDemoStats:
 
         today = timezone.localdate()
         for booking in bookings.select_related('property'):
-            # Past stays only, so no room inventory is held by demo data
+            # Tek ótken turıwlar, sol sebepli demo maǵlıwmat hesh qanday xona inventory in ustap turmaydı
             assert booking.check_out <= today
             assert booking.check_in >= today - timedelta(days=365)
             assert booking.number_of_nights == (booking.check_out - booking.check_in).days
@@ -130,7 +130,7 @@ class TestSeedDemoStats:
 
 @pytest.mark.django_db
 class TestSeedDemoStatsCash:
-    """Cash at the hotel: demo bookings carry no payment rows and are paid at the hotel."""
+    """Mehmanxanada naqd: demo bronlarda tólem qatarları joq hám mehmanxanada tólenedi."""
 
     @pytest.fixture(autouse=True)
     def debug_on(self, settings):
@@ -174,7 +174,8 @@ class TestSeedDemoPromotions:
         assert Promotion.objects.count() == 7
 
     def test_rerun_after_the_demo_ads_ended_makes_them_run_again(self):
-        """QA F6: ads seeded weeks ago had ended, a re-run kept them ended and the banner test failed."""
+        """QA F6: bir neshe hápte aldın seed etilgen reklamalar pitip ketti, qayta isletiw olardı pitken etip qaldırdı hám
+        banner testi sátsiz boldı."""
         from promotions import service
         from promotions.models import Promotion
 

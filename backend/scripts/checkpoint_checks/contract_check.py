@@ -1,20 +1,20 @@
 """
-API Contract Consistency Check for TICKBRON Backend Checkpoint 01
+TICKBRON Backend 01-checkpoint ushın API shártnama izbe-izligin tekseriw
 
-This script verifies that the foundation is consistent with the API contract.
+Bul skript tiykardıń API shártnamasına say ekenin tastıyıqlaydı.
 """
 import os
 from pathlib import Path
 
 def check_contract_consistency():
-    """Verify API contract consistency with foundation setup."""
+    """API shártnama izbe-izligin tiykar sazlawı menen tastıyıqlaw."""
 
     print("TICKBRON Backend API Contract Consistency Check")
     print("=" * 50)
 
     checks = []
 
-    # Check 1: API contract file exists
+    # 1-tekseriw: API shártnama faylı bar
     contract_file = Path('../.ai/API_CONTRACT.md')
     if contract_file.exists():
         checks.append(("PASS", "API contract file exists"))
@@ -23,14 +23,14 @@ def check_contract_consistency():
         checks.append(("FAIL", "API contract file not found"))
         contract_content = ""
 
-    # Check 2: Version prefix is defined in contract
+    # 2-tekseriw: Versiya prefiksi shártnamada anıqlanǵan
     if contract_content:
         if '/api/v1/' in contract_content:
             checks.append(("PASS", "API version prefix /api/v1/ defined in contract"))
         else:
             checks.append(("FAIL", "API version prefix not defined in contract"))
 
-    # Check 3: Core endpoints are listed in contract
+    # 3-tekseriw: Tiykarǵı endpoint ler shártnamada kórsetilgen
     if contract_content:
         required_endpoints = [
             'auth/register',
@@ -49,7 +49,7 @@ def check_contract_consistency():
         else:
             checks.append(("WARN", f"Some core endpoints missing from contract: {missing_endpoints}"))
 
-    # Check 4: Django REST Framework is configured
+    # 4-tekseriw: Django REST Framework sazlanǵan
     settings_file = Path('config/settings.py')
     if settings_file.exists():
         settings_content = settings_file.read_text()
@@ -65,7 +65,7 @@ def check_contract_consistency():
     else:
         checks.append(("FAIL", "Settings file not found"))
 
-    # Check 5: URL structure supports API versioning
+    # 5-tekseriw: URL dúzilisi API versiyalawdı qollap-quwatlaydı
     urls_file = Path('config/urls.py')
     if urls_file.exists():
         urls_content = urls_file.read_text()
@@ -81,17 +81,17 @@ def check_contract_consistency():
     else:
         checks.append(("FAIL", "URLs file not found"))
 
-    # Check 6: No premature API implementation
-    # For checkpoint 01, we should NOT have implemented actual API endpoints
+    # 6-tekseriw: Erte API iske asırıwı joq
+    # 01-checkpoint ushın haqıyqıy API endpoint leri iske asırılmawı kerek
     if urls_file.exists():
         urls_content = urls_file.read_text()
-        # Check if actual API endpoints are implemented (they shouldn't be for checkpoint 01)
+        # Haqıyqıy API endpoint leri iske asırılǵanın tekseriw (01-checkpoint ushın olar bolmawı kerek)
         if 'include(' in urls_content and 'api_v1' in urls_content:
             checks.append(("WARN", "API v1 endpoints may be prematurely implemented"))
         else:
             checks.append(("PASS", "No premature API endpoint implementation (correct for checkpoint 01)"))
 
-    # Check 7: Contract rules are followed
+    # 7-tekseriw: Shártnama qaǵıydalarına ámel etilgen
     if contract_content:
         if 'OpenAPI documentation is mandatory' in contract_content:
             checks.append(("PASS", "Contract specifies OpenAPI documentation requirement"))
@@ -103,7 +103,7 @@ def check_contract_consistency():
         else:
             checks.append(("WARN", "Contract may not specify versioning rules"))
 
-    # Print results
+    # Nátiyjelerdi shıǵarıw
     print("\nContract Consistency Status:")
     print("-" * 50)
 

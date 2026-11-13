@@ -1,7 +1,7 @@
 """
-R12 1a: booking create, quote and availability reject a check-in before the BUSINESS
-date (Asia/Tashkent), not the UTC date. Between 00:00 and 05:00 in Tashkent the UTC
-date is still yesterday; a check-in for "yesterday" must be refused then.
+R12 1a: bron jaratıw, quote hám bos orınlar kiriwdi UTC sanasınan emes, IS sanasınan (Asia/Tashkent)
+aldın bolsa biykar etedi. Tashkent te 00:00 menen 05:00 aralıǵında UTC
+sanası ele keshe; "keshe" ge kiriw sonda biykar etiliwi kerek.
 """
 from datetime import datetime, time, timedelta, timezone as dt_timezone
 from unittest import mock
@@ -19,7 +19,7 @@ TASHKENT = zoneinfo.ZoneInfo('Asia/Tashkent')
 
 
 def _tashkent(day, hour, minute):
-    """Patch "now" to the given local Tashkent time (stored and compared in UTC)."""
+    """"Házir" di berilgen jergilikli Tashkent waqtına yamalaw (UTC de saqlanadı hám salıstırıladı)."""
     moment = datetime.combine(day, time(hour, minute), tzinfo=TASHKENT).astimezone(dt_timezone.utc)
     return mock.patch('django.utils.timezone.now', return_value=moment)
 
@@ -49,12 +49,12 @@ def _availability(stay, check_in):
 
 @pytest.mark.django_db
 class TestAtHalfPastMidnightTashkent:
-    """00:30 in Tashkent on day D+1 = 19:30 UTC on day D: the UTC date is D, the business date D+1."""
+    """D+1 kúni Tashkent te 00:30 = D kúni 19:30 UTC: UTC sanası D, is sanası D+1."""
 
     @pytest.fixture
     def day(self, stay):
         _make_uzs(stay)
-        return stay['start'] + timedelta(days=1)   # business today
+        return stay['start'] + timedelta(days=1)   # is búgini
 
     def test_api_refuses_check_in_on_the_business_yesterday(self, stay, day):
         with _tashkent(day, 0, 30):
@@ -90,7 +90,7 @@ class TestAtHalfPastMidnightTashkent:
 
 @pytest.mark.django_db
 class TestAtHalfPastElevenTashkent:
-    """23:30 in Tashkent on day D = 18:30 UTC on day D: both dates are D."""
+    """D kúni Tashkent te 23:30 = D kúni 18:30 UTC: eki sana da D."""
 
     @pytest.fixture
     def day(self, stay):

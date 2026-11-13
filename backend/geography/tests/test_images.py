@@ -1,6 +1,7 @@
 """
-Pictures of countries and regions (plan .ai/PLAN_GEO_IMAGES.md): required when the super admin creates one,
-random stored names, the usual image checks, old file removed on replace/delete, `image_url` in the public API.
+Mámleketler hám regionlar súwretleri (reje .ai/PLAN_GEO_IMAGES.md): super admin jaratqanda májbúriy,
+tosınarlıq saqlanǵan atlar, ádettegi súwret tekseriwleri, almastırǵanda/óshirgende eski fayl alıp taslanadı, ashıq API da
+`image_url`.
 """
 import io
 import os
@@ -160,7 +161,7 @@ class TestMultipartKeepsRowsVisible:
 
 @pytest.mark.django_db
 class TestPictureSizeRules:
-    """A country or region picture follows the "where to" card: at least 800 x 600 px, a shape from 6:5 to 9:5."""
+    """Mámleket yamasa region súwreti "qayaqqa" kartasın izleydi: eń kemi 800 x 600 px, 6:5 ten 9:5 ke shekem forma."""
 
     def test_a_picture_that_is_too_small_is_refused_and_creates_nothing(self, client):
         response = client.post(f'{ADMIN}/countries/', {**COUNTRY, 'image': picture(size=(600, 450))}, format='multipart')

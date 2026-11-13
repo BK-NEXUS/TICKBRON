@@ -1,13 +1,13 @@
 """
-TICKBRON Backend Authentication Security Check
+TICKBRON Backend autentifikaciya qáwipsizligin tekseriw
 
-This script checks the authentication security configuration for TICKBRON.
+Bul skript TICKBRON ushın autentifikaciya qáwipsizligi sazlamasın tekseredi.
 """
 import os
 import sys
 from pathlib import Path
 
-# Add the backend directory to the Python path
+# Backend papkasın Python jolına qosıw
 backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
@@ -21,7 +21,7 @@ from django.conf import settings
 
 def check_auth_security():
     """
-    Check authentication security configuration.
+    Autentifikaciya qáwipsizligi sazlamasın tekseriw.
     """
     print("TICKBRON Backend Authentication Security Check")
     print("=" * 50)
@@ -30,7 +30,7 @@ def check_auth_security():
     checks = []
     warnings = []
 
-    # Check 1: Custom user model configured
+    # 1-tekseriw: Arnawlı user model sazlanǵan
     print("Authentication Security Status:")
     print("-" * 50)
 
@@ -46,7 +46,7 @@ def check_auth_security():
         print("FAIL No custom user model configured")
         checks.append(False)
 
-    # Check 2: Session-based authentication (no JWT in settings)
+    # 2-tekseriw: Session tiykarındaǵı autentifikaciya (sazlamalarda JWT joq)
     if 'rest_framework_simplejwt' not in settings.INSTALLED_APPS:
         print("PASS JWT not configured (session-based auth)")
         checks.append(True)
@@ -54,7 +54,7 @@ def check_auth_security():
         print("FAIL JWT configured (should use session-based auth)")
         checks.append(False)
 
-    # Check 3: Session security settings
+    # 3-tekseriw: Session qáwipsizligi sazlamaları
     session_checks = []
 
     if settings.SESSION_COOKIE_HTTPONLY:
@@ -70,7 +70,7 @@ def check_auth_security():
     else:
         print("WARN Session cookie Secure not enabled (development mode)")
         warnings.append(True)
-        session_checks.append(True)  # Acceptable for development
+        session_checks.append(True)  # Rawajlandırıw ushın maqul
 
     if settings.SESSION_COOKIE_SAMESITE in ['Lax', 'Strict']:
         print(f"PASS Session cookie SameSite configured: {settings.SESSION_COOKIE_SAMESITE}")
@@ -78,11 +78,11 @@ def check_auth_security():
     else:
         print(f"WARN Session cookie SameSite: {settings.SESSION_COOKIE_SAMESITE}")
         warnings.append(True)
-        session_checks.append(True)  # Acceptable default
+        session_checks.append(True)  # Ádettegi mánis maqul
 
     checks.extend(session_checks)
 
-    # Check 4: CSRF protection
+    # 4-tekseriw: CSRF qorǵanısı
     if 'django.middleware.csrf.CsrfViewMiddleware' in settings.MIDDLEWARE:
         print("PASS CSRF middleware enabled")
         checks.append(True)
@@ -103,9 +103,9 @@ def check_auth_security():
     else:
         print(f"WARN CSRF cookie SameSite: {settings.CSRF_COOKIE_SAMESITE}")
         warnings.append(True)
-        checks.append(True)  # Acceptable default
+        checks.append(True)  # Ádettegi mánis maqul
 
-    # Check 5: User model exists and has required fields
+    # 5-tekseriw: User model bar hám kerekli maydanlarǵa iye
     try:
         from django.contrib.auth import get_user_model
         User = get_user_model()
@@ -121,20 +121,20 @@ def check_auth_security():
         else:
             print(f"WARN User model missing fields: {missing_fields}")
             warnings.append(True)
-            checks.append(True)  # Acceptable for customization
+            checks.append(True)  # Sazlaw ushın maqul
 
     except Exception as e:
         print(f"FAIL Error checking user model: {str(e)}")
         checks.append(False)
 
-    # Check 6: Password validation
+    # 6-tekseriw: Parol validaciyası
     if settings.AUTH_PASSWORD_VALIDATORS:
         print(f"PASS Password validators configured ({len(settings.AUTH_PASSWORD_VALIDATORS)})")
         checks.append(True)
     else:
         print("WARN No password validators configured")
         warnings.append(True)
-        checks.append(True)  # Acceptable for basic setup
+        checks.append(True)  # Ápiwayı sazlaw ushın maqul
 
     print("-" * 50)
 

@@ -1,6 +1,6 @@
 """
-QA finding F7: the owner had to type a "Slug" by hand and a clash showed "The fields property, slug must
-make a unique set." Now the slug is made from the name and kept unique inside the hotel / room type.
+QA tabılması F7: iye "Slug" tı qolda teriwi kerek edi hám qaqtıǵıs "The fields property, slug must
+make a unique set." kórsetti. Endi slug attan jasaladı hám mehmanxana / xona túri ishinde unikal saqlanadı.
 """
 import pytest
 

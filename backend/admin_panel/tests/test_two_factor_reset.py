@@ -1,4 +1,5 @@
-"""A super admin resets another account's two-step sign-in (a lost phone) with their own current code; plan .ai/PLAN_2FA.md."""
+"""Super admin óz házirgi kodı menen basqa akkauntıń eki basqıshlı kirisiwin qayta ornatadı (telefon joǵaldı); reje
+.ai/PLAN_2FA.md."""
 from io import StringIO
 from unittest import mock
 

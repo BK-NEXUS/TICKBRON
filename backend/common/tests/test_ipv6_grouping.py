@@ -1,6 +1,6 @@
 """
-An IPv6 visitor owns a whole /64 block of addresses and can change address at will, so limits and
-lockouts count the block, not the single address. IPv4 stays per address.
+IPv6 kelwshisi pútkil /64 mánzil blokına iye hám mánzildi qálegen waqıtta ózgerte aladı, sol sebepli shekler hám
+lockout lar bir mánzildi emes, blokti sanaydı. IPv4 hár mánzil boyınsha qaladı.
 """
 from django.test import TestCase
 from rest_framework.test import APIClient

@@ -1,5 +1,5 @@
 """
-Tests for the legacy phone number column and its history (migration 0006).
+Eski telefon nomeri baǵanası hám onıń tariyxı ushın testler (0006 migration).
 """
 import pytest
 from django.db import connection
@@ -10,7 +10,7 @@ from users.models import User
 
 
 class TestPhoneNumberStorage(TestCase):
-    """A blank number is stored as NULL."""
+    """Bos nomer NULL retinde saqlanadı."""
 
     def test_blank_phone_numbers_are_stored_as_null(self):
         first = User.objects.create_user(email='a@example.com', password='testpass123', phone_number='')
@@ -23,7 +23,7 @@ class TestPhoneNumberStorage(TestCase):
 
 
 class TestPhoneUniqueMigration(TransactionTestCase):
-    """Migration 0006 normalizes blanks and stops on duplicate numbers."""
+    """0006 migration bos mánislerdi normalizaciya etedi hám dublikat nomerlerde toqtaydı."""
 
     before = [('users', '0005_user_preferred_contact_method_user_telegram_and_more')]
     after = [('users', '0006_user_phone_number_unique')]
@@ -40,7 +40,7 @@ class TestPhoneUniqueMigration(TransactionTestCase):
         return executor.loader.project_state(targets).apps
 
     def tearDown(self):
-        # Leave the schema at the latest migration for the following tests
+        # Keyingi testler ushın sxemanı eń sońǵı migration da qaldırıw
         self._migrate(self._latest())
 
     def test_migration_stops_on_duplicate_phone_numbers(self):

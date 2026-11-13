@@ -1,8 +1,8 @@
 """
-Cash at the hotel (.ai/PLAN_CASH_ONLY.md stage 3): a guest cancels their booking at any time before the stay
-starts, for free. There is no refund, no cancellation terms and no cancel-preview.
+Mehmanxanada naqd (.ai/PLAN_CASH_ONLY.md 3-basqısh): mehmann bronnan turıw baslanbastan aldın qálegen waqıtta
+tegin bas tarta aladı. Qaytarıw, biykar etiw shártleri hám biykar etiw aldınan qarawı joq.
 
-POST /bookings/{id}/cancel/  cancels the booking and releases the rooms (guest only)
+POST /bookings/{id}/cancel/  bronnan bas tartadı hám xonalardı bosatadı (tek mehmann)
 """
 from datetime import timedelta
 

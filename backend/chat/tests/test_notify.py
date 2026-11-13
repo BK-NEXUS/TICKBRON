@@ -1,4 +1,4 @@
-"""E-mail notices of the support chat: one per unread run, with a link and without the message text."""
+"""Qollap-quwatlaw chatınıń e-mail xabarlandırıwları: hár oqılmaǵan izbe-izlikke bir, silteme menen hám xabar tekstisiz."""
 from unittest import mock
 
 import pytest
@@ -18,7 +18,7 @@ SECRET = 'my private question about room 12'
 
 @pytest.fixture(autouse=True)
 def run_tasks_at_once():
-    """The task normally runs in a worker; here it runs when it is queued."""
+    """Task ádetde worker de isleydi; bul jerde náwbetke qoyılǵanda isleydi."""
     with mock.patch('chat.tasks.send_chat_notice.delay', side_effect=lambda message_id: send_chat_notice.run(message_id)):
         yield
 

@@ -1,4 +1,4 @@
-"""R14: the number of queries of the search page and the hotel page does not grow with what they show."""
+"""R14: izlew beti hám mehmanxana betiniń query sanı olar kórsetetuǵın nárse menen ósip ketpeydi."""
 from decimal import Decimal
 from unittest import mock
 
@@ -79,7 +79,7 @@ class SearchQueryCountTests(PropertyFixtureMixin, TestCase):
 
 
 def field_builds_of(client, url):
-    """How many times DRF worked out a model serializer's fields (reading the model) while answering the URL."""
+    """URL ge juwap berip atırǵanda DRF model serializer diń maydanların neshe ret esaplaǵanı (modeldi oqıp)."""
     real = serializers.ModelSerializer.get_fields
     with mock.patch.object(serializers.ModelSerializer, 'get_fields', autospec=True, side_effect=real) as spy:
         response = client.get(url)
@@ -88,7 +88,7 @@ def field_builds_of(client, url):
 
 
 class SerializerWorkTests(PropertyFixtureMixin, TestCase):
-    """Building a serializer reads the model and is slow: it must not be done once per hotel on a page of hotels."""
+    """Serializer qurıw modeldi oqıydı hám sekin: mehmanxanalar betinde hár mehmanxana ushın bir márte islenbewi kerek."""
 
     def test_the_search_page_builds_the_same_serializers_for_one_hotel_and_for_many(self):
         self.add_hotel(1)

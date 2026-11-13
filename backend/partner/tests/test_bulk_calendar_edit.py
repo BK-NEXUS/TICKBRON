@@ -1,6 +1,6 @@
 """
-Tests for the partner bulk calendar-edit endpoints (3.6/3.7):
-POST /partner/room-inventory/bulk/ and POST /partner/inventory/bulk-price/.
+Partner kóp kalendar ózgertiw endpoint leri ushın testler (3.6/3.7):
+POST /partner/room-inventory/bulk/ hám POST /partner/inventory/bulk-price/.
 """
 from datetime import date, timedelta
 from decimal import Decimal
@@ -154,7 +154,7 @@ class PartnerDateInventoryBulkPriceTests(TestCase):
 
 
 class PartnerBlockRoomTypeFilterTests(TestCase):
-    """3.6: ?room_type= filters the blocks list (used by the calendar screen)."""
+    """3.6: ?room_type= bloklar dizimin filterleydi (kalendar ekranı paydalanadı)."""
 
     def setUp(self):
         self.client = APIClient()

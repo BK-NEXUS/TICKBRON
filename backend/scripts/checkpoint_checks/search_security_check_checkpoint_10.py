@@ -1,21 +1,21 @@
 """
-Security Review Script for Checkpoint 10 - Search API Standardization
+Checkpoint 10 qáwipsizlik tekseriw skripti - Izlew API in standartlastırıw
 
-This script performs a comprehensive security review of the search API improvements:
-- Standardized filtering
-- Standardized sorting  
-- Standardized pagination
-- Improved error handling and validation
+Bul skript izlew API jaqsılawların tolıq qáwipsizlik tekseriwinen ótkeredi:
+- Standartlastırılǵan filterlew
+- Standartlastırılǵan tártiplew
+- Standartlastırılǵan betlew
+- Jaqsılanǵan qátelerdi islew hám validaciya
 """
 
 import sys
 from pathlib import Path
 
-# Add backend to path
+# Backend ti jolǵa qosıw
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def check_search_parameter_validation():
-    """Check if search parameters are properly validated."""
+    """Izlew parametrleri durıs tekserilgenin tekseriw."""
     print("[*] Checking search parameter validation...")
 
     search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
@@ -44,7 +44,7 @@ def check_search_parameter_validation():
     return passed == total
 
 def check_input_sanitization():
-    """Check if user input is properly sanitized."""
+    """Paydalanıwshı kiriwi durıs tazalanǵanın tekseriw."""
     print("[*] Checking input sanitization...")
 
     search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
@@ -68,7 +68,7 @@ def check_input_sanitization():
     return passed == total
 
 def check_error_handling():
-    """Check if error handling is comprehensive."""
+    """Qátelerdi islew tolıq ekenin tekseriw."""
     print("[*] Checking error handling...")
 
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
@@ -96,7 +96,7 @@ def check_error_handling():
     return passed == total
 
 def check_pagination_security():
-    """Check if pagination is secure."""
+    """Betlew qáwipsiz ekenin tekseriw."""
     print("[*] Checking pagination security...")
 
     search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
@@ -120,7 +120,7 @@ def check_pagination_security():
     return passed == total
 
 def check_sql_injection_prevention():
-    """Check if SQL injection is prevented."""
+    """SQL injection nıń aldın alınǵanın tekseriw."""
     print("[*] Checking SQL injection prevention...")
 
     search_file = Path(__file__).parent.parent.parent / 'properties' / 'search.py'
@@ -143,7 +143,7 @@ def check_sql_injection_prevention():
     return passed == total
 
 def check_serializer_validation():
-    """Check if serializer validation is comprehensive."""
+    """Serializer validaciyası tolıq ekenin tekseriw."""
     print("[*] Checking serializer validation...")
 
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
@@ -168,7 +168,7 @@ def check_serializer_validation():
     return passed == total
 
 def check_rate_limiting_considerations():
-    """Check if rate limiting considerations are addressed."""
+    """Rate limiting jaǵdayları qarastırılǵanın tekseriw."""
     print("[*] Checking rate limiting considerations...")
 
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
@@ -191,7 +191,7 @@ def check_rate_limiting_considerations():
     return passed == total
 
 def run_security_review():
-    """Run the complete security review."""
+    """Tolıq qáwipsizlik tekseriwin islew."""
     print("=" * 60)
     print("CHECKPOINT 10 SECURITY REVIEW: Search API Standardization")
     print("=" * 60)

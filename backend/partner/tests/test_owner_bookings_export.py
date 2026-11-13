@@ -1,4 +1,5 @@
-"""The hotel owner downloads the bookings of their own hotels as CSV or Excel, with no guest names, e-mails or phones."""
+"""Mehmanxana iyesi óz mehmanxanalarınıń bronların CSV yamasa Excel retinde júkleydi, mehman atları, e-mail ları yamasa
+telefonları joq."""
 import csv
 import io
 from datetime import date, time

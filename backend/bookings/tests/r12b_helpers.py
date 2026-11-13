@@ -1,4 +1,4 @@
-"""Shared helpers for the R12 phase 3 (no-show reports) tests."""
+"""R12 3-basqısh (no-show esabatları) testleri ushın ortaq járdemshiler."""
 from datetime import timedelta
 from decimal import Decimal
 
@@ -13,7 +13,7 @@ from users.models import User
 
 P = '/api/v1/partner'
 A = '/api/v1/admin-panel'
-UZS_PRICE = Decimal('1177295')      # per night; 2 nights -> 2 354 590 (the plan's example)
+UZS_PRICE = Decimal('1177295')      # hár túnge; 2 túnge -> 2 354 590 (plannıń mısalı)
 
 
 def client_for(user):
@@ -48,7 +48,7 @@ def make_hotel(owner, name='Alpha', currency='UZS', rooms=3):
 def make_stay(prop, guest, check_in, nights=2, status='confirmed', price=UZS_PRICE, rooms=1,
               room=None, rate=None, currency='UZS', **fields):
     """
-    A booking row as the engine leaves it, with its booking item (when room and rate are given).
+    Bron qatarı sistema qaldırǵanday, bron elementi menen (xona hám baha berilse).
     """
     booking = Booking.objects.create(
         guest=guest, property=prop, status=status,
@@ -68,7 +68,7 @@ def make_stay(prop, guest, check_in, nights=2, status='confirmed', price=UZS_PRI
 
 @pytest.fixture
 def world(db):
-    """Two hotel owners with a hotel each, a guest, a staff member and a super-admin."""
+    """Hárbirinde bir mehmanxanası bar eki mehmanxana iyesi, bir mehman, bir staff aǵzası hám bir super-admin."""
     owner_role, _ = Role.objects.get_or_create(name='hotel-owner', defaults={'is_system_role': True})
     people = {
         'guest': User.objects.create_user(email='guest@example.com', password='x', full_name='Gita Guest', phone_number='+998901112233'),
@@ -88,7 +88,7 @@ def world(db):
 
 
 def past_stay(world, days_ago_check_in=3, nights=2, **kwargs):
-    """A confirmed stay of the first hotel that started `days_ago_check_in` days ago."""
+    """Birinshi mehmanxananıń `days_ago_check_in` kún aldın baslanǵan tastıyıqlanǵan turıwı."""
     return make_stay(world['prop'], world['guest'], world['today'] - timedelta(days=days_ago_check_in),
                      nights=nights, room=world['room'], rate=world['rate'], **kwargs)
 

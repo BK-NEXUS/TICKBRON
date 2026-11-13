@@ -1,15 +1,15 @@
 """
-Security review for Property models (Backend Checkpoint 05).
+Property model leri ushın qáwipsizlik tekseriwi (Backend Checkpoint 05).
 
-This script performs a comprehensive security review of the property models
-and related infrastructure.
+Bul skript mehmanxana model lerin hám baylanıslı infrastrukturanı tolıq qáwipsizlik
+tekseriwinen ótkeredi.
 """
 import os
 import sys
 import uuid
 from django.core.exceptions import ValidationError
 
-# Setup Django
+# Django dı tayarlaw
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -22,10 +22,10 @@ from decimal import Decimal
 
 
 def check_ownership_security():
-    """Check property ownership security."""
+    """Mehmanxana iyeliginiń qáwipsizligin tekseriw."""
     print("=== Ownership Security ===")
 
-    # Test that users can only access their own properties
+    # Paydalanıwshılar tek óz mehmanxanalarına qol jetkere alatuǵının testlew
     unique_id = str(uuid.uuid4())[:8]
     user1 = User.objects.create_user(
         email=f'user1_{unique_id}@example.com',
@@ -45,7 +45,7 @@ def check_ownership_security():
         slug=f'apartment_{unique_id}'
     )
 
-    # Create property owned by user1
+    # user1 ge tiyisli mehmanxananı jaratıw
     property1 = Property.objects.create(
         owner=user1,
         property_type=property_type,
@@ -56,14 +56,14 @@ def check_ownership_security():
         base_price=Decimal('100.00')
     )
 
-    # Verify ownership
+    # Iyelikti tastıyıqlaw
     assert property1.owner == user1, "Property ownership check failed"
     assert property1 in user1.properties.all(), "Property-user relation check failed"
     assert property1 not in user2.properties.all(), "User2 should not have access to user1's property"
 
     print("[PASS] Ownership security: PASSED")
 
-    # Cleanup
+    # Tazalaw
     property1.delete()
     property_type.delete()
     user1.delete()
@@ -71,7 +71,7 @@ def check_ownership_security():
 
 
 def check_data_validation():
-    """Check data validation security."""
+    """Maǵlıwmat validaciyası qáwipsizligin tekseriw."""
     print("=== Data Validation Security ===")
 
     unique_id = str(uuid.uuid4())[:8]
@@ -87,7 +87,7 @@ def check_data_validation():
         slug=f'apartment_{unique_id}'
     )
 
-    # Test negative price validation
+    # Teris baha validaciyasın testlew
     try:
         property_invalid = Property(
             owner=user,
@@ -96,14 +96,14 @@ def check_data_validation():
             address_line1='123 Main Street',
             city='Tashkent',
             country='Uzbekistan',
-            base_price=Decimal('-100.00')  # Invalid
+            base_price=Decimal('-100.00')  # Jaramsız
         )
         property_invalid.full_clean()
         print("[FAIL] Negative price validation: FAILED (should reject negative prices)")
     except ValidationError:
         print("[PASS] Negative price validation: PASSED")
 
-    # Test latitude/longitude validation
+    # Latitude/longitude validaciyasın testlew
     try:
         property_invalid = Property(
             owner=user,
@@ -113,7 +113,7 @@ def check_data_validation():
             city='Tashkent',
             country='Uzbekistan',
             base_price=Decimal('100.00'),
-            latitude=Decimal('91.0')  # Invalid (> 90)
+            latitude=Decimal('91.0')  # Jaramsız (> 90)
         )
         property_invalid.full_clean()
         print("[FAIL] Latitude validation: FAILED (should reject invalid latitude)")
@@ -129,19 +129,19 @@ def check_data_validation():
             city='Tashkent',
             country='Uzbekistan',
             base_price=Decimal('100.00'),
-            longitude=Decimal('181.0')  # Invalid (> 180)
+            longitude=Decimal('181.0')  # Jaramsız (> 180)
         )
         property_invalid.full_clean()
         print("[FAIL] Longitude validation: FAILED (should reject invalid longitude)")
     except ValidationError:
         print("[PASS] Longitude validation: PASSED")
 
-    # Test max_guests validation
+    # max_guests validaciyasın testlew
     try:
         property_invalid = Property(
             owner=user,
             property_type=property_type,
-            max_guests=0,  # Invalid (must be >= 1)
+            max_guests=0,  # Jaramsız (>= 1 bolıwı kerek)
             address_line1='123 Main Street',
             city='Tashkent',
             country='Uzbekistan',
@@ -152,13 +152,13 @@ def check_data_validation():
     except ValidationError:
         print("[PASS] Max guests validation: PASSED")
 
-    # Cleanup
+    # Tazalaw
     property_type.delete()
     user.delete()
 
 
 def check_uniqueness_constraints():
-    """Check uniqueness constraints."""
+    """Unikallıq sheklewlerin tekseriw."""
     print("=== Uniqueness Constraints ===")
 
     unique_id = str(uuid.uuid4())[:8]
@@ -184,7 +184,7 @@ def check_uniqueness_constraints():
         base_price=Decimal('100.00')
     )
 
-    # Test PropertyTranslation uniqueness
+    # PropertyTranslation unikallıǵın testlew
     translation1 = PropertyTranslation.objects.create(
         property=property,
         language='en',
@@ -195,7 +195,7 @@ def check_uniqueness_constraints():
     try:
         translation2 = PropertyTranslation.objects.create(
             property=property,
-            language='en',  # Same language - should fail
+            language='en',  # Birdey til - sátsiz bolıwı kerek
             name='Another Name',
             description='Another description'
         )
@@ -204,7 +204,7 @@ def check_uniqueness_constraints():
     except Exception:
         print("[PASS] PropertyTranslation uniqueness: PASSED")
 
-    # Test PropertyPolicy uniqueness
+    # PropertyPolicy unikallıǵın testlew
     policy1 = PropertyPolicy.objects.create(
         property=property,
         policy_type='check_in',
@@ -215,7 +215,7 @@ def check_uniqueness_constraints():
     try:
         policy2 = PropertyPolicy.objects.create(
             property=property,
-            policy_type='check_in',  # Same policy type - should fail
+            policy_type='check_in',  # Birdey siyasat túri - sátsiz bolıwı kerek
             title='Another Policy',
             description='Another description'
         )
@@ -224,7 +224,7 @@ def check_uniqueness_constraints():
     except Exception:
         print("[PASS] PropertyPolicy uniqueness: PASSED")
 
-    # Cleanup
+    # Tazalaw
     translation1.delete()
     policy1.delete()
     property.delete()
@@ -233,7 +233,7 @@ def check_uniqueness_constraints():
 
 
 def check_soft_delete_security():
-    """Check soft delete security."""
+    """Soft delete qáwipsizligin tekseriw."""
     print("=== Soft Delete Security ===")
 
     unique_id = str(uuid.uuid4())[:8]
@@ -259,29 +259,29 @@ def check_soft_delete_security():
         base_price=Decimal('100.00')
     )
 
-    # Test soft delete
+    # Soft delete di testlew
     property.soft_delete()
     assert property.is_deleted, "Soft delete should set is_deleted flag"
     assert property.deleted_at is not None, "Soft delete should set deleted_at timestamp"
 
-    # Test restore
+    # Restore di testlew
     property.restore()
     assert not property.is_deleted, "Restore should clear is_deleted flag"
     assert property.deleted_at is None, "Restore should clear deleted_at timestamp"
 
     print("[PASS] Soft delete security: PASSED")
 
-    # Cleanup
+    # Tazalaw
     property.delete()
     property_type.delete()
     user.delete()
 
 
 def check_sensitive_data_exposure():
-    """Check for sensitive data exposure."""
+    """Sezgir maǵlıwmat ashılıwın tekseriw."""
     print("=== Sensitive Data Exposure ===")
 
-    # Check that user email is not exposed in property model
+    # Mehmanxana modelinde paydalanıwshı email i ashılmaǵanın tekseriw
     unique_id = str(uuid.uuid4())[:8]
     user = User.objects.create_user(
         email=f'sensitive_{unique_id}@example.com',
@@ -305,20 +305,20 @@ def check_sensitive_data_exposure():
         base_price=Decimal('100.00')
     )
 
-    # Check that property model doesn't expose sensitive user data directly
+    # Mehmanxana modeli sezgir paydalanıwshı maǵlıwmatın tuwrıdan-tuwrı ashpaytuǵının tekseriw
     property_str = str(property)
     assert 'sensitive@example.com' not in property_str, "Property string representation should not expose user email"
 
     print("[PASS] Sensitive data exposure: PASSED (no direct email exposure)")
 
-    # Cleanup
+    # Tazalaw
     property.delete()
     property_type.delete()
     user.delete()
 
 
 def check_cascade_deletion():
-    """Check cascade deletion behavior."""
+    """Cascade óshiriw minez-qulqın tekseriw."""
     print("=== Cascade Deletion ===")
 
     unique_id = str(uuid.uuid4())[:8]
@@ -358,7 +358,7 @@ def check_cascade_deletion():
         description='Test policy'
     )
 
-    # Delete property and verify cascade
+    # Mehmanxananı óshiriw hám cascade di tastıyıqlaw
     property.delete()
 
     assert not PropertyTranslation.objects.filter(id=translation.id).exists(), "Translation should be deleted with property"
@@ -366,16 +366,16 @@ def check_cascade_deletion():
 
     print("[PASS] Cascade deletion: PASSED")
 
-    # Cleanup
+    # Tazalaw
     property_type.delete()
     user.delete()
 
 
 def check_database_constraints():
-    """Check database-level constraints."""
+    """Database dárejesindegi sheklewlerdi tekseriw."""
     print("=== Database Constraints ===")
 
-    # Verify that models have proper indexes
+    # Model lerde tiyisli indeksler barlıǵın tastıyıqlaw
     property_model = Property._meta
     assert any(index for index in property_model.indexes if 'status' in str(index.fields)), "Property should have status index"
     assert any(index for index in property_model.indexes if 'city' in str(index.fields) and 'country' in str(index.fields)), "Property should have composite city/country index"
@@ -384,7 +384,7 @@ def check_database_constraints():
 
 
 def run_security_check():
-    """Run all security checks."""
+    """Barlıq qáwipsizlik tekseriwlerin islew."""
     print("=" * 50)
     print("PROPERTY MODELS SECURITY REVIEW")
     print("Backend Checkpoint 05")

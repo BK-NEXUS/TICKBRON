@@ -1,5 +1,5 @@
 """
-Tests for TICKBRON booking models.
+TICKBRON bron model leri ushın testler.
 """
 from django.test import TestCase
 from django.core.exceptions import ValidationError
@@ -11,10 +11,10 @@ from bookings.models import Booking, BookingItem
 
 
 class BookingModelBasicTests(TestCase):
-    """Basic test cases for Booking model."""
+    """Booking modeli ushın tiykarǵı test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='TestPassword123!',
@@ -65,7 +65,7 @@ class BookingModelBasicTests(TestCase):
         )
 
     def test_booking_string_representation(self):
-        """Test booking string representation."""
+        """Bron qatar kórinisin testlew."""
         booking = Booking.objects.create(
             guest=self.user,
             property=self.property,
@@ -83,7 +83,7 @@ class BookingModelBasicTests(TestCase):
         self.assertEqual(str(booking), expected_str)
 
     def test_booking_item_string_representation(self):
-        """Test booking item string representation."""
+        """Bron elementi qatar kórinisin testlew."""
         booking = Booking.objects.create(
             guest=self.user,
             property=self.property,
@@ -110,13 +110,13 @@ class BookingModelBasicTests(TestCase):
         self.assertEqual(str(booking_item), expected_str)
 
     def test_booking_validation_invalid_date_range(self):
-        """Test booking validation with invalid date range."""
+        """Jaramsız sana aralıǵı menen bron tekseriwin testlew."""
         booking = Booking(
             guest=self.user,
             property=self.property,
             status='pending',
             check_in=date.today() + timedelta(days=12),
-            check_out=date.today() + timedelta(days=10),  # Invalid: check_out before check_in
+            check_out=date.today() + timedelta(days=10),  # Jaramsız: check_out check_in nen aldın
             number_of_nights=2,
             guest_count=2,
             total_price=Decimal('200.00'),
@@ -130,7 +130,7 @@ class BookingModelBasicTests(TestCase):
         self.assertIn('check_out', context.exception.message_dict)
 
     def test_booking_confirmation_code_generation(self):
-        """Test that confirmation code is generated automatically."""
+        """Tastıyıqlaw kodı avtomat jaratılatuǵının testlew."""
         booking = Booking.objects.create(
             guest=self.user,
             property=self.property,
@@ -147,8 +147,8 @@ class BookingModelBasicTests(TestCase):
         self.assertEqual(len(booking.confirmation_code), 6)
 
     def test_booking_reference_code_unambiguous_characters(self):
-        """Test that reference code uses unambiguous character set."""
-        # Unambiguous character set excludes: 0/O, 1/I/L
+        """Reference code shatastırmaytuǵın belgiler toplamın paydalanatuǵının testlew."""
+        # Shatastırmaytuǵın belgiler toplamı mınalardı kirgizbeydi: 0/O, 1/I/L
         ambiguous_chars = {'0', 'O', '1', 'I', 'L'}
 
         booking = Booking.objects.create(
@@ -163,13 +163,13 @@ class BookingModelBasicTests(TestCase):
             currency='USD'
         )
 
-        # Check that no ambiguous characters are in the code
+        # Kodta shatastırıwshı belgiler joq ekenin tekseriw
         code_chars = set(booking.confirmation_code.upper())
         self.assertFalse(code_chars & ambiguous_chars,
                          f"Reference code contains ambiguous characters: {booking.confirmation_code}")
 
     def test_booking_reference_code_uniqueness(self):
-        """Test that reference codes are unique across bookings."""
+        """Reference code ler bronlar arasında unikal ekenin testlew."""
         booking1 = Booking.objects.create(
             guest=self.user,
             property=self.property,
@@ -197,7 +197,7 @@ class BookingModelBasicTests(TestCase):
         self.assertNotEqual(booking1.confirmation_code, booking2.confirmation_code)
 
     def test_booking_reference_code_case_insensitive_lookup(self):
-        """Test that reference codes can be looked up case-insensitively."""
+        """Reference code lardı register ti esapqa almay izlew múmkinligin testlew."""
         booking = Booking.objects.create(
             guest=self.user,
             property=self.property,
@@ -210,17 +210,17 @@ class BookingModelBasicTests(TestCase):
             currency='USD'
         )
 
-        # Look up using uppercase
+        # Úlken háripler menen izlew
         found_upper = Booking.objects.filter(confirmation_code=booking.confirmation_code.upper()).first()
         self.assertEqual(found_upper.id, booking.id)
 
-        # Look up using lowercase
+        # Kishi háripler menen izlew
         Booking.objects.filter(confirmation_code=booking.confirmation_code.lower()).first()
-        # This might not find it unless we use exact match, but the code itself is uppercase
+        # Anıq sáykeslik paydalanbasaq bul onı tappawı múmkin, biraq kodtıń ózi úlken háripte
         self.assertIsNotNone(found_upper)
 
     def test_booking_number_of_nights_calculation(self):
-        """Test that number_of_nights is calculated automatically."""
+        """number_of_nights avtomat esaplanatuǵının testlew."""
         check_in = date.today() + timedelta(days=10)
         check_out = date.today() + timedelta(days=15)
 

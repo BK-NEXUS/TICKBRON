@@ -1,8 +1,8 @@
 """
-Tests for partner API endpoints.
+Partner API endpoint leri ushın testler.
 
-This module contains tests for property, room, rate, and availability
-management scoped to hotel-owner accounts.
+Bul modul mehmanxana iyesi akkaunt larına shekemlengen mehmanxana, xona, baha hám
+bos orınlardı basqarıw testlerin óz ishine aladı.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -17,19 +17,19 @@ User = get_user_model()
 
 
 class PartnerPropertyTests(TestCase):
-    """Tests for partner property management endpoints."""
+    """Partner mehmanxana basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create hotel-owner role
+        # Mehmanxana iyesi rolin jaratıw
         self.hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
             defaults={'description': 'Hotel owner role', 'is_system_role': True}
         )
 
-        # Create hotel-owner user
+        # Mehmanxana iyesi paydalanıwshısın jaratıw
         self.hotel_owner = User.objects.create_user(
             email='hotelowner@example.com',
             password='testpassword123',
@@ -38,7 +38,7 @@ class PartnerPropertyTests(TestCase):
             role=self.hotel_owner_role
         )
 
-        # Create another user (not hotel-owner)
+        # Basqa paydalanıwshı jaratıw (mehmanxana iyesi emes)
         self.other_user = User.objects.create_user(
             email='other@example.com',
             password='testpassword123',
@@ -46,14 +46,14 @@ class PartnerPropertyTests(TestCase):
             last_name='Smith'
         )
 
-        # Create property type
+        # Mehmanxana túrin jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
             description='Apartment property type'
         )
 
-        # Create property for hotel-owner
+        # Mehmanxana iyesi ushın mehmanxana jaratıw
         self.property = Property.objects.create(
             owner=self.hotel_owner,
             property_type=self.property_type,
@@ -68,7 +68,7 @@ class PartnerPropertyTests(TestCase):
             currency='USD'
         )
 
-        # Create property for other user
+        # Basqa paydalanıwshı ushın mehmanxana jaratıw
         self.other_property = Property.objects.create(
             owner=self.other_user,
             property_type=self.property_type,
@@ -84,30 +84,30 @@ class PartnerPropertyTests(TestCase):
         )
 
     def test_hotel_owner_can_list_own_properties(self):
-        """Test that hotel-owner can list their own properties."""
+        """Mehmanxana iyesi óz mehmanxanaların dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/properties/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Handle paginated response
+        # Betlengen juwaptı islew
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['id'], self.property.id)
 
     def test_hotel_owner_cannot_list_other_properties(self):
-        """Test that hotel-owner cannot list other users' properties."""
+        """Mehmanxana iyesi basqa paydalanıwshılardıń mehmanxanaların dizimley almaytuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/properties/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Handle paginated response
+        # Betlengen juwaptı islew
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
-        # Should only see own property, not other user's property
+        # Tek óz mehmanxanasın kóriwi kerek, basqa paydalanıwshınıń emes
         self.assertEqual(len(results), 1)
         self.assertNotEqual(results[0]['id'], self.other_property.id)
 
     def test_hotel_owner_can_create_property(self):
-        """Test that hotel-owner can create new property."""
+        """Mehmanxana iyesi jańa mehmanxana jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'property_type': self.property_type.id,
@@ -125,14 +125,14 @@ class PartnerPropertyTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Property.objects.count(), 3)
 
-        # Verify owner is set to authenticated user
-        # Get the most recent property created by hotel_owner
+        # Iye kirgen paydalanıwshı etip belgilengenin tekseriw
+        # hotel_owner jaratqan eń sońǵı mehmanxananı alıw
         new_property = Property.objects.filter(owner=self.hotel_owner).order_by('-created_at').first()
         self.assertIsNotNone(new_property)
         self.assertEqual(new_property.owner, self.hotel_owner)
 
     def test_hotel_owner_can_update_own_property(self):
-        """Test that hotel-owner can update their own property."""
+        """Mehmanxana iyesi óz mehmanxanasın jańalay alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'max_guests': 5,
@@ -146,7 +146,7 @@ class PartnerPropertyTests(TestCase):
         self.assertEqual(float(self.property.base_price), 120.00)
 
     def test_hotel_owner_cannot_change_property_status(self):
-        """Status comes from admin moderation; the owner cannot self-approve."""
+        """Status admin moderation ınan keledi; iye ózin tastıyıqlay almaydı."""
         Property.objects.filter(pk=self.property.pk).update(status='pending_approval')
         self.client.force_authenticate(user=self.hotel_owner)
 
@@ -159,7 +159,7 @@ class PartnerPropertyTests(TestCase):
             self.assertEqual(self.property.status, 'pending_approval')
 
     def test_hotel_owner_cannot_reactivate_suspended_property(self):
-        """A suspended owner cannot lift the suspension while editing other fields."""
+        """Toqtatılǵan iye basqa maydanlardı ózgertkende toqtatıwdı alıp taslay almaydı."""
         Property.objects.filter(pk=self.property.pk).update(status='suspended')
         self.client.force_authenticate(user=self.hotel_owner)
 
@@ -173,7 +173,7 @@ class PartnerPropertyTests(TestCase):
         self.assertEqual(self.property.max_guests, 6)
 
     def test_new_property_starts_as_draft(self):
-        """Creating a property never makes it public, even if status is sent."""
+        """Mehmanxana jaratıw hesh qashan onı ashıq etpeydi, status jiberilse de."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'property_type': self.property.property_type_id, 'status': 'active', 'max_guests': 2,
@@ -187,7 +187,7 @@ class PartnerPropertyTests(TestCase):
         self.assertEqual(Property.objects.get(address_line1='1 Status Test St').status, 'draft')
 
     def test_hotel_owner_cannot_update_other_property(self):
-        """Test that hotel-owner cannot update other users' property."""
+        """Mehmanxana iyesi basqa paydalanıwshılardıń mehmanxanasın jańalay almaytuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'max_guests': 3,
@@ -195,38 +195,38 @@ class PartnerPropertyTests(TestCase):
         }
         response = self.client.patch(f'/api/v1/partner/properties/{self.other_property.id}/', data)
 
-        # Should return 404 because property is not in their queryset
+        # 404 qaytarıwı kerek, sebebi mehmanxana olardıń queryset inde joq
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_hotel_owner_can_delete_own_property(self):
-        """Test that hotel-owner can delete their own property (soft delete)."""
+        """Mehmanxana iyesi óz mehmanxanasın óshire alatuǵının testlew (soft delete)."""
         self.client.force_authenticate(user=self.hotel_owner)
         property_id = self.property.id
         response = self.client.delete(f'/api/v1/partner/properties/{property_id}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        # The row stays (soft delete) and is flagged; the owner's list no longer shows it
+        # Qatar qaladı (soft delete) hám belgilenedi; iyeniń dizimi onı endi kórsetpeydi
         self.assertTrue(Property.objects.get(id=property_id).is_deleted)
         self.assertEqual(self.client.get(f'/api/v1/partner/properties/{property_id}/').status_code,
                          status.HTTP_404_NOT_FOUND)
 
     def test_hotel_owner_cannot_delete_other_property(self):
-        """Test that hotel-owner cannot delete other users' property."""
+        """Mehmanxana iyesi basqa paydalanıwshılardıń mehmanxanasın óshire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.delete(f'/api/v1/partner/properties/{self.other_property.id}/')
 
-        # Should return 404 because property is not in their queryset
+        # 404 qaytarıwı kerek, sebebi mehmanxana olardıń queryset inde joq
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_unauthenticated_user_cannot_access_partner_endpoints(self):
-        """Test that unauthenticated users cannot access partner endpoints."""
+        """Kirmegen paydalanıwshılar partner endpoint lerge kire almaytuǵının testlew."""
         response = self.client.get('/api/v1/partner/properties/')
 
-        # DRF returns 403 for unauthenticated users when authentication is required
+        # Autentifikaciya kerek bolǵanda DRF kirmegen paydalanıwshılarǵa 403 qaytaradı
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_regular_user_cannot_access_partner_endpoints(self):
-        """Test that regular users without hotel-owner role cannot access partner endpoints."""
+        """Mehmanxana iyesi rolisiz ápiwayı paydalanıwshılar partner endpoint lerge kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.other_user)
         response = self.client.get('/api/v1/partner/properties/')
 
@@ -234,13 +234,13 @@ class PartnerPropertyTests(TestCase):
 
 
 class PartnerRoomTypeTests(TestCase):
-    """Tests for partner room type management endpoints."""
+    """Partner xona túrin basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create hotel-owner role and user
+        # Mehmanxana iyesi rolin hám paydalanıwshısın jaratıw
         self.hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
             defaults={'description': 'Hotel owner role', 'is_system_role': True}
@@ -254,7 +254,7 @@ class PartnerRoomTypeTests(TestCase):
             role=self.hotel_owner_role
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -275,7 +275,7 @@ class PartnerRoomTypeTests(TestCase):
             currency='USD'
         )
 
-        # Create room type
+        # Xona túrin jaratıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -288,18 +288,18 @@ class PartnerRoomTypeTests(TestCase):
         )
 
     def test_hotel_owner_can_list_own_room_types(self):
-        """Test that hotel-owner can list their own room types."""
+        """Mehmanxana iyesi óz xona túrlerin dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/rooms/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Handle paginated response
+        # Betlengen juwaptı islew
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['id'], self.room_type.id)
 
     def test_hotel_owner_can_create_room_type(self):
-        """Test that hotel-owner can create room type."""
+        """Mehmanxana iyesi xona túri jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'property': self.property.id,
@@ -317,8 +317,8 @@ class PartnerRoomTypeTests(TestCase):
         self.assertEqual(RoomType.objects.count(), 2)
 
     def test_hotel_owner_cannot_create_room_type_for_other_property(self):
-        """Test that hotel-owner cannot create room type for other users' property."""
-        # Create another user and property
+        """Mehmanxana iyesi basqa paydalanıwshılardıń mehmanxanası ushın xona túri jarata almaytuǵının testlew."""
+        # Basqa paydalanıwshı hám mehmanxana jaratıw
         other_user = User.objects.create_user(
             email='other@example.com',
             password='testpassword123',
@@ -354,7 +354,7 @@ class PartnerRoomTypeTests(TestCase):
         response = self.client.post('/api/v1/partner/rooms/', data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # Check for error in the new response format
+        # Jańa juwap formatında qátelikti tekseriw
         if 'error' in response.data:
             self.assertIn('property', response.data['error'].get('details', {}))
         else:
@@ -362,13 +362,13 @@ class PartnerRoomTypeTests(TestCase):
 
 
 class PartnerRatePlanTests(TestCase):
-    """Tests for partner rate plan management endpoints."""
+    """Partner rate plan basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create hotel-owner role and user
+        # Mehmanxana iyesi rolin hám paydalanıwshısın jaratıw
         self.hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
             defaults={'description': 'Hotel owner role', 'is_system_role': True}
@@ -382,7 +382,7 @@ class PartnerRatePlanTests(TestCase):
             role=self.hotel_owner_role
         )
 
-        # Create property type, property, and room type
+        # Mehmanxana túrin, mehmanxananı hám xona túrin jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -414,7 +414,7 @@ class PartnerRatePlanTests(TestCase):
             total_rooms=5
         )
 
-        # Create rate plan
+        # Rate plan jaratıw
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -427,18 +427,18 @@ class PartnerRatePlanTests(TestCase):
         )
 
     def test_hotel_owner_can_list_own_rate_plans(self):
-        """Test that hotel-owner can list their own rate plans."""
+        """Mehmanxana iyesi óz rate planların dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/rates/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Handle paginated response
+        # Betlengen juwaptı islew
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['id'], self.rate_plan.id)
 
     def test_hotel_owner_can_create_rate_plan(self):
-        """Test that hotel-owner can create rate plan."""
+        """Mehmanxana iyesi rate plan jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'room_type': self.room_type.id,
@@ -458,13 +458,13 @@ class PartnerRatePlanTests(TestCase):
 
 
 class PartnerDateInventoryTests(TestCase):
-    """Tests for partner date inventory management endpoints."""
+    """Partner date inventory basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create hotel-owner role and user
+        # Mehmanxana iyesi rolin hám paydalanıwshısın jaratıw
         self.hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
             defaults={'description': 'Hotel owner role', 'is_system_role': True}
@@ -478,7 +478,7 @@ class PartnerDateInventoryTests(TestCase):
             role=self.hotel_owner_role
         )
 
-        # Create property type, property, room type, and rate plan
+        # Mehmanxana túrin, mehmanxananı, xona túrin hám rate plan dı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -521,7 +521,7 @@ class PartnerDateInventoryTests(TestCase):
             is_active=True
         )
 
-        # Create date inventory
+        # Date inventory jaratıw
         from datetime import date
         self.date_inventory = DateInventory.objects.create(
             rate_plan=self.rate_plan,
@@ -534,18 +534,18 @@ class PartnerDateInventoryTests(TestCase):
         )
 
     def test_hotel_owner_can_list_own_date_inventory(self):
-        """Test that hotel-owner can list their own date inventory."""
+        """Mehmanxana iyesi óz date inventory sın dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/inventory/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Handle paginated response
+        # Betlengen juwaptı islew
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['id'], self.date_inventory.id)
 
     def test_hotel_owner_can_create_date_inventory(self):
-        """Test that hotel-owner can create date inventory."""
+        """Mehmanxana iyesi date inventory jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         from datetime import date, timedelta
         data = {
@@ -563,21 +563,21 @@ class PartnerDateInventoryTests(TestCase):
         self.assertEqual(DateInventory.objects.count(), 2)
 
     def test_hotel_owner_cannot_modify_booked_rooms(self):
-        """Test that hotel-owner cannot modify booked_rooms field."""
+        """Mehmanxana iyesi booked_rooms maydanın ózgerte almaytuǵının testlew."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'booked_rooms': 2
         }
         response = self.client.patch(f'/api/v1/partner/inventory/{self.date_inventory.id}/', data)
 
-        # booked_rooms should be read-only
+        # booked_rooms tek oqıw bolıwı kerek
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.date_inventory.refresh_from_db()
-        self.assertEqual(self.date_inventory.booked_rooms, 0)  # Should remain unchanged
+        self.assertEqual(self.date_inventory.booked_rooms, 0)  # Ózgerissiz qalıwı kerek
 
 
 class PartnerDateInventoryFilterTests(TestCase):
-    """?rate_plan, ?date_from and ?date_to narrow the inventory list."""
+    """?rate_plan, ?date_from hám ?date_to inventory dizimin shekemleydi."""
 
     def setUp(self):
         PartnerDateInventoryTests.setUp(self)
@@ -647,9 +647,9 @@ class PartnerDateInventoryFilterTests(TestCase):
 
 
 class PartnerPropertyPhotoUploadTests(TestCase):
-    """Tests for partner property photo upload validation (audit #23)."""
+    """Partner mehmanxana súwretin júklew tekseriwi ushın testler (audit #23)."""
 
-    # Minimal valid 1x1 GIF, matches the fixture used in properties/tests/test_models.py
+    # Eń kishi jaramlı 1x1 GIF, properties/tests/test_models.py degi fixture menen sáykes
     VALID_IMAGE_BYTES = (
         b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
         b'\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
@@ -657,7 +657,7 @@ class PartnerPropertyPhotoUploadTests(TestCase):
     )
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
         self.hotel_owner_role, _ = Role.objects.get_or_create(
@@ -696,7 +696,7 @@ class PartnerPropertyPhotoUploadTests(TestCase):
         self.upload_url = f'/api/v1/partner/properties/{self.property.id}/photos/'
 
     def test_hotel_owner_can_upload_valid_photo(self):
-        """A genuine, correctly-typed picture of a size the site shows well is accepted."""
+        """Haqıyqıy, durıs túrdegi, saytta jaqsı kórinetuǵın ólshemdegi súwret qabıllanadı."""
         from common.testing import image_upload
 
         self.client.force_authenticate(user=self.hotel_owner)
@@ -711,11 +711,11 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
     def test_hotel_owner_cannot_upload_fake_image(self):
         """
-        A non-image file disguised with an image extension/content-type must be rejected.
+        Súwret keńeytpesi/content-type penen jasırılǵan súwret emes fayl biykar etiliwi kerek.
 
-        DRF's ImageField already verifies the payload with Pillow before it reaches our
-        code, so this passes even pre-fix -- it documents that existing coverage rather
-        than testing the audit #23 gap itself (see the extension/size tests below for that).
+        DRF tiń ImageField ı payload dı bizdiń kodqa jetpesten aldın Pillow menen aldınan tekseredi,
+        sol sebepli bul túzetiwden aldın da ótedi -- ol audit #23 tesigin emes, bar qaplawdı hújjetlestiredi
+        (onıń ushın tómendegi keńeytpe/ólshem testlerin qarań).
         """
         from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -736,9 +736,9 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
     def test_hotel_owner_cannot_upload_disallowed_extension(self):
         """
-        A genuinely valid image (Pillow opens it fine) in a format outside our whitelist
-        (jpg/jpeg/png/gif/webp) must still be rejected. model.clean() enforces this, but
-        DRF never calls it -- audit #23's actual gap.
+        Bizdiń ruxsat dizimimizden (jpg/jpeg/png/gif/webp) sırtındaǵı formattaǵı haqıyqıy jaramlı súwret
+        (Pillow onı jaqsı ashadı) ele biykar etiliwi kerek. model.clean() bunı májbúrleydi, biraq
+        DRF onı hesh qashan shaqırmaydı -- audit #23 tiń haqıyqıy tesigi.
         """
         from django.core.files.uploadedfile import SimpleUploadedFile
         from PIL import Image
@@ -765,15 +765,15 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
     def test_hotel_owner_cannot_upload_oversized_photo(self):
         """
-        A genuinely valid image larger than the 10MB limit must be rejected by the API,
-        not just by model.clean() (which DRF never calls).
+        10MB shegi nen úlken haqıyqıy jaramlı súwret API tárepinen biykar etiliwi kerek,
+        tek model.clean() tárepinen emes (DRF onı hesh qashan shaqırmaydı).
         """
         from django.core.files.uploadedfile import SimpleUploadedFile
         from PIL import Image
         import io
         import os
 
-        width, height = 2000, 1800  # random-noise pixels compress poorly -> file stays > 10MB
+        width, height = 2000, 1800  # tosınarlıq shawqın pikselleri jaman qısıladı -> fayl > 10MB qaladı
         raw_pixels = os.urandom(width * height * 3)
         img = Image.frombytes('RGB', (width, height), raw_pixels)
         buf = io.BytesIO()
@@ -802,11 +802,11 @@ class PartnerPropertyPhotoUploadTests(TestCase):
         from PIL import Image
 
         buf = io.BytesIO()
-        Image.new('L', (width, height)).save(buf, format='PNG')  # flat colour: tiny file, huge pixel count
+        Image.new('L', (width, height)).save(buf, format='PNG')  # tegis reń: kishi fayl, úlken piksel sanı
         return buf.getvalue()
 
     def test_hotel_owner_cannot_upload_huge_pixel_dimensions(self):
-        """A small file can still decompress to gigabytes of pixels (decompression bomb)."""
+        """Kishi fayl ele gigabaytlap pikselge ashılıwı múmkin (decompression bomb)."""
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         self.client.force_authenticate(user=self.hotel_owner)
@@ -839,11 +839,11 @@ class PartnerPropertyPhotoUploadTests(TestCase):
 
 
 class PartnerBookingListTests(TestCase):
-    """Tests for the partner bookings list endpoint (audit #26)."""
+    """Partner bronlar dizimi endpoint i ushın testler (audit #26)."""
 
     def setUp(self):
-        """Set up test data."""
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        """Test maǵlıwmatın tayarlaw."""
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         self.client = APIClient()
 
         self.hotel_owner_role, _ = Role.objects.get_or_create(
@@ -936,7 +936,7 @@ class PartnerBookingListTests(TestCase):
         )
 
     def test_hotel_owner_can_list_bookings_with_guest_name(self):
-        """booking.guest_name doesn't exist on the model -- must not 500."""
+        """booking.guest_name modelde joq -- 500 bermewi kerek."""
         self.client.force_authenticate(user=self.hotel_owner)
         response = self.client.get('/api/v1/partner/bookings/')
 

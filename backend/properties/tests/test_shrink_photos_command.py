@@ -1,4 +1,5 @@
-"""`shrink_photos` shrinks stored hotel and room photos; it only reports by default and changes files with --apply."""
+"""`shrink_photos` saqlanǵan mehmanxana hám xona súwretlerin kishireytedi; ádetde tek esabat beredi, fayllardı tek --apply
+menen ózgertedi."""
 import io
 from io import StringIO
 
@@ -22,7 +23,7 @@ def big_jpeg_bytes(side=(3200, 2400)):
 
 @pytest.fixture
 def stored(inventory, settings, tmp_path):
-    """One full size hotel photo and one full size room photo already in storage."""
+    """Saqlawda tolıq ólshemli bir mehmanxana súwreti hám bir xona súwreti bar."""
     settings.MEDIA_ROOT = tmp_path
     from django.core.files.base import ContentFile
     hotel_photo = PropertyPhoto(property=inventory['property'])

@@ -1,8 +1,7 @@
 """
-R6: every booking stores what the guest is charged: charge currency (UZS), the
-UZS amount, the rate used, its date and source, and whether it was stale. Written
-in the transaction that locks the inventory, from a database read of the rate,
-and never changed afterwards.
+R6: hár bron mehmannan ne alınatuǵının saqlaydı: alıw valyutası (UZS), UZS
+summası, paydalanılǵan kurs, onıń sanası hám deregi, hám ol eskirgen be. Inventory di
+qulıplaytuǵın transaction ishinde, kurstı database den oqıp jazıladı, hám keyin hesh qashan ózgermeydi.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -19,7 +18,7 @@ from currency.models import ExchangeRate
 from currency.cbu import tashkent_today
 from properties.models import DateInventory, Property, RatePlan, RoomInventory, RoomType
 
-# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+# R6: bul testler valyuta kurslarin ózleri basqaradı (kurs joq, eskirgen, alıw, qabıllaw)
 pytestmark = pytest.mark.no_default_exchange_rate
 
 RATE = Decimal('11772.95')
@@ -54,13 +53,13 @@ class TestSnapshotOnCreate:
 
     def test_usd_booking_is_charged_in_uzs_at_the_current_rate(self, stay):
         _rate()
-        response = _book(stay)   # 60 + 69 + base 60 = 189.00 USD
+        response = _book(stay)   # 60 + 69 + tiykarǵı 60 = 189.00 USD
 
         assert response.status_code == 201, response.data
         booking = Booking.objects.get()
         assert (booking.total_price, booking.currency) == (Decimal('189.00'), 'USD')
         assert booking.charge_currency == 'UZS'
-        assert booking.charge_amount == Decimal('2225088')   # 189 x 11772.95 = 2 225 087.55 -> rounded once
+        assert booking.charge_amount == Decimal('2225088')   # 189 x 11772.95 = 2 225 087.55 -> bir márte jumalaqlanǵan
         assert booking.exchange_rate == RATE
         assert booking.exchange_rate_date == tashkent_today()
         assert booking.exchange_rate_source == 'cbu.uz'
@@ -137,7 +136,7 @@ class TestSnapshotNeverChanges:
 
         ExchangeRate.objects.create(currency='USD', rate=Decimal('12500'), nominal=1, source='cbu.uz',
                                     status='accepted', rate_date=tashkent_today() + timedelta(days=1))
-        booking = Booking.objects.get()  # the booking API confirms at once, so there is nothing to confirm
+        booking = Booking.objects.get()  # bron API birden tastıyıqlaydı, sol sebepli tastıyıqlaytuǵın hesh nárse joq
         booking.cancel_booking('changed plans')
 
         assert Booking.objects.values('charge_amount', 'exchange_rate', 'exchange_rate_date').get() == before
@@ -167,7 +166,7 @@ class TestSnapshotNeverChanges:
 
 @pytest.mark.django_db
 class TestRowsCreatedOutsideTheBookingFlow:
-    """Seeds and old code paths create Booking rows directly; they get an honest snapshot."""
+    """Seed ler hám eski kod jolları Booking qatarların tikkeley jaratadı; olar haqıyqıy snapshot aladı."""
 
     def _create(self, stay, currency, total):
         return Booking.objects.create(

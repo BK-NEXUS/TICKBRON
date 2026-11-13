@@ -1,9 +1,9 @@
 """
-R16 slice 1: the hotel owner's own price per currency (RatePlanPrice) decides what a guest
-sees and what is charged; a currency without an owner price is converted at the CBU rate.
+R16 1-bólim: mehmanxana iyesiniń hár valyutadaǵı óz bahası (RatePlanPrice) mehman neni
+kóretuǵının hám neni alatuǵının sheshedi; iye bahası joq valyuta CBU kursı boyınsha konvertaciyalanadı.
 
-Fixture `stay` (test_quote.py): a USD hotel, rate plan 60 USD, nights +1 = 60, +2 = 69, +3 = base 60
-(stay of nights 1-3 = 189 USD). Default test USD rate: 12000 so'm.
+`stay` fixture si (test_quote.py): USD mehmanxana, rate plan 60 USD, túnler +1 = 60, +2 = 69, +3 = tiykarǵı 60
+(1-3 túnlik turıw = 189 USD). Ádetdegi test USD kursı: 12000 som.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -20,7 +20,7 @@ from properties.models import RatePlanPrice
 
 pytestmark = pytest.mark.django_db
 
-# Owner prices for the 60 USD base: 750 000 so'm, 27 000 tenge, 5 400 rubles
+# 60 USD tiykarǵı ushın iye bahaları: 750 000 som, 27 000 tenge, 5 400 rubl
 OWNER = {'UZS': '750000', 'KZT': '27000', 'RUB': '5400'}
 
 
@@ -65,7 +65,7 @@ class TestStayTotalInACurrency:
     def test_owner_price_is_used_and_a_special_night_keeps_the_ratio(self, stay):
         owner_prices(stay)
         quote = quote_for(stay)
-        # 60 -> 750000, 69 (+15%) -> 862500, base night -> 750000
+        # 60 -> 750000, 69 (+15%) -> 862500, tiykarǵı tún -> 750000
         assert quote.total_in('UZS') == (Decimal('2362500'), 'owner')
         assert quote.total_in('KZT') == (Decimal('85050'), 'owner')    # 27000 + 31050 + 27000
         assert quote.total_in('RUB') == (Decimal('17010'), 'owner')    # 5400 + 6210 + 5400
@@ -73,7 +73,7 @@ class TestStayTotalInACurrency:
     def test_rooms_multiply_and_the_total_is_rounded_once(self, stay):
         owner_prices(stay, UZS='750001')
         quote = quote_for(stay, rooms=2)
-        # nightly sum 750001 + 862501.15 + 750001 = 2 362 503.15, times 2 = 4 725 006.30 -> 4 725 006
+        # túnlik jıyındı 750001 + 862501.15 + 750001 = 2 362 503.15, eki ese = 4 725 006.30 -> 4 725 006
         assert quote.total_in('UZS') == (Decimal('4725006'), 'owner')
 
     def test_a_currency_without_an_owner_price_is_converted_at_the_cbu_rates(self, stay):
@@ -97,7 +97,7 @@ class TestStayTotalInACurrency:
         listing = price_list(stay['rate'])
         assert listing['USD'] == {'amount': '60.00', 'source': 'main'}
         assert listing['UZS'] == {'amount': '750000.00', 'source': 'owner'}
-        assert listing['KZT'] == {'amount': None, 'source': 'converted'}   # no KZT rate in the database
+        assert listing['KZT'] == {'amount': None, 'source': 'converted'}   # database de KZT kursı joq
         kzt_rate('24.50')
         assert price_list(stay['rate'])['KZT'] == {'amount': '29388.00', 'source': 'converted'}
 
@@ -135,7 +135,7 @@ class TestPublicQuote:
 
     def test_the_so_m_the_guest_pays_is_the_owners_so_m_price(self, stay):
         owner_prices(stay)
-        response = api_quote(stay)    # asked in dollars; payment is in so'm
+        response = api_quote(stay)    # dollarda soraldı; tólem somda
         assert response.data['uzs_total'] == '2362500.00'
         assert response.data['exchange_rate'] is None
 
@@ -150,7 +150,7 @@ class TestBookingCharge:
         assert (booking.total_price, booking.currency) == (Decimal('189.00'), 'USD')
         assert (booking.charge_currency, booking.charge_amount) == ('UZS', Decimal('2362500'))
         assert booking.exchange_rate_source == 'owner'
-        assert booking.exchange_rate == Decimal('12500.000000')   # 2 362 500 / 189, informational
+        assert booking.exchange_rate == Decimal('12500.000000')   # 2 362 500 / 189, maǵlıwmat ushın
         assert booking.exchange_rate_date is None and booking.exchange_rate_stale is False
 
     @pytest.mark.no_default_exchange_rate
@@ -163,7 +163,7 @@ class TestBookingCharge:
     def test_without_an_owner_so_m_price_the_cbu_conversion_is_unchanged(self, stay):
         ExchangeRate.objects.create(currency='USD', rate=Decimal('11772.95'), nominal=1, source='cbu.uz',
                                     status='accepted', rate_date=tashkent_today())
-        owner_prices(stay, KZT='27000')     # a tenge price does not change the so'm charge
+        owner_prices(stay, KZT='27000')     # tenge bahası som alınatuǵın summanı ózgertpeydi
         assert book(stay).status_code == 201
         booking = Booking.objects.get()
         assert booking.charge_amount == Decimal('2225088')
@@ -191,4 +191,4 @@ class TestHotelPage:
         assert prices['USD'] == {'amount': '60.00', 'source': 'main'}
         assert prices['UZS'] == {'amount': '750000.00', 'source': 'owner'}
         assert prices['KZT'] == {'amount': '29388.00', 'source': 'converted'}
-        assert prices['RUB'] == {'amount': None, 'source': 'converted'}   # no ruble rate yet
+        assert prices['RUB'] == {'amount': None, 'source': 'converted'}   # rubl kursı ele joq

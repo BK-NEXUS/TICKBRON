@@ -1,9 +1,9 @@
 """
-Partner property writes use the Geography dictionary (Geography plan G4; no town or district below the region
-since 2026-11-10): country_ref and region_ref ids are required on create and validated (active, region inside
-country). The text fields country / state / city are read-only copies: Property.save() fills them from the
-English names of the country and the region (the "city" copy is the region's name, so every screen that shows a
-place keeps working). The owner types no town.
+Partner mehmanxana jazıwları Geografiya sózligin paydalanadı (Geography reje G4; 2026-11-10 den beri regiondan
+tómen qala yamasa tuman joq): country_ref hám region_ref id leri jaratıwda májbúriy hám tekseriledi (aktiv, region
+mámleket ishinde). country / state / city tekst maydanları tek oqıw nusqaları: Property.save() olardı mámleket hám
+regionnıń inglizsha atlarınan toltıradı ("city" nusqası regionnıń atı, sol sebepli orındı kórsetetuǵın hár ekran
+islewin dawam etedi). Iye qalanı teriwmeydi.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -17,7 +17,7 @@ URL = '/api/v1/partner/properties/'
 
 
 def details(response):
-    """Field errors from the uniform error envelope."""
+    """Birdey qátelik konvertinen maydan qátelikleri."""
     return response.data['error']['details']
 
 
@@ -167,7 +167,7 @@ class TestUpdate:
 
 @pytest.mark.django_db
 class TestOldTextIsNotInput:
-    """The old wizard sent country / state text instead of ids; since 2026-10-19 only the ids count."""
+    """Eski wizard id ler ornına country / state tekst jiberdi; 2026-10-19 dan beri tek id ler esaplanadı."""
 
     @pytest.fixture
     def uz(self, db):

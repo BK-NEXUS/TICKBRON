@@ -1,4 +1,4 @@
-"""L-2: the API schema and docs are an inventory of every endpoint; hide them in production."""
+"""L-2: API schema hám hújjetler hár endpoint tiń inventarı; olardı production ta jasırıń."""
 import pytest
 from django.test import override_settings
 from rest_framework.test import APIClient

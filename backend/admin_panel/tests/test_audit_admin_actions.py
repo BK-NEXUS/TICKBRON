@@ -1,10 +1,10 @@
 """
-N-17: every admin write is in the append-only AdminAccessLog (who, what, which id, when).
+N-17: hár admin jazıwı append-only AdminAccessLog ta (kim, ne, qaysı id, qashan).
 
-Before this, only reads of customer data, exchange rates, refund follow-ups, promotions and
-no-show decisions were logged. Property approve/reject/suspend, creating hotel owners,
-amenities, geography and internal notes left no trace. Only ids and non-personal facts are
-stored (no names, notes, reasons or e-mails).
+Bunnan aldın tek mijoz maǵlıwmatın, valyuta kurslarin, qaytarıw izlewlerin, reklamalardı hám
+no-show qararların oqıw jazılatuǵın edi. Mehmanxananı tastıyıqlaw/biykar etiw/toqtatıw, mehmanxana iyelerin jaratıw,
+amenity ler, geografiya hám ishki jazbalar iz qaldırmadı. Tek id ler hám jeke emes faktlar
+saqlanadı (at, jazba, sebep yamasa e-mail joq).
 """
 from decimal import Decimal
 
@@ -98,8 +98,8 @@ class TestHotelOwnerCreation:
         response = _as(superadmin).post(f'{A}/users/create-hotel-owner/', {
             'email': 'newowner@example.com', 'first_name': 'New', 'last_name': 'Owner',
             'password': 'Str0ng#Pass-2026!', 'password_confirm': 'Str0ng#Pass-2026!',
-            **uzbek_location('Tashkent'),  # a new account needs a place
-            'phone_number': '+998901234567',  # a new account needs a phone number
+            **uzbek_location('Tashkent'),  # jańa akkauntqa orın kerek
+            'phone_number': '+998901234567',  # jańa akkauntqa telefon nomeri kerek
         }, format='json')
 
         assert response.status_code == 201, response.data
@@ -148,7 +148,7 @@ class TestGeography:
     def test_country_create_update_delete_and_reorder_are_logged_with_the_level(self, superadmin, settings, tmp_path):
         from geography.tests.test_images import picture
 
-        settings.MEDIA_ROOT = tmp_path  # a new country needs a picture
+        settings.MEDIA_ROOT = tmp_path  # jańa mámleketke súwret kerek
         client = _as(superadmin)
 
         created = client.post(f'{A}/geography/countries/', {
@@ -172,7 +172,7 @@ class TestGeography:
     def test_a_delete_that_is_refused_because_the_row_is_in_use_writes_nothing(self, superadmin, hotel):
         from geography.models import Country
 
-        country = Country.objects.get(code='UZ')  # loaded by the geography data migration
+        country = Country.objects.get(code='UZ')  # geografiya maǵlıwmat migration ı júklegen
         Property.objects.filter(pk=hotel.pk).update(country_ref=country)
 
         response = _as(superadmin).delete(f'{A}/geography/countries/{country.id}/')

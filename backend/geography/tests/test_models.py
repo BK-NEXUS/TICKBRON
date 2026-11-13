@@ -1,5 +1,5 @@
 """
-Geography dictionary: Country > Region (Geography plan G1; the city level was removed 2026-11-10).
+Geografiya sózligi: Country > Region (Geography reje G1; qala dárejesi 2026-11-10 de alıp taslandı).
 """
 import pytest
 from django.db import IntegrityError, transaction
@@ -22,7 +22,7 @@ class TestModels:
     def test_names_in_three_languages(self, world):
         country, region = world
         assert (region.name('uz'), region.name('ru'), region.name('en')) == ('Sharq', 'Восток', 'East')
-        # Unknown language or missing name: English
+        # Belgisiz til yamasa joq at: inglizsha
         assert region.name('de') == 'East'
         assert str(region) == 'East' and str(country) == 'Xland'
 
@@ -50,7 +50,7 @@ class TestModels:
         country, region = world
         with pytest.raises(ProtectedError):
             country.delete()
-        # A leaf can be deleted; hiding is done with is_active=False
+        # Japıraq óshirilip boladı; jasırıw is_active=False penen islenedi
         region.delete()
 
     def test_stable_slug_is_set_once(self, world):
@@ -59,5 +59,5 @@ class TestModels:
         region.name_en = 'Renamed'
         region.save()
         region.refresh_from_db()
-        # Renaming does not change the key the initial data is matched by
+        # Qayta ataw dáslepki maǵlıwmat sáykeslestiriletuǵın kiltti ózgertpeydi
         assert region.slug == 'xa-east'

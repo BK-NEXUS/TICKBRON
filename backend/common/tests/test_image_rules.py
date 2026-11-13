@@ -1,6 +1,7 @@
 """
-The size rules of every picture upload (.ai/PLAN_IMAGE_RULES.md): a picture that is too small or the wrong shape is refused
-with the sizes to use; what is not a real JPEG, PNG or WebP is refused whatever its name or header says.
+Hár súwret júklewdiń ólshem qaǵıydaları (.ai/PLAN_IMAGE_RULES.md): júdá kishi yamasa qáte formadaǵı súwret biykar etiledi,
+paydalanıw kerek ólshemler menen; haqıyqıy JPEG, PNG yamasa WebP bolmaǵan nárse atı yamasa header i ne dese de biykar
+etiledi.
 """
 import io
 
@@ -43,7 +44,7 @@ def test_a_picture_one_pixel_short_is_refused_and_the_message_names_both_sizes(r
 @pytest.mark.parametrize('rule', SMALLEST)
 def test_the_shape_limits_are_inclusive(rule):
     low, high = rule.shape
-    height = 1800  # divisible by every denominator of the limits, so both edges are whole pixels
+    height = 1800  # shekler denominatorlarınıń hámmesine bóliner, sol sebepli eki shegara da pútin piksel
     assert image_upload_error(image_upload(int(height * high), height), rule) is None
     assert image_upload_error(image_upload(int(height * low), height), rule) is None
 
@@ -63,7 +64,8 @@ def test_a_portrait_picture_is_not_a_hotel_photo():
 
 
 def test_a_phone_photo_stored_sideways_is_judged_by_how_it_is_shown():
-    # 4000 x 3000 pixels with "turn right" shows upright as a portrait: refused. 3000 x 4000 turned right shows as a landscape: accepted
+    # 4000 x 3000 piksel "oń jaqqa burıw" menen portret retinde tik kórinedi: biykar etiledi. 3000 x 4000 oń jaqqa burılǵan
+    # landshaft retinde kórinedi: qabıllanadı
     assert 'wrong shape' in image_upload_error(image_upload(4000, 3000, orientation=6), HOTEL_PHOTO)
     assert image_upload_error(image_upload(3000, 4000, orientation=6), HOTEL_PHOTO) is None
 

@@ -1,5 +1,5 @@
 """
-Tests for login lockout and account enumeration (audit #11).
+Kiriwdi bloklaw hám akkaunt bar-joqlıǵın anıqlaw ushın testler (audit #11).
 """
 from datetime import timedelta
 from unittest import mock
@@ -32,7 +32,7 @@ class LockoutTestBase(TestCase):
 
 
 class TestPerIpLockout(LockoutTestBase):
-    """An attacker's failures lock out the attacker's IP, not the account owner."""
+    """Hújimshiniń sátsiz urınıwları akkaunt iyesin emes, hújimshiniń IP sın bloklaydı."""
 
     def test_failures_from_one_ip_lock_only_that_ip(self):
         self.fail_logins('203.0.113.66', lockout.IP_FAILURE_LIMIT)
@@ -45,10 +45,10 @@ class TestPerIpLockout(LockoutTestBase):
 
 
 class TestAccountWideLockout(LockoutTestBase):
-    """Distributed guessing from many IPs still locks the account, but later and briefly."""
+    """Kóp IP den tamınlap tabıw ele de akkauntti bloklaydı, biraq keyinirek hám qısqa waqıtqa."""
 
     def test_many_ips_lock_the_account(self):
-        per_ip = lockout.IP_FAILURE_LIMIT - 1  # stay under the per-IP limit
+        per_ip = lockout.IP_FAILURE_LIMIT - 1  # hár IP shegi astında qalıw
         ips = [f'203.0.113.{i}' for i in range(1, User.ACCOUNT_FAILURE_LIMIT // per_ip + 2)]
         for ip in ips:
             self.fail_logins(ip, per_ip)
@@ -79,7 +79,7 @@ class TestAccountWideLockout(LockoutTestBase):
 
 
 class TestNoAccountEnumeration(LockoutTestBase):
-    """Responses must not reveal whether an email/phone exists or is locked."""
+    """Juwaplar email/telefon bar yamasa bloklanǵanın ashpawı kerek."""
 
     def test_login_failures_look_identical(self):
         unknown = self.login(PASSWORD, '198.51.100.10', email='nobody@example.com')

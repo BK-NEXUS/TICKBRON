@@ -1,6 +1,6 @@
 """
-A six-digit code mailed to the address: at sign-up (the account is made only after the code is typed) and at every
-sign-in of a guest or hotel owner (after the password, before the session). Plan: .ai/PLAN_EMAIL_CODES.md.
+Mánzilge jiberilgen altı sanlı kod: dizimnen ótkende (akkaunt tek kod terilgennen keyin jaratıladı) hám
+mehman yamasa mehmanxana iyesiniń hár kiriwinde (paroldan keyin, session nan aldın). Reje: .ai/PLAN_EMAIL_CODES.md.
 """
 import re
 from unittest import mock
@@ -34,7 +34,7 @@ def codes_on(settings):
 
 @pytest.fixture
 def clock():
-    """The moment the code module sees; tests move it with clock.now."""
+    """Kod moduli kóretuǵın waqıt; testler onı clock.now menen jıljıtadı."""
     class Clock:
         now = NOW
     with mock.patch.object(email_codes, '_now', side_effect=lambda: Clock.now):
@@ -186,7 +186,7 @@ class TestSignUp:
         assert response.status_code == 503
         assert not User.objects.filter(email='new.guest@example.com').exists()
         _, again = start_sign_up()
-        assert again.status_code == 202  # no cool-down for a mail that never left
+        assert again.status_code == 202  # Hesh qashan ketpegen xat ushın sovıw waqıtı joq
 
     def test_the_mail_says_who_sent_it_and_to_ignore_it_if_unasked(self):
         start_sign_up()

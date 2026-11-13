@@ -1,7 +1,8 @@
 """
-One account cannot hold a hotel's rooms (owner decision 2026-10-23): at most two upcoming bookings at once,
-and a new stay must not overlap another stay of the same guest. A second booking is fine when its dates start
-the day the first one ends or later (or end before the first starts).
+Bir akkaunt mehmanxananıń xonaların ustap tura almaydı (iyeniń qararı 2026-10-23): bir waqıtta eń kóbi eki keletuǵın bron,
+hám jańa turıw sol mehmannıń basqa turıwı menen kesilispewi kerek. Ekinshi bron sanaları birinshisi pitken kúni yamasa
+onnan keyin
+baslansa (yamasa birinshi baslanbastan aldın pitse) boladı.
 """
 from datetime import timedelta
 
@@ -17,7 +18,7 @@ from users.models import User
 
 class GuestBookingRulesTests(APITestCase):
     def setUp(self):
-        test_views.BookingViewTests.setUp(self)  # hotel, room type, rate plan, a guest
+        test_views.BookingViewTests.setUp(self)  # mehmanxana, xona túri, rate plan, bir mehman
         self.client.force_authenticate(user=self.user)
 
     def book(self, dates, guest=None):
@@ -44,7 +45,7 @@ class GuestBookingRulesTests(APITestCase):
         assert Booking.objects.filter(guest=self.user).count() == 2
 
     def test_a_stay_overlapping_an_existing_one_is_refused(self):
-        first = stay(self, 0, nights=4)  # days 10 to 14
+        first = stay(self, 0, nights=4)  # 10 dan 14 kúnge
         assert self.book(first).status_code == status.HTTP_201_CREATED
         for index, nights, first_day in [(0, 2, 10), (0, 2, 12), (0, 2, 11), (0, 6, 9), (0, 1, 13)]:
             response = self.book(stay(self, index, nights=nights, first_day=first_day))
@@ -53,11 +54,11 @@ class GuestBookingRulesTests(APITestCase):
         assert Booking.objects.filter(guest=self.user).count() == 1
 
     def test_a_stay_that_starts_the_day_the_first_ends_is_allowed(self):
-        assert self.book(stay(self, 0, nights=4)).status_code == status.HTTP_201_CREATED  # days 10 to 14
+        assert self.book(stay(self, 0, nights=4)).status_code == status.HTTP_201_CREATED  # 10 dan 14 kúnge
         assert self.book(stay(self, 0, nights=2, first_day=14)).status_code == status.HTTP_201_CREATED
 
     def test_a_stay_that_ends_the_day_the_first_starts_is_allowed(self):
-        assert self.book(stay(self, 0, nights=2, first_day=12)).status_code == status.HTTP_201_CREATED  # days 12 to 14
+        assert self.book(stay(self, 0, nights=2, first_day=12)).status_code == status.HTTP_201_CREATED  # 12 den 14 kúnge
         assert self.book(stay(self, 0, nights=2, first_day=10)).status_code == status.HTTP_201_CREATED
 
     def test_a_cancelled_booking_does_not_block_its_dates(self):

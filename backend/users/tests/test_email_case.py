@@ -1,6 +1,6 @@
 """
-An e-mail address is the same address whatever its capitals (QA finding F2, .ai/QA_REPORT_2026-10-26.md):
-one account per mailbox, and signing in works with the capitals a phone keyboard adds.
+E-mail mánzili háripleri úlken-kishi bolıwına qaramastan birdey mánzil (QA tabılması F2, .ai/QA_REPORT_2026-10-26.md):
+bir pochta qutısına bir akkaunt, hám telefon klaviaturası qosatuǵın úlken háripler menen kiriw isleydi.
 """
 from unittest import mock
 
@@ -112,7 +112,8 @@ def test_the_database_itself_refuses_two_spellings():
 
 
 class TestEmailCaseMigration(TransactionTestCase):
-    """The migration lower-cases the stored addresses and stops, changing nothing, when two differ only by capitals."""
+    """Migration saqlanǵan mánzillerdi kishi háripke ótkeredi hám eki mánzil tek úlken háripleri menen parıq qılsa, hesh
+    nárseni ózgertpesten toqtaydı."""
 
     before = [('users', '0009_drop_sms_login_columns')]
     after = [('users', '0010_email_case_insensitive')]
@@ -147,7 +148,7 @@ class TestEmailCaseMigration(TransactionTestCase):
 
 @pytest.mark.django_db
 def test_sign_up_that_loses_the_race_for_an_address_answers_400_not_500():
-    """Two sign-ups pass validation together; the database lets only one create the account."""
+    """Eki dizimnen ótiw birge validaciyadan ótedi; database akkauntti tek birewine jaratıwǵa ruxsat beredi."""
     with mock.patch('users.serializers.UserRegistrationSerializer.save', side_effect=IntegrityError('duplicate')):
         response = signup('race.signup@example.com')
     assert response.status_code == 400

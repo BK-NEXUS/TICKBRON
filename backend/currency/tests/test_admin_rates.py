@@ -1,7 +1,7 @@
 """
-R6: staff see the rate history; super-admins see the rate status (for the frontend's
-warning banner) and may accept a rate the fetch rejected for jumping too far. Every
-accept is written to the admin audit log: who, old rate, new rate, when.
+R6: staff kurs tariyxın kóredi; super-admin ler kurs statusın (frontend tiń
+eskertiw baneri ushın) kóredi hám alıw júdá uzaq sekirgeni ushın biykar etken kurstı qabıllay aladı. Hár
+qabıllaw admin audit logına jazıladı: kim, eski kurs, jańa kurs, qashan.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -15,7 +15,7 @@ from currency.models import ExchangeRate, ExchangeRateFetch
 from currency.rates import current_rate
 from users.models import User
 
-# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+# R6: bul testler valyuta kurslarin ózleri basqaradı (kurs joq, eskirgen, alıw, qabıllaw)
 pytestmark = pytest.mark.no_default_exchange_rate
 
 A = '/api/v1/admin-panel/exchange-rates'
@@ -103,7 +103,7 @@ class TestAcceptRejectedRate:
 
         assert response.status_code == 201, response.data
         assert current_rate('USD').rate == Decimal('13500')
-        # the rejected row itself is history and stays as it was
+        # biykar etilgen qatardıń ózi tariyx hám burınǵıday qaladı
         assert ExchangeRate.objects.get(pk=rates['jump'].id).status == 'rejected'
         entry = AdminAccessLog.objects.get(action='exchange_rate_accept')
         assert entry.actor_id == people['super'].id

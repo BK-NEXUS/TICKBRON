@@ -1,7 +1,7 @@
 """
-R6: a property is priced in USD or UZS; its room types, rate plans and nightly
-prices use the property's currency; UZS prices are whole so'm. A new property
-defaults to its country's currency when supported (Uzbekistan -> UZS), else USD.
+R6: mehmanxana USD yamasa UZS de bahalanadı; onıń xona túrleri, rate plan ları hám túngi
+bahaları mehmanxananıń valyutasın paydalanadı; UZS bahaları pútin som. Jańa mehmanxana
+qollap-quwatlansa óz mámleketiniń valyutasın alıp ádetde (Ózbekstan -> UZS), bolmasa USD.
 """
 from datetime import timedelta
 
@@ -48,7 +48,7 @@ class TestPropertyCurrency:
         assert response.data['currency'] == 'USD'
 
     def test_a_country_with_a_supported_currency_defaults_to_it(self, owner, inventory):
-        """R16: tenge and ruble are supported, so a Kazakh hotel starts in tenge."""
+        """R16: tenge hám rubl qollap-quwatlanadı, sol sebepli qazaq mehmanxanası tengede baslanadı."""
         region = Region.objects.select_related('country').filter(country__code='KZ').first()
         payload = _property_payload(inventory, country_ref=region.country_id, region_ref=region.id,
                                     base_price='35000')
@@ -78,7 +78,7 @@ class TestPropertyCurrency:
 
 @pytest.mark.django_db
 class TestChildrenFollowTheProperty:
-    """inventory fixture: a USD property with a room type, rate plan and one nightly price."""
+    """inventory fixture si: xona túri, rate plan hám bir túngi bahası bar USD mehmanxana."""
 
     @pytest.mark.parametrize('url, payload', [
         ('rooms', lambda inv: {'property': inv['property'].id, 'name': 'Deluxe', 'slug': 'deluxe',

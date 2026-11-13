@@ -1,5 +1,5 @@
 """
-Tests for core models.
+core model leri ushın testler.
 """
 import pytest
 from django.test import TestCase
@@ -8,10 +8,10 @@ from core.models import SystemSettings
 
 
 class TestSystemSettings(TestCase):
-    """Test cases for SystemSettings model."""
+    """SystemSettings modeli ushın test jaǵdayları."""
 
     def test_create_system_setting(self):
-        """Test creating a system setting."""
+        """Sistema sazlamasın jaratıwdı testlew."""
         setting = SystemSettings.objects.create(
             key='test_key',
             value='test_value',
@@ -25,7 +25,7 @@ class TestSystemSettings(TestCase):
         assert setting.is_deleted is False
 
     def test_system_settings_str_representation(self):
-        """Test string representation of SystemSettings."""
+        """SystemSettings tiń qatar kórinisin testlew."""
         setting = SystemSettings.objects.create(
             key='test_key',
             value='test_value'
@@ -35,13 +35,13 @@ class TestSystemSettings(TestCase):
         assert str(setting) == expected_str
 
     def test_system_settings_unique_key(self):
-        """Test that key field is unique."""
+        """key maydanı unikal ekenin testlew."""
         SystemSettings.objects.create(
             key='unique_key',
             value='value1'
         )
 
-        # Attempting to create another setting with the same key should fail
+        # Sol key penen basqa sazlama jaratıwǵa urınıw sátsiz bolıwı kerek
         with pytest.raises(IntegrityError):
             SystemSettings.objects.create(
                 key='unique_key',
@@ -49,7 +49,7 @@ class TestSystemSettings(TestCase):
             )
 
     def test_system_settings_ordering(self):
-        """Test that system settings are ordered by key."""
+        """Sistema sazlamaları key boyınsha tártiplengenin testlew."""
         SystemSettings.objects.create(key='zebra', value='value3')
         SystemSettings.objects.create(key='alpha', value='value1')
         SystemSettings.objects.create(key='beta', value='value2')

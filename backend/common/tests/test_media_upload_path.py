@@ -1,4 +1,4 @@
-"""A room photo is stored under its hotel's folder, not in a shared "temp" folder."""
+"""Xona súwreti ortaq "temp" papkada emes, óz mehmanxanasınıń papkasında saqlanadı."""
 from types import SimpleNamespace
 
 from common.storage import get_media_upload_path
