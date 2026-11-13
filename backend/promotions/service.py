@@ -1,11 +1,11 @@
 """
-All promotion business rules live here; views only call these functions.
+Barlıq reklama biznes qaǵıydaları usı jerde; view ler tek usı funkciyalardı shaqıradı.
 
-What a promotion is: one paid period during which one hotel may appear in the banner carousel.
-  1. create_promotion / update_promotion  check dates, price, place and "no overlap for the same hotel"
-  2. pause / resume / cancel / mark_paid   change the state (every change is written to the audit log)
-  3. shown_now / ordered                   decide which promotions guests see, and in which order
-  4. tidy_statuses                         nightly clean-up of the `status` column (used by the Celery task)
+Reklama nede: bir tólengen dáwir, onıń dawamında bir mehmanxana banner karuselinde kóriniwi múmkin.
+  1. create_promotion / update_promotion  sanalardı, bahanı, ornın hám "bir mehmanxana ushın kesilispew" ti tekseredi
+  2. pause / resume / cancel / mark_paid   jaǵdaydı ózgertedi (hár ózgeris audit logına jazıladı)
+  3. shown_now / ordered                   mehmanlar qaysı reklamanı hám qanday tártipte kóretuǵının sheshedi
+  4. tidy_statuses                         `status` baǵanasın túnde tazalaw (Celery task paydalanadı)
 """
 import hashlib
 import re
@@ -25,23 +25,23 @@ from geography.models import Region
 from promotions.models import AdRenewal, Promotion, PromotionPhoto
 from properties.models import Property
 
-MAX_DAYS = 365                # longest single promotion
-MAX_START_AHEAD_DAYS = 730    # catches typos such as the year 2062; a real booking is never planned further ahead
-MAX_PRIORITY = 100            # 0 = normal, higher = shown earlier in the carousel
-MAX_NOTE = 500                # internal note length (the admin must not paste contact data here)
-MAX_PRICE = Decimal('999999999999.99')  # fits the DecimalField(14, 2) column
-MAX_PHOTOS = 10               # pictures on one ad (the banner shows the same number of the hotel's own photos)
-# States in which a promotion can still be changed; ended and cancelled ones are history
+MAX_DAYS = 365                # eń uzın bir reklama
+MAX_START_AHEAD_DAYS = 730    # 2062 jıl sıyaqlı qátelerdi tutadı; haqıyqıy bron hesh qashan onshama aldınan rejelestirilmeydi
+MAX_PRIORITY = 100            # 0 = ádettegi, joqarı = karuselde erterek kórsetiledi
+MAX_NOTE = 500                # ishki jazba uzınlıǵı (admin bul jerge baylanıs maǵlıwmatın qoymawı kerek)
+MAX_PRICE = Decimal('999999999999.99')  # DecimalField(14, 2) baǵanasına sıyadı
+MAX_PHOTOS = 10               # bir reklamadaǵı súwretler (banner mehmanxananıń óz súwretlerinen sonshasın kórsetedi)
+# Reklama ele ózgertilip bolatuǵın jaǵdaylar; pitken hám biykar etilgenler tariyx
 EDITABLE_STATUSES = (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE, Promotion.STATUS_PAUSED)
 CURRENCY_RE = re.compile(r'^[A-Z]{3}$')
-# The only fields update_promotion accepts: hotel, status and payment can never be changed through it
+# update_promotion qabıllaytuǵın jalǵız maydanlar: mehmanxana, status hám tólem onıń arqalı hesh qashan ózgertilmeydi
 UPDATABLE_FIELDS = frozenset({
     'start_date', 'end_date', 'priority', 'country_ref', 'region_ref',
     'price_amount', 'price_currency', 'note'})
 
 
 class PromotionError(Exception):
-    """A rule was broken. `code` is a stable machine-readable name the API returns; `message` is for people."""
+    """Qaǵıyda buzıldı. `code` API qaytaratuǵın turaqlı mashina oqıytuǵın at; `message` adamlar ushın."""
 
     def __init__(self, code, message=''):
         super().__init__(message or code)
@@ -50,7 +50,7 @@ class PromotionError(Exception):
 
 
 def _audit(actor, action, promotion):
-    """Write one audit row. Only ids, dates and the agreed amount: no names, notes or contact data."""
+    """Bir audit qatarın jazıw. Tek id ler, sanalar hám kelisilgen summa: at, jazba yamasa baylanıs maǵlıwmatı joq."""
     details = {'promotion_id': promotion.pk, 'property_id': promotion.property_id,
                'start_date': promotion.start_date.isoformat(), 'end_date': promotion.end_date.isoformat()}
     if action in ('promotion_create', 'promotion_mark_paid') and promotion.price_amount is not None:
@@ -60,7 +60,7 @@ def _audit(actor, action, promotion):
 
 
 def _check_dates(start, end, today, *, check_start_in_past):
-    """`check_start_in_past` is off when an edit keeps the old start date of a promotion already running."""
+    """Islep atırǵan reklamanıń eski baslanıw sanasın saqlaytuǵın ózgertiwde `check_start_in_past` óshiriledi."""
     if end < start:
         raise PromotionError('bad_dates', 'End date is before the start date')
     if check_start_in_past and start < today:
@@ -72,7 +72,7 @@ def _check_dates(start, end, today, *, check_start_in_past):
 
 
 def _check_values(priority, price_amount, price_currency, note):
-    """Range checks for the plain values an admin types."""
+    """Admin jazatuǵın ápiwayı mánisler ushın aralıq tekseriwleri."""
     if not 0 <= priority <= MAX_PRIORITY:
         raise PromotionError('bad_priority', f'Priority must be between 0 and {MAX_PRIORITY}')
     if price_amount is not None and not Decimal('0') <= price_amount <= MAX_PRICE:
@@ -84,13 +84,13 @@ def _check_values(priority, price_amount, price_currency, note):
 
 
 def _check_scope(country, region):
-    """A place limit must be consistent: the chosen region lies in the chosen country."""
+    """Orın shegi izbe-iz bolıwı kerek: tańlanǵan region tańlanǵan mámleket ishinde."""
     if region and country and region.country_id != country.pk:
         raise PromotionError('bad_scope', 'Region is not in the chosen country')
 
 
 def _check_overlap(property_id, start, end, exclude_pk=None):
-    """One hotel cannot hold two promotions on the same day. Cancelled and ended periods do not count."""
+    """Bir mehmanxana birdey kúnde eki reklama ustap tura almaydı. Biykar etilgen hám pitken dáwirler esaplanbaydı."""
     clash = Promotion.objects.filter(
         property_id=property_id, is_deleted=False, status__in=Promotion.HOLDING_STATUSES,
         start_date__lte=end, end_date__gte=start)
@@ -101,20 +101,22 @@ def _check_overlap(property_id, start, end, exclude_pk=None):
 
 
 def _lock_property(property_id):
-    # Serialises concurrent changes for one hotel so the overlap check cannot be raced
+    # Bir mehmanxana ushın birdey waqıttaǵı ózgerislerdi izbe-iz etedi, sol sebepli kesilisiw tekseriwin jarıstırıp ótip
+    # bolmaydı
     Property.objects.select_for_update().only('id').get(pk=property_id)
 
 
 def _lock_promotion(promotion):
-    # Re-reads the row under a lock so two admins acting at once see each other's result
+    # Qatardı qulıp astında qayta oqıydı, sonda birdey waqıtta háreket etken eki admin bir-birinıń nátiyjesin kóredi
     promotion.refresh_from_db(from_queryset=Promotion.objects.select_for_update())
 
 
 def create_promotion(*, actor, property, start_date, end_date, priority=0, country_ref=None, region_ref=None,
                      price_amount=None, price_currency='UZS', note=''):
     """
-    Create an unpaid promotion (status `scheduled`). It is shown only after mark_paid() and only inside its dates.
-    The hotel row is locked while checking, so two admins creating at the same moment cannot both pass.
+    Tólenbegen reklama jaratıw (status `scheduled`). Ol tek mark_paid() ten keyin hám tek óz sanaları ishinde kórsetiledi.
+    Tekseriw waqtında mehmanxana qatarı qulıplanadı, sol sebepli birdey waqıtta jaratatuǵın eki admin ekewi de ótip ala
+    almaydı.
     """
     price_currency = (price_currency or '').strip().upper()
     note = (note or '').strip()
@@ -133,7 +135,8 @@ def create_promotion(*, actor, property, start_date, end_date, priority=0, count
 
 
 def update_promotion(promotion, *, actor, **changes):
-    """Change dates, priority, place, price or note. Dates run the same checks as create (own period ignored)."""
+    """Sanalardı, dáwirdi, ornın, bahanı yamasa jazbanı ózgertiw. Sanalar jaratıw menen birdey tekseriwlerden ótedi (óz
+    dáwiri itibarǵa alınbaydı)."""
     unknown = set(changes) - UPDATABLE_FIELDS
     if unknown:
         raise PromotionError('bad_field', f'Cannot change: {sorted(unknown)}')
@@ -160,7 +163,7 @@ def update_promotion(promotion, *, actor, **changes):
 
 
 def _transition(promotion, actor, action, allowed, new_status, **extra):
-    """Move to `new_status` if the current status is in `allowed`; re-read under a lock to be race-safe."""
+    """Házirgi status `allowed` ishinde bolsa `new_status` ke ótiw; jarıstan qorǵaw ushın qulıp astında qayta oqıw."""
     with transaction.atomic():
         _lock_promotion(promotion)
         if promotion.status not in allowed:
@@ -174,20 +177,20 @@ def _transition(promotion, actor, action, allowed, new_status, **extra):
 
 
 def pause(promotion, *, actor):
-    """Hide the promotion for now; its dates stay reserved."""
+    """Reklamanı házirshe jasırıw; sanaları rezervlengen qaladı."""
     return _transition(promotion, actor, 'promotion_pause',
                        (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE), Promotion.STATUS_PAUSED)
 
 
 def resume(promotion, *, actor):
-    """Show it again: `active` if it was already paid and started, otherwise back to `scheduled`."""
+    """Qayta kórsetiw: aldınan tólengen hám baslanǵan bolsa `active`, bolmasa `scheduled` ke qaytıw."""
     started_and_paid = promotion.paid_at is not None and promotion.start_date <= business_today()
     return _transition(promotion, actor, 'promotion_resume', (Promotion.STATUS_PAUSED,),
                        Promotion.STATUS_ACTIVE if started_and_paid else Promotion.STATUS_SCHEDULED)
 
 
 def cancel(promotion, *, actor, reason):
-    """Stop for good and free the dates. A reason is required for the books; refunds are settled outside."""
+    """Mángige toqtatıw hám sanalardı bosatıw. Esap ushın sebep májbúriy; qaytarıwlar sırtta sheshiledi."""
     reason = (reason or '').strip()
     if not reason:
         raise PromotionError('reason_required', 'A reason is required')
@@ -198,7 +201,7 @@ def cancel(promotion, *, actor, reason):
 
 
 def mark_paid(promotion, *, actor):
-    """Record that the client paid (outside the platform). Only now can the promotion be shown."""
+    """Klienttiń tólegenin jazıw (platforma sırtında). Reklama tek endi kórsetile aladı."""
     with transaction.atomic():
         _lock_promotion(promotion)
         if promotion.paid_at is not None:
@@ -213,7 +216,7 @@ def mark_paid(promotion, *, actor):
 
 
 def _scope_matches_property():
-    """A promotion with a place only shows for hotels in that place; an empty level matches all."""
+    """Orını bar reklama tek sol orındaǵı mehmanxanalarǵa kórsetiledi; bos dáreje hámmesine sáykes keledi."""
     return (
         (Q(country_ref__isnull=True) | Q(country_ref_id=F('property__country_ref_id')))
         & (Q(region_ref__isnull=True) | Q(region_ref_id=F('property__region_ref_id')))
@@ -221,7 +224,7 @@ def _scope_matches_property():
 
 
 def shown_now(today: date | None = None):
-    """Promotions that may be served right now. Computed from the facts, never from `status` alone."""
+    """Házir kórsetile alatuǵın reklamalar. Faktlardan esaplanadı, hesh qashan tek `status` tan emes."""
     today = today or business_today()
     awaiting_answer = Exists(AdRenewal.objects.filter(
         promotion=OuterRef('pk'), status=AdRenewal.STATUS_PENDING, deadline__gte=today))
@@ -233,20 +236,20 @@ def shown_now(today: date | None = None):
 
 
 def _rotation_key(promotion, today):
-    """Sort key: higher priority first; the hash of (date, id) shuffles equal priorities once per day."""
+    """Tártiplew kilti: joqarı priority birinshi; (sana, id) hash i birdey priority lerdi kúnine bir ret aralastıradı."""
     digest = hashlib.sha256(f'{today.isoformat()}:{promotion.pk}'.encode()).hexdigest()
     return -promotion.priority, digest
 
 
 def ordered(queryset, today: date | None = None, limit: int | None = None):
-    """Highest priority first; equal priorities rotate fairly, a different order each business day."""
+    """Eń joqarı priority birinshi; birdey priority ler ádil aylanadı, hár is kúni ayrıqsha tártip."""
     today = today or business_today()
     items = sorted(queryset, key=lambda promotion: _rotation_key(promotion, today))
     return items[:limit] if limit is not None else items
 
 
 def blocked_reason(promotion):
-    """Why a promotion cannot be seen by guests even though it is paid and running, or None."""
+    """Reklama tólengen hám islep tursa da mehmanlar nege kóre almaydı, yamasa None."""
     prop = promotion.property
     if prop.is_deleted or not prop.is_active or prop.status != 'active':
         return 'hotel_not_active'
@@ -258,13 +261,13 @@ def blocked_reason(promotion):
 
 
 def _awaiting_answer(promotion, today):
-    """The ad ended but the question "did the hotel pay for the next month?" is still open (renewals.py)."""
+    """Reklama pitti, biraq "mehmanxana keyingi ay ushın tóledi me?" sorawı ele ashıq (renewals.py)."""
     return any(renewal.status == AdRenewal.STATUS_PENDING and renewal.deadline >= today
                for renewal in promotion.renewals.all())
 
 
 def is_shown_now(promotion, today: date | None = None):
-    """Python twin of shown_now() for one loaded promotion (admin screens). Keep the two in step."""
+    """Bir júklengen reklama ushın shown_now() tiń Python juwıbı (admin ekranları). Ekewin birge jańalap turıń."""
     today = today or business_today()
     return (
         not promotion.is_deleted
@@ -278,9 +281,9 @@ def is_shown_now(promotion, today: date | None = None):
 
 def tidy_statuses(today: date | None = None):
     """
-    Nightly: expired promotions become `ended` (not while their renewal question is open), paid ones whose
-    period has begun become `active`.
-    Only keeps `status` readable in the admin lists; serving is computed by `shown_now()`.
+    Túnde: múddeti ótken reklamalar `ended` boladı (jańalaw sorawı ashıq waqıtta emes), dáwiri baslanǵan tólengenleri
+    `active` boladı.
+    Tek admin dizimlerinde `status` dı oqılatuǵın etip saqlaydı; kórsetiw shown_now() menen esaplanadı.
     """
     today = today or business_today()
     live = Promotion.objects.filter(is_deleted=False)
@@ -293,13 +296,14 @@ def tidy_statuses(today: date | None = None):
 
 
 def _audit_photo(actor, action, promotion, photo):
-    """Ids only, like every audit row."""
+    """Tek id ler, hár audit qatarı sıyaqlı."""
     AdminAccessLog.record(actor, action, details={
         'promotion_id': promotion.pk, 'property_id': promotion.property_id, 'object_id': photo.pk})
 
 
 def add_photo(*, actor, promotion, photo):
-    """Put one picture on an ad that can still change: at most MAX_PHOTOS, a real image, shown in upload order."""
+    """Ele ózgertilip bolatuǵın reklamaǵa bir súwret qoyıw: eń kóbi MAX_PHOTOS, haqıyqıy súwret, júklew tártibinde
+    kórsetiledi."""
     error = image_upload_error(photo, AD_BANNER)
     if error:
         raise PromotionError('bad_image', error)
@@ -318,7 +322,7 @@ def add_photo(*, actor, promotion, photo):
 
 
 def remove_photo(*, actor, promotion, photo_id):
-    """Take one picture off an ad (a soft delete; the file stays on disk)."""
+    """Reklamadan bir súwretti alıp taslaw (soft delete; fayl diskte qaladı)."""
     with transaction.atomic():
         row = PromotionPhoto.objects.select_for_update().filter(
             pk=photo_id, promotion=promotion, is_deleted=False).first()
@@ -330,9 +334,9 @@ def remove_photo(*, actor, promotion, photo_id):
 
 def regions_panel(today: date | None = None):
     """
-    Every active region with how many ads run in it now (`running`, with the hotels) and how many are still to
-    run or wait for payment (`waiting`). Regions with the most running ads first, so the admin also sees
-    the empty ones: that is where ads can still be sold.
+    Hár aktiv region, onda házir neshe reklama islep atırǵanı (`running`, mehmanxanalar menen) hám neshewi ele islewi
+    yamasa tólemdi kútiwi kerek (`waiting`). Eń kóp isleytuǵın reklamalı regionlar birinshi, sonda admin
+    bos regionlardı da kóredi: reklamanı sol jerde ele satıw múmkin.
     """
     today = today or business_today()
     holding = Promotion.objects.filter(

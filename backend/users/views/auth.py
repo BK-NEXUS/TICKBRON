@@ -1,4 +1,4 @@
-"""Sign-up, password login, logout and the CSRF token."""
+"""Dizimnen ótiw, parol kirisiwi, shıǵıw hám CSRF token."""
 import logging
 
 from django.contrib.auth import authenticate, login, logout
@@ -25,8 +25,8 @@ from users.sessions import start_session
 from users.throttles import LoginRateThrottle, RegisterRateThrottle
 from django.utils.translation import gettext as _
 
-# One message for every failed login, so responses do not reveal whether an
-# email exists or an account is locked
+# Hár sátsiz kirisiw ushın bir xabar, sol sebepli juwaplar e-mail dıń barlıǵın
+# yamasa akkauntiń bloklanǵanın ashpaydı
 LOGIN_FAILED_MESSAGE = 'Invalid credentials. If you have made several failed attempts, please try again later.'
 
 
@@ -40,9 +40,10 @@ def _login_failed_response():
 @throttle_classes([RegisterRateThrottle])
 def register(request):
     """
-    Sign up with e-mail, name and password. With EMAIL_VERIFICATION_REQUIRED (the normal setting) nothing is created yet:
-    a six-digit code goes to the address and the account is made by POST /auth/register/verify/. Without it the account
-    is made at once and the new user is signed in.
+    E-mail, at hám parol menen dizimnen ótiw. EMAIL_VERIFICATION_REQUIRED (ádettegi sazlama) bolsa ele hesh nárse
+    jaratılmaydı:
+    altı sanlı kod mánzilge baradı hám akkaunt POST /auth/register/verify/ arqalı jaratıladı. Onsız akkaunt
+    birden jaratıladı hám jańa paydalanıwshı kirgiziledi.
     """
     enforce_csrf(request)
     serializer = UserRegistrationSerializer(data=request.data)
@@ -54,7 +55,7 @@ def register(request):
 
     try:
         user = serializer.save()
-    except IntegrityError:  # a parallel sign-up took the address between validation and insert
+    except IntegrityError:  # paralel dizimnen ótiw tekseriw hám qosıw arasında mánzildi aldı
         return Response({'email': [_('User with this email already exists.')]}, status=status.HTTP_400_BAD_REQUEST)
     login(request, user)
     log_security_event('account_created', request, user=user, level=logging.INFO)
@@ -73,7 +74,7 @@ def too_soon_response(error):
 
 
 def _start_verified_sign_up(request, data):
-    """Keep the typed data (the password only as a hash) with a new code and mail the code; make no account yet."""
+    """Terilgen maǵlıwmattı (parol tek hash retinde) jańa kod penen saqlaw hám kodtı e-mail ge jiberiw; ele akkaunt jaratpaw."""
     email = data['email']
     waiting = {key: value for key, value in data.items() if key not in ('password', 'password_confirm')}
     waiting['password_hash'] = make_password(data['password'])
@@ -90,7 +91,8 @@ def _start_verified_sign_up(request, data):
 
 
 def create_verified_user(waiting):
-    """The account of a confirmed sign-up: the stored password hash is used as it is, the address counts as confirmed."""
+    """Tastıyıqlanǵan dizimnen ótiwdiń akkaunt ı: saqlanǵan parol hash i sol qalpında paydalanıladı, mánzil tastıyıqlanǵan
+    sanaladı."""
     fields = {key: value for key, value in waiting.items() if key != 'password_hash'}
     with transaction.atomic():
         user = User.objects.create_user(password=None, **fields)
@@ -106,10 +108,10 @@ def create_verified_user(waiting):
 @throttle_classes([LoginRateThrottle])
 def login_view(request):
     """
-    Sign in with e-mail and password (lockout rules: see users.lockout).
+    E-mail hám parol menen kiriw (lockout qaǵıydaları: qarań users.lockout).
 
-    Unknown email, wrong password, inactive and locked accounts all get the
-    same 401 response, so the endpoint does not reveal which emails exist.
+    Belgisiz e-mail, qáte parol, aktiv emes hám bloklanǵan akkauntlar birdey
+    401 juwabın aladı, sol sebepli endpoint qaysı e-mail ler barlıǵın ashpaydı.
     """
     enforce_csrf(request)
     serializer = UserLoginSerializer(data=request.data)
@@ -122,9 +124,9 @@ def login_view(request):
 
     user = User.objects.filter(email=email).first()
     if user is None or lockout.is_locked(user, client_ip):
-        # Hash anyway so the response time does not reveal which case this is
+        # Sonda da hash lew, sonda juwap waqtı bul qaysı jaǵday ekenin ashpaydı
         make_password(password)
-        # The client sees one answer; the log says which case it was
+        # Klient bir juwap kóredi; log qaysı jaǵday bolǵanın aytadı
         log_security_event('login_failed', request, user=user, reason='unknown_account' if user is None else 'locked')
         return _login_failed_response()
 
@@ -135,7 +137,7 @@ def login_view(request):
         return _login_failed_response()
 
     if authenticated_user.two_factor_enabled:
-        # Not signed in yet: the failure counters stay until the code is right too
+        # Ele kirmegen: kod ta durıs bolǵansha qátelik sanaǵıshları qaladı
         two_factor.remember_password_step(request, authenticated_user)
         return Response({'two_factor_required': True}, status=status.HTTP_200_OK)
 
@@ -147,12 +149,12 @@ def login_view(request):
 
 
 def _ask_for_login_code(request, user):
-    """The password is right: mail a code and wait for it; the session starts only when the code is typed."""
+    """Parol durıs: kod jiberiledi hám onı kútedi; session tek kod terilgende baslanadı."""
     ident = str(user.pk)
     try:
         email_codes.issue('login', ident, user.email)
     except email_codes.TooSoon as error:
-        if error.retry_after > email_codes.RESEND_AFTER_SECONDS:  # the hourly limit, not "the last code is still fresh"
+        if error.retry_after > email_codes.RESEND_AFTER_SECONDS:  # saatlıq limit, "sońǵı kod ele jańa" emes
             return too_soon_response(error)
     except email_codes.SendFailed:
         log_security_event('email_code_failed', request, user=user, reason='mail_not_sent', purpose='login')
@@ -169,7 +171,7 @@ def _ask_for_login_code(request, user):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
-    """End the session and clear its cookie."""
+    """Session dı tawsıw hám onıń cookie sin tazalaw."""
     account = request.user if request.user.is_authenticated else None
     if account is not None:
         log_security_event('logout', request, user=account, level=logging.INFO)
@@ -183,14 +185,14 @@ def logout_view(request):
 @permission_classes([AllowAny])
 def csrf_token(request):
     """
-    Return a CSRF token for the X-CSRFToken header.
+    X-CSRFToken header ushın CSRF token di qaytarıw.
 
-    The csrftoken cookie is HttpOnly, so the SPA cannot read it and asks here
-    instead. get_token() also sets the cookie if the browser has none yet.
-    Django rotates the token on login, so clients fetch a new one after it.
+    csrftoken cookie HttpOnly, sol sebepli SPA onı oqıy almaydı hám usı jerden soraydı.
+    get_token() brauzerde ele joq bolsa cookie di de ornatadı.
+    Django kirisiwde token di aylandıradı, sol sebepli klientler sonnan keyin jańasın aladı.
     """
     return Response({
         'csrf_token': get_token(request),
-        # Lets the SPA skip /auth/me/ (a 401) when nobody is logged in
+        # Hesh kim kirmegen waqıtta SPA ǵa /auth/me/ ti (401) ótkizip jiberiwge múmkinshilik beredi
         'authenticated': request.user.is_authenticated,
     }, status=status.HTTP_200_OK)

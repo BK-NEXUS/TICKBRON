@@ -1,4 +1,4 @@
-"""Celery tasks shared by the whole project."""
+"""Pútkil proekt ortaq paydalanatuǵın Celery task lar."""
 import json
 import logging
 import urllib.error
@@ -17,9 +17,9 @@ SEND_TIMEOUT_SECONDS = 5
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)
 def send_telegram_message(self, text):
     """
-    Send `text` to the alert chat. Retried twice when Telegram cannot be reached.
+    `text` ti eskertiw chatına jiberiw. Telegram ǵa jetip bolmasa eki ret qayta urınıladı.
 
-    Only the kind of error is logged: the request URL holds the bot token.
+    Tek qátelik túri log qa jazıladı: soraw URL inde bot token bar.
     """
     request = urllib.request.Request(
         TELEGRAM_API.format(token=settings.TELEGRAM_BOT_TOKEN),
@@ -35,5 +35,5 @@ def send_telegram_message(self, text):
 
 @shared_task
 def clear_expired_sessions():
-    """Delete the sign-in sessions that have expired: Django keeps them in the database and never removes them itself."""
+    """Múddeti ótken kirisiw session ların óshiriw: Django olardı database de saqlaydı hám ózi hesh qashan óshirmeydi."""
     call_command('clearsessions')

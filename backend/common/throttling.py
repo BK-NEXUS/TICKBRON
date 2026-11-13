@@ -1,11 +1,11 @@
-"""Throttles that count a visitor by network block (see common.request.network_key), not by single address."""
+"""Kelwshini jeke mánzil boyınsha emes, tarmaq bloǵı boyınsha sanaytuǵın throttle ler (qarań common.request.network_key)."""
 from rest_framework.throttling import AnonRateThrottle
 
 from common.request import network_key
 
 
 class BlockAnonRateThrottle(AnonRateThrottle):
-    """DRF's anonymous throttle, with an IPv6 visitor counted by its /64 block."""
+    """DRF tiń anonim throttle i, IPv6 kelwshisi óziniń /64 bloǵı boyınsha sanalǵan."""
 
     def get_ident(self, request):
         return network_key(super().get_ident(request))

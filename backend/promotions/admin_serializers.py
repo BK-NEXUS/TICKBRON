@@ -8,7 +8,7 @@ from properties.models import Property
 
 
 class PromotionWriteFields(serializers.Serializer):
-    """Input shared by create and update. Status, payment and hotel are never writable here."""
+    """Jaratıw hám jańalaw ortaq paydalanatuǵın kirisiw. Status, tólem hám mehmanxana bul jerde hesh qashan jazılmaydı."""
     start_date = serializers.DateField()
     end_date = serializers.DateField()
     priority = serializers.IntegerField()
@@ -42,7 +42,7 @@ class CancelSerializer(serializers.Serializer):
 
 
 class PromotionPhotoUploadSerializer(serializers.Serializer):
-    """The upload field: an ImageField decodes the file, so a renamed text file is refused, not stored."""
+    """Júklew maydanı: ImageField fayldı ashıp tekseredi, sol sebepli atı ózgertilgen tekst fayl biykar etiledi, saqlanbaydı."""
     photo = serializers.ImageField()
 
 
@@ -84,7 +84,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         return {'id': prop.pk, 'name': prop.display_name(), 'city': prop.city, 'status': prop.status}
 
     def _live_photos(self, obj):
-        # The admin list prefetches `photos`; filtering here keeps that one query for all rows
+        # Admin dizimi `photos` ti aldınan júkleydi; bul jerdegi filter lew barlıq qatarlar ushın sol bir query di saqlaydı
         return [photo for photo in obj.photos.all() if not photo.is_deleted and photo.is_active]
 
     @extend_schema_field(PromotionPhotoSerializer(many=True))

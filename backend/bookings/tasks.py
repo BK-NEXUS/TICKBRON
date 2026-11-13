@@ -1,5 +1,5 @@
 """
-Celery tasks for bookings.
+Bronlar ushın Celery task lar.
 """
 from celery import shared_task
 
@@ -10,11 +10,11 @@ from bookings.notices import send_notice
 @shared_task
 def expire_pending_bookings():
     """
-    Cancel pending bookings whose payment window has passed and release their inventory.
+    Tólem oynası ótken kútip turǵan bronlardı biykar etiw hám inventory dı bosatıw.
 
-    Scheduled by CELERY_BEAT_SCHEDULE. Raises if any booking could not be
-    expired, so the failure is visible in Celery monitoring; the other
-    bookings are still processed first.
+    CELERY_BEAT_SCHEDULE boyınsha rejelestirilgen. Qanday da bron múddeti ótken dep belgilenbese
+    kóteredi, sol sebepli qátelik Celery monitoring inde kórinedi; basqa
+    bronlar aldın islenedi.
     """
     return Booking.process_expired_bookings(raise_on_error=True)
 
@@ -22,10 +22,10 @@ def expire_pending_bookings():
 @shared_task
 def complete_finished_stays():
     """
-    Confirmed stays whose check-out date has passed become completed (R12).
+    Shıǵıw sanası ótken tastıyıqlanǵan turıwlar completed boladı (R12).
 
-    Scheduled at 00:05 Asia/Tashkent (CELERY_BEAT_SCHEDULE). Raises after the run if
-    any booking could not be completed, so the failure shows in Celery monitoring.
+    Asia/Tashkent 00:05 te rejelestirilgen (CELERY_BEAT_SCHEDULE). Qanday da bron juwmaqlanbasa,
+    isleniwden keyin kóteredi, sol sebepli qátelik Celery monitoring inde kórinedi.
     """
     from bookings.completion import CompletionError, complete_finished_stays as run
 
@@ -38,10 +38,10 @@ def complete_finished_stays():
 @shared_task
 def cancel_unarrived_bookings():
     """
-    Cancel confirmed bookings whose guest has not arrived ARRIVAL_GRACE_HOURS after the arrival time they gave.
+    Mehmanı bergen keliw waqtınan keyin ARRIVAL_GRACE_HOURS saat ótkenshe kelmegen tastıyıqlanǵan bronlardı biykar etiw.
 
-    Scheduled every 10 minutes (CELERY_BEAT_SCHEDULE). Raises after the run if any booking could not be
-    cancelled, so the failure shows in Celery monitoring; the others are still processed first.
+    Hár 10 minutta rejelestirilgen (CELERY_BEAT_SCHEDULE). Qanday da bron biykar etilmese, isleniwden keyin
+    kóteredi, sol sebepli qátelik Celery monitoring inde kórinedi; basqaları aldın islenedi.
     """
     from bookings.arrival import ArrivalCancellationError, cancel_unarrived_bookings as run
 
@@ -51,10 +51,12 @@ def cancel_unarrived_bookings():
     return result
 
 
-# ignore_result: nobody reads the answer, and the result store is not touched (with Redis down that cost 20 s a call)
+# ignore_result: juwaptı hesh kim oqımaydı, hám natiyje saqlaw orınına tiyilmeydi (Redis óship qalsa bul hár shaqırıwǵa 20 s
+# ketti)
 @shared_task(ignore_result=True)
 def send_booking_notice(booking_id, kind):
-    """Mail one booking notice. The booking was saved before this runs, so a slow mail server shows nothing."""
+    """Bir bron xabarlandırıwın e-mail ge jiberiw. Bron bul isleniwden aldın saqlanǵan, sol sebepli sekin e-mail server hesh
+    nárse kórsetpeydi."""
     booking = Booking.objects.select_related('guest', 'property__owner').filter(pk=booking_id).first()
     if booking is not None:
         send_notice(booking, kind)

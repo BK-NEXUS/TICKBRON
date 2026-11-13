@@ -6,5 +6,5 @@ class PropertiesConfig(AppConfig):
     name = 'properties'
 
     def ready(self):
-        """Import signal handlers when the app is ready."""
+        """App tayın bolǵanda signal handler lerdi import etiw."""
         import properties.signals  # noqa: F401  (connects the signal handlers)

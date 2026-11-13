@@ -1,4 +1,4 @@
-"""Hotel owners read the approved reviews of their own hotels and answer them in public."""
+"""Mehmanxana iyeleri óz mehmanxanaları tastıyıqlanǵan sharhların oqıydı hám olarǵa ashıq juwap beredi."""
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
@@ -18,7 +18,7 @@ REPLY_MAX_LENGTH = 1000
 
 
 class OwnerReviewSerializer(serializers.ModelSerializer):
-    """A public review as its hotel's owner sees it; the reviewer is "Aziz K.", never an address."""
+    """Ashıq sharh mehmanxana iyesi kóretuǵınday; sharh jazıwshı "Aziz K.", hesh qashan mánzil emes."""
     reviewer = serializers.SerializerMethodField()
     stay_month = serializers.SerializerMethodField()
     property_name = serializers.CharField(source='property.display_name', read_only=True)
@@ -48,7 +48,7 @@ def _own_public_reviews(user):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_reviews(request):
-    """The approved reviews of the owner's hotels, newest first (`?property=<id>` for one hotel)."""
+    """Iyeniń mehmanxanaları tastıyıqlanǵan sharhları, eń jańası birinshi (bir mehmanxana ushın `?property=<id>`)."""
     reviews = _own_public_reviews(request.user)
     hotel = request.query_params.get('property')
     if hotel and hotel.isdigit():
@@ -62,7 +62,7 @@ def partner_reviews(request):
 @api_view(['POST', 'DELETE'])
 @permission_classes([IsHotelOwner])
 def partner_review_reply(request, review_id):
-    """POST {text}: write or replace the answer (the guest is told about the first one). DELETE: take it back."""
+    """POST {text}: juwaptı jazıw yamasa almastırıw (mehmanǵa birinshisi haqqında aytıladı). DELETE: qaytarıp alıw."""
     review = _own_public_reviews(request.user).filter(pk=review_id).first()
     if review is None:
         return Response({'detail': _('Not found.')}, status=status.HTTP_404_NOT_FOUND)

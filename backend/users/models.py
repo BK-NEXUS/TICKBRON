@@ -1,7 +1,7 @@
 """
-User models for TICKBRON.
+TICKBRON ushın User model leri.
 
-This module contains the custom User model and related user management models.
+Bul modul óz User modelin hám paydalanıwshını basqarıwǵa baylanıslı model lerdi óz ishine aladı.
 """
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -13,9 +13,9 @@ from common.models import BaseModel
 
 class UserManager(BaseUserManager):
     """
-    Custom user manager for email-based authentication.
+    E-mail tiykarındaǵı autentifikaciya ushın óz paydalanıwshı manager i.
 
-    An address is the same address whatever its capitals: it is stored in lower case and looked up the same way.
+    Mánzil úlken háripleri qanday bolsa da birdey mánzil: ol kishi háripte saqlanadı hám sol usılda izlenedi.
     """
 
     @classmethod
@@ -27,7 +27,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         """
-        Create and save a regular user with the given email and password.
+        Berilgen e-mail hám parol menen ápiwayı paydalanıwshı jaratıw hám saqlaw.
         """
         if not email:
             raise ValueError('Users must have an email address')
@@ -40,7 +40,7 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         """
-        Create and save a superuser with the given email and password.
+        Berilgen e-mail hám parol menen superuser jaratıw hám saqlaw.
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -56,17 +56,17 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     """
-    Custom User model for TICKBRON.
+    TICKBRON ushın óz User modeli.
 
-    Uses email as the username field and includes additional fields
-    for user management and profile information.
+    E-mail di username maydanı retinde paydalanadı hám paydalanıwshını basqarıw hám profil maǵlıwmatı
+    ushın qosımsha maydanlardı óz ishine aladı.
     """
     email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=300, blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
-    # Legacy, read-only: nothing in the app collects or verifies a number any more (accounts are
-    # e-mail only). Blank is stored as NULL; not unique, old accounts may share a number.
+    # Eski, tek oqıw: ilovada hesh nárse endi nomerdi jıynamaydı yamasa tekspeydi (akkauntlar
+    # tek e-mail). Bos NULL retinde saqlanadı; unikal emes, eski akkauntlar nomerdi bólisiwi múmkin.
     phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     is_staff = models.BooleanField(default=False)
@@ -75,7 +75,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
 
-    # Security and verification fields
+    # Qáwipsizlik hám tekseriw maydanları
     failed_login_attempts = models.IntegerField(default=0)
     last_failed_login = models.DateTimeField(null=True, blank=True)
     account_locked_until = models.DateTimeField(null=True, blank=True)
@@ -84,14 +84,14 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     email_verification_token = models.CharField(max_length=255, blank=True, null=True)
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
 
-    # 2FA foundation fields
+    # 2FA tiykar maydanları
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
     two_factor_backup_codes = models.TextField(blank=True, null=True)
-    # The 30 second step of the last code accepted, so a code cannot be used twice (users/two_factor.py)
+    # Eń sońǵı qabıllanǵan kodtıń 30 sekundlıq qádemi, sol sebepli kodtı eki ret paydalanıp bolmaydı (users/two_factor.py)
     two_factor_last_step = models.BigIntegerField(null=True, blank=True)
 
-    # Contact method preferences
+    # Baylanıs usılı qálewleri
     whatsapp = models.CharField(max_length=20, blank=True, null=True)
     telegram = models.CharField(max_length=50, blank=True, null=True)
     PREFERRED_CONTACT_CHOICES = [
@@ -108,7 +108,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         null=True
     )
 
-    # Role foundation (for RBAC)
+    # Rol tiykarı (RBAC ushın)
     role = models.ForeignKey('permissions.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
     objects = UserManager()
@@ -122,7 +122,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
         constraints = [
-            # One account per mailbox, whatever the capitals (the stored value is already lower case)
+            # Hár poshta qutısına bir akkaunt, úlken háripleri qanday bolsa da (saqlanǵan mánis aldınan kishi háripte)
             models.UniqueConstraint(Lower('email'), name='users_email_lower_unique'),
         ]
 
@@ -130,14 +130,14 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return self.email
 
     def save(self, *args, **kwargs):
-        # Store a missing phone number as NULL so the unique constraint allows many
+        # Joq telefon nomerin NULL retinde saqlaw, sonda unikal constraint kóplerine ruxsat beredi
         if self.phone_number is not None:
             self.phone_number = self.phone_number.strip() or None
         super().save(*args, **kwargs)
 
     def get_full_name(self):
         """
-        Return the full_name if set, otherwise first_name plus last_name, with a space in between.
+        full_name belgilengen bolsa, onı, bolmasa first_name hám last_name di aralarında bos orın penen qaytarıw.
         """
         if self.full_name:
             return self.full_name
@@ -146,30 +146,31 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     def get_short_name(self):
         """
-        Return the short name for the user.
+        Paydalanıwshı ushın qısqa atın qaytarıw.
         """
         return self.first_name
 
     def is_account_locked(self):
         """
-        Check if the account is currently locked due to failed login attempts.
+        Akkauntiń sátsiz kirisiw urınıwları sebepli házir bloklanǵanın tekseriw.
         """
         if self.account_locked_until and self.account_locked_until > timezone.now():
             return True
         return False
 
-    # Account-wide lockout (all IPs together); per-IP lockout is in users.lockout
+    # Akkaunt dárejesindegi lockout (barlıq IP birge); IP boyınsha lockout users.lockout ta
     ACCOUNT_FAILURE_LIMIT = 20
     ACCOUNT_FAILURE_WINDOW_MINUTES = 30
     ACCOUNT_LOCK_MINUTES = 15
 
     def increment_failed_login(self):
         """
-        Increment failed login attempts and lock account if threshold reached.
+        Sátsiz kirisiw urınıwların kóbeytiw hám shek jetse akkaunttı bloklaw.
 
-        Failures older than the window no longer count, so occasional typos
-        never add up to a lock. The threshold is high on purpose: a low
-        account-wide limit lets anyone lock out any user (see users.lockout).
+        Oynadan eski qátelikler endi esaplanbaydı, sol sebepli waqıt-waqıtı menen bolǵan
+        jazıw qátelikleri hesh qashan blokqa jıynalmaydı. Shek ataylap joqarı: tómen
+        akkaunt dárejesindegi limit qálegen adamǵa qálegen paydalanıwshını bloklawǵa múmkinshilik beredi (qarań
+        users.lockout).
         """
         from datetime import timedelta
         now = timezone.now()
@@ -183,12 +184,13 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         if self.failed_login_attempts >= self.ACCOUNT_FAILURE_LIMIT:
             self.account_locked_until = now + timedelta(minutes=self.ACCOUNT_LOCK_MINUTES)
 
-        # Only these fields: a stale in-memory user must not overwrite others (e.g. a password changed meanwhile)
+        # Tek usı maydanlar: eskirgen jaddaǵı paydalanıwshı basqalardı (mısalı usı arada ózgertilgen paroldi) qayta jazbawı
+        # kerek
         self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
 
     def reset_failed_login(self):
         """
-        Reset failed login attempts after successful login.
+        Tabıslı kirisiwden keyin sátsiz kirisiw urınıwların qayta ornatıw.
         """
         self.failed_login_attempts = 0
         self.last_failed_login = None

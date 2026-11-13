@@ -1,7 +1,7 @@
 """
-R6 migration guard (decision B): run as the first operation of the first R6
-migration. If any property, room type or rate plan is priced in a currency that is
-not supported, the migration stops before anything has changed.
+R6 migration qorǵawı (B sheshimi): birinshi R6 migration nıń birinshi ámeli
+retinde isleydi. Qanday da mehmanxana, xona túri yamasa rate plan qollap-quwatlanbaytuǵın
+valyutada bahalanǵan bolsa, migration hesh nárse ózgermesten aldın toqtaydı.
 """
 from common.money import SUPPORTED_BASE_CURRENCIES
 

@@ -1,8 +1,8 @@
 """
-Geography dictionary: Country > Region (there is no town or district below the region).
+Geografiya sózligi: Country > Region (regiondan tómen qala yamasa tuman joq).
 
-Names are stored in Uzbek (Latin), Russian and English; the frontend picks the
-language. Rows in use are never deleted (PROTECT): hide them with is_active=False.
+Atlar ózbek (Latin), rus hám inglizshe saqlanadı; frontend tildi
+tańlaydı. Paydalanılıp atırǵan qatarlar hesh qashan óshirilmeydi (PROTECT): olardı is_active=False penen jasırıń.
 """
 import os
 import uuid
@@ -16,7 +16,7 @@ LANGUAGES = ('uz', 'ru', 'en')
 
 
 def _random_image_path(folder, filename):
-    """Stored picture names are random: the path is public and must not be guessable."""
+    """Saqlanǵan súwret atları tosınarlıq: jol ashıq hám boljawǵa bolmaytuǵın bolıwı kerek."""
     return f'geography/{folder}/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}'
 
 
@@ -29,7 +29,7 @@ def region_image_path(instance, filename):
 
 
 class GeoName(BaseModel):
-    """Shared fields: three names, active flag (from BaseModel) and a sort order."""
+    """Ortaq maydanlar: úsh at, aktiv flag (BaseModel den) hám tártip nomeri."""
     name_uz = models.CharField(max_length=150)
     name_ru = models.CharField(max_length=150)
     name_en = models.CharField(max_length=150)
@@ -39,7 +39,7 @@ class GeoName(BaseModel):
         abstract = True
 
     def name(self, language='en'):
-        """The name in `language` (uz, ru, en); English when unknown or empty."""
+        """`language` degi at (uz, ru, en); belgisiz yamasa bos bolsa inglizsha."""
         if language in LANGUAGES:
             value = getattr(self, f'name_{language}')
             if value:
@@ -69,7 +69,7 @@ class Country(GeoName):
 class Region(GeoName):
     country = models.ForeignKey(Country, on_delete=models.PROTECT, related_name='regions')
     image = models.ImageField(upload_to=region_image_path, null=True, blank=True)
-    # Stable key (e.g. "uz-khorezm-region"): set once, never changed by a rename
+    # Turaqlı kilt (mısalı "uz-khorezm-region"): bir márte belgilenedi, at ózgergende hesh qashan ózgermeydi
     slug = models.SlugField(max_length=200, unique=True, blank=True)
 
     class Meta:

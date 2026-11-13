@@ -1,15 +1,15 @@
 """
-Login lockout policy for password login.
+Parol kirisiwi ushın kirisiw lockout siyasatı.
 
-Failures are counted per (account, client IP) and per account:
+Qátelikler (akkaunt, klient IP) hám akkaunt boyınsha sanaladı:
 
-- 5 failures from one IP lock that IP out of that account for 30 minutes.
-  An attacker hammering someone's account only locks themselves out; the
-  owner can still sign in from their own network.
-- 20 failures across all IPs (within a 30-minute window) lock the account
-  for 15 minutes, to slow down distributed guessing.
+- Bir IP den 5 qátelik sol IP di sol akkauntqa 30 minutqa bloklaydı.
+  Birewdiń akkauntın urıp atırǵan hújimshi tek ózin bloklaydı; iye
+  óz tarmaǵınan ele kire aladı.
+- Barlıq IP lerden 20 qátelik (30 minutlıq oyna ishinde) akkauntti 15 minutqa
+  bloklaydı, tarqalǵan boljawdı sekinletiw ushın.
 
-Counters for the per-IP rule live in the cache (Redis in production).
+IP boyınsha qaǵıyda sanaǵıshları keshte turadı (production ta Redis).
 """
 from django.core.cache import cache
 
@@ -25,25 +25,25 @@ def _ip_key(user, client_ip):
 
 
 def is_locked(user, client_ip):
-    """True if this account is locked, either for everyone or for this client IP."""
+    """Bul akkaunt bloklanǵan bolsa True, hámmege yamasa usı klient IP ge."""
     if user.is_account_locked():
         return True
     return (cache.get(_ip_key(user, client_ip)) or 0) >= IP_FAILURE_LIMIT
 
 
 def record_failure(user, client_ip):
-    """Count a failed password attempt for this account and IP."""
+    """Usı akkaunt hám IP ushın sátsiz parol urınıwın sanaw."""
     key = _ip_key(user, client_ip)
     cache.add(key, 0, IP_LOCK_SECONDS)
     try:
         failures = cache.incr(key)
     except ValueError:
-        # Expired between add() and incr()
+        # add() hám incr() arasında múddeti ótti
         cache.set(key, 1, IP_LOCK_SECONDS)
         failures = 1
     was_locked = user.is_account_locked()
     user.increment_failed_login()
-    # Logged once, at the moment the lock starts, so an alert can key on it
+    # Bir márte, blok baslanǵan waqıtta log qa jazıladı, sol sebepli eskertiw onı kilt etip ala aladı
     if failures == IP_FAILURE_LIMIT:
         log_security_event('lockout', user=user, ip=client_ip, scope='ip')
     if user.is_account_locked() and not was_locked:
@@ -51,6 +51,6 @@ def record_failure(user, client_ip):
 
 
 def record_success(user, client_ip):
-    """Clear failure counters after a successful login."""
+    """Tabıslı kirisiwden keyin qátelik sanaǵıshların tazalaw."""
     cache.delete(_ip_key(user, client_ip))
     user.reset_failed_login()

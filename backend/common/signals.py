@@ -1,6 +1,6 @@
 """
-Signal handlers for the common app.
+common app ı ushın signal handler ler.
 
-This module will contain signal handlers for common models.
-Currently empty - will be populated in future checkpoints.
+Bul modul common model leri ushın signal handler lerdi óz ishine aladı.
+Házir bos - keyingi checkpoint larda toltırıladı.
 """

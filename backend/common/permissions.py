@@ -1,10 +1,10 @@
-"""Permission classes shared by several apps."""
+"""Bir neshe app ortaq paydalanatuǵın ruxsat klasları."""
 from django.conf import settings
 from rest_framework.permissions import BasePermission
 
 
 class StaffOrDebug(BasePermission):
-    """Open in development, staff only in production (API schema and docs)."""
+    """Development te ashıq, production ta tek staff (API schema hám hújjetler)."""
 
     def has_permission(self, request, view):
         if settings.DEBUG:

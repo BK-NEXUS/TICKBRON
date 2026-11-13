@@ -1,5 +1,5 @@
 """
-Signal handlers for the properties app.
+properties app ı ushın signal handler ler.
 
-This module contains signal handlers for property-related events.
+Bul modul mehmanxanaǵa baylanıslı waqıyalar ushın signal handler lerdi óz ishine aladı.
 """

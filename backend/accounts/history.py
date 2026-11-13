@@ -1,4 +1,4 @@
-"""The user-visible account history (logins, logout, sign-up) written from the auth views."""
+"""Paydalanıwshıǵa kórinetuǵın akkaunt tariyxı (kirisiw, shıǵıw, dizimnen ótiw); auth view lerinen jazıladı."""
 import logging
 
 from django.db import transaction
@@ -11,7 +11,7 @@ MAX_USER_AGENT_LENGTH = 500
 
 
 def record_history(user, action, request):
-    """Add one AccountHistory row; a failure is logged and never breaks the login itself."""
+    """Bir AccountHistory jazbasın qosadı; qátelik log qa jazıladı, kirisiwdiń ózin hesh qashan buzbaydı."""
     try:
         with transaction.atomic():
             AccountHistory.objects.create(

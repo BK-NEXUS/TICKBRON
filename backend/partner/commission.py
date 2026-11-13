@@ -1,12 +1,12 @@
 """
-The commission the site takes from hotel owners: one place for the rules.
+Sayt mehmanxana iyelerinen alatuǵın komissiya: qaǵıydalar ushın bir orın.
 
-- Counted bookings (confirmed or completed, see bookings.metrics.COUNTED_STATUSES) of the owner's hotels, by the
-  month of check-in, each currency apart. Nothing is converted.
-- The owner's percent of a month is the latest CommissionRate not after it; no rate, no commission.
-- commission = the month's gross x percent, rounded to cents (once per month and currency).
-- A month is confirmed as paid only after it has ended; the amounts are copied into the CommissionPayment.
-- Year totals are shown only for an account that is at least a year old.
+- Iyeniń mehmanxanalarınıń esaplanatuǵın bronları (confirmed yamasa completed, qarań bookings.metrics.COUNTED_STATUSES),
+  kiriw ayı boyınsha, hár valyuta bólek. Hesh nárse konvertaciyalanbaydı.
+- Iyeniń ay ushın procenti sol aydan keyin bolmaǵan eń sońǵı CommissionRate; kurs joq bolsa, komissiya joq.
+- komissiya = aydıń jalpı summası x procent, sentke shekem jumalaqlanǵan (hár ay hám valyuta ushın bir márte).
+- Ay tek pitkennen keyin ǵana tólengen dep tastıyıqlanadı; summalar CommissionPayment ke kóshiriledi.
+- Jıllıq jıynaqlar tek eń keminde bir jıllıq akkaunt ushın kórsetiledi.
 """
 import re
 from collections import defaultdict
@@ -29,7 +29,7 @@ MONTH_FORMAT = re.compile(r'^(20\d\d)-(0[1-9]|1[0-2])$')
 
 
 class CommissionError(Exception):
-    """A request the rules refuse; `code` picks the HTTP answer in the view."""
+    """Qaǵıydalar biykar etetuǵın soraw; `code` view de HTTP juwabın tańlaydı."""
 
     def __init__(self, code, message):
         super().__init__(message)
@@ -50,7 +50,7 @@ def month_label(first):
 
 
 def parse_month(text):
-    """The first day of 'YYYY-MM', or None for anything else."""
+    """'YYYY-MM' diń birinshi kúni, yamasa basqa hár nárse ushın None."""
     found = MONTH_FORMAT.match(text or '')
     return date(int(found.group(1)), int(found.group(2)), 1) if found else None
 
@@ -76,7 +76,7 @@ def _percent_for(rates, month):
 
 
 def _booking_rows(owner_ids):
-    """{owner id: {month: {'bookings', 'gross'}}} for all the owners in one query."""
+    """Barlıq iyeler ushın bir query de {iye id si: {ay: {'bookings', 'gross'}}}."""
     rows = (Booking.objects.filter(counted_q(), property__owner_id__in=owner_ids)
             .annotate(month=TruncMonth('check_in')).values('property__owner_id', 'month', 'currency')
             .annotate(bookings=Count('id'), amount=Sum('total_price')))
@@ -89,7 +89,7 @@ def _booking_rows(owner_ids):
 
 
 def _load(owner_ids):
-    """The percents, the booked figures and the paid months of all the owners: three queries, whatever their number."""
+    """Barlıq iyeler procentleri, bronlanǵan sanları hám tólengen ayları: sanı qansha bolsa da úsh query."""
     rates = defaultdict(list)
     for rate in CommissionRate.objects.filter(owner_id__in=owner_ids).order_by('effective_from'):
         rates[rate.owner_id].append(rate)
@@ -144,7 +144,7 @@ def _public_month(row):
 
 
 def statement(owner):
-    """Everything the owner's commission screen and the staff detail screen show."""
+    """Iyeniń komissiya ekranı hám staff tolıq maǵlıwmat ekranı kórsetetuǵın hámme nárse."""
     today = business_today()
     rows, rates = _month_rows(owner.id, _load([owner.id]), today)
     old_enough = owner.date_joined.date() <= today - timedelta(days=YEAR_DAYS)
@@ -157,19 +157,19 @@ def statement(owner):
 
 
 def list_summaries(owners):
-    """{owner id: row of the staff list} for the owners of one page, with the database asked three times in all."""
+    """Bir bettegi iyeler ushın {iye id si: staff dizimniń qatarı}, database ge jámi úsh ret soralıp."""
     loaded = _load([owner.id for owner in owners])
     today = business_today()
     return {owner.id: _summary(*_month_rows(owner.id, loaded, today), today) for owner in owners}
 
 
 def list_summary(owner):
-    """The row of one owner (the same figures as in `list_summaries`)."""
+    """Bir iyeniń qatarı (`list_summaries` degi birdey sanlar)."""
     return list_summaries([owner])[owner.id]
 
 
 def _summary(rows, rates, today):
-    """One row of the staff list: the percent, this month, and the commission of ended months not yet confirmed."""
+    """Staff dizimniń bir qatarı: procent, usı ay hám tastıyıqlanbaǵan pitken aylardıń komissiyası."""
     this_month = next(row for row in rows if row['first'] == month_start(today))
     unpaid = defaultdict(Decimal)
     for row in rows:
@@ -187,7 +187,7 @@ def _summary(rows, rates, today):
 
 
 def set_percent(owner, percent, actor):
-    """The percent from this month on (setting it again in the same month replaces it)."""
+    """Usı aydan baslap procent (sol ayda qayta belgilew onı almastıradı)."""
     CommissionRate.objects.update_or_create(
         owner=owner, effective_from=month_start(business_today()), defaults={'percent': percent, 'set_by': actor})
 
@@ -197,7 +197,7 @@ def _confirmer_name(actor):
 
 
 def confirm_paid(owner, first, actor):
-    """Record that the owner paid the commission of the month `first`; refuse what cannot be paid."""
+    """Iye `first` ayınıń komissiyasın tólegenin jazıw; tólenip bolmaytuǵın nárseden bas tartıw."""
     today = business_today()
     if first >= month_start(today):
         raise CommissionError('not_ended', _('This month has not ended yet.'))

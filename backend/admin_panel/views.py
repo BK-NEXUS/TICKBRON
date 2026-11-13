@@ -1,8 +1,8 @@
 """
-Views for admin API endpoints.
+Admin API endpoint leri ushın view ler.
 
-This module contains views for property moderation, user management,
-amenity management, and payment monitoring.
+Bul modul mehmanxana moderation ı, paydalanıwshılardı basqarıw,
+amenity di basqarıw hám tólemdi baqlaw view lerin óz ishine aladı.
 """
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -50,15 +50,15 @@ from django.utils.translation import gettext as _
 
 class IsSuperAdminOrStaff(IsAuthenticated):
     """
-    Custom permission to ensure user is super-admin or staff.
+    Paydalanıwshınıń super-admin yamasa staff ekenin támiyinleytuǵın ruxsat.
 
-    Super-admins have full access, staff have limited access.
+    Super-admin lerde tolıq kirisiw bar, staff ta shekli.
     """
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
 
-        # Check if user is staff
+        # Paydalanıwshınıń staff ekenin tekseriw
         if request.user.is_staff:
             return True
 
@@ -67,15 +67,15 @@ class IsSuperAdminOrStaff(IsAuthenticated):
 
 class IsSuperAdmin(IsAuthenticated):
     """
-    Custom permission to ensure user is super-admin.
+    Paydalanıwshınıń super-admin ekenin támiyinleytuǵın ruxsat.
 
-    Only super-admins (is_superuser=True) can access these endpoints.
+    Bul endpoint lerge tek super-admin ler (is_superuser=True) kire aladı.
     """
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
 
-        # Check if user is superuser
+        # Paydalanıwshınıń superuser ekenin tekseriw
         if request.user.is_superuser:
             return True
 
@@ -86,23 +86,23 @@ HOTEL_OWNER_ROLE = 'hotel-owner'
 
 
 class AdminAPIRootView(routers.APIRootView):
-    """The router's endpoint index; the default one is open to any logged-in user."""
+    """Router diń endpoint dizimi; ádetdegisi kirgen qálegen paydalanıwshıǵa ashıq."""
     permission_classes = [IsSuperAdminOrStaff]
 
 
 class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for property moderation by admins.
+    Admin ler mehmanxana moderation ı ushın ViewSet.
 
-    Read-only access to all properties for moderation purposes.
+    Moderation maqsetinde barlıq mehmanxanalarǵa tek oqıw kirisiwi.
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminPropertySerializer
 
     def get_queryset(self):
         """
-        All properties for moderation. Query: ?letter= (first letter of the hotel name in any language, or #),
-        ?status= (pending, active, suspended, ...), ?search= (name in any language or city).
+        Moderation ushın barlıq mehmanxanalar. Query: ?letter= (qálegen tildegi mehmanxana atınıń birinshi háripi, yamasa #),
+        ?status= (pending, active, suspended, ...), ?search= (qálegen tildegi at yamasa city).
         """
         params = self.request.query_params
         properties = hotels_with_letter(
@@ -123,16 +123,16 @@ class AdminPropertyViewSet(viewsets.ReadOnlyModelViewSet):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_approve(request, property_id):
     """
-    Approve a property for listing.
+    Mehmanxananı dizimge tastıyıqlaw.
 
-    Path Parameters:
-        property_id: Property ID
+    Path parametrleri:
+        property_id: mehmanxana ID si
 
-    Request Body:
-        rejection_reason: Reason for rejection (optional, only when rejecting)
+    Request body:
+        rejection_reason: biykar etiw sebebi (ıqtıyarıy, tek biykar etkende)
 
-    Returns:
-        Updated property with approval status
+    Qaytaradı:
+        Tastıyıqlaw statusı menen jańalanǵan mehmanxana
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
 
@@ -142,7 +142,7 @@ def admin_property_approve(request, property_id):
         rejection_reason = serializer.validated_data.get('rejection_reason', '')
 
         if rejection_reason:
-            # Reject property
+            # Mehmanxananı biykar etiw
             property.status = 'rejected'
             property.rejection_reason = rejection_reason
             property.approved_by = None
@@ -178,13 +178,13 @@ def admin_property_approve(request, property_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_region(request, property_id):
     """
-    Set the location of a property (Status section: country > region > hotel).
+    Mehmanxananıń jaylasıwın belgilew (Status bólimi: mámleket > region > mehmanxana).
 
-    Request Body (either form):
-        country_ref, region_ref: Geography ids (both null clears them)
-        state: region name; blank or null clears it ("Unspecified"); older clients only
+    Request body (eki forma da bolıwı múmkin):
+        country_ref, region_ref: Geography id leri (ekewi null bolsa tazalanadı)
+        state: region atı; bos yamasa null bolsa tazalanadı ("Unspecified"); tek eski klientler ushın
 
-    Only the location changes; every other field in the body is ignored.
+    Tek jaylasıw ózgeredi; body degi basqa hár maydan itibarǵa alınbaydı.
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
     serializer = AdminPropertyRegionSerializer(data=request.data, context={'property': property})
@@ -198,7 +198,7 @@ def admin_property_region(request, property_id):
             setattr(property, name, data[name])
         if all(data.get(name) is None for name in refs) and len(refs) == 2:
             property.state = None
-        # Property.save() copies the English names of the refs into country / state
+        # Property.save() ref lerdiń inglizsha atların country / state ge kóshiredi
         property.save()
     else:
         property.state = data['state']
@@ -212,13 +212,13 @@ def admin_property_region(request, property_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_property_suspend(request, property_id):
     """
-    Suspend a property.
+    Mehmanxananı toqtatıw.
 
-    Path Parameters:
-        property_id: Property ID
+    Path parametrleri:
+        property_id: mehmanxana ID si
 
-    Returns:
-        Updated property with suspended status
+    Qaytaradı:
+        Toqtatılǵan statusı menen jańalanǵan mehmanxana
     """
     property = get_object_or_404(Property, id=property_id, is_deleted=False)
 
@@ -233,7 +233,7 @@ def admin_property_suspend(request, property_id):
 
 
 class AdminListPagination(PageNumberPagination):
-    """The lists of the panels: 50 a page, up to 100 when asked."""
+    """Panellerdiń dizimleri: bir betke 50, soralsa 100 ge shekem."""
     page_size = 50
     page_size_query_param = 'page_size'
     max_page_size = 100
@@ -244,7 +244,7 @@ SEARCH_LENGTH = 100
 
 
 def users_of_role(queryset, role):
-    """Narrow users to one kind of account; the kinds do not overlap."""
+    """Paydalanıwshılardı akkaunttıń bir túrine shekemlew; túrler bir-birine tuspeydi."""
     if role == 'super_admin':
         return queryset.filter(is_superuser=True)
     if role == 'staff':
@@ -256,18 +256,19 @@ def users_of_role(queryset, role):
 
 class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for user management by admins.
+    Admin ler paydalanıwshılardı basqarıw ushın ViewSet.
 
-    Read-only, a page at a time, in the alphabetical order of the shown name. Query: ?letter= (first letter of the
-    shown name, or # for no letter), ?search= (name, e-mail or phone), ?role= guest|owner|staff|super_admin,
-    ?page=, ?page_size= (up to 100).
+    Tek oqıw, bir waqıtta bir bet, kórsetilgen at tıń alfavit tártibinde. Query: ?letter= (kórsetilgen
+    attıń birinshi háripi, yamasa háripsiz ushın #), ?search= (at, e-mail yamasa telefon), ?role=
+    guest|owner|staff|super_admin,
+    ?page=, ?page_size= (100 ge shekem).
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminUserSerializer
     pagination_class = AdminListPagination
 
     def get_queryset(self):
-        """Users for management, narrowed by the query."""
+        """Basqarıw ushın paydalanıwshılar, query menen shekemlengen."""
         params = self.request.query_params
         users = people_with_letter(User.objects.filter(is_deleted=False).select_related('role'), letter_from(self.request))
         role = (params.get('role') or '').strip()
@@ -293,24 +294,24 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
 @permission_classes([IsSuperAdmin])
 def admin_create_hotel_owner(request):
     """
-    Create a hotel-owner account (super-admin only).
+    Mehmanxana iyesi akkaunt ın jaratıw (tek super-admin).
 
-    This endpoint allows super-admins to directly create hotel-owner accounts
-    without self-registration. The account is created with the hotel-owner role
-    and is immediately usable with the provided credentials.
+    Bul endpoint super-admin lerge mehmanxana iyesi akkaunt ların óz-ózinen dizimnen ótiwsiz
+    tikkeley jaratıwǵa múmkinshilik beredi. Akkaunt mehmanxana iyesi roli menen jaratıladı
+    hám berilgen kirisiw maǵlıwmatları menen birden paydalanıwǵa tayar boladı.
 
-    Request Body:
-        email: Hotel owner email (required)
-        first_name: First name (required)
-        last_name: Last name (required)
-        phone_number: Phone number (required)
-        country_ref, region_ref: the place of the owner's hotels (required, must fit together)
-        commission_percent: what the site takes from each booking, 0 to 100 (required)
-        password: Initial password (required, min 8 characters)
-        password_confirm: Password confirmation (required)
+    Request body:
+        email: mehmanxana iyesiniń e-mail ı (májbúriy)
+        first_name: Atı (májbúriy)
+        last_name: Familiyası (májbúriy)
+        phone_number: Telefon nomeri (májbúriy)
+        country_ref, region_ref: iyeniń mehmanxanaları jaylasatuǵın orın (májbúriy, bir-birine sáykes bolıwı kerek)
+        commission_percent: sayt hár bronnan ne aladı, 0 den 100 ge shekem (májbúriy)
+        password: Dáslepki parol (májbúriy, eń kemi 8 belgi)
+        password_confirm: Parol tastıyıqlawı (májbúriy)
 
-    Returns:
-        Created user object with hotel-owner role
+    Qaytaradı:
+        Mehmanxana iyesi rolindegi jaratılǵan paydalanıwshı obyekti
     """
     serializer = AdminUserCreateSerializer(data=request.data)
 
@@ -332,9 +333,9 @@ def admin_create_hotel_owner(request):
 @permission_classes([IsSuperAdmin])
 def admin_create_admin(request):
     """
-    Add another administrator (super-admin only). The new account is staff and never a super-admin;
-    the request cannot change that. Body: email, first_name, last_name, phone_number, password,
-    password_confirm. Written to the admin access log.
+    Basqa administrator qosıw (tek super-admin). Jańa akkaunt staff boladı, hesh qashan super-admin emes;
+    soraw bunı ózgerte almaydı. Body: email, first_name, last_name, phone_number, password,
+    password_confirm. Admin kirisiw logına jazıladı.
     """
     serializer = AdminStaffCreateSerializer(data=request.data)
     if not serializer.is_valid():
@@ -350,10 +351,11 @@ def admin_create_admin(request):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_change_contact(request, user_id):
     """
-    Change the phone number and/or e-mail of an account (super admin or staff). Body: phone_number, email.
-    A staff admin may change guests and hotel owners; a super admin may also change staff admins. A super
-    admin's contact data cannot be changed here. A new e-mail marks the account unverified and signs it out
-    everywhere. Written to the admin access log (which fields, never the values).
+    Akkauttıń telefon nomerin hám/yamasa e-mail ın ózgertiw (super admin yamasa staff). Body: phone_number, email.
+    Staff admin mehmanlardı hám mehmanxana iyelerin ózgerte aladı; super admin staff adminlerdi de ózgerte aladı. Super
+    admin niń baylanıs maǵlıwmatın bul jerde ózgertip bolmaydı. Jańa e-mail akkauntti tastıyıqlanbaǵan etip belgileydi hám
+    onı
+    hámme jerden shıǵaradı. Admin kirisiw logına jazıladı (qaysı maydanlar, mánisler hesh qashan).
     """
     target = get_object_or_404(User.objects.filter(is_deleted=False), pk=user_id)
     allowed_over_staff = request.user.is_superuser
@@ -382,10 +384,10 @@ def admin_change_contact(request, user_id):
 @throttle_classes([TwoFactorResetThrottle])
 def admin_reset_two_factor(request, user_id):
     """
-    Reset another account's two-step sign-in after a lost phone (super-admin only). Body: code, the
-    super admin's OWN current app code, so a stolen session alone cannot do it. The account is signed out
-    everywhere and sets it up again at its next sign-in. A super admin's own two-step sign-in cannot be
-    reset here: that is done on the server (`manage.py reset_2fa`). Written to the admin access log.
+    Telefon joǵalǵannan keyin basqa akkauttıń eki basqıshlı kirisiwin qayta ornatıw (tek super-admin). Body: code,
+    super admin niń ÓZ házirgi ilova kodı, sol sebepli tek urlanǵan session menen bunı islep bolmaydı. Akkaunt
+    hámme jerden shıǵarıladı hám keyingi kirisiwinde qayta sazlaydı. Super admin niń óz eki basqıshlı kirisiwin bul jerde
+    qayta ornatıp bolmaydı: ol serverde isleniledi (`manage.py reset_2fa`). Admin kirisiw logına jazıladı.
     """
     code = object_body(request).get('code')
     if not (request.user.two_factor_enabled and isinstance(code, str) and two_factor.accept_code(request.user, code)):
@@ -406,38 +408,38 @@ def admin_reset_two_factor(request, user_id):
 
 class AdminAmenityCategoryViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
-    ViewSet for amenity category management by admins.
+    Admin ler amenity kategoriyaların basqarıw ushın ViewSet.
 
-    Full CRUD access for amenity categories.
+    Amenity kategoriyaları ushın tolıq CRUD kirisiwi.
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenityCategorySerializer
     audit_name = 'amenity_category'
 
     def get_queryset(self):
-        """Return all amenity categories."""
+        """Barlıq amenity kategoriyaların qaytaradı."""
         return AmenityCategory.objects.filter(is_deleted=False)
 
 
 class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     """
-    ViewSet for amenity management by admins.
+    Admin ler amenity lerdi basqarıw ushın ViewSet.
 
-    Full CRUD access for amenities.
+    Amenity ler ushın tolıq CRUD kirisiwi.
     """
     permission_classes = [IsSuperAdminOrStaff]
     serializer_class = AdminAmenitySerializer
     audit_name = 'amenity'
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         if self.action in ['list', 'retrieve']:
-            # Use a serializer with nested category for read operations
+            # Oqıw ámelleri ushın ishki kategoriyası bar serializer di paydalanıw
             return AdminAmenityReadSerializer
         return AdminAmenitySerializer
 
     def get_queryset(self):
-        """Return all amenities."""
+        """Barlıq amenity lerdi qaytaradı."""
         return Amenity.objects.filter(is_deleted=False).select_related('category')
 
 
@@ -446,20 +448,20 @@ class AdminAmenityViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_booking_lookup_by_reference(request):
     """
-    Look up a customer's full details and booking by reference code.
+    Mijozdıń tolıq maǵlıwmatın hám bronın reference code boyınsha izlew.
 
-    This endpoint is for staff/support use when a guest reports a problem at the property
-    and calls support with their booking reference code.
+    Bul endpoint staff/qollap-quwatlaw ushın: mehmann mehmanxanada mashqala haqqında
+    xabarlasqanda hám bron reference code in aytıp qollap-quwatlawǵa qońıraw etkende.
 
-    Query Parameters:
-        reference_code: 6-character booking reference code (required)
+    Query parametrleri:
+        reference_code: 6 belgili bron reference code (májbúriy)
 
-    Returns:
-        Full booking details including:
-        - Customer information (name, contact info)
-        - Property and room details
-        - Booking dates and status
-        - Payment status
+    Qaytaradı:
+        Tolıq bron maǵlıwmatı, olardıń ishinde:
+        - Mijoz maǵlıwmatı (at, baylanıs)
+        - Mehmanxana hám xona maǵlıwmatı
+        - Bron sanaları hám status
+        - Tólem statusı
     """
     reference_code = request.query_params.get('reference_code')
 
@@ -469,7 +471,7 @@ def admin_booking_lookup_by_reference(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Look up booking by reference code
+    # Bron di reference code boyınsha izlew
     try:
         booking = Booking.objects.select_related(
             'guest', 'property', 'property__property_type', 'property__owner'
@@ -485,7 +487,7 @@ def admin_booking_lookup_by_reference(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Build comprehensive response
+    # Tolıq juwap qurıw
     booking_items_data = []
     for item in booking.booking_items.all():
         booking_items_data.append({
@@ -568,7 +570,7 @@ def admin_booking_lookup_by_reference(request):
 
 class AdminCustomerPagination(PageNumberPagination):
     """
-    Custom pagination for admin customers directory.
+    Admin mijozlar dizimi ushın óz pagination ı.
     """
     page_size = 20
     page_size_query_param = 'page_size'
@@ -580,33 +582,33 @@ class AdminCustomerPagination(PageNumberPagination):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_customers_directory(request):
     """
-    Admin API for customers directory with booking aggregates.
+    Bron jıynaqları menen mijozlar dizimi ushın admin API.
 
-    Returns for each customer:
-    - customer ID, registration date, full name, phone, email, whatsapp, telegram, preferred contact method
-    - total booking count, last booking date, total amount paid, customer status
+    Hár mijoz ushın qaytaradı:
+    - mijoz ID si, dizimnen ótken sana, tolıq at, telefon, e-mail, whatsapp, telegram, qálegen baylanıs usılı
+    - bronlardıń jámi sanı, sońǵı bron sanası, tólengen jámi summa, mijoz statusı
 
-    Query Parameters:
-        search: Search by name, phone, email, or customer ID (optional)
-        page: Page number (default: 1)
-        page_size: Items per page (default: 20, max: 100)
-        sort_by: Sort field (default: registration_date)
-        sort_order: Sort order (asc or desc, default: desc)
+    Query parametrleri:
+        search: at, telefon, e-mail yamasa mijoz ID si boyınsha izlew (ıqtıyarıy)
+        page: Bet nomeri (ádetde: 1)
+        page_size: Bettegi elementler sanı (ádetde: 20, eń kóbi: 100)
+        sort_by: Tártiplew maydanı (ádetde: registration_date)
+        sort_order: Tártiplew baǵıtı (asc yamasa desc, ádetde: desc)
 
-    Returns:
-        Paginated list of customers with booking aggregates
+    Qaytaradı:
+        Bron jıynaqları menen mijozlardıń betlerge bólingen dizimi
     """
-    # Get query parameters
+    # Query parametrlerin alıw
     search = request.query_params.get('search', '').strip()
     page = request.query_params.get('page', 1)
     sort_by = request.query_params.get('sort_by', 'registration_date')
     sort_order = request.query_params.get('sort_order', 'desc')
 
-    # Validate sort_order
+    # sort_order di tekseriw
     if sort_order not in ['asc', 'desc']:
         sort_order = 'desc'
 
-    # Validate sort_by field
+    # sort_by maydanın tekseriw
     valid_sort_fields = [
         'registration_date', 'full_name', 'email', 'total_booking_count',
         'last_booking_date', 'customer_status'
@@ -614,16 +616,16 @@ def admin_customers_directory(request):
     if sort_by not in valid_sort_fields:
         sort_by = 'registration_date'
 
-    # Aggregates come from correlated subqueries, so one customer is never counted twice
+    # Jıynaqlar baylanıslı sub-query ler arqalı keledi, sol sebepli bir mijoz eki ret esaplanbaydı
     customer_bookings = Booking.objects.filter(
         guest=OuterRef('pk'), is_deleted=False
     ).order_by().values('guest')
 
-    # Active: is_active=True and (has booking in last 90 days OR no bookings yet)
-    # Inactive: is_active=False OR (is_active=True and last booking > 90 days ago)
+    # Aktiv: is_active=True hám (sońǵı 90 kúnde broni bar YAMASA ele bronları joq)
+    # Aktiv emes: is_active=False YAMASA (is_active=True hám sońǵı bron 90 kúnnen aldın)
     threshold_date = timezone.now() - timedelta(days=90)
 
-    # Staff, super-admins and hotel owners are not customers
+    # Staff, super-admin ler hám mehmanxana iyeleri mijoz emes
     users = User.objects.filter(
         is_deleted=False, is_staff=False, is_superuser=False
     ).exclude(role__name=HOTEL_OWNER_ROLE).annotate(
@@ -631,7 +633,7 @@ def admin_customers_directory(request):
             Subquery(customer_bookings.annotate(c=Count('id')).values('c')), 0
         ),
         last_booking_date=Subquery(customer_bookings.annotate(m=Max('created_at')).values('m')),
-        # Same fallback as User.get_full_name(): full_name, else first + last, else email
+        # User.get_full_name() penen birdey zapas jol: full_name, bolmasa first + last, bolmasa email
         display_name=Coalesce(
             NullIf('full_name', Value('')),
             NullIf(Trim(Concat('first_name', Value(' '), 'last_name')), Value('')),
@@ -651,7 +653,7 @@ def admin_customers_directory(request):
     if letter is not None:
         users = users.filter(letter_q('display_name', letter))
 
-    # Apply search filter
+    # Izlew filter in qollanıw
     if search:
         users = users.filter(
             Q(full_name__icontains=search) |
@@ -662,7 +664,7 @@ def admin_customers_directory(request):
             Q(id__icontains=search)
         )
 
-    # Sort in the database; id breaks ties so pages are stable
+    # Database de tártiplew; id teń jaǵdaylardı ajıratadı, sol sebepli betler turaqlı boladı
     sort_expressions = {
         'registration_date': F('date_joined'),
         'full_name': Lower('display_name'),
@@ -677,7 +679,7 @@ def admin_customers_directory(request):
     else:
         users = users.order_by(sort_expression.desc(nulls_last=True), '-id')
 
-    # Paginate the queryset, so only one page of users is loaded
+    # Queryset ti betlerge bóliw, sonda paydalanıwshılardıń tek bir beti júklenedi
     paginator = AdminCustomerPagination()
     page = paginator.paginate_queryset(users, request)
 
@@ -698,7 +700,7 @@ def admin_customers_directory(request):
         for user in page
     ]
 
-    # Serialize paginated data
+    # Betlerge bólingen maǵlıwmattı serializer den ótkiziw
     serializer = AdminCustomerSerializer(paginated_data, many=True)
 
     AdminAccessLog.record(request.user, 'customer_list')
@@ -710,33 +712,33 @@ def admin_customers_directory(request):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_customer_detail(request, customer_id):
     """
-    Admin API for a single customer's full profile.
+    Bir mijozdıń tolıq profili ushın admin API.
 
-    Returns:
-    - Contact information (full profile)
-    - All bookings filterable by all/upcoming/completed/cancelled
-    - Last activity timestamp
-    - Internal notes (staff-only)
+    Qaytaradı:
+    - Baylanıs maǵlıwmatı (tolıq profil)
+    - all/upcoming/completed/cancelled boyınsha filterlenetuǵın barlıq bronlar
+    - Sońǵı aktivlik waqıt belgisi
+    - Ishki jazbalar (tek staff)
 
-    Query Parameters:
-        booking_filter: Filter bookings by status (all, upcoming, completed, cancelled)
+    Query parametrleri:
+        booking_filter: Bronlardı status boyınsha filterlew (all, upcoming, completed, cancelled)
 
-    Path Parameters:
-        customer_id: Customer ID
+    Path parametrleri:
+        customer_id: Mijoz ID si
     """
-    # Get customer
+    # Mijozdı alıw
     customer = get_object_or_404(User, id=customer_id, is_deleted=False)
 
-    # Get booking filter
+    # Bron filter in alıw
     booking_filter = request.query_params.get('booking_filter', 'all')
 
-    # Build bookings query
+    # Bronlar query sin qurıw
     bookings = Booking.objects.filter(
         guest=customer,
         is_deleted=False
     ).select_related('property').order_by('-created_at')
 
-    # Apply booking filter
+    # Bron filter in qollanıw
     if booking_filter == 'upcoming':
         bookings = bookings.filter(
             status='confirmed',
@@ -746,9 +748,9 @@ def admin_customer_detail(request, customer_id):
         bookings = bookings.filter(status='completed')
     elif booking_filter == 'cancelled':
         bookings = bookings.filter(status='cancelled')
-    # 'all' returns all bookings
+    # 'all' barlıq bronlardı qaytaradı
 
-    # Serialize bookings
+    # Bronlardı serializer den ótkiziw
     bookings_data = []
     for booking in bookings:
         bookings_data.append({
@@ -768,7 +770,7 @@ def admin_customer_detail(request, customer_id):
 
     bookings_serializer = AdminBookingSummarySerializer(bookings_data, many=True)
 
-    # Get internal notes
+    # Ishki jazbalardı alıw
     internal_notes = InternalNote.objects.filter(
         customer=customer,
         is_deleted=False
@@ -776,8 +778,8 @@ def admin_customer_detail(request, customer_id):
 
     internal_notes_serializer = AdminInternalNoteSerializer(internal_notes, many=True)
 
-    # Calculate last activity timestamp
-    # Last activity is the most recent of: last_login, last booking created_at
+    # Sońǵı aktivlik waqıt belgisin esaplaw
+    # Sońǵı aktivlik mınalardıń eń jańası: last_login, sońǵı bronnıń created_at
     last_activities = []
     if customer.last_login:
         last_activities.append(customer.last_login)
@@ -786,7 +788,7 @@ def admin_customer_detail(request, customer_id):
 
     last_activity = max(last_activities) if last_activities else None
 
-    # Build response
+    # Juwaptı qurıw
     response_data = {
         'customer': AdminCustomerDetailSerializer(customer).data,
         'bookings': bookings_serializer.data,
@@ -803,16 +805,16 @@ def admin_customer_detail(request, customer_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_internal_note_create(request, customer_id):
     """
-    Create an internal note for a customer.
+    Mijoz ushın ishki jazba jaratıw.
 
-    Path Parameters:
-        customer_id: Customer ID
+    Path parametrleri:
+        customer_id: Mijoz ID si
 
-    Request Body:
-        note: Note content (required)
+    Request body:
+        note: Jazba mazmunı (májbúriy)
 
-    Returns:
-        Created internal note
+    Qaytaradı:
+        Jaratılǵan ishki jazba
     """
     customer = get_object_or_404(User, id=customer_id, is_deleted=False)
 
@@ -838,17 +840,17 @@ def admin_internal_note_create(request, customer_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_internal_note_detail(request, customer_id, note_id):
     """
-    Update or delete an internal note.
+    Ishki jazbanı jańalaw yamasa óshiriw.
 
-    Path Parameters:
-        customer_id: Customer ID
-        note_id: Note ID
+    Path parametrleri:
+        customer_id: Mijoz ID si
+        note_id: Jazba ID si
 
-    Request Body (for PUT):
-        note: Updated note content (required)
+    Request body (PUT ushın):
+        note: Jańalanǵan jazba mazmunı (májbúriy)
 
-    Returns:
-        Updated note (for PUT) or 204 No Content (for DELETE)
+    Qaytaradı:
+        Jańalanǵan jazba (PUT ushın) yamasa 204 No Content (DELETE ushın)
     """
     customer = get_object_or_404(User, id=customer_id, is_deleted=False)
     note = get_object_or_404(
@@ -879,22 +881,22 @@ def admin_internal_note_detail(request, customer_id, note_id):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_registration_statistics(request):
     """
-    Admin API for registration statistics.
+    Dizimnen ótiw statistikası ushın admin API.
 
-    Returns new-registration counts broken down by:
-    - Rolling 12-month window (month-by-month)
-    - Calendar year (year-by-year)
+    Jańa dizimnen ótiw sanların mınaǵan bólip qaytaradı:
+    - Júrip turatuǵın 12 ay aynası (aymaǵa)
+    - Kalendar jıl (jılma-jıl)
 
-    Query Parameters:
-        type: Type of breakdown (rolling_12_months or calendar_year, default: rolling_12_months)
+    Query parametrleri:
+        type: Bóliw túri (rolling_12_months yamasa calendar_year, ádetde: rolling_12_months)
 
-    Returns:
-        Registration statistics with counts and period labels
+    Qaytaradı:
+        Sanlar hám dáwir belgileri menen dizimnen ótiw statistikası
     """
     stats_type = request.query_params.get('type', 'rolling_12_months')
 
     if stats_type == 'calendar_year':
-        # Get registration counts by calendar year
+        # Kalendar jıl boyınsha dizimnen ótiw sanın alıw
         yearly_stats = User.objects.filter(
             is_deleted=False
         ).annotate(
@@ -903,7 +905,7 @@ def admin_registration_statistics(request):
             count=Count('id')
         ).order_by('year')
 
-        # Format response
+        # Juwaptı formatlaw
         stats_data = [
             {
                 'period': str(item['year']),
@@ -917,12 +919,12 @@ def admin_registration_statistics(request):
             'statistics': stats_data
         }, status=status.HTTP_200_OK)
 
-    else:  # rolling_12_months (default)
-        # Get rolling 12-month window
+    else:  # rolling_12_months (ádetde)
+        # Júrip turatuǵın 12 ay aynasın alıw
         end_date = timezone.now()
         start_date = end_date - timedelta(days=365)
 
-        # Get registration counts by month for the rolling window
+        # Júrip turatuǵın aynada ay boyınsha dizimnen ótiw sanın alıw
         monthly_stats = User.objects.filter(
             is_deleted=False,
             date_joined__gte=start_date,
@@ -933,7 +935,7 @@ def admin_registration_statistics(request):
             count=Count('id')
         ).order_by('month')
 
-        # Format response with month labels
+        # Juwaptı ay belgileri menen formatlaw
         stats_data = []
         for item in monthly_stats:
             month_date = item['month']
@@ -955,22 +957,22 @@ def admin_registration_statistics(request):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_top_bookers_leaderboard(request):
     """
-    Admin API for top-bookers leaderboard.
+    Eń kóp bronlaǵan mijozlar reytingi ushın admin API.
 
-    Returns customers ranked by number of completed bookings within a selectable period.
-    Intended to support customer-reward/loyalty programs.
+    Mijozlardı tańlanatuǵın dáwir ishinde juwmaqlanǵan bronlar sanı boyınsha ráteleydi.
+    Mijozdı sıylıqlaw/loyallıq baǵdarlamaların qollap-quwatlaw ushın arnalǵan.
 
-    Query Parameters:
-        period: Time period for the leaderboard (this_month, this_year, all_time, default: all_time)
-        limit: Maximum number of top bookers to return (default: 10, max: 100)
+    Query parametrleri:
+        period: Reyting ushın waqıt dáwiri (this_month, this_year, all_time, ádetde: all_time)
+        limit: Qaytarılatuǵın eń jaqsı mijozlardıń eń kóp sanı (ádetde: 10, eń kóbi: 100)
 
-    Returns:
-        Leaderboard with customer name, booking count, and rank
+    Qaytaradı:
+        Mijoz atı, bron sanı hám rat penen reyting
     """
     period = request.query_params.get('period', 'all_time')
     limit = request.query_params.get('limit', 10)
 
-    # Validate and sanitize limit
+    # limit ti tekseriw hám tazalaw
     try:
         limit = int(limit)
         if limit < 1:
@@ -980,11 +982,11 @@ def admin_top_bookers_leaderboard(request):
     except (ValueError, TypeError):
         limit = 10
 
-    # Build date filter based on period
+    # Dáwirge qarap sana filter in qurıw
     now = timezone.now()
 
     if period == 'this_month':
-        # First day of current month
+        # Házirgi aydıń birinshi kúni
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         booking_filter = Q(
             bookings__is_deleted=False,
@@ -992,20 +994,20 @@ def admin_top_bookers_leaderboard(request):
             bookings__created_at__gte=start_date
         )
     elif period == 'this_year':
-        # First day of current year
+        # Házirgi jıldıń birinshi kúni
         start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         booking_filter = Q(
             bookings__is_deleted=False,
             bookings__status='completed',
             bookings__created_at__gte=start_date
         )
-    else:  # 'all_time' has no date filter
+    else:  # 'all_time' sana filter ine iye emes
         booking_filter = Q(
             bookings__is_deleted=False,
             bookings__status='completed'
         )
 
-    # Get top bookers with completed booking counts
+    # Juwmaqlanǵan bronlar sanı menen eń jaqsı mijozlardı alıw
     top_bookers = User.objects.filter(
         is_deleted=False
     ).annotate(
@@ -1014,7 +1016,7 @@ def admin_top_bookers_leaderboard(request):
         completed_booking_count__gt=0
     ).order_by('-completed_booking_count')[:limit]
 
-    # Build leaderboard response
+    # Reyting juwabın qurıw
     leaderboard_data = []
     for rank, user in enumerate(top_bookers, start=1):
         leaderboard_data.append({
@@ -1049,10 +1051,10 @@ class AdminAccessLogPagination(PageNumberPagination):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_access_log(request):
     """
-    Staff-only, read-only view of AdminAccessLog, newest first.
+    AdminAccessLog tiń tek staff ushın, tek oqıw view si, eń jańası birinshi.
 
-    Filters: actor_id, target_user_id, target_booking_id (integers), action.
-    Reading this log is not itself recorded (it holds ids only, no customer data).
+    Filter ler: actor_id, target_user_id, target_booking_id (integer ler), action.
+    Bul logtı oqıw ózi jazılmaydı (onda tek id ler bar, mijoz maǵlıwmatı joq).
     """
     entries = AdminAccessLog.objects.all()
     for name in ('actor_id', 'target_user_id', 'target_booking_id'):

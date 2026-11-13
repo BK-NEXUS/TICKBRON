@@ -1,11 +1,11 @@
 """
-Fill Property.country_ref / region_ref / city_ref from the old text fields.
+Property.country_ref / region_ref / city_ref di eski tekst maydanlardan toltırıw.
 
-    python manage.py map_property_geography --dry-run   # report only
-    python manage.py map_property_geography             # write
+    python manage.py map_property_geography --dry-run   # tek esabat
+    python manage.py map_property_geography             # jazıw
 
-Only properties without a country_ref are touched; unmatched values stay NULL and are
-listed with counts. Migration properties/0013 ran this once already.
+Tek country_ref i joq mehmanxanalarǵa tiyiledi; sáykes kelmegen mánisler NULL qaladı hám
+sanları menen dizimlenedi. properties/0013 migration bunı aldınan bir ret isledi.
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction

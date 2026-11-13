@@ -1,36 +1,35 @@
 """
-Status definitions (R12 phase 2, .ai/PLAN_R12.md section 1). The one place that says what
-a guest, a stay, a night and revenue are; bookings/stats.py keeps its old public names as
-thin wrappers, and every Status view (admin and partner) reads these functions.
+Status anıqlamaları (R12 2-basqısh, .ai/PLAN_R12.md 1-bólim). Mehmann, turıw, tún hám dáramat nede ekenin
+aytatuǵın birden-bir orın; bookings/stats.py óziniń eski ashıq atların jińishke wrapper retinde saqlaydı, hám
+hár Status view (admin hám partner) usı funkciyalardı oqıydı.
 
-- Date basis: the CHECK-IN date. "Today" = common.dates.business_today() (Asia/Tashkent).
-- counted   = confirmed + completed, not soft-deleted.
-- stayed    = completed (the headline number).
-- upcoming  = confirmed with check-in after today; never limited by the period.
-- bookings  = COUNT of counted bookings.
-- every headline number also exists as PERSONS (SUM(guest_count)): counted_guests (= guests),
-              stayed_guests (completed) and upcoming_guests (upcoming); the reconciliation blocks
-              carry bookings and guests for counted and stayed.
-- guests    = SUM(guest_count) of counted bookings (persons; guest_count includes children).
-- unique_customers = COUNT(DISTINCT guest) of counted bookings (the old `guests`).
+- Sana tiykarı: KIRIW sanası (CHECK-IN). "Búgin" = common.dates.business_today() (Asia/Tashkent).
+- counted   = confirmed + completed, soft-delete etilmegen.
+- stayed    = completed (tiykarǵı san).
+- upcoming  = búgennen keyin kiriwi bar confirmed; dáwir menen hesh qashan shekemlenbeydi.
+- bookings  = counted bronlardıń COUNT ı.
+- hár tiykarǵı san ADAMLAR (SUM(guest_count)) retinde de bar: counted_guests (= guests),
+              stayed_guests (completed) hám upcoming_guests (upcoming); sáykeslestiriw bloklarında
+              counted hám stayed ushın bronlar hám mehmanlar bar.
+- guests    = counted bronlardıń SUM(guest_count) ı (adamlar; guest_count ballardı óz ishine aladı).
+- unique_customers = counted bronlardıń COUNT(DISTINCT guest) ı (eski `guests`).
 - nights    = SUM(number_of_nights); room_nights = SUM(number_of_nights x number_of_rooms).
-- no_show   = status no_show (an approved report); no_show_reported = has a
-              pending no-show report. A reported booking is neither stayed nor no_show until staff
-              decide: it is left out of the confirmed / completed counts of booking_status.
-- revenue   = cash expected at the hotel (plan .ai/PLAN_CASH_ONLY.md: there are no online payments): per
-              currency, never mixed, SUM(total_price) of COMPLETED bookings. A confirmed booking is not revenue
-              until the stay is completed; cancelled, expired and no-show bookings are never revenue.
-- booking_value = SUM(total_price) of counted bookings (confirmed + completed) in the hotel's currency.
-- booking_status = raw counts per status in the period: pending, confirmed, completed,
-              cancelled (not expired), expired (cancelled by expiry, EXPIRY_REASON), no_show,
+- no_show   = status no_show (tastıyıqlanǵan esabat); no_show_reported = kútip turǵan
+              no_show esabatı bar. Xabarlanǵan bron staff sheshkenshe stayed da, no_show da emes:
+              ol booking_status tıń confirmed / completed sanlarınan shıǵarıp taslanadı.
+- revenue   = mehmanxanada kútilip atırǵan naqd pul (reje .ai/PLAN_CASH_ONLY.md: onlayn tólem joq): hár
+              valyuta boyınsha, hesh qashan aralastırılmaydı, COMPLETED bronlardıń SUM(total_price) ı. Tastıyıqlanǵan bron
+              turıw juwmaqlanǵansha dáramat emes; biykar etilgen, múddeti ótken hám no-show bronlar hesh qashan dáramat emes.
+- booking_value = mehmanxana valyutasında counted bronlardıń (confirmed + completed) SUM(total_price) ı.
+- booking_status = dáwirdegi hár status boyınsha tikkeley sanlar: pending, confirmed, completed,
+              cancelled (múddeti ótkeni emes), expired (múddeti boyınsha biykar etilgen, EXPIRY_REASON), no_show,
               no_show_reported.
 
-Caveat: "stayed" numbers for the last NO_SHOW_REPORT_WINDOW_DAYS days after check-out can
-still change: a hotel may report a no-show in that window, and an approved report moves the
-booking from stayed to no_show. (A completed stay with a PENDING report is still in `stayed`
-until it is decided.)
+Eskertiw: shıǵıwdan keyingi sońǵı NO_SHOW_REPORT_WINDOW_DAYS kún ushın "stayed" sanları
+ózgeriwi múmkin: mehmanxana usı oyna ishinde no-show haqqında xabarlaw múmkin, hám tastıyıqlanǵan esabat
+bronnı stayed ten no_show ǵa ótkizedi. (KÚTIP TURǴAN esabatlı juwmaqlanǵan turıw sheshilgenshe ele `stayed` ishinde.)
 
-All aggregation runs in the database; Python only reshapes already-aggregated rows.
+Barlıq jıynaqlaw database de isleydi; Python tek aldınan jıynaqlanǵan qatarlardı qayta qurıp shıǵadı.
 """
 import re
 from datetime import date, timedelta
@@ -60,20 +59,20 @@ class InvalidPeriod(ValueError):
 
 
 def status_meta(today=None):
-    """The meta every statistics response carries: the business date the numbers are as of and
-    the window in which a hotel can still report a no-show (so "stayed" can still change)."""
+    """Hár statistika juwabı alıp júretuǵın meta: sanlar qaysı is sanasına tiyisli hám
+    mehmanxana ele no-show haqqında xabarlay alatuǵın oyna (sol sebepli "stayed" ele ózgeriwi múmkin)."""
     return {
         'business_date': (today or business_today()).isoformat(),
         'no_show_report_window_days': settings.NO_SHOW_REPORT_WINDOW_DAYS,
     }
 
 
-# --- periods -------------------------------------------------------------------------
+# --- dáwirler ------------------------------------------------------------------------
 
 def _years_back(day, years):
     try:
         return day.replace(year=day.year - years)
-    except ValueError:      # 29 February
+    except ValueError:      # 29-fevral
         return day.replace(year=day.year - years, day=28)
 
 
@@ -93,12 +92,12 @@ def _iso_date(value, field):
 
 def parse_period(value, date_from=None, date_to=None, today=None):
     """
-    Returns (label, (first_day, first_day_after)) or (PERIOD_ALL, None).
+    (label, (first_day, first_day_after)) yamasa (PERIOD_ALL, None) qaytaradı.
 
-    'all' (or empty), 'today', 'last_7_days' (today-6 .. today), 'last_30_days',
-    'this_year' (1 Jan .. 31 Dec), 'last_5_years' / 'last_10_years' (same day N years ago
-    + 1 day .. today), 'custom' with `date_from` / `date_to` (inclusive, from <= to, at
-    most 20 years), 'YYYY', 'YYYY-MM'. Raises InvalidPeriod for anything else.
+    'all' (yamasa bos), 'today', 'last_7_days' (today-6 .. today), 'last_30_days',
+    'this_year' (1-yanvar .. 31-dekabr), 'last_5_years' / 'last_10_years' (N jıl aldınǵı sol kún
+    + 1 kún .. today), `date_from` / `date_to` penen 'custom' (shegarası kiredi, from <= to, eń kóbi
+    20 jıl), 'YYYY', 'YYYY-MM'. Basqa hár nárse ushın InvalidPeriod kóteredi.
     """
     value = (value or PERIOD_ALL).strip()
     today = today or business_today()
@@ -143,7 +142,7 @@ def parse_period(value, date_from=None, date_to=None, today=None):
 
 
 def period_from_request(request):
-    """(label, date_range) from ?period=, ?from=, ?to=. Raises InvalidPeriod."""
+    """?period=, ?from=, ?to= ten (label, date_range). InvalidPeriod kóteredi."""
     params = request.query_params
     period = (params.get('period') or '').strip()
     if (params.get('from') or params.get('to')) and period != 'custom':
@@ -152,7 +151,7 @@ def period_from_request(request):
 
 
 def range_json(date_range):
-    """{'from', 'to'} (inclusive ISO dates) or None for all time."""
+    """{'from', 'to'} (shegarası kiretuǵın ISO sanalar) yamasa pútkil waqıt ushın None."""
     if date_range is None:
         return None
     first, after = date_range
@@ -160,7 +159,7 @@ def range_json(date_range):
 
 
 def parse_year(value, default):
-    """A year for monthly series; InvalidPeriod when it is not YYYY."""
+    """Ayliq seriya ushın jıl; YYYY bolmasa InvalidPeriod."""
     if value in (None, ''):
         return default
     if not re.fullmatch(r'\d{4}', str(value)) or not 2000 <= int(value) <= 2100:
@@ -168,7 +167,7 @@ def parse_year(value, default):
     return int(value)
 
 
-# --- granularity and buckets ---------------------------------------------------------
+# --- granularity hám bucket ler -----------------------------------------------------
 
 def bucket_start(day, granularity):
     if granularity == 'day':
@@ -199,7 +198,7 @@ def bucket_label(start, granularity):
 
 
 def buckets(date_range, granularity):
-    """Bucket start dates covering [first, after). InvalidPeriod above MAX_BUCKETS."""
+    """[first, after) ti qaplaytuǵın bucket baslanıw sanaları. MAX_BUCKETS tan asqanda InvalidPeriod."""
     first, after = date_range
     starts = []
     start = bucket_start(first, granularity)
@@ -221,7 +220,7 @@ def parse_granularity(value, default='month'):
 _TRUNC = {'day': TruncDay, 'week': TruncWeek, 'month': TruncMonth, 'year': TruncYear}
 
 
-# --- booking sets -------------------------------------------------------------------
+# --- bron toplamları ---------------------------------------------------------------
 
 def period_q(prefix='', date_range=None):
     if not date_range:
@@ -231,12 +230,12 @@ def period_q(prefix='', date_range=None):
 
 
 def counted_q(prefix='', date_range=None):
-    """Q for counted bookings; `prefix` is the path to Booking, e.g. 'bookings__'."""
+    """counted bronlar ushın Q; `prefix` Booking ke jol, mısalı 'bookings__'."""
     return Q(**{f'{prefix}status__in': COUNTED_STATUSES, f'{prefix}is_deleted': False}) & period_q(prefix, date_range)
 
 
 def revenue_q(prefix='', date_range=None):
-    """Bookings whose money is revenue: the stay is completed (the cash was handed over at the hotel)."""
+    """Puli dáramat bolatuǵın bronlar: turıw juwmaqlanǵan (naqd pul mehmanxanada tapsırılǵan)."""
     return Q(**{f'{prefix}status': 'completed', f'{prefix}is_deleted': False}) & period_q(prefix, date_range)
 
 
@@ -254,20 +253,20 @@ def revenue_bookings(date_range=None):
 
 
 def all_bookings():
-    """Every not-deleted booking (the base for booking_status and conditional totals)."""
+    """Hár óshirilmegen bron (booking_status hám shárli jıynaqlar ushın tiykar)."""
     return _bookings().filter(is_deleted=False)
 
 
-# --- grouped annotations (on a query of Property, User, ...) ---------------------------
+# --- toparlanǵan annotation lar (Property, User, ... query inde) -----------------------
 
 def upcoming_q(prefix='', today=None):
-    """Confirmed bookings checking in after today; never limited by a period."""
+    """Búgennen keyin kiretuǵın tastıyıqlanǵan bronlar; dáwir menen hesh qashan shekemlenbeydi."""
     today = today or business_today()
     return Q(**{f'{prefix}status': 'confirmed', f'{prefix}is_deleted': False, f'{prefix}check_in__gt': today})
 
 
 def guest_annotations(prefix='bookings__', date_range=None, today=None):
-    """Persons (SUM guest_count) of counted, stayed and upcoming bookings, for .annotate()."""
+    """counted, stayed hám upcoming bronlardıń adamları (SUM guest_count), .annotate() ushın."""
     counted = counted_q(prefix, date_range)
     return {
         'counted_guests_count': Coalesce(Sum(f'{prefix}guest_count', filter=counted), 0),
@@ -279,7 +278,7 @@ def guest_annotations(prefix='bookings__', date_range=None, today=None):
 
 def metric_annotations(prefix='bookings__', date_range=None, today=None):
     """
-    Counted bookings, guests, unique customers, nights, room nights and stays, for .annotate().
+    Counted bronlar, mehmanlar, unikal mijozlar, túnler, xona túnleri hám turıwlar, .annotate() ushın.
     """
     counted = counted_q(prefix, date_range)
     return {
@@ -296,7 +295,7 @@ def metric_annotations(prefix='bookings__', date_range=None, today=None):
 
 
 def grouped_row(item):
-    """The metric fields of a row annotated with metric_annotations()."""
+    """metric_annotations() penen belgilengen qatardıń metrika maydanları."""
     return {
         'bookings': item['bookings_count'],
         'guests': item['guests_count'],
@@ -309,7 +308,7 @@ def grouped_row(item):
 
 
 def guest_fields(item):
-    """The persons fields of a row annotated with guest_annotations()."""
+    """guest_annotations() penen belgilengen qatardıń adamlar maydanları."""
     return {
         'counted_guests': item['counted_guests_count'],
         'stayed_guests': item['stayed_guests_count'],
@@ -317,7 +316,7 @@ def guest_fields(item):
     }
 
 
-# --- money --------------------------------------------------------------------------
+# --- pul ----------------------------------------------------------------------------
 
 def _money(amount):
     return f'{amount:.2f}'
@@ -325,19 +324,19 @@ def _money(amount):
 
 def revenue_by(bookings, key):
     """
-    {key value: [{'currency', 'amount'}, ...]}: SUM(total_price) per booking currency, for already-filtered
-    revenue bookings (completed stays). `key` is a Booking lookup or annotation.
+    {kilt mánisi: [{'currency', 'amount'}, ...]}: aldınan filterlengen dáramat bronları
+    (juwmaqlanǵan turıwlar) ushın hár bron valyutası boyınsha SUM(total_price). `key` Booking lookup ı yamasa annotation.
     """
     return booking_value_by(bookings, key)
 
 
 def revenue_total(bookings):
-    """[{'currency', 'amount'}, ...] for already-filtered revenue bookings."""
+    """Aldınan filterlengen dáramat bronları ushın [{'currency', 'amount'}, ...]."""
     return revenue_by(bookings.annotate(_all=Value(1, output_field=IntegerField())), '_all').get(1, [])
 
 
 def booking_value_by(bookings, key):
-    """{key value: [{'currency', 'amount'}]}: SUM(total_price) per booking currency (old revenue)."""
+    """{kilt mánisi: [{'currency', 'amount'}]}: hár bron valyutası boyınsha SUM(total_price) (eski dáramat)."""
     rows = bookings.values(key, 'currency').annotate(amount=Sum('total_price')).order_by(key, 'currency')
     result = {}
     for row in rows:
@@ -350,7 +349,7 @@ def booking_value_total(bookings):
     return [{'currency': row['currency'], 'amount': _money(row['amount'])} for row in rows]
 
 
-# --- totals -------------------------------------------------------------------------
+# --- jámiler ----------------------------------------------------------------------
 
 def _pending_report():
     from bookings.models import NoShowReport
@@ -374,9 +373,9 @@ def _status_counts(date_range):
 
 def metric_totals(scope, date_range=None, today=None):
     """
-    Every number of section 1 for the bookings in `scope` (a not-deleted Booking queryset
-    narrowed to a hotel, an owner or a guest; NOT narrowed to the period). One aggregate
-    query for the counts plus two for revenue and one for booking value.
+    `scope` degi bronlar ushın 1-bólimniń hár sanı (mehmanxanaǵa, iyege yamasa mehmanǵa shekemlengen
+    óshirilmegen Booking queryset i; dáwirge shekemlenbegen). Sanlar ushın bir jıynaqlaw
+    query si, dáramat ushın eki hám bron mánisi ushın bir query.
     """
     today = today or business_today()
     counted = counted_q('', date_range)
@@ -423,10 +422,10 @@ def metric_totals(scope, date_range=None, today=None):
     }
 
 
-# --- insights (R12 additions) ---------------------------------------------------------
+# --- insight ler (R12 qosımshaları) ----------------------------------------------------
 
 def previous_range(date_range):
-    """The period of the same length right before `date_range`; None for all time."""
+    """`date_range` aldındaǵı birdey uzınlıqtaǵı dáwir; pútkil waqıt ushın None."""
     if date_range is None:
         return None
     first, after = date_range
@@ -438,7 +437,7 @@ def _percent(part, whole):
 
 
 def _change_pct(current, previous):
-    """Change in percent with one decimal ('-50.0'); None when there is nothing to compare with."""
+    """Procent penen ózgeris bir onlıq belgi menen ('-50.0'); salıstırıwǵa hesh nárse bolmasa None."""
     return f'{(Decimal(current) - Decimal(previous)) * 100 / Decimal(previous):.1f}' if previous else None
 
 
@@ -454,21 +453,21 @@ def _average_values(bookings):
 
 
 def rooms_offered(properties):
-    """Rooms the given hotels (a Property queryset) offer: SUM(total_rooms) of their room types."""
+    """Berilgen mehmanxanalar (Property queryset i) usınatuǵın xonalar: olardıń xona túrleriniń SUM(total_rooms) ı."""
     from properties.models import RoomType
     return RoomType.objects.filter(property__in=properties, is_deleted=False).aggregate(
         total=Coalesce(Sum('total_rooms'), 0))['total']
 
 
-RANK_MIN_HOTELS = 5   # below this a rank would let owners guess who is who
+RANK_MIN_HOTELS = 5   # bunnan tómende ráteli iyelerge kim kim ekenin boljawǵa múmkinshilik berer edi
 
 
 def region_rank(prop, date_range):
     """
-    {'position', 'of'}: the hotel's place among the active hotels of its region by counted
-    bookings in the period (equal numbers share a place). Only the hotel's own place and the
-    number of hotels leave this function. None without a region, when the hotel is not active
-    or when the region has fewer than RANK_MIN_HOTELS active hotels.
+    {'position', 'of'}: dáwirdegi counted bronlar boyınsha mehmanxananıń óz regionındaǵı aktiv mehmanxanalar
+    arasındaǵı orni (teń sanlar bir orındı bóliskeni). Bul funkciyadan tek mehmanxananıń óz orni hám
+    mehmanxanalar sanı shıǵadı. Region joq bolsa, mehmanxana aktiv bolmasa yamasa regionda
+    RANK_MIN_HOTELS tan kem aktiv mehmanxana bolsa None.
     """
     from properties.models import Property
     if not prop.region_ref_id:
@@ -485,23 +484,23 @@ def region_rank(prop, date_range):
 
 
 def average_lead_days(bookings):
-    """Days between the day a booking was made (business date) and its check-in, on average; None without bookings."""
+    """Bron jasalǵan kún (is sanası) menen kiriw ortasındaǵı kúnler ortashası; bron joq bolsa None."""
     lead = ExpressionWrapper(F('check_in') - TruncDate('created_at', tzinfo=business_time_zone()), output_field=DurationField())
     average = bookings.aggregate(days=Avg(lead))['days']
     return f'{average.total_seconds() / 86400:.1f}' if average is not None else None
 
 
 def repeat_guest_pct(bookings, unique_customers):
-    """Share of the guests (accounts) with more than one of these bookings, in percent; None without guests."""
+    """Usı bronlardıń birewinen kóbi bar mehmanlardıń (akkaunt) úlesi, procent penen; mehman joq bolsa None."""
     repeat = bookings.values('guest').annotate(n=Count('id')).filter(n__gt=1).count()
     return _percent(repeat, unique_customers)
 
 
 def month_comparison(scope, today=None):
     """
-    This calendar month against the last one (whatever period the page shows) and the guests arriving in the next
-    7 days (today included): {'current', 'previous'} with the month, its range, bookings, guests and revenue,
-    'change_pct' and 'next_7_days' {'bookings', 'guests'} (confirmed bookings).
+    Usı kalendar ay aldınǵı ayǵa qarata (bet qaysı dáwirdi kórsetpesin) hám keyingi 7 kúnde keletuǵın mehmanlar
+    (búgin kiredi): ay, onıń aralıǵı, bronlar, mehmanlar hám dáramat penen {'current', 'previous'},
+    'change_pct' hám 'next_7_days' {'bookings', 'guests'} (tastıyıqlanǵan bronlar).
     """
     today = today or business_today()
     this_first = today.replace(day=1)
@@ -535,11 +534,15 @@ def _previous_month(first):
 
 def room_type_stats(scope, date_range, room_types):
     """
-    One row per room type of `room_types` (a RoomType queryset; types nobody booked are listed with zeros),
-    busiest first: counted bookings that include it, room nights (rooms x nights by check-in date), revenue per currency
-    (its items of completed stays: price per night x rooms x nights), its share of all the counted room-type bookings
-    in percent, and the occupancy rate over a bounded period (room nights / rooms offered x days; None for all time).
-    `scope` is a Booking queryset (not narrowed to the period).
+    `room_types` (RoomType queryset i; hesh kim bronlamaǵan túrler nollar menen kórsetiledi) degi hár xona túri ushın bir
+    qatar,
+    eń bánti birinshi: onı óz ishine alǵan counted bronlar, xona túnleri (kiriw sanası boyınsha xonalar x túnler), hár
+    valyuta boyınsha dáramat
+    (juwmaqlanǵan turıwlardaǵı elementleri: bir túnnıń bahası x xonalar x túnler), barlıq counted xona túri bronlarındaǵı
+    úlesi
+    procent penen, hám shekli dáwir ushın bantlıq dárejesi (xona túnleri / usınılǵan xonalar x kúnler; pútkil waqıt ushın
+    None).
+    `scope` bul Booking queryset i (dáwirge shekemlenbegen).
     """
     from bookings.models import BookingItem
     items = BookingItem.objects.filter(is_deleted=False, room_type__in=room_types)
@@ -571,11 +574,11 @@ def room_type_stats(scope, date_range, room_types):
 
 def insights(scope, date_range, totals, rooms=None, today=None):
     """
-    Derived numbers of the Status pages for the bookings in `scope`, from their `totals`
-    (metric_totals of the same scope and range): the previous period and the
-    change in percent, cancellation rate, occupancy rate (needs `rooms`, the number of rooms the
-    hotels offer; room nights are by check-in date), average booking value per currency and
-    average stay length. Read only; every rate is None when its denominator is 0.
+    `scope` degi bronlar ushın Status betleriniń tuwındı sanları, olardıń `totals` inen
+    (sol scope hám aralıqtıń metric_totals ı): aldınǵı dáwir hám
+    procent penen ózgeris, biykar etiw dárejesi, bantlıq dárejesi (`rooms` kerek, mehmanxanalar
+    usınatuǵın xonalar sanı; xona túnleri kiriw sanası boyınsha), hár valyuta boyınsha ortasha bron mánisi hám
+    ortasha turıw uzınlıǵı. Tek oqıw; bóliwshi 0 bolsa hár dáreje None.
     """
     today = today or business_today()
     status = totals['booking_status']
@@ -606,14 +609,14 @@ def insights(scope, date_range, totals, rooms=None, today=None):
     return result
 
 
-# --- series -------------------------------------------------------------------------
+# --- seriyalar ------------------------------------------------------------------------
 
 def series(scope, date_range, granularity, today=None):
     """
-    One row per bucket ({'period', 'start', 'bookings', 'guests', 'nights', 'stayed',
-    'revenue'}), empty buckets included. With date_range None the range runs from the first
-    check-in of `scope` to today (or the last check-in when later). InvalidPeriod above
-    MAX_BUCKETS buckets.
+    Hár bucket ushın bir qatar ({'period', 'start', 'bookings', 'guests', 'nights', 'stayed',
+    'revenue'}), bos bucket ler de kiredi. date_range None bolsa, aralıq `scope` tıń birinshi
+    kiriwinen búginge shekem baradı (yamasa sońǵı kiriw keyin bolsa, sol). MAX_BUCKETS bucket ten asqanda
+    InvalidPeriod.
     """
     today = today or business_today()
     if date_range is None:
@@ -650,8 +653,8 @@ def _as_date(value):
 
 def monthly_series(scope, year):
     """
-    Twelve rows for `year` ({'month': 'YYYY-MM', 'bookings', 'guests', 'revenue'}), kept for
-    the existing `monthly` field. `scope` is a not-deleted Booking queryset.
+    `year` ushın on eki qatar ({'month': 'YYYY-MM', 'bookings', 'guests', 'revenue'}), bar
+    `monthly` maydanı ushın saqlanǵan. `scope` óshirilmegen Booking queryset i.
     """
     rows = series(scope, (date(year, 1, 1), date(year + 1, 1, 1)), 'month')
     return [{'month': row['period'], 'bookings': row['bookings'], 'guests': row['guests'],
@@ -659,11 +662,11 @@ def monthly_series(scope, year):
 
 
 def available_years(scope):
-    """Years (ascending) that have at least one counted booking, for the year selector."""
+    """Eń keminde bir counted broni bar jıllar (ósiw tártibinde), jıl tańlaǵısh ushın."""
     return [day.year for day in scope.filter(counted_q('', None)).dates('check_in', 'year')]
 
 
-# --- reconciliation -----------------------------------------------------------------
+# --- sáykeslestiriw ------------------------------------------------------------------
 
 def reconciliation_windows(today=None):
     today = today or business_today()
@@ -703,8 +706,8 @@ def _reconciliation_block(windows, values):
 
 def reconciliation(scope, today=None):
     """
-    {window: {'from', 'to', 'counted': {bookings, guests}, 'stayed': {bookings, guests}}}
-    for today, this week (Mon-Sun), this month, this year and all time. One query.
+    {oyna: {'from', 'to', 'counted': {bookings, guests}, 'stayed': {bookings, guests}}}
+    búgin, usı hápte (Dsh-Jk), usı ay, usı jıl hám pútkil waqıt ushın. Bir query.
     """
     windows = reconciliation_windows(today)
     aggregates = _reconciliation_aggregates(windows)
@@ -712,7 +715,7 @@ def reconciliation(scope, today=None):
 
 
 def reconciliation_by(scope, key, today=None):
-    """{key value: reconciliation block} grouped by `key` (e.g. 'property_id'). One query."""
+    """`key` boyınsha toparlanǵan {kilt mánisi: sáykeslestiriw bloǵı} (mısalı 'property_id'). Bir query."""
     windows = reconciliation_windows(today)
     aggregates = _reconciliation_aggregates(windows)
     rows = scope.values(key).annotate(**aggregates).order_by(key)

@@ -1,4 +1,4 @@
-"""Public promotion endpoints: the home carousel and the click counter."""
+"""Ashıq reklama endpoint leri: bas bet karuseli hám bosıw sanaǵıshı."""
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -15,7 +15,7 @@ from promotions.search import promoted_for_home, serialize_banners
 
 
 class PromotionPublicThrottle(AnonRateThrottle):
-    """Requests per minute per IP for the public promotion endpoints (THROTTLE_PROMOTION_PUBLIC_RATE, 60/min by default)."""
+    """Ashıq reklama endpoint leri ushın hár IP ge minutına sorawlar (THROTTLE_PROMOTION_PUBLIC_RATE, ádetde 60/min)."""
     rate = settings.PROMOTION_PUBLIC_THROTTLE_RATE
     scope = 'promotion_public'
 
@@ -30,7 +30,7 @@ class PromotionPublicThrottle(AnonRateThrottle):
 @permission_classes([AllowAny])
 @throttle_classes([PromotionPublicThrottle])
 def home_promotions(request):
-    """Banners for the home page carousel (at most 8). Optional `country` = geography country id."""
+    """Bas bet karuseli ushın banner ler (eń kóbi 8). Ixtıyarıy `country` = geography country id."""
     country_id = None
     raw = request.query_params.get('country')
     if raw is not None:
@@ -48,7 +48,7 @@ def home_promotions(request):
 @permission_classes([AllowAny])
 @throttle_classes([PromotionPublicThrottle])
 def promotion_click(request, promotion_id):
-    """The frontend calls this when a banner is opened. Unknown or not-shown ids are 404."""
+    """Frontend bunı banner ashılǵanda shaqıradı. Belgisiz yamasa kórsetilmeytuǵın id ler 404."""
     if not service.shown_now().filter(pk=promotion_id).exists():
         return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
     stats.record(stats.CLICK, [promotion_id], request)

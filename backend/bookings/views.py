@@ -1,5 +1,5 @@
 """
-Views for TICKBRON booking endpoints.
+TICKBRON bron endpoint leri ushın view ler.
 """
 import logging
 from drf_spectacular.types import OpenApiTypes
@@ -24,14 +24,15 @@ from django.utils.translation import gettext as _
 
 logger = logging.getLogger('tickbron')
 
-# Bookings are confirmed at once and paid in cash, so nothing stops a free account from taking rooms;
-# without a cap one account could keep a whole hotel unavailable (also the old cap on unpaid holds)
-# Owner decision 2026-10-23: one account holds at most two upcoming bookings, and their dates never overlap
+# Bronlar birden tastıyıqlanadı hám naqd tólenedi, sol sebepli hesh nárse ápiwayı akkaunttıń xonalardı alıwına tosqınlıq
+# etpeydi;
+# shekleusiz bir akkaunt pútkil mehmanxananı bos emes etip ustap turıwı múmkin (tólenbegen bronlardıń eski shegi de)
+# Iyeniń qararı 2026-10-23: bir akkaunt eń kóbi eki keletuǵın bronnı ustaydı, hám olardıń sanaları hesh qashan kesilispeydi
 MAX_UPCOMING_BOOKINGS_PER_GUEST = 2
 
 
 class BookingCreateThrottle(UserRateThrottle):
-    """Booking creation per user (settings: THROTTLE_BOOKING_CREATE_RATE)."""
+    """Paydalanıwshı boyınsha bron jaratıw (sazlama: THROTTLE_BOOKING_CREATE_RATE)."""
     scope = 'booking_create'
 
     def allow_request(self, request, view):
@@ -45,31 +46,31 @@ class BookingViewSet(mixins.CreateModelMixin,
                      mixins.RetrieveModelMixin,
                      viewsets.GenericViewSet):
     """
-    ViewSet for booking management.
+    Bronlardı basqarıw ushın ViewSet.
 
-    Supports create, list and retrieve only. Bookings are never updated or
-    deleted directly by guests: status changes go through the state machine
-    (e.g. the cancel endpoint), so PUT/PATCH/DELETE return 405.
+    Tek create, list hám retrieve qollap-quwatlanadı. Mehmanlar bronlardı hesh qashan tikkeley
+    jańalamaydı yamasa óshirmeydi: status ózgerisleri state machine arqalı ótedi
+    (mısalı biykar etiw endpoint i), sol sebepli PUT/PATCH/DELETE 405 qaytaradı.
     """
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return bookings for the current user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Házirgi paydalanıwshınıń bronların qaytaradı."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         return Booking.objects.filter(
             guest=self.request.user,
             is_deleted=False
         ).select_related('guest', 'property').prefetch_related(
-            # The item serializer names each room type and rate plan: fetch them with the items
+            # Element serializer i hár xona túrin hám rate plan dı ataydı: olardı elementler menen birge alıń
             Prefetch('booking_items', queryset=BookingItem.objects.select_related('room_type', 'rate_plan')),
             'property__translations',
         )
 
     @staticmethod
     def _pending_cap_reached(user):
-        """The guest already holds the most upcoming bookings (not cancelled, not arrived, not over)."""
+        """Mehmanda ele eń kóp keletuǵın bron bar (biykar etilmegen, kelmegen, pitpegen)."""
         upcoming = Booking.objects.filter(
             guest=user, status__in=('pending', 'confirmed'), arrived_at__isnull=True,
             check_out__gte=business_today(), is_deleted=False,
@@ -81,13 +82,13 @@ class BookingViewSet(mixins.CreateModelMixin,
         return Response(
             {'error': _('Too many upcoming bookings. Cancel one or wait until you have stayed.'),
              'code': 'too_many_upcoming_bookings'},
-            # A business rule, not throttling: 429 would look like a rate limit to clients and monitoring
+            # Bul biznes qaǵıydası, throttling emes: 429 klientlerge hám monitoring ke rate limit sıyaqlı kórinedi
             status=status.HTTP_409_CONFLICT
         )
 
     @staticmethod
     def _overlaps_another_stay(user, check_in, check_out):
-        """The guest already has a live booking whose nights share a night with these dates (check-out day is free)."""
+        """Mehmanda usı sanalar menen bir túnin bólisetuǵın aktiv bron bar (shıǵıw kúni bos)."""
         return Booking.objects.filter(
             guest=user, status__in=('pending', 'confirmed'), is_deleted=False,
             check_in__lt=check_out, check_out__gt=check_in,
@@ -102,7 +103,7 @@ class BookingViewSet(mixins.CreateModelMixin,
         )
 
     def _refused_by_account_rules(self, user, serializer):
-        """The response when one account may not book these dates now, else None."""
+        """Bir akkaunt usı sanalardı házir bronlay almasa juwap, bolmasa None."""
         if self._pending_cap_reached(user):
             return self._pending_cap_response()
         if self._overlaps_another_stay(user, serializer.validated_data['check_in'], serializer.validated_data['check_out']):
@@ -116,19 +117,19 @@ class BookingViewSet(mixins.CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         """
-        Create a new booking with transaction-safe inventory locking.
+        Transaction qáwipsiz inventory qulıplaw menen jańa bron jaratıw.
 
         Request body:
-            property_id: Property ID
-            room_type_id: Room type ID
-            rate_plan_id: Rate plan ID
-            check_in: Check-in date (YYYY-MM-DD)
-            check_out: Check-out date (YYYY-MM-DD)
-            guest_count: Number of guests
-            special_requests: Optional special requests text
+            property_id: Mehmanxana ID si
+            room_type_id: Xona túri ID si
+            rate_plan_id: Rate plan ID si
+            check_in: Kiriw sanası (YYYY-MM-DD)
+            check_out: Shıǵıw sanası (YYYY-MM-DD)
+            guest_count: Mehmanlar sanı
+            special_requests: Ixtıyarıy arnawlı sorawlar teksti
 
-        Returns:
-            Created booking with confirmation code
+        Qaytaradı:
+            Tastıyıqlaw kodı menen jaratılǵan bron
         """
         serializer = BookingCreateSerializer(
             data=request.data,
@@ -147,8 +148,8 @@ class BookingViewSet(mixins.CreateModelMixin,
 
         try:
             with transaction.atomic():
-                # Check the rules again under a lock on the guest's row: without it, parallel
-                # requests all read the same bookings and every one of them passes the check above
+                # Qaǵıydalardı mehmannıń qatarın qulıplap qayta tekseriw: bunsız birdey
+                # sorawlar bir bronlardı oqıp, hámmesi joqarıdaǵı tekseriwden ótedi
                 get_user_model().objects.select_for_update().get(pk=request.user.pk)
                 refused = self._refused_by_account_rules(request.user, serializer)
                 if refused is not None:
@@ -160,27 +161,27 @@ class BookingViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_201_CREATED
             )
         except ExchangeRateUnavailable as e:
-            # USD-priced hotel and no rate yet: nothing was reserved (R6 decision A)
+            # USD bahalı mehmanxana hám ele kurs joq: hesh nárse rezervlenbedi (R6 sheshimi A)
             return Response(
                 {'error': _('Exchange rate unavailable'), 'code': e.default_code, 'details': str(e.detail)},
                 status=e.status_code
             )
         except ValidationError as e:
-            # Handle Django ValidationError
+            # Django ValidationError di islew
             return Response(
                 {'error': _('Booking validation failed'), 'details': e.message_dict},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except DRFValidationError as e:
-            # BookingCreateSerializer.create() raises this for both business-rule
-            # violations and unexpected internal errors; either way e.detail is
-            # already a safe, non-leaking message by the time it gets here.
+            # BookingCreateSerializer.create() bunı biznes qaǵıydası buzılǵanda da, kútilmegen
+            # ishki qátelikte de kóteredi; eki jaǵdayda da e.detail bul jerge jetkenshe
+            # aldınan qáwipsiz, aǵıp ketpeytuǵın xabar boladı.
             body = {'error': 'Booking validation failed', 'details': e.detail}
             if getattr(e, 'reason', None):
                 body['reason'] = e.reason
             return Response(body, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
-            # Truly unexpected error: never echo str(e) to the client.
+            # Haqıyqatında kútilmegen qátelik: str(e) di klientke hesh qashan qaytarmań.
             logger.exception('Unexpected error creating booking')
             return Response(
                 {'error': _('Failed to create booking')},
@@ -189,13 +190,13 @@ class BookingViewSet(mixins.CreateModelMixin,
 
     def retrieve(self, request, *args, **kwargs):
         """
-        Retrieve a specific booking.
+        Belgili bir bronnı alıw.
 
-        Path parameters:
-            id: Booking ID
+        Path parametrleri:
+            id: Bron ID si
 
-        Returns:
-            Booking details
+        Qaytaradı:
+            Bron tolıq maǵlıwmatı
         """
         booking = self.get_object()
         serializer = self.get_serializer(booking)
@@ -203,14 +204,14 @@ class BookingViewSet(mixins.CreateModelMixin,
 
     def list(self, request, *args, **kwargs):
         """
-        List the current user's bookings, newest first, 20 per page.
+        Házirgi paydalanıwshınıń bronların dizimlew, eń jańası birinshi, bir betke 20.
 
-        Query parameters:
-            status: Filter by status (optional)
-            payment_status: Filter by payment status (optional)
-            page: Page number (optional)
+        Query parametrleri:
+            status: Status boyınsha filter (ıqtıyarıy)
+            payment_status: Tólem statusı boyınsha filter (ıqtıyarıy)
+            page: Bet nomeri (ıqtıyarıy)
 
-        Returns:
+        Qaytaradı:
             { count, next, previous, results }
         """
         queryset = self.get_queryset().order_by('-created_at', '-id')
@@ -233,16 +234,16 @@ class BookingViewSet(mixins.CreateModelMixin,
 @permission_classes([IsAuthenticated])
 def booking_cancel(request, booking_id):
     """
-    Cancel a booking and restore inventory. Cancelling is always free: the guest pays cash at the hotel.
+    Bronnan bas tartıw hám inventory di qaytarıw. Biykar etiw hárdayım tegin: mehmann mehmanxanada naqd tóleydi.
 
-    Path parameters:
-        booking_id: Booking ID
+    Path parametrleri:
+        booking_id: Bron ID si
 
     Request body:
-        cancellation_reason: Optional reason for cancellation
+        cancellation_reason: Ixtıyarıy biykar etiw sebebi
 
-    Returns:
-        Updated booking with cancelled status
+    Qaytaradı:
+        Biykar etilgen statusı menen jańalanǵan bron
     """
     booking = get_object_or_404(
         Booking,
@@ -268,8 +269,8 @@ def booking_cancel(request, booking_id):
         updated_booking = serializer.save()
         return Response(BookingSerializer(updated_booking).data, status=status.HTTP_200_OK)
     except DRFValidationError as e:
-        # BookingCancelSerializer.update() raises this for both business-rule
-        # violations and unexpected internal errors; e.detail is already safe.
+        # BookingCancelSerializer.update() bunı biznes qaǵıydası buzılǵanda da, kútilmegen
+        # ishki qátelikte de kóteredi; e.detail aldınan qáwipsiz.
         return Response(
             {'error': _('Failed to cancel booking'), 'details': e.detail},
             status=status.HTTP_400_BAD_REQUEST

@@ -1,4 +1,4 @@
-"""Locust load test for the guest paths (see README.md). Local development only."""
+"""Mehman jolları ushın Locust load test (qarań README.md). Tek jergilikli development."""
 import json
 import os
 import random
@@ -8,15 +8,15 @@ from pathlib import Path
 from locust import HttpUser, between, task
 
 API = '/api/v1'
-# People look for the same few places and the same coming days, and open the hotels at the top of the list
+# Adamlar birdey bir neshe orındı hám birdey jaqın kúnlerdi izleydi, hám dizim joqarısındaǵı mehmanxanalardı ashadı
 CITIES = ['Tashkent'] * 5 + ['Samarkand'] * 3 + ['Bukhara'] * 2 + ['Khiva', 'Fergana', 'Namangan', 'Almaty', 'Istanbul']
 SESSIONS = json.loads(Path(__file__).with_name('sessions.json').read_text()) \
     if Path(__file__).with_name('sessions.json').exists() else []
 BUSINESS_REFUSALS = (400, 409, 429)
-# Against a production-like server (DEBUG off, https only) set this to one of its CSRF_TRUSTED_ORIGINS: the test then
-# speaks as a visitor that came over https through the proxy. Leave it unset against the development server.
+# Production sıyaqlı serverge qarsı (DEBUG óshken, tek https) buǵan onıń CSRF_TRUSTED_ORIGINS inen birin qoyıń: test sonda
+# proxy arqalı https penen kelgen kelwshi sıyaqlı sóyleydi. Development serverge qarsı belgilemey qaldırıń.
 HTTPS_ORIGIN = os.getenv('LOADTEST_ORIGIN', '')
-# Seconds a visitor reads a page before the next click. 1-3 is a stress test; 40-80 is people reading (3000 visitors).
+# Kelwshi keyingi kliktan aldın betti oqıytuǵın sekundlar. 1-3 stress test; 40-80 adamlar oqıp atırǵanday (3000 kelwshi).
 WAIT_MIN = float(os.getenv('LOADTEST_WAIT_MIN', '1'))
 WAIT_MAX = float(os.getenv('LOADTEST_WAIT_MAX', '3'))
 
@@ -27,13 +27,13 @@ def stay():
 
 
 class Guest(HttpUser):
-    """Browses: search, hotel page, availability, quote."""
+    """Kóredi: izlew, mehmanxana beti, bos orınlar, quote."""
     weight = 8
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def on_start(self):
         self.hotel = None
-        # Behind nginx every visitor has an own address; the API throttles per address (NUM_PROXIES=1)
+        # nginx artında hár kelwshiniń óz mánzili bar; API hár mánzil boyınsha throttle laydı (NUM_PROXIES=1)
         self.client.headers['X-Forwarded-For'] = '.'.join(str(random.randint(1, 254)) for _ in range(4))
         if HTTPS_ORIGIN:
             self.client.headers['X-Forwarded-Proto'] = 'https'
@@ -63,7 +63,7 @@ class Guest(HttpUser):
         plans = room.get('rate_plans') or []
         if plans:
             check_in, check_out = stay()
-            # "No rooms left" (400) is the right answer once the booking users have filled the best hotels
+            # "Xona qalmadı" (400) bron paydalanıwshıları eń jaqsı mehmanxanalardı tolıtırǵannan keyin durıs juwap
             with self.client.get(f'{API}/properties/{self.hotel}/quote/', name='quote', catch_response=True, params={
                     'room_type_id': room['id'], 'rate_plan_id': plans[0]['id'],
                     'check_in': check_in, 'check_out': check_out}) as quote:
@@ -87,7 +87,7 @@ class Guest(HttpUser):
 
 
 class Booker(Guest):
-    """Browses like a guest, then books (pending booking, no payment)."""
+    """Mehmanday kóredi, keyin bronlaydı (pending bron, tólem joq)."""
     weight = 2
     session_index = 0
 
@@ -103,7 +103,7 @@ class Booker(Guest):
         self.client.get(f'{API}/auth/csrf/', name='csrf')
         self.csrf = self.client.cookies.get('csrftoken')
         if HTTPS_ORIGIN:
-            # The cookie is Secure and this test talks plain http to the server: send it back as an ordinary cookie
+            # Cookie Secure hám bul test serverge ápiwayı http menen sóyleydi: onı ádettegi cookie retinde qaytarıp jiberiw
             self.client.cookies.set('csrftoken', self.csrf or '')
 
     def write_headers(self):

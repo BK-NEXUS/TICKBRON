@@ -1,9 +1,9 @@
 """
-WSGI config for config project.
+config proekti ushın WSGI sazlaması.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
+Ol WSGI shaqırılatuǵın obyektti modul dárejesindegi ``application`` ózgeriwshisi retinde usınadı.
 
-For more information on this file, see
+Bul fayl haqqında kóbirek maǵlıwmat ushın qarań:
 https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 """
 

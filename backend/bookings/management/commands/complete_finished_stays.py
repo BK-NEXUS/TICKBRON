@@ -1,9 +1,9 @@
 """
 python manage.py complete_finished_stays [--dry-run]
 
-One-off (and manual) run of the nightly auto-completion (R12): confirmed bookings
-whose check-out date is before the business date become completed. The counts are
-printed before anything changes; --dry-run only prints them.
+Túngi avtomat juwmaqlawdıń bir márte (hám qolda) isletiliwi (R12): shıǵıw sanası
+is sanasınan burın bolǵan tastıyıqlanǵan bronlar completed boladı. Sanlar
+hesh nárse ózgermesten aldın basıp shıǵarıladı; --dry-run tek sonı basıp shıǵaradı.
 """
 from django.core.management.base import BaseCommand
 

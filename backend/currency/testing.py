@@ -1,9 +1,9 @@
-"""Test helper (R6): USD-priced hotels can only be booked once an exchange rate exists."""
+"""Test járdemshisi (R6): USD bahalı mehmanxanalardı tek valyuta kursı bolǵannan keyin bronlap boladı."""
 from decimal import Decimal
 
 
 def make_usd_rate(rate=Decimal('12000.00'), days_old=0):
-    """Store an accepted CBU USD rate, as the scheduled fetch does in a running system."""
+    """Qabıllanǵan CBU USD kursın saqlaw, isleytuǵın sistemada rejelestirilgen alıw islegenindey."""
     from datetime import timedelta
 
     from currency.cbu import tashkent_today

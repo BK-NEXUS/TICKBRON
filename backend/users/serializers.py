@@ -1,7 +1,7 @@
 """
-Serializers for user models.
+Paydalanıwshı model leri ushın serializer ler.
 
-This module contains serializers for the User model to be used in API endpoints.
+Bul modul API endpoint lerinde paydalanıw ushın User modeli serializer lerin óz ishine aladı.
 """
 from common.validators import validate_person_name
 from django.contrib.auth.password_validation import validate_password
@@ -15,23 +15,24 @@ from django.utils.translation import gettext as _
 
 
 class LowercaseEmailField(serializers.EmailField):
-    """An address typed with any capitals is the same address: it is lower-cased before it is checked and stored."""
+    """Qálegen úlken háripler menen terilgen mánzil birdey mánzil: ol tekserilmesten hám saqlanbastan aldın kishi háripke
+    ótkiziledi."""
 
     def to_internal_value(self, data):
         return super().to_internal_value(data).strip().lower()
 
 
 def unique_email_field():
-    """The e-mail field of a form that makes an account: lower case, and not taken by another account."""
+    """Akkaunt jaratatuǵın formanıń e-mail maydanı: kishi háripte hám basqa akkaunt tárepinen alınbaǵan."""
     return LowercaseEmailField(validators=[UniqueValidator(
         queryset=User.objects.all(), message='User with this email already exists.')])
 
 
 def validate_new_password(attrs):
     """
-    Run AUTH_PASSWORD_VALIDATORS on attrs['password'] and raise a 400 under 'password'.
+    attrs['password'] ge AUTH_PASSWORD_VALIDATORS di isletip, 'password' astında 400 kóteriw.
 
-    The other attrs (email, names) feed the similarity check, through an unsaved user.
+    Basqa attrs (email, atlar) saqlanbaǵan paydalanıwshı arqalı uqsaslıq tekseriwin bekkemleydi.
     """
     user = User(**{
         field: attrs[field] for field in ('email', 'full_name', 'first_name', 'last_name')
@@ -44,7 +45,7 @@ def validate_new_password(attrs):
 
 
 def validate_phone_number_format(value):
-    """Return the E.164 form of the number or raise a 400 with one clear message."""
+    """Nomerdiń E.164 formasın qaytarıw yamasa bir anıq xabar menen 400 kóteriw."""
     normalized = parse_phone_number(value)
     if normalized is None:
         raise serializers.ValidationError(PHONE_NUMBER_ERROR)
@@ -53,12 +54,12 @@ def validate_phone_number_format(value):
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Base serializer for User model.
+    User modeli ushın tiykarǵı serializer.
     """
     full_name = serializers.SerializerMethodField()
-    # Role name ('hotel-owner') or None. Only a super-admin assigns roles, so it is read-only
+    # Rol atı ('hotel-owner') yamasa None. Rollardı tek super-admin beredi, sol sebepli tek oqıw
     role = serializers.SerializerMethodField()
-    # True for an administrator who must set up two-step sign-in and has not: the site shows the setup screen
+    # Eki basqıshlı kirisiwdi sazlawı kerek hám sazlamaǵan administrator ushın True: sayt sazlaw ekranın kórsetedi
     two_factor_setup_required = serializers.SerializerMethodField()
 
     class Meta:
@@ -67,7 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method',
                   'is_active', 'date_joined', 'last_login',
                   'email_verified', 'two_factor_enabled', 'two_factor_setup_required', 'is_staff', 'is_superuser', 'role']
-        # phone_number is legacy data: shown, never written
+        # phone_number eski maǵlıwmat: kórsetiledi, hesh qashan jazılmaydı
         read_only_fields = ['id', 'phone_number', 'date_joined', 'last_login', 'is_staff', 'is_superuser']
 
     def get_full_name(self, obj):
@@ -82,12 +83,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
-    Serializer for user registration.
+    Paydalanıwshı dizimnen ótiwi ushın serializer.
     """
     email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
-    # Stored only (no SMS, no code); several accounts may share a number
+    # Tek saqlanadı (SMS joq, kod joq); bir neshe akkaunt nomerdi bóliwi múmkin
     phone_number = serializers.CharField(max_length=30)
 
     class Meta:
@@ -97,7 +98,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {'full_name': {'required': True, 'allow_blank': False, 'validators': [validate_person_name]}}
 
     def validate_email(self, value):
-        """Validate email format."""
+        """E-mail formatın tekseriw."""
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
@@ -122,25 +123,25 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    Serializer for user login.
+    Paydalanıwshı kirisiwi ushın serializer.
     """
     email = LowercaseEmailField()
     password = serializers.CharField()
 
     def validate_email(self, value):
-        """Validate email format."""
+        """E-mail formatın tekseriw."""
         validator = EmailFormatValidator()
         validator.validate(value)
         return value
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """The address a reset link is requested for."""
+    """Tiklew siltemesi soralatuǵın mánzil."""
     email = LowercaseEmailField()
 
 
 class NewPasswordSerializer(serializers.Serializer):
-    """A new password typed twice. Its strength is checked by validate_new_password, which needs the user."""
+    """Eki ret terilgen jańa parol. Onıń kúshi validate_new_password penen tekseriledi, ol paydalanıwshını talap etedi."""
     password = serializers.CharField(max_length=128)
     password_confirm = serializers.CharField(max_length=128)
 
@@ -151,19 +152,19 @@ class NewPasswordSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(NewPasswordSerializer):
-    """The link's uid and token, and the new password."""
+    """Siltemeniń uid hám token i, hám jańa parol."""
     uid = serializers.CharField(max_length=64)
     token = serializers.CharField(max_length=128)
 
 
 class PasswordChangeSerializer(NewPasswordSerializer):
-    """The current password proves the person at the keyboard knows it."""
+    """Házirgi parol klaviatura artındaǵı adamnıń onı biletuǵının dálillaydı."""
     current_password = serializers.CharField(max_length=128)
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating user profile. The phone number can be changed but never blanked.
+    Paydalanıwshı profilin jańalaw ushın serializer. Telefon nomerin ózgertiw múmkin, biraq hesh qashan bosatıp bolmaydı.
     """
     phone_number = serializers.CharField(required=False, max_length=30)
 

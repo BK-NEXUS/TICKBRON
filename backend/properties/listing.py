@@ -1,9 +1,9 @@
-"""What a hotel needs before guests can see it: a room, an active rate and a photo."""
+"""Mehmanlar kóre almastan aldın mehmanxanaǵa ne kerek: xona, aktiv baha hám súwret."""
 from properties.models import PropertyPhoto, RatePlan, RoomType
 
 
 def missing_for_listing(property):
-    """Return the parts still missing, in the order the owner sets them up."""
+    """Ele jetispeytuǵın bólimlerdi qaytaradı, iye olardı sazlaytuǵın tártipte."""
     rooms = RoomType.objects.filter(property=property, is_deleted=False)
     rates = RatePlan.objects.filter(room_type__in=rooms, is_active=True, is_deleted=False)
     parts = (

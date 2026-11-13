@@ -1,7 +1,7 @@
 """
-Exchange rate history (R6). Rows are appended by the scheduled CBU fetch (and by a
-super-admin accepting a rejected rate); they are never changed or deleted, so any
-booking's snapshot can be traced back to the row it came from.
+Valyuta kursları tariyxı (R6). Qatarlar rejelestirilgen CBU alıwı menen (hám super-admin
+biykar etilgen kursın qabıllaǵanda) qosıladı; olar hesh qashan ózgertilmeydi yamasa óshirilmeydi, sol sebepli
+qálegen bronnıń snapshot ın ózi alınǵan qatarǵa shekem izlew múmkin.
 """
 from django.db import models
 from django.utils import timezone
@@ -25,7 +25,7 @@ class AppendOnlyModel(models.Model):
 
 
 class ExchangeRate(AppendOnlyModel):
-    """UZS per one unit of `currency` (CBU Rate / Nominal), for one CBU rate date."""
+    """Bir CBU kurs sanası ushın `currency` diń bir birligine UZS (CBU Rate / Nominal)."""
     STATUS_CHOICES = [('accepted', 'Accepted'), ('rejected', 'Rejected')]
 
     currency = models.CharField(max_length=3, db_index=True)
@@ -52,7 +52,7 @@ class ExchangeRate(AppendOnlyModel):
 
 
 class ExchangeRateFetch(AppendOnlyModel):
-    """One row per fetch attempt and currency, so staff can see the last error."""
+    """Hár alıw urınıwı hám valyuta ushın bir qatar, sonda staff sońǵı qátelikti kóre aladı."""
     currency = models.CharField(max_length=3)
     attempted_at = models.DateTimeField(default=timezone.now, db_index=True)
     success = models.BooleanField()

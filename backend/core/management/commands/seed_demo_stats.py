@@ -1,19 +1,19 @@
 """
-DEMO DATA for the Status sections (admin and partner panels). Local development only.
+Status bólimleri ushın DEMO MAǴLIWMAT (admin hám partner panelleri). Tek jergilikli development.
 
     python manage.py seed_demo_stats
 
-Creates 12 demo hotels in 3 countries (Uzbekistan, Kazakhstan, Turkey), one demo
-owner account per hotel, 60 demo guests and 250 demo bookings over the last
-12 months (confirmed, completed and cancelled).
+3 mámlekette (Ózbekstan, Qazaqstan, Túrkiya) 12 demo mehmanxana, hár mehmanxana ushın bir demo
+iye akkauntın, 60 demo mehman hám sońǵı 12 ayǵa 250 demo bron jaratadı
+(confirmed, completed hám cancelled).
 
-- Every demo account uses a `stats-owner-NN@tickbron.demo` / `stats-guest-NN@tickbron.demo`
-  address, and every demo booking's special request starts with "[DEMO]".
-- All stays are in the past (check-out on or before today), so demo data never
-  holds room inventory.
-- Safe to run repeatedly: rows are matched by email, address and booking number
-  and updated in place, dates move with today.
-- Refuses to run when DEBUG is off, because the demo accounts have a well-known password.
+- Hár demo akkaunt `stats-owner-NN@tickbron.demo` / `stats-guest-NN@tickbron.demo`
+  mánzilin paydalanadı, hám hár demo bronnıń arnawlı sorawı "[DEMO]" den baslanadı.
+- Barlıq turıwlar ótken waqıtta (shıǵıw búgin yamasa búgennen aldın), sol sebepli demo maǵlıwmat hesh qashan
+  xona inventory in ustap turmaydı.
+- Qayta-qayta isletiw qáwipsiz: qatarlar email, mánzil hám bron nomeri boyınsha tabıladı
+  hám ornında jańalanadı, sanalar búgin menen birge jılısadı.
+- DEBUG óshken bolsa islewden bas tartadı, sebebi demo akkauntlardıń paroli ámelde belgili.
 """
 import random
 from datetime import datetime, time, timedelta
@@ -39,7 +39,8 @@ BOOKING_COUNT = 250
 GUEST_COUNT = 60
 SEED = 2026
 
-# City centres (latitude, longitude) for the map; each hotel gets a small fixed offset so pins do not overlap
+# Karta ushın qala orayları (latitude, longitude); hár mehmanxana belgiler bir-birin jawıp qalmawı ushın kishi turaqlı awıtqıw
+# aladı
 CITY_CENTERS = {
     'Tashkent': (Decimal('41.311081'), Decimal('69.279737')),
     'Samarkand': (Decimal('39.654823'), Decimal('66.975670')),
@@ -51,13 +52,13 @@ CITY_CENTERS = {
 
 
 def _map_point(city, number):
-    """The city centre moved by a fixed step that differs for every hotel number (1-12)."""
+    """Hár mehmanxana nomeri (1-12) ushın ayrıqsha turaqlı qádem menen jılıstırılǵan qala orayı."""
     lat, lng = CITY_CENTERS[city]
     return lat + Decimal(number % 4) * Decimal('0.004'), lng + Decimal((number // 4) % 3) * Decimal('0.005')
 
 
-# (country, region or None, city, hotel name, address, nightly price, currency)
-# R6: hotels in Uzbekistan are priced in whole so'm, the others in USD (the only supported currencies)
+# (mámleket, region yamasa None, qala, mehmanxana atı, mánzil, túngi baha, valyuta)
+# R6: Ózbekstandaǵı mehmanxanalar pútin somda, basqaları USD de bahalanadı (qollap-quwatlanatuǵın jalǵız valyutalar)
 DEMO_HOTELS = [
     ('Uzbekistan', 'Tashkent', 'Tashkent', 'Silk Road Plaza Hotel', '12 Navoi Street', '1000000', 'UZS'),
     ('Uzbekistan', 'Tashkent', 'Tashkent', 'Chorsu Garden Inn', '4 Chorsu Square', '565000', 'UZS'),
@@ -70,11 +71,11 @@ DEMO_HOTELS = [
     ('Kazakhstan', 'Almaty', 'Almaty', 'Panfilov Park Hotel', '61 Panfilov Street', '72.00', 'USD'),
     ('Turkey', 'Istanbul', 'Istanbul', 'Bosphorus Terrace Hotel', '8 Kennedy Avenue', '120.00', 'USD'),
     ('Turkey', 'Istanbul', 'Istanbul', 'Grand Bazaar Suites', '44 Divanyolu Street', '88.00', 'USD'),
-    # No region on purpose: shows the "Unspecified" group
+    # Anıq regionsız: "Unspecified" topardı kórsetedi
     ('Turkey', None, 'Cappadocia', 'Cave Stone Retreat', '3 Uchisar Road', '105.00', 'USD'),
 ]
 
-# Popularity weight of each hotel above (index-aligned), so the rankings are not flat
+# Joqarıdaǵı hár mehmanxananıń popularlıq salmaǵı (index boyınsha sáykes), sol sebepli reytingler tegis emes
 HOTEL_WEIGHTS = [10, 6, 4, 8, 3, 7, 4, 6, 3, 5, 3, 2]
 
 OWNER_NAMES = [
@@ -108,7 +109,7 @@ class Command(BaseCommand):
             raise CommandError('seed_demo_stats creates demo accounts with a known password; set DEBUG=True.')
 
         rng = random.Random(SEED)
-        # Hashed once: 72 accounts share the demo password, and hashing is slow on purpose
+        # Bir márte hash lengen: 72 akkaunt demo parolin bólisedi, hash lew ataylap sekin
         self.password_hash = make_password(DEMO_PASSWORD)
         today = timezone.localdate()
         with transaction.atomic():
@@ -161,13 +162,13 @@ class Command(BaseCommand):
                     'approved_at': registered,
                 },
             )
-            # Geography refs from the dictionary; the hotel without a region keeps only its country
+            # Dizimdegi Geography ref leri; regionı joq mehmanxana tek óz mámleketin saqlaydı
             country_ref, region_ref, _city = geography.match(country, region, city)
             if region is None:
                 region_ref = None
             prop.country_ref, prop.region_ref = country_ref, region_ref
             prop.save(update_fields=['country_ref', 'region_ref', 'updated_at'])
-            # Back-date the registration so "since" and monthly series look real
+            # "Beri" hám ayliq seriyalar haqıyqıy kórinsin dep dizimnen ótiw sanasın artqa jılıstırıw
             Property.objects.filter(pk=prop.pk).update(created_at=registered + timedelta(days=number))
             PropertyTranslation.objects.update_or_create(
                 property=prop, language='en',
@@ -199,7 +200,7 @@ class Command(BaseCommand):
         return guests
 
     def _seed_bookings(self, rng, today, hotels, guests):
-        # Some guests book much more often than others, so the users ranking is not flat
+        # Ayırım mehmanlar basqalarǵa qaraǵanda kóp bronlaydı, sol sebepli paydalanıwshılar reytingi tegis emes
         guest_weights = [1 / (rank + 1) ** 0.7 for rank in range(len(guests))]
         statuses = {'confirmed': 0, 'completed': 0, 'cancelled': 0}
         for number in range(1, BOOKING_COUNT + 1):
@@ -208,7 +209,7 @@ class Command(BaseCommand):
             nights = rng.randint(1, 5)
             rooms = 2 if rng.random() < 0.15 else 1
             if number % 25 == 0:
-                # A few stays that ended in the last week are still "confirmed"
+                # Sońǵı háptede pitken bir neshe turıw ele "confirmed" bolıp qaladı
                 check_out = today - timedelta(days=rng.randint(0, 6))
             else:
                 check_out = today - timedelta(days=rng.randint(7, 365 - nights))
@@ -221,7 +222,7 @@ class Command(BaseCommand):
             else:
                 status = 'completed'
             statuses[status] += 1
-            # Weekend-heavy stays and seasonal variation: +/- 20% around the hotel price
+            # Dem alıs kúnleri kóp hám mawsımlıq ózgeris: mehmanxana bahası átirapında +/- 20%
             nightly = quantize(hotel['price'] * Decimal(str(round(rng.uniform(0.8, 1.2), 2))), hotel['currency'])
             booked_at = timezone.make_aware(
                 datetime.combine(check_in - timedelta(days=rng.randint(1, 45)), time(10)))
@@ -253,7 +254,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _seed_promotions(rng, hotels):
-        """Five running paid promotions with numbers, one unpaid, one expired (R10 demo for the banners)."""
+        """Sanlı bes isleytuǵın tólengen reklama, bir tólenbegen, bir múddeti ótken (banner ler ushın R10 demo)."""
         from common.dates import business_today
         from promotions.models import Promotion, PromotionDailyStat
 
@@ -264,7 +265,7 @@ class Command(BaseCommand):
             first = today + timedelta(days=start)
             earlier = Promotion.objects.filter(property=prop, note='DEMO')
             if earlier.exists():
-                # A re-run moves the demo ads to today, so the banners keep showing
+                # Qayta isletiw demo reklamaların búginge jılıstıradı, sol sebepli banner ler kórinip turadı
                 earlier.update(start_date=first, end_date=first + timedelta(days=days - 1))
                 continue
             if Promotion.objects.filter(property=prop).exists():

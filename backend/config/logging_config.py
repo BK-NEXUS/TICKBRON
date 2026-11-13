@@ -1,7 +1,7 @@
 """
-Logging configuration for TICKBRON Backend.
+TICKBRON Backend ushın logging sazlaması.
 
-Provides structured logging with different handlers for development and production.
+Development hám production ushın túrli handler ler menen dúzilgen logging di usınadı.
 """
 import os
 from django.conf import settings
@@ -9,9 +9,9 @@ from django.conf import settings
 
 def get_logging_config():
     """
-    Get logging configuration based on environment.
+    Ortalıqqa qarap logging sazlamasın alıw.
 
-    Returns a dict suitable for Django's LOGGING setting.
+    Django nıń LOGGING sazlaması ushın jaraytuǵın dict qaytaradı.
     """
     log_level = os.getenv('LOG_LEVEL', 'INFO' if settings.DEBUG else 'WARNING')
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -42,12 +42,12 @@ def get_logging_config():
                 'formatter': 'verbose',
                 'level': log_level,
             },
-            # Telegram message for a security event worth acting on or any ERROR (see common/alerts.py)
+            # Háreket etiwge ılayıq qáwipsizlik waqıyası yamasa qálegen ERROR ushın Telegram xabarı (qarań common/alerts.py)
             'alerts': {
                 'class': 'common.alerts.AlertHandler',
                 'level': 'WARNING',
             },
-            # Security events (logins, lockouts, refused requests) are kept at INFO whatever LOG_LEVEL is
+            # Qáwipsizlik waqıyaları (kirisiw, lockout lar, qabıllanbaǵan sorawlar) LOG_LEVEL qanday bolsa da INFO da saqlanadı
             'security_console': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'verbose',
@@ -98,7 +98,7 @@ def get_logging_config():
             },
         },
         'root': {
-            # Module loggers (getLogger(__name__): payments, bookings, users...) end up here
+            # Modul logger leri (getLogger(__name__): payments, bookings, users...) usı jerge túsedi
             'handlers': ['console', 'file', 'alerts'],
             'level': log_level,
         }

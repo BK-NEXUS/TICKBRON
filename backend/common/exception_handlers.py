@@ -1,7 +1,7 @@
 """
-Custom exception handlers for TICKBRON Backend.
+TICKBRON Backend ushın óz exception handler leri.
 
-Provides consistent error responses and logging for API exceptions.
+API exception ları ushın birdey qátelik juwapların hám log lawdı támiyinleydi.
 """
 import logging
 from django.conf import settings
@@ -16,7 +16,7 @@ logger = logging.getLogger('tickbron')
 
 
 def readable_text(detail):
-    """Plain text of a DRF error body ('field: text'), never a Python dump."""
+    """DRF qátelik denesiniń ápiwayı teksti ('field: text'), hesh qashan Python dump emes."""
     if isinstance(detail, dict):
         parts = []
         for field, value in detail.items():
@@ -29,21 +29,21 @@ def readable_text(detail):
 
 
 def _log_refusal(exc, context, event):
-    """Security event for a refused request; the exception text is not logged (it can echo input)."""
+    """Qabıllanbaǵan soraw ushın qáwipsizlik waqıyası; exception teksti log qa jazılmaydı (ol kirisiwdi qaytalawı múmkin)."""
     view = context.get('view')
     log_security_event(event, context.get('request'), view=view.__class__.__name__ if view is not None else 'unknown')
 
 
 def custom_exception_handler(exc, context):
     """
-    Custom exception handler for TICKBRON API.
+    TICKBRON API ushın óz exception handler i.
 
-    Provides consistent error responses with proper logging.
+    Durıs log lawdı menen birdey qátelik juwapların támiyinleydi.
     """
-    # Call REST framework's default exception handler first
+    # Aldın REST framework tiń ádettegi exception handler in shaqırıw
     response = exception_handler(exc, context)
 
-    # Django's own "the request is bad" errors are the caller's mistake, not a server failure
+    # Django tiń óz "soraw jaramsız" qátelikleri shaqırıwshınıń qátesi, server qátesi emes
     if response is None and isinstance(exc, (SuspiciousOperation, BadRequest)):
         logger.warning(f"Bad request: {exc.__class__.__name__}")
         return Response(
@@ -51,7 +51,7 @@ def custom_exception_handler(exc, context):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # psycopg2 refuses a NUL character before the query leaves Python: the caller sent something the database cannot hold
+    # psycopg2 NUL belgisin soraw Python den shıqpastan aldın qabıllamaydı: shaqırıwshı database saqlay almaytuǵın nárse jiberdi
     if response is None and isinstance(exc, ValueError) and 'NUL (0x00)' in str(exc):
         logger.warning('Refused a NUL character that reached the database layer')
         return Response(
@@ -60,16 +60,16 @@ def custom_exception_handler(exc, context):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # If response is None, it's a non-API exception
+    # Juwap None bolsa, ol API emes exception
     if response is None:
-        # Log unexpected exceptions
+        # Kútilmegen exception lardı log qa jazıw
         logger.error(
             f"Unexpected exception: {exc.__class__.__name__} - {str(exc)}",
             exc_info=True,
             extra={'context': context}
         )
 
-        # Return standardized error response
+        # Standart qátelik juwabın qaytarıw
         return Response(
             {
                 'error': {
@@ -81,20 +81,20 @@ def custom_exception_handler(exc, context):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    # Handle TICKBRON custom exceptions
+    # TICKBRON óz exception ların islew
     if isinstance(exc, TickBronException):
-        # Log the exception (already logged in exception class)
+        # Exception dı log qa jazıw (exception klasında aldınan log qa jazılǵan)
         logger.info(
             f"TICKBRON exception: {exc.__class__.__name__} - {str(exc)}",
             extra={'context': context}
         )
 
-        # Add retry-after header for rate limit exceptions
+        # Rate limit exception ları ushın retry-after header in qosıw
         headers = {}
         if hasattr(exc, 'retry_after') and exc.retry_after:
             headers['Retry-After'] = str(exc.retry_after)
 
-        # Return standardized error response
+        # Standart qátelik juwabın qaytarıw
         return Response(
             {
                 'error': {
@@ -107,14 +107,14 @@ def custom_exception_handler(exc, context):
             headers=headers
         )
 
-    # Log validation errors
+    # Validation qátelikların log qa jazıw
     if response.status_code == status.HTTP_400_BAD_REQUEST:
         logger.warning(
             f"Validation error: {str(exc)}",
             extra={'context': context}
         )
 
-    # Log permission errors, and every refused request as a security event (who, from where, which URL)
+    # Ruxsat qátelikların, hám hár qabıllanbaǵan sorawdı qáwipsizlik waqıyası retinde log qa jazıw (kim, qayaqtan, qaysı URL)
     if response.status_code == status.HTTP_403_FORBIDDEN:
         logger.warning(
             f"Permission denied: {str(exc)}",
@@ -124,14 +124,14 @@ def custom_exception_handler(exc, context):
     if response.status_code == status.HTTP_401_UNAUTHORIZED:
         _log_refusal(exc, context, 'unauthenticated')
 
-    # Log not found errors
+    # Tabılmaǵan qátelikların log qa jazıw
     if response.status_code == status.HTTP_404_NOT_FOUND:
         logger.info(
             f"Resource not found: {str(exc)}",
             extra={'context': context}
         )
 
-    # Log rate limit errors
+    # Rate limit qátelikların log qa jazıw
     if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
         logger.warning(
             f"Rate limit exceeded: {str(exc)}",
@@ -139,7 +139,7 @@ def custom_exception_handler(exc, context):
         )
         _log_refusal(exc, context, 'throttled')
 
-    # Log server errors
+    # Server qátelikların log qa jazıw
     if response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         logger.error(
             f"Server error: {exc.__class__.__name__} - {str(exc)}",
@@ -147,21 +147,21 @@ def custom_exception_handler(exc, context):
             extra={'context': context}
         )
 
-    # Standardize error response format
+    # Qátelik juwabı formatın standartlastırıw
     if hasattr(response, 'data'):
         original_data = response.data
-        # Wrap existing data in error format if not already wrapped
+        # Bar maǵlıwmattı, aldınan oralmaǵan bolsa, qátelik formatına oraw
         if not isinstance(original_data, dict) or 'error' not in original_data:
             if isinstance(original_data, dict):
                 code = original_data.get('code', 'error')
                 message = original_data.get('detail') or readable_text(original_data)
                 details = original_data
             else:
-                # A ValidationError raised with a plain string/list (e.g.
-                # raise serializers.ValidationError('some message')) leaves
-                # response.data as a bare list of ErrorDetail, not a dict.
-                # original_data.get(...) would raise AttributeError here and
-                # turn this 400 into an unhandled 500.
+                # Ápiwayı qatar/dizim menen kóterilgen ValidationError (mısalı
+                # raise serializers.ValidationError('some message')) response.data di dict emes,
+                # ErrorDetail dıń tuwrı dizimi etip qaldıradı.
+                # original_data.get(...) bul jerde AttributeError kótergen bolar edi hám
+                # bul 400 di islenbegen 500 ge aylandırar edi.
                 items = original_data if isinstance(original_data, list) else [original_data]
                 code = 'error'
                 message = ' '.join(str(item) for item in items)

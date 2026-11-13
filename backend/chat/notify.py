@@ -1,4 +1,5 @@
-"""Notices of the support chat (e-mail to the user or the team, Telegram to the team). They carry a link, never the text of the message."""
+"""Qollap-quwatlaw chatınıń xabarlandırıwları (paydalanıwshıǵa yamasa komandaǵa e-mail, komandaǵa Telegram). Olarda silteme
+boladı, xabardıń teksti hesh qashan."""
 import logging
 
 from django.conf import settings
@@ -15,7 +16,7 @@ TEAM_SUBJECT = 'TICKBRON support: new message'
 
 
 def _first_unread(message):
-    """True when no earlier message of the same side is still unread, so a run of messages sends one notice."""
+    """Sol tárepten aldınǵı xabar ele oqılmaǵan bolmasa True, sol sebepli birneshe xabar bir xabarlandırıw jiberedi."""
     conversation = message.conversation
     if message.from_staff:
         read_id = conversation.user_read_id
@@ -27,7 +28,7 @@ def _first_unread(message):
 
 
 def notice_for(message):
-    """(subject, body, recipient) for a new message, or None when nobody has to be told."""
+    """Jańa xabar ushın (subject, body, recipient), yamasa hesh kimge aytıwdıń keregi joq bolsa None."""
     if not _first_unread(message):
         return None
     user = message.conversation.user
@@ -45,7 +46,7 @@ def notice_for(message):
 
 
 def telegram_text_for(message):
-    """The Telegram text for the team when a user writes (name and role, no address and no message text), else None."""
+    """Paydalanıwshı jazǵanda komandaǵa Telegram teksti (at hám rol, mánzil hám xabar teksti joq), bolmasa None."""
     if message.from_staff or not alerts_configured() or not _first_unread(message):
         return None
     user = message.conversation.user
@@ -54,7 +55,7 @@ def telegram_text_for(message):
 
 
 def send_notice(message):
-    """Tell the team on Telegram, then mail: a broken Telegram queue must not stop the e-mail."""
+    """Aldın komandaǵa Telegram arqalı aytıw, keyin e-mail: buzılǵan Telegram náwbeti e-mail di toqtatpawı kerek."""
     text = telegram_text_for(message)
     if text:
         try:

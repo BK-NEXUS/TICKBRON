@@ -1,5 +1,5 @@
 """
-Partner app configuration.
+Partner app sazlaması.
 """
 from django.apps import AppConfig
 

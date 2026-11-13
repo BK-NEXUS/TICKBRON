@@ -1,14 +1,14 @@
 """
-DEMO DATA at volume, for measuring performance (R14). Local development only.
+Ónimdarlıqtı ólshew ushın úlken kólemdegi DEMO MAǴLIWMAT (R14). Tek jergilikli development.
 
     python manage.py seed_demo_bulk --hotels 2000 --guests 300 --bookings 10000 --days 90
 
-Run it against a scratch database (DB_NAME=tickbron_perf): it creates thousands of rows.
-Hotels get 2 room types, 2 rate plans each, 3 photos, 6 amenities, 3 languages of names and
-`--days` days of inventory; bookings are spread over the next and last months.
+Onı waqtınsha database ge qarsı isletiń (DB_NAME=tickbron_perf): ol mıńlaǵan qatar jaratadı.
+Mehmanxanalarda 2 xona túri, hárbirinde 2 rate plan, 3 súwret, 6 amenity, 3 tilde atlar hám
+`--days` kúnlik inventory boladı; bronlar keyingi hám ótken aylarǵa taralǵan.
 
-- Every account is `bulk-owner-NNNN@tickbron.demo` / `bulk-guest-NNNN@tickbron.demo`, marker "[BULK]".
-- Refuses to run when DEBUG is off, and when bulk data already exists.
+- Hár akkaunt `bulk-owner-NNNN@tickbron.demo` / `bulk-guest-NNNN@tickbron.demo`, belgi "[BULK]".
+- DEBUG óshken bolsa hám bulk maǵlıwmat aldınan bar bolsa islewden bas tartadı.
 """
 import random
 from datetime import timedelta

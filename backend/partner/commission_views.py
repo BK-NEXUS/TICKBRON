@@ -1,4 +1,4 @@
-"""The commission screens: the owner's own statement, and the staff list, detail, percent and "paid" confirmation."""
+"""Komissiya ekranları: iyeniń óz esabatı hám staff dizimi, tolıq maǵlıwmatı, procenti hám "tólendi" tastıyıqlawı."""
 from decimal import Decimal, InvalidOperation
 
 from django.db.models import Q
@@ -30,7 +30,7 @@ class OwnerListPagination(PageNumberPagination):
 
 
 def parse_percent(value):
-    """A Decimal 0..100 with at most two decimals, or None for anything else (text, NaN, lists, too many digits)."""
+    """Eń kóbi eki onlıq belgili Decimal 0..100, yamasa basqa hár nárse ushın None (tekst, NaN, dizimler, júdá kóp san)."""
     if isinstance(value, bool) or not isinstance(value, (str, int, float)):
         return None
     try:
@@ -70,7 +70,7 @@ def refusal(error):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_commission(request):
-    """The signed-in owner's percent, months (newest first) and, for an account a year old, year totals."""
+    """Kirgen iyeniń procenti, aylar (eń jańası birinshi) hám bir jıllıq akkaunt ushın jıllıq jıynaqlar."""
     return Response(commission.statement(request.user))
 
 
@@ -83,7 +83,8 @@ def owner_row(owner, summary):
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_commission_list(request):
-    """Hotel owners with their percent, this month and unconfirmed commission. ?search= name, e-mail, phone or hotel name; ?letter= first letter of the owner's name (or #)."""
+    """Procenti, usı ayı hám tastıyıqlanbaǵan komissiyası menen mehmanxana iyeleri. ?search= at, e-mail, telefon yamasa
+    mehmanxana atı; ?letter= iyeniń atınıń birinshi háripi (yamasa #)."""
     owners = people_with_letter(hotel_owners(), letter_from(request)).order_by('full_name', 'email')
     term = (request.query_params.get('search') or '').strip()[:100]
     if term:
@@ -108,7 +109,7 @@ def admin_commission_detail(request, owner_id):
 @api_view(['PUT'])
 @permission_classes([IsSuperAdmin])
 def admin_commission_rate(request, owner_id):
-    """Set the owner's percent from this month on (super admin only). Body: percent."""
+    """Iyeniń procentin usı aydan baslap belgilew (tek super admin). Body: percent."""
     owner = owner_of(owner_id)
     percent = parse_percent(object_body(request).get('percent'))
     if percent is None:
@@ -122,7 +123,7 @@ def admin_commission_rate(request, owner_id):
 @api_view(['POST', 'DELETE'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_commission_paid(request, owner_id, month):
-    """POST: confirm that the owner paid this ended month; DELETE: take the confirmation back. Staff or super admin."""
+    """POST: iye usı pitken ayın tólegenin tastıyıqlaw; DELETE: tastıyıqlawdı qaytarıp alıw. Staff yamasa super admin."""
     owner = owner_of(owner_id)
     first = month_or_404(month)
     try:

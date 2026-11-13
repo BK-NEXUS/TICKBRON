@@ -1,4 +1,4 @@
-"""The account's own thread: read it (polled), write to the team, mark it read, count what is unread."""
+"""Akkauttıń óz thread i: oqıw (polling), komandaǵa jazıw, oqıldı dep belgilew, oqılmaǵandı sanaw."""
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -13,7 +13,7 @@ from chat.throttles import ChatPollThrottle, ChatSendThrottle
 
 
 def after_param(request):
-    """`?after=` is the id of the last message the page already has; 0 when absent. None when it is not a number."""
+    """`?after=` bettiń aldınan alǵan sońǵı xabarınıń id si; joq bolsa 0. San bolmasa None."""
     raw = request.query_params.get('after')
     if raw in (None, ''):
         return 0
@@ -29,7 +29,7 @@ def chat_error(exc):
 
 
 class MyMessages(APIView):
-    """GET: the account's thread (the last 100 messages, or only those after `?after=`). POST `{text}`: write to the team."""
+    """GET: akkauttıń thread i (sońǵı 100 xabar, yamasa tek `?after=` ten keyingileri). POST `{text}`: komandaǵa jazıw."""
     permission_classes = [IsAuthenticated]
 
     def get_throttles(self):
@@ -58,7 +58,7 @@ class MyMessages(APIView):
 
 
 class MyRead(APIView):
-    """POST: the account has seen the thread."""
+    """POST: akkaunt thread di kórdi."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [ChatPollThrottle]
 
@@ -71,7 +71,7 @@ class MyRead(APIView):
 
 
 class MyUnread(APIView):
-    """GET: how many messages from the team the account has not read (the badge)."""
+    """GET: komandadan kelgen neshe xabardı akkaunt oqımaǵan (belgi)."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [ChatPollThrottle]
 

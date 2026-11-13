@@ -1,4 +1,5 @@
-"""The code steps of sign-up and sign-in: type the mailed code, or ask for a new one. Rules: users/email_codes.py."""
+"""Dizimnen ótiw hám kirisiwdiń kod qádemleri: jiberilgen kodtı teriw, yamasa jańasın sorawlaw. Qaǵıydalar:
+users/email_codes.py."""
 import logging
 
 from django.contrib.auth import login
@@ -26,7 +27,7 @@ MAX_EMAIL_LENGTH = 254
 
 
 def _address(value):
-    """The address as the sign-up stored it (trimmed, lower case), or None when it is not text of a sensible size."""
+    """Dizimnen ótiw saqlaǵan mánzil (qırqılǵan, kishi háripte), yamasa aqılǵa muwapıq ólshemdegi tekst bolmasa None."""
     if not isinstance(value, str):
         return None
     value = value.strip().lower()
@@ -42,7 +43,7 @@ def _wrong_code_response():
 @permission_classes([AllowAny])
 @throttle_classes([EmailCodeVerifyThrottle])
 def register_verify(request):
-    """Last step of sign-up. Body: email, code. The right code makes the account, confirms the address and signs in."""
+    """Dizimnen ótiwdiń aqırǵı qádemi. Body: email, code. Durıs kod akkauntti jaratadı, mánzildi tastıyıqlaydı hám kirgizedi."""
     enforce_csrf(request)
     body = object_body(request)
     email = _address(body.get('email'))
@@ -52,7 +53,7 @@ def register_verify(request):
         return _wrong_code_response()
     try:
         user = create_verified_user(waiting)
-    except IntegrityError:  # the address got an account while the code was waiting
+    except IntegrityError:  # kod kútip turǵanda mánzil akkaunt aldı
         return Response({'email': [_('User with this email already exists.')]}, status=status.HTTP_400_BAD_REQUEST)
     login(request, user)
     log_security_event('account_created', request, user=user, level=logging.INFO)
@@ -65,7 +66,7 @@ def register_verify(request):
 @permission_classes([AllowAny])
 @throttle_classes([EmailCodeSendThrottle])
 def register_resend(request):
-    """A new code for a sign-up that is waiting (after a minute; 5 mails an hour). Body: email."""
+    """Kútip turǵan dizimnen ótiw ushın jańa kod (bir minuttan keyin; saatına 5 xat). Body: email."""
     enforce_csrf(request)
     email = _address(object_body(request).get('email'))
     if email is None or not email_codes.waiting('register', email):
@@ -92,7 +93,7 @@ def _pending_login_user(request):
 @permission_classes([AllowAny])
 @throttle_classes([EmailCodeVerifyThrottle])
 def login_email_code(request):
-    """Second step of the sign-in of a guest or hotel owner: the password was accepted, now the mailed code."""
+    """Mehmann yamasa mehmanxana iyesi kirisiwiniń ekinshi qádemi: parol qabıllandı, endi jiberilgen kod."""
     enforce_csrf(request)
     user, client_ip = _pending_login_user(request), get_client_ip(request)
     if user is None or lockout.is_locked(user, client_ip):
@@ -106,7 +107,7 @@ def login_email_code(request):
         return _login_failed_response()
 
     email_codes.forget_login_step(request)
-    if not user.email_verified:  # the code came to this mailbox: that proves the address
+    if not user.email_verified:  # kod usı poshta qutısına keldi: bul mánzildi dálillaydı
         user.email_verified = True
         user.save(update_fields=['email_verified'])
     start_session(request, user, client_ip, method='password+email_code')
@@ -118,7 +119,7 @@ def login_email_code(request):
 @permission_classes([AllowAny])
 @throttle_classes([EmailCodeSendThrottle])
 def login_email_code_resend(request):
-    """A new code for the sign-in that is waiting (after a minute; 5 mails an hour)."""
+    """Kútip turǵan kirisiw ushın jańa kod (bir minuttan keyin; saatına 5 xat)."""
     enforce_csrf(request)
     user = _pending_login_user(request)
     if user is None:

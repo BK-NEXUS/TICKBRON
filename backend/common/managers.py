@@ -1,15 +1,15 @@
 """
-Custom managers for TICKBRON models.
+TICKBRON model leri ushın óz manager leri.
 
-This module contains custom managers that provide additional query capabilities.
+Bul modul qosımsha query múmkinshiliklerin beretuǵın óz manager lerin óz ishine aladı.
 """
 from django.db import models
 
 
 class SoftDeleteManager(models.Manager):
     """
-    Manager that excludes soft-deleted records by default.
+    Ádetde soft-delete etilgen jazbalardı shıǵarıp taslaytuǵın manager.
     """
     def get_queryset(self):
-        """Return queryset excluding soft-deleted records."""
+        """Soft-delete etilgen jazbalarsız queryset qaytaradı."""
         return super().get_queryset().filter(is_deleted=False)

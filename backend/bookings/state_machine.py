@@ -1,15 +1,14 @@
 """
-State machine for booking state transitions.
+Bron status ótiwleri ushın state machine.
 
-This module implements deterministic state transitions for bookings
-with validation and audit logging.
+Bul modul tekseriw hám audit log penen bronlar ushın anıq status ótiwlerin ámelge asıradı.
 """
 from enum import Enum
 from typing import Dict, Set, Optional, Tuple
 
 
 class BookingState(Enum):
-    """Booking status states."""
+    """Bron status jaǵdayları."""
     PENDING = 'pending'
     CONFIRMED = 'confirmed'
     CANCELLED = 'cancelled'
@@ -19,35 +18,35 @@ class BookingState(Enum):
 
 class BookingStateMachine:
     """
-    State machine for booking status transitions.
+    Bron status ótiwleri ushın state machine.
 
-    Enforces deterministic state transitions with validation.
+    Tekseriw penen anıq status ótiwlerin májbúrleydi.
     """
 
-    # Valid state transitions
+    # Jaramlı status ótiwleri
     TRANSITIONS: Dict[BookingState, Set[BookingState]] = {
         BookingState.PENDING: {BookingState.CONFIRMED, BookingState.CANCELLED},
         BookingState.CONFIRMED: {BookingState.CANCELLED, BookingState.COMPLETED, BookingState.NO_SHOW},
-        BookingState.CANCELLED: set(),  # Terminal state
-        BookingState.COMPLETED: set(),  # Terminal state
-        BookingState.NO_SHOW: set(),  # Terminal state
+        BookingState.CANCELLED: set(),  # Aqırǵı jaǵday
+        BookingState.COMPLETED: set(),  # Aqırǵı jaǵday
+        BookingState.NO_SHOW: set(),  # Aqırǵı jaǵday
     }
 
-    # Transition reasons for audit logging
+    # Audit log ushın ótiw sebepleri
     TRANSITION_REASONS: Dict[Tuple[BookingState, BookingState], str] = {
         (BookingState.PENDING, BookingState.CONFIRMED): 'payment_completed',
-        (BookingState.PENDING, BookingState.CANCELLED): 'user_cancelled',  # Can also be 'expiry'
+        (BookingState.PENDING, BookingState.CANCELLED): 'user_cancelled',  # 'expiry' de bolıwı múmkin
         (BookingState.CONFIRMED, BookingState.CANCELLED): 'user_cancelled',
         (BookingState.CONFIRMED, BookingState.COMPLETED): 'checkout_completed',
         (BookingState.CONFIRMED, BookingState.NO_SHOW): 'guest_no_show',
     }
 
-    # Transitions that exist ONLY with one specific reason (R12): a completed stay becomes
-    # a no-show only when staff approve the hotel's no-show report. can_transition() stays
-    # False for them; validate_transition() accepts them only with that reason.
+    # TEK belgili bir sebep penen bar bolatuǵın ótiwler (R12): juwmaqlanǵan turıw
+    # tek staff mehmanxananıń no-show esabatın tastıyıqlaǵanda no-show boladı. can_transition()
+    # olar ushın False qaladı; validate_transition() olardı tek usı sebep penen qabıllaydı.
     GATED_TRANSITIONS: Dict[Tuple[BookingState, BookingState], str] = {
         (BookingState.COMPLETED, BookingState.NO_SHOW): 'no_show_report_approved',
-        # staff corrected an approved report: the stay happened after all
+        # staff tastıyıqlanǵan esabattı túzetti: turıw haqıyqatında boldı
         (BookingState.NO_SHOW, BookingState.COMPLETED): 'no_show_report_reversed',
         (BookingState.NO_SHOW, BookingState.CONFIRMED): 'no_show_report_reversed',
     }
@@ -55,17 +54,17 @@ class BookingStateMachine:
     @classmethod
     def can_transition(cls, from_state: BookingState, to_state: BookingState) -> bool:
         """
-        Check if a state transition is valid.
+        Status ótiwiniń jaramlı ekenin tekseriw.
 
-        Args:
-            from_state: Current state
-            to_state: Target state
+        Argumentler:
+            from_state: Házirgi jaǵday
+            to_state: Maqset jaǵday
 
-        Returns:
-            bool: True if transition is valid
+        Qaytaradı:
+            bool: Ótiw jaramlı bolsa True
         """
         if from_state == to_state:
-            return False  # No self-transitions
+            return False  # Óz-ózine ótiw joq
 
         valid_transitions = cls.TRANSITIONS.get(from_state, set())
         return to_state in valid_transitions
@@ -74,14 +73,14 @@ class BookingStateMachine:
     def validate_transition(cls, from_state: BookingState, to_state: BookingState,
                           reason: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         """
-        Validate a state transition and return validation result.
+        Status ótiwin tekseriw hám tekseriw nátiyjesin qaytarıw.
 
-        Args:
-            from_state: Current state
-            to_state: Target state
-            reason: Optional reason for transition
+        Argumentler:
+            from_state: Házirgi jaǵday
+            to_state: Maqset jaǵday
+            reason: Ótiw ushın ıqtıyarıy sebep
 
-        Returns:
+        Qaytaradı:
             tuple: (is_valid, error_message)
         """
         if from_state == to_state:
@@ -97,12 +96,12 @@ class BookingStateMachine:
         if to_state not in valid_transitions:
             return False, f"Invalid transition from {from_state.value} to {to_state.value}"
 
-        # Validate reason if provided
+        # Berilgen bolsa sebepti tekseriw
         if reason:
             expected_reason = cls.TRANSITION_REASONS.get((from_state, to_state))
-            # Allow multiple valid reasons for certain transitions
+            # Ayırım ótiwler ushın bir neshe jaramlı sebepke ruxsat beriw
             if expected_reason:
-                # For pending->cancelled, allow both 'user_cancelled' and 'expiry'
+                # pending->cancelled ushın 'user_cancelled' hám 'expiry' ekewine de ruxsat beriw
                 if (from_state, to_state) == (BookingState.PENDING, BookingState.CANCELLED):
                     if reason not in ['user_cancelled', 'expiry']:
                         return False, f"Invalid reason '{reason}' for transition from {from_state.value} to {to_state.value}. Expected: user_cancelled or expiry"
@@ -114,26 +113,20 @@ class BookingStateMachine:
     @classmethod
     def get_transition_reason(cls, from_state: BookingState, to_state: BookingState) -> Optional[str]:
         """
-        Get the expected reason for a state transition.
+        Status ótiwi ushın kútilgen sebepti alıw.
 
-        Args:
-            from_state: Current state
-            to_state: Target state
+        Argumentler:
+            from_state: Házirgi jaǵday
+            to_state: Maqset jaǵday
 
-        Returns:
-            str or None: Expected reason or None if not defined
+        Qaytaradı:
+            str yamasa None: Kútilgen sebep yamasa anıqlanbaǵan bolsa None
         """
         return cls.TRANSITION_REASONS.get((from_state, to_state))
 
     @classmethod
     def get_valid_transitions(cls, from_state: BookingState) -> Set[BookingState]:
         """
-        Get all valid transitions from a given state.
-
-        Args:
-            from_state: Current state
-
-        Returns:
-            set: Set of valid target states
+        Berilgen jaǵdaydan barlıq jaramlı ótiwlerdi alıw.
         """
         return cls.TRANSITIONS.get(from_state, set())

@@ -1,9 +1,9 @@
 """
-Writes sessions.json: logged-in sessions of fresh load-test guests (DEBUG only; used by locustfile.py)
-and adds a USD and EUR exchange rate to the scratch database.
+sessions.json jazadı: jańa load-test mehmanlarınıń kirgen session ları (tek DEBUG; locustfile.py paydalanadı)
+hám waqtınsha database ge USD hám EUR valyuta kursın qosadı.
 
-The guests are new accounts without bookings: a guest may hold only a few pending bookings, so booking
-users switch to the next session after each booking.
+Mehmanlar bronsız jańa akkauntlar: mehmanda tek bir neshe pending bron bolıwı múmkin, sol sebepli bron
+paydalanıwshıları hár bronnan keyin keyingi session ǵa ótedi.
 """
 import json
 import os
@@ -38,7 +38,7 @@ if not User.objects.filter(email__startswith=PREFIX).exists():
              phone_number=f'+9987{n:06d}', is_active=True)
         for n in range(1, COUNT + 1)], batch_size=500)
 
-# Hotels priced in USD need a CBU rate to take a booking (R6); the scratch database has none
+# USD de bahalanǵan mehmanxanalarǵa bron alıw ushın CBU kursı kerek (R6); waqtınsha database de ol joq
 from common.dates import business_today  # noqa: E402
 from currency.models import ExchangeRate  # noqa: E402
 

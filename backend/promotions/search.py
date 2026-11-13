@@ -1,4 +1,4 @@
-"""Banner carousel entries for the search page: promoted hotels inside the guest's own result set."""
+"""Izlew beti ushın banner karuseli jazbaları: mehmannıń óz nátiyje toplamındaǵı reklamalanǵan mehmanxanalar."""
 from collections import defaultdict
 
 from promotions import service
@@ -13,8 +13,8 @@ HOME_SLOTS = 8
 
 def promoted_for_search(search_service, search_params, limit=SEARCH_SLOTS):
     """
-    `[(promotion, property)]` in display order. The promoted ids are intersected with the
-    filtered queryset the guest asked for, so a hotel that does not match is never added.
+    Kórsetiw tártibindegi `[(promotion, property)]`. Reklamalanǵan id ler mehmann soraǵan
+    filterlengen queryset penen kesiledi, sol sebepli sáykes kelmeytuǵın mehmanxana hesh qashan qosılmaydı.
     """
     matching_ids = search_service.filtered_queryset(search_params).order_by().values('id')
     promotions = service.ordered(service.shown_now().filter(property_id__in=matching_ids), limit=limit)
@@ -27,8 +27,9 @@ def promoted_for_search(search_service, search_params, limit=SEARCH_SLOTS):
 
 def _banner_photos(entries):
     """
-    `{promotion_id: [url, ...]}`, at most service.MAX_PHOTOS each: the pictures put on the ad, else the hotel's own
-    photos with the cover first. Two queries for the whole carousel.
+    `{promotion_id: [url, ...]}`, hárbirinen eń kóbi service.MAX_PHOTOS: reklamaǵa qoyılǵan súwretler, bolmasa
+    mehmanxananıń óz
+    súwretleri muqaba birinshi. Pútkil karusel ushın eki query.
     """
     own = defaultdict(list)
     for row in PromotionPhoto.objects.filter(
@@ -43,7 +44,7 @@ def _banner_photos(entries):
 
 
 def serialize_banners(request, entries):
-    """Card fields of the hotel, the `promotion_id` the frontend sends back on click and the `promo_photos`."""
+    """Mehmanxananıń karta maydanları, klik bolǵanda frontend qaytaratuǵın `promotion_id` hám `promo_photos`."""
     items = PropertySearchResultSerializer(
         [prop for _, prop in entries], many=True, context={'rate_request': request}).data
     photos = _banner_photos(entries)

@@ -1,8 +1,8 @@
 """
-Payment models for TICKBRON.
+TICKBRON ushın tólem model leri.
 
-This module contains models for payment ledger, adapters, and webhook processing
-with idempotency, signature validation, and replay protection.
+Bul modul tólem ledgeri, adapterler hám webhook islewdiń model lerin óz ishine aladı,
+idempotency, signature tekseriwi hám replay qorǵanısı menen.
 """
 from django.db import models
 from django.core.validators import MinValueValidator
@@ -14,10 +14,10 @@ from common.models import BaseModel
 
 class PaymentTransaction(BaseModel):
     """
-    Core Payment Transaction model for TICKBRON payment ledger.
+    TICKBRON tólem ledgeri ushın tiykarǵı Payment Transaction modeli.
 
-    Represents a payment transaction with idempotency support.
-    Raw card data is never stored - only tokens/references from payment providers.
+    Idempotency qollawı bar tólem transaction ın kórsetedi.
+    Qáwipsiz karta maǵlıwmatı hesh qashan saqlanbaydı - tek tólem provayderlerinen token lar/siltemeler.
     """
     STATUS_CHOICES = [
         ('pending', _('Pending')),
@@ -34,7 +34,7 @@ class PaymentTransaction(BaseModel):
         ('visa', _('Visa')),
     ]
 
-    # Idempotency key - ensures duplicate payment requests are handled safely
+    # Idempotency kilti - qaytalanǵan tólem sorawlarınıń qáwipsiz islenwin támiyinleydi
     idempotency_key = models.CharField(
         max_length=255,
         unique=True,
@@ -42,7 +42,7 @@ class PaymentTransaction(BaseModel):
         help_text=_('Unique key for idempotent payment requests')
     )
 
-    # Associated booking
+    # Baylanıslı bron
     booking = models.ForeignKey(
         'bookings.Booking',
         on_delete=models.PROTECT,
@@ -51,7 +51,7 @@ class PaymentTransaction(BaseModel):
         help_text=_('Associated booking for this payment')
     )
 
-    # Payment provider information
+    # Tólem provayderi maǵlıwmatı
     provider = models.CharField(
         max_length=20,
         choices=PROVIDER_CHOICES,
@@ -67,7 +67,7 @@ class PaymentTransaction(BaseModel):
         help_text=_('Transaction ID from payment provider')
     )
 
-    # Amount information
+    # Summa maǵlıwmatı
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -80,7 +80,7 @@ class PaymentTransaction(BaseModel):
         help_text=_('ISO 4217 currency code')
     )
 
-    # Payment status
+    # Tólem statusı
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -88,7 +88,7 @@ class PaymentTransaction(BaseModel):
         db_index=True
     )
 
-    # Payment method token (never raw card data)
+    # Tólem usılı token ı (hesh qashan xom karta maǵlıwmatı emes)
     payment_method_token = models.CharField(
         max_length=255,
         null=True,
@@ -96,14 +96,14 @@ class PaymentTransaction(BaseModel):
         help_text=_('Tokenized payment method from provider')
     )
 
-    # Response data from provider (sanitized, no sensitive data)
+    # Provayderdiń juwap maǵlıwmatı (tazalanǵan, jasırın maǵlıwmatsız)
     provider_response = models.JSONField(
         null=True,
         blank=True,
         help_text=_('Sanitized response data from payment provider')
     )
 
-    # Error information
+    # Qátelik maǵlıwmatı
     error_code = models.CharField(
         max_length=100,
         null=True,
@@ -116,7 +116,7 @@ class PaymentTransaction(BaseModel):
         help_text=_('Error message from payment provider')
     )
 
-    # Metadata for auditing
+    # Audit ushın metadata
     client_ip = models.GenericIPAddressField(
         null=True,
         blank=True,
@@ -145,17 +145,17 @@ class PaymentTransaction(BaseModel):
         return f"Payment {self.idempotency_key} - {self.amount} {self.currency}"
 
     def clean(self):
-        """Validate payment transaction data."""
+        """Tólem transaction maǵlıwmatın tekseriw."""
         super().clean()
 
-        # Validate that booking is in pending status for new payments
+        # Jańa tólemler ushın bronnıń pending statusında ekenin tekseriw
         if self.status == 'pending' and self.booking.status != 'pending':
             raise ValidationError({
                 'booking': _('Payment can only be initiated for pending bookings')
             })
 
-        # A payment is the booking's charge snapshot (R6): its UZS amount, or for bookings
-        # made before R6 their total in their own currency
+        # Tólem bronnıń alınatuǵın summa snapshot ı (R6): onıń UZS summası, yamasa
+        # R6 dan aldın jasalǵan bronlar ushın óz valyutasındaǵı jámi
         if self.amount != self.booking.charge_amount:
             raise ValidationError({
                 'amount': _('Payment amount must match the booking charge amount')
@@ -166,24 +166,24 @@ class PaymentTransaction(BaseModel):
             })
 
     def save(self, *args, **kwargs):
-        """Override save to enforce idempotency."""
+        """Idempotency di májbúrlew ushın save di qayta anıqlaw."""
         self.full_clean()
         super().save(*args, **kwargs)
 
     @classmethod
     def get_or_create_idempotent(cls, idempotency_key, **kwargs):
         """
-        Get existing transaction by idempotency key or create new one.
+        Bar transaction dı idempotency kilti boyınsha alıw yamasa jańa jaratıw.
 
-        This ensures that duplicate payment requests return the same transaction,
-        preventing duplicate charges.
+        Bul qaytalanǵan tólem sorawlarınıń birdey transaction qaytarıwın,
+        qos alıwdıń aldın alıwın támiyinleydi.
 
-        Args:
-            idempotency_key: Unique key for idempotent request
-            **kwargs: Other fields for payment transaction
+        Argumentler:
+            idempotency_key: Idempotent soraw ushın unikal kilt
+            **kwargs: Tólem transaction ınıń basqa maydanları
 
-        Returns:
-            tuple: (transaction, created) where created is True if new transaction was created
+        Qaytaradı:
+            tuple: (transaction, created), jańa transaction jaratılsa created True
         """
         try:
             transaction = cls.objects.get(idempotency_key=idempotency_key)
@@ -195,17 +195,17 @@ class PaymentTransaction(BaseModel):
 
 class Refund(models.Model):
     """
-    One refund of one payment (R12). The money ledger for refunds: statistics, limits
-    and the staff needs-attention list read these rows, never text in audit details.
+    Bir tólemniń bir qaytarıwı (R12). Qaytarıwlar ushın pul ledgeri: statistika, shekler
+    hám staff dıń dıqqat talap etetuǵın dizimi usı qatarlardı oqıydı, audit tolıq maǵlıwmatındaǵı tekstti hesh qashan.
 
-    - amount is in the payment's currency (UZS: whole so'm); the sum of a payment's
-      non-failed refunds (pending, succeeded, needs_manual) never exceeds its amount,
-      checked under a lock on the payment row
-    - pending: committed, provider not called yet; succeeded / failed: provider answer;
-      needs_manual: the provider cannot do it through the API (partial refund not
-      supported or not verified, integration missing), staff refund by hand and mark it done
-    - idempotency_key is unique: the same refund request never creates a second row
-    - rows are never deleted
+    - amount tólemniń valyutasında (UZS: pútin som); tólemniń sátsiz bolmaǵan
+      qaytarıwlarınıń (pending, succeeded, needs_manual) jıyındısı onıń summasınan hesh qashan aspaydı,
+      tólem qatarı qulıbı astında tekseriledi
+    - pending: tastıyıqlanǵan, provayder ele shaqırılmaǵan; succeeded / failed: provayder juwabı;
+      needs_manual: provayder API arqalı bunı islep almaydı (bólekleyin qaytarıw
+      qollanılmaydı yamasa tekserilmegen, integraciya joq), staff qolda qaytaradı hám islendi dep belgileydi
+    - idempotency_key unikal: birdey qaytarıw soraw hesh qashan ekinshi qatar jaratpaydı
+    - qatarlar hesh qashan óshirilmeydi
     """
     REASON_CHOICES = [('cancel', 'Booking cancelled'), ('no_show', 'No-show'), ('staff', 'Staff decision')]
     STATUS_CHOICES = [
@@ -248,9 +248,9 @@ class Refund(models.Model):
 
 class WebhookEvent(BaseModel):
     """
-    Webhook Event model for processing payment provider webhooks.
+    Tólem provayderi webhook larin islew ushın Webhook Event modeli.
 
-    Implements replay protection through event ID tracking and timestamp validation.
+    Waqıya ID sin hám waqıt belgisin tekseriw arqalı replay qorǵanısın ámelge asıradı.
     """
     STATUS_CHOICES = [
         ('received', _('Received')),
@@ -266,7 +266,7 @@ class WebhookEvent(BaseModel):
         ('visa', _('Visa')),
     ]
 
-    # Provider information
+    # Provayder maǵlıwmatı
     provider = models.CharField(
         max_length=20,
         choices=PROVIDER_CHOICES,
@@ -274,19 +274,19 @@ class WebhookEvent(BaseModel):
         help_text=_('Payment provider sending the webhook')
     )
 
-    # Event ID from provider (for replay protection)
+    # Provayderdiń waqıya ID si (replay qorǵanısı ushın)
     provider_event_id = models.CharField(
         max_length=255,
         db_index=True,
         help_text=_('Event ID from payment provider')
     )
 
-    # Webhook payload
+    # Webhook payload ı
     payload = models.JSONField(
         help_text=_('Raw webhook payload from provider')
     )
 
-    # Signature verification
+    # Signature tekseriwi
     signature = models.CharField(
         max_length=255,
         help_text=_('Signature from provider for verification')
@@ -296,7 +296,7 @@ class WebhookEvent(BaseModel):
         help_text=_('Whether the signature was valid')
     )
 
-    # Timestamp validation
+    # Waqıt belgisin tekseriw
     timestamp = models.DateTimeField(
         null=True,
         blank=True,
@@ -307,7 +307,7 @@ class WebhookEvent(BaseModel):
         help_text=_('Whether the timestamp was within acceptable range')
     )
 
-    # Processing status
+    # Islew statusı
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -315,7 +315,7 @@ class WebhookEvent(BaseModel):
         db_index=True
     )
 
-    # Associated payment transaction (if any)
+    # Baylanıslı tólem transaction ı (bar bolsa)
     payment_transaction = models.ForeignKey(
         PaymentTransaction,
         on_delete=models.SET_NULL,
@@ -325,14 +325,14 @@ class WebhookEvent(BaseModel):
         help_text=_('Associated payment transaction')
     )
 
-    # Error information
+    # Qátelik maǵlıwmatı
     error_message = models.TextField(
         null=True,
         blank=True,
         help_text=_('Error message if processing failed')
     )
 
-    # Processing metadata
+    # Islew metadata sı
     processed_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -349,7 +349,7 @@ class WebhookEvent(BaseModel):
             models.Index(fields=['status']),
             models.Index(fields=['created_at']),
         ]
-        # Unique constraint to prevent replay attacks
+        # Replay hújimlerdiń aldın alıw ushın unikal constraint
         unique_together = [['provider', 'provider_event_id']]
 
     def __str__(self):
@@ -357,13 +357,13 @@ class WebhookEvent(BaseModel):
 
     def is_replay_attack(self):
         """
-        Check if this webhook event is a replay attack.
+        Bul webhook waqıyasınıń replay hújim ekenin tekseriw.
 
-        Returns:
-            bool: True if this is a replay attack (duplicate event ID)
+        Qaytaradı:
+            bool: Bul replay hújim bolsa True (qaytalanǵan waqıya ID si)
         """
         if self.id is None:
-            # For unsaved instances, check if any event with same ID exists
+            # Saqlanbaǵan nusqalar ushın birdey ID li qálegen waqıya barlıǵın tekseriw
             return WebhookEvent.objects.filter(
                 provider=self.provider,
                 provider_event_id=self.provider_event_id
@@ -372,18 +372,18 @@ class WebhookEvent(BaseModel):
         return WebhookEvent.objects.filter(
             provider=self.provider,
             provider_event_id=self.provider_event_id,
-            id__lt=self.id  # Exclude current instance
+            id__lt=self.id  # Házirgi nusqanı shıǵarıp taslaw
         ).exists()
 
     def is_timestamp_valid(self, max_age_seconds=300):
         """
-        Check if webhook timestamp is within acceptable range.
+        Webhook waqıt belgisiniń ruxsat etilgen aralıqta ekenin tekseriw.
 
-        Args:
-            max_age_seconds: Maximum age of webhook in seconds (default: 5 minutes)
+        Argumentler:
+            max_age_seconds: Webhook tıń eń úlken jası sekundlarda (ádetde: 5 minut)
 
-        Returns:
-            bool: True if timestamp is valid
+        Qaytaradı:
+            bool: Waqıt belgisi jaramlı bolsa True
         """
         if not self.timestamp:
             return False
@@ -394,9 +394,9 @@ class WebhookEvent(BaseModel):
 
 class PaymentAuditLog(BaseModel):
     """
-    Payment Audit Log for tracking all payment-related state changes.
+    Barlıq tólemge baylanıslı status ózgerislerin baqlaw ushın Payment Audit Log.
 
-    Provides a complete audit trail for payment operations.
+    Tólem ámelleri ushın tolıq audit izin beredi.
     """
     ACTION_CHOICES = [
         ('payment_initiated', _('Payment Initiated')),
@@ -409,7 +409,7 @@ class PaymentAuditLog(BaseModel):
         ('payment_status_changed', _('Payment Status Changed')),
     ]
 
-    # Associated entities
+    # Baylanıslı obyektler
     payment_transaction = models.ForeignKey(
         PaymentTransaction,
         on_delete=models.SET_NULL,
@@ -435,7 +435,7 @@ class PaymentAuditLog(BaseModel):
         help_text=_('Associated booking')
     )
 
-    # Action information
+    # Háreket maǵlıwmatı
     action = models.CharField(
         max_length=50,
         choices=ACTION_CHOICES,
@@ -443,7 +443,7 @@ class PaymentAuditLog(BaseModel):
         help_text=_('Action that was performed')
     )
 
-    # State changes
+    # Status ózgerisleri
     old_status = models.CharField(
         max_length=50,
         null=True,
@@ -457,7 +457,7 @@ class PaymentAuditLog(BaseModel):
         help_text=_('New status after action')
     )
 
-    # Additional context
+    # Qosımsha kontekst
     actor = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,
@@ -498,21 +498,21 @@ class PaymentAuditLog(BaseModel):
                    booking=None, old_status=None, new_status=None, actor=None,
                    ip_address=None, details=None):
         """
-        Create an audit log entry for a payment action.
+        Tólem háreketi ushın audit log jazbasın jaratıw.
 
-        Args:
-            action: Action that was performed
-            payment_transaction: Associated payment transaction (optional)
-            webhook_event: Associated webhook event (optional)
-            booking: Associated booking (optional)
-            old_status: Previous status (optional)
-            new_status: New status (optional)
-            actor: User who performed the action (optional)
-            ip_address: IP address (optional)
-            details: Additional details (optional)
+        Argumentler:
+            action: Orınlanǵan háreket
+            payment_transaction: Baylanıslı tólem transaction ı (ıqtıyarıy)
+            webhook_event: Baylanıslı webhook waqıyası (ıqtıyarıy)
+            booking: Baylanıslı bron (ıqtıyarıy)
+            old_status: Aldınǵı status (ıqtıyarıy)
+            new_status: Jańa status (ıqtıyarıy)
+            actor: Háreketti orınlaǵan paydalanıwshı (ıqtıyarıy)
+            ip_address: IP mánzil (ıqtıyarıy)
+            details: Qosımsha tolıq maǵlıwmat (ıqtıyarıy)
 
-        Returns:
-            PaymentAuditLog: Created audit log entry
+        Qaytaradı:
+            PaymentAuditLog: Jaratılǵan audit log jazbası
         """
         return cls.objects.create(
             payment_transaction=payment_transaction,

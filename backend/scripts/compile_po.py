@@ -1,8 +1,8 @@
 """
-Compile the project's translation sources (locale/<language>/LC_MESSAGES/django.po) into django.mo.
+Proekttiń awdarma derekleri (locale/<til>/LC_MESSAGES/django.po) django.mo ǵa kompilyaciyalaw.
 
-The build machines have no GNU gettext (msgfmt), so this does the same job for the plain entries the
-project uses (no plurals, no contexts). Run it after editing a .po file:
+Build mashinalarında GNU gettext (msgfmt) joq, sol sebepli bul proekt paydalanatuǵın ápiwayı jazbalar ushın
+(kóplik hám kontekst joq) sol jumıstı isleydi. .po faylın ózgertkennen keyin isletiń:
 
     python scripts/compile_po.py
 """
@@ -17,7 +17,7 @@ MAGIC = 0x950412DE
 
 
 def read_po(path):
-    """{msgid: msgstr} of a .po file; the header is the entry with an empty msgid."""
+    """.po fayldıń {msgid: msgstr} i; header bos msgid li jazba."""
     entries, msgid, msgstr, target = {}, None, None, None
     for raw in Path(path).read_text(encoding='utf-8').splitlines() + ['']:
         line = raw.strip()
@@ -41,7 +41,7 @@ def read_po(path):
 
 
 def compile_po(path):
-    """The bytes of the .mo file for a .po file (entries sorted by msgid, as msgfmt writes them)."""
+    """.po fayl ushın .mo fayldıń baytları (jazbalar msgid boyınsha tártiplengen, msgfmt jazǵanday)."""
     entries = {key: value for key, value in read_po(path).items() if value or key == ''}
     keys = sorted(entries)
     ids = strs = b''

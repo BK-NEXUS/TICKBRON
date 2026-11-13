@@ -1,5 +1,5 @@
 """
-URL configuration for admin app.
+admin app ı ushın URL sazlaması.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

@@ -1,5 +1,5 @@
 """
-Serializers for TICKBRON property models and search results.
+TICKBRON mehmanxana model leri hám izlew nátiyjeleri ushın serializer ler.
 """
 from datetime import timedelta
 
@@ -24,16 +24,16 @@ MAX_AVAILABILITY_DAYS = 366
 
 class ApproxUzsPriceMixin(serializers.Serializer):
     """
-    R6 decision D: base_price in so'm at the latest rate, for display only (the name says
-    approximate; the charged amount comes from the booking snapshot). The rate is looked
-    up once per request (currency.rates.rate_for_request), never per row.
+    R6 D sheshimi: base_price eń sońǵı kurs boyınsha somda, tek kórsetiw ushın (atı
+    shama menen degenin aytadı; alınatuǵın summa bron snapshot ınan keledi). Kurs hár
+    soraw ushın bir márte izlenedi (currency.rates.rate_for_request), hesh qashan hár qatar ushın emes.
     """
     base_price_uzs_approx = serializers.SerializerMethodField()
     uzs_rate = serializers.SerializerMethodField()
 
     def _approx_uzs(self, obj):
-        # 'rate_request' only carries the per-request rate cache; it is not DRF's
-        # 'request' context, which would also turn file fields into absolute URLs
+        # 'rate_request' tek hár soraw ushın kurs keshin alıp júredi; ol DRF tiń
+        # 'request' konteksti emes, ol fayl maydanların da absolyut URL ǵa ótkizer edi
         request = self.context.get('rate_request') or self.context.get('request')
         if request is None:
             return {'value': None, 'exchange_rate': None}
@@ -50,8 +50,8 @@ class ApproxUzsPriceMixin(serializers.Serializer):
 
 class CardPricesMixin(serializers.Serializer):
     """
-    R16: the "from" price of a hotel card in every supported currency (the lowest price of its active rate
-    plans in that currency): {code: {amount, source}}; see bookings.pricing.property_price_list.
+    R16: mehmanxana kartasınıń hár qollap-quwatlanatuǵın valyutadaǵı "dan" bahası (sol valyutadaǵı aktiv rate
+    plan larınıń eń arzan bahası): {code: {amount, source}}; qarań bookings.pricing.property_price_list.
     """
     prices = serializers.SerializerMethodField()
 
@@ -65,7 +65,7 @@ class CardPricesMixin(serializers.Serializer):
 
 
 class PropertyTypeSerializer(serializers.ModelSerializer):
-    """Serializer for PropertyType model."""
+    """PropertyType modeli ushın serializer."""
 
     class Meta:
         model = PropertyType
@@ -74,7 +74,7 @@ class PropertyTypeSerializer(serializers.ModelSerializer):
 
 
 class AmenityCategorySerializer(serializers.ModelSerializer):
-    """Serializer for AmenityCategory model."""
+    """AmenityCategory modeli ushın serializer."""
 
     class Meta:
         model = AmenityCategory
@@ -83,7 +83,7 @@ class AmenityCategorySerializer(serializers.ModelSerializer):
 
 
 class AmenitySerializer(serializers.ModelSerializer):
-    """Serializer for Amenity model."""
+    """Amenity modeli ushın serializer."""
     category = AmenityCategorySerializer(read_only=True)
 
     class Meta:
@@ -93,7 +93,7 @@ class AmenitySerializer(serializers.ModelSerializer):
 
 
 class PropertyAmenitySerializer(serializers.ModelSerializer):
-    """Serializer for PropertyAmenity model."""
+    """PropertyAmenity modeli ushın serializer."""
     amenity = AmenitySerializer(read_only=True)
 
     class Meta:
@@ -103,7 +103,7 @@ class PropertyAmenitySerializer(serializers.ModelSerializer):
 
 
 class PropertyPhotoSerializer(serializers.ModelSerializer):
-    """Serializer for PropertyPhoto model."""
+    """PropertyPhoto modeli ushın serializer."""
     photo_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -112,14 +112,14 @@ class PropertyPhotoSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def get_photo_url(self, obj):
-        """Get the absolute URL for the photo."""
+        """Súwret ushın absolyut URL di alıw."""
         if obj.photo:
             return obj.photo.url
         return None
 
 
 class PropertyTranslationSerializer(serializers.ModelSerializer):
-    """Serializer for PropertyTranslation model."""
+    """PropertyTranslation modeli ushın serializer."""
 
     class Meta:
         model = PropertyTranslation
@@ -128,7 +128,7 @@ class PropertyTranslationSerializer(serializers.ModelSerializer):
 
 
 class PropertyPolicySerializer(serializers.ModelSerializer):
-    """Serializer for PropertyPolicy model."""
+    """PropertyPolicy modeli ushın serializer."""
 
     class Meta:
         model = PropertyPolicy
@@ -136,25 +136,26 @@ class PropertyPolicySerializer(serializers.ModelSerializer):
         read_only_fields = []
 
 
-# Built once: a serializer reads the model to work out its fields, which costs more than filling it with one
-# hotel's row, and a search page has up to 100 hotels. They take no request, so nothing is shared between requests.
+# Bir márte qurıladı: serializer óz maydanların anıqlaw ushın modeldi oqıydı, bul onı bir
+# mehmanxananıń qatarı menen toltırıwdan qımbatlaw, hám izlew betinde 100 ge shekem mehmanxana boladı. Olar request almaydı, sol
+# sebepli sorawlar arasında hesh nárse bólisilmeydi.
 _PHOTO_ROW = PropertyPhotoSerializer()
 _AMENITY_ROW = PropertyAmenitySerializer()
 
 
 class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
-    Serializer for property search results.
+    Izlew nátiyjeleri ushın serializer.
 
-    Includes essential property information for search results display.
+    Izlew nátiyjelerin kórsetiw ushın tiykarǵı mehmanxana maǵlıwmatın óz ishine aladı.
     """
     property_type = PropertyTypeSerializer(read_only=True)
-    # The search queryset prefetches these, so there is no query per result
+    # Izlew queryset i bulardı aldınan júkleydi, sol sebepli hár nátiyje ushın query joq
     translations = PropertyTranslationSerializer(many=True, read_only=True)
     primary_photo = serializers.SerializerMethodField()
     amenities = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
-    # Annotated by the search queryset (properties.search.with_review_scores)
+    # Izlew queryset i belgilegen (properties.search.with_review_scores)
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
 
@@ -171,21 +172,21 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
         read_only_fields = ['id']
 
     def get_primary_photo(self, obj):
-        """The primary photo, else the first one; read from the rows the search already loaded."""
+        """Tiykarǵı súwret, bolmasa birinshisi; izlew aldınan júklegen qatarlardan oqıladı."""
         photos = list(obj.active_photos if hasattr(obj, 'active_photos') else obj.photos.filter(
             is_active=True, is_deleted=False))
         primary = next((photo for photo in photos if photo.is_primary), None) or (photos[0] if photos else None)
         return _PHOTO_ROW.to_representation(primary) if primary else None
 
     def get_amenities(self, obj):
-        """Available, searchable amenities; read from the rows the search already loaded."""
+        """Bar, izlenetuǵın amenity ler; izlew aldınan júklegen qatarlardan oqıladı."""
         links = obj.searchable_amenities if hasattr(obj, 'searchable_amenities') else obj.property_amenities.filter(
             is_available=True, amenity__is_searchable=True, is_deleted=False,
         ).select_related('amenity__category')
         return [_AMENITY_ROW.to_representation(link) for link in links]
 
     def get_full_address(self, obj):
-        """Get the full address as a string."""
+        """Tolıq mánzildi qatar retinde alıw."""
         return obj.get_full_address()
 
     def get_average_rating(self, obj):
@@ -198,9 +199,9 @@ class PropertySearchResultSerializer(CardPricesMixin, ApproxUzsPriceMixin, seria
 
 class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
-    Detailed serializer for property information.
+    Mehmanxana maǵlıwmatı ushın tolıq serializer.
 
-    Includes all property details for property detail pages.
+    Mehmanxana beti ushın barlıq mehmanxana maǵlıwmatın óz ishine aladı.
     """
     property_type = PropertyTypeSerializer(read_only=True)
     translations = PropertyTranslationSerializer(many=True, read_only=True)
@@ -226,7 +227,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_amenities(self, obj):
-        """Get all amenities for the property."""
+        """Mehmanxananıń barlıq amenity lerin alıw."""
         property_amenities = obj.property_amenities.filter(
             is_deleted=False
         ).select_related('amenity__category')
@@ -234,11 +235,11 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         return PropertyAmenitySerializer(property_amenities, many=True).data
 
     def get_full_address(self, obj):
-        """Get the full address as a string."""
+        """Tolıq mánzildi qatar retinde alıw."""
         return obj.get_full_address()
 
     def get_gallery(self, obj):
-        """Get property gallery organized by photo type."""
+        """Súwret túri boyınsha shólkemlestirilgen mehmanxana galereyasın alıw."""
         photos = obj.photos.filter(
             is_active=True,
             is_deleted=False
@@ -254,7 +255,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
 
         for photo in photos:
             photo_data = PropertyPhotoSerializer(photo).data
-            # Handle missing photo URL gracefully
+            # Joq súwret URL in durıs islew
             if not photo_data.get('photo_url'):
                 photo_data['photo_url'] = None
             photo_type = photo.photo_type
@@ -266,8 +267,8 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         return gallery
 
     def get_room_types(self, obj):
-        """Get room types with rate plans for the property."""
-        # Filtered in SQL inside the prefetch, so there are four queries however many room types exist
+        """Mehmanxana ushın rate plan lı xona túrlerin alıw."""
+        # Prefetch ishinde SQL de filterlenedi, sol sebepli xona túrleri qansha bolsa da tórt query
         room_types = obj.room_types.filter(is_deleted=False).prefetch_related(
             Prefetch('rate_plans', queryset=RatePlan.objects.filter(
                 is_active=True, is_deleted=False).prefetch_related('prices')),
@@ -280,7 +281,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
         rates = {}
 
         def rate_of(code):
-            """so'm per one unit of `code`; looked up once per currency for the whole hotel page."""
+            """`code` diń bir birligine som; pútkil mehmanxana beti ushın hár valyuta ushın bir márte izlenedi."""
             if code not in rates:
                 info = rate_for_request(request, code) if request else current_rate(code)
                 rates[code] = getattr(info, 'rate', None)
@@ -288,7 +289,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
 
         room_types_data = []
         for room_type in room_types:
-            # Get active rate plans
+            # Aktiv rate plan larǵı alıw
             active_rate_plans = room_type.rate_plans.all()
 
             rate_plans_data = []
@@ -311,7 +312,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 }
                 rate_plans_data.append(rate_plan_data)
 
-            # Get room photos
+            # Xona súwretlerin alıw
             room_photos = room_type.photos.all()
 
             room_photos_data = []
@@ -327,7 +328,7 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
                 }
                 room_photos_data.append(photo_data)
 
-            # Get room amenities
+            # Xona amenity lerin alıw
             room_amenities = room_type.room_amenities.all()
 
             room_amenities_data = []
@@ -372,15 +373,15 @@ class PropertyDetailSerializer(ApproxUzsPriceMixin, serializers.ModelSerializer)
             }
             room_types_data.append(room_type_data)
 
-        # VIP rooms first; sorted() is stable, so every group keeps the usual order
+        # VIP xonalar birinshi; sorted() turaqlı, sol sebepli hár topar ádettegi tártipti saqlaydı
         return sorted(room_types_data, key=lambda room: not room['is_vip'])
 
 
 class SearchParamsSerializer(serializers.Serializer):
     """
-    Serializer for search request parameters.
+    Izlew sorawı parametrleri ushın serializer.
 
-    Validates and parses search parameters for the search endpoint with standardized validation.
+    Izlew endpoint i ushın izlew parametrlerin standartlastırılǵan tekseriw menen tekseredi hám oqıydı.
     """
     q = serializers.CharField(
         required=False,
@@ -506,24 +507,24 @@ class SearchParamsSerializer(serializers.Serializer):
         return features
 
     def validate(self, data):
-        """Validate search parameters with comprehensive checks."""
-        # Validate geographic search parameters
+        """Izlew parametrlerin tolıq tekseriwler menen tekseriw."""
+        # Geografiyalıq izlew parametrlerin tekseriw
         if (data.get('lat') and not data.get('lng')) or (data.get('lng') and not data.get('lat')):
             raise serializers.ValidationError(_("Both lat and lng are required for geographic search"))
 
-        # Validate date range
+        # Sana aralıǵın tekseriw
         check_in = data.get('check_in')
         check_out = data.get('check_out')
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError("check_out must be after check_in")
 
-        # Validate price range
+        # Baha aralıǵın tekseriw
         min_price = data.get('min_price')
         max_price = data.get('max_price')
         if min_price and max_price and max_price < min_price:
             raise serializers.ValidationError("max_price must be greater than or equal to min_price")
 
-        # Validate guest range
+        # Mehmanlar aralıǵın tekseriw
         min_guests = data.get('min_guests')
         max_guests = data.get('max_guests')
         if min_guests and max_guests and max_guests < min_guests:
@@ -534,12 +535,12 @@ class SearchParamsSerializer(serializers.Serializer):
 
 class DateInventorySerializer(serializers.ModelSerializer):
     """
-    Serializer for DateInventory model.
+    DateInventory modeli ushın serializer.
 
-    Represents daily availability and pricing data.
+    Kúnlik bos orın hám baha maǵlıwmatın kórsetedi.
     """
     remaining_rooms = serializers.IntegerField(help_text="Calculated remaining available rooms")
-    # R16: the night's price in every currency; needs the rate plan in the context (see RatePlanAvailabilitySerializer)
+    # R16: túnniń hár valyutadaǵı bahası; contextte rate plan kerek (qarań RatePlanAvailabilitySerializer)
     prices = serializers.SerializerMethodField()
 
     class Meta:
@@ -568,12 +569,12 @@ class DateInventorySerializer(serializers.ModelSerializer):
 
 class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
     """
-    Serializer for RatePlan with availability data.
+    Bos orın maǵlıwmatı bar RatePlan ushın serializer.
 
-    Includes rate plan details and date inventory for specified date range.
+    Rate plan maǵlıwmatın hám berilgen sana aralıǵındaǵı date inventory di óz ishine aladı.
     """
     date_inventory = serializers.SerializerMethodField()
-    # R16: the plan's price in every currency (owner / main / converted), see bookings.pricing.price_list
+    # R16: plannıń hár valyutadaǵı bahası (iye / tiykarǵı / konvertaciyalanǵan), qarań bookings.pricing.price_list
     prices = serializers.SerializerMethodField()
 
     class Meta:
@@ -587,14 +588,14 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
 
     def get_date_inventory(self, obj):
         """
-        Get date inventory for this rate plan within the requested date range.
+        Usı rate plan ushın soralǵan sana aralıǵındaǵı date inventory di alıw.
 
-        Price and rules (open/closed, min/max stay) still come from DateInventory, but
-        available_rooms/booked_rooms/remaining_rooms are overridden in-memory (not saved)
-        from RoomInventory -- the room type's shared physical room count -- since the
-        booking engine stopped writing DateInventory's own counters in 3.3 (audit #31).
-        A night with no RoomInventory row yet is unmanaged: open at the room type's full
-        total_rooms, same default as quote_stay.
+        Baha hám qaǵıydalar (ashıq/jabıq, eń kem/eń kóp turıw) ele DateInventory den keledi, biraq
+        available_rooms/booked_rooms/remaining_rooms jaddıda (saqlanbaydı) RoomInventory den
+        -- xona túriniń ortaq fizikalıq xona sanınan -- qayta jazıladı, sebebi
+        bron sisteması 3.3 te DateInventory diń óz sanaǵıshların jazıwdı toqtattı (audit #31).
+        Ele RoomInventory qatarı joq tún basqarılmaydı: xona túriniń tolıq
+        total_rooms ı menen ashıq, quote_stay penen birdey ádetdegi mánis.
         """
         from properties.models import RoomInventory
 
@@ -602,7 +603,7 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
         check_in = request.query_params.get('check_in') if request else None
         check_out = request.query_params.get('check_out') if request else None
 
-        # An open-ended request would return every row ever stored: bound it to a year from the start
+        # Ushı ashıq soraw hár waqıt saqlanǵan hár qatardı qaytarar edi: onı baslanıwınan bir jılǵa shekem shekemlew
         start = parse_date(check_in) if check_in else business_today()
         queryset = obj.date_inventory.filter(
             is_deleted=False, date__gte=start, date__lte=start + timedelta(days=MAX_AVAILABILITY_DAYS),
@@ -643,9 +644,9 @@ class RatePlanAvailabilitySerializer(serializers.ModelSerializer):
 
 class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
     """
-    Serializer for RoomType with availability data.
+    Bos orın maǵlıwmatı bar RoomType ushın serializer.
 
-    Includes room type details and rate plans with their availability.
+    Xona túri maǵlıwmatın hám olardıń bos orınları menen rate plan larǵı óz ishine aladı.
     """
     rate_plans = serializers.SerializerMethodField()
 
@@ -658,7 +659,7 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def get_rate_plans(self, obj):
-        """Get active rate plans with availability data for this room type."""
+        """Usı xona túri ushın bos orın maǵlıwmatı bar aktiv rate plan larǵı alıw."""
         request = self.context.get('request')
         rate_plans = obj.rate_plans.filter(
             is_active=True,
@@ -674,9 +675,9 @@ class RoomTypeAvailabilitySerializer(serializers.ModelSerializer):
 
 class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSerializer):
     """
-    Serializer for Property availability data.
+    Mehmanxananıń bos orın maǵlıwmatı ushın serializer.
 
-    Includes property details and room types with rate plans and date inventory.
+    Mehmanxana maǵlıwmatın hám rate plan lar menen date inventory bar xona túrlerin óz ishine aladı.
     """
     room_types = serializers.SerializerMethodField()
 
@@ -690,9 +691,9 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
         read_only_fields = ['id']
 
     def get_room_types(self, obj):
-        """Get room types with availability data for this property."""
+        """Usı mehmanxana ushın bos orın maǵlıwmatı bar xona túrlerin alıw."""
         request = self.context.get('request')
-        # VIP rooms first, then by name
+        # Aldın VIP xonalar, keyin at boyınsha
         room_types = obj.room_types.filter(
             is_deleted=False
         ).order_by('-is_vip', 'name')
@@ -706,9 +707,9 @@ class PropertyAvailabilitySerializer(ApproxUzsPriceMixin, serializers.ModelSeria
 
 class AvailabilityParamsSerializer(serializers.Serializer):
     """
-    Serializer for availability endpoint request parameters.
+    Availability endpoint sorawı parametrleri ushın serializer.
 
-    Validates date range parameters for availability queries.
+    Bos orın sorawları ushın sana aralıǵı parametrlerin tekseredi.
     """
     check_in = serializers.DateField(
         required=False,
@@ -720,7 +721,7 @@ class AvailabilityParamsSerializer(serializers.Serializer):
     )
 
     def validate(self, data):
-        """Validate date range parameters."""
+        """Sana aralıǵı parametrlerin tekseriw."""
         check_in = data.get('check_in')
         check_out = data.get('check_out')
 
@@ -734,13 +735,13 @@ class AvailabilityParamsSerializer(serializers.Serializer):
 
 
 class QuoteParamsSerializer(serializers.Serializer):
-    """Query parameters of GET /properties/{id}/quote/."""
+    """GET /properties/{id}/quote/ tiń query parametrleri."""
     room_type_id = serializers.IntegerField(min_value=1)
     rate_plan_id = serializers.IntegerField(min_value=1)
     check_in = serializers.DateField()
     check_out = serializers.DateField()
     rooms = serializers.IntegerField(min_value=1, max_value=20, default=1)
-    # R16: show the stay in this currency (default: the rate plan's own)
+    # R16: turıwdı usı valyutada kórsetiw (ádetde: rate plan nıń óz valyutası)
     currency = serializers.ChoiceField(choices=SUPPORTED_BASE_CURRENCIES, required=False)
 
     def validate(self, data):

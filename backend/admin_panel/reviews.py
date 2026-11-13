@@ -1,4 +1,4 @@
-"""Staff moderation of guest reviews: a review is public only after the staff approves it."""
+"""Staff tıń mehmann sharhların moderation ı: sharh tek staff tastıyıqlaǵannan keyin ashıq boladı."""
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -18,7 +18,7 @@ STATUSES = ('pending', 'approved', 'rejected')
 
 
 class AdminReviewSerializer(serializers.ModelSerializer):
-    """A review as the staff sees it: the reviewer's address is shown here, never on the public list."""
+    """Staff kóretuǵın sharh: sharh jazıwshınıń mánzili usı jerde kórsetiledi, ashıq dizimde hesh qashan."""
     reviewer = serializers.SerializerMethodField()
     reviewer_email = serializers.EmailField(source='user.email', read_only=True)
     property_name = serializers.CharField(source='property.display_name', read_only=True)
@@ -44,7 +44,7 @@ def _queryset():
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_reviews(request):
-    """Reviews by status (`?status=pending|approved|rejected`, default pending), oldest waiting first."""
+    """Sharhlar status boyınsha (`?status=pending|approved|rejected`, ádetde pending), eń burın kútip turǵanı birinshi."""
     wanted = request.query_params.get('status', 'pending')
     if wanted not in STATUSES:
         return Response({'status': [_('Choose one of: pending, approved, rejected.')]},
@@ -74,7 +74,7 @@ def _decide(request, review_id, decision):
 @api_view(['POST'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_review_approve(request, review_id):
-    """Show the review on the hotel page and count it in the hotel's scores."""
+    """Sharhtı mehmanxana betinde kórsetiw hám mehmanxana bahalarına qosıw."""
     return _decide(request, review_id, 'approved')
 
 
@@ -82,5 +82,5 @@ def admin_review_approve(request, review_id):
 @api_view(['POST'])
 @permission_classes([IsSuperAdminOrStaff])
 def admin_review_reject(request, review_id):
-    """Keep the review off the hotel page and out of its scores."""
+    """Sharhtı mehmanxana betinen hám onıń bahalarınan shıǵarıp turıw."""
     return _decide(request, review_id, 'rejected')

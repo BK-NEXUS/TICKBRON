@@ -1,9 +1,9 @@
 """
-Serializers for the no-show report endpoints (R12 phase 3).
+No-show esabat endpoint leri ushın serializer ler (R12 3-basqısh).
 
-Owner rows carry the report, the booking reference and the hotel; staff rows add the abuse
-flag. No guest name, phone or email in either: the staff see the booking reference and look the
-guest up the usual way.
+Iye qatarlarında esabat, bron reference i hám mehmanxana bar; staff qatarlarına qıylı paydalanıw
+belgisi qosıladı. Eki jaǵında da mehmannıń atı, telefonı yamasa e-mail ı joq: staff bron reference in kóredi hám
+mehmandı ádettegi jol menen izleydi.
 """
 import re
 
@@ -17,7 +17,7 @@ _HTML_TAG = re.compile(r'<\s*/?\s*[A-Za-z!][^>]*>')
 
 
 class PlainTextComment(serializers.CharField):
-    """10-500 characters of plain text after stripping; HTML tags are refused."""
+    """Tazalawdan keyin 10-500 belgilik ápiwayı tekst; HTML teg ler qabıllanbaydı."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault('min_length', MIN_LENGTH)
@@ -59,7 +59,7 @@ class OwnerReportSerializer(serializers.ModelSerializer):
 
 
 class StaffReportSerializer(OwnerReportSerializer):
-    """Context: flagged (set of property ids)."""
+    """Context: flagged (mehmanxana id leri toplamı)."""
     hotel_flagged = serializers.SerializerMethodField()
 
     class Meta(OwnerReportSerializer.Meta):

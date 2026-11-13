@@ -1,9 +1,9 @@
 """
-Validation of a property's location against the Geography dictionary (plan G4).
+Mehmanxana jaylasıwın Geography sózligine qarsı tekseriw (reje G4).
 
-GeographyRefsMixin goes on a Property ModelSerializer that lists country_ref,
-region_ref. It checks that the chosen rows are active, that the region is inside
-the country, and that a new property gets both.
+GeographyRefsMixin country_ref, region_ref di dizimlegen Property ModelSerializer ge qosıladı. Ol
+tańlanǵan qatarlardıń aktiv ekenin, regionnıń mámleket ishinde ekenin hám
+jańa mehmanxananıń ekewin de alatuǵının tekseredi.
 """
 from rest_framework import serializers
 
@@ -12,11 +12,11 @@ REF_FIELDS = ('country_ref', 'region_ref')
 
 def check_geography(incoming, current=None, required=False, nullable=False):
     """
-    Return {field: message} for the geography refs in `incoming` (validated data).
+    `incoming` degi (tekserilgen maǵlıwmat) geografiya ref leri ushın {field: message} qaytaradı.
 
-    current:  the property being edited (None on create); refs not sent are read from it.
-    required: both refs must be sent (create).
-    nullable: both may be null together (admin clearing the location).
+    current:  ózgertilip atırǵan mehmanxana (jaratıwda None); jiberilmegen ref ler sonnan oqıladı.
+    required: ekewi de jiberilgen bolıwı kerek (jaratıw).
+    nullable: ekewi birge null bola aladı (admin jaylasıwdı tazalaǵanda).
     """
     errors = {}
     if required:
@@ -51,10 +51,10 @@ def check_geography(incoming, current=None, required=False, nullable=False):
 
 class GeographyRefsMixin:
     """
-    Partner-style rule: refs are required on create and can be changed, not cleared.
+    Partner stili qaǵıyda: ref ler jaratıwda májbúriy hám ózgertiliwi múmkin, tazalanbaydı.
 
-    The old text fields country / state / city are not input (they are read-only copies of the English
-    names, filled by Property.save()); only the ids count. There is no town or district below the region.
+    Eski tekst maydanlar country / state / city kirisiw emes (olar inglizsha atlardıń tek oqıw nusqaları,
+    Property.save() toltıradı); tek id ler esapqa alınadı. Regiondan tómen qala yamasa tuman joq.
     """
 
     def validate(self, attrs):

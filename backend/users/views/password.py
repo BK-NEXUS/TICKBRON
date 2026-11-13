@@ -1,4 +1,4 @@
-"""Forgotten password (e-mailed link) and password change for a signed-in user."""
+"""Umıtılǵan parol (e-mail ge jiberilgen silteme) hám kirgen paydalanıwshı ushın parol ózgertiw."""
 import logging
 
 from django.contrib.auth import update_session_auth_hash
@@ -26,14 +26,14 @@ from django.utils.translation import gettext as _
 
 logger = logging.getLogger(__name__)
 
-INVALID_RESET_LINK_CODE = 'invalid_reset_link'  # the frontend shows its own text for it
+INVALID_RESET_LINK_CODE = 'invalid_reset_link'  # frontend onıń ushın óz tekstin kórsetedi
 INVALID_RESET_LINK_MESSAGE = 'This link is invalid or has expired. Please request a new one.'
 RESET_REQUESTED_MESSAGE = 'If this address is registered, we have sent a link to reset the password.'
 PASSWORD_CHANGED_MESSAGE = 'Your password was changed.'
 
 
 def _queue_reset_email(user):
-    """Hand the mail to the worker; a broken queue must not change the answer (it would reveal the account)."""
+    """E-mail di worker ge beriw; buzılǵan náwbet juwaptı ózgertpewi kerek (ol akkauntti ashar edi)."""
     try:
         send_password_reset_email.delay(user.id)
     except Exception:
@@ -46,9 +46,9 @@ def _queue_reset_email(user):
 @throttle_classes([PasswordResetRequestThrottle])
 def request_password_reset(request):
     """
-    Mail a password reset link to a registered address.
+    Dizimnen ótken mánzilge parol tiklew siltemesin jiberiw.
 
-    The answer is the same for every address, so this cannot be used to find out who has an account.
+    Juwap hár mánzil ushın birdey, sol sebepli bul kimniń akkaunt ı barlıǵın biliw ushın paydalanılmaydı.
     """
     enforce_csrf(request)
     serializer = PasswordResetRequestSerializer(data=request.data)
@@ -66,7 +66,7 @@ def request_password_reset(request):
 
 
 def _password_rule_violation(user, password):
-    """A 400 Response when the password breaks a password rule for this user, else None."""
+    """Parol usı paydalanıwshı ushın parol qaǵıydasın buzsa 400 Response, bolmasa None."""
     try:
         validate_new_password({'password': password, 'email': user.email, 'full_name': user.full_name})
     except DRFValidationError as error:
@@ -75,7 +75,7 @@ def _password_rule_violation(user, password):
 
 
 def _set_new_password(request, user, password, event):
-    """Store the (already validated) password, clear lockouts, and write the event and history row."""
+    """(Aldınan tekserilgen) paroldi saqlaw, lockout lardı tazalaw hám waqıya hám tariyx qatarın jazıw."""
     user.set_password(password)
     user.save(update_fields=['password'])
     lockout.record_success(user, get_client_ip(request))
@@ -89,9 +89,10 @@ def _set_new_password(request, user, password, event):
 @throttle_classes([PasswordResetConfirmThrottle])
 def confirm_password_reset(request):
     """
-    Set a new password with the link from the reset e-mail.
+    Tiklew e-mail inen silteme penen jańa parol belgilew.
 
-    A broken, expired or used link gets one answer. The user is not signed in; every session they had ends.
+    Buzılǵan, múddeti ótken yamasa paydalanılǵan silteme bir juwap aladı. Paydalanıwshı kirgizilmeydi; onıń hár session ı
+    tawsıladı.
     """
     enforce_csrf(request)
     serializer = PasswordResetConfirmSerializer(data=request.data)
@@ -119,9 +120,9 @@ def confirm_password_reset(request):
 @throttle_classes([PasswordChangeThrottle])
 def change_password(request):
     """
-    Change the password of the signed-in user. A wrong current password counts as a failed login.
+    Kirgen paydalanıwshınıń parolin ózgertiw. Qáte házirgi parol sátsiz kirisiw sanaladı.
 
-    This session stays signed in; the account's other sessions end.
+    Bul session kirgen qaladı; akkaunttıń basqa session ları tawsıladı.
     """
     serializer = PasswordChangeSerializer(data=request.data)
     if not serializer.is_valid():

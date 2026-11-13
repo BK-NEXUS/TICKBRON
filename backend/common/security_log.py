@@ -1,11 +1,12 @@
 """
-One place for security events: who did what, from where, and how it ended.
+Qáwipsizlik waqıyaları ushın bir orın: kim ne islegen, qayaqtan, hám qalay tamamlanǵan.
 
-Lines go to the `tickbron.security` logger, which production keeps at INFO in its own file
-(config/logging_config.py), so an investigation does not depend on the general log level.
-A line is `event=<name> user=<id|none> ip=<address> method=<GET> path=<url> key=value ...`.
-Only ids, addresses and fixed reason codes are written: never an e-mail, phone number,
-password, one-time code or token. Caller-chosen text is escaped so it cannot forge a line.
+Qatarlar `tickbron.security` logger ine baradı, production ol sonı óz faylında INFO dárejesinde saqlaydı
+(config/logging_config.py), sol sebepli tekseriw ulıwma log dárejesine baylanbaydı.
+Qatar: `event=<name> user=<id|none> ip=<address> method=<GET> path=<url> key=value ...`.
+Tek id ler, mánzillerdi hám turaqlı sebep kodları jazıladı: hesh qashan e-mail, telefon nomeri,
+parol, bir márte paydalanılatuǵın kod yamasa token emes. Shaqırıwshı tańlaǵan tekst escape etiledi, sonda ol qatardı jalǵan
+qıla almaydı.
 """
 import logging
 
@@ -21,7 +22,7 @@ def _value(value):
 
 
 def log_security_event(event, request=None, user=None, level=logging.WARNING, **fields):
-    """Write one security event. `user` defaults to the authenticated user of `request`."""
+    """Bir qáwipsizlik waqıyasın jazıw. `user` ádetde `request` tiń kirgen paydalanıwshısı."""
     if user is None and request is not None and getattr(request, 'user', None) is not None:
         user = request.user if request.user.is_authenticated else None
     parts = [f'event={event}', f'user={user.pk if user is not None else "none"}']

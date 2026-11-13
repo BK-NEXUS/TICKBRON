@@ -1,7 +1,7 @@
 """
-Views for the accounts app.
+accounts app ınıń view leri.
 
-This module contains views for favorites, reviews, notifications, and account history.
+Bul modul favorit ler, sharhlar, bildiriwler hám akkaunt tariyxı view lerin óz ishine aladı.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -27,13 +27,13 @@ from django.utils.translation import gettext as _
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing user favorites.
+    Paydalanıwshı favorit lerin basqarıw ushın ViewSet.
     """
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return favorites for the current user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Házirgi paydalanıwshınıń favorit lerin qaytaradı."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         return Favorite.objects.filter(
             user=self.request.user,
@@ -52,18 +52,18 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         )
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         if self.action == 'create':
             return FavoriteCreateSerializer
         return FavoriteSerializer
 
     def perform_create(self, serializer):
         """
-        Create favorite for the current user.
+        Házirgi paydalanıwshı ushın favorit jaratadı.
 
-        unique_together on (user, property) does not know about is_deleted, so a
-        previously soft-deleted favorite for the same property would otherwise
-        make a plain create() 500 on an IntegrityError. Restore it instead.
+        (user, property) boyınsha unique_together is_deleted di bilmeydi, sol sebepli
+        sol mehmanxana ushın burın óshirilgen (soft-deleted) favorit bar bolsa, ápiwayı create()
+        IntegrityError sebepli 500 beredi. Onıń ornına sonı qayta tiklaymız.
         """
         property_obj = serializer.validated_data.get('property')
         existing = Favorite.objects.filter(user=self.request.user, property=property_obj).first()
@@ -79,7 +79,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         else:
             serializer.save(user=self.request.user)
 
-        # Log account history
+        # Akkaunt tariyxına jazıw
         AccountHistory.objects.create(
             user=self.request.user,
             action='favorite_added',
@@ -90,11 +90,11 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        """Soft delete favorite."""
+        """Favorittı soft delete etedi."""
         instance = self.get_object()
         instance.soft_delete()
 
-        # Log account history
+        # Akkaunt tariyxına jazıw
         AccountHistory.objects.create(
             user=request.user,
             action='favorite_removed',
@@ -108,37 +108,37 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def count(self, request):
-        """Get total count of user favorites."""
+        """Paydalanıwshı favorit leriniń ulıwma sanın qaytaradı."""
         count = self.get_queryset().count()
         return Response({'count': count})
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing property reviews.
+    Mehmanxana sharhların basqarıw ushın ViewSet.
     """
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return reviews based on user role."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Paydalanıwshı roline qarap sharhlardı qaytaradı."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         user = self.request.user
 
-        # Regular users can only see their own reviews
+        # Ápiwayı paydalanıwshılar tek óz sharhların kóre aladı
         if not user.is_staff:
             return Review.objects.filter(
                 user=user,
                 is_deleted=False
             ).select_related('user', 'property', 'booking')
 
-        # Staff can see all reviews
+        # Staff barlıq sharhlardı kóre aladı
         return Review.objects.filter(
             is_deleted=False
         ).select_related('user', 'property', 'booking')
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         if self.action == 'create':
             return ReviewCreateSerializer
         if self.action in ['update', 'partial_update']:
@@ -146,15 +146,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return ReviewSerializer
 
     def perform_create(self, serializer):
-        """Create review for the current user."""
+        """Házirgi paydalanıwshı ushın sharh jaratadı."""
         try:
             with transaction.atomic():
                 serializer.save(user=self.request.user, status='pending')
         except IntegrityError:
-            # A concurrent request reviewed the same booking after validation
+            # Tekseriwden keyin basqa bir sorawdıń bir bronǵa sharh jazıp úlgergeni
             raise ValidationError({'booking': [_("This booking has already been reviewed.")]})
 
-        # Log account history
+        # Akkaunt tariyxına jazıw
         property_obj = serializer.validated_data.get('property')
         AccountHistory.objects.create(
             user=self.request.user,
@@ -167,20 +167,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        """Send an edited review back to moderation so unchecked text is not shown as approved."""
+        """Ózgertilgen sharhtı qaytadan moderation ǵa jiberedi, sonda tekserilmegen tekst tastıyıqlanǵan dep kórsetilmeydi."""
         serializer.save(status='pending', reviewed_at=None)
 
     @action(detail=False, methods=['get'])
     def eligible_properties(self, request):
         """
-        Get bookings the user is eligible to review.
+        Paydalanıwshı sharh jaza alatuǵın bronlardı qaytaradı.
 
-        Every completed booking without a review is listed separately, so two stays
-        at the same property are two entries.
+        Sharhı joq hár juwmaqlanǵan bron bólek jazıladı, sol sebepli bir mehmanxanada eki
+        turıw eki jazba boladı.
         """
         user = request.user
 
-        # Soft-deleted reviews still count: the booking cannot be reviewed again
+        # Óshirilgen (soft-deleted) sharhlar da esapqa alınadı: bronǵa qayta sharh jazıp bolmaydı
         completed_bookings = Booking.objects.filter(
             guest=user,
             status='completed',
@@ -203,10 +203,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         return Response({'eligible_properties': eligible_properties})
 
-    # Public and read-only: the approved reviews of a listed hotel, newest first (the reviewer as "Aziz K.")
+    # Ashıq hám tek oqıw ushın: dizimdegi mehmanxananıń tastıyıqlanǵan sharhları, eń jańası birinshi (sharh jazıwshı "Aziz K."
+    # sıyaqlı)
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def public(self, request):
-        """The approved reviews of one hotel, paginated."""
+        """Bir mehmanxananıń tastıyıqlanǵan sharhları, betlerge bólingen (paginated)."""
         raw = request.query_params.get('property_id')
         if not raw or not raw.isdigit():
             return Response({'detail': _('property_id must be a whole number.')}, status=status.HTTP_400_BAD_REQUEST)
@@ -217,13 +218,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(reviews)
         return self.get_paginated_response(PublicReviewSerializer(page, many=True).data)
 
-    # Public and read-only: aggregate scores of approved reviews are shown on every property page
+    # Ashıq hám tek oqıw ushın: tastıyıqlanǵan sharhlardıń jámi bahaları hár mehmanxana betinde kórsetiledi
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def property_scores(self, request):
         """
-        Get review scores for a specific property.
+        Belgili bir mehmanxana ushın sharh bahaların qaytaradı.
 
-        Returns average ratings across different categories for a property.
+        Mehmanxana ushın hár túrli kategoriyalar boyınsha ortasha bahalardı qaytaradı.
         """
         property_id = request.query_params.get('property_id')
 
@@ -241,7 +242,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get approved reviews for the property
+        # Mehmanxananıń tastıyıqlanǵan sharhların alıw
         reviews = Review.objects.filter(
             property_id=property_id,
             status='approved',
@@ -256,7 +257,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 'category_scores': {}
             })
 
-        # Calculate average ratings
+        # Ortasha bahalardı esaplaw
         avg_overall = reviews.aggregate(avg_rating=Avg('overall_rating'))['avg_rating']
 
         category_scores = {}
@@ -278,13 +279,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class NotificationViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing user notifications.
+    Paydalanıwshı bildiriwlerin basqarıw ushın ViewSet.
     """
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return notifications for the current user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Házirgi paydalanıwshınıń bildiriwlerin qaytaradı."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         return Notification.objects.filter(
             user=self.request.user,
@@ -292,26 +293,26 @@ class NotificationViewSet(viewsets.ModelViewSet):
         ).select_related('booking', 'property')
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         if self.action in ['update', 'partial_update']:
             return NotificationUpdateSerializer
         return NotificationSerializer
 
     def create(self, request, *args, **kwargs):
-        """Prevent direct creation of notifications through API."""
+        """Bildiriwlerdi API arqalı tikkeley jaratıwdıń aldın aladı."""
         return Response(
             {'detail': _('Notifications cannot be created directly through API.')},
             status=status.HTTP_403_FORBIDDEN
         )
 
     def perform_update(self, serializer):
-        """Update notification."""
+        """Bildiriwdi jańalaw."""
         if 'is_read' in serializer.validated_data:
             serializer.save()
 
     @action(detail=False, methods=['get'])
     def unread(self, request):
-        """Get unread notifications for the current user."""
+        """Házirgi paydalanıwshınıń oqılmaǵan bildiriwlerin qaytaradı."""
         unread = self.get_queryset().filter(is_read=False)
         page = self.paginate_queryset(unread)
         serializer = self.get_serializer(page, many=True)
@@ -319,7 +320,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
-        """Mark all notifications as read for the current user."""
+        """Házirgi paydalanıwshınıń barlıq bildiriwlerin oqılǵan dep belgileydi."""
         count = self.get_queryset().filter(is_read=False).update(
             is_read=True,
             read_at=timezone.now()
@@ -328,7 +329,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def count(self, request):
-        """Get notification counts for the current user."""
+        """Házirgi paydalanıwshınıń bildiriw sanların qaytaradı."""
         total = self.get_queryset().count()
         unread = self.get_queryset().filter(is_read=False).count()
 
@@ -341,13 +342,13 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for viewing user account history.
+    Paydalanıwshı akkaunt tariyxın kóriw ushın ViewSet.
     """
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return account history for the current user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Házirgi paydalanıwshınıń akkaunt tariyxın qaytaradı."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         return AccountHistory.objects.filter(
             user=self.request.user,
@@ -355,12 +356,12 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
         ).select_related('booking', 'property')
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         return AccountHistorySerializer
 
     @action(detail=False, methods=['get'])
     def recent(self, request):
-        """Get recent account history entries."""
+        """Eń sońǵı akkaunt tariyxı jazbaların qaytaradı."""
         try:
             limit = int(request.query_params.get('limit', 10))
         except (TypeError, ValueError):
@@ -380,10 +381,10 @@ class AccountHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """Get account activity statistics."""
+        """Akkaunt háreketleri statistikasın qaytaradı."""
         queryset = self.get_queryset()
 
-        # Count by action type
+        # Háreket túri boyınsha sanaw
         action_counts = queryset.values('action').annotate(
             count=Count('id')
         ).order_by('-count')

@@ -1,10 +1,12 @@
 """
-The size rules of every picture upload (plan: .ai/PLAN_IMAGE_RULES.md).
+Hár súwret júklewdiń ólshem qaǵıydaları (reje: .ai/PLAN_IMAGE_RULES.md).
 
-A picture is stored only when it is a real JPEG, PNG or WebP of a size and shape that the site shows well; otherwise the
-upload is refused with the sizes to use. The rules are data (one per kind of picture) and one function checks them, so the
-hotel owner's, the admin's and the ad uploads cannot drift apart. The frontend repeats the numbers to show a hint and to
-refuse early (frontend/src/utils/imageRules.ts); this module is the authority.
+Súwret tek haqıyqıy JPEG, PNG yamasa WebP bolsa hám saytta jaqsı kórinetuǵın ólshemde hám formada bolsa saqlanadı;
+bolmasa júkleniw paydalanıw kerek ólshemler menen biykar etiledi. Qaǵıydalar maǵlıwmat (hár súwret túri ushın bir) hám bir
+funkciya
+olardı tekseredi, sol sebepli mehmanxana iyesiniń, adminniń hám reklama júklewleri bir-birinen ayrılıp ketpeydi.
+Frontend sanlardı kórsetpe ushın hám erte biykar etiw ushın qaytaladı (frontend/src/utils/imageRules.ts);
+bul modul tiykarǵı hújjet.
 """
 from dataclasses import dataclass
 from fractions import Fraction
@@ -13,11 +15,11 @@ from django.utils.translation import gettext as _
 from PIL import Image
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
-# A tiny file can expand to gigabytes of pixels when decoded
+# Kishkene fayl ashılǵanda gigabaytlap piksel bolıp keńeyiwi múmkin
 MAX_IMAGE_PIXELS = 40_000_000
-# The pictures the site accepts, by what Pillow finds in the file (never by the name or the header the client sends)
+# Sayt qabıllaytuǵın súwretler, Pillow fayldan tapqanı boyınsha (hesh qashan klient jiberetuǵın at yamasa header boyınsha emes)
 ALLOWED_FORMATS = ('JPEG', 'PNG', 'WEBP')
-# EXIF turn flags that show a picture on its side: the shape the visitor sees has width and height swapped
+# Súwretti jantayıp kórsetetuǵın EXIF burıw belgileri: paydalanıwshı kóretuǵın formada eni menen boyı almasadı
 SIDEWAYS = {5, 6, 7, 8}
 ORIENTATION_TAG = 0x0112
 
@@ -26,28 +28,28 @@ ORIENTATION_TAG = 0x0112
 class ImageRule:
     min_width: int
     min_height: int
-    shape: tuple  # (narrowest, widest) as width / height
-    shape_labels: tuple  # the same two limits as the people say them, e.g. ('4:3', '16:9')
-    recommended: tuple  # (width, height)
-    recommended_label: str  # the shape of the recommended size, e.g. '3:2'
-    max_side: int  # the longest side a stored picture keeps (common/images.py shrinks to it)
+    shape: tuple  # (eń tar, eń keń) eni / boyı retinde
+    shape_labels: tuple  # sol eki shek adamlar aytatuǵınday, mısalı ('4:3', '16:9')
+    recommended: tuple  # (eni, boyı)
+    recommended_label: str  # usınılatuǵın ólshemniń forması, mısalı '3:2'
+    max_side: int  # saqlanǵan súwret saqlaytuǵın eń uzın tárep (common/images.py sonıǵa shekem kishireytedi)
 
     @property
     def shape_label(self):
         return f'{self.shape_labels[0]} to {self.shape_labels[1]}'
 
 
-# Hotel and room photos: cards, gallery and room cards show them from 4:3 to 16:9
+# Mehmanxana hám xona súwretleri: kartalar, galereya hám xona kartaları olardı 4:3 ten 16:9 ǵa shekem kórsetedi
 HOTEL_PHOTO = ImageRule(1200, 800, (Fraction(4, 3), Fraction(16, 9)), ('4:3', '16:9'), (1600, 1067), '3:2', 1600)
 ROOM_PHOTO = ImageRule(1200, 800, (Fraction(4, 3), Fraction(16, 9)), ('4:3', '16:9'), (1600, 1067), '3:2', 1600)
-# The ad carousel is 16:9 on a phone and 16:5 on a wide screen, and crops the middle in between
+# Reklama karuseli telefonda 16:9 hám keń ekranda 16:5, ortasın kesedi
 AD_BANNER = ImageRule(1600, 600, (Fraction(16, 9), Fraction(16, 5)), ('16:9', '16:5'), (1920, 720), '8:3', 2400)
-# The "where to" cards of the home page are 4:3
+# Bas bettiń "qayaqqa" kartaları 4:3
 PLACE_PICTURE = ImageRule(800, 600, (Fraction(6, 5), Fraction(9, 5)), ('6:5', '9:5'), (1200, 900), '4:3', 1600)
 
 
 def _shown_size(image):
-    """Width and height as a visitor sees the picture: a phone photo stored sideways is turned by its flag."""
+    """Súwrettiń paydalanıwshı kóretuǵın eni hám boyı: jantayıp saqlanǵan telefon súwreti óz belgisi boyınsha burıladı."""
     width, height = image.size
     if image.getexif().get(ORIENTATION_TAG) in SIDEWAYS:
         return height, width
@@ -55,7 +57,7 @@ def _shown_size(image):
 
 
 def _the_picture(file):
-    """(width, height) of a real JPEG, PNG or WebP as shown, 'dimensions' when it is far too big, None when it is not one."""
+    """Haqıyqıy JPEG, PNG yamasa WebP tıń kórsetilgenindey (eni, boyı), júdá úlken bolsa 'dimensions', ol emes bolsa None."""
     try:
         file.seek(0)
         image = Image.open(file)
@@ -70,14 +72,14 @@ def _the_picture(file):
         return _shown_size(image)
     except Image.DecompressionBombError:
         return 'dimensions'
-    except Exception:  # not a picture, or a damaged one: Pillow raises many kinds
+    except Exception:  # súwret emes, yamasa buzılǵan: Pillow kóp túrli qátelik kóteredi
         return None
     finally:
         file.seek(0)
 
 
 def image_upload_error(file, rule):
-    """The refusal text of an upload that does not fit `rule` (in the page language), or None when it can be stored."""
+    """`rule` ge sáykes kelmeytuǵın júklewdiń biykar etiw teksti (bet tilinde), yamasa saqlanatuǵın bolsa None."""
     if file.size > MAX_FILE_BYTES:
         return _('File size exceeds maximum allowed size of %(size)sMB') % {'size': MAX_FILE_BYTES / (1024 * 1024)}
     shown = _the_picture(file)

@@ -1,4 +1,4 @@
-"""Notices about a guest review: the decision of the staff (guest, owner) and the owner's answer (guest)."""
+"""Mehmann sharhı haqqındaǵı xabarlandırıwlar: staff tıń qararı (mehmannan hám iyege) hám iyeniń juwabı (mehmanǵa)."""
 import logging
 
 from accounts import notify
@@ -11,7 +11,7 @@ def _params(review):
 
 
 def _tell(user, code, review):
-    # A notice that cannot be stored must never undo the decision or the answer that caused it
+    # Saqlanbaǵan xabarlandırıw ózin keltirip shıǵarǵan qarar yamasa juwaptı hesh qashan biykar etpewi kerek
     try:
         notify(user, code, _params(review))
     except Exception:
@@ -19,7 +19,7 @@ def _tell(user, code, review):
 
 
 def tell_decision(review, approved):
-    """The guest learns the decision; the hotel owner learns about a new public review."""
+    """Mehmann qarardı biledi; mehmanxana iyesi jańa ashıq sharh haqqında biledi."""
     if approved:
         _tell(review.user, 'review_approved', review)
         _tell(review.property.owner, 'new_review', review)

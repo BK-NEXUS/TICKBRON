@@ -1,4 +1,5 @@
-"""Shrinks the hotel and room photos stored before uploads were shrunk (longest side 1600 px, no camera data)."""
+"""Júklewler kishireytiliwinen aldın saqlanǵan mehmanxana hám xona súwretlerin kishireytedi (eń uzın tárep 1600 px, kamera
+maǵlıwmatısız)."""
 import mimetypes
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,7 +8,8 @@ from django.core.management.base import BaseCommand
 from common.images import shrink_upload
 from properties.models import PropertyPhoto, RoomPhoto
 
-# A file is rewritten only when it gets at least 5% smaller, so a second run does not keep re-encoding the same photos
+# Fayl tek eń keminde 5% kishireyse qayta jazıladı, sol sebepli ekinshi isleniw birdey súwretlerdi qayta kodlawdı dawam
+# ettirmeydi
 WORTH_REWRITING = 0.95
 
 

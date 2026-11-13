@@ -1,4 +1,5 @@
-"""How guests rate the owner's hotels: the approved reviews only, over all time (not the period the page shows)."""
+"""Mehmanlar iyeniń mehmanxanaların qalay bahalaydı: tek tastıyıqlanǵan sharhlar, pútkil waqıt boyınsha (bet kórsetken dáwir
+emes)."""
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db.models import Avg, Count
@@ -14,14 +15,14 @@ def _approved(property_ids):
 
 
 def _one_decimal(value):
-    """4.25 -> '4.3' (halves go up, as people count); None stays None."""
+    """4.25 -> '4.3' (jarımlar joqarıǵa, adamlar sanaǵanday); None None bolıp qaladı."""
     if value is None:
         return None
     return str(Decimal(str(value)).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP))
 
 
 def ratings_by_hotel(property_ids):
-    """{hotel id: {'count', 'average'}} for every id asked for (a hotel without reviews: 0 and None)."""
+    """Soralǵan hár id ushın {mehmanxana id si: {'count', 'average'}} (sharhsız mehmanxana: 0 hám None)."""
     rows = {row['property_id']: row for row in _approved(property_ids).values('property_id').annotate(
         count=Count('id'), average=Avg('overall_rating')).order_by()}
     return {
@@ -34,7 +35,7 @@ def ratings_by_hotel(property_ids):
 
 
 def rating_detail(property_id):
-    """One hotel: count, average, how many reviews gave 1..5 stars, and the average of each category."""
+    """Bir mehmanxana: sanı, ortashası, neshe sharh 1..5 juldız bergeni hám hár kategoriyanıń ortashası."""
     reviews = _approved([property_id])
     by_stars = dict(reviews.values_list('overall_rating').annotate(total=Count('id')).order_by())
     totals = reviews.aggregate(count=Count('id'), average=Avg('overall_rating'),

@@ -1,7 +1,7 @@
 """
-Custom middleware for TICKBRON Backend.
+TICKBRON Backend ushın óz middleware i.
 
-Provides security headers, request logging, and performance monitoring.
+Qáwipsizlik header leri, sorawlardı log lawdı hám ónimdarlıq monitoring in támiyinleydi.
 """
 import re
 from urllib.parse import unquote
@@ -19,30 +19,30 @@ _CONTROL_CHARACTERS = re.compile(r'[\x00-\x1f\x7f-\x9f\u2028\u2029]')
 
 
 def printable(value):
-    """A caller-chosen value made safe for one log line: a newline in it would start a forged line."""
+    """Bir log qatarı ushın qáwipsiz etilgen shaqırıwshı tańlaǵan mánis: ondaǵı jańa qatar jalǵan qatar baslar edi."""
     return _CONTROL_CHARACTERS.sub(lambda match: match.group().encode('unicode_escape').decode(), str(value))
 
 
-MAX_JSON_BODY_BYTES = 4 * 1024 * 1024  # real API bodies are under 100 KB; nginx stops at 1 MB first
-MAX_UPLOAD_BODY_BYTES = 12 * 1024 * 1024  # photo upload: 10 MB image plus form overhead
+MAX_JSON_BODY_BYTES = 4 * 1024 * 1024  # haqıyqıy API denelerı 100 KB tan kem; nginx aldın 1 MB da toqtaydı
+MAX_UPLOAD_BODY_BYTES = 12 * 1024 * 1024  # súwret júklew: 10 MB súwret hám forma qosımsha ólshemi
 
 
 class RequestLanguageMiddleware(LocaleMiddleware):
-    """The language of the request (Accept-Language: uz, ru or en) for its own duration only."""
+    """Sorawdıń tili (Accept-Language: uz, ru yamasa en) tek óz dawamlılıǵı ushın."""
 
     def process_response(self, request, response):
         response = super().process_response(request, response)
-        # The thread is reused: code outside a request (tasks, tests) must not inherit this language
+        # Thread qayta paydalanıladı: soraw sırtındaǵı kod (task lar, testler) bul tildi miyras almawı kerek
         translation.deactivate()
         return response
 
 
 class RequestBodyLimitMiddleware:
     """
-    Refuse an oversized body from its Content-Length header, before any view reads it.
+    Artıq úlken denení Content-Length header inen, qálegen view oqıp úlgermesten biykar etiw.
 
-    DRF's JSON parser reads the stream directly, so Django's DATA_UPLOAD_MAX_MEMORY_SIZE does not
-    stop one huge JSON request from being buffered by a worker. nginx should enforce the same limits.
+    DRF tiń JSON parser i aǵımdı tikkeley oqıydı, sol sebepli Django nıń DATA_UPLOAD_MAX_MEMORY_SIZE
+    bir úlken JSON sorawdıń worker ge buffer ge alınıwın toqtatpaydı. nginx sol shekleulerdi de májbúrlewi kerek.
     """
 
     def __init__(self, get_response):
@@ -64,10 +64,10 @@ class RequestBodyLimitMiddleware:
 
 class RejectNullCharactersMiddleware:
     """
-    Answer 400 to a query string that carries a NUL character (%00).
+    NUL belgisi (%00) bar query string ke 400 menen juwap beriw.
 
-    PostgreSQL can neither store nor search for it, so a search box would otherwise answer 500. A NUL inside a JSON
-    body is left to the field checks (which name the field) and, for text nobody checks, to the exception handler.
+    PostgreSQL onı saqlay da, izley de almaydı, sol sebepli izlew qutısı basqasha 500 beredi. JSON denesindegi NUL
+    maydan tekseriwine (maydandı ataydı) hám hesh kim tekspeytuǵın tekst ushın exception handler ge qaldırıladı.
     """
 
     def __init__(self, get_response):
@@ -85,7 +85,7 @@ class RejectNullCharactersMiddleware:
 
 class SecurityHeadersMiddleware:
     """
-    Middleware to add security headers to all responses.
+    Barlıq juwaplarǵa qáwipsizlik header lerin qosatuǵın middleware.
     """
 
     def __init__(self, get_response):
@@ -94,22 +94,22 @@ class SecurityHeadersMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
 
-        # Add security headers
+        # Qáwipsizlik header lerin qosıw
         response['X-Content-Type-Options'] = 'nosniff'
         response['X-Frame-Options'] = getattr(settings, 'X_FRAME_OPTIONS', 'DENY')
-        response['X-XSS-Protection'] = '0'  # the legacy auditor can be abused to leak data; CSP is the defence
+        response['X-XSS-Protection'] = '0'  # eski auditor maǵlıwmattı sızdırıw ushın paydalanılıwı múmkin; CSP bul qorǵanıs
         response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
 
-        # Strict-Transport-Security comes from Django's SecurityMiddleware (SECURE_HSTS_* settings):
-        # it sends it on HTTPS requests only, which a second copy here got wrong behind a proxy
+        # Strict-Transport-Security Django nıń SecurityMiddleware inen keledi (SECURE_HSTS_* sazlamaları):
+        # ol tek HTTPS sorawlarında jiberiledi, bul jerdegi ekinshi nusqa proxy artında qátelesti
 
         return response
 
 
 class RequestLoggingMiddleware:
     """
-    Middleware to log HTTP requests for monitoring and debugging.
+    Monitoring hám debug ushın HTTP sorawların log laytuǵın middleware.
     """
 
     def __init__(self, get_response):
@@ -118,8 +118,8 @@ class RequestLoggingMiddleware:
     def __call__(self, request):
         start_time = time.time()
 
-        # Log request. Use the user's id, not str(user) (the user's email), so
-        # PII does not end up in every request log line.
+        # Sorawdı log qa jazıw. str(user) (paydalanıwshınıń e-mail ı) emes, paydalanıwshınıń id sin paydalanıń, sonda
+        # PII hár soraw log qatarına túspeydi.
         user_info = 'Anonymous'
         if hasattr(request, 'user') and request.user.is_authenticated:
             user_info = f'user:{request.user.id}'
@@ -136,38 +136,38 @@ class RequestLoggingMiddleware:
         finally:
             reset_current_ip(token)
 
-        # Calculate duration
+        # Dawamlılıqtı esaplaw
         duration = time.time() - start_time
 
-        # Log response
+        # Juwaptı log qa jazıw
         logger.info(
             f"Response: {response.status_code} - "
             f"Duration: {duration:.3f}s - "
             f"Path: {printable(request.path)}"
         )
 
-        # Add response time header for monitoring
+        # Monitoring ushın juwap waqtı header in qosıw
         response['X-Response-Time'] = f'{duration:.3f}s'
 
         return response
 
     def get_client_ip(self, request):
         """
-        Get the client IP address from the request.
+        Sorawdan klient IP mánzilin alıw.
 
-        Handles proxied requests (X-Forwarded-For header).
+        Proxy arqalı kelgen sorawlardı islewdi biledi (X-Forwarded-For header).
         """
         return get_client_ip(request)
 
 
 class PerformanceMonitoringMiddleware:
     """
-    Middleware to monitor slow requests and database queries.
+    Sekin sorawlardı hám database query lerin baqlaytuǵın middleware.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.slow_request_threshold = 2.0  # 2 seconds default
+        self.slow_request_threshold = 2.0  # ádetde 2 sekund
 
     def __call__(self, request):
         start_time = time.time()
@@ -176,7 +176,7 @@ class PerformanceMonitoringMiddleware:
 
         duration = time.time() - start_time
 
-        # Log slow requests
+        # Sekin sorawlardı log qa jazıw
         if duration > self.slow_request_threshold:
             logger.warning(
                 f"Slow request detected: {request.method} {printable(request.path)} - "
@@ -187,5 +187,5 @@ class PerformanceMonitoringMiddleware:
         return response
 
     def get_client_ip(self, request):
-        """Get the client IP address from the request."""
+        """Sorawdan klient IP mánzilin alıw."""
         return get_client_ip(request)

@@ -1,4 +1,4 @@
-"""The team's side: the inbox, one thread, replies, read marks and the unread badge. Staff and super-admin."""
+"""Komandanıń tárepi: kiriwshi qutı, bir thread, juwaplar, oqıldı belgileri hám oqılmaǵan belgi. Staff hám super-admin."""
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -17,7 +17,8 @@ from chat.views import after_param, bad_after, chat_error
 
 
 class Inbox(APIView):
-    """GET: the threads, newest activity first. `?unread=true` keeps those with unread messages, `?q=` searches name or e-mail."""
+    """GET: thread ler, eń sońǵı háreket birinshi. `?unread=true` oqılmaǵan xabarı barların qaldıradı, `?q=` at yamasa e-mail
+    boyınsha izleydi."""
     permission_classes = [IsSuperAdminOrStaff]
     throttle_classes = [ChatPollThrottle]
 
@@ -32,7 +33,7 @@ class Inbox(APIView):
 
 
 class Thread(APIView):
-    """GET: one thread (the last 100 messages, or those after `?after=`). POST `{text}`: the team answers."""
+    """GET: bir thread (sońǵı 100 xabar, yamasa `?after=` ten keyingileri). POST `{text}`: komanda juwap beredi."""
     permission_classes = [IsSuperAdminOrStaff]
 
     def get_throttles(self):
@@ -65,7 +66,7 @@ class Thread(APIView):
 
 
 class ThreadRead(APIView):
-    """POST: the team has read the thread."""
+    """POST: komanda thread di oqıdı."""
     permission_classes = [IsSuperAdminOrStaff]
     throttle_classes = [ChatPollThrottle]
 
@@ -76,7 +77,7 @@ class ThreadRead(APIView):
 
 
 class StaffUnread(APIView):
-    """GET: how many threads have messages the team has not read (the badge on the admin tab)."""
+    """GET: neshe thread te komanda oqımaǵan xabar bar (admin tabındaǵı belgi)."""
     permission_classes = [IsSuperAdminOrStaff]
     throttle_classes = [ChatPollThrottle]
 

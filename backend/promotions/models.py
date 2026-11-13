@@ -1,8 +1,8 @@
 """
-Paid placement of hotels in the banner carousel (R10).
+Mehmanxanalardıń banner karuselinde tólengen orınlastırıwı (R10).
 
-One `Promotion` row is one paid period of one hotel. The price is only the agreed amount
-typed by the super-admin for the books; nothing in booking or payment reads it.
+Bir `Promotion` qatarı bir mehmanxananıń bir tólengen dáwiri. Baha tek super-admin
+esap ushın jazǵan kelisilgen summa; bron yamasa tólemde hesh nárse onı oqımaydı.
 """
 import os
 import uuid
@@ -26,7 +26,7 @@ class Promotion(BaseModel):
         (STATUS_ENDED, 'Ended'),
         (STATUS_CANCELLED, 'Cancelled'),
     ]
-    # A period in one of these statuses still holds its dates against overlaps
+    # Usı statuslardıń birindegi dáwir óz sanaların kesilisiwge qarsı ele ustap turadı
     HOLDING_STATUSES = (STATUS_SCHEDULED, STATUS_ACTIVE, STATUS_PAUSED)
 
     property = models.ForeignKey('properties.Property', on_delete=models.PROTECT, related_name='promotions')
@@ -34,7 +34,7 @@ class Promotion(BaseModel):
     end_date = models.DateField(db_index=True, help_text='Inclusive, business dates (Asia/Tashkent)')
     priority = models.PositiveSmallIntegerField(default=0, help_text='0-100, higher is shown first')
 
-    # Empty = shown everywhere; a set level limits it to hotels in that place
+    # Bos = hár jerde kórsetiledi; belgilengen dáreje onı sol orındaǵı mehmanxanalarǵa shekemleydi
     country_ref = models.ForeignKey(
         'geography.Country', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     region_ref = models.ForeignKey(
@@ -57,7 +57,7 @@ class Promotion(BaseModel):
         ordering = ['-start_date', '-id']
         indexes = [
             models.Index(fields=['property', 'start_date', 'end_date'], name='promo_prop_dates_idx'),
-            # The advertising shown now: status and the date window
+            # Házir kórsetilip atırǵan reklama: status hám sana oynası
             models.Index(fields=['status', 'start_date', 'end_date'], name='promo_status_dates_idx'),
         ]
 
@@ -67,8 +67,9 @@ class Promotion(BaseModel):
 
 class AdRenewal(models.Model):
     """
-    The question asked when an ad's month ends: did the hotel pay for the next one? Opened on the end day;
-    the ad stays visible until `deadline`; no confirmation by then removes it (promotions/renewals.py).
+    Reklamanıń ayı pitkende soralatuǵın soraw: mehmanxana keyingisi ushın tóledi me? Pitken kúni ashıladı;
+    reklama `deadline` ǵa shekem kórinip turadı; sol waqıtqa shekem tastıyıqlaw bolmasa onı alıp taslaydı
+    (promotions/renewals.py).
     """
     STATUS_PENDING = 'pending'
     STATUS_RENEWED = 'renewed'
@@ -107,7 +108,7 @@ class AdRenewal(models.Model):
 
 
 class PromotionDailyStat(models.Model):
-    """Views and clicks of one promotion on one business date. No visitor data is stored."""
+    """Bir promotion nıń bir is kúnindegi kóriwleri hám bosıwları. Kelwshi maǵlıwmatı saqlanbaydı."""
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='daily_stats')
     date = models.DateField(db_index=True)
     impressions = models.PositiveIntegerField(default=0)
@@ -120,12 +121,12 @@ class PromotionDailyStat(models.Model):
 
 
 def promotion_photo_path(instance, filename):
-    """The client's file name is never used: stored paths are public and must not be guessable."""
+    """Klienttiń fayl atı hesh qashan paydalanılmaydı: saqlanǵan jollar ashıq hám boljawǵa bolmaytuǵın bolıwı kerek."""
     return f'promotions/{instance.promotion_id}/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}'
 
 
 class PromotionPhoto(BaseModel):
-    """A picture the super-admin put on one ad; the banner shows these instead of the hotel's own photos."""
+    """Super-admin bir reklamaǵa qoyǵan súwret; banner mehmanxananıń óz súwretleriniń ornına usılardı kórsetedi."""
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='photos')
     photo = models.ImageField(upload_to=promotion_photo_path)
     display_order = models.PositiveSmallIntegerField(default=0)

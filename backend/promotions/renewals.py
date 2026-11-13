@@ -1,11 +1,11 @@
 """
-Monthly ad renewal (plan .ai/PLAN_AD_RENEWAL.md). Views and the daily task only call this module.
+Ayliq reklama jańalaw (reje .ai/PLAN_AD_RENEWAL.md). View ler hám kúndelik task tek usı modulge shaqıradı.
 
-On an ad's end day the question "did the hotel pay for the next month?" is opened. The owner is told on that
-day and again on day 3. The ad stays visible until the deadline (end day + GRACE_DAYS). The super admin answers:
-  confirm  the same ad's end date moves one month on
-  decline  the ad is removed now
-No answer by the deadline removes the ad too. The hotel itself is never touched.
+Reklamanıń pitken kúni "mehmanxana keyingi ay ushın tóledi me?" sorawı ashıladı. Iyege sol kúni hám
+3-kúni qayta aytıladı. Reklama deadline ǵa (pitken kún + GRACE_DAYS) shekem kórinip turadı. Super admin juwap beredi:
+  confirm  sol reklamanıń pitiw sanası bir ayǵa jılısadı
+  decline  reklama házir alıp taslanadı
+Deadline ǵa shekem juwap bolmasa, reklama da alıp taslanadı. Mehmanxananıń ózine hesh qashan tiyilmeydi.
 """
 import calendar
 import logging
@@ -26,12 +26,13 @@ logger = logging.getLogger(__name__)
 GRACE_DAYS = 5
 REMINDER_DAYS = (0, 3)
 REMINDER_CODES = ('ad_ending', 'ad_last_warning')
-# Only a paid ad that is running or about to run can be renewed; paused, ended and cancelled ones are not asked about
+# Tek isleytuǵın yamasa jaqında baslanatuǵın tólengen reklamanı jańalawǵa boladı; toqtatılǵan, pitken hám biykar etilgenler
+# haqqında sorawlanbaydı
 ASKED_STATUSES = (Promotion.STATUS_SCHEDULED, Promotion.STATUS_ACTIVE)
 
 
 class RenewalError(Exception):
-    """A rule was broken. `code` is a stable name the API returns; `message` is for people."""
+    """Qaǵıyda buzıldı. `code` API qaytaratuǵın turaqlı at; `message` adamlar ushın."""
 
     def __init__(self, code, message=''):
         super().__init__(message or code)
@@ -40,7 +41,7 @@ class RenewalError(Exception):
 
 
 def next_month_end(end: date) -> date:
-    """One month on: the last day of the next month if `end` is a month's last day, else the same day (clamped)."""
+    """Bir ay aldı: `end` ay dıń sońǵı kúni bolsa keyingi aydıń sońǵı kúni, bolmasa sol kún (shegaralanǵan)."""
     year, month = (end.year + 1, 1) if end.month == 12 else (end.year, end.month + 1)
     last_day = calendar.monthrange(year, month)[1]
     ends_the_month = end.day == calendar.monthrange(end.year, end.month)[1]
@@ -48,7 +49,7 @@ def next_month_end(end: date) -> date:
 
 
 def open_due(today):
-    """Ask about every paid, running ad whose end day has come; one question per ad and end date."""
+    """Pitken kúni kelgen hár tólengen, isleytuǵın reklama haqqında soraw: hár reklama hám pitiw sanası ushın bir soraw."""
     due = Promotion.objects.filter(
         is_deleted=False, status__in=ASKED_STATUSES, paid_at__isnull=False, end_date__lte=today)
     return sum(1 for promotion in due if AdRenewal.objects.get_or_create(
@@ -67,7 +68,7 @@ def _notice_params(renewal, code):
 
 
 def _tell_owner(renewal, code):
-    """A notice never blocks a decision or the daily run; the caller learns whether it was stored."""
+    """Xabarlandırıw hesh qashan sheshimdi yamasa kúndelik isleniwdi tosıp qoymaydı; shaqırıwshı onıń saqlanǵanın biledi."""
     try:
         notify(renewal.promotion.property.owner, code, _notice_params(renewal, code))
     except Exception:
@@ -77,7 +78,8 @@ def _tell_owner(renewal, code):
 
 
 def send_reminders(today):
-    """The latest reminder an open question has reached (day 0 or 3), once; a missed day does not send old ones."""
+    """Ashıq sorawdıń jetken eń sońǵı eskertiwi (0 yamasa 3-kún), bir márte; ótkizip jiberilgen kún eski eskertiwlerdi
+    jibermeydi."""
     sent = 0
     pending = (AdRenewal.objects.filter(status=AdRenewal.STATUS_PENDING, reminder_stage__lt=len(REMINDER_CODES))
                .select_related('promotion__property__owner'))
@@ -99,14 +101,14 @@ def _close(renewal, status, via, actor=None):
 
 
 def _remove_ad(promotion, reason):
-    """Cancel the ad without an audit row (nobody acted); the renewal row records how it ended."""
+    """Reklamanı audit qatarısız biykar etiw (hesh kim háreket etpedi); jańalaw qatarı qalay pitkenin jazadı."""
     promotion.status = Promotion.STATUS_CANCELLED
     promotion.cancelled_reason = reason
     promotion.save(update_fields=['status', 'cancelled_reason', 'updated_at'])
 
 
 def expire_overdue(today):
-    """No answer by the deadline: the ad is removed from the banner, the owner is told."""
+    """Deadline ǵa shekem juwap joq: reklama bannerden alıp taslanadı, iyege aytıladı."""
     expired = 0
     overdue = (AdRenewal.objects.filter(status=AdRenewal.STATUS_PENDING, deadline__lt=today)
                .select_related('promotion__property__owner'))
@@ -127,7 +129,7 @@ def expire_overdue(today):
 
 
 def _decidable(renewal):
-    """Re-read the renewal and its ad under a lock; refuse when somebody already answered."""
+    """Jańalawdı hám onıń reklamasın qulıp astında qayta oqıw; birew aldın juwap bergen bolsa qabıllamaw."""
     renewal = AdRenewal.objects.select_for_update().select_related(
         'promotion__property__owner').get(pk=renewal.pk)
     if renewal.status != AdRenewal.STATUS_PENDING:
@@ -136,7 +138,7 @@ def _decidable(renewal):
 
 
 def confirm(renewal, *, actor, via=AdRenewal.VIA_PANEL):
-    """The hotel paid for the next month: the same ad's end date moves one month on."""
+    """Mehmanxana keyingi ay ushın tóledi: sol reklamanıń pitiw sanası bir ayǵa jılısadı."""
     with transaction.atomic():
         renewal = _decidable(renewal)
         promotion = renewal.promotion
@@ -158,7 +160,7 @@ def confirm(renewal, *, actor, via=AdRenewal.VIA_PANEL):
 
 
 def decline(renewal, *, actor, via=AdRenewal.VIA_PANEL):
-    """The hotel did not pay: the ad is removed from the banner now."""
+    """Mehmanxana tólemedi: reklama házir bannerden alıp taslanadı."""
     with transaction.atomic():
         renewal = _decidable(renewal)
         if renewal.promotion.status in ASKED_STATUSES:
@@ -170,6 +172,6 @@ def decline(renewal, *, actor, via=AdRenewal.VIA_PANEL):
 
 
 def run_daily(today=None):
-    """Open the questions, remove what is overdue, then remind the owners of what is still open."""
+    """Sorawlardı ashıw, múddeti ótkenlerdi alıp taslaw, keyin ele ashıq bolǵanlar haqqında iyelerge eskertiw."""
     today = today or business_today()
     return {'opened': open_due(today), 'expired': expire_overdue(today), 'notices': send_reminders(today)}

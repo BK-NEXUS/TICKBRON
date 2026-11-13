@@ -1,4 +1,4 @@
-"""The guest's confirmation e-mail: the whole stay in uz, ru and en. Amounts and dates are the ones stored with the booking."""
+"""Mehmannıń tastıyıqlaw e-mail ı: pútkil turıw uz, ru hám en de. Summalar hám sanalar bron menen birge saqlanǵanlar."""
 from decimal import Decimal
 
 from django.conf import settings
@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 LANGUAGES = ('uz', 'ru', 'en')
 LABELS = {'uz': 'Uz', 'ru': 'Ru', 'en': 'En'}
 
-# One line per fact; {placeholders} are filled from `facts()`. Pay in cash at the hotel (no online payment).
+# Hár fakt ushın bir qatar; {placeholders} `facts()` ten toltırıladı. Mehmanxanada naqd tóleń (onlayn tólem joq).
 LINES = {
     'uz': {
         'intro': "{code} raqamli broningiz tasdiqlandi.",
@@ -43,7 +43,7 @@ LINES = {
 
 
 def money(amount, currency):
-    """49 000 UZS has no decimals; every other currency keeps two."""
+    """49 000 UZS tiń onlıq bólegi joq; basqa hár valyutada eki belgi saqlanadı."""
     amount = Decimal(amount)
     text = f'{amount:,.0f}' if currency == 'UZS' else f'{amount:,.2f}'
     return f'{text.replace(",", " ")} {currency}'
@@ -67,7 +67,7 @@ def facts(booking, language):
 
 def _lines(booking, language):
     values = facts(booking, language)
-    # Bookings made before the arrival time existed have none: that line is left out
+    # Keliw waqtı payda bolmastan burın jasalǵan bronlarda ol joq: sol qatar taslanadı
     keys = [key for key in LINES[language] if key != 'arrival' or values['arrival']]
     return [LINES[language][key].format(**values) for key in keys]
 

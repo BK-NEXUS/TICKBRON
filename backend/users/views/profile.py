@@ -1,4 +1,4 @@
-"""The signed-in user's own profile and session."""
+"""Kirgen paydalanıwshınıń óz profili hám session ı."""
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -14,7 +14,7 @@ from django.utils.translation import gettext as _
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def me(request):
-    """The profile of the signed-in user."""
+    """Kirgen paydalanıwshınıń profili."""
     if request.user.is_authenticated:
         return Response(UserSerializer(request.user).data)
     return Response(
@@ -27,7 +27,7 @@ def me(request):
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
-    """Change name, phone number and contact preferences (whatsapp, telegram, preferred_contact_method)."""
+    """Atın, telefon nomerin hám baylanıs qálewlerin ózgertiw (whatsapp, telegram, preferred_contact_method)."""
     serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -39,7 +39,7 @@ def update_profile(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_session(request):
-    """Tell the SPA whether the current session is still valid, and who it belongs to."""
+    """SPA ǵa házirgi session ele jaramlı ekenin hám kimge tiyisli ekenin aytıw."""
     if request.user.is_authenticated:
         return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
     return Response({'detail': _('No active session found.')}, status=status.HTTP_401_UNAUTHORIZED)

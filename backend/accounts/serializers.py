@@ -1,7 +1,7 @@
 """
-Serializers for the accounts app.
+accounts app ınıń serializer leri.
 
-This module contains serializers for favorites, reviews, notifications, and account history.
+Bul modul favorit ler, sharhlar, bildiriwler hám akkaunt tariyxı serializer lerin óz ishine aladı.
 """
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -15,16 +15,16 @@ from django.utils.translation import gettext as _
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """
-    Serializer for Favorite model.
+    Favorite modeli ushın serializer.
     """
     property_city = serializers.CharField(source='property.city', read_only=True)
     property_country = serializers.CharField(source='property.country', read_only=True)
     property_base_price = serializers.DecimalField(source='property.base_price', read_only=True, max_digits=10, decimal_places=2)
     property_currency = serializers.CharField(source='property.currency', read_only=True)
     property_primary_photo = serializers.SerializerMethodField()
-    # R16: the hotel's "from" price in every currency, like a hotel card ({code: {amount, source}})
+    # R16: mehmanxananıń hár valyutadaǵı "dan" bahası, mehmanxana kartası sıyaqlı ({code: {amount, source}})
     property_prices = serializers.SerializerMethodField()
-    # The property's name lives in its translations; FavoriteViewSet prefetches them
+    # Mehmanxana atı onıń awdarmalarında saqlanadı; FavoriteViewSet olardı aldınan júklep aladı (prefetch)
     property_translations = PropertyTranslationSerializer(
         source='property.translations', many=True, read_only=True
     )
@@ -34,12 +34,12 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'property', 'property_translations', 'property_city',
                   'property_country', 'property_base_price', 'property_currency', 'property_prices',
                   'property_primary_photo', 'notes', 'created_at']
-        # property is fixed at creation: an update would skip the availability check of FavoriteCreateSerializer
+        # property jaratılǵanda belgilenedi: ózgertiw FavoriteCreateSerializer degi bos orın tekseriwin ótkizip jiberer edi
         read_only_fields = ['id', 'user', 'property', 'created_at']
         extra_kwargs = {'notes': {'max_length': 500}}
 
     def get_property_primary_photo(self, obj) -> str | None:
-        """URL of the primary photo; the list view loads it for every favorite in one query."""
+        """Tiykarǵı súwret URL i; dizim view si hár favorit ushın onı bir query menen júkleydi."""
         photos = obj.property.primary_photos if hasattr(obj.property, 'primary_photos') else obj.property.photos.filter(
             is_primary=True, is_deleted=False)
         photo = next(iter(photos), None)
@@ -47,7 +47,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_property_prices(self, obj):
-        """The list view loads the active rate plans of every favorite in a few queries; rates are read once."""
+        """Dizim view si hár favorittiń aktiv rate planların bir neshe query menen júkleydi; bahalar bir márte oqıladı."""
         if not hasattr(self, '_rate_of'):
             self._rate_of = rate_lookup(self.context.get('request'))
         plans = [plan for room_type in getattr(obj.property, 'card_room_types', []) for plan in room_type.rate_plans.all()]
@@ -56,7 +56,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class FavoriteCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating a favorite.
+    Favorit jaratıw ushın serializer.
     """
     class Meta:
         model = Favorite
@@ -64,15 +64,16 @@ class FavoriteCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'notes': {'max_length': 500}}
 
     def validate_property(self, value):
-        """Validate that the property is published."""
+        """Mehmanxananıń járiyalanǵanın tekseredi."""
         if not value.is_active or value.is_deleted or value.status != 'active':
             raise serializers.ValidationError(_("Property is not available for favorites."))
         return value
 
 
 def reviewer_label(user):
-    """How a reviewer is shown to the public: the first name and the initial of the last one ("Aziz K."), never an address."""
-    # Not get_full_name(): without any name it falls back to the e-mail address
+    """Sharh jazıwshı jámiyetshilikke qalay kórsetiledi: atı hám familiyasınıń birinshi háripi ("Aziz K."), hesh qashan mánzil
+    emes."""
+    # get_full_name() emes: atı bolmasa e-mail mánzilge túsip qaladı
     parts = (user.full_name or f'{user.first_name or ""} {user.last_name or ""}').split()
     if not parts:
         return ''
@@ -80,7 +81,7 @@ def reviewer_label(user):
 
 
 def stay_month(review):
-    """The month of the stay the review is about (YYYY-MM), or None when the booking is gone."""
+    """Sharh qaysı turıwǵa tiyisli bolsa, sol ay (YYYY-MM), bron joq bolsa None."""
     return review.booking.check_out.strftime('%Y-%m') if review.booking_id else None
 
 
@@ -89,7 +90,7 @@ RATING_FIELDS = ['overall_rating', 'cleanliness_rating', 'location_rating', 'val
 
 
 class PublicReviewSerializer(serializers.ModelSerializer):
-    """An approved review as every visitor of the hotel page sees it."""
+    """Mehmanxana betine kirgen hár paydalanıwshı kóretuǵın tastıyıqlanǵan sharh."""
     reviewer = serializers.SerializerMethodField()
     stay_month = serializers.SerializerMethodField()
 
@@ -106,7 +107,7 @@ class PublicReviewSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """
-    Serializer for Review model.
+    Review modeli ushın serializer.
     """
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_full_name = serializers.CharField(source='user.get_full_name', read_only=True)
@@ -124,13 +125,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         extra_kwargs = {'comment': {'max_length': 2000}}
 
     def validate_overall_rating(self, value):
-        """Validate overall rating is between 1 and 5."""
+        """Ulıwma bahanıń 1 hám 5 aralıǵında ekenin tekseredi."""
         if not 1 <= value <= 5:
             raise serializers.ValidationError(_("Overall rating must be between 1 and 5."))
         return value
 
     def validate(self, attrs):
-        """Validate category ratings if provided."""
+        """Kategoriya bahaların (berilgen bolsa) tekseredi."""
         rating_fields = ['cleanliness_rating', 'location_rating', 'value_rating',
                         'amenities_rating', 'service_rating']
 
@@ -144,7 +145,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ReviewUpdateSerializer(ReviewSerializer):
     """
-    Serializer for editing a review. The booking and property are fixed at creation.
+    Sharhtı ózgertiw ushın serializer. Bron hám mehmanxana jaratılǵanda belgilenedi.
     """
     class Meta(ReviewSerializer.Meta):
         read_only_fields = ReviewSerializer.Meta.read_only_fields + ['property', 'booking']
@@ -152,9 +153,9 @@ class ReviewUpdateSerializer(ReviewSerializer):
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating a review.
+    Sharh jaratıw ushın serializer.
     """
-    # A review is always tied to one of the reviewer's completed stays
+    # Sharh hárdaym sharh jazıwshınıń juwmaqlanǵan turıwlarınıń birine baylanǵan boladı
     booking = OwnBookingField(required=True, allow_null=False)
 
     class Meta:
@@ -165,24 +166,24 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'comment': {'max_length': 2000}}
 
     def validate_booking(self, value):
-        """Validate that the booking is completed and is not reviewed yet (OwnBookingField checks the owner)."""
+        """Bronnıń juwmaqlanǵanın hám ele sharh jazılmaǵanın tekseredi (iyesin OwnBookingField tekseredi)."""
         if value.status != 'completed':
             raise serializers.ValidationError(_("You can only review completed bookings."))
 
-        # Soft-deleted reviews count too: they still hold the unique (user, booking) row
+        # Óshirilgen (soft-deleted) sharhlar da esapqa alınadı: olar unique (user, booking) qatarın ele ustap turadı
         if Review.objects.filter(booking=value).exists():
             raise serializers.ValidationError(_("This booking has already been reviewed."))
 
         return value
 
     def validate_property(self, value):
-        """Validate that the property exists and is active."""
+        """Mehmanxananıń bar hám aktiv ekenin tekseredi."""
         if not value.is_active or value.is_deleted:
             raise serializers.ValidationError(_("Property is not available for review."))
         return value
 
     def validate(self, attrs):
-        """Validate that the review is for the booked property."""
+        """Sharhtıń bronlanǵan mehmanxana ushın ekenin tekseredi."""
         if attrs['property'].id != attrs['booking'].property_id:
             raise serializers.ValidationError(
                 {'property': _("The review must be for the property of the booking.")}
@@ -192,7 +193,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     """
-    Serializer for Notification model.
+    Notification modeli ushın serializer.
     """
     property_name = serializers.CharField(source='property.display_name', read_only=True, allow_null=True)
     property_slug = serializers.CharField(source='property.slug', read_only=True, allow_null=True)
@@ -209,14 +210,14 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class NotificationUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating notification read status.
+    Bildiriwdiń oqılǵan statusın jańalaw ushın serializer.
     """
     class Meta:
         model = Notification
         fields = ['is_read']
 
     def validate_is_read(self, value):
-        """Ensure read_at is set when marking as read."""
+        """Oqılǵan dep belgilengende read_at ornatılatuǵının támiyinleydi."""
         if value and not self.instance.read_at:
             from django.utils import timezone
             self.instance.read_at = timezone.now()
@@ -225,7 +226,7 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
 
 class AccountHistorySerializer(serializers.ModelSerializer):
     """
-    Serializer for AccountHistory model.
+    AccountHistory modeli ushın serializer.
     """
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_full_name = serializers.CharField(source='user.get_full_name', read_only=True)

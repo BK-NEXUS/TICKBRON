@@ -1,7 +1,8 @@
-# Run manually against a local dev server to smoke-test the core register→login→book→favorites chain. Usage: venv\Scripts\python.exe backend\scripts\smoke_test.py
+# Jergilikli dev serverge qarsı qolda isletip, tiykarǵı register→login→book→favorites shınjırın smoke-test etiw. Paydalanıw:
+# venv\Scripts\python.exe backend\scripts\smoke_test.py
 """
-Comprehensive API Smoke Test for TICKBRON Backend - VERSION 2
-Tests the core register→login→book chain with fresh unique users each run
+TICKBRON Backend ushın tolıq API Smoke Test - 2-NUSQA
+Hár isleniwde jańa unikal paydalanıwshılar menen tiykarǵı register→login→book shınjırın tekseredi
 """
 import os
 import sys
@@ -9,7 +10,7 @@ import django
 import time
 import random
 
-# Setup Django
+# Django di sazlaw
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
@@ -27,7 +28,7 @@ User = get_user_model()
 class APISmokeTestV2:
     def __init__(self):
         self.client = Client()
-        # Override the default testserver host to avoid ALLOWED_HOSTS issues
+        # ALLOWED_HOSTS máselelerinen qashıw ushın ádetdegi testserver host in qayta anıqlaw
         self.client.defaults['HTTP_HOST'] = 'localhost'
         self.test_user = None
         self.test_property = None
@@ -37,18 +38,18 @@ class APISmokeTestV2:
         self.random_suffix = random.randint(1000, 9999)
 
     def get_unique_email(self):
-        """Generate a unique email for this test run"""
+        """Usı test isleniwi ushın unikal e-mail jaratıw"""
         return f"smoketest_{self.timestamp}_{self.random_suffix}@example.com"
 
     def get_unique_phone(self):
-        """Generate a unique phone number for this test run"""
+        """Usı test isleniwi ushın unikal telefon nomerin jaratıw"""
         return f"+99890{self.random_suffix}{self.timestamp % 1000000:06d}"
 
     def setup_test_data(self):
-        """Create test data for smoke tests"""
+        """Smoke test ler ushın test maǵlıwmatın jaratıw"""
         print("\n=== SETTING UP TEST DATA ===")
 
-        # Create super admin
+        # Super admin jaratıw
         self.super_admin, created = User.objects.get_or_create(
             email='admin@smoketest.com',
             defaults={
@@ -67,7 +68,7 @@ class APISmokeTestV2:
             self.super_admin.save()
         print(f"Created/retrieved super admin: {self.super_admin.email}")
 
-        # Create property type
+        # Mehmanxana túrin jaratıw
         property_type, created = PropertyType.objects.get_or_create(
             slug='apartment',
             defaults={
@@ -76,7 +77,7 @@ class APISmokeTestV2:
             }
         )
 
-        # Create test property
+        # Test mehmanxananı jaratıw
         self.test_property, created = Property.objects.get_or_create(
             address_line1='123 Test St',
             defaults={
@@ -94,7 +95,7 @@ class APISmokeTestV2:
         )
         print(f"Created/retrieved test property: {self.test_property.id} - {self.test_property.city}, {self.test_property.country}")
 
-        # Create room type
+        # Xona túrin jaratıw
         room_type, created = RoomType.objects.get_or_create(
             property=self.test_property,
             slug='standard-room',
@@ -108,7 +109,7 @@ class APISmokeTestV2:
             }
         )
 
-        # Create rate plan
+        # Rate plan dı jaratıw
         rate_plan, created = RatePlan.objects.get_or_create(
             room_type=room_type,
             slug='standard-rate',
@@ -123,9 +124,9 @@ class APISmokeTestV2:
             }
         )
 
-        # Create date inventory for testing
+        # Testlew ushın date inventory jaratıw
         today = date.today()
-        # Delete existing inventory for this rate plan
+        # Usı rate plan ushın bar inventory di óshiriw
         DateInventory.objects.filter(rate_plan=rate_plan).delete()
 
         for i in range(30):
@@ -142,7 +143,7 @@ class APISmokeTestV2:
 
         print("Created room type, rate plan, and inventory")
 
-        # R6: a USD hotel can only be booked once an exchange rate exists
+        # R6: USD mehmanxanasın tek valyuta kursı bolǵannan keyin bronlap boladı
         from currency.cbu import tashkent_today
         from currency.models import ExchangeRate
         if not ExchangeRate.objects.filter(currency='USD', status='accepted').exists():
@@ -152,7 +153,7 @@ class APISmokeTestV2:
             print("Stored a demo USD rate (run fetch_exchange_rates for the real one)")
 
     def test_registration(self):
-        """Test user registration with fresh unique user"""
+        """Jańa unikal paydalanıwshı menen paydalanıwshı dizimnen ótiwin testlew"""
         print("\n=== STEP 1: USER REGISTRATION ===")
 
         unique_email = self.get_unique_email()
@@ -181,14 +182,14 @@ class APISmokeTestV2:
         print(f"Response Body: {response.content.decode('utf-8')}")
 
         if response.status_code == 201:
-            # Verify user was created
+            # Paydalanıwshı jaratılǵanın tekseriw
             user_exists = User.objects.filter(email=unique_email).exists()
             if user_exists:
                 self.test_user = User.objects.get(email=unique_email)
                 print(f"\nSUCCESS: User created successfully: {self.test_user.email}")
                 print(f"User ID: {self.test_user.id}")
                 print(f"User is_active: {self.test_user.is_active}")
-                # Store credentials for login test
+                # Kirisiw testi ushın kirisiw maǵlıwmatın saqlaw
                 self.test_user_email = unique_email
                 self.test_user_password = test_password
                 return True
@@ -200,7 +201,7 @@ class APISmokeTestV2:
             return False
 
     def test_password_login(self):
-        """Test password login with the freshly registered user"""
+        """Jańa dizimnen ótken paydalanıwshı menen parol kirisiwin testlew"""
         print("\n=== STEP 2: PASSWORD LOGIN ===")
 
         if not hasattr(self, 'test_user_email'):
@@ -226,19 +227,19 @@ class APISmokeTestV2:
 
         if response.status_code == 200:
             print("\nSUCCESS: Login successful")
-            # Update test_user reference to the authenticated user
+            # test_user siltemesin kirgen paydalanıwshıǵa jańalaw
             self.test_user = User.objects.get(email=self.test_user_email)
             return True
         else:
             print(f"\nFAIL: Login failed with status {response.status_code}")
-            # Investigate why
+            # Sebebin izertlew
             print("\nINVESTIGATION:")
             user = User.objects.filter(email=self.test_user_email).first()
             if user:
                 print(f"User exists in DB: {user.email}")
                 print(f"User is_active: {user.is_active}")
                 print(f"User password hash: {user.password[:50]}...")
-                # Verify password manually
+                # Paroldi qolda tekseriw
                 from django.contrib.auth import check_password
                 if check_password(self.test_user_password, user.password):
                     print("Password hash verification: MATCH")
@@ -249,14 +250,14 @@ class APISmokeTestV2:
             return False
 
     def test_booking_creation(self):
-        """Test booking creation with authenticated session"""
+        """Kirgen session menen bron jaratıwdı testlew"""
         print("\n=== STEP 3: BOOKING CREATION ===")
 
         if not self.test_user or not self.test_property:
             print("SKIPPED: Missing test data")
             return False
 
-        # Get room type and rate plan
+        # Xona túrin hám rate plan dı alıw
         room_type = RoomType.objects.filter(property=self.test_property).first()
         if not room_type:
             print("SKIPPED: No room type available")
@@ -313,7 +314,7 @@ class APISmokeTestV2:
             return False
 
     def test_favorites(self):
-        """Test favorites functionality with authenticated session"""
+        """Kirgen session menen favorit funkciyasın testlew"""
         print("\n=== STEP 4: FAVORITES ===")
 
         if not self.test_user or not self.test_property:
@@ -340,7 +341,7 @@ class APISmokeTestV2:
             return False
 
     def run_full_chain(self):
-        """Run the full register→login→book→favorites chain"""
+        """Tolıq register→login→book→favorites shınjırın isletiw"""
         print("=" * 80)
         print("TICKBRON BACKEND API SMOKE TEST - FULL CHAIN")
         print("=" * 80)
@@ -350,19 +351,19 @@ class APISmokeTestV2:
         try:
             self.setup_test_data()
 
-            # Step 1: Register
+            # 1-qádem: Dizimnen ótiw
             step1_pass = self.test_registration()
 
-            # Step 2: Login
+            # 2-qádem: Kirisiw
             step2_pass = self.test_password_login()
 
-            # Step 3: Create booking
+            # 3-qádem: Bron jaratıw
             step3_pass = self.test_booking_creation()
 
-            # Step 4: Add to favorites
+            # 4-qádem: Favorit ke qosıw
             step4_pass = self.test_favorites()
 
-            # Summary
+            # Juwmaq
             print("\n" + "=" * 80)
             print("FULL CHAIN SUMMARY")
             print("=" * 80)

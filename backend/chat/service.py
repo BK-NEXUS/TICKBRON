@@ -1,4 +1,4 @@
-"""All chat rules live here; views only call these functions."""
+"""Barlıq chat qaǵıydaları usı jerde; view ler tek usı funkciyalardı shaqıradı."""
 import logging
 
 from django.core.exceptions import ValidationError
@@ -12,11 +12,11 @@ from common.validators import validate_free_text
 logger = logging.getLogger(__name__)
 
 MAX_TEXT = 2000
-PAGE = 100  # messages in one answer; a thread is read from the end
+PAGE = 100  # bir juwaptaǵı xabarlar; thread aqırınan oqıladı
 
 
 class ChatError(Exception):
-    """A rule was broken. `code` is a stable name the API returns; `message` is for people."""
+    """Qaǵıyda buzıldı. `code` API qaytaratuǵın turaqlı at; `message` adamlar ushın."""
 
     def __init__(self, code, message=''):
         super().__init__(message or code)
@@ -38,12 +38,12 @@ def clean_text(raw):
 
 
 def conversation_of(user):
-    """The account's own thread, created at the first message."""
+    """Akkauttıń óz thread i, birinshi xabarda jaratıladı."""
     return Conversation.objects.filter(user=user).first()
 
 
 def post(*, conversation, sender, text, from_staff):
-    """Add one message to a thread (the thread's own `last_message_at` and the sender's read mark follow)."""
+    """Thread ke bir xabar qosıw (threadtiń óz `last_message_at` ı hám jiberiwshiniń oqıldı belgisi izinen baradı)."""
     text = clean_text(text)
     with transaction.atomic():
         message = Message.objects.create(conversation=conversation, sender=sender, from_staff=from_staff, text=text)
@@ -55,7 +55,7 @@ def post(*, conversation, sender, text, from_staff):
 
 
 def _queue_notice(message):
-    """Hand the e-mail notice to the worker; a broken queue must not lose or fail the message."""
+    """E-mail xabarlandırıwın worker ge beriw; buzılǵan náwbet xabardı joǵaltpawı yamasa sátsiz etpewi kerek."""
     from chat.tasks import send_chat_notice
 
     try:
@@ -65,7 +65,7 @@ def _queue_notice(message):
 
 
 def post_from_user(user, text):
-    """A guest or owner writes to the team; the thread is created on the first message."""
+    """Mehmann yamasa iye komandaǵa jazadı; thread birinshi xabarda jaratıladı."""
     text = clean_text(text)
     with transaction.atomic():
         conversation, _ = Conversation.objects.get_or_create(user=user, defaults={'last_message_at': timezone.now()})
@@ -73,7 +73,7 @@ def post_from_user(user, text):
 
 
 def messages_after(conversation, after_id=0):
-    """New messages after `after_id`; the first read (after_id 0) gives the last PAGE ones, oldest first."""
+    """`after_id` ten keyingi jańa xabarlar; birinshi oqıw (after_id 0) sońǵı PAGE dániesin beredi, eń eskisi birinshi."""
     queryset = Message.objects.filter(conversation=conversation)
     if after_id:
         return list(queryset.filter(pk__gt=after_id).order_by('id')[:PAGE])
@@ -83,12 +83,12 @@ def messages_after(conversation, after_id=0):
 def mark_read(conversation, *, staff):
     newest = Message.objects.filter(conversation=conversation).order_by('-id').values_list('pk', flat=True).first() or 0
     field = 'staff_read_id' if staff else 'user_read_id'
-    # Never moves backwards, even when two readers race
+    # Hesh qashan artqa júrmeydi, eki oqıwshı jarısqanda da
     Conversation.objects.filter(pk=conversation.pk, **{f'{field}__lt': newest}).update(**{field: newest})
 
 
 def unread_for_user(user):
-    """Messages from the team the account has not read yet."""
+    """Komandadan kelgen, akkaunt ele oqımaǵan xabarlar."""
     return Message.objects.filter(
         conversation__user=user, from_staff=True, pk__gt=F('conversation__user_read_id')).count()
 
@@ -99,7 +99,7 @@ def _unseen_by_staff():
 
 
 def inbox(*, search='', unread_only=False):
-    """Threads for the admin screen, newest activity first, with how many messages the team has not read."""
+    """Admin ekranı ushın thread ler, eń sońǵı háreket birinshi, komanda neshe xabardı oqımaǵanı menen."""
     queryset = Conversation.objects.select_related('user', 'user__role').annotate(
         unread=Count('messages', filter=Q(messages__from_staff=False, messages__pk__gt=F('staff_read_id'))))
     if search:
@@ -112,5 +112,5 @@ def inbox(*, search='', unread_only=False):
 
 
 def unread_threads_for_staff():
-    """How many threads have a message the team has not read (the badge on the admin tab)."""
+    """Neshe thread te komanda oqımaǵan xabar bar (admin tabındaǵı belgi)."""
     return Conversation.objects.filter(Exists(_unseen_by_staff())).count()

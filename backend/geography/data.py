@@ -1,13 +1,13 @@
 """
-Initial geography data: Uzbekistan in full (14 first-level regions), plus the regions of Kazakhstan
-and Turkey used by the demo data and a few major ones. The city lists stay only for the old migration
-geography/0002, which loads them while the city table still exists; the loader skips them otherwise.
+Dáslepki geografiya maǵlıwmatı: Ózbekstan tolıq (14 birinshi dárejeli region), hám demo maǵlıwmat paydalanatuǵın
+Qazaqstan hám Túrkiya regionları hám bir neshe úlkenleri. Qala dizimleri tek eski geography/0002
+migration ushın qaladı, ol qala kestesi ele bar waqıtta olardı júkleydi; basqa waqıtta júkleıwshi olardı ótkizip jiberedi.
 
-NOTE: the Uzbek (Latin) and Russian names below need a review by native speakers.
+ESKERTIW: tómendegi ózbek (Latin) hám rus atların ana tilinde sóylewshiler tekserip shıǵıwı kerek.
 
-Each name triple is (uz, ru, en). Loaded by migration geography/0002 and by
-`python manage.py load_geography`; rows are matched by country code / slug and never
-overwritten, so edits made in the admin Geography screen are kept.
+Hár at úshligi (uz, ru, en). geography/0002 migration hám
+`python manage.py load_geography` júkleydi; qatarlar mámleket kodı / slug boyınsha tabıladı hám hesh qashan
+qayta jazılmaydı, sol sebepli admin Geography ekranında islengen ózgerisler saqlanadı.
 """
 from django.utils.text import slugify
 
@@ -112,8 +112,8 @@ GEOGRAPHY = [
 ]
 
 
-# Extra spellings used only to map old free-text locations (geography/mapping.py).
-# The uz/ru/en names, the ISO code and "X Region" -> "X" are matched without listing them.
+# Tek eski erkin tekst jaylasıwlardı sáykeslew ushın paydalanılatuǵın qosımsha jazılıwlar (geography/mapping.py).
+# uz/ru/en atları, ISO kod hám "X Region" -> "X" olardı dizimlemesten sáykeslenedi.
 COUNTRY_ALIASES = {
     'UZ': ['UZB', 'Uzbekiston', 'Ўзбекистон', 'Republic of Uzbekistan', "O'zbekiston Respublikasi"],
     'KZ': ['KAZ', 'Kazakstan', 'Qazaqstan', 'Қазақстан', 'Republic of Kazakhstan'],
@@ -121,7 +121,7 @@ COUNTRY_ALIASES = {
 }
 REGION_ALIASES = {
     'uz-republic-of-karakalpakstan': ['Karakalpakstan', "Qoraqalpog'iston", 'Каракалпакстан'],
-    'uz-tashkent-city': ['Toshkent shahar', 'Tashkent city'],  # the old English name stays an alias
+    'uz-tashkent-city': ['Toshkent shahar', 'Tashkent city'],  # eski inglizsha at alias bolıp qaladı
 }
 CITY_ALIASES = {
     'uz-tashkent-city-tashkent': ['Toshkent shahri', 'Tashkent city'],
@@ -132,9 +132,9 @@ CITY_ALIASES = {
 }
 
 
-# English names of Uzbek regions that were renamed by migration geography/0003 (2026-10-02) to the plain
-# form ("Samarkand Region" -> "Samarkand"). A region's slug is a stable key set once, so it keeps the
-# slug made from the old name; load_geography must keep finding those rows by it.
+# geography/0003 migration (2026-10-02) arqalı ápiwayı formaǵa ("Samarkand Region" -> "Samarkand") ózgertilgen Ózbekstan
+# regionlarınıń inglizsha atları. Regionnıń slug ı bir márte belgilenetuǵın turaqlı kilt, sol sebepli ol eski attan
+# jasalǵan slug dı saqlaydı; load_geography sol qatarlardı usı arqalı tabıwın dawam etiwi kerek.
 RENAMED_UZ_REGIONS = {
     'Tashkent': 'Tashkent City',
     'Samarkand': 'Samarkand Region',
@@ -163,11 +163,11 @@ def city_slug(region_slug_value, name_en):
 
 def load_geography(country_model, region_model, city_model=None):
     """
-    Create the initial rows that do not exist yet; never change existing ones.
+    Ele joq dáslepki qatarlardı jaratıw; bar bolǵanların hesh qashan ózgertpew.
 
-    Takes the model classes so a data migration can pass its historical models
-    (which do not run the models' own save(): codes and slugs are set here).
-    Returns (countries, regions, cities) created; cities stays 0 without a city model.
+    Model klaslardı aladı, sonda data migration óziniń tariyxıy model lerin bere aladı
+    (olar model lerdiń óz save() in islemeydi: kodlar hám slug lar usı jerde belgilenedi).
+    (mámleketler, regionlar, qalalar) jaratılǵanın qaytaradı; qala modeli joq bolsa qalalar 0 bolıp qaladı.
     """
     created = [0, 0, 0]
     for country_order, spec in enumerate(GEOGRAPHY, start=1):

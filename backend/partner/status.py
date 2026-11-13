@@ -1,16 +1,16 @@
 """
-Partner Status tab (the hotel owner's own properties only).
+Partner Status tabı (tek mehmanxana iyesiniń óz mehmanxanaları).
 
-GET /api/v1/partner/status/                  totals since the account was created (or for
-    ?period=, same values as the admin Status incl. custom ?from=&to=), a per-property
-    breakdown, a series for ?granularity=day|week|month|year, the reconciliation block and the
-    monthly series for ?year= (default: the current year). ?export=csv downloads the
-    reconciliation table (one row per own hotel and window).
-GET /api/v1/partner/status/hotels/{id}/      the same for one own hotel (another owner's: 404).
-GET /api/v1/partner/status/arrivals/?day=today|tomorrow   confirmed check-ins of own hotels
-    (guest name, booking reference, room types, rooms, nights, special requests, the whole phone
-    number, no email).
-Definitions of counted bookings, guests, nights, stays and revenue: bookings/metrics.py.
+GET /api/v1/partner/status/                  akkaunt jaratılǵannan beri jıynaqlar (yamasa
+    ?period= ushın, admin Status penen birdey mánisler, custom ?from=&to= de), hár
+    mehmanxana boyınsha bóliw, ?granularity=day|week|month|year ushın seriya, sáykeslestiriw bloǵı hám
+    ?year= ushın ayliq seriya (ádetde házirgi jıl). ?export=csv sáykeslestiriw
+    kestesin júklep aladı (hár óz mehmanxanası hám oyna ushın bir qatar).
+GET /api/v1/partner/status/hotels/{id}/      bir óz mehmanxana ushın sol (basqa iyeniń: 404).
+GET /api/v1/partner/status/arrivals/?day=today|tomorrow   óz mehmanxanalarınıń tastıyıqlanǵan kiriwleri
+    (mehmann atı, bron reference i, xona túrleri, xonalar, túnler, arnawlı sorawlar, tolıq telefon
+    nomeri, e-mail joq).
+Esaplanatuǵın bronlar, mehmanlar, túnler, turıwlar hám dáramat anıqlamaları: bookings/metrics.py.
 """
 from datetime import timedelta
 
@@ -46,7 +46,7 @@ def own_properties(user):
 
 
 def _common(request):
-    """(period, date_range, year, granularity) or a 400 Response."""
+    """(period, date_range, year, granularity) yamasa 400 Response."""
     try:
         period, date_range = period_from_request(request)
     except InvalidPeriod as error:
@@ -63,7 +63,7 @@ def _common(request):
 
 
 def _numbers(scope, period, date_range, year, granularity, properties):
-    """The shared part of the summary and the hotel detail, or a 400 Response."""
+    """Qısqasha mazmunnıń hám mehmanxana tolıq maǵlıwmatınıń ortaq bólegi, yamasa 400 Response."""
     try:
         series = metrics.series(scope, date_range, granularity)
     except InvalidPeriod as error:
@@ -179,7 +179,7 @@ class ArrivalsPagination(PageNumberPagination):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_status_arrivals(request):
-    """Confirmed bookings of own hotels checking in ?day=today|tomorrow (Tashkent); ?property= one own hotel."""
+    """?day=today|tomorrow (Tashkent) kiretuǵın óz mehmanxanalarınıń tastıyıqlanǵan bronları; ?property= bir óz mehmanxana."""
     day_param = (request.query_params.get('day') or 'today').strip()
     if day_param not in ('today', 'tomorrow'):
         return bad_request('day', 'day must be "today" or "tomorrow".')
@@ -230,7 +230,7 @@ def partner_status_arrivals(request):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_status_rooms(request):
-    """Room types of the owner's hotels (?property= one hotel) ranked by counted bookings in ?period=."""
+    """Iyeniń mehmanxanaları xona túrleri (?property= bir mehmanxana) ?period= degi esaplanǵan bronlar boyınsha reytingli."""
     try:
         period, date_range = period_from_request(request)
     except InvalidPeriod as error:

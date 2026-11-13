@@ -1,5 +1,5 @@
 """
-Request helpers shared across apps.
+App lar ortaq paydalanatuǵın request járdemshileri.
 """
 import ipaddress
 from collections.abc import Mapping
@@ -10,16 +10,16 @@ from django.conf import settings
 
 def get_client_ip(request):
     """
-    Return the client IP address, trusting X-Forwarded-For only behind known proxies.
+    Klient IP mánzilin qaytaradı, X-Forwarded-For ga tek belgili proxy lerdiń artında isenedi.
 
-    settings.NUM_PROXIES is the number of reverse proxies in front of the app
-    that append to X-Forwarded-For. With 0 (the default), the header is
-    client-controlled and ignored, and REMOTE_ADDR is used. With N > 0, the
-    address N entries from the right is used, which is the one the outermost
-    trusted proxy saw; entries further left are whatever the client sent.
-    This matches DRF's throttling (REST_FRAMEWORK['NUM_PROXIES']).
+    settings.NUM_PROXIES app aldındaǵı X-Forwarded-For ge qosatuǵın
+    reverse proxy ler sanı. 0 (ádetde) bolsa, header
+    klient basqaradı hám itibarǵa alınbaydı, REMOTE_ADDR paydalanıladı. N > 0 bolsa,
+    oń jaqtan N-shi jazba paydalanıladı, ol eń sırtqı isenimli
+    proxy kórgen mánzil; shepte kóbirek jazbalar klient jibergen nárse.
+    Bul DRF tiń throttling i menen sáykes keledi (REST_FRAMEWORK['NUM_PROXIES']).
 
-    Falls back to REMOTE_ADDR if the chosen value is not a valid IP address.
+    Tańlanǵan mánis jaramlı IP mánzil bolmasa REMOTE_ADDR ge qaytadı.
     """
     remote_addr = request.META.get('REMOTE_ADDR')
     num_proxies = getattr(settings, 'NUM_PROXIES', 0) or 0
@@ -41,12 +41,12 @@ def get_client_ip(request):
 
 def network_key(ip):
     """
-    What limits and lockouts count a client by: the address for IPv4, the /64 block for IPv6.
+    Limit ler hám lockout lar klientti nege qarap sanaydı: IPv4 ushın mánzil, IPv6 ushın /64 blok.
 
-    A home or phone connection gets a whole /64 from its provider and can switch address inside it
-    at will, so counting single IPv6 addresses would let one visitor dodge every limit. An IPv4
-    address written as IPv6 (::ffff:1.2.3.4) is the IPv4 address. Anything that is not an address is
-    returned unchanged (it is only a cache key).
+    Úy yamasa telefon baylanısı provayderinen pútkil /64 aladı hám onıń ishinde mánzildi
+    qálegen waqıtta almastıra aladı, sol sebepli jeke IPv6 mánzillerdi sanaw bir kelwshige hár limit ten qutılıwǵa
+    múmkinshilik berer edi. IPv6 retinde jazılǵan IPv4 mánzil (::ffff:1.2.3.4) IPv4 mánzil. Mánzil bolmaǵan hár nárse
+    ózgerissiz qaytarıladı (ol tek kesh kilti).
     """
     if not ip:
         return ip
@@ -62,20 +62,20 @@ def network_key(ip):
 
 
 def object_body(request):
-    """The JSON object a client sent, or {} when it sent something else (a list, a text, a number).
+    """Klient jibergen JSON obyekti, yamasa basqa nárse (dizim, tekst, san) jiberse {}.
 
-    Views read single fields from the body; `request.data.get` on a list is a 500 instead of the 400 the caller earns.
+    View ler denedegi jeke maydanlardı oqıydı; dizimde `request.data.get` shaqırıwdan shaqırıwshı layıq 400 emes 500 aladı.
     """
     return request.data if isinstance(request.data, Mapping) else {}
 
 
-# The address of the request being handled, set by RequestLoggingMiddleware, so code far from the
-# view (audit rows) can record where an action came from without every caller passing the request.
+# RequestLoggingMiddleware belgilegen, islenip atırǵan sorawdıń mánzili, sonda view den uzaq kod
+# (audit qatarları) hár shaqırıwshı sorawdı bermesten háreket qayaqtan kelgenin jaza aladı.
 _current_ip = ContextVar('current_client_ip', default=None)
 
 
 def set_current_ip(ip):
-    """Remember the client address for this request; returns the token for reset_current_ip."""
+    """Usı soraw ushın klient mánzilin esinde saqlaw; reset_current_ip ushın token qaytaradı."""
     return _current_ip.set(ip)
 
 
@@ -84,5 +84,5 @@ def reset_current_ip(token):
 
 
 def current_ip():
-    """The client address of the request being handled, or None outside a request (Celery, shell)."""
+    """Islenip atırǵan sorawdıń klient mánzili, yamasa soraw sırtında (Celery, shell) None."""
     return _current_ip.get()

@@ -1,9 +1,9 @@
 """
-The one place a stay is priced.
+Turıw bahalanatuǵın birden-bir orın.
 
-Booking.create_booking charges what quote_stay returns, and the public quote
-endpoint shows the same result before booking, so the total a guest sees is
-the amount they pay.
+Booking.create_booking quote_stay qaytarǵan summanı alıp, ashıq quote endpoint i
+bronlawdan aldın birdey nátiyjeni kórsetedi, sol sebepli mehmann kóretuǵın jámi
+summa ol tóleytuǵın summa menen birdey.
 """
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -16,8 +16,8 @@ from django.db import IntegrityError, transaction
 from common.money import quantize
 from django.utils.translation import gettext as _
 
-# Longest stay anyone can quote or book, whatever the rate plan allows. Without it a
-# far-away check_out made quote_stay build (and lock) one row per night (R4 security review).
+# Rate plan ne ruxsat bersede, qálegen adam quote jasay alatuǵın yamasa bronlay alatuǵın eń uzın turıw. Bunsız
+# uzaqtaǵı check_out quote_stay ge hár tún ushın bir qatar qurıwǵa (hám qulıplawǵa) májbúr etti (R4 qáwipsizlik tekseriwi).
 MAX_STAY_NIGHTS = 365
 
 
@@ -27,14 +27,14 @@ class StayQuote:
     check_out: date
     number_of_rooms: int
     currency: str
-    # (date, price of one room that night), in date order
+    # (sana, sol túngi bir xonanıń bahası), sana tártibinde
     nights: List[tuple] = field(default_factory=list)
-    # The DateInventory rows: price and rate-plan rules (open/closed, min/max stay)
+    # DateInventory qatarları: baha hám rate plan qaǵıydaları (ashıq/jabıq, eń kem/eń kóp turıw)
     inventory: list = field(default_factory=list)
-    # The RoomInventory rows: physical room count, shared by every rate plan of the
-    # room type (locked only when quote_stay(..., lock=True))
+    # RoomInventory qatarları: fizikalıq xona sanı, xona túriniń hár rate plan ı ortaq
+    # paydalanadı (tek quote_stay(..., lock=True) bolǵanda qulıplanadı)
     room_inventory: list = field(default_factory=list)
-    # R16: the owner's own price of the rate plan per currency, the main one included
+    # R16: iyeniń rate plan ushın hár valyutadaǵı óz bahası, tiykarǵısı da kiredi
     owner_prices: dict = field(default_factory=dict)
 
     @property
@@ -43,7 +43,7 @@ class StayQuote:
 
     @property
     def nightly_total(self):
-        """Price of one room for the whole stay."""
+        """Pútkil turıw ushın bir xonanıń bahası."""
         return sum((price for _night, price in self.nights), Decimal('0'))
 
     @property
@@ -52,12 +52,12 @@ class StayQuote:
 
     def total_in(self, currency, rate_of=None):
         """
-        (amount, source) of the whole stay in `currency`, rounded once to the currency's unit.
+        `currency` degi pútkil turıwdıń (amount, source) i, valyutanıń birligine bir márte jumalaqlanǵan.
 
-        source is 'main' (the plan's own currency), 'owner' (the owner entered a price in that
-        currency; a night with its own price keeps the plan's ratio, e.g. +15% in dollars is +15%
-        in so'm) or 'converted' (no owner price: the main amount at the CBU rates).
-        (None, 'converted') when a rate is missing.
+        source: 'main' (plannıń óz valyutası), 'owner' (iye sol valyutada baha kirgizgen; óz bahası bar
+        tún plannıń qatnasın saqlaydı, mısalı dollarda +15% bul somda da +15%)
+        yamasa 'converted' (iye bahası joq: tiykarǵı summa CBU kursları boyınsha).
+        Kurs joq bolsa (None, 'converted').
         """
         rate_of = rate_of or current_uzs_rate
         total = Decimal('0')
@@ -70,7 +70,7 @@ class StayQuote:
         return quantize(total * self.number_of_rooms, currency), source
 
     def nights_in(self, currency, rate_of=None):
-        """[(date, price of one room)] in `currency`, each rounded for display; None when a rate is missing."""
+        """`currency` degi [(sana, bir xonanıń bahası)], hár biri kórsetiw ushın jumalaqlanǵan; kurs joq bolsa None."""
         rate_of = rate_of or current_uzs_rate
         rows = []
         for night, price in self.nights:
@@ -82,7 +82,7 @@ class StayQuote:
 
 
 def current_uzs_rate(currency):
-    """so'm per one unit of `currency` from the database, or None without an accepted rate."""
+    """Database den `currency` diń bir birligine som; qabıllanǵan kurs joq bolsa None."""
     from currency.rates import current_rate
 
     info = current_rate(currency)
@@ -90,7 +90,7 @@ def current_uzs_rate(currency):
 
 
 def night_price_in(main, owner_prices, price, currency, rate_of):
-    """(unrounded price of one room-night in `currency`, source). See StayQuote.total_in."""
+    """`currency` degi bir xona-túnniń (jumalaqlanbaǵan baha, source). Qarań: StayQuote.total_in."""
     if currency == main:
         return price, 'main'
     if currency in owner_prices:
@@ -104,15 +104,15 @@ def night_price_in(main, owner_prices, price, currency, rate_of):
 
 
 def owner_prices_of(rate_plan):
-    """{currency: price} the owner entered for a rate plan, the main price included."""
+    """Iye rate plan ushın kirgizgen {valyuta: baha}, tiykarǵı baha da kiredi."""
     return {rate_plan.currency: rate_plan.base_price,
             **{row.currency: row.amount for row in rate_plan.prices.all()}}
 
 
 def rate_lookup(request=None):
     """
-    A `rate_of(code)` for the price functions: so'm per one unit, looked up once per currency (and, with a
-    request, once per request via currency.rates.rate_for_request); None without an accepted rate.
+    Baha funkciyaları ushın `rate_of(code)`: bir birlikke som, hár valyuta ushın bir márte izlenedi (hám soraw bolsa,
+    hár soraw ushın bir márte currency.rates.rate_for_request arqalı); qabıllanǵan kurs joq bolsa None.
     """
     from currency.rates import current_rate, rate_for_request
 
@@ -136,9 +136,10 @@ def _listing(prices_by_code):
 
 def property_price_list(prop, plans, rate_of=None):
     """
-    A hotel's "from" price in every supported currency for its cards: the lowest price of its active rate
-    plans in that currency (the owner's own, or a conversion), or the hotel's own price converted when it has
-    no plan. Same shape as price_list. `plans` are the hotel's active rate plans (prices prefetched).
+    Mehmanxananıń kartaları ushın hár qollap-quwatlanatuǵın valyutadaǵı "dan" bahası: sol valyutadaǵı aktiv rate
+    plan larınıń eń arzan bahası (iyeniń óz bahası yamasa konvertaciya), yamasa plan joq bolsa
+    mehmanxananıń óz bahası konvertaciyalanǵan. price_list penen birdey forma. `plans` mehmanxananıń aktiv rate plan ları
+    (bahalar aldınan júklengen).
     """
     from common.money import SUPPORTED_BASE_CURRENCIES
 
@@ -155,8 +156,8 @@ def property_price_list(prop, plans, rate_of=None):
 
 def price_list(rate_plan, rate_of=None):
     """
-    The rate plan's price in every supported currency for the API:
-    {currency: {'amount': '1250000.00' or None, 'source': 'main' | 'owner' | 'converted'}}.
+    API ushın rate plannıń hár qollap-quwatlanatuǵın valyutadaǵı bahası:
+    {valyuta: {'amount': '1250000.00' yamasa None, 'source': 'main' | 'owner' | 'converted'}}.
     """
     from common.money import SUPPORTED_BASE_CURRENCIES
 
@@ -178,13 +179,13 @@ def _nights(check_in, check_out):
 
 def _room_inventory_rows(room_type, nights, lock=False):
     """
-    One RoomInventory row per night for this room type. A night with no row
-    yet is unmanaged: it is open with the room type's full total_rooms.
+    Usı xona túri ushın hár túnge bir RoomInventory qatarı. Ele qatarı joq
+    tún basqarılmaydı: ol xona túriniń tolıq total_rooms ı menen ashıq.
 
-    With lock=False the missing rows are not written, only returned as
-    in-memory defaults (safe for a read-only quote preview). With lock=True
-    they are select_for_update()'d, creating (and locking) any that are
-    still missing -- call inside transaction.atomic().
+    lock=False bolsa, joq qatarlar jazılmaydı, tek jaddaǵı ádetdegi mánis retinde
+    qaytarıladı (tek oqıw quote aldınan qarawı ushın qáwipsiz). lock=True bolsa
+    ele joq bolǵanları select_for_update() etiledi, jaratıladı (hám qulıplanadı) --
+    transaction.atomic() ishinde shaqırıń.
     """
     from properties.models import RoomInventory
 
@@ -211,23 +212,24 @@ def _room_inventory_rows(room_type, nights, lock=False):
                     room_type=room_type, date=night, available_rooms=room_type.total_rooms,
                 )
         except IntegrityError:
-            # Lost the race to create it; the winner's row is now committed and lockable.
+            # Jaratıw jarısınan jeńiledi; jeńimpazdıń qatarı endi saqlanǵan hám qulıplanatuǵın.
             rows[night] = RoomInventory.objects.select_for_update().get(room_type=room_type, date=night)
     return rows
 
 
 def _refused(field, code, message, **params):
-    """A refusal: the English text stays, and the code with its values lets the site say it in the user's language."""
+    """Biykar etiw: inglizsha tekst qaladı, al kod hám onıń mánisleri saytqa paydalanıwshınıń tilinde aytıwǵa múmkinshilik
+    beredi."""
     return ValidationError({field: ValidationError(message, code=code, params=params)})
 
 
 def _refusal(code, message, night, **params):
-    """A refusal about one night of the stay."""
+    """Turıwdıń bir túni haqqında biykar etiw."""
     return _refused('availability', code, message, date=night.isoformat(), **params)
 
 
 def refusal_reason(error):
-    """{'code', 'params'} of the first refusal that has a code, or None when the refusal has none."""
+    """Kodı bar birinshi biykar etiwdiń {'code', 'params'} ı, yamasa biykar etiwde kod joq bolsa None."""
     for messages in getattr(error, 'error_dict', {}).values():
         for message in messages:
             if getattr(message, 'code', None):
@@ -237,14 +239,14 @@ def refusal_reason(error):
 
 def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     """
-    Price a stay: each night costs its own inventory price, or the rate plan's
-    base price when the night has none. Every night must have its rate plan
-    open (DateInventory) with enough physical rooms left (RoomInventory,
-    shared by every rate plan of the room type -- audit #31), and the stay
-    must meet the rate plan's and each night's minimum/maximum stay.
+    Turıwdı bahalaw: hár tún óziniń inventory bahası menen, yamasa túnde baha joq bolsa
+    rate plannıń tiykarǵı bahası menen turadı. Hár túnde rate plan ashıq bolıwı kerek
+    (DateInventory) hám jetkilikli fizikalıq xona qalıwı kerek (RoomInventory,
+    xona túriniń hár rate plan ı ortaq -- audit #31), hám turıw rate plannıń hám hár túnniń
+    eń kem/eń kóp turıw shártlerine sáykes bolıwı kerek.
 
-    Raises ValidationError naming the field and, for availability, the date.
-    With lock=True the inventory rows are locked (call inside transaction.atomic()).
+    Maydandı hám, bos orın ushın, sanasın atawshı ValidationError kóteredi.
+    lock=True bolsa inventory qatarları qulıplanadı (transaction.atomic() ishinde shaqırıń).
     """
     from properties.models import DateInventory
 

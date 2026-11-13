@@ -1,4 +1,4 @@
-"""Shrinking of the pictures hotel owners upload."""
+"""Mehmanxana iyeleri júkleytuǵın súwretlerdi kishireytiw."""
 import io
 import logging
 import os
@@ -8,10 +8,11 @@ from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
-# The longest side a stored photo keeps: sharp on a 1440 px screen, a fraction of a phone photo's size
+# Saqlanǵan súwret saqlaytuǵın eń uzın tárep: 1440 px ekranda anıq, telefon súwretiniń kishkene bólegi
 MAX_SIDE = 1600
 QUALITY = 82
-# Photos and logos are stored as WebP (about a third smaller than JPEG); a GIF may be animated, so it stays a GIF
+# Súwretler hám logotip ler WebP retinde saqlanadı (JPEG ten shama menen úshten bir kishi); GIF animaciyalı bolıwı múmkin, sol
+# sebepli GIF bolıp qaladı
 STORED_AS = {'JPEG': 'WEBP', 'PNG': 'WEBP', 'WEBP': 'WEBP', 'GIF': 'GIF'}
 EXTENSION = {'WEBP': '.webp', 'GIF': '.gif', 'JPEG': '.jpg', 'PNG': '.png'}
 SAVE_OPTIONS = {
@@ -24,12 +25,12 @@ SAVE_OPTIONS = {
 
 def shrink_upload(upload, max_side=MAX_SIDE, keep_format=False):
     """
-    The same upload with a picture no bigger than `max_side`, stored as WebP (a GIF stays a GIF); the name ends with
-    what the file really is (a PNG sent as photo.jpg is stored as photo.webp).
+    `max_side` ten úlken bolmaǵan súwret penen sol júkleniw, WebP retinde saqlanadı (GIF GIF bolıp qaladı); at
+    fayldıń haqıyqıy túri menen pitedi (photo.jpg dep jiberilgen PNG photo.webp retinde saqlanadı).
 
-    Re-saving also drops the camera's hidden data (place, time, device); the turn it asked for is applied first.
-    `keep_format` leaves a JPEG a JPEG and a PNG a PNG, for files that must keep their name.
-    Something Pillow cannot read is handed back as it came (the callers have already checked it is a picture).
+    Qayta saqlaw kameranıń jasırın maǵlıwmatın (orın, waqıt, qurılma) da taslaydı; ol soraǵan burıw aldın qollanıladı.
+    `keep_format` JPEG di JPEG, PNG di PNG qaldıradı, atın saqlaw kerek fayllar ushın.
+    Pillow oqıy almaǵan nárse qanday kelse sonday qaytarıladı (shaqırıwshılar onıń súwret ekenin aldınan tekserip bolǵan).
     """
     try:
         upload.seek(0)

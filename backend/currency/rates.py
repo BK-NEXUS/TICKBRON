@@ -1,7 +1,7 @@
 """
-Reading the rate to use (R6). Database only: this module never touches the network,
-so it is safe in request handlers. The rate itself is fetched by currency.cbu in
-the scheduled task.
+Paydalanatuǵın kursı oqıw (R6). Tek database: bul modul hesh qashan tarmaqqa tiymeydi,
+sol sebepli soraw handler lerinde qáwipsiz. Kurstıń ózi rejelestirilgen task ta
+currency.cbu arqalı alınadı.
 """
 import logging
 from dataclasses import dataclass
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExchangeRateUnavailable(APIException):
-    """No accepted rate yet for a non-UZS property: it cannot be charged in UZS (R6 decision A)."""
+    """UZS emes mehmanxana ushın ele qabıllanǵan kurs joq: ol UZS de alınıp bolmaydı (R6 A sheshimi)."""
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_code = 'exchange_rate_unavailable'
     default_detail = ("This hotel is priced in a foreign currency and today's exchange rate is not available "
@@ -30,9 +30,9 @@ class ExchangeRateUnavailable(APIException):
 @dataclass(frozen=True)
 class RateInfo:
     currency: str
-    rate: Decimal            # UZS per one unit
+    rate: Decimal            # bir birlikke UZS
     date: Optional[date]
-    source: str              # 'cbu.uz' or 'identity'
+    source: str              # 'cbu.uz' yamasa 'identity'
     stale: bool
     exchange_rate_id: Optional[int] = None
 
@@ -43,10 +43,10 @@ class RateInfo:
 
 def current_rate(currency, today=None):
     """
-    The rate to convert `currency` to UZS now, or None when no accepted rate exists yet.
+    `currency` di UZS ke házir ótkiziw kursı, yamasa qabıllanǵan kurs ele joq bolsa None.
 
-    UZS needs no rate. A rate older than FX_STALE_AFTER_DAYS is still returned, with
-    stale=True and a warning in the log.
+    UZS ke kurs kerek emes. FX_STALE_AFTER_DAYS tan eski kurs ele qaytarıladı,
+    stale=True hám log qa eskertiw menen.
     """
     from currency.cbu import tashkent_today
     from currency.models import ExchangeRate
@@ -61,7 +61,7 @@ def current_rate(currency, today=None):
 
 def _rate_info(row, today):
     stale = row.rate_date < today - timedelta(days=settings.FX_STALE_AFTER_DAYS)
-    # Logged at most once per hour and rate date (cache.add is a no-op while the key exists)
+    # Saatına hám kurs sanasına eń kóbi bir márte log qa jazıladı (kilt bar waqıtta cache.add ámel emes)
     if stale and cache.add(f'fx-stale-warning:{row.currency}:{row.rate_date}', 1, 3600):
         logger.warning(f'{row.currency} exchange rate of {row.rate_date} is stale (older than '
                        f'{settings.FX_STALE_AFTER_DAYS} days); check the CBU fetch task')
@@ -70,8 +70,8 @@ def _rate_info(row, today):
 
 def current_rates(today=None):
     """
-    {currency: RateInfo} for every supported currency in ONE query (R16: a page can show prices in
-    four currencies); a currency without an accepted rate is missing. Same rule as current_rate.
+    HÁR qollap-quwatlanatuǵın valyuta ushın {valyuta: RateInfo} BIR query de (R16: bet tórt
+    valyutada baha kórsete aladı); qabıllanǵan kursı joq valyuta joq boladı. current_rate penen birdey qaǵıyda.
     """
     from common.money import SUPPORTED_BASE_CURRENCIES
     from currency.cbu import tashkent_today
@@ -88,7 +88,7 @@ def current_rates(today=None):
 
 
 def rate_for_request(request, currency):
-    """The rate of `currency`, from all rates loaded once per request (one query, never per row)."""
+    """`currency` kursı, hár soraw ushın bir márte júklengen barlıq kurslardan (bir query, hesh qashan hár qatar ushın emes)."""
     rates = request.__dict__.get('_tickbron_rates')
     if rates is None:
         rates = request.__dict__['_tickbron_rates'] = current_rates()
@@ -97,9 +97,9 @@ def rate_for_request(request, currency):
 
 def uzs_amount(request, amount, currency, key):
     """
-    `amount` in `currency` shown in so'm with the rate behind it, for API responses:
-    {key: "2354590.00" or None, 'exchange_rate': {...} or None}. UZS needs no rate
-    (exchange_rate None); no accepted rate yet gives None for both.
+    API juwapları ushın `currency` degi `amount` onıń artındaǵı kurs penen somda kórsetilgen:
+    {key: "2354590.00" yamasa None, 'exchange_rate': {...} yamasa None}. UZS ke kurs kerek emes
+    (exchange_rate None); qabıllanǵan kurs ele joq bolsa ekewi de None.
     """
     from common.money import quantize, to_uzs
 

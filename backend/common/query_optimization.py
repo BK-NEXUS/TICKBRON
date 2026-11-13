@@ -1,7 +1,7 @@
 """
-Query optimization utilities for TICKBRON Backend.
+TICKBRON Backend ushın query optimizaciya qurallar.
 
-Provides helper functions for database query optimization and monitoring.
+Database query optimizaciyası hám monitoring ushın járdemshi funkciyalardı usınadı.
 """
 import logging
 from django.db import connection, reset_queries
@@ -12,9 +12,9 @@ logger = logging.getLogger('tickbron')
 
 def log_query_count(func):
     """
-    Decorator to log database query count for views.
+    View ler ushın database query sanın log qa jazatuǵın decorator.
 
-    Usage:
+    Paydalanıw:
         @log_query_count
         def my_view(request):
             ...
@@ -26,7 +26,7 @@ def log_query_count(func):
             query_count = len(connection.queries)
             logger.info(f"Query count for {func.__name__}: {query_count}")
 
-            # Log slow queries (> 100ms)
+            # Sekin query lerdi log qa jazıw (> 100ms)
             for query in connection.queries:
                 time = float(query['time'])
                 if time > 0.1:  # 100ms
@@ -41,11 +41,11 @@ def log_query_count(func):
 
 class QueryPerformanceMonitor:
     """
-    Context manager to monitor query performance.
+    Query ónimdarlıǵın baqlaytuǵın context manager.
 
-    Usage:
+    Paydalanıw:
         with QueryPerformanceMonitor('my_operation'):
-            # Perform database operations
+            # Database ámellerin orınlaw
             ...
     """
 

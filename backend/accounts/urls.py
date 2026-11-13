@@ -1,7 +1,7 @@
 """
-URL configuration for the accounts app.
+accounts app ı ushın URL sazlaması.
 
-This module contains URL patterns for favorites, reviews, notifications, and account history.
+Bul modul favorit ler, sharhlar, bildiriwler hám akkaunt tariyxı ushın URL úlgilerin óz ishine aladı.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

@@ -1,7 +1,7 @@
 """
-Permission and role models for TICKBRON.
+TICKBRON ushın ruxsat hám rol model leri.
 
-This module contains models for role-based access control (RBAC) foundation.
+Bul modul rol tiykarındaǵı kirisiwdi basqarıw (RBAC) tiykarınıń model lerin óz ishine aladı.
 """
 from django.db import models
 from common.models import BaseModel
@@ -9,13 +9,13 @@ from common.models import BaseModel
 
 class Role(BaseModel):
     """
-    Role model for RBAC foundation.
+    RBAC tiykarı ushın Role modeli.
 
-    Defines user roles with associated permissions.
+    Baylanıslı ruxsatları bar paydalanıwshı rollerin anıqlaydı.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
-    is_system_role = models.BooleanField(default=False)  # System roles cannot be deleted
+    is_system_role = models.BooleanField(default=False)  # Sistema rolleri óshirilmeydi
 
     class Meta:
         db_table = 'roles'
@@ -29,14 +29,14 @@ class Role(BaseModel):
 
 class Permission(BaseModel):
     """
-    Permission model for RBAC foundation.
+    RBAC tiykarı ushın Permission modeli.
 
-    Defines granular permissions that can be assigned to roles.
+    Rollerge berilip atırılatuǵın mayda ruxsatlardı anıqlaydı.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
     codename = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
-    module = models.CharField(max_length=100, blank=True, null=True)  # e.g., 'properties', 'bookings'
+    module = models.CharField(max_length=100, blank=True, null=True)  # mısalı, 'properties', 'bookings'
 
     class Meta:
         db_table = 'permissions'
@@ -50,7 +50,7 @@ class Permission(BaseModel):
 
 class RolePermission(BaseModel):
     """
-    Many-to-many relationship between roles and permissions.
+    Rollar menen ruxsatlar arasındaǵı many-to-many baylanıs.
     """
     role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name='role_permissions')
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE, related_name='permission_roles')

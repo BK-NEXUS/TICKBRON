@@ -1,8 +1,8 @@
 """
-Serializers for admin API endpoints.
+Admin API endpoint leri ushın serializer ler.
 
-This module contains serializers for property moderation, user management,
-amenity management, and payment monitoring.
+Bul modul mehmanxana moderation ı, paydalanıwshılardı basqarıw,
+amenity di basqarıw hám tólemdi baqlaw serializer lerin óz ishine aladı.
 """
 from django.db import transaction
 from common.validators import validate_person_name
@@ -21,9 +21,9 @@ from django.utils.translation import gettext as _
 
 class AdminPropertySerializer(serializers.ModelSerializer):
     """
-    Serializer for property moderation by admins.
+    Admin ler tárepinen mehmanxana moderation ı ushın serializer.
 
-    Includes approval/suspension functionality.
+    Tastıyıqlaw/toqtatıw funkciyasın óz ishine aladı.
     """
     property_type = PropertyTypeSerializer(read_only=True)
     owner_email = serializers.SerializerMethodField()
@@ -43,31 +43,31 @@ class AdminPropertySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'owner', 'approved_at', 'approved_by', 'created_at', 'updated_at']
 
     def get_owner_email(self, obj) -> str | None:
-        """Get owner email."""
+        """Iyeniń e-mail ın alıw."""
         return obj.owner.email if obj.owner else None
 
     def get_owner_name(self, obj) -> str | None:
-        """Get owner full name."""
+        """Iyeniń tolıq atın alıw."""
         return obj.owner.get_full_name() if obj.owner else None
 
     def get_full_address(self, obj) -> str:
-        """Get the full address as a string."""
+        """Tolıq mánzildi qatar retinde alıw."""
         return obj.get_full_address()
 
 
 class AdminPropertyApproveSerializer(serializers.Serializer):
     """
-    Serializer for property approval action.
+    Mehmanxananı tastıyıqlaw háreketi ushın serializer.
     """
     rejection_reason = serializers.CharField(required=False, allow_blank=True)
 
 
 class AdminPropertyRegionSerializer(serializers.Serializer):
     """
-    Location of a property. Send geography refs (country_ref, region_ref; both
-    null clears them) or, for older clients, `state`: the region text (blank clears it, so the
-    property is grouped as "Unspecified" in the Status section). Refs win when both are sent.
-    Needs the property in the serializer context.
+    Mehmanxananıń jaylasıwı. Geografiya ref lerin (country_ref, region_ref; ekewi
+    null bolsa tazalanadı) yamasa eski klientler ushın `state` jiberiń: region teksti (bos bolsa tazalanadı, sonda
+    mehmanxana Status bóliminde "Unspecified" retinde toparlanadı). Ekewi jiberilse, ref ler ústin boladı.
+    Serializer context inde mehmanxana kerek.
     """
     state = serializers.CharField(
         max_length=100, allow_blank=True, allow_null=True, trim_whitespace=True, required=False)
@@ -90,13 +90,13 @@ class AdminPropertyRegionSerializer(serializers.Serializer):
 
 class AdminUserSerializer(serializers.ModelSerializer):
     """
-    Serializer for user management by admins.
+    Admin ler paydalanıwshılardı basqarıw ushın serializer.
 
-    Limited fields for admin user listing.
+    Admin paydalanıwshı dizimi ushın shekli maydanlar.
     """
     full_name = serializers.SerializerMethodField()
     role_name = serializers.SerializerMethodField()
-    # Same value as role_name, under the name the admin UI reads
+    # role_name penen birdey mánis, admin UI oqıytuǵın atama astında
     role = serializers.SerializerMethodField(method_name='get_role_name')
 
     class Meta:
@@ -109,20 +109,20 @@ class AdminUserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
 
     def get_full_name(self, obj) -> str:
-        """Get user full name."""
+        """Paydalanıwshınıń tolıq atın alıw."""
         return obj.get_full_name()
 
     def get_role_name(self, obj) -> str | None:
-        """Get role name."""
+        """Rol atın alıw."""
         return obj.role.name if obj.role else None
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
-    """The fields every account a super-admin creates by hand needs: who, how to reach them, the first password."""
+    """Super-admin qolda jaratatuǵın hár akkaunt ushın kerek maydanlar: kim, qalay baylanısıw, birinshi parol."""
     email = unique_email_field()
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
-    phone_number = serializers.CharField(max_length=30)  # stored only: no SMS, no code
+    phone_number = serializers.CharField(max_length=30)  # tek saqlanadı: SMS joq, kod joq
 
     class Meta:
         model = User
@@ -136,7 +136,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return validate_phone_number_format(value)
 
     def validate(self, data):
-        """Validate password confirmation."""
+        """Parol tastıyıqlawın tekseriw."""
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError({
                 'password_confirm': _('Passwords do not match')
@@ -147,9 +147,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 class AdminStaffCreateSerializer(AccountCreateSerializer):
     """
-    An administrator added by a super-admin: staff (can use the panel) or, when `role` says so, another
-    super-admin. The rights come only from `role`; no other field of the request can change them.
-    Both names are required: the panel shows who confirmed a payment by name.
+    Super-admin qosatuǵın administrator: staff (panelden paydalana aladı) yamasa `role` solay desse, basqa
+    super-admin. Huquqlar tek `role` ten keledi; sorawdıń basqa hesh bir maydanı olardı ózgerte almaydı.
+    Eki at ta májbúriy: panel tólemdi kim tastıyıqlaǵanın atı menen kórsetedi.
     """
     ROLES = ('staff', 'super_admin')
     role = serializers.ChoiceField(choices=ROLES, default='staff', write_only=True)
@@ -173,7 +173,7 @@ class AdminStaffCreateSerializer(AccountCreateSerializer):
 
 
 class AdminContactSerializer(serializers.Serializer):
-    """A new phone number and/or e-mail for an account, typed by an administrator. At least one of the two."""
+    """Administrator jazǵan akkauttıń jańa telefon nomeri hám/yamasa e-mail ı. Eń keminde ekewiniń biri."""
     email = LowercaseEmailField(required=False)
     phone_number = serializers.CharField(required=False, max_length=30)
 
@@ -198,15 +198,15 @@ class AdminContactSerializer(serializers.Serializer):
 
 class AdminUserCreateSerializer(AccountCreateSerializer):
     """
-    Serializer for creating hotel-owner accounts by super-admins.
+    Super-admin ler tárepinen mehmanxana iyesi akkaunt ların jaratıw ushın serializer.
 
-    Super-admin only endpoint for direct hotel-owner account creation.
+    Mehmanxana iyesi akkauntın tikkeley jaratıw ushın tek super-admin endpoint i.
     """
-    # Where the owner's hotels will appear: both are required and must fit together
+    # Iyeniń mehmanxanaları qayerde kórinedi: ekewi de májbúriy hám bir-birine sáykes bolıwı kerek
     country_ref = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all(), write_only=True)
     region_ref = serializers.PrimaryKeyRelatedField(queryset=Region.objects.all(), write_only=True)
 
-    # What the site takes from each booking of this owner: the super admin must decide it on creation
+    # Sayt usı iyeniń hár bronınan ne aladı: super-admin jaratılǵanda sonı belgilewi kerek
     commission_percent = serializers.DecimalField(
         max_digits=5, decimal_places=2, min_value=0, max_value=100, write_only=True)
 
@@ -222,7 +222,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        """Create user with hotel-owner role, and the place of the account."""
+        """Mehmanxana iyesi rolindegi paydalanıwshını hám akkauttıń ornın jaratıw."""
         from permissions.models import Role
 
         validated_data.pop('password_confirm')
@@ -231,7 +231,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
             'region': validated_data.pop('region_ref'),
         }
 
-        # Get or create hotel-owner role
+        # Mehmanxana iyesi rolin alıw yamasa jaratıw
         hotel_owner_role, _ = Role.objects.get_or_create(
             name='hotel-owner',
             defaults={
@@ -240,7 +240,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
             }
         )
 
-        # Create user with hotel-owner role
+        # Mehmanxana iyesi rolindegi paydalanıwshı jaratıw
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
@@ -256,7 +256,7 @@ class AdminUserCreateSerializer(AccountCreateSerializer):
 
 class AdminAmenityCategorySerializer(serializers.ModelSerializer):
     """
-    Serializer for amenity category management by admins.
+    Admin ler amenity kategoriyasın basqarıw ushın serializer.
     """
     class Meta:
         model = AmenityCategory
@@ -268,7 +268,7 @@ class AdminAmenityCategorySerializer(serializers.ModelSerializer):
 
 class AdminAmenitySerializer(serializers.ModelSerializer):
     """
-    Serializer for amenity management by admins (write operations).
+    Admin ler amenity di basqarıw ushın serializer (jazıw ámelleri).
     """
     category = serializers.PrimaryKeyRelatedField(queryset=AmenityCategory.objects.all())
 
@@ -283,7 +283,7 @@ class AdminAmenitySerializer(serializers.ModelSerializer):
 
 class AdminAmenityReadSerializer(serializers.ModelSerializer):
     """
-    Serializer for amenity read operations (includes nested category).
+    Amenity oqıw ámelleri ushın serializer (ishki kategoriyanı óz ishine aladı).
     """
     category = AmenityCategorySerializer(read_only=True)
 
@@ -298,9 +298,9 @@ class AdminAmenityReadSerializer(serializers.ModelSerializer):
 
 class AdminCustomerSerializer(serializers.Serializer):
     """
-    Serializer for admin customers directory.
+    Admin mijozlar dizimi ushın serializer.
 
-    Returns customer information with booking aggregates.
+    Bron jıynaqları menen mijoz maǵlıwmatın qaytaradı.
     """
     id = serializers.IntegerField()
     registration_date = serializers.DateTimeField()
@@ -317,9 +317,9 @@ class AdminCustomerSerializer(serializers.Serializer):
 
 class AdminCustomerDetailSerializer(serializers.ModelSerializer):
     """
-    Serializer for detailed customer profile in admin panel.
+    Admin panelindegi mijozdıń tolıq profili ushın serializer.
 
-    Returns full customer contact information.
+    Mijozdıń tolıq baylanıs maǵlıwmatın qaytaradı.
     """
     full_name = serializers.SerializerMethodField()
 
@@ -333,13 +333,13 @@ class AdminCustomerDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'date_joined', 'last_login']
 
     def get_full_name(self, obj) -> str:
-        """Get user full name."""
+        """Paydalanıwshınıń tolıq atın alıw."""
         return obj.get_full_name()
 
 
 class AdminBookingSummarySerializer(serializers.Serializer):
     """
-    Serializer for booking summary in customer detail.
+    Mijoz tolıq maǵlıwmatındaǵı bron qısqasha mazmunı ushın serializer.
     """
     id = serializers.IntegerField()
     reference_code = serializers.CharField()
@@ -357,7 +357,7 @@ class AdminBookingSummarySerializer(serializers.Serializer):
 
 class AdminInternalNoteSerializer(serializers.ModelSerializer):
     """
-    Serializer for internal notes (staff-only).
+    Ishki jazbalar ushın serializer (tek staff).
     """
     author_name = serializers.SerializerMethodField()
     author_email = serializers.SerializerMethodField()
@@ -368,30 +368,30 @@ class AdminInternalNoteSerializer(serializers.ModelSerializer):
             'id', 'customer', 'author', 'author_name', 'author_email',
             'note', 'created_at', 'updated_at'
         ]
-        # A note belongs to the customer in its URL and keeps its original author;
-        # neither can be changed by editing
+        # Jazba óz URL indegi mijozǵa tiyisli hám dáslepki avtorın saqlaydı;
+        # ózgertiw menen ekewin de ózgertip bolmaydı
         read_only_fields = ['id', 'customer', 'author', 'created_at', 'updated_at']
 
     def get_author_name(self, obj):
-        """Get author full name."""
+        """Avtordıń tolıq atın alıw."""
         return obj.author.get_full_name() if obj.author else None
 
     def get_author_email(self, obj):
-        """Get author email."""
+        """Avtordıń e-mail ın alıw."""
         return obj.author.email if obj.author else None
 
 
 class AdminInternalNoteCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating internal notes.
+    Ishki jazbalar jaratıw ushın serializer.
     """
     class Meta:
         model = InternalNote
         fields = ['customer', 'note']
-        # Taken from the URL by the view (serializer.save(customer=...)), not the body
+        # View tárepinen URL den alınadı (serializer.save(customer=...)), body den emes
         read_only_fields = ['customer']
 
     def create(self, validated_data):
-        """Create internal note with current user as author."""
+        """Házirgi paydalanıwshını avtor etip ishki jazba jaratadı."""
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)

@@ -11,10 +11,10 @@ class _ChatThrottle(UserRateThrottle):
 
 
 class ChatSendThrottle(_ChatThrottle):
-    """Messages written: 20 a minute per account."""
+    """Jazılǵan xabarlar: akkaunt boyınsha minutına 20."""
     scope = 'chat_send'
 
 
 class ChatPollThrottle(_ChatThrottle):
-    """Reading a thread or the unread count: the page polls, so this is far above the default hourly limit."""
+    """Thread di yamasa oqılmaǵan sandı oqıw: bet polling isleydi, sol sebepli bul ádettegi saatlıq limittan ápiwayı kóp."""
     scope = 'chat_poll'

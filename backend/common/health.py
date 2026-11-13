@@ -1,9 +1,9 @@
 """
-Liveness and readiness probes for a load balancer or uptime monitor.
+Load balancer yamasa uptime monitor ushın liveness hám readiness tekseriwleri.
 
-/healthz/  the process answers.
-/readyz/   the database and the cache (Redis in production: throttles and lockouts live there)
-           both work. Failures answer 503 with no detail, since the endpoints are public.
+/healthz/  process juwap beredi.
+/readyz/   database hám kesh (production ta Redis: throttle hám lockout lar sonda turadı)
+           ekewi de isleydi. Qátelikte 503 beredi, tolıq maǵlıwmatsız, sebebi endpoint ler ashıq.
 """
 import logging
 

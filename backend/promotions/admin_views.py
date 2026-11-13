@@ -1,4 +1,4 @@
-"""Super-admin endpoints for hotel promotions. Reads: staff or super-admin; changes: super-admin only."""
+"""Mehmanxana reklamaları ushın super-admin endpoint leri. Oqıw: staff yamasa super-admin; ózgertiw: tek super-admin."""
 from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Q, Sum
@@ -103,7 +103,7 @@ def _filtered(request):
         promotions = promotions.filter(property__region_ref_id=int(region))
     name = (request.query_params.get('q') or '').strip()
     if name:
-        # A subquery, not a join: a join per translation would multiply the Sum() totals
+        # Join emes, sub-query: hár awdarma ushın join Sum() jıynaqların kóbeytip jiberer edi
         named = PropertyTranslation.objects.filter(
             property=OuterRef('property_id'), is_deleted=False, name__icontains=name)
         promotions = promotions.filter(Exists(named))
@@ -235,7 +235,8 @@ def promotion_stats(request, promotion_id):
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def promotion_hotels(request):
-    """Find a hotel by name to promote it. Any status is listed so the admin sees why one cannot be shown."""
+    """Mehmanxananı atı boyınsha tabıw hám reklamalaw. Hár status dizimlenedi, sonda admin birin nege kórsetip bolmaytuǵının
+    kóredi."""
     term = (request.query_params.get('q') or '').strip()
     if len(term) < 2:
         return Response({'results': []})
@@ -256,7 +257,8 @@ def promotion_hotels(request):
 @api_view(['GET'])
 @permission_classes([StaffReadsSuperAdminWrites])
 def promotion_regions(request):
-    """Every region with the ads running and waiting in it and the hotels running them (advertising panel)."""
+    """Hár region, onda isleytuǵın hám kútip turǵan reklamalar hám olardı júrgizip atırǵan mehmanxanalar menen (reklama
+    paneli)."""
     return Response(service.regions_panel())
 
 
@@ -264,7 +266,7 @@ def promotion_regions(request):
 @api_view(['GET', 'POST'])
 @permission_classes([StaffReadsSuperAdminWrites])
 def promotion_photos(request, promotion_id):
-    """GET: the live photos of one ad. POST (multipart `photo`): add one (at most 10)."""
+    """GET: bir reklamanıń aktiv súwretleri. POST (multipart `photo`): birin qosıw (eń kóbi 10)."""
     promotion = _find(promotion_id)
     if promotion is None:
         return _not_found()

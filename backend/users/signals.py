@@ -1,5 +1,5 @@
 """
-Signal handlers for the users app.
+users app ı ushın signal handler ler.
 
-This module contains signal handlers for user-related events.
+Bul modul paydalanıwshıǵa baylanıslı waqıyalar ushın signal handler lerdi óz ishine aladı.
 """

@@ -8,7 +8,7 @@ class PermissionsConfig(AppConfig):
 
     def ready(self):
         """
-        Import signal handlers when the app is ready.
+        App tayın bolǵanda signal handler lerdi import etiw.
         """
         try:
             import permissions.signals  # noqa: F401  (connects the signal handlers)

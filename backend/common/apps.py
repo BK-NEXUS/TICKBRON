@@ -7,7 +7,7 @@ class CommonConfig(AppConfig):
     verbose_name = 'Common'
 
     def ready(self):
-        """Import signal handlers when the app is ready."""
+        """App tayın bolǵanda signal handler lerdi import etiw."""
         try:
             import common.signals  # noqa: F401  (connects the signal handlers)
         except ImportError:

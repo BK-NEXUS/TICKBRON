@@ -1,5 +1,5 @@
 """
-Celery Configuration for TICKBRON
+TICKBRON ushın Celery sazlaması
 """
 
 import os
@@ -7,16 +7,16 @@ import os
 try:
     from celery import Celery
 
-    # Set the default Django settings module for the 'celery' program.
+    # 'celery' baǵdarlaması ushın ádettegi Django sazlama modulin belgilew.
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
     app = Celery('tickbron')
 
-    # Load configuration from Django settings
+    # Sazlamanı Django sazlamalarınan júklew
     app.config_from_object('django.conf:settings', namespace='CELERY')
 
-    # Auto-discover tasks in all installed apps
+    # Barlıq ornatılǵan app larda task lardı avtomat tabıw
     app.autodiscover_tasks()
 except ImportError:
-    # Celery not installed (e.g. a minimal environment): run without a worker app
+    # Celery ornatılmaǵan (mısalı eń kishi ortalıq): worker app sız isle
     app = None

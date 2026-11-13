@@ -1,8 +1,8 @@
 """
-Core models for TICKBRON.
+TICKBRON ushın core model leri.
 
-This module contains core application models that provide fundamental
-functionality for the TICKBRON system.
+Bul modul TICKBRON sisteması ushın tiykarǵı funkciyanı beretuǵın
+tiykarǵı app model lerin óz ishine aladı.
 """
 from django.db import models
 from common.models import BaseModel
@@ -10,7 +10,7 @@ from common.models import BaseModel
 
 class SystemSettings(BaseModel):
     """
-    System-wide settings and configuration.
+    Sistema dárejesindegi sazlamalar hám konfiguraciya.
     """
     key = models.CharField(max_length=100, unique=True, db_index=True)
     value = models.TextField()

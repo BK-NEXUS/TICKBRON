@@ -1,8 +1,8 @@
 """
-Super-admin view of the nightly auto-completion (R12), under /api/v1/admin-panel/.
+Túngi avtomat juwmaqlawdıń super-admin view si (R12), /api/v1/admin-panel/ astında.
 
-GET auto-completion/status/  last real run (time, trigger, completed, failed) and how many
-                             finished stays are waiting for the next run right now.
+GET auto-completion/status/  sońǵı haqıyqıy isleniw (waqıt, trigger, juwmaqlanǵan, sátsiz) hám
+                             házir keyingi isleniwdi kútip turǵan pitken turıwlar sanı.
 """
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema

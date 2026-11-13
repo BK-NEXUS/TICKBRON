@@ -1,17 +1,17 @@
 """
-No-show reports (R12 phase 3, .ai/PLAN_R12.md section 3). The guest pays cash at the hotel, so a
-no-show moves no money.
+No-show esabatları (R12 3-basqısh, .ai/PLAN_R12.md 3-bólim). Mehmann mehmanxanada naqd tóleydi, sol sebepli
+no-show hesh qanday pulǵa tiymeydi.
 
-The hotel reports that a guest did not arrive; staff decide. Owners never decide.
+Mehmanxana mehmannıń kelmegenin xabarlaydı; staff sheshedi. Iyeler hesh qashan sheshpeydi.
 
-create_report()    owner: one open report per booking, inside the window after check-out
-withdraw_report()  owner: own pending report only
-approve_report()   staff: ONE transaction: booking -> no_show, future nights released, audit row,
-                   notifications
-reject_report()    staff: the booking is untouched
-reverse_report()   staff correction: approved -> rejected (the booking is restored),
-                   rejected -> approved (runs the normal approval)
-flagged_property_ids()  hotels whose report rate is unusually high (thresholds are settings)
+create_report()    iye: bir bronǵa bir ashıq esabat, shıǵıwdan keyingi oyna ishinde
+withdraw_report()  iye: tek óziniń kútip turǵan esabatın
+approve_report()   staff: BIR transaction: bron -> no_show, keleshektegi túnler bosatıladı, audit qatarı,
+                   bildiriwler
+reject_report()    staff: bron tiyilmeydi
+reverse_report()   staff túzetiwi: approved -> rejected (bron tiklenedi),
+                   rejected -> approved (ádettegi tastıyıqlawdı isleydi)
+flagged_property_ids()  esabat dárejesi sheklenbegen joqarı bolǵan mehmanxanalar (shegaralar sazlamalarda)
 """
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
@@ -32,7 +32,7 @@ REPORTABLE_STATUSES = ('confirmed', 'completed')
 
 
 class NoShowError(Exception):
-    """A step that may not happen. `code` is stable for API responses and tests."""
+    """Bolıwı múmkin bolmaǵan qádem. `code` API juwapları hám testler ushın turaqlı."""
 
     def __init__(self, code, message):
         super().__init__(message)
@@ -43,7 +43,7 @@ class NoShowError(Exception):
 # --- inventory -----------------------------------------------------------------------------
 
 def _future_inventory_rows(booking, today):
-    """(item, locked RoomInventory rows for the nights after `today`), nights in date order."""
+    """(element, `today` ten keyingi túnler ushın qulıplanǵan RoomInventory qatarları), túnler sana tártibinde."""
     from properties.models import RoomInventory
 
     result = []
@@ -56,7 +56,7 @@ def _future_inventory_rows(booking, today):
 
 
 def release_future_nights(booking, today):
-    """The guest is not coming: nights after today go back on sale (same locking as cancel_booking)."""
+    """Mehmann kelmeydi: búgennen keyingi túnler qayta satıwǵa shıǵadı (cancel_booking penen birdey qulıplaw)."""
     for item, rows in _future_inventory_rows(booking, today):
         for row in rows:
             row.booked_rooms = max(0, row.booked_rooms - item.number_of_rooms)
@@ -64,7 +64,7 @@ def release_future_nights(booking, today):
 
 
 def reserve_future_nights(booking, today):
-    """Undo release_future_nights for a reversed approval; refuses when a night was sold again."""
+    """Biykar etilgen tastıyıqlaw ushın release_future_nights di qaytarıw; túnniń qayta satılǵanı bolsa qabıllamaydı."""
     plan = _future_inventory_rows(booking, today)
     for item, rows in plan:
         for row in rows:
@@ -77,15 +77,15 @@ def reserve_future_nights(booking, today):
             row.save(update_fields=['booked_rooms'])
 
 
-# --- owner: report and withdraw -----------------------------------------------------------
+# --- iye: esabat beriw hám qaytarıp alıw ---------------------------------------------------
 
 def report_deadline(booking):
-    """Last business day on which the owner may still report this booking."""
+    """Iye usı bronnıń haqqında esabat bere alatuǵın sońǵı is kúni."""
     return booking.check_out + timedelta(days=settings.NO_SHOW_REPORT_WINDOW_DAYS)
 
 
 def reportable_bookings(queryset, today):
-    """Bookings the owner can report today: the same rules create_report enforces, minus the lock."""
+    """Iye búgin esabat bere alatuǵın bronlar: create_report ushın birdey qaǵıydalar, tek qulıp joq."""
     window = timedelta(days=settings.NO_SHOW_REPORT_WINDOW_DAYS)
     return queryset.filter(
         status__in=REPORTABLE_STATUSES, check_in__lt=today, check_out__gte=today - window,
@@ -93,7 +93,7 @@ def reportable_bookings(queryset, today):
 
 
 def create_report(booking_id, owner, comment):
-    """Owner reports that the guest did not arrive. Raises NoShowError; returns the NoShowReport."""
+    """Iye mehmannıń kelmegenin xabarlaydı. NoShowError kóteredi; NoShowReport qaytaradı."""
     today = business_today()
     with transaction.atomic():
         booking = Booking.objects.select_for_update(of=('self',)).select_related('property').filter(
@@ -128,7 +128,7 @@ def withdraw_report(report_id, owner):
         return report
 
 
-# --- staff: decisions ---------------------------------------------------------------------
+# --- staff: qararlar ---------------------------------------------------------------------
 
 def _lock_report(report_id):
     report = NoShowReport.objects.select_for_update().filter(pk=report_id).first()
@@ -158,13 +158,13 @@ def _notify_owner(report, code):
 
 def _notify_guest(booking):
     if Notification.objects.filter(booking=booking, code__in=('no_show_marked', 'no_show_marked_no_refund')).exists():
-        return                                         # a corrected decision never repeats the notice
+        return                                         # túzetilgen qarar xabarlandırıwdı hesh qashan qaytalamaydı
     notify(booking.guest, 'no_show_marked_no_refund',
            {'booking_id': booking.pk, 'booking_reference': booking.confirmation_code}, booking=booking)
 
 
 def _apply_approval(report):
-    """Inside the caller's transaction: booking -> no_show and the future nights released."""
+    """Shaqırıwshınıń transaction ı ishinde: bron -> no_show hám keleshektegi túnler bosatıladı."""
     booking = Booking.objects.select_for_update().get(pk=report.booking_id)
     try:
         booking.mark_no_show(via_approved_report=True)
@@ -175,7 +175,7 @@ def _apply_approval(report):
 
 
 def approve_report(report_id, actor, decision_comment):
-    """Approve a pending report. Returns the report. Raises NoShowError."""
+    """Kútip turǵan esabattı tastıyıqlaw. Esabattı qaytaradı. NoShowError kóteredi."""
     with transaction.atomic():
         report = _lock_report(report_id)
         if report.status != 'pending':
@@ -206,9 +206,9 @@ def reject_report(report_id, actor, decision_comment):
 
 def reverse_report(report_id, actor, decision_comment):
     """
-    Correct a decision. approved -> rejected: the booking goes back to completed (check-out
-    passed) or confirmed and the future nights are reserved again if still free.
-    rejected -> approved: the normal approval.
+    Qararǵa túzetiw kirgiziw. approved -> rejected: bron completed ke (shıǵıw
+    ótti) yamasa confirmed ke qaytadı hám keleshektegi túnler bos bolsa qayta rezervlenedi.
+    rejected -> approved: ádettegi tastıyıqlaw.
     """
     with transaction.atomic():
         report = _lock_report(report_id)
@@ -230,14 +230,14 @@ def reverse_report(report_id, actor, decision_comment):
         return report
 
 
-# --- the abuse flag -----------------------------------------------------------------------
+# --- qıylı paydalanıwdıń belgisi ---------------------------------------------------------
 
 def flagged_property_ids(property_ids=None):
     """
-    Hotels reporting far more no-shows than the rest, over the last NO_SHOW_FLAG_DAYS days:
-    rate = reports created (not withdrawn) / bookings checked in (confirmed, completed, no_show).
-    Flagged when reports >= NO_SHOW_FLAG_MIN_REPORTS AND rate >= NO_SHOW_FLAG_FACTOR x the
-    platform rate AND rate >= NO_SHOW_FLAG_MIN_RATE. Two grouped queries however many hotels.
+    Sońǵı NO_SHOW_FLAG_DAYS kúnde qalǵanlarǵa qaraǵanda keskin kóbirek no-show xabarlaǵan mehmanxanalar:
+    dáreje = jaratılǵan (qaytarıp alınbaǵan) esabatlar / kirgen bronlar (confirmed, completed, no_show).
+    esabatlar >= NO_SHOW_FLAG_MIN_REPORTS HÁM dáreje >= NO_SHOW_FLAG_FACTOR x platforma
+    dárejesi HÁM dáreje >= NO_SHOW_FLAG_MIN_RATE bolsa belgilenedi. Mehmanxana qansha bolsa da eki toparlanǵan query.
     """
     days = int(settings.NO_SHOW_FLAG_DAYS)
     reports = dict(NoShowReport.objects.filter(created_at__gte=timezone.now() - timedelta(days=days))
@@ -264,7 +264,7 @@ def flagged_property_ids(property_ids=None):
         if count < int(settings.NO_SHOW_FLAG_MIN_REPORTS):
             continue
         total = bookings.get(property_id, 0)
-        rate = Decimal(count) / Decimal(total) if total else None      # None: reports without bookings
+        rate = Decimal(count) / Decimal(total) if total else None      # None: bronsız esabatlar
         if rate is None or (rate >= factor * average and rate >= floor):
             flagged.add(property_id)
     return flagged

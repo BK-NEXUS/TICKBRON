@@ -1,17 +1,17 @@
-"""Keeps an administrator without two-step sign-in inside the setup screen."""
+"""Eki basqıshlı kirisiwi joq administratordı sazlaw ekranı ishinde ustap turadı."""
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 
 from users.two_factor import needs_setup
 
-# What a session without two-step sign-in may still call: who am I, sign out, the CSRF token, the setup itself
+# Eki basqıshlı kirisiwi joq session ele neni shaqıra aladı: men kimmen, shıǵıw, CSRF token, sazlawdıń ózi
 ALLOWED_PREFIXES = (
     '/api/v1/auth/me/', '/api/v1/auth/logout/', '/api/v1/auth/csrf/', '/api/v1/auth/refresh/', '/api/v1/auth/2fa/',
 )
 
 
 class TwoFactorSetupMiddleware:
-    """403 on every API call except the setup ones while the signed-in administrator has not set up the second step."""
+    """Kirgen administrator ekinshi basqıshtı sazlamaǵansha sazlaw shaqırıwlarınan basqa hár API shaqırıwına 403."""
 
     def __init__(self, get_response):
         self.get_response = get_response

@@ -6,9 +6,9 @@ from currency import cbu
 @shared_task(bind=True, max_retries=3, default_retry_delay=600)
 def fetch_exchange_rates(self):
     """
-    Fetch today's CBU rates (scheduled by CELERY_BEAT_SCHEDULE twice a day).
+    Búgingi CBU kurslarin alıw (CELERY_BEAT_SCHEDULE kúnine eki ret rejelestirgen).
 
-    A failed fetch keeps the last accepted rate and is retried up to 3 times, 10 minutes apart.
+    Sátsiz alıw sońǵı qabıllanǵan kursı saqlaydı hám 10 minut aralıq penen 3 ke shekem qayta urınıladı.
     """
     results = cbu.fetch_and_store()
     if any(row is None for row in results.values()):

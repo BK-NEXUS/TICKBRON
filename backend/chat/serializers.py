@@ -13,7 +13,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class MessageInputSerializer(serializers.Serializer):
-    # Length and content are checked by chat.service.clean_text (one place), this only needs a string
+    # Uzınlıq hám mazmun chat.service.clean_text (bir orın) arqalı tekseriledi, bul jerde tek tekst kerek
     text = serializers.CharField(max_length=MAX_TEXT * 2, allow_blank=True, trim_whitespace=False)
 
 

@@ -1,5 +1,5 @@
 """
-Views for TICKBRON property endpoints.
+TICKBRON mehmanxana endpoint leri ushın view ler.
 """
 import sys
 import os
@@ -24,26 +24,26 @@ from properties.serializers import (
 )
 from django.utils.translation import gettext as _
 
-# Check if running in test mode
+# Test rejiminde isleytuǵının tekseriw
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 logger = logging.getLogger('tickbron')
 
 
 class SearchRateThrottle(AnonRateThrottle):
-    """Rate throttle for the search endpoints: 100 requests per minute per IP unless THROTTLE_SEARCH_RATE says otherwise."""
+    """Izlew endpoint leri ushın rate throttle: THROTTLE_SEARCH_RATE basqasha aytpasa hár IP ge minutına 100 soraw."""
     rate = settings.SEARCH_THROTTLE_RATE
     scope = 'search'
 
     def allow_request(self, request, view):
-        # Disable throttling during tests
+        # Testler waqtında throttling di óshiriw
         if TESTING:
             return True
         return super().allow_request(request, view)
 
 
 def _promoted_banners(request, search_service, search_params, page):
-    """Paid banners for the top of the first results page; advertising must never break a search."""
+    """Birinshi nátiyje betiniń joqarısı ushın tólengen banner ler; reklama hesh qashan izlewdi buzbawı kerek."""
     if page != 1:
         return []
     try:
@@ -61,30 +61,30 @@ def _promoted_banners(request, search_service, search_params, page):
 @throttle_classes([SearchRateThrottle])
 def property_search(request):
     """
-    Search for properties based on various criteria.
+    Túrli kriteriyalar boyınsha mehmanxanalardı izlew.
 
-    Query Parameters:
-        q: Text search query (max 500 characters)
-        location: Location search (city, country, max 200 characters)
-        lat, lng: Geographic search coordinates (lat: -90 to 90, lng: -180 to 180)
-        radius: Search radius in kilometers (1-100, default: 10)
-        min_price, max_price: Price range (non-negative)
-        min_guests, max_guests: Guest capacity range (min 1)
-        amenities: List of amenity IDs (comma-separated, max 20)
-        property_type: Property type ID
-        features: Comma-separated flags the property must all have (wifi, parking, ac, heating, elevator)
-        min_rating: Minimum average rating of approved reviews (1-5)
-        check_in, check_out: Only properties with one rate plan open for every night of the stay (YYYY-MM-DD)
-        sort: Sorting method (relevance, price_asc, price_desc, rating, reviews, distance)
-        page: Page number (min 1, default: 1)
-        page_size: Results per page (1-100, default: 20)
+    Query parametrleri:
+        q: Tekst izlew sorawı (eń kóbi 500 belgi)
+        location: Jaylasıw izlewi (city, country, eń kóbi 200 belgi)
+        lat, lng: Geografiyalıq izlew koordinatalar (lat: -90 den 90 ǵa, lng: -180 den 180 ge)
+        radius: Kilometrlerde izlew radiusı (1-100, ádetde: 10)
+        min_price, max_price: Baha aralıǵı (teris emes)
+        min_guests, max_guests: Mehmanlar sıyımlılıǵı aralıǵı (eń kemi 1)
+        amenities: Amenity ID lar dizimi (útir menen ajıratılǵan, eń kóbi 20)
+        property_type: Mehmanxana túri ID si
+        features: Mehmanxanada hámmesi bolıwı kerek útir menen ajıratılǵan belgiler (wifi, parking, ac, heating, elevator)
+        min_rating: Tastıyıqlanǵan sharhlardıń eń kem ortasha reytingi (1-5)
+        check_in, check_out: Turıwdıń hár túnine ashıq bir rate plan ı bar mehmanxanalar ǵana (YYYY-MM-DD)
+        sort: Tártiplew usılı (relevance, price_asc, price_desc, rating, reviews, distance)
+        page: Bet nomeri (eń kemi 1, ádetde: 1)
+        page_size: Bettegi nátiyjeler (1-100, ádetde: 20)
 
-    Returns:
-        Paginated search results with property information
+    Qaytaradı:
+        Mehmanxana maǵlıwmatı menen betlerge bólingen izlew nátiyjeleri
     """
     search_service = PropertySearchService()
 
-    # Parse and validate search parameters
+    # Izlew parametrlerin oqıw hám tekseriw
     params_serializer = SearchParamsSerializer(data=request.query_params)
 
     if not params_serializer.is_valid():
@@ -95,7 +95,7 @@ def property_search(request):
 
     search_params = params_serializer.validated_data
 
-    # Handle amenities parameter (comma-separated list)
+    # Amenities parametrin islew (útir menen ajıratılǵan dizim)
     amenities_param = request.query_params.get('amenities')
     if amenities_param:
         try:
@@ -123,19 +123,19 @@ def property_search(request):
             'total_pages': search_results.get('total_pages', 1),
         }
 
-    # The results are the same for every visitor and are copied for a few seconds; the paid banners are not part of
-    # the copy, so every visitor's view of them is still counted
+    # Nátiyjeler hár kelwshi ushın birdey hám bir neshe sekundqa nusqalanadı; tólengen banner ler nusqanıń bólegi emes,
+    # sol sebepli hár kelwshiniń olardı kóriwi ele sanaladı
     try:
         response_data = dict(public_cache.remember(request, 'search', find))
     except ValueError as e:
-        # Handle validation errors from search service
+        # Izlew xızmetinen validation qátelikların islew
         logger.warning(f"Invalid search parameters: {e}")
         return Response(
             {'error': _('Invalid search parameters'), 'details': _('One or more search parameters are invalid.')},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception:
-        # Handle unexpected errors
+        # Kútilmegen qátelikterdi islew
         logger.exception('Unexpected error during property search')
         return Response(
             {'error': 'Search failed', 'details': _('An unexpected error occurred during search')},
@@ -152,9 +152,9 @@ def property_search(request):
 @throttle_classes([SearchRateThrottle])
 def property_filter_options(request):
     """
-    What the search sidebar can filter and sort by, from the searchable properties:
-    property types that have at least one property, features and searchable amenities
-    with property counts, the price range and the sort options /properties/search/ accepts.
+    Izlew jan paneli neni filterley hám tártipley aladı, izlenetuǵın mehmanxanalardan:
+    eń keminde bir mehmanxanası bar mehmanxana túrleri, feature lar hám izlenetuǵın amenity ler
+    mehmanxana sanları menen, baha aralıǵı hám /properties/search/ qabıllaytuǵın tártiplew usılları.
     """
     from django.db.models import Count, Max, Min, Q
     from properties.models import Amenity, PropertyType
@@ -206,14 +206,14 @@ def property_filter_options(request):
 @permission_classes([AllowAny])
 def property_search_suggestions(request):
     """
-    Get search suggestions for autocomplete.
+    Avtotolıqtırıw ushın izlew usınısların alıw.
 
-    Query Parameters:
-        q: Partial search query
-        limit: Maximum number of suggestions (default: 5)
+    Query parametrleri:
+        q: Bólekleyin izlew sorawı
+        limit: Usınıslardıń eń kóp sanı (ádetde: 5)
 
-    Returns:
-        List of search suggestions
+    Qaytaradı:
+        Izlew usınısları dizimi
     """
     search_service = PropertySearchService()
 
@@ -248,25 +248,25 @@ def property_search_suggestions(request):
 @permission_classes([AllowAny])
 def property_detail(request, property_id):
     """
-    Get detailed property information with complete sections.
+    Tolıq bólimleri menen mehmanxananıń tolıq maǵlıwmatın alıw.
 
-    Path Parameters:
-        property_id: Property ID
+    Path parametrleri:
+        property_id: Mehmanxana ID si
 
-    Returns:
-        Complete property details including:
-        - Basic property information
-        - Gallery (photos organized by type)
-        - Amenities with categories
-        - Room types with rate plans
-        - Policies
-        - Translations
+    Qaytaradı:
+        Tolıq mehmanxana maǵlıwmatı, olardıń ishinde:
+        - Tiykarǵı mehmanxana maǵlıwmatı
+        - Galereya (súwretler túri boyınsha shólkemlestirilgen)
+        - Kategoriyaları menen amenity ler
+        - Rate plan lı xona túrleri
+        - Siyasatlar
+        - Awdarmalar
         - Metadata
     """
     from properties.models import Property
 
     def build():
-        # Pending, rejected and suspended properties are not public
+        # Kútip turǵan, biykar etilgen hám toqtatılǵan mehmanxanalar ashıq emes
         property = Property.objects.get(
             id=property_id,
             status='active',
@@ -291,25 +291,25 @@ def property_detail(request, property_id):
 @permission_classes([AllowAny])
 def property_availability(request, property_id):
     """
-    Get property availability and pricing preview.
+    Mehmanxananıń bos orınların hám baha aldınan qarawın alıw.
 
-    Path Parameters:
-        property_id: Property ID
+    Path parametrleri:
+        property_id: Mehmanxana ID si
 
-    Query Parameters:
-        check_in: Start date for availability check (YYYY-MM-DD format, optional)
-        check_out: End date for availability check (YYYY-MM-DD format, optional)
+    Query parametrleri:
+        check_in: Bos orın tekseriw ushın baslanıw sanası (YYYY-MM-DD formatı, ıqtıyarıy)
+        check_out: Bos orın tekseriw ushın pitiw sanası (YYYY-MM-DD formatı, ıqtıyarıy)
 
-    Returns:
-        Property availability data including:
-        - Property basic information
-        - Room types with rate plans
-        - Date inventory with availability and pricing for specified date range
-        - Deterministic pricing preview (same inputs = same outputs)
+    Qaytaradı:
+        Mehmanxana bos orın maǵlıwmatı, olardıń ishinde:
+        - Mehmanxananıń tiykarǵı maǵlıwmatı
+        - Rate plan lı xona túrleri
+        - Berilgen sana aralıǵı ushın bos orın hám baha menen date inventory
+        - Anıq baha aldınan qarawı (birdey kirisiw = birdey shıǵıs)
     """
     from properties.models import Property
 
-    # Validate date range parameters
+    # Sana aralıǵı parametrlerin tekseriw
     params_serializer = AvailabilityParamsSerializer(data=request.query_params)
 
     if not params_serializer.is_valid():
@@ -319,7 +319,7 @@ def property_availability(request, property_id):
         )
 
     def build():
-        # Pending, rejected and suspended properties are not public
+        # Kútip turǵan, biykar etilgen hám toqtatılǵan mehmanxanalar ashıq emes
         property = Property.objects.get(
             id=property_id,
             status='active',
@@ -329,7 +329,7 @@ def property_availability(request, property_id):
         return PropertyAvailabilitySerializer(property, context={'request': request}).data
 
     try:
-        # Free rooms change faster than the rest of the page: this copy lives half as long
+        # Bos xonalar bettiń qalǵanınan tezirek ózgeredi: bul nusqa jarım waqıt jasaydı
         data = public_cache.remember(request, 'availability', build, divisor=2)
     except Property.DoesNotExist:
         return Response(
@@ -345,18 +345,18 @@ def property_availability(request, property_id):
 @permission_classes([AllowAny])
 def property_quote(request, property_id):
     """
-    Price a stay before booking, with the code that charges for it.
+    Bronlawdan aldın turıwdıń bahasın, onı alatuǵın kod penen esaplaw.
 
-    Query Parameters:
-        room_type_id, rate_plan_id: the room and rate (must belong to this property)
-        check_in, check_out: YYYY-MM-DD, check_out exclusive
-        rooms: number of rooms (default 1)
+    Query parametrleri:
+        room_type_id, rate_plan_id: xona hám baha (usı mehmanxanaǵa tiyisli bolıwı kerek)
+        check_in, check_out: YYYY-MM-DD, check_out kirmeydi
+        rooms: xonalar sanı (ádetde 1)
 
-    Returns:
+    Qaytaradı:
         { check_in, check_out, number_of_nights, number_of_rooms, currency,
           nights: [{date, price}], total_price }
-        400 {error, details: {field: [message]}} when the stay cannot be booked;
-        availability messages name the date.
+        Turıwdı bronlap bolmasa 400 {error, details: {field: [message]}};
+        bos orın xabarları sananı ataydı.
     """
     from django.core.exceptions import ValidationError as DjangoValidationError
     from properties.models import RatePlan
@@ -409,7 +409,7 @@ def property_quote(request, property_id):
              'details': _('No exchange rate for %(currency)s yet.') % {'currency': shown}},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
-    # What the guest pays is in so'm (Payme and Click): the owner's own so'm price when there is one
+    # Mehmannıń tóleytuǵını somda (Payme hám Click): bar bolsa iyeniń óz som bahası
     owner_uzs = quote.owner_prices.get('UZS') is not None and quote.currency != 'UZS'
     if owner_uzs:
         uzs = {'uzs_total': f"{quote.total_in('UZS', rate_of)[0]:.2f}", 'exchange_rate': None}

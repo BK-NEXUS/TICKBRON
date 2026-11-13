@@ -1,5 +1,5 @@
 """
-URL configuration for properties app.
+properties app ı ushın URL sazlaması.
 """
 from django.urls import path
 from properties.views import (

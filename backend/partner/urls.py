@@ -1,5 +1,5 @@
 """
-URL configuration for partner app.
+partner app ı ushın URL sazlaması.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

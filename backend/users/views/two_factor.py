@@ -1,4 +1,4 @@
-"""Two-step sign-in: the code step of the login, and the setup screen's two calls."""
+"""Eki basqıshlı kirisiw: kirisiwdiń kod qádemi hám sazlaw ekranınıń eki shaqırıwı."""
 import logging
 
 from django.utils.translation import gettext as _
@@ -21,7 +21,7 @@ from users.views.auth import _login_failed_response
 
 
 def _code_is_right(user, data):
-    """Check the app's code, or else a backup code; returns the method name that worked, or None."""
+    """Ilova kodın, bolmasa zapas kodtı tekseriw; islegen usıldıń atın qaytaradı, yamasa None."""
     code, backup_code = data.get('code'), data.get('backup_code')
     if isinstance(code, str) and code and two_factor.accept_code(user, code):
         return 'totp'
@@ -35,7 +35,7 @@ def _code_is_right(user, data):
 @permission_classes([AllowAny])
 @throttle_classes([TwoFactorLoginThrottle])
 def login_two_factor(request):
-    """Second step of the login: the password was accepted in the last 5 minutes, now the code (or a backup code)."""
+    """Kirisiwdiń ekinshi qádemi: parol sońǵı 5 minutta qabıllandı, endi kod (yamasa zapas kod)."""
     enforce_csrf(request)
     user, client_ip = two_factor.pending_user(request), get_client_ip(request)
     if user is None or lockout.is_locked(user, client_ip):
@@ -58,7 +58,7 @@ def login_two_factor(request):
 @permission_classes([IsAuthenticated])
 @throttle_classes([TwoFactorSetupThrottle])
 def setup_two_factor(request):
-    """Make a new secret for the signed-in user's authenticator app. Nothing is switched on until confirm."""
+    """Kirgen paydalanıwshınıń authenticator ilovası ushın jańa sır jasaw. Tastıyıqlanǵansha hesh nárse qosılmaydı."""
     if request.user.two_factor_enabled:
         return Response({'detail': _('Two-step sign-in is already on.')}, status=status.HTTP_400_BAD_REQUEST)
     secret = two_factor.new_secret()
@@ -71,7 +71,7 @@ def setup_two_factor(request):
 @permission_classes([IsAuthenticated])
 @throttle_classes([TwoFactorSetupThrottle])
 def confirm_two_factor(request):
-    """The first right code from the app switches two-step sign-in on and returns the backup codes (once)."""
+    """Ilovadan birinshi durıs kod eki basqıshlı kirisiwdi qosadı hám zapas kodlardı (bir márte) qaytaradı."""
     secret = request.session.get(two_factor.SETUP_KEY)
     code = object_body(request).get('code')
     step = two_factor.matching_step(secret, code) if secret and isinstance(code, str) else None

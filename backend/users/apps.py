@@ -8,7 +8,7 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         """
-        Import signal handlers when the app is ready.
+        App tayın bolǵanda signal handler lerdi import etiw.
         """
         try:
             import users.signals  # noqa: F401  (connects the signal handlers)

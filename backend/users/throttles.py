@@ -1,8 +1,8 @@
 """
-Rate limits for the authentication endpoints.
+Autentifikaciya endpoint leri ushın rate limit ler.
 
-Every limit here is keyed by something the caller cannot change freely: the client IP or the
-logged-in account.
+Bul jerdegi hár limit shaqırıwshı erkin ózgerte almaytuǵın nárse boyınsha kiltlenedi: klient IP si yamasa
+kirgen akkaunt.
 """
 import os
 import sys
@@ -11,90 +11,90 @@ from django.conf import settings
 
 from common.throttling import BlockAnonRateThrottle
 
-# Throttling is off while tests run; the tests that check a limit patch this flag back to False
+# Testler islep atırǵanda throttling óshken; limitti tekseretuǵın testler bul flag tı qaytadan False ǵa qoyadı
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 
 class IPRateThrottle(BlockAnonRateThrottle):
     """
-    Throttle keyed by client IP for every caller.
+    Hár shaqırıwshı ushın klient IP si boyınsha kiltlengen throttle.
 
-    DRF's AnonRateThrottle skips logged-in users, so a throwaway account would
-    lift the login and registration limits.
+    DRF tiń AnonRateThrottle ı kirgen paydalanıwshılardı ótkizip jiberedi, sol sebepli waqtınsha
+    akkaunt kirisiw hám dizimnen ótiw limitlerin kótergen bolar edi.
     """
 
     def get_cache_key(self, request, view):
         return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
 
     def allow_request(self, request, view):
-        # Disable throttling during tests
+        # Testler waqtında throttling di óshiriw
         if TESTING:
             return True
         return super().allow_request(request, view)
 
 
 class LoginRateThrottle(IPRateThrottle):
-    """Rate throttle for login endpoint per IP (THROTTLE_LOGIN_RATE, 10/min by default)."""
+    """Hár IP ushın kirisiw endpoint i rate throttle i (THROTTLE_LOGIN_RATE, ádetde 10/min)."""
     rate = settings.LOGIN_THROTTLE_RATE
     scope = 'login'
 
 
 class RegisterRateThrottle(IPRateThrottle):
-    """Rate throttle for registration endpoint per IP (THROTTLE_REGISTER_RATE, 5/min by default)."""
+    """Hár IP ushın dizimnen ótiw endpoint i rate throttle i (THROTTLE_REGISTER_RATE, ádetde 5/min)."""
     rate = settings.REGISTER_THROTTLE_RATE
     scope = 'register'
 
 
 class PasswordResetRequestThrottle(IPRateThrottle):
-    """Reset e-mails requested from one address: 5 per hour."""
+    """Bir mánzilden soralatuǵın tiklew e-mail leri: saatına 5."""
     rate = '5/hour'
     scope = 'password_reset_request'
 
 
 class PasswordResetConfirmThrottle(IPRateThrottle):
-    """Reset links tried from one address: 10 per hour."""
+    """Bir mánzilden sınap kórilgen tiklew silteme leri: saatına 10."""
     rate = '10/hour'
     scope = 'password_reset_confirm'
 
 
 class EmailCodeVerifyThrottle(IPRateThrottle):
-    """Mailed codes tried from one network: 20 per minute (5 wrong tries burn a code sooner)."""
+    """Bir tarmaqtan sınap kórilgen e-mail kodlar: minutına 20 (5 qáte urınıw kodtı tezirek jaǵadı)."""
     rate = '20/min'
     scope = 'email_code_verify'
 
 
 class EmailCodeSendThrottle(IPRateThrottle):
-    """New mailed codes asked for from one network: 30 per hour (one address gets 5 an hour at most)."""
+    """Bir tarmaqtan soralǵan jańa e-mail kodlar: saatına 30 (bir mánzil eń kóbi saatına 5 aladı)."""
     rate = '30/hour'
     scope = 'email_code_send'
 
 
 class AccountRateThrottle(IPRateThrottle):
-    """Keyed by the logged-in account, not by anything the client puts in the request."""
+    """Kirgen akkaunt boyınsha kiltlengen, klient soraw ishine qoyǵan hesh nárse boyınsha emes."""
 
     def get_cache_key(self, request, view):
         return self.cache_format % {'scope': self.scope, 'ident': f'user-{request.user.pk}'}
 
 
 class PasswordChangeThrottle(AccountRateThrottle):
-    """Password changes (and wrong current passwords) per account: 5 per minute."""
+    """Hár akkaunt ushın parol ózgertiwler (hám qáte házirgi parollar): minutına 5."""
     rate = '5/min'
     scope = 'password_change'
 
 
 class TwoFactorLoginThrottle(IPRateThrottle):
-    """Codes tried from one network: 10 per minute (the lockout stops guessing sooner)."""
+    """Bir tarmaqtan sınap kórilgen kodlar: minutına 10 (lockout boljawdı tezirek toqtatadı)."""
     rate = '10/min'
     scope = 'two_factor_login'
 
 
 class TwoFactorSetupThrottle(AccountRateThrottle):
-    """Setup and confirm calls per account: 10 per minute."""
+    """Hár akkaunt ushın sazlaw hám tastıyıqlaw shaqırıwları: minutına 10."""
     rate = '10/min'
     scope = 'two_factor_setup'
 
 
 class TwoFactorResetThrottle(AccountRateThrottle):
-    """A super admin proving themselves with their own code to reset someone else: 5 tries per minute."""
+    """Super admin óz kodı menen basqa birewdi qayta ornatıw ushın óz-ózin dálillaydı: minutına 5 urınıw."""
     rate = '5/min'
     scope = 'two_factor_reset'

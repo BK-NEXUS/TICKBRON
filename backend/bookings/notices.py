@@ -1,6 +1,6 @@
 """
-Tell the guest and the hotel owner about a booking: a line in the site's list and an e-mail.
-The guest gets the full confirmation; the mail to the owner is one line and carries no guest details.
+Mehmanǵa hám mehmanxana iyesine bron haqqında xabarlaw: saytıń dizimindegi bir qatar hám e-mail.
+Mehmanǵa tolıq tastıyıqlaw baradı; iyege e-mail bir qatar hám mehmann maǵlıwmatın óz ishine almaydı.
 """
 import logging
 
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 SUBJECT = 'TICKBRON: bron / бронь / booking'
 
-# kind -> who is mailed and the text in uz / ru / en ({code} is the booking reference)
+# kind -> kimge e-mail barıwı hám uz / ru / en degi tekst ({code} bron reference i)
 MAILS = {
-    # The guest's mail is the full confirmation (bookings/confirmation_mail.py), so it has no text of its own here
+    # Mehmannıń e-mail ı tolıq tastıyıqlaw (bookings/confirmation_mail.py), sol sebepli bul jerde óz teksti joq
     'guest_confirmed': {'to': 'guest', 'path': '/bookings'},
     'owner_new': {
         'to': 'owner', 'path': '/partner',
@@ -36,7 +36,7 @@ MAILS = {
 
 
 def mail_for(booking, kind):
-    """(subject, body, recipient) of one notice, or None when the person cannot be mailed."""
+    """Bir xabarlandırıwdıń (subject, body, recipient) i, yamasa adamǵa e-mail jiberip bolmasa None."""
     spec = MAILS[kind]
     user = booking.guest if spec['to'] == 'guest' else booking.property.owner
     if not user.is_active or not user.email:
@@ -62,12 +62,13 @@ def _params(booking):
     }
 
 
-# With the broker down the booking must still answer at once: one quick try, no waiting out the default retries
+# Broker óship qalsa da bron birden juwap beriwi kerek: bir tez urınıw, ádettegi qayta urınıwlardı kútpew
 FAST_FAIL = {'max_retries': 1, 'interval_start': 0, 'interval_step': 0.2, 'interval_max': 0.2}
 
 
 def _queue(booking, kinds):
-    """Hand the mails to the worker; a broken queue must not fail or slow the booking that is already saved."""
+    """E-mail lerdi worker ge beriw; buzılǵan náwbet saqlanıp bolǵan bronnıń sátsiz bolıwına yamasa sekinlewine sebep bolmawı
+    kerek."""
     from bookings.tasks import send_booking_notice
     from config.celery import app
 

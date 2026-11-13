@@ -1,7 +1,7 @@
 """
-URL configuration for the users app.
+users app ı ushın URL sazlaması.
 
-This module contains URL patterns for user authentication and management endpoints.
+Bul modul paydalanıwshı autentifikaciyası hám basqarıw endpoint leri ushın URL úlgilerin óz ishine aladı.
 """
 from django.urls import path
 from users.views import (

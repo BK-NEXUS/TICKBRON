@@ -1,11 +1,11 @@
 """
-Load the initial Country > Region data (geography/data.py).
+Dáslepki Country > Region maǵlıwmatın júklew (geography/data.py).
 
     python manage.py load_geography
 
-Idempotent: only missing rows are created; existing rows (and admin edits) are kept.
-The same data is loaded by migration geography/0002, so this is only needed to
-re-add rows that were deleted.
+Idempotent: tek joq qatarlar jaratıladı; bar qatarlar (hám admin ózgerisleri) saqlanadı.
+Sol maǵlıwmat geography/0002 migration arqalı da júklenedi, sol sebepli bul tek
+óshirilgen qatarlardı qayta qosıw kerek bolǵanda kerek.
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction

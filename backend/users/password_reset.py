@@ -1,8 +1,8 @@
 """
-Password reset links and the e-mail that carries them.
+Parol tiklew silteme leri hám olardı alıp júretuǵın e-mail.
 
-The link holds a signed, single-use token (Django's PasswordResetTokenGenerator): it stops working
-after the password changes or the user signs in, and after PASSWORD_RESET_TIMEOUT.
+Silteme qol qoyılǵan, bir márte paydalanılatuǵın token di (Django nıń PasswordResetTokenGenerator ı) saqlaydı: ol
+parol ózgergennen yamasa paydalanıwshı kirgennen keyin, hám PASSWORD_RESET_TIMEOUT tan keyin islewdi toqtatadı.
 """
 import hashlib
 
@@ -22,12 +22,12 @@ EMAIL_SUBJECT = 'TICKBRON: parolni tiklash / сброс пароля / password 
 
 
 def can_reset_password(user):
-    """Only active accounts that have a password; a phone-only account has nothing to reset."""
+    """Tek paroli bar aktiv akkauntlar; tek telefonlı akkaunttı tiklewge hesh nárse joq."""
     return user.is_active and user.has_usable_password()
 
 
 def daily_request_allowed(email):
-    """Count this request against the address's daily budget; False once it is used up."""
+    """Bul sorawdı mánzildiń kúnlik shegine sanaw; tawsılsa False."""
     key = 'password_reset_requests:' + hashlib.sha256(email.lower().encode()).hexdigest()
     cache.add(key, 0, ONE_DAY_SECONDS)
     return cache.incr(key) <= MAX_REQUESTS_PER_ADDRESS_PER_DAY
@@ -40,7 +40,8 @@ def build_reset_link(user):
 
 
 def find_user_for_reset(uid, token):
-    """The user a valid link belongs to, or None (unknown id, wrong token, expired, used, deactivated)."""
+    """Jaramlı silteme tiyisli paydalanıwshı, yamasa None (belgisiz id, qáte token, múddeti ótken, paydalanılǵan,
+    óshirilgen)."""
     try:
         user = User.objects.get(pk=urlsafe_base64_decode(uid).decode())
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):

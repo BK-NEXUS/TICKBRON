@@ -1,4 +1,4 @@
-"""Switches off the two-step sign-in of one account (a lost phone and lost backup codes). Run on the server only."""
+"""Bir akkauttıń eki basqıshlı kirisiwin óshiredi (telefon hám zapas kodlar joǵalǵan). Tek serverde isletiń."""
 from django.core.management.base import BaseCommand, CommandError
 
 from common.security_log import log_security_event

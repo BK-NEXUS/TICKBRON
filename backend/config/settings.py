@@ -1,5 +1,5 @@
 """
-TICKBRON Backend Settings
+TICKBRON Backend sazlamaları
 
 Django + Django REST Framework + PostgreSQL + Redis + Celery
 """
@@ -17,19 +17,19 @@ from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 from .logging_config import get_logging_config
 
-# Load environment variables
+# Environment ózgeriwshilerin júklew
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Proekt ishindegi jollardı bılay qurıń: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Check if running in test mode
+# Test rejiminde isleytuǵının tekseriw
 TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 if TESTING:
-    # Tests hash passwords with a fast algorithm; production keeps Django's default (PBKDF2).
+    # Testler parollardı tez algoritm menen hash laydı; production Django niń ádetdegisin (PBKDF2) saqlaydı.
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
-    # A developer's .env (e.g. .env.dev.example) must not change values that tests assert as defaults.
+    # Programmistiń .env i (mısalı .env.dev.example) testler ádetdegi dep tastıyıqlaytuǵın mánislerdi ózgertpewi kerek.
     for _name in (
         'THROTTLE_ANON_RATE', 'THROTTLE_USER_RATE', 'THROTTLE_BOOKING_CREATE_RATE',
         'THROTTLE_NO_SHOW_REPORT_RATE', 'THROTTLE_CHAT_SEND_RATE', 'THROTTLE_CHAT_POLL_RATE',
@@ -38,41 +38,41 @@ if TESTING:
     ):
         os.environ.pop(_name, None)
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# QÁWIPSIZLIK ESKERTIWI: production ta paydalanılatuǵın secret key di jasırın saqlań!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# QÁWIPSIZLIK ESKERTIWI: production ta debug ti qosıp islemeń!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Validate SECRET_KEY in production (when DEBUG is False), but allow default for testing
+# Production ta (DEBUG False bolǵanda) SECRET_KEY di tekseriw, biraq testlew ushın ádetdegige ruxsat beriw
 if not DEBUG and SECRET_KEY == 'django-insecure-change-this-in-production' and not TESTING:
     raise ValueError('SECRET_KEY environment variable must be set in production')
 
-# Validate ALLOWED_HOSTS in production (when DEBUG is False), but allow default for testing/development
+# Production ta (DEBUG False bolǵanda) ALLOWED_HOSTS ti tekseriw, biraq testlew/development ushın ádetdegige ruxsat beriw
 _allowed_hosts = os.getenv('ALLOWED_HOSTS', '')
 if not DEBUG and not _allowed_hosts and not TESTING:
     raise ValueError('ALLOWED_HOSTS environment variable must be set in production')
 
 
 def _env_list(raw):
-    """Comma-separated env value -> list, whitespace and empty entries dropped ("a.com, b.com" is two hosts)."""
+    """Útir menen ajıratılǵan env mánisi -> dizim, bos orınlar hám bos jazbalar taslanadı ("a.com, b.com" eki host)."""
     return [item.strip() for item in raw.split(',') if item.strip()]
 
 
 ALLOWED_HOSTS = _env_list(_allowed_hosts) or ['localhost', '127.0.0.1']
 
 
-# Application definition
+# Application anıqlaması
 
 INSTALLED_APPS = [
-    # 'django.contrib.admin',  # Removed - using custom admin_panel app instead
+    # 'django.contrib.admin',  # Alıp taslandı - ornına óz admin_panel app ı paydalanıladı
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # TICKBRON apps
+    # TICKBRON app ları
     'common',
     'core',
     'users',
@@ -88,7 +88,7 @@ INSTALLED_APPS = [
     'promotions',
     'chat',
 
-    # Third-party apps
+    # Úshinshi tárep app ları
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
@@ -98,15 +98,16 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'common.middleware.RequestBodyLimitMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    # after CorsMiddleware: its 400 must carry the CORS headers, or a browser shows a CORS error instead of the 400
+    # CorsMiddleware ten keyin: onıń 400 i CORS header lerin alıp júriwi kerek, bolmasa brauzer 400 ornına CORS qátesin
+    # kórsetedi
     'common.middleware.RejectNullCharactersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # The site sends Accept-Language (uz, ru, en); validation errors come back in that language
+    # Sayt Accept-Language (uz, ru, en) jiberedi; validation qátelikleri sol tilde qaytadı
     'common.middleware.RequestLanguageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # An administrator without two-step sign-in can only set it up (users/two_factor.py)
+    # Eki basqıshlı kirisiwi joq administrator tek onı sazlay aladı (users/two_factor.py)
     'users.middleware.TwoFactorSetupMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -117,7 +118,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
-# Logging Configuration
+# Logging sazlaması
 LOGGING = get_logging_config()
 
 TEMPLATES = [
@@ -142,7 +143,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# PostgreSQL only: SQLite has no row locks, so the double-booking protection would silently stop
+# Tek PostgreSQL: SQLite te qatar qulıpları joq, sol sebepli qos bronlawdan qorǵanıs ún-túnsiz toqtap qalar edi
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -151,8 +152,8 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 60,  # Persistent connections for 60 seconds
-        'CONN_HEALTH_CHECKS': True,  # a connection the database closed (restart) is replaced, not served as a 500
+        'CONN_MAX_AGE': 60,  # 60 sekund dawamlı ulanıwlar
+        'CONN_HEALTH_CHECKS': True,  # Database jawıp taslaǵan ulanıw (qayta iske túsiriw) 500 retinde emes, almastırıladı
         'OPTIONS': {
             'connect_timeout': 10,
             'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
@@ -161,8 +162,8 @@ DATABASES = {
 }
 
 
-# Each developer session (or Claude session) sets its own TICKBRON_TEST_DB_SUFFIX so two pytest
-# runs on one PostgreSQL server never share a test database (xdist adds _gw0, _gw1, ... to it)
+# Hár programmist sessiyası (yamasa Claude sessiyası) óziniń TICKBRON_TEST_DB_SUFFIX in belgileydi, sonda bir
+# PostgreSQL serverde eki pytest isleniwi hesh qashan bir test database di bólispeydi (xdist oǵan _gw0, _gw1, ... qosadı)
 TEST_DB_SUFFIX = os.getenv('TICKBRON_TEST_DB_SUFFIX', '')
 if TEST_DB_SUFFIX:
     if not re.fullmatch(r'[A-Za-z0-9_]{1,30}', TEST_DB_SUFFIX):
@@ -170,7 +171,7 @@ if TEST_DB_SUFFIX:
     DATABASES['default']['TEST'] = {'NAME': f"test_{DATABASES['default']['NAME']}_{TEST_DB_SUFFIX}"}
 
 
-# Password validation
+# Parol tekseriwi
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -190,7 +191,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
     {
-        # Letter, digit, special character, no common words
+        # Háripti, sandı, arnawlı belgi, ápiwayı sózler joq
         'NAME': 'users.validators.StrongPasswordValidator',
         'OPTIONS': {
             'min_length': 8,
@@ -200,7 +201,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Xalıqaralastırıw (Internationalization)
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
@@ -209,8 +210,8 @@ LOCALE_PATHS = [BASE_DIR / 'locale']
 
 TIME_ZONE = 'UTC'
 
-# R12: the date "today" for bookings, statistics and auto-completion (common.dates.business_today).
-# TIME_ZONE stays UTC; hotels in other countries use this business date for now.
+# R12: bronlar, statistika hám avtomat juwmaqlaw ushın "búgin" sanası (common.dates.business_today).
+# TIME_ZONE UTC bolıp qaladı; basqa mámleketlerdegi mehmanxanalar házirshe usı is sanasın paydalanadı.
 BUSINESS_TIME_ZONE = os.getenv('BUSINESS_TIME_ZONE', 'Asia/Tashkent')
 
 USE_I18N = True
@@ -218,59 +219,59 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Statik fayllar (CSS, JavaScript, súwretler)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files
+# Media fayllar
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default primary key field type
+# Ádetdegi primary key maydan túri
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model
+# Óz User modeli
 AUTH_USER_MODEL = 'users.User'
 
-# Security Settings
+# Qáwipsizlik sazlamaları
 CSRF_TRUSTED_ORIGINS = _env_list(os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000'))
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
-# Behind a TLS-terminating proxy (nginx) Django only sees http. With this on it trusts the
-# proxy's X-Forwarded-Proto, so request.is_secure(), the https redirect and HSTS work and the
-# redirect does not loop. Turn it on only when the proxy always overwrites that header.
+# TLS di tamamlaytuǵın proxy (nginx) artında Django tek http kóredi. Bul qosılǵanda ol
+# proxy diń X-Forwarded-Proto sına isenedi, sol sebepli request.is_secure(), https redirect hám HSTS isleydi
+# hám redirect aylanıp qalmaydı. Tek proxy sol header di hárdayım qayta jazǵanda qosıń.
 SECURE_PROXY_SSL_HEADER = (
     ('HTTP_X_FORWARDED_PROTO', 'https')
     if os.getenv('USE_X_FORWARDED_PROTO', 'False').lower() == 'true' else None
 )
-# Cookies are https-only unless DEBUG is on (local http); override with the env vars
+# Cookie ler DEBUG qosılmaǵansha (jergilikli http) tek https; env ózgeriwshileri menen ózgertiń
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-# A stolen session cookie stops working after a week (Django's default is two)
+# Urlanǵan session cookie bir háptedan keyin islewdi toqtatadı (Django tiń ádetdegisi eki)
 SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', str(7 * 24 * 3600)))
 
-# Additional Security Headers
-SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))  # 1 year
+# Qosımsha qáwipsizlik header leri
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))  # 1 jıl
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() == 'true'
-# Preload is hard to undo (browsers ship the list), so it is an explicit owner decision
+# Preload tı qaytarıw qıyın (brauzerler dizimdi jetkizedi), sol sebepli ol iyeniń anıq qararı
 SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
-SILENCED_SYSTEM_CHECKS = ['security.W021']  # W021 asks for preload: documented choice above
+SILENCED_SYSTEM_CHECKS = ['security.W021']  # W021 preload sorayıdı: joqarıda hújjetlestirilgen tańlaw
 SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
-# Two-step sign-in (users/two_factor.py): administrators and staff must have it. TWO_FACTOR_KEY seals the
-# authenticator secrets in the database; development and tests derive a key from SECRET_KEY instead.
+# Eki basqıshlı kirisiw (users/two_factor.py): administratorlar hám staff ta bolıwı shárt. TWO_FACTOR_KEY database degi
+# authenticator sırların shifrlaydı; development hám testler onıń ornına SECRET_KEY ten kilt shıǵaradı.
 TWO_FACTOR_REQUIRED_FOR_ADMINS = os.getenv('TWO_FACTOR_REQUIRED_FOR_ADMINS', str(not DEBUG and not TESTING)).lower() == 'true'
 TWO_FACTOR_KEY = os.getenv('TWO_FACTOR_KEY', '')
 
-# CORS Settings
+# CORS sazlamaları
 CORS_ALLOWED_ORIGINS = _env_list(os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000'))
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
@@ -293,9 +294,9 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# Number of trusted reverse proxies in front of the app that append to
-# X-Forwarded-For. 0 (default) ignores the header, since clients can forge it;
-# set it to match the deployment (e.g. 1 behind a single nginx/load balancer).
+# Ilova aldındaǵı X-Forwarded-For ge qosatuǵın isenimli reverse proxy ler sanı.
+# 0 (ádetde) header di itibarǵa almaydı, sebebi klientler onı jalǵan jasay aladı;
+# onı deployment ke sáykes qoyıń (mısalı bir nginx/load balancer artında 1).
 
 
 def _read_num_proxies():
@@ -311,9 +312,9 @@ def _read_num_proxies():
 
 NUM_PROXIES, _NUM_PROXIES_ERROR = _read_num_proxies()
 
-# Django REST Framework Settings
+# Django REST Framework sazlamaları
 REST_FRAMEWORK = {
-    'NUM_PROXIES': NUM_PROXIES,  # client IP for throttling; see common.request.get_client_ip
+    'NUM_PROXIES': NUM_PROXIES,  # throttling ushın klient IP si; qarań common.request.get_client_ip
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -321,7 +322,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    # The browsable API (HTML forms for every endpoint) is a development tool only
+    # Browsable API (hár endpoint ushın HTML formalar) tek development quralı
     'DEFAULT_RENDERER_CLASSES': (
         ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG
         else ['rest_framework.renderers.JSONRenderer']
@@ -329,7 +330,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'common.exception_handlers.custom_exception_handler',
-    # SafeJSONParser answers 400 to JSON nested too deeply to read (the stock parser lets a RecursionError become a 500)
+    # SafeJSONParser júda tereń oralǵan JSON ǵa 400 menen juwap beredi (ádettegi parser RecursionError dıń 500 bolıwına jol
+    # qoyadı)
     'DEFAULT_PARSER_CLASSES': [
         'common.parsers.SafeJSONParser',
         'rest_framework.parsers.FormParser',
@@ -340,28 +342,28 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        # Per IP for anonymous visitors. One property page makes ~6 API calls, and
-        # many users can share one IP (mobile carriers, offices), so this must not
-        # be tight. Login, register and OTP keep their own strict limits.
+        # Anonim kelwshiler ushın IP boyınsha. Bir mehmanxana beti ~6 API shaqırıwın isleydi, hám
+        # kóp paydalanıwshı bir IP ni bólisiwi múmkin (mobil operatorlar, ofisler), sol sebepli bul qattı bolmawı
+        # kerek. Login, register hám OTP óz qattı limitlerin saqlaydı.
         'anon': os.getenv('THROTTLE_ANON_RATE', '2000/hour'),
-        # Per logged-in user. The E2E crawl raises both rates (see frontend/playwright.config.ts)
+        # Kirgen paydalanıwshı boyınsha. E2E crawl eki dárejeni de kóteredi (qarań frontend/playwright.config.ts)
         'user': os.getenv('THROTTLE_USER_RATE', '1000/hour'),
         'booking_create': os.getenv('THROTTLE_BOOKING_CREATE_RATE', '30/hour'),
-        # R12: hotels filing no-show reports (bookings.views_noshow.NoShowReportThrottle)
+        # R12: no-show esabatı jiberiwshi mehmanxanalar (bookings.views_noshow.NoShowReportThrottle)
         'no_show_report': os.getenv('THROTTLE_NO_SHOW_REPORT_RATE', '20/hour'),
-        # Support chat: writing, and reading (the page polls while the chat is open)
+        # Qollap-quwatlaw chatı: jazıw hám oqıw (chat ashıq waqıtta bet polling isleydi)
         'chat_send': os.getenv('THROTTLE_CHAT_SEND_RATE', '20/min'),
         'chat_poll': os.getenv('THROTTLE_CHAT_POLL_RATE', '90/min'),
     },
 }
 
-# API Documentation
+# API hújjetlestiriw
 SPECTACULAR_SETTINGS = {
     'TITLE': 'TICKBRON API',
     'DESCRIPTION': 'TICKBRON API Documentation',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # Several models have a field named "status" with different choices
+    # Kóp model de "status" atlı, túrli tańlawlı maydan bar
     'ENUM_NAME_OVERRIDES': {
         'BookingStatusEnum': 'bookings.models.Booking.STATUS_CHOICES',
         'PropertyStatusEnum': 'properties.models.Property.STATUS_CHOICES',
@@ -370,15 +372,15 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-# Redis Configuration
+# Redis sazlaması
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
 REDIS_URL = os.getenv('REDIS_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
 
-# Cache (throttling and rate-limit counters live here). Redis shares them
-# across all workers; LocMem is per process and only suitable for local
-# development. Defaults to Redis when DEBUG is off; tests always use LocMem.
+# Kesh (throttling hám rate-limit sanaǵıshları usı jerde turadı). Redis olardı barlıq
+# worker ler arasında bóliskenlestiredi; LocMem hár process ushın bólek hám tek jergilikli
+# development ke jaraydı. DEBUG óshirilgende ádetde Redis; testler hárdayım LocMem paydalanadı.
 USE_REDIS_CACHE = os.getenv('USE_REDIS_CACHE', str(not DEBUG)).lower() == 'true' and not TESTING
 if USE_REDIS_CACHE:
     CACHES = {
@@ -387,7 +389,7 @@ if USE_REDIS_CACHE:
             'LOCATION': REDIS_URL,
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                # A dead Redis must fail fast; without timeouts every worker hangs on the OS TCP timeout
+                # Óship qalǵan Redis tez qátelesiwi kerek; timeout lar bolmasa hár worker OS TCP timeout ında qatıp qaladı
                 'SOCKET_CONNECT_TIMEOUT': 2,
                 'SOCKET_TIMEOUT': 2,
             },
@@ -401,36 +403,36 @@ else:
         }
     }
 
-# Limit of the search endpoints per visitor address (properties.views.SearchRateThrottle)
+# Hár kelwshi mánzili ushın izlew endpoint leriniń limiti (properties.views.SearchRateThrottle)
 SEARCH_THROTTLE_RATE = os.getenv('THROTTLE_SEARCH_RATE', '100/min')
-# Limit of the public banner endpoints per visitor address (promotions.views.PromotionPublicThrottle)
+# Hár kelwshi mánzili ushın ashıq banner endpoint leriniń limiti (promotions.views.PromotionPublicThrottle)
 PROMOTION_PUBLIC_THROTTLE_RATE = os.getenv('THROTTLE_PROMOTION_PUBLIC_RATE', '60/min')
-# Limits of the sign-in and sign-up endpoints per visitor address (users.throttles)
+# Hár kelwshi mánzili ushın kirisiw hám dizimnen ótiw endpoint leriniń limitleri (users.throttles)
 LOGIN_THROTTLE_RATE = os.getenv('THROTTLE_LOGIN_RATE', '10/min')
 REGISTER_THROTTLE_RATE = os.getenv('THROTTLE_REGISTER_RATE', '5/min')
 
-# Seconds a copy of a public answer (hotel page, availability, search results) is kept in the cache; 0 turns it off.
-# The tests run with it off so one test never sees another's data. (common/public_cache.py)
+# Ashıq juwaptıń (mehmanxana beti, bos orınlar, izlew nátiyjeleri) nusqası keshte saqlanatuǵın sekundlar; 0 onı óshiredi.
+# Testler onı óship isleydi, sonda bir test basqasınıń maǵlıwmatın kórmeydi. (common/public_cache.py)
 PUBLIC_CACHE_SECONDS = max(int(os.getenv('PUBLIC_CACHE_SECONDS', '0' if TESTING else '30')), 0)
 
-# R16: when True (the default), a rate plan must carry the owner's price in every supported currency (create and
-# every edit); the owner decided this on 2026-10-19 (see .ai/PLAN_R16_MULTI_CURRENCY.md).
+# R16: True bolǵanda (ádetde), rate plan hár qollap-quwatlanatuǵın valyutada iyeniń bahasın alıp júriwi kerek (jaratıw hám
+# hár ózgertiw); iye bunı 2026-10-19 de sheshti (qarań .ai/PLAN_R16_MULTI_CURRENCY.md).
 RATE_PLAN_PRICES_REQUIRED = os.getenv('RATE_PLAN_PRICES_REQUIRED', 'True').lower() == 'true'
 
-# Celery Configuration
+# Celery sazlaması
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
-# Local development without a worker: run tasks (password reset e-mails, alerts) inside the request
+# Worker siz jergilikli development: task lardı (parol tiklew e-mail leri, eskertiwler) soraw ishinde orınlaw
 CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False').lower() == 'true'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-# R12: beat schedules are written in business time (Asia/Tashkent) whatever TIME_ZONE is.
-# Production must run Celery beat, a worker and Redis (RELEASE_CHECKLIST).
+# R12: beat kesteleri TIME_ZONE qanday bolsa da is waqtında (Asia/Tashkent) jazıladı.
+# Production Celery beat, worker hám Redis tı isletiwi shárt (RELEASE_CHECKLIST).
 CELERY_TIMEZONE = BUSINESS_TIME_ZONE
 
-# E-mail (password reset links). Local development prints the mail to the console; production sends it
-# through SMTP and must say where the site lives, because the link points to the frontend.
+# E-mail (parol tiklew silteme leri). Jergilikli development e-mail di konsolǵa basıp shıǵaradı; production onı
+# SMTP arqalı jiberedi hám sayt qayerde ekenin aytıwı kerek, sebebi silteme frontend ke baradı.
 EMAIL_BACKEND = os.getenv(
     'EMAIL_BACKEND',
     'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
@@ -442,88 +444,90 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'TICKBRON <no-reply@tickbron.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-# Where the team hears of a new chat message (empty = the team is not mailed; the admin tab still shows the badge)
+# Komanda jańa chat xabarı haqqında qayerden biledi (bos = komandaǵa e-mail jiberilmeydi; admin tab ta belgi ele kórinedi)
 SUPPORT_NOTIFY_EMAIL = os.getenv('SUPPORT_NOTIFY_EMAIL', '')
-PASSWORD_RESET_TIMEOUT = 60 * 60  # a reset link works for one hour
-# A mail server that does not answer must not hold a web process for long: the code mail is sent inside the request
+PASSWORD_RESET_TIMEOUT = 60 * 60  # tiklew siltemesi bir saat isleydi
+# Juwap bermeytuǵın e-mail server web process ti uzaq waqıt ustap turmawı kerek: kod e-mail ı soraw ishinde jiberiledi
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
-# Six-digit codes mailed to the address (users/email_codes.py): at sign-up the account is made only after the code is
-# typed, and every sign-in of a guest or hotel owner needs one after the password. Both need working mail (EMAIL_HOST).
+# Mánzilge e-mail penen jiberiletuǵın altı sanlı kodlar (users/email_codes.py): dizimnen ótkende akkaunt kod
+# terilgennen keyin ǵana jaratıladı, hám mehmann yamasa mehmanxana iyesiniń hár kirisiwine paroldan keyin biri kerek. Ekewine de
+# isleytuǵın e-mail kerek (EMAIL_HOST).
 EMAIL_VERIFICATION_REQUIRED = os.getenv('EMAIL_VERIFICATION_REQUIRED', 'True').lower() == 'true'
 EMAIL_LOGIN_CODE_REQUIRED = os.getenv('EMAIL_LOGIN_CODE_REQUIRED', 'True').lower() == 'true'
 
-# Alerts to a Telegram chat (common/alerts.py). Both empty = alerts off. Create the bot with
-# @BotFather, add it to the chat and take the chat id from the getUpdates call.
+# Telegram chatqa eskertiwler (common/alerts.py). Ekewi de bos = eskertiwler óshken. Botti
+# @BotFather menen jaratıń, chatqa qosıń hám chat id sin getUpdates shaqırıwınan alıń.
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_ALERT_CHAT_ID = os.getenv('TELEGRAM_ALERT_CHAT_ID', '')
 
-# Periodic tasks (run with: celery -A config beat -l info)
+# Dáwirli tapsırmalar (mınadan isletiledi: celery -A config beat -l info)
 EXPIRED_BOOKINGS_INTERVAL_SECONDS = int(os.getenv('EXPIRED_BOOKINGS_INTERVAL_SECONDS', '60'))
 CELERY_BEAT_SCHEDULE = {
-    # Pending bookings expire after 15 minutes; release their inventory promptly
+    # Kútip turǵan bronlardıń múddeti 15 minuttan keyin ótedi; olardıń inventory in tez bosatıw
     'expire-pending-bookings': {
         'task': 'bookings.tasks.expire_pending_bookings',
         'schedule': EXPIRED_BOOKINGS_INTERVAL_SECONDS,
     },
-    # A confirmed booking whose guest has not arrived ARRIVAL_GRACE_HOURS after the given time is cancelled
+    # Mehmanı bergen waqıttan keyin ARRIVAL_GRACE_HOURS saat kelmegen tastıyıqlanǵan bron biykar etiledi
     'cancel-unarrived-bookings': {
         'task': 'bookings.tasks.cancel_unarrived_bookings',
         'schedule': crontab(minute='*/10'),
     },
-    # CBU exchange rates at 09:00 and 18:00 Asia/Tashkent (CELERY_TIMEZONE)
+    # CBU valyuta kursları Asia/Tashkent 09:00 hám 18:00 de (CELERY_TIMEZONE)
     'fetch-exchange-rates': {
         'task': 'currency.tasks.fetch_exchange_rates',
         'schedule': crontab(hour='9,18', minute=0),
     },
-    # R12: confirmed stays whose check-out date has passed become completed, 00:05 Asia/Tashkent
+    # R12: shıǵıw sanası ótken tastıyıqlanǵan turıwlar completed boladı, Asia/Tashkent 00:05
     'complete-finished-stays': {
         'task': 'bookings.tasks.complete_finished_stays',
         'schedule': crontab(hour=0, minute=5),
     },
-    # Monthly ad renewal: ask "did the hotel pay for the next month?", remove ads not renewed in time, 00:05 Asia/Tashkent
-    # (before the 00:10 tidy below, which leaves an ad with an open question running)
+    # Aylıq reklama jańalaw: "mehmanxana keyingi ay ushın tólep pe?" dep soraw, waqtında jańalanbaǵan reklamalardı alıp taslaw,
+    # Asia/Tashkent 00:05
+    # (tómendegi 00:10 tazalawdan aldın, ol ashıq sorawı bar reklamanı isletip qaldıradı)
     'run-ad-renewals': {
         'task': 'promotions.tasks.run_ad_renewals',
         'schedule': crontab(hour=0, minute=5),
     },
-    # R10: expired hotel promotions end, paid ones that started become active, 00:10 Asia/Tashkent
+    # R10: múddeti ótken mehmanxana reklamaları tamamlanadı, baslanǵan tólengenleri aktiv boladı, Asia/Tashkent 00:10
     'end-expired-promotions': {
         'task': 'promotions.tasks.end_expired_promotions',
         'schedule': crontab(hour=0, minute=10),
     },
-    # Expired sign-in sessions are rows in the database that nothing else removes, 03:30 Asia/Tashkent
+    # Múddeti ótken kirisiw session ları database degi basqa hesh nárse alıp taslamaytuǵın qatarlar, Asia/Tashkent 03:30
     'clear-expired-sessions': {
         'task': 'common.tasks.clear_expired_sessions',
         'schedule': crontab(hour=3, minute=30),
     },
 }
 
-# Exchange rates (R6). Thresholds come from the environment; see currency/cbu.py
+# Valyuta kursları (R6). Shegaralar environment ten keledi; qarań currency/cbu.py
 FX_STALE_AFTER_DAYS = int(os.getenv('FX_STALE_AFTER_DAYS', '3'))
-FX_MAX_CHANGE = Decimal(os.getenv('FX_MAX_CHANGE', '0.10'))      # reject jumps over 10 %
-FX_MIN_RATE = Decimal(os.getenv('FX_MIN_RATE', '1000'))          # UZS per USD, sane range
+FX_MAX_CHANGE = Decimal(os.getenv('FX_MAX_CHANGE', '0.10'))      # 10 % tan sekirewdi biykar etiw
+FX_MIN_RATE = Decimal(os.getenv('FX_MIN_RATE', '1000'))          # UZS / USD, aqılǵa muwapıq aralıq
 FX_MAX_RATE = Decimal(os.getenv('FX_MAX_RATE', '100000'))
-FX_FETCH_TIMEOUT = int(os.getenv('FX_FETCH_TIMEOUT', '10'))      # seconds
+FX_FETCH_TIMEOUT = int(os.getenv('FX_FETCH_TIMEOUT', '10'))      # sekund
 
-# R12 Status: CSV exports stop after this many rows (then a final "truncated" line)
+# R12 Status: CSV eksportlar usı qatar sanınan keyin toqtaydı (keyin aqırǵı "truncated" qatarı)
 CSV_EXPORT_MAX_ROWS = int(os.getenv('CSV_EXPORT_MAX_ROWS', '10000'))
-# R12: hotels may report a no-show up to this many days after check-out (phase 3), so the
-# Status "stayed" numbers of that window can still change
+# R12: mehmanxanalar shıǵıwdan keyin usı kúnge shekem no-show haqqında xabarlay aladı (3-basqısh), sol sebepli
+# sol oynanıń Status "stayed" sanları ele ózgeriwi múmkin
 NO_SHOW_REPORT_WINDOW_DAYS = int(os.getenv('NO_SHOW_REPORT_WINDOW_DAYS', '7'))
-# Cash bookings: hours the hotel waits after the arrival time the guest gave before the booking is cancelled
+# Naqd bronlar: mehmanxana bron biykar etilgenshe mehmannıń bergen keliw waqtınan keyin kútetuǵın saatlar
 ARRIVAL_GRACE_HOURS = int(os.getenv('ARRIVAL_GRACE_HOURS', '2'))
-# R12 phase 3: a hotel is flagged in the staff queue when, over the last NO_SHOW_FLAG_DAYS days, it has at
-# least NO_SHOW_FLAG_MIN_REPORTS reports AND its report rate is at least NO_SHOW_FLAG_FACTOR times the
-# platform rate AND at least NO_SHOW_FLAG_MIN_RATE (so a near-zero average does not flag everyone)
+# R12 3-basqısh: mehmanxana staff náwbetinde sońǵı NO_SHOW_FLAG_DAYS kúnde eń keminde
+# NO_SHOW_FLAG_MIN_REPORTS esabatı bolsa HÁM esabat dárejesi platforma dárejesiniń eń keminde NO_SHOW_FLAG_FACTOR
+# ese bolsa HÁM eń keminde NO_SHOW_FLAG_MIN_RATE bolsa belgilenedi (sol sebepli nolge jaqın ortasha hámmeni belgilemeydi)
 NO_SHOW_FLAG_DAYS = int(os.getenv('NO_SHOW_FLAG_DAYS', '90'))
 NO_SHOW_FLAG_MIN_REPORTS = int(os.getenv('NO_SHOW_FLAG_MIN_REPORTS', '5'))
 NO_SHOW_FLAG_FACTOR = Decimal(os.getenv('NO_SHOW_FLAG_FACTOR', '3'))
 NO_SHOW_FLAG_MIN_RATE = Decimal(os.getenv('NO_SHOW_FLAG_MIN_RATE', '0.10'))
 
-# Database connection health check
+# Database ulanıwı jaǵdayın tekseriw
 
-# Production refuses to start on insecure settings (R4 security review).
-# Local development (DEBUG=True) and the test run keep their defaults.
+# Production qáwipsiz emes sazlamalar menen iske túspeydi (R4 qáwipsizlik tekseriwi).
+# Jergilikli development (DEBUG=True) hám test isleniwi óz ádetdegilerin saqlaydı.
 _PLACEHOLDER_SECRET_KEYS = {
     'django-insecure-change-this-in-production',
     'your-secret-key-here-change-in-production',
@@ -544,18 +548,18 @@ def _production_config_errors():
         errors.append('SECRET_KEY must be a random value of at least 50 characters, not a placeholder')
     if '*' in ALLOWED_HOSTS:
         errors.append("ALLOWED_HOSTS must list the real host names, not '*'")
-    # N-3: unset means "no proxy", and behind nginx every visitor then shares one IP, so the login
-    # throttle, the account lockout and the promotion counters collapse into one bucket
+    # N-3: belgilenbegen "proxy joq" degen mánis, hám nginx artında hár kelwshi bir IP ni bólisedi, sol sebepli kirisiw
+    # throttle i, akkaunt lockout ı hám reklama sanaǵıshları bir sebetke jıynaladı
     if _NUM_PROXIES_ERROR:
         errors.append(_NUM_PROXIES_ERROR)
     elif os.getenv('NUM_PROXIES') is None:
         errors.append('NUM_PROXIES must be set (0 = no reverse proxy, 1 = one nginx/load balancer in front)')
-    # N-6: https must be enforced, and a TLS-terminating proxy needs its header trusted
+    # N-6: https májbúrlenwi kerek, hám TLS di tamamlaytuǵın proxy header ine isenim kerek
     if not SECURE_SSL_REDIRECT:
         errors.append('SECURE_SSL_REDIRECT must be True when DEBUG is False')
     if NUM_PROXIES > 0 and SECURE_PROXY_SSL_HEADER is None:
         errors.append('USE_X_FORWARDED_PROTO must be True behind a reverse proxy (otherwise the https redirect loops)')
-    # Password reset: the e-mailed link points to the frontend and needs a mail server to be sent
+    # Parol tiklew: e-mail ǵa jiberilgen silteme frontend ke baradı hám jiberiw ushın e-mail server kerek
     if not FRONTEND_URL.startswith('https://'):
         errors.append('FRONTEND_URL must be the https:// address of the site (password reset links point to it)')
     if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST:
@@ -569,8 +573,9 @@ def _production_config_errors():
         errors.append('CSRF_COOKIE_SECURE must be True when DEBUG is False')
     if not USE_REDIS_CACHE:
         errors.append('USE_REDIS_CACHE must be True when DEBUG is False (lockouts and throttles need a shared cache)')
-    # docker-compose.yml names its database container `db` and reaches it over Docker's own network on the
-    # same machine: DB_NETWORK_IS_PRIVATE=True says so, and only a bare service name (no dot, no IP) counts
+    # docker-compose.yml óziniń database konteynerin `db` dep ataydı hám oǵan sol bir mashinadaǵı Docker tiń óz
+    # tarmaǵı arqalı jetedi: DB_NETWORK_IS_PRIVATE=True sonı aytadı, hám tek ápiwayı xızmet atı (nuqta joq, IP joq) esapqa
+    # alınadı
     db_host = os.getenv('DB_HOST', '')
     db_on_private_network = (os.getenv('DB_NETWORK_IS_PRIVATE', 'False').lower() == 'true'
                              and '.' not in db_host and ':' not in db_host)
@@ -587,7 +592,7 @@ def _production_config_errors():
 
 
 def _is_local_host(host):
-    """localhost, a *.localhost / *.local name or an IP address: places a developer's own machine can be."""
+    """localhost, *.localhost / *.local at yamasa IP mánzil: programmistiń óz mashinası bola alatuǵın orınlar."""
     host = host.strip('[]')
     try:
         ipaddress.ip_address(host)
@@ -597,7 +602,8 @@ def _is_local_host(host):
 
 
 if DEBUG and not TESTING and not all(_is_local_host(host) for host in ALLOWED_HOSTS):
-    # DEBUG shows stack traces, opens the API docs and skips every check below: never on a public domain
+    # DEBUG stack trace lerdi kórsetedi, API hújjetlerin ashadı hám tómendegi hár tekseriwdi ótkizip jiberedi: ashıq domen de
+    # hesh qashan
     raise ValueError('DEBUG must be False when ALLOWED_HOSTS lists a public host name')
 
 if not DEBUG and not TESTING:

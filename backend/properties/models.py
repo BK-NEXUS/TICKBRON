@@ -1,7 +1,7 @@
 """
-Property models for TICKBRON.
+TICKBRON ushın Property model leri.
 
-This module contains models for properties, translations, policies, and related structures.
+Bul modul mehmanxanalar, awdarmalar, siyasatlar hám olarǵa baylanıslı dúzilislerdiń model lerin óz ishine aladı.
 """
 from datetime import timedelta
 from django.db import models, transaction, IntegrityError
@@ -15,14 +15,14 @@ from common.storage import get_media_upload_path, validate_image_file
 
 class PropertyType(BaseModel):
     """
-    Property type model (e.g., apartment, house, villa, studio).
+    Mehmanxana túri modeli (mısalı apartment, house, villa, studio).
 
-    Categorizes properties by their type for filtering and display.
+    Mehmanxanalardı túri boyınsha filterlew hám kórsetiw ushın toparlaydı.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)  # Icon class or emoji
+    icon = models.CharField(max_length=50, blank=True, null=True)  # Ikonka klası yamasa emoji
 
     class Meta:
         db_table = 'property_types'
@@ -36,11 +36,11 @@ class PropertyType(BaseModel):
 
 class Property(BaseModel):
     """
-    Core Property model for TICKBRON.
+    TICKBRON ushın tiykarǵı Property modeli.
 
-    Represents a property available for booking with all essential information.
+    Barlıq tiykarǵı maǵlıwmatı menen bronlawǵa bar mehmanxananı kórsetedi.
     """
-    # Ownership
+    # Iyelik
     owner = models.ForeignKey(
         'users.User',
         on_delete=models.CASCADE,
@@ -48,7 +48,7 @@ class Property(BaseModel):
         db_index=True
     )
 
-    # Property classification
+    # Mehmanxana klassifikaciyası
     property_type = models.ForeignKey(
         PropertyType,
         on_delete=models.PROTECT,
@@ -71,7 +71,7 @@ class Property(BaseModel):
         db_index=True
     )
 
-    # Capacity
+    # Sıyımlılıq
     max_guests = models.PositiveIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(50)],
         help_text=_('Maximum number of guests allowed')
@@ -87,7 +87,7 @@ class Property(BaseModel):
         help_text=_('Number of bathrooms')
     )
 
-    # Location
+    # Jaylasıw
     address_line1 = models.CharField(max_length=255, db_index=True)
     address_line2 = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100, db_index=True)
@@ -95,15 +95,15 @@ class Property(BaseModel):
     postal_code = models.CharField(max_length=20, blank=True, null=True)
     country = models.CharField(max_length=100, db_index=True)
 
-    # Geography dictionary. When set, save() copies their English names into the text
-    # fields country, state and city above (the city copy is the region's name: there is no town or district below
-    # the region), so code that still reads them keeps working.
+    # Geografiya sózligi. Belgilengende save() olardıń inglizsha atların joqarıdaǵı tekst
+    # maydanlar country, state hám city ge kóshiredi (city kóshirmesi regionnıń atı: regiondan tómen qala yamasa tuman joq),
+    # sonda olardı ele oqıytuǵın kod islewin dawam etedi.
     country_ref = models.ForeignKey(
         'geography.Country', on_delete=models.PROTECT, null=True, blank=True, related_name='properties')
     region_ref = models.ForeignKey(
         'geography.Region', on_delete=models.PROTECT, null=True, blank=True, related_name='properties')
 
-    # Geolocation
+    # Geojaylasıw
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -119,15 +119,15 @@ class Property(BaseModel):
         validators=[MinValueValidator(-180), MaxValueValidator(180)]
     )
 
-    # Pricing
+    # Bahalaw
     base_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(0)]
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
 
-    # Additional info
+    # Qosımsha maǵlıwmat
     total_area = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -144,7 +144,7 @@ class Property(BaseModel):
     has_ac = models.BooleanField(default=False)
     has_heating = models.BooleanField(default=False)
 
-    # Approval tracking
+    # Tastıyıqlawdı baqlaw
     approved_at = models.DateTimeField(null=True, blank=True)
     approved_by = models.ForeignKey(
         'users.User',
@@ -163,7 +163,7 @@ class Property(BaseModel):
         indexes = [
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['city', 'country']),
-            # Status sections: country > region (state) drill-down
+            # Status bólimleri: mámleket > region (state) tereńlew
             models.Index(fields=['country', 'state'], name='property_country_state_idx'),
             models.Index(fields=['base_price']),
         ]
@@ -172,7 +172,7 @@ class Property(BaseModel):
         return f"Property {self.id} - {self.city}, {self.country}"
 
     def save(self, *args, **kwargs):
-        # Keep the old text location in step with the Geography refs (English names)
+        # Eski tekst jaylasıwdı Geography ref leri (inglizsha atlar) menen sáykes saqlaw
         if self.country_ref_id:
             self.country = self.country_ref.name_en
         if self.region_ref_id:
@@ -185,8 +185,8 @@ class Property(BaseModel):
 
     def display_name(self, language='en'):
         """
-        Name shown to people: the translation in `language`, else any translation,
-        else the address. Uses prefetched translations when available.
+        Adamlarǵa kórsetiletuǵın at: `language` degi awdarma, bolmasa qálegen awdarma,
+        bolmasa mánzil. Bar bolsa aldınan júklengen awdarmalardı paydalanadı.
         """
         translations = [t for t in self.translations.all() if not t.is_deleted and t.name]
         for translation in translations:
@@ -197,7 +197,7 @@ class Property(BaseModel):
         return self.get_full_address()
 
     def get_full_address(self):
-        """Return the full address as a string."""
+        """Tolıq mánzildi qatar retinde qaytarıw."""
         parts = [self.address_line1]
         if self.address_line2:
             parts.append(self.address_line2)
@@ -211,7 +211,7 @@ class Property(BaseModel):
 
     @staticmethod
     def _without_repeats(parts):
-        """A city and its region often share a name (Tashkent, Tashkent); write each name once."""
+        """Qala hám onıń regionı kóbinese birdey atqa iye (Tashkent, Tashkent); hár atın bir márte jazıń."""
         seen, kept = set(), []
         for part in parts:
             if part.casefold() not in seen:
@@ -222,9 +222,9 @@ class Property(BaseModel):
 
 class PropertyTranslation(BaseModel):
     """
-    Property translation model for multilingual support.
+    Kóp tillilikti qollaw ushın mehmanxana awdarması modeli.
 
-    Stores translated property information for different languages.
+    Mehmanxana maǵlıwmatınıń túrli tillerdegi awdarmaların saqlaydı.
     """
     LANGUAGE_CHOICES = [
         ('en', _('English')),
@@ -262,9 +262,9 @@ class PropertyTranslation(BaseModel):
 
 class PropertyPolicy(BaseModel):
     """
-    Property policy model for property-level policies.
+    Mehmanxana dárejesindegi siyasatlar ushın mehmanxana siyasatı modeli.
 
-    Stores various policies like check-in/check-out, cancellation, etc.
+    Kiriw/shıǵıw, biykar etiw hám t.b. túrli siyasatlardı saqlaydı.
     """
     POLICY_TYPE_CHOICES = [
         ('check_in', _('Check-in Policy')),
@@ -309,14 +309,14 @@ class PropertyPolicy(BaseModel):
 
 class AmenityCategory(BaseModel):
     """
-    Amenity category model for organizing amenities into groups.
+    Amenity lerdi toparlarǵa shólkemlestiriw ushın amenity kategoriyası modeli.
 
-    Examples: Kitchen, Bathroom, Entertainment, Safety, etc.
+    Mısallar: Asxana, Hammam, Oyın-kúlki, Qáwipsizlik hám t.b.
     """
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)  # Icon class or emoji
+    icon = models.CharField(max_length=50, blank=True, null=True)  # Ikonka klası yamasa emoji
     sort_order = models.PositiveIntegerField(default=0, help_text=_('Display order'))
 
     class Meta:
@@ -334,9 +334,9 @@ class AmenityCategory(BaseModel):
 
 class AmenityCategoryTranslation(BaseModel):
     """
-    Amenity category translation model for multilingual support.
+    Kóp tillilikti qollaw ushın amenity kategoriyası awdarması modeli.
 
-    Stores translated amenity category information for different languages.
+    Amenity kategoriyası maǵlıwmatınıń túrli tillerdegi awdarmaların saqlaydı.
     """
     LANGUAGE_CHOICES = [
         ('en', _('English')),
@@ -371,9 +371,9 @@ class AmenityCategoryTranslation(BaseModel):
 
 class Amenity(BaseModel):
     """
-    Amenity model for individual property amenities.
+    Jeke mehmanxana amenity leri ushın amenity modeli.
 
-    Examples: WiFi, Air Conditioning, Swimming Pool, Kitchen, etc.
+    Mısallar: WiFi, kondicioner, basseyn, asxana hám t.b.
     """
     category = models.ForeignKey(
         AmenityCategory,
@@ -384,7 +384,7 @@ class Amenity(BaseModel):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)  # Icon class or emoji
+    icon = models.CharField(max_length=50, blank=True, null=True)  # Ikonka klası yamasa emoji
     is_searchable = models.BooleanField(
         default=True,
         help_text=_('Whether this amenity can be used in search filters')
@@ -407,9 +407,9 @@ class Amenity(BaseModel):
 
 class AmenityTranslation(BaseModel):
     """
-    Amenity translation model for multilingual support.
+    Kóp tillilikti qollaw ushın amenity awdarması modeli.
 
-    Stores translated amenity information for different languages.
+    Amenity maǵlıwmatınıń túrli tillerdegi awdarmaların saqlaydı.
     """
     LANGUAGE_CHOICES = [
         ('en', _('English')),
@@ -444,9 +444,9 @@ class AmenityTranslation(BaseModel):
 
 class PropertyAmenity(BaseModel):
     """
-    Property amenity relation model.
+    Mehmanxana amenity baylanıs modeli.
 
-    Links properties to their available amenities with optional additional information.
+    Mehmanxanalardı olardıń bar amenity lerine ıqtıyarıy qosımsha maǵlıwmat penen baylanıstıradı.
     """
     property = models.ForeignKey(
         Property,
@@ -484,9 +484,9 @@ class PropertyAmenity(BaseModel):
 
 class PropertyPhoto(BaseModel):
     """
-    Property photo model for handling property images.
+    Mehmanxana súwretlerin islew ushın mehmanxana súwreti modeli.
 
-    Stores property photos with metadata, ordering, and storage abstraction.
+    Mehmanxana súwretlerin metadata, tártip hám storage abstrakciyası menen saqlaydı.
     """
     PHOTO_TYPE_CHOICES = [
         ('exterior', _('Exterior')),
@@ -551,16 +551,16 @@ class PropertyPhoto(BaseModel):
         return f"Photo {self.id} - Property {self.property.id} ({self.get_photo_type_display()})"
 
     def clean(self):
-        """Validate the photo file."""
+        """Súwret fayldı tekseriw."""
         super().clean()
 
         if self.photo:
-            # Validate the image file
+            # Súwret fayldı tekseriw
             is_valid, error_message = validate_image_file(self.photo)
             if not is_valid:
                 raise ValidationError({'photo': error_message})
 
-            # Ensure only one primary photo per property
+            # Hár mehmanxanaǵa tek bir tiykarǵı súwret bolıwın támiyinlew
             if self.is_primary:
                 existing_primary = PropertyPhoto.objects.filter(
                     property=self.property,
@@ -573,9 +573,9 @@ class PropertyPhoto(BaseModel):
                     })
 
     def save(self, *args, **kwargs):
-        """Override save to enforce single primary photo constraint."""
+        """Jalǵız tiykarǵı súwret qısıwın májbúrlew ushın save di qayta anıqlaw."""
         if self.is_primary:
-            # Set all other photos for this property to non-primary
+            # Usı mehmanxananıń barlıq basqa súwretlerin tiykarǵı emes etip belgilew
             PropertyPhoto.objects.filter(
                 property=self.property,
                 is_primary=True
@@ -584,7 +584,7 @@ class PropertyPhoto(BaseModel):
         super().save(*args, **kwargs)
 
     def remove(self):
-        """Soft-delete this photo; if it was the cover, the first remaining photo becomes the cover."""
+        """Usı súwretti soft-delete etiw; muqaba bolsa, qalǵan birinshi súwret muqaba boladı."""
         was_cover = self.is_primary
         self.is_primary = False
         self.soft_delete()
@@ -595,15 +595,15 @@ class PropertyPhoto(BaseModel):
                 successor.save()
 
     def get_absolute_url(self):
-        """Get the absolute URL for the photo."""
+        """Súwret ushın absolyut URL di alıw."""
         return self.photo.url if self.photo else None
 
 
 class RoomType(BaseModel):
     """
-    Room type model for classifying rooms within properties.
+    Mehmanxanalar ishindegi xonalardı klassifikaciyalaw ushın xona túri modeli.
 
-    Examples: Standard Room, Suite, Deluxe Room, Studio, Penthouse.
+    Mısallar: Standard xona, Suite, Deluxe xona, Studio, Penthouse.
     """
     property = models.ForeignKey(
         Property,
@@ -630,7 +630,7 @@ class RoomType(BaseModel):
         validators=[MinValueValidator(0)],
         help_text=_('Base price per night for this room type')
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
     total_rooms = models.PositiveIntegerField(
         validators=[MinValueValidator(0)],
         default=1,
@@ -648,7 +648,8 @@ class RoomType(BaseModel):
         help_text=_('Room size in square meters')
     )
 
-    # R9: set by the hotel owner at will, no approval (.ai/PLAN_R9_VIP.md v2); VIP rooms are listed first
+    # R9: mehmanxana iyesi óz qálewi boyınsha belgileydi, tastıyıqlaw joq (.ai/PLAN_R9_VIP.md v2); VIP xonalar birinshi
+    # dizimlenedi
     is_vip = models.BooleanField(
         default=False,
         help_text=_('A VIP room: shown first and with a badge')
@@ -669,7 +670,7 @@ class RoomType(BaseModel):
         return f"{self.property.id} - {self.name}"
 
     def clean(self):
-        """Validate room type data."""
+        """Xona túri maǵlıwmatın tekseriw."""
         super().clean()
 
         if self.max_occupancy < self.base_occupancy:
@@ -680,9 +681,9 @@ class RoomType(BaseModel):
 
 class RoomPhoto(BaseModel):
     """
-    Room photo model for handling room images.
+    Xona súwretlerin islew ushın xona súwreti modeli.
 
-    Stores room photos with metadata, ordering, and storage abstraction.
+    Xona súwretlerin metadata, tártip hám storage abstrakciyası menen saqlaydı.
     """
     PHOTO_TYPE_CHOICES = [
         ('bedroom', _('Bedroom')),
@@ -748,16 +749,16 @@ class RoomPhoto(BaseModel):
         return f"Photo {self.id} - {self.room_type.name} ({self.get_photo_type_display()})"
 
     def clean(self):
-        """Validate the photo file."""
+        """Súwret fayldı tekseriw."""
         super().clean()
 
         if self.photo:
-            # Validate the image file
+            # Súwret fayldı tekseriw
             is_valid, error_message = validate_image_file(self.photo)
             if not is_valid:
                 raise ValidationError({'photo': error_message})
 
-            # Ensure only one primary photo per room type
+            # Hár xona túrine tek bir tiykarǵı súwret bolıwın támiyinlew
             if self.is_primary:
                 existing_primary = RoomPhoto.objects.filter(
                     room_type=self.room_type,
@@ -770,9 +771,9 @@ class RoomPhoto(BaseModel):
                     })
 
     def save(self, *args, **kwargs):
-        """Override save to enforce single primary photo constraint."""
+        """Jalǵız tiykarǵı súwret qısıwın májbúrlew ushın save di qayta anıqlaw."""
         if self.is_primary:
-            # Set all other photos for this room type to non-primary
+            # Usı xona túriniń barlıq basqa súwretlerin tiykarǵı emes etip belgilew
             RoomPhoto.objects.filter(
                 room_type=self.room_type,
                 is_primary=True
@@ -781,7 +782,7 @@ class RoomPhoto(BaseModel):
         super().save(*args, **kwargs)
 
     def remove(self):
-        """Soft-delete this photo; if it was the cover, the first remaining photo becomes the cover."""
+        """Usı súwretti soft-delete etiw; muqaba bolsa, qalǵan birinshi súwret muqaba boladı."""
         was_cover = self.is_primary
         self.is_primary = False
         self.soft_delete()
@@ -792,15 +793,15 @@ class RoomPhoto(BaseModel):
                 successor.save()
 
     def get_absolute_url(self):
-        """Get the absolute URL for the photo."""
+        """Súwret ushın absolyut URL di alıw."""
         return self.photo.url if self.photo else None
 
 
 class RoomAmenity(BaseModel):
     """
-    Room amenity relation model.
+    Xona amenity baylanıs modeli.
 
-    Links room types to their available amenities with optional additional information.
+    Xona túrlerin olardıń bar amenity lerine ıqtıyarıy qosımsha maǵlıwmat penen baylanıstıradı.
     """
     room_type = models.ForeignKey(
         RoomType,
@@ -838,9 +839,9 @@ class RoomAmenity(BaseModel):
 
 class RatePlan(BaseModel):
     """
-    Rate plan model for pricing strategies.
+    Baha strategiyaları ushın rate plan modeli.
 
-    Defines different pricing plans (e.g., Standard, Non-refundable, Early Bird).
+    Túrli baha rejelerin anıqlaydı (mısalı Standard, Qaytarılmaytuǵın, Early Bird).
     """
     RATE_TYPE_CHOICES = [
         ('standard', _('Standard Rate')),
@@ -874,7 +875,7 @@ class RatePlan(BaseModel):
         validators=[MinValueValidator(0)],
         help_text=_('Base price per night for this rate plan')
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
     min_nights = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
         default=1,
@@ -895,7 +896,7 @@ class RatePlan(BaseModel):
         null=True,
         help_text=_('Cancellation policy for this rate plan')
     )
-    # R11 free cancellation (.ai/PLAN_R11_CANCELLATION.md); copied onto a booking when it is created
+    # R11 tegin biykar etiw (.ai/PLAN_R11_CANCELLATION.md); bron jaratılǵanda oǵan kóshiriledi
     free_cancel_hours = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -941,7 +942,7 @@ class RatePlan(BaseModel):
         return f"{self.room_type.name} - {self.name}"
 
     def clean(self):
-        """Validate rate plan data."""
+        """Rate plan maǵlıwmatın tekseriw."""
         super().clean()
 
         if self.max_nights and self.max_nights < self.min_nights:
@@ -961,7 +962,7 @@ class RatePlan(BaseModel):
 
 
 def _check_bulk_range(date_from, date_to):
-    """Bulk edits write one row per day: cap the range like a stay (R4 security review)."""
+    """Kóp ózgertiwler hár kúnge bir qatar jazadı: aralıqtı turıw sıyaqlı shekle (R4 qáwipsizlik tekseriwi)."""
     from bookings.pricing import MAX_STAY_NIGHTS
     if (date_to - date_from).days > MAX_STAY_NIGHTS:
         raise ValidationError({'date_to': _('The range can be at most %(days)d days') % {'days': MAX_STAY_NIGHTS}})
@@ -969,11 +970,11 @@ def _check_bulk_range(date_from, date_to):
 
 class RatePlanPrice(models.Model):
     """
-    R16: the hotel owner's own price of a rate plan in one more currency (USD, UZS, KZT, RUB).
+    R16: mehmanxana iyesiniń rate plan nıń taǵı bir valyutadaǵı (USD, UZS, KZT, RUB) óz bahası.
 
-    The plan's main price stays in `RatePlan.base_price` + `currency` (the property's currency);
-    each row here is the same night's price entered by the owner in another currency, because
-    exchange rates move. A currency without a row is shown converted at the CBU rate ("approximate").
+    Plannıń tiykarǵı bahası `RatePlan.base_price` + `currency` (mehmanxananıń valyutası) de qaladı;
+    bul jerdegi hár qatar iye basqa valyutada kirgizgen sol túngi baha, sebebi
+    valyuta kursları ózgeredi. Qatarı joq valyuta CBU kursı boyınsha konvertaciyalanıp kórsetiledi ("shama menen").
     """
     rate_plan = models.ForeignKey(RatePlan, on_delete=models.CASCADE, related_name='prices')
     currency = models.CharField(max_length=3)
@@ -993,9 +994,9 @@ class RatePlanPrice(models.Model):
 
 class DateInventory(BaseModel):
     """
-    Date inventory model for tracking availability and pricing over time.
+    Waqıt boyınsha bos orınlardı hám bahanı baqlaw ushın date inventory modeli.
 
-    Stores day-by-day inventory data including availability status and pricing adjustments.
+    Bos orın statusın hám baha túzetiwlerin óz ishine alǵan kúnlik inventory maǵlıwmatın saqlaydı.
     """
     rate_plan = models.ForeignKey(
         RatePlan,
@@ -1022,7 +1023,7 @@ class DateInventory(BaseModel):
         blank=True,
         help_text=_('Price for this specific date (overrides rate plan base price if set)')
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
     is_available = models.BooleanField(
         default=True,
         db_index=True,
@@ -1057,7 +1058,7 @@ class DateInventory(BaseModel):
         return f"{self.rate_plan.name} - {self.date} ({self.available_rooms} available)"
 
     def clean(self):
-        """Validate date inventory data."""
+        """Date inventory maǵlıwmatın tekseriw."""
         super().clean()
 
         if self.booked_rooms > self.available_rooms:
@@ -1072,11 +1073,11 @@ class DateInventory(BaseModel):
 
     @property
     def remaining_rooms(self):
-        """Calculate remaining available rooms."""
+        """Qalǵan bos xonalardı esaplaw."""
         return max(0, self.available_rooms - self.booked_rooms)
 
     def is_available_for_booking(self, nights=1):
-        """Check if this date is available for booking with the specified number of nights."""
+        """Usı sananıń berilgen túnler sanı menen bronlaw ushın bos ekenin tekseriw."""
         if not self.is_available:
             return False
 
@@ -1094,10 +1095,10 @@ class DateInventory(BaseModel):
     @classmethod
     def bulk_set_price(cls, rate_plan, date_from, date_to, price):
         """
-        Set the nightly price for every night in [date_from, date_to) of this rate plan
-        (3.7 bulk price edit), creating any missing row (opened at the room type's full
-        total_rooms) and leaving an existing row's other fields (rules, booked_rooms)
-        untouched.
+        Usı rate plan nıń [date_from, date_to) degi hár túni ushın túngi bahanı belgilew
+        (3.7 kóp bahanı ózgertiw), joq qatardı jaratıw (xona túriniń tolıq
+        total_rooms ı menen ashılǵan) hám bar qatardıń basqa maydanlarına (qaǵıydalar,
+        booked_rooms) tiymew.
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
@@ -1130,11 +1131,11 @@ class DateInventory(BaseModel):
 
 class RoomInventory(BaseModel):
     """
-    How many rooms of a room type can be sold on a date (audit #31).
+    Xona túriniń neshe xonası sanada satılıwı múmkin (audit #31).
 
-    Rooms are physical, so they are counted once per room type, whatever rate plan
-    sells them. DateInventory keeps the per rate plan price and rules (open/closed,
-    minimum/maximum stay).
+    Xonalar fizikalıq, sol sebepli olar hár rate plan nıń satıwına qaramastan xona túri boyınsha
+    bir márte sanaladı. DateInventory hár rate plan bahası hám qaǵıydaların (ashıq/jabıq,
+    eń kem/eń kóp turıw) saqlaydı.
     """
     room_type = models.ForeignKey(
         RoomType,
@@ -1180,18 +1181,18 @@ class RoomInventory(BaseModel):
 
     @property
     def remaining_rooms(self):
-        """Rooms that can still be sold on this date."""
+        """Usı sanada ele satılıwı múmkin xonalar."""
         return max(0, self.available_rooms - self.booked_rooms)
 
     @classmethod
     def bulk_set(cls, room_type, date_from, date_to, available_rooms=None, is_available=None):
         """
-        Set available_rooms and/or is_available for every night in [date_from, date_to)
-        of this room type (3.6 calendar date-range edit), creating any missing,
-        unmanaged row (opened at the room type's full total_rooms) first.
+        Usı xona túriniń [date_from, date_to) degi hár túni ushın available_rooms hám/yamasa
+        is_available di belgilew (3.6 kalendar sana aralıǵın ózgertiw), aldın joq,
+        basqarılmaytuǵın qatardı jaratıp (xona túriniń tolıq total_rooms ı menen ashılǵan).
 
-        Raises ValidationError naming the date when available_rooms would drop a night
-        below its booked_rooms; nothing is applied if any night fails.
+        available_rooms túnni onıń booked_rooms ınan tómenge túsirse, sananı atap ValidationError kóteredi;
+        qanday da tún sátsiz bolsa hesh nárse qollanılmaydı.
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
@@ -1248,13 +1249,13 @@ class RoomInventory(BaseModel):
 
 class RoomBlock(BaseModel):
     """
-    Rooms taken out of sale for a date range without a TICKBRON booking -- an external
-    sale (Booking.com, phone, walk-in) or maintenance (audit #31, 3.5).
+    TICKBRON broni joq sana aralıǵında satıwdan alınǵan xonalar -- sırtqı satıw
+    (Booking.com, telefon, tikkeley kelgen) yamasa jóndew (audit #31, 3.5).
 
-    Applying a block locks and decrements the affected RoomInventory rows directly
-    (creating any missing, unmanaged one at the room type's full total_rooms first, same
-    as the booking engine); deleting a block (release()) restores them. Blocks stack: a
-    second block on an already-blocked night reduces available_rooms further.
+    Blok qollanıw tásirlengen RoomInventory qatarların tikkeley qulıplaydı hám kemeytedi
+    (joq, basqarılmaytuǵınların aldın xona túriniń tolıq total_rooms ında jaratıp, bron sisteması sıyaqlı);
+    blokti óshiriw (release()) olardı qaytaradı. Bloklar toplanadı: aldın bloklanǵan túndegi
+    ekinshi blok available_rooms dı taǵı kemeytedi.
     """
     room_type = models.ForeignKey(
         RoomType,
@@ -1304,12 +1305,12 @@ class RoomBlock(BaseModel):
     @classmethod
     def create_block(cls, room_type, date_from, date_to, rooms, note, created_by):
         """
-        Lock every affected night's RoomInventory row (materializing any unmanaged one
-        at the room type's full total_rooms first), check none of them would drop below
-        what is already booked on TICKBRON, then create the block and decrement them.
+        Hár tásirlengen túnniń RoomInventory qatarın qulıplaw (basqarılmaytuǵın qatardı aldın
+        xona túriniń tolıq total_rooms ında payda etip), hesh biri TICKBRON da aldınan
+        bronlanǵannan tómen túspeytuǵının tekseriw, keyin blokti jaratıw hám olardı kemeytiw.
 
-        Raises ValidationError naming the date when a night has too few rooms left.
-        Call outside an existing atomic block -- this opens its own.
+        Túnde xona az qalsa, sananı atap ValidationError kóteredi.
+        Bar atomic blok sırtında shaqırıń -- bul óziniń blokın ashadı.
         """
         if date_to <= date_from:
             raise ValidationError({'date_to': _('Must be after date_from')})
@@ -1335,7 +1336,7 @@ class RoomBlock(BaseModel):
                             room_type=room_type, date=night, available_rooms=room_type.total_rooms,
                         )
                 except IntegrityError:
-                    # Lost the race to create it; the winner's row is now committed and lockable.
+                    # Jaratıw jarısınan jeńiledi; jeńimpazdıń qatarı endi saqlanǵan hám qulıplanatuǵın.
                     rows[night] = RoomInventory.objects.select_for_update().get(room_type=room_type, date=night)
 
             for night in nights:
@@ -1359,7 +1360,7 @@ class RoomBlock(BaseModel):
             return block
 
     def release(self):
-        """Undo: restore the blocked rooms to RoomInventory and soft-delete the block."""
+        """Biykar etiw: bloklanǵan xonalardı RoomInventory ge qaytarıw hám blokti soft-delete etiw."""
         nights = list(self._nights())
         with transaction.atomic():
             rows = RoomInventory.objects.filter(

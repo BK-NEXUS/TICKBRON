@@ -1,4 +1,4 @@
-"""Serializers for the super-admin geography API (Geography plan G3)."""
+"""Super-admin geografiya API ı ushın serializer ler (Geography reje G3)."""
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from rest_framework import serializers
@@ -20,7 +20,8 @@ class _NamesMixin:
 
 
 class _ImageMixin:
-    """A country or region has a picture: required on create, kept when an edit sends none, old file removed on replace."""
+    """Mámleket yamasa regionnıń súwreti bar: jaratıwda májbúriy, ózgertiw jibermese saqlanadı, almastırǵanda eski fayl
+    óshiriledi."""
 
     def get_image_url(self, obj) -> str | None:
         return default_storage.url(obj.image.name) if obj.image else None
@@ -45,7 +46,7 @@ class _ImageMixin:
 
 
 class _ParentImmutableMixin:
-    """The parent decides what a property's location means: it is set on create only."""
+    """Ata-ana mehmanxana jaylasıwınıń mánisin sheshedi: tek jaratıwda belgilenedi."""
     parent_field = None
 
     def validate(self, attrs):
@@ -57,7 +58,7 @@ class _ParentImmutableMixin:
 
 class AdminCountrySerializer(_ImageMixin, _NamesMixin, serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-    # A multipart form that leaves out a checkbox means False to DRF; a new row stays visible unless hidden on purpose
+    # Checkbox tı taslap ketken multipart forma DRF ushın False degen mánis; jańa qatar ataylap jasırılmaǵansha kórinip turadı
     is_active = serializers.BooleanField(required=False, default=True)
     region_count = serializers.IntegerField(read_only=True)
     hotel_count = serializers.IntegerField(read_only=True)
@@ -67,7 +68,7 @@ class AdminCountrySerializer(_ImageMixin, _NamesMixin, serializers.ModelSerializ
         fields = ['id', 'code', 'currency', 'name_uz', 'name_ru', 'name_en', 'image', 'image_url', 'is_active',
                   'sort_order', 'region_count', 'hotel_count']
         read_only_fields = ['sort_order']
-        extra_kwargs = {'code': {'validators': []}, 'image': {'write_only': True}}  # uniqueness is checked in validate_code
+        extra_kwargs = {'code': {'validators': []}, 'image': {'write_only': True}}  # unikallıq validate_code da tekseriledi
 
     def validate_code(self, value):
         value = value.strip().upper()
@@ -87,7 +88,7 @@ class AdminCountrySerializer(_ImageMixin, _NamesMixin, serializers.ModelSerializ
 class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, serializers.ModelSerializer):
     parent_field = 'country'
     image_url = serializers.SerializerMethodField()
-    # A multipart form that leaves out a checkbox means False to DRF; a new row stays visible unless hidden on purpose
+    # Checkbox tı taslap ketken multipart forma DRF ushın False degen mánis; jańa qatar ataylap jasırılmaǵansha kórinip turadı
     is_active = serializers.BooleanField(required=False, default=True)
     hotel_count = serializers.IntegerField(read_only=True)
 
@@ -97,7 +98,7 @@ class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, ser
                   'sort_order', 'hotel_count']
         read_only_fields = ['slug', 'sort_order']
         extra_kwargs = {'image': {'write_only': True}}
-        validators = []  # the name is checked below, so a clash is a plain 400 with a clear message
+        validators = []  # at tómende tekseriledi, sol sebepli qaqtıǵıs anıq xabarı bar ápiwayı 400
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -112,7 +113,7 @@ class AdminRegionSerializer(_ImageMixin, _ParentImmutableMixin, _NamesMixin, ser
 
 
 def search_filter(queryset, term, extra=()):
-    """Match the term against all three names (and any extra field), case-insensitive."""
+    """Sózdi úsh attıń hámmesine (hám qálegen qosımsha maydanǵa) sáykeslew, register e esapqa almay."""
     term = (term or '').strip()
     if not term:
         return queryset

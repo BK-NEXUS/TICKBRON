@@ -1,4 +1,4 @@
-"""Starting a signed-in session after a successful password login."""
+"""Tabıslı parol kirisiwinen keyin kirgen session di baslaw."""
 import logging
 
 from django.contrib.auth import login
@@ -9,7 +9,7 @@ from users import lockout
 
 
 def start_session(request, user, client_ip, method):
-    """Clear the failure counters, remember the IP, sign the user in and write the event and history row."""
+    """Qátelik sanaǵıshların tazalaw, IP di esinde saqlaw, paydalanıwshını kirgiziw hám waqıya hám tariyx qatarın jazıw."""
     lockout.record_success(user, client_ip)
     user.last_login_ip = client_ip
     user.save(update_fields=['last_login_ip'])

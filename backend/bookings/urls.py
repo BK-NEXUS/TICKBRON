@@ -1,5 +1,5 @@
 """
-URL configuration for TICKBRON booking endpoints.
+TICKBRON bron endpoint leri ushın URL sazlaması.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

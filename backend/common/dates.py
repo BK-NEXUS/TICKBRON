@@ -1,11 +1,11 @@
 """
-The business date (R12).
+Is sanası (R12).
 
-TIME_ZONE stays UTC (stored datetimes, logs). "Today" for bookings, statistics and
-auto-completion is the date in BUSINESS_TIME_ZONE (default Asia/Tashkent, UTC+5),
-so between 00:00 and 05:00 in Tashkent it is already the next day. Hotels in other
-countries use the same business date for now; a per-country time zone is a later
-improvement.
+TIME_ZONE UTC bolıp qaladı (saqlanǵan datetime lar, log lar). Bronlar, statistika hám
+avtomat juwmaqlaw ushın "búgin" BUSINESS_TIME_ZONE degi sana (ádetde Asia/Tashkent, UTC+5),
+sol sebepli Tashkent te 00:00 menen 05:00 aralıǵında ol ózi keyingi kún. Basqa
+mámleketlerdegi mehmanxanalar házirshe sol is sanasın paydalanadı; mámleket boyınsha waqıt zonası keyingi
+jaqsılaw.
 """
 import zoneinfo
 

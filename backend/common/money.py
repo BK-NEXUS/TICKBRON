@@ -1,19 +1,19 @@
 """
-Money rules (R6). The only place that knows which currencies exist and how they round.
+Pul qaǵıydaları (R6). Qanday valyutalar bar hám qalay jumalaqlanatuǵının biletuǵın birden-bir orın.
 
-- The one registry of currencies is CURRENCIES below: to add a currency add one line there (and its
-  name in the frontend catalogs, `frontend/src/i18n/options.ts`); the CBU fetch, the owner price boxes
-  and the validation follow from it.
-- A property is priced in one of SUPPORTED_BASE_CURRENCIES; a rate plan can carry an own price in each.
-- Guests are charged in CHARGE_CURRENCY (Payme and Click only take UZS).
-- UZS, KZT and RUB amounts are whole units, USD amounts are cents; all ROUND_HALF_UP.
-- Converting a stay to UZS rounds the stay total once, never night by night.
-- Decimal only: a float anywhere in money code is a bug, so it raises.
+- Valyutalardıń birden-bir dizimi tómendegi CURRENCIES: valyuta qosıw ushın sonda bir qatar qosıń (hám onıń
+  atın frontend katalogları, `frontend/src/i18n/options.ts` ke); CBU alıw, iyeniń baha qutıları
+  hám tekseriw sonnan kelip shıǵadı.
+- Mehmanxana SUPPORTED_BASE_CURRENCIES tiń birinde bahalanadı; rate plan hárbirinde óz bahasın alıp júre aladı.
+- Mehmanlardan CHARGE_CURRENCY de alınadı (Payme hám Click tek UZS qabıllaydı).
+- UZS, KZT hám RUB summaları pútin birlik, USD summaları sent; barlıǵı ROUND_HALF_UP.
+- Turıwdı UZS ge ótkiziw turıw jámin bir márte jumalaqlaydı, túnlep emes.
+- Tek Decimal: pul kodındaǵı hár float qátelik, sol sebepli kóteriledi.
 """
 from decimal import ROUND_HALF_UP, Decimal
 
 
-# code -> number of decimals of its smallest price unit
+# kod -> eń kishi baha birliginiń onlıq belgileri sanı
 CURRENCIES = {'UZS': 0, 'USD': 2, 'KZT': 0, 'RUB': 0}
 SUPPORTED_BASE_CURRENCIES = tuple(CURRENCIES)
 CHARGE_CURRENCY = 'UZS'
@@ -29,19 +29,19 @@ def _decimal(value):
 
 
 def quantize(amount, currency):
-    """Round an amount to its currency's smallest unit (whole units, or cents for USD)."""
+    """Summanı óz valyutasınıń eń kishi birligine jumalaqlaw (pútin birlik, yamasa USD ushın sent)."""
     if currency not in _STEP:
         raise ValueError(f'Unsupported currency: {currency}')
     return _decimal(amount).quantize(_STEP[currency], rounding=ROUND_HALF_UP)
 
 
 def to_uzs(amount, rate):
-    """Convert an amount to whole so'm at `rate` (so'm per one unit), rounding once."""
+    """Summanı `rate` (bir birlikke som) boyınsha pútin somǵa ótkiziw, bir márte jumalaqlap."""
     return quantize(_decimal(amount) * _decimal(rate), 'UZS')
 
 
 def is_valid_unit(amount, currency):
-    """True when `amount` has no finer part than the currency's smallest unit."""
+    """`amount` tiń valyutanıń eń kishi birliginen mayda bólegi bolmasa True."""
     return _decimal(amount) == quantize(amount, currency)
 
 

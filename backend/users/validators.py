@@ -1,8 +1,8 @@
 """
-Custom validators for user authentication and security.
+Paydalanıwshı autentifikaciyası hám qáwipsizlik ushın óz validator ları.
 
-This module contains custom validators for password strength, email verification,
-and other security-related validations.
+Bul modul parol kúshi, e-mail tekseriw hám basqa
+qáwipsizlikke baylanıslı tekseriwler ushın óz validator larin óz ishine aladı.
 """
 import re
 import phonenumbers
@@ -11,17 +11,17 @@ from django.utils.translation import gettext_lazy as _
 
 PHONE_NUMBER_ERROR = 'Enter a valid phone number in international format, e.g. +998 90 123 45 67.'
 
-# Spaces, dashes, dots and brackets people type between digit groups
+# Adamlar san toparları arasında jazatuǵın bos orınlar, defisler, nuqtalar hám jaqshalar
 _PHONE_SEPARATORS = re.compile(r'[\s\-.()]')
 
 
 def parse_phone_number(value):
     """
-    Return the E.164 form of a phone number ("+998901234567"), or None if it is
-    not a valid number.
+    Telefon nomerin E.164 formasında ("+998901234567") qaytarıw, yamasa jaramlı nomer
+    bolmasa None.
 
-    The number must start with "+" and a country code. Separators between
-    digit groups are allowed; letters and other characters are not.
+    Nomer "+" hám mámleket kodınan baslanıwı kerek. San toparları arasındaǵı
+    ajıratıwshılarǵa ruxsat, háripler hám basqa belgilerge ruxsat joq.
     """
     compact = _PHONE_SEPARATORS.sub('', str(value or ''))
     if not re.fullmatch(r'\+\d{1,15}', compact):
@@ -37,25 +37,25 @@ def parse_phone_number(value):
 
 class StrongPasswordValidator:
     """
-    Custom password validator for strong password requirements.
+    Kúshli parol talapları ushın óz parol validator ı.
 
-    Enforces:
-    - Minimum length of 8 characters
-    - At least one letter (any case, any alphabet)
-    - At least one digit
-    - At least one special character (not a letter, digit or space)
-    - No common patterns or sequences
+    Májbúrleydi:
+    - Eń kem uzınlıq 8 belgi
+    - Eń keminde bir háripti (qálegen register, qálegen alfavit)
+    - Eń keminde bir sandı
+    - Eń keminde bir arnawlı belgini (háripti, sandı yamasa bos orındı emes)
+    - Ulıwma úlgiler yamasa izbe-izlik joq
     """
 
     def __init__(self, min_length=8, forbid_sequences=True):
         self.min_length = min_length
-        # Off in AUTH_PASSWORD_VALIDATORS: any "abc"/"456" run would also reject
-        # long random passphrases, and length + blocklist matter more
+        # AUTH_PASSWORD_VALIDATORS ta óshirilgen: hár "abc"/"456" izbe-izligi
+        # uzın tosınarlıq parol jumlalardı da biykar etedi, hám uzınlıq + blok dizim kóbirek áhmiyetli
         self.forbid_sequences = forbid_sequences
 
     def validate(self, password, user=None):
         """
-        Validate password strength.
+        Parol kúshin tekseriw.
         """
         if len(password) < self.min_length:
             raise ValidationError(
@@ -82,7 +82,7 @@ class StrongPasswordValidator:
                 code='password_no_special',
             )
 
-        # Check for common patterns
+        # Ulıwma úlgilerdi tekseriw
         common_patterns = [
             r'123456', r'qwerty', r'password', r'admin', r'letmein',
             r'welcome', r'monkey', r'football', r'abc123', r'111111'
@@ -96,7 +96,7 @@ class StrongPasswordValidator:
                     code='password_common_pattern',
                 )
 
-        # Check for sequential characters
+        # Izbe-iz belgilerdi tekseriw
         if self.forbid_sequences and self._has_sequential_chars(password):
             raise ValidationError(
                 _("Password contains sequential characters and is not secure."),
@@ -104,7 +104,7 @@ class StrongPasswordValidator:
             )
 
     def _has_sequential_chars(self, password):
-        """Check if password contains sequential characters."""
+        """Parolda izbe-iz belgiler barlıǵın tekseriw."""
         password_lower = password.lower()
         for i in range(len(password_lower) - 2):
             if (ord(password_lower[i+1]) == ord(password_lower[i]) + 1 and
@@ -114,7 +114,7 @@ class StrongPasswordValidator:
 
     def get_help_text(self):
         """
-        Return help text for password requirements.
+        Parol talapları ushın járdem tekstin qaytarıw.
         """
         return _(
             "Your password must be at least %(min_length)d characters long, "
@@ -125,24 +125,24 @@ class StrongPasswordValidator:
 
 class EmailFormatValidator:
     """
-    Enhanced email format validator.
+    Keńeytilgen e-mail format validator ı.
 
-    Validates email format with stricter rules than Django's default.
+    E-mail formatın Django nıń ádetdegisinen qattıraq qaǵıydalar menen tekseredi.
     """
 
     def validate(self, email):
         """
-        Validate email format.
+        E-mail formatın tekseriw.
         """
         if not email:
             raise ValidationError(_("Email address is required."))
 
-        # Basic format check
+        # Ápiwayı format tekseriwi
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             raise ValidationError(_("Invalid email format."))
 
-        # Check for disposable email domains (basic list)
+        # Waqtınsha e-mail domenlerin tekseriw (ápiwayı dizim)
         disposable_domains = [
             'tempmail.com', 'throwaway.com', 'guerrillamail.com',
             'mailinator.com', '10minutemail.com'
@@ -157,6 +157,6 @@ class EmailFormatValidator:
 
     def get_help_text(self):
         """
-        Return help text for email requirements.
+        E-mail talapları ushın járdem tekstin qaytarıw.
         """
         return _("Enter a valid email address. Disposable email addresses are not allowed.")

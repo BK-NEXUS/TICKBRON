@@ -1,11 +1,11 @@
 """
-Staff endpoints for exchange rates (R6), under /api/v1/admin-panel/exchange-rates/.
+Valyuta kursları ushın staff endpoint leri (R6), /api/v1/admin-panel/exchange-rates/ astında.
 
-- GET  /                 staff: rate history, newest first
-- GET  /status/          super-admin: per currency the rate in use, its date, stale yes/no,
-                         the last fetch and its error, rejected rates waiting for a decision
-- POST /{id}/accept/     super-admin: use a rate the fetch rejected (jump over FX_MAX_CHANGE);
-                         written to the admin audit log with the old and new rate
+- GET  /                 staff: kurs tariyxı, eń jańası birinshi
+- GET  /status/          super-admin: hár valyuta boyınsha paydalanılatuǵın kurs, onıń sanası, eskirgen ha/yaq,
+                         sońǵı alıw hám onıń qátesi, sheshimdi kútip turǵan biykar etilgen kurslar
+- POST /{id}/accept/     super-admin: alıw biykar etken kurstı paydalanıw (FX_MAX_CHANGE sekirewi);
+                         admin audit logına eski hám jańa kurs penen jazıladı
 """
 from django.db import IntegrityError, transaction
 from drf_spectacular.types import OpenApiTypes
@@ -72,7 +72,7 @@ def exchange_rate_status(request):
             'rate': f'{rate.rate:.6f}' if rate else None,
             'date': rate.date.isoformat() if rate and rate.date else None,
             'source': rate.source if rate else None,
-            # no rate at all is the worst kind of stale: foreign-currency hotels cannot be booked
+            # kurstıń bolmawı eskiriwdiń eń jaman túri: sırtqı valyutadaǵı mehmanxanalardı bronlap bolmaydı
             'stale': rate.stale if rate else True,
             'last_fetch': _fetch_dict(last_fetch),
             'last_error': last_failure.error if last_failure else None,
@@ -86,8 +86,8 @@ def exchange_rate_status(request):
 @permission_classes([IsSuperAdmin])
 def exchange_rate_accept(request, rate_id):
     """
-    Accept a rejected rate: a new accepted row with the same values is appended (history
-    is never rewritten) and becomes the rate in use for its date.
+    Biykar etilgen kurstı qabıllaw: birdey mánisli jańa qabıllanǵan qatar qosıladı (tariyx
+    hesh qashan qayta jazılmaydı) hám óz sanası ushın paydalanılatuǵın kurs boladı.
     """
     rejected = ExchangeRate.objects.filter(pk=rate_id).first()
     if rejected is None:

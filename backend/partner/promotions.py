@@ -1,4 +1,5 @@
-"""The hotel owner's view of the ads of their own hotels: how they run, views and clicks, the open renewal question. Read only."""
+"""Mehmanxana iyesiniń óz mehmanxanaları reklamaların kóriwi: qalay isleydi, kóriwler hám bosıwlar, ashıq jańalaw sorawı. Tek
+oqıw."""
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
@@ -22,7 +23,7 @@ def _click_rate(impressions, clicks):
 
 
 def _open_question(promotion, today):
-    """The renewal question still waiting for an answer, or None."""
+    """Ele juwap kútip turǵan jańalaw sorawı, yamasa None."""
     for renewal in promotion.renewals.all():
         if renewal.status == AdRenewal.STATUS_PENDING:
             return {'ends_on': renewal.ends_on.isoformat(), 'deadline': renewal.deadline.isoformat(),
@@ -48,8 +49,8 @@ def _row(promotion, today):
 @permission_classes([IsHotelOwner])
 def partner_promotions(request):
     """
-    Ads of the owner's hotels, newest first. `?status=` (scheduled, active, paused, ended, cancelled) and
-    `?property=<own hotel id>` narrow the list. The agreed price and the staff's note are not part of it.
+    Iyeniń mehmanxanaları reklamaları, eń jańası birinshi. `?status=` (scheduled, active, paused, ended, cancelled) hám
+    `?property=<óz mehmanxana id si>` dizimdi shekemleydi. Kelisilgen baha hám staff tıń jazbası oǵan kirmeydi.
     """
     own = own_properties(request.user)
     ads = (Promotion.objects.filter(property__in=own, is_deleted=False)

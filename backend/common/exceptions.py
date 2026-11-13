@@ -1,7 +1,7 @@
 """
-Custom exceptions for TICKBRON Backend.
+TICKBRON Backend ushın óz exception ları.
 
-Provides structured error handling with proper logging.
+Durıs log lawdı menen dúzilgen qátelik islewdi támiyinleydi.
 """
 import logging
 from rest_framework.exceptions import APIException
@@ -12,7 +12,7 @@ logger = logging.getLogger('tickbron')
 
 class TickBronException(APIException):
     """
-    Base exception for TICKBRON-specific errors.
+    TICKBRON ǵa tiyisli qátelikler ushın tiykarǵı exception.
     """
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = 'A server error occurred.'
@@ -22,14 +22,14 @@ class TickBronException(APIException):
         self.log_level = log_level
         super().__init__(detail, code)
 
-        # Log the exception
+        # Exception dı log qa jazıw
         log_method = getattr(logger, log_level, logger.error)
         log_method(f"{self.__class__.__name__}: {self.detail}")
 
 
 class RateLimitException(TickBronException):
     """
-    Exception raised when rate limit is exceeded.
+    Rate limit ten asqanda kóteriletuǵın exception.
     """
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = 'Rate limit exceeded. Please try again later.'
@@ -44,7 +44,7 @@ class RateLimitException(TickBronException):
 
 class PermissionDeniedException(TickBronException):
     """
-    Exception raised when user lacks required permissions.
+    Paydalanıwshıda kerekli ruxsat bolmaǵanda kóteriletuǵın exception.
     """
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = 'You do not have permission to perform this action.'
@@ -58,7 +58,7 @@ class PermissionDeniedException(TickBronException):
 
 class ResourceNotFoundException(TickBronException):
     """
-    Exception raised when a requested resource is not found.
+    Soralǵan resurs tabılmaǵanda kóteriletuǵın exception.
     """
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = 'Resource not found.'
@@ -72,7 +72,7 @@ class ResourceNotFoundException(TickBronException):
 
 class ValidationException(TickBronException):
     """
-    Exception raised when validation fails.
+    Validation sátsiz bolǵanda kóteriletuǵın exception.
     """
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'Invalid input data.'
@@ -86,7 +86,7 @@ class ValidationException(TickBronException):
 
 class ExternalServiceException(TickBronException):
     """
-    Exception raised when an external service call fails.
+    Sırtqı xızmetke shaqırıw sátsiz bolǵanda kóteriletuǵın exception.
     """
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = 'External service unavailable.'

@@ -1,12 +1,12 @@
-"""Audit helpers for admin write endpoints (N-17). Ids and non-personal facts only."""
+"""Admin jazıw endpoint leri ushın audit járdemshileri (N-17). Tek id hám jeke emes faktlar."""
 from admin_panel.models import AdminAccessLog
 
 
 class AuditedModelViewSetMixin:
     """
-    Writes one AdminAccessLog row after every successful create, update and delete of a
-    ModelViewSet: `<audit_name>_create|update|delete` with the object id (and the geography
-    level). A refused or invalid request raises before the row is written.
+    ModelViewSet tiń hár tabıslı create, update hám delete inen keyin bir AdminAccessLog qatarın jazadı:
+    `<audit_name>_create|update|delete` obyekt id si menen (hám geografiya dárejesi).
+    Qabıllanbaǵan yamasa jaramsız sorawda qatar jazılmastan aldın qátelik kóteriledi.
     """
     audit_name = None
     audit_level = None

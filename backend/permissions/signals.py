@@ -1,5 +1,5 @@
 """
-Signal handlers for the permissions app.
+permissions app ı ushın signal handler ler.
 
-This module contains signal handlers for permission-related events.
+Bul modul ruxsatlarǵa baylanıslı waqıyalar ushın signal handler lerdi óz ishine aladı.
 """

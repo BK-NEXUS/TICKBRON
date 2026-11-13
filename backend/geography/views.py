@@ -1,8 +1,8 @@
 """
-Public geography API (Geography plan G3). Read-only, no login.
+Ashıq geografiya API ı (Geography reje G3). Tek oqıw, kirisiw joq.
 
-Only active rows are listed. hotel_count is the number of public properties
-(active, approved, not deleted) and comes from one annotated query per list.
+Tek aktiv qatarlar dizimlenedi. hotel_count ashıq mehmanxanalar sanı
+(aktiv, tastıyıqlanǵan, óshirilmegen) hám hár dizim ushın bir annotation lanǵan query den keledi.
 """
 from django.core.files.storage import default_storage
 from django.db.models import Count, Q
@@ -23,7 +23,7 @@ NAME_FIELDS = ('name_uz', 'name_ru', 'name_en')
 def _rows(queryset, *fields):
     rows = list(
         queryset.annotate(hotel_count=Count('properties', filter=PUBLIC_PROPERTY))
-        .order_by('sort_order', 'name_en')  # Meta.ordering is ignored once the query aggregates
+        .order_by('sort_order', 'name_en')  # Query jıynaqlaǵannan keyin Meta.ordering itibarǵa alınbaydı
         .values('id', *fields, *NAME_FIELDS, 'hotel_count')
     )
     if 'image' in fields:
@@ -37,7 +37,7 @@ def _rows(queryset, *fields):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def country_list(request):
-    """Active countries with their currency and hotel counts."""
+    """Valyutası hám mehmanxana sanları menen aktiv mámleketler."""
     return Response(public_cache.remember(
         request, 'countries', lambda: _rows(Country.objects.filter(is_active=True), 'code', 'currency', 'image')))
 
@@ -46,7 +46,7 @@ def country_list(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def region_list(request, code):
-    """Active regions of an active country (code is case-insensitive)."""
+    """Aktiv mámlekettegi aktiv regionlar (kod register ti esapqa almaydı)."""
     def build():
         country = get_object_or_404(Country, code=code.upper(), is_active=True)
         return _rows(Region.objects.filter(country=country, is_active=True), 'image')

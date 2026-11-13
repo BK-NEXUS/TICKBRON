@@ -1,5 +1,5 @@
 """
-Admin app configuration.
+Admin app sazlaması.
 """
 from django.apps import AppConfig
 

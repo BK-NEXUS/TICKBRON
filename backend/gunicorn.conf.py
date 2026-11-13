@@ -1,16 +1,17 @@
 """
-Settings of the web server (gunicorn) in the Docker image. The size comes from the environment (.env):
+Docker image degi web serverdiń (gunicorn) sazlamaları. Ólshem environment ten (.env) keledi:
 
-  WEB_WORKERS  processes, one per CPU core is a good start
-  WEB_THREADS  requests each process handles at the same time (the site mostly waits for the database)
-  WEB_TIMEOUT  seconds before a stuck request is cut
-  WEB_MAX_REQUESTS  requests after which a process is replaced by a fresh one; 0 (the default) never replaces. Memory stayed
-               flat over 90,000 requests, and every replacement resets the connections that process had open
-  WEB_KEEPALIVE  seconds an idle connection from the proxy stays open; it must be longer than the proxy's own idle
-               time (Caddy keeps upstream connections 2 minutes), else the proxy reuses a connection the app just closed
+  WEB_WORKERS  process ler, hár CPU yadrosına bir jaqsı baslama
+  WEB_THREADS  hár process bir waqıtta islewge alatuǵın sorawlar (sayt kóbinese database di kútedi)
+  WEB_TIMEOUT  qatıp qalǵan sorawdı úziwden aldınǵı sekundlar
+  WEB_MAX_REQUESTS  process jańasına almastırılatuǵın sorawlar sanı; 0 (ádetde) hesh qashan almastırmaydı. Jaddı
+               90 000 sorawda turaqlı qaldı, hám hár almastırıw sol process ashıq qaldırǵan ulanıwlardı qaytadan basladı
+  WEB_KEEPALIVE  proxy den bos ulanıw ashıq saqlanatuǵın sekundlar; ol proxy diń óz bos
+               waqtınan uzın bolıwı kerek (Caddy upstream ulanıwların 2 minut saqlaydı), bolmasa proxy app jańa ǵana jawıp
+taslaǵan ulanıwdı qayta paydalanadı
 
-Every thread holds its own database connection for a minute (CONN_MAX_AGE), so WEB_WORKERS x WEB_THREADS
-(plus the Celery worker) must stay well under PostgreSQL's max_connections (100).
+Hár thread database ulanıwın bir minut ustaydı (CONN_MAX_AGE), sol sebepli WEB_WORKERS x WEB_THREADS
+(hám Celery worker) PostgreSQL diń max_connections (100) tan jaqsı tómen qalıwı kerek.
 """
 import os
 
@@ -37,7 +38,8 @@ except ValueError:
     max_requests = -1
 if max_requests < 0:
     raise ValueError(f"WEB_MAX_REQUESTS must be 0 or a whole number above it, got {os.getenv('WEB_MAX_REQUESTS')!r}")
-max_requests_jitter = max_requests // 10  # so the processes are not all replaced at the same moment
-# In a container the files the processes use to say they are alive belong in memory: a slow disk freezes the server
+max_requests_jitter = max_requests // 10  # sonda process lerdiń hámmesi bir waqıtta almastırılmaydı
+# Konteynerde process ler tiri ekenin aytıw ushın paydalanatuǵın fayllar jaddıda turıwı kerek: sekin disk serverdi qatırıp
+# qoyadı
 worker_tmp_dir = '/dev/shm'
 accesslog = '-'

@@ -5,10 +5,10 @@ from .models import Booking
 
 class OwnBookingField(serializers.PrimaryKeyRelatedField):
     """
-    A booking id that must belong to the caller.
+    Shaqırıwshıǵa tiyisli bolıwı kerek bron id si.
 
-    Someone else's booking and a booking that does not exist get the same answer, so the
-    sequential ids cannot be used to count or probe other guests' bookings.
+    Basqa birewdiń broni hám joq bron birdey juwap aladı, sol sebepli
+    izbe-iz id lerdi basqa mehmanlardıń bronların sanaw yamasa izlew ushın paydalanıp bolmaydı.
     """
     default_error_messages = {
         'does_not_exist': 'Booking not found.',

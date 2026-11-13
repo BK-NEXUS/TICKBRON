@@ -1,14 +1,14 @@
 """
-Telegram alerts for the events somebody should look at now.
+Házir birew qarawı kerek waqıyalar ushın Telegram eskertiwleri.
 
-A logging handler on the security log and the error logs decides what is worth a message:
+Qáwipsizlik logı hám qátelik log ları boyınsha logging handler xabarǵa ılayıq nárseni sheshedi:
 
-- security events listed in ALERT_EVENTS (an account lock)
-- any ERROR record (a server error)
+- ALERT_EVENTS tizimindegi qáwipsizlik waqıyaları (akkaunt bloklanıwı)
+- qálegen ERROR jazbası (server qátesi)
 
-The same message is sent once per ALERT_COOLDOWN_SECONDS, so an attack or an error loop produces
-one message, not a flood. Sending happens in a Celery task (common/tasks.py), never in the request.
-Without TELEGRAM_BOT_TOKEN and TELEGRAM_ALERT_CHAT_ID nothing is sent.
+Birdey xabar ALERT_COOLDOWN_SECONDS ta bir ret jiberiledi, sol sebepli hújim yamasa qátelik sikli
+bir xabar beredi, kóp emes. Jiberiw Celery task (common/tasks.py) ishinde boladı, hesh qashan soraw ishinde emes.
+TELEGRAM_BOT_TOKEN hám TELEGRAM_ALERT_CHAT_ID bolmasa hesh nárse jiberilmeydi.
 """
 import logging
 import re
@@ -30,7 +30,7 @@ def alerts_configured():
 
 
 def send_alert(text):
-    """Queue a Telegram message unless alerts are off or this exact text was sent recently."""
+    """Eskertiwler óship turmasa yamasa dál sol tekst jaqında jiberilmegen bolsa, Telegram xabarın náwbetke qoyıw."""
     if not alerts_configured():
         return
     text = text[:MAX_ALERT_LENGTH]
@@ -41,7 +41,7 @@ def send_alert(text):
 
 
 def _is_alert_worthy(record):
-    """A configured security event, or any record at ERROR level."""
+    """Sazlanǵan qáwipsizlik waqıyası, yamasa ERROR dárejesindegi qálegen jazba."""
     if record.name == security_logger.name:
         match = _EVENT_NAME.match(record.getMessage())
         return bool(match) and match.group(1) in ALERT_EVENTS
@@ -49,12 +49,12 @@ def _is_alert_worthy(record):
 
 
 class AlertHandler(logging.Handler):
-    """Logging handler that turns alert-worthy records into Telegram messages."""
+    """Eskertiwge ılayıq jazbalardı Telegram xabarlarına aylandıratuǵın logging handler."""
 
     def emit(self, record):
         try:
             if _is_alert_worthy(record):
                 send_alert(record.getMessage())
         except Exception:
-            # An alert problem (broker down, cache down) must never break the request being logged
+            # Eskertiw máselesi (broker óshken, kesh óshken) log qa jazılıp atırǵan sorawdı hesh qashan buzbawı kerek
             self.handleError(record)

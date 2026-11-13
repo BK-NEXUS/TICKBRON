@@ -1,14 +1,14 @@
 """
-Map the old free-text location of properties (country / state) to the
-Geography dictionary (country_ref / region_ref).
+Mehmanxanalardıń eski erkin tekst jaylasıwın (country / state) Geography
+sózligine (country_ref / region_ref) sáykeslew.
 
-The city dictionary no longer exists. `city_model` is accepted only for the old data migration
-properties/0013, which runs while the city table still does.
+Qala sózligi endi joq. `city_model` tek eski properties/0013 data migration ı ushın qabıllanadı,
+ol qala kestesi ele bar waqıtta isleydi.
 
-Matching is trimmed, case-insensitive and apostrophe-insensitive, against the uz, ru
-and en names plus the aliases in geography/data.py. A value that does not match
-exactly one row stays NULL and is listed in the report. Properties that already have
-a ref keep it.
+Sáykeslew bos orınlarsız, register ti hám apostrofti esapqa almay, uz, ru
+hám en atlarına hám geography/data.py degi alias larǵa qarsı isleydi. Anıq bir qatarǵa
+sáykes kelmeytuǵın mánis NULL qaladı hám esabatta dizimlenedi. Aldınan
+ref i bar mehmanxanalar onı saqlaydı.
 """
 import re
 from collections import Counter
@@ -17,7 +17,7 @@ from geography.data import CITY_ALIASES, COUNTRY_ALIASES, REGION_ALIASES
 
 _APOSTROPHES = re.compile(r"[ʻʼ‘’`'´]")
 _SPACES = re.compile(r'\s+')
-# Words that only say what kind of region it is ("Samarkand Region" -> "samarkand"); used as a fallback
+# Tek regionnıń qanday túri ekenin aytatuǵın sózler ("Samarkand Region" -> "samarkand"); zapas jol retinde paydalanıladı
 _REGION_WORDS = re.compile(
     r'\b(region|province|city|oblast|viloyati|shahri|respublikasi|область|город|ил)\b|\(ил\)')
 
@@ -35,7 +35,7 @@ def _strip_region_words(key):
 
 
 def _region_keys(region):
-    """(exact, loose): the full names and aliases, and the same without the "Region" / "City" words."""
+    """(exact, loose): tolıq atlar hám alias lar, hám "Region" / "City" sózlerisiz sol sıyaqlılar."""
     names = [region.name_uz, region.name_ru, region.name_en, *REGION_ALIASES.get(region.slug, [])]
     exact = {normalize(name) for name in names if name}
     loose = {_strip_region_words(key) for key in exact}
@@ -47,15 +47,15 @@ def _names(row, aliases):
 
 
 class GeographyIndex:
-    """All dictionary rows, indexed by normalized name."""
+    """Barlıq sózlik qatarları, normallastırılǵan at boyınsha indekslengen."""
 
     def __init__(self, country_model, region_model, city_model=None):
         self.countries = {}
         for country in country_model.objects.all():
             for key in _names(country, [country.code, *COUNTRY_ALIASES.get(country.code, [])]):
                 self.countries.setdefault(key, set()).add(country)
-        # Exact names first: "Tashkent" (the city) and "Tashkent Region" are two regions that only
-        # look alike once "Region" is stripped, so the stripped keys are the fallback.
+        # Aldın anıq atlar: "Tashkent" (qala) hám "Tashkent Region" "Region" alıp taslanǵanda ǵana
+        # uqsas bolıp qalatuǵın eki region, sol sebepli alıp taslanǵan kilt ler zapas jol.
         self.regions = {}
         self.loose_regions = {}
         for region in region_model.objects.select_related('country'):
@@ -72,7 +72,7 @@ class GeographyIndex:
             keys = _names(city, CITY_ALIASES.get(city.slug, []))
             for key in keys:
                 self.cities.setdefault(key, set()).add(city)
-            # A region is also known by its centre (its first city): "Termez" -> Surkhandarya
+            # Region óziniń orayı (birinshi qalası) menen de belgili: "Termez" -> Surkhandarya
             if city.region_id not in centres:
                 centres.add(city.region_id)
                 for key in keys:
@@ -83,7 +83,7 @@ class GeographyIndex:
         return next(iter(candidates)) if len(candidates) == 1 else None
 
     def match(self, country_text, state_text, city_text):
-        """(country, region, city) for one text triple; None where there is no single match."""
+        """Bir tekst úshligi ushın (mámleket, region, qala); jalǵız sáykeslik joq bolsa None."""
         country = self._one(self.countries.get(normalize(country_text), set()))
         if country is None:
             return None, None, None
@@ -98,18 +98,18 @@ class GeographyIndex:
             cities = {c for c in cities if c.region_id == region.id}
         city = self._one(cities)
         if city is not None:
-            # The city is the most specific: its region wins
+            # Qala eń anıq: onıń regionı jeńedi
             region = city.region
         return country, region, city
 
 
 def map_properties(property_model, country_model, region_model, city_model=None, dry_run=False, queryset=None):
     """
-    Fill country_ref / region_ref from the text fields where they are empty (city_ref too when a city model is given).
+    Bos bolǵan jerde country_ref / region_ref di tekst maydanlardan toltırıw (qala modeli berilse city_ref de).
 
-    Takes the model classes so a data migration can pass its historical models.
-    `queryset` limits the run to some properties (e.g. the ones a seed command made).
-    Returns a report dict; with dry_run=True nothing is written.
+    Model klaslardı aladı, sonda data migration óziniń tariyxıy model lerin bere aladı.
+    `queryset` islewdi ayırım mehmanxanalarǵa shekemleydi (mısalı seed command jasaǵanlar).
+    Esabat dict in qaytaradı; dry_run=True bolsa hesh nárse jazılmaydı.
     """
     index = GeographyIndex(country_model, region_model, city_model)
     scope = property_model.objects.all() if queryset is None else queryset
@@ -120,7 +120,7 @@ def map_properties(property_model, country_model, region_model, city_model=None,
         'country': 0, 'region': 0, 'city': 0,
         'unmatched_country': Counter(), 'unmatched_region': Counter(), 'unmatched_city': Counter(),
     }
-    # order_by(): the model's default ordering would make distinct() see created_at too
+    # order_by(): modeldiń ádetdegi tártibi distinct() ge created_at tı da kórsetken bolar edi
     combos = todo.order_by().values_list('country', 'state', 'city').distinct()
     for country_text, state_text, city_text in combos:
         rows = todo.filter(country=country_text, state=state_text, city=city_text)

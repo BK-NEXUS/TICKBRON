@@ -1,8 +1,8 @@
 """
-Booking models for TICKBRON.
+TICKBRON ushın Booking model leri.
 
-This module contains models for bookings, booking items, and related structures
-with transaction-safe inventory locking and double-booking prevention.
+Bul modul bronlar, bron elementleri hám olarǵa baylanıslı dúzilislerdiń model lerin óz ishine aladı,
+transaction qáwipsiz inventory qulıplaw hám qos bronlawdıń aldın alıw menen.
 """
 import logging
 
@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class ExpiredBookingProcessingError(Exception):
-    """Raised after an expiry run in which one or more bookings could not be expired."""
+    """Bir yamasa birneshe bron múddeti ótti dep belgilenbegen expiry isleniwinen keyin kóteriledi."""
 
 
 class Booking(BaseModel):
     """
-    Core Booking model for TICKBRON.
+    TICKBRON ushın tiykarǵı Booking modeli.
 
-    Represents a booking with transaction-safe inventory locking.
+    Transaction qáwipsiz inventory qulıplaw menen bronnı kórsetedi.
     """
     STATUS_CHOICES = [
         ('pending', _('Pending')),
@@ -47,7 +47,7 @@ class Booking(BaseModel):
         ('partially_refunded', _('Partially Refunded')),
     ]
 
-    # User information
+    # Paydalanıwshı maǵlıwmatı
     guest = models.ForeignKey(
         'users.User',
         on_delete=models.PROTECT,
@@ -55,7 +55,7 @@ class Booking(BaseModel):
         db_index=True
     )
 
-    # Property information
+    # Mehmanxana maǵlıwmatı
     property = models.ForeignKey(
         'properties.Property',
         on_delete=models.PROTECT,
@@ -63,7 +63,7 @@ class Booking(BaseModel):
         db_index=True
     )
 
-    # Booking status
+    # Bron statusı
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -77,13 +77,13 @@ class Booking(BaseModel):
         db_index=True
     )
 
-    # Cash at the hotel: when the guest says they will arrive on the check-in day, and when the hotel
-    # marked them as arrived. A confirmed booking without arrived_at is cancelled ARRIVAL_GRACE_HOURS
-    # after the given time (bookings/arrival.py). Old bookings have no arrival time and are never cancelled.
+    # Mehmanxanada naqd: mehmann kiriw kúni qaysı waqıtta keletuǵının aytqanda hám mehmanxana
+    # onı kelgen dep belgilegende. arrived_at joq tastıyıqlanǵan bron berilgen waqıttan ARRIVAL_GRACE_HOURS
+    # saat keyin biykar etiledi (bookings/arrival.py). Eski bronlarda keliw waqtı joq hám hesh qashan biykar etilmeydi.
     expected_arrival_time = models.TimeField(null=True, blank=True)
     arrived_at = models.DateTimeField(null=True, blank=True)
 
-    # Date information
+    # Sana maǵlıwmatı
     check_in = models.DateField(db_index=True)
     check_out = models.DateField(db_index=True)
     number_of_nights = models.PositiveIntegerField(
@@ -91,18 +91,18 @@ class Booking(BaseModel):
         help_text=_('Number of nights for the booking')
     )
 
-    # Guest information
+    # Mehmann maǵlıwmatı
     guest_count = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
         help_text=_('Number of guests')
     )
 
-    # Guest contact details (can differ from user profile for specific booking)
+    # Mehmannıń baylanıs maǵlıwmatı (belgili bir bron ushın paydalanıwshı profilinen ayrıla aladı)
     guest_full_name = models.CharField(max_length=300, blank=True, null=True)
     guest_phone = models.CharField(max_length=20, blank=True, null=True)
     guest_email = models.EmailField(blank=True, null=True)
 
-    # Room and children information
+    # Xona hám balalar maǵlıwmatı
     number_of_rooms = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
         default=1,
@@ -110,36 +110,36 @@ class Booking(BaseModel):
     )
     children = models.JSONField(default=list, blank=True, help_text=_('List of children with ages'))
 
-    # Pricing information
+    # Baha maǵlıwmatı
     total_price = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(0)],
         help_text=_('Total price for the booking')
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
 
-    # What the guest is charged (R6): set once when the booking is created, inside the
-    # transaction that locks the inventory, and never changed (see save()). total_price
-    # and currency above are the price in the property's own currency.
+    # Mehmannan ne alınatuǵını (R6): bron jaratılǵanda bir márte belgilenedi, inventory ti qulıplaytuǵın
+    # transaction ishinde, hám hesh qashan ózgertilmeydi (qarań: save()). Joqarıdaǵı total_price
+    # hám currency mehmanxananıń óz valyutasındaǵı baha.
     charge_currency = models.CharField(max_length=3)
     charge_amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(0)])
     exchange_rate = models.DecimalField(max_digits=18, decimal_places=6, help_text=_('UZS per one unit of currency'))
     exchange_rate_date = models.DateField(null=True, blank=True)
-    exchange_rate_source = models.CharField(max_length=16)  # 'cbu.uz', 'identity' or 'legacy'
+    exchange_rate_source = models.CharField(max_length=16)  # 'cbu.uz', 'identity' yamasa 'legacy'
     exchange_rate_stale = models.BooleanField(default=False)
 
-    # What the guest was promised if the hotel reports them as a no-show and staff approve (R12
-    # phase 3): the NO_SHOW_REFUND_PERCENT of the moment the booking was created, written in the
-    # inventory-locking transaction and never changed (see save()). 0 = nothing promised: bookings
-    # made before this existed, and rows written outside create_booking.
+    # Mehmanxana mehmandı no-show dep xabarlasa hám staff tastıyıqlasa, mehmanǵa ne wáde etilgeni (R12
+    # 3-basqısh): bron jaratılǵan waqıttaǵı NO_SHOW_REFUND_PERCENT, inventory qulıplaytuǵın
+    # transaction da jazıladı hám hesh qashan ózgertilmeydi (qarań: save()). 0 = hesh nárse wáde etilmegen: bul
+    # payda bolmastan burın jasalǵan bronlar hám create_booking sırtında jazılǵan qatarlar.
     no_show_refund_percent = models.PositiveSmallIntegerField(
         default=0, validators=[MaxValueValidator(100)],
         help_text=_('Percent of the amount paid refunded if the guest does not arrive (snapshot)'))
 
-    # What the guest was promised if they cancel a paid booking (R11, .ai/PLAN_R11_CANCELLATION.md): the
-    # rate plan's terms of the moment the booking was created, never changed (see SNAPSHOT_FIELDS).
-    # cancel_refund_percent_after NULL = no promise: bookings made before this existed get no automatic refund.
+    # Mehmann tólengen bronnan bas tartsa, oǵan ne wáde etilgeni (R11, .ai/PLAN_R11_CANCELLATION.md): bron
+    # jaratılǵan waqıttaǵı rate plan shártleri, hesh qashan ózgertilmeydi (qarań: SNAPSHOT_FIELDS).
+    # cancel_refund_percent_after NULL = wáde joq: bul payda bolmastan burın jasalǵan bronlar avtomat qaytarıw almaydı.
     cancel_free_until = models.DateTimeField(
         null=True, blank=True,
         help_text=_('Cancelling up to this moment refunds everything paid (snapshot); empty = no free window'))
@@ -147,7 +147,7 @@ class Booking(BaseModel):
         null=True, blank=True, validators=[MaxValueValidator(100)],
         help_text=_('Percent of the amount paid refunded when cancelling after the free window (snapshot)'))
 
-    # Additional information
+    # Qosımsha maǵlıwmat
     special_requests = models.TextField(blank=True, null=True)
     confirmation_code = models.CharField(
         max_length=6,
@@ -156,11 +156,11 @@ class Booking(BaseModel):
         help_text=_('Unique 6-character booking reference code')
     )
 
-    # Cancellation information
+    # Biykar etiw maǵlıwmatı
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True)
 
-    # Expiry information
+    # Múddet maǵlıwmatı
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text=_('Timestamp when pending booking expires'))
 
     class Meta:
@@ -176,9 +176,9 @@ class Booking(BaseModel):
             models.Index(fields=['guest', 'status']),
             models.Index(fields=['property', 'status']),
             models.Index(fields=['expires_at']),
-            # Status sections: counted bookings (status) in a period (check-in date)
+            # Status bólimleri: dáwirdegi (kiriw sanası) counted bronlar (status)
             models.Index(fields=['status', 'check_in'], name='booking_status_checkin_idx'),
-            # A hotel's arrivals and calendar: bookings of one property by check-in date
+            # Mehmanxananıń keliwleri hám kalendarı: bir mehmanxananıń bronları kiriw sanası boyınsha
             models.Index(fields=['property', 'check_in'], name='booking_prop_checkin_idx'),
         ]
 
@@ -186,7 +186,7 @@ class Booking(BaseModel):
         return f"Booking {self.confirmation_code} - {self.property}"
 
     def clean(self):
-        """Validate booking data."""
+        """Bron maǵlıwmatın tekseriw."""
         super().clean()
 
         if self.check_out <= self.check_in:
@@ -199,7 +199,7 @@ class Booking(BaseModel):
                 'number_of_nights': _('Number of nights must match the date range')
             })
 
-        # Validate state transition if status is being changed
+        # Status ózgerip atırǵan bolsa, ótiwdi tekseriw
         if self.pk:
             try:
                 old_booking = Booking.objects.get(pk=self.pk)
@@ -212,9 +212,9 @@ class Booking(BaseModel):
                             'status': error_message
                         })
             except Booking.DoesNotExist:
-                pass  # New booking, no transition validation needed
+                pass  # Jańa bron, ótiwdi tekseriw kerek emes
 
-    # The price and the charge snapshot: never changed once the booking exists
+    # Baha hám tólem snapshot ı: bron payda bolǵannan keyin hesh qashan ózgermeydi
     SNAPSHOT_FIELDS = (
         'total_price', 'currency', 'charge_currency', 'charge_amount', 'exchange_rate',
         'exchange_rate_date', 'exchange_rate_source', 'exchange_rate_stale', 'no_show_refund_percent',
@@ -223,7 +223,7 @@ class Booking(BaseModel):
 
     @classmethod
     def from_db(cls, db, field_names, values, **kwargs):
-        # Django 6.1 adds `fetch_mode`; the pinned 5.2 passes nothing, so the keywords go on untouched
+        # Django 6.1 `fetch_mode` qosadı; bekitilgen 5.2 hesh nárse bermeydi, sol sebepli keyword lar ózgerissiz ótedi
         instance = super().from_db(db, field_names, values, **kwargs)
         instance._loaded_snapshot = {
             name: getattr(instance, name) for name in cls.SNAPSHOT_FIELDS if name in instance.__dict__
@@ -240,9 +240,9 @@ class Booking(BaseModel):
 
     def _fill_snapshot_if_missing(self):
         """
-        Rows created outside create_booking (seeds, old code paths) record what really
-        happens to them: a UZS row is charged as is, any other currency is a legacy row
-        charged in its own currency at rate 1. create_booking always sets the snapshot.
+        create_booking sırtında jaratılǵan qatarlar (seed ler, eski kod jolları) olarǵa haqıyqatında
+        ne bolıp atırǵanın jazadı: UZS qatarı sol qalpında alınadı, basqa hár valyuta legacy qatar bolıp,
+        óz valyutasında 1 kurs penen alınadı. create_booking snapshot tı hárdayım belgileydi.
         """
         if self.charge_currency:
             return
@@ -252,7 +252,7 @@ class Booking(BaseModel):
         self.exchange_rate_source = 'identity' if self.currency == CHARGE_CURRENCY else 'legacy'
 
     def save(self, *args, **kwargs):
-        """Refuse snapshot changes, fill the snapshot of new rows, generate the confirmation code and expiry."""
+        """Snapshot ózgeriwin qabıllamaw, jańa qatarlardıń snapshot ın toltırıw, tastıyıqlaw kodın hám múddetti jaratıw."""
         self._check_snapshot_unchanged()
         if self._state.adding:
             self._fill_snapshot_if_missing()
@@ -262,96 +262,96 @@ class Booking(BaseModel):
     def _save_with_confirmation_code(self, *args, **kwargs):
         from django.db import IntegrityError
 
-        # Calculate number of nights if not set
+        # Belgilenbegen bolsa, túnler sanın esaplaw
         if not self.number_of_nights:
             self.number_of_nights = (self.check_out - self.check_in).days
 
-        # Set expiry time for pending bookings (15 minutes from creation)
+        # Kútip turǵan bronlar ushın múddet waqtın belgilew (jaratılǵannan 15 minut keyin)
         if self.status == 'pending' and not self.expires_at:
             from datetime import timedelta
             self.expires_at = timezone.now() + timedelta(minutes=15)
 
-        # Generate confirmation code if not set
+        # Belgilenbegen bolsa, tastıyıqlaw kodın jaratıw
         if not self.confirmation_code:
             max_attempts = 10
             for attempt in range(max_attempts):
                 self.confirmation_code = self.generate_confirmation_code()
                 try:
                     super().save(*args, **kwargs)
-                    return  # Success, exit early
+                    return  # Tabıslı, erte shıǵıw
                 except IntegrityError:
-                    # Confirmation code collision, try again
+                    # Tastıyıqlaw kodı tuwrı keldi (collision), qayta urınıw
                     self.confirmation_code = None
                     continue
-            # If we get here, all attempts failed
+            # Usı jerge jetsek, barlıq urınıwlar sátsiz boldı
             raise IntegrityError("Could not generate unique confirmation code after multiple attempts")
         else:
             super().save(*args, **kwargs)
 
     def generate_confirmation_code(self):
         """
-        Generate a unique 6-character booking reference code using cryptographically secure random.
+        Kriptografiyalıq qáwipsiz tosınarlıq sandı paydalanıp, unikal 6 belgili bron reference code jaratadı.
 
-        Uses unambiguous character set excluding: 0/O, 1/I/L to prevent confusion.
-        Character set: 2-9, A-H, J-K, M-N, P, R-Z (excluding 0, 1, I, L, O)
+        Shatasıwdıń aldın alıw ushın aytılmaǵan belgiler toplamın paydalanadı, bunnan 0/O, 1/I/L shıǵarılǵan.
+        Belgiler toplamı: 2-9, A-H, J-K, M-N, P, R-Z (0, 1, I, L, O shıǵarılǵan)
 
-        Note: The save() method handles collision detection via database constraint
-        and retries if IntegrityError occurs.
+        Eskertiw: save() metodı tuwrı kelwdi (collision) database constraint arqalı biledi
+        hám IntegrityError bolsa qayta urınadı.
         """
         import secrets
 
-        # Unambiguous character set (excludes 0/O, 1/I/L)
+        # Aytılǵan belgiler toplamı (0/O, 1/I/L shıǵarılǵan)
         unambiguous_chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
 
-        # Generate a single random code - uniqueness is enforced by save() method
+        # Bir tosınarlıq kod jaratıw: unikallıq save() metodı tárepinen támiyinlenedi
         return ''.join(secrets.choice(unambiguous_chars) for _ in range(6))
 
     @classmethod
     def create_booking(cls, guest, property_obj, room_type, rate_plan, check_in, check_out, guest_count, special_requests=None, guest_full_name=None, guest_phone=None, guest_email=None, number_of_rooms=1, children=None, expected_arrival_time=None, confirmed=False):
         """
-        Create a booking with transaction-safe inventory locking.
+        Transaction qáwipsiz inventory qulıplaw menen bron jaratıw.
 
-        This method uses database transactions and row-level locking to prevent
-        double-booking and ensure inventory consistency.
+        Bul metod qos bronlawdıń aldın alıw hám inventory dıń izbe-izligin támiyinlew ushın
+        database transaction ların hám qatar dárejesindegi qulıplawdı paydalanadı.
 
-        Args:
-            guest: User object (the guest making the booking)
-            property_obj: Property object
-            room_type: RoomType object
-            rate_plan: RatePlan object
-            check_in: Check-in date (date object)
-            check_out: Check-out date (date object)
-            guest_count: Number of guests
-            special_requests: Optional special requests text
-            guest_full_name: Optional guest full name (defaults to user's full name)
-            guest_phone: Optional guest phone (defaults to user's phone)
-            guest_email: Optional guest email (defaults to user's email)
-            number_of_rooms: Number of rooms (defaults to 1)
-            children: List of children ages, counted inside guest_count (defaults to empty list)
+        Argumentler:
+            guest: User obyekti (bronlaytuǵın mehmann)
+            property_obj: Property obyekti
+            room_type: RoomType obyekti
+            rate_plan: RatePlan obyekti
+            check_in: Kiriw sanası (date obyekti)
+            check_out: Shıǵıw sanası (date obyekti)
+            guest_count: Mehmanlar sanı
+            special_requests: Ixtıyarıy arnawlı sorawlar teksti
+            guest_full_name: Ixtıyarıy mehmannıń tolıq atı (ádetde paydalanıwshınıń tolıq atı)
+            guest_phone: Ixtıyarıy mehmannıń telefonı (ádetde paydalanıwshınıń telefonı)
+            guest_email: Ixtıyarıy mehmannıń e-mail ı (ádetde paydalanıwshınıń e-mail ı)
+            number_of_rooms: Xonalar sanı (ádetde 1)
+            children: guest_count ishinde esaplanatuǵın balalar jasları dizimi (ádetde bos dizim)
 
-        Returns:
-            Booking object if successful
+        Qaytaradı:
+            Tabıslı bolsa Booking obyekti
 
-        Raises:
-            ValidationError: If booking cannot be created (no availability, validation errors)
-            Exception: If database error occurs
+        Kóteredi:
+            ValidationError: Bron jaratıp bolmasa (bos orın joq, tekseriw qátelikleri)
+            Exception: Database qátesi bolsa
         """
         from decimal import Decimal
         from bookings.pricing import quote_stay
 
-        # Validate input
+        # Kirisiwdi tekseriw
         if check_out <= check_in:
             raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
 
         number_of_nights = (check_out - check_in).days
 
-        # Validate children ages if provided
+        # Balalar jasların (berilgen bolsa) tekseriw
         if children is None:
             children = []
         for age in children:
             if not isinstance(age, int) or age < 0 or age > 17:
                 raise ValidationError({'children': _('Children ages must be integers between 0 and 17')})
-        # Children are part of guest_count (persons), and the booker is an adult
+        # Balalar guest_count tıń (adamlar) bir bólegi, hám bronlawshı úlken adam
         if len(children) >= guest_count:
             raise ValidationError({'children': _('Children are part of the guest count; at least one guest must be an adult')})
 
@@ -367,19 +367,19 @@ class Booking(BaseModel):
         if guest_count > room_type.max_occupancy * number_of_rooms:
             raise ValidationError({'guest_count': _('Guest count exceeds the capacity of the booked rooms')})
 
-        # Use atomic transaction for consistency
+        # Izbe-izlik ushın atomic transaction paydalanıw
         with transaction.atomic():
-            # Locks every night's inventory row and prices the stay; the public quote
-            # endpoint uses the same function, so the guest pays what they were shown
+            # Hár túnniń inventory qatarın qulıplaydı hám turıwdıń bahasın esaplaydı; ashıq quote
+            # endpoint i sol funkciyanı paydalanadı, sol sebepli mehmann kórsetilgen bahanı tóleydi
             quote = quote_stay(rate_plan, check_in, check_out, number_of_rooms, lock=True)
             room_inventory_records = quote.room_inventory
-            nightly_total = quote.nightly_total  # price of one room for the whole stay
+            nightly_total = quote.nightly_total  # pútkil turıw ushın bir xonanıń bahası
             currency = rate_plan.currency
             total_price = quantize(quote.total_price, currency)
 
-            # The charge snapshot (so'm). The owner's own so'm price for this stay when there is one
-            # (R16): no exchange rate is needed. Otherwise the rate, read now after the inventory is
-            # locked, from the database only; no rate yet for a foreign currency -> nothing is reserved.
+            # Alınatuǵın summa snapshot ı (som). Bar bolsa, usı turıw ushın iyeniń óz som bahası
+            # (R16): valyuta kursı kerek emes. Bolmasa kurs, inventory qulıplanǵannan keyin házir oqıladı,
+            # tek database den; sırtqı valyuta ushın kurs ele joq bolsa -> hesh nárse rezervlenbeydi.
             charge_amount, charge_source = quote.total_in(CHARGE_CURRENCY)
             if charge_source == 'owner':
                 rate_value, rate_date, rate_stale = (
@@ -392,12 +392,12 @@ class Booking(BaseModel):
                 charge_amount, charge_source = to_uzs(total_price, rate.rate), rate.source
                 rate_value, rate_date, rate_stale = rate.rate, rate.date, rate.stale
 
-            # Create the booking
+            # Bronnı jaratıw
             booking = cls.objects.create(
                 guest=guest,
                 property=property_obj,
-                # The booking API passes confirmed=True: cash at the hotel, no payment window, the room is taken
-                # at once. Direct callers keep the old pending booking until the payment code goes (stage 3).
+                # Booking API confirmed=True beredi: mehmanxanada naqd, tólem oynası joq, xona birden
+                # alınadı. Tikkeley shaqırıwshılar tólem kodı óshirilgenshe (3-basqısh) eski pending bronǵa iye boladı.
                 status='confirmed' if confirmed else 'pending',
                 payment_status='pending',
                 expected_arrival_time=expected_arrival_time,
@@ -421,20 +421,20 @@ class Booking(BaseModel):
                 children=children
             )
 
-            # Create booking item
+            # Bron elementin jaratıw
             BookingItem.objects.create(
                 booking=booking,
                 room_type=room_type,
                 rate_plan=rate_plan,
                 number_of_rooms=number_of_rooms,
-                # Average nightly price of one room (nightly prices may differ)
+                # Bir xonanıń ortasha túngi bahası (túngi bahalar parıqlı bolıwı múmkin)
                 price_per_night=(nightly_total / number_of_nights).quantize(Decimal('0.01')),
                 currency=rate_plan.currency
             )
 
-            # Update inventory - atomically reserve every booked room. RoomInventory is
-            # keyed by room type, not rate plan, so this is what stops a second rate
-            # plan of the same room type from selling the same physical room (#31).
+            # Inventory di jańalaw - hár bronlanǵan xonanı atomic túrde rezervlew. RoomInventory
+            # rate plan emes, xona túri boyınsha, sol sebepli usı bir xona túriniń ekinshi rate
+            # plan ı sol bir fizikalıq xonanı ekinshi ret satıwınan usı saqlaydı (#31).
             for inventory in room_inventory_records:
                 inventory.booked_rooms = F('booked_rooms') + number_of_rooms
                 inventory.save(update_fields=['booked_rooms'])
@@ -443,10 +443,10 @@ class Booking(BaseModel):
 
     def _lock_row(self):
         """
-        Lock this booking's row and reload its mutable state from it.
+        Usı bronnıń qatarın qulıplaw hám onıń ózgeriwshi jaǵdayın sonnan qayta oqıw.
 
-        Must be called inside transaction.atomic(); state-machine checks made
-        afterwards see the latest committed status, not a stale in-memory copy.
+        transaction.atomic() ishinde shaqırılıwı kerek; keyin ótkerilgen state-machine
+        tekseriwleri eskirgen jaddaǵı nusqanı emes, eń sońǵı saqlanǵan statustı kóredi.
         """
         locked = type(self).objects.select_for_update().get(pk=self.pk)
         for field in ('status', 'payment_status', 'cancelled_at', 'cancellation_reason', 'expires_at'):
@@ -454,25 +454,25 @@ class Booking(BaseModel):
 
     def cancel_booking(self, cancellation_reason=None):
         """
-        Cancel a booking and restore inventory.
+        Bronnan bas tartıw hám inventory di qaytarıw.
 
-        This method uses transactions to ensure inventory is properly restored
-        even if cancellation fails partway through.
+        Bul metod biykar etiw ortasında sátsiz bolsa da inventory durıs qaytarılıwı
+        ushın transaction larǵa tayanadı.
 
-        Args:
-            cancellation_reason: Optional reason for cancellation
+        Argumentler:
+            cancellation_reason: Ixtıyarıy biykar etiw sebebi
 
-        Raises:
-            ValidationError: If booking cannot be cancelled
-            Exception: If database error occurs
+        Kóteredi:
+            ValidationError: Bronnan bas tartıp bolmasa
+            Exception: Database qátesi bolsa
         """
         from datetime import timedelta
 
         with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
+            # Qatardı qulıplaw hám jaǵdayın qayta oqıw, sonda birdey waqıttaǵı ótiwler
+            # (mısalı biykar etiw hám múddet ótiw hám tólem) izbe-iz isleydi
             self._lock_row()
-            # Validate state transition using state machine
+            # State machine arqalı ótiwdi tekseriw
             from_state = BookingState(self.status)
             to_state = BookingState('cancelled')
             is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state)
@@ -481,10 +481,10 @@ class Booking(BaseModel):
                     'status': error_message
                 })
 
-            # Get booking items
+            # Bron elementlerin alıw
             booking_items = self.booking_items.all()
 
-            # Restore inventory for each booking item
+            # Hár bron elementi ushın inventory di qaytarıw
             for item in booking_items:
                 date_range = []
                 current_date = self.check_in
@@ -492,8 +492,8 @@ class Booking(BaseModel):
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
 
-                # Lock and update inventory (RoomInventory: shared by every rate plan
-                # of this room type, see create_booking)
+                # Inventory di qulıplaw hám jańalaw (RoomInventory: usı xona túriniń hár rate
+                # plan ı ortaq paydalanadı, qarań create_booking)
                 from properties.models import RoomInventory
                 inventory_records = RoomInventory.objects.filter(
                     room_type=item.room_type,
@@ -501,38 +501,38 @@ class Booking(BaseModel):
                 ).select_for_update()
 
                 for inventory in inventory_records:
-                    # Decrement booked_rooms
+                    # booked_rooms di kemeytiw
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
                     inventory.save(update_fields=['booked_rooms'])
 
-            # Update booking status
+            # Bron statusın jańalaw
             old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = cancellation_reason
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
 
-            # Log state transition
+            # Status ótiwin log qa jazıw
             self._log_state_transition(old_status, 'cancelled', cancellation_reason or 'user_cancelled')
 
     def expire_booking(self):
         """
-        Expire a pending booking and restore inventory.
+        Kútip turǵan bronnıń múddetin ótkeriw hám inventory di qaytarıw.
 
-        This method is called when a pending booking expires (typically after 15 minutes).
-        It uses transactions to ensure inventory is properly restored.
+        Bul metod kútip turǵan bronnıń múddeti ótkende (ádetde 15 minuttan keyin) shaqırıladı.
+        Inventory durıs qaytarılıwı ushın transaction lardı paydalanadı.
 
-        Raises:
-            ValidationError: If booking cannot be expired
-            Exception: If database error occurs
+        Kóteredi:
+            ValidationError: Bronnıń múddetin ótkerip bolmasa
+            Exception: Database qátesi bolsa
         """
         from datetime import timedelta
 
         with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
+            # Qatardı qulıplaw hám jaǵdayın qayta oqıw, sonda birdey waqıttaǵı ótiwler
+            # (mısalı biykar etiw hám múddet ótiw hám tólem) izbe-iz isleydi
             self._lock_row()
-            # Validate state transition using state machine
+            # State machine arqalı ótiwdi tekseriw
             from_state = BookingState(self.status)
             to_state = BookingState('cancelled')
             is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='expiry')
@@ -541,10 +541,10 @@ class Booking(BaseModel):
                     'status': error_message
                 })
 
-            # Get booking items
+            # Bron elementlerin alıw
             booking_items = self.booking_items.all()
 
-            # Restore inventory for each booking item
+            # Hár bron elementi ushın inventory di qaytarıw
             for item in booking_items:
                 date_range = []
                 current_date = self.check_in
@@ -552,8 +552,8 @@ class Booking(BaseModel):
                     date_range.append(current_date)
                     current_date += timedelta(days=1)
 
-                # Lock and update inventory (RoomInventory: shared by every rate plan
-                # of this room type, see create_booking)
+                # Inventory di qulıplaw hám jańalaw (RoomInventory: usı xona túriniń hár rate
+                # plan ı ortaq paydalanadı, qarań create_booking)
                 from properties.models import RoomInventory
                 inventory_records = RoomInventory.objects.filter(
                     room_type=item.room_type,
@@ -561,34 +561,34 @@ class Booking(BaseModel):
                 ).select_for_update()
 
                 for inventory in inventory_records:
-                    # Decrement booked_rooms
+                    # booked_rooms di kemeytiw
                     inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
                     inventory.save(update_fields=['booked_rooms'])
 
-            # Update booking status
+            # Bron statusın jańalaw
             old_status = self.status
             self.status = 'cancelled'
             self.cancelled_at = timezone.now()
             self.cancellation_reason = 'Booking expired - payment not completed within time limit'
             self.save(update_fields=['status', 'cancelled_at', 'cancellation_reason'])
 
-            # Log state transition
+            # Status ótiwin log qa jazıw
             self._log_state_transition(old_status, 'cancelled', 'expiry')
 
     @classmethod
     def process_expired_bookings(cls, raise_on_error=False):
         """
-        Process all expired pending bookings and restore their inventory.
+        Múddeti ótken barlıq kútip turǵan bronlardı islew hám inventory di qaytarıw.
 
-        This method should be called periodically (e.g., via a management command or Celery task)
-        to clean up expired bookings and restore inventory.
+        Bul metod waqtı-waqtı menen shaqırılıwı kerek (mısalı management command yamasa Celery task arqalı),
+        múddeti ótken bronlardı tazalaw hám inventory di qaytarıw ushın.
 
-        A booking that fails to expire is logged and skipped so the rest are
-        still processed. With raise_on_error=True, ExpiredBookingProcessingError
-        is raised after the run if any booking failed.
+        Múddeti ótip bolmaǵan bron log qa jazıladı hám ótkizip jiberiledi, sonda qalǵanları
+        islenedi. raise_on_error=True bolsa, qanday da bir bron sátsiz bolsa, isleniwden keyin
+        ExpiredBookingProcessingError kóteriledi.
 
-        Returns:
-            int: Number of bookings processed
+        Qaytaradı:
+            int: Islengen bronlar sanı
         """
         expired_bookings = cls.objects.filter(
             status='pending',
@@ -603,14 +603,14 @@ class Booking(BaseModel):
                 booking.expire_booking()
                 processed_count += 1
             except ValidationError:
-                # Paid or cancelled by another request after this run listed it:
-                # nothing left to expire, so not a failure
+                # Usı isleniw dizimdi jasaǵannan keyin basqa soraw tárepinen tólengen yamasa biykar etilgen:
+                # ótkeriw ushın hesh nárse qalmadı, sol sebepli qátelik emes
                 if booking.status != 'pending':
                     continue
                 logger.exception(f"Failed to expire booking {booking.pk}")
                 failed_ids.append(booking.pk)
             except Exception:
-                # Keep going so one bad booking does not block the others
+                # Dawam etiw, sonda bir jaman bron basqalardı tosıp qoymaydı
                 logger.exception(f"Failed to expire booking {booking.pk}")
                 failed_ids.append(booking.pk)
 
@@ -622,20 +622,20 @@ class Booking(BaseModel):
 
     def complete_booking(self):
         """
-        Complete a booking after checkout.
+        Shıǵıwdan keyin bronnı juwmaqlaw.
 
-        This method is called when guest checks out to transition the booking
-        from confirmed to completed status.
+        Bul metod mehmann shıqqanda bronnı confirmed statustan
+        completed statusqa ótkiziw ushın shaqırıladı.
 
-        Raises:
-            ValidationError: If booking cannot be completed
-            Exception: If database error occurs
+        Kóteredi:
+            ValidationError: Bronnı juwmaqlap bolmasa
+            Exception: Database qátesi bolsa
         """
         with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
+            # Qatardı qulıplaw hám jaǵdayın qayta oqıw, sonda birdey waqıttaǵı ótiwler
+            # (mısalı biykar etiw hám múddet ótiw hám tólem) izbe-iz isleydi
             self._lock_row()
-            # Validate state transition using state machine
+            # State machine arqalı ótiwdi tekseriw
             from_state = BookingState(self.status)
             to_state = BookingState('completed')
             is_valid, error_message = BookingStateMachine.validate_transition(from_state, to_state, reason='checkout_completed')
@@ -644,31 +644,31 @@ class Booking(BaseModel):
                     'status': error_message
                 })
 
-            # Update booking status
+            # Bron statusın jańalaw
             old_status = self.status
             self.status = 'completed'
             self.save(update_fields=['status'])
 
-            # Log state transition
+            # Status ótiwin log qa jazıw
             self._log_state_transition(old_status, 'completed', 'checkout_completed')
 
     def mark_no_show(self, via_approved_report=False):
         """
-        Mark a booking as no-show when guest doesn't arrive.
+        Mehmann kelmese, bronnı no-show dep belgilew.
 
-        This method is called when a confirmed booking becomes a no-show. With
-        via_approved_report=True (R12, staff approved the hotel's no-show report) a
-        completed booking may become a no-show as well; nothing else allows that.
+        Bul metod tastıyıqlanǵan bron no-show bolǵanda shaqırıladı. via_approved_report=True
+        bolsa (R12, staff mehmanxananıń no-show esabatın tastıyıqladı) juwmaqlanǵan bron da
+        no-show bola aladı; basqa hesh nárse bunı ruxsat etpeydi.
 
-        Raises:
-            ValidationError: If booking cannot be marked as no-show
-            Exception: If database error occurs
+        Kóteredi:
+            ValidationError: Bronnı no-show dep belgilep bolmasa
+            Exception: Database qátesi bolsa
         """
         with transaction.atomic():
-            # Lock the row and re-read its state so concurrent transitions
-            # (e.g. cancel vs. expire vs. payment) are serialized
+            # Qatardı qulıplaw hám jaǵdayın qayta oqıw, sonda birdey waqıttaǵı ótiwler
+            # (mısalı biykar etiw hám múddet ótiw hám tólem) izbe-iz isleydi
             self._lock_row()
-            # Validate state transition using state machine
+            # State machine arqalı ótiwdi tekseriw
             from_state = BookingState(self.status)
             to_state = BookingState('no_show')
             reason = 'no_show_report_approved' if via_approved_report else 'guest_no_show'
@@ -680,22 +680,22 @@ class Booking(BaseModel):
                     'status': error_message
                 })
 
-            # Update booking status
+            # Bron statusın jańalaw
             old_status = self.status
             self.status = 'no_show'
             self.save(update_fields=['status'])
 
-            # Log state transition
+            # Status ótiwin log qa jazıw
             self._log_state_transition(
                 old_status, 'no_show', 'no_show_report_approved' if via_approved_report else 'guest_no_show')
 
     def restore_after_reversed_no_show(self, completed):
         """
-        Staff corrected an approved no-show report: the booking goes back to `completed` (the
-        stay is over) or `confirmed`. Only no_show_report.reverse_report calls this.
+        Staff tastıyıqlanǵan no-show esabatın túzetti: bron `completed` ke (turıw
+        pitti) yamasa `confirmed` ke qaytadı. Tek no_show_report.reverse_report usını shaqıradı.
 
-        Raises:
-            ValidationError: if the booking is not a no-show any more
+        Kóteredi:
+            ValidationError: bron endi no-show emes bolsa
         """
         with transaction.atomic():
             self._lock_row()
@@ -712,16 +712,16 @@ class Booking(BaseModel):
 
     def _log_state_transition(self, old_status, new_status, reason):
         """
-        Log booking state transition for audit purposes.
+        Audit maqsetinde bron status ótiwin log qa jazıw.
 
-        Args:
-            old_status: Previous booking status
-            new_status: New booking status
-            reason: Reason for transition
+        Argumentler:
+            old_status: Aldınǵı bron statusı
+            new_status: Jańa bron statusı
+            reason: Ótiw sebebi
         """
         try:
             from payments.models import PaymentAuditLog
-            # Savepoint: a database error here must not abort the caller's transaction
+            # Savepoint: bul jerdegi database qátesi shaqırıwshınıń transaction ın toqtatpawı kerek
             with transaction.atomic():
                 PaymentAuditLog.log_action(
                     action='booking_status_changed',
@@ -731,15 +731,15 @@ class Booking(BaseModel):
                     details={'reason': reason}
                 )
         except Exception:
-            # The state change itself stands; the missing history row must not be silent
+            # Status ózgerisiniń ózi kúshte qaladı; joq tariyx qatarı ún-túnsiz qalmawı kerek
             logger.exception('Could not write the audit entry for booking %s (%s -> %s)', self.pk, old_status, new_status)
 
 
 class BookingItem(BaseModel):
     """
-    Booking item model for individual room bookings within a booking.
+    Bron ishindegi jeke xona bronları ushın bron element modeli.
 
-    Represents specific room types and rate plans booked.
+    Bronlanǵan belgili xona túrleri hám rate plan lardı kórsetedi.
     """
     booking = models.ForeignKey(
         Booking,
@@ -770,7 +770,7 @@ class BookingItem(BaseModel):
         validators=[MinValueValidator(0)],
         help_text=_('Price per night for this room type')
     )
-    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 currency code
+    currency = models.CharField(max_length=3, default='USD')  # ISO 4217 valyuta kodı
 
     class Meta:
         db_table = 'booking_items'
@@ -788,9 +788,9 @@ class BookingItem(BaseModel):
 
 class AutoCompletionRun(models.Model):
     """
-    One real run of the nightly auto-completion (R12): when it ran, what started it,
-    how many confirmed stays became completed and how many could not. Dry runs are
-    not recorded. Shown to super-admins at /admin-panel/auto-completion/status/.
+    Túngi avtomat juwmaqlawdıń bir haqıyqıy isleniwi (R12): qashan isledi, ne iske túsirdi,
+    neshe tastıyıqlanǵan turıw completed boldı hám neshewi bolmadı. Dry run lar
+    jazılmaydı. Super-admin lerge /admin-panel/auto-completion/status/ de kórsetiledi.
     """
     TRIGGER_CHOICES = [('beat', 'Celery beat'), ('command', 'Management command')]
 
@@ -810,15 +810,15 @@ class AutoCompletionRun(models.Model):
 
 class NoShowReport(models.Model):
     """
-    A hotel's report that a guest did not arrive (R12 phase 3). The hotel reports, staff decide:
-    owners can withdraw their own pending report but never approve or reject.
+    Mehmanxananıń mehmannıń kelmegeni haqqındaǵı esabatı (R12 3-basqısh). Mehmanxana xabarlaydı, staff sheshedi:
+    iyeler óz kútip turǵan esabatın qaytarıp ala aladı, biraq hesh qashan tastıyıqlay yamasa biykar ete almaydı.
 
-    - one `pending` report per booking (partial unique constraint); a report is allowed only for
-      a confirmed or completed booking, from the day after check-in until NO_SHOW_REPORT_WINDOW_DAYS
-      after check-out (bookings.noshow.create_report)
-    - approving moves the booking to no_show and pays the refund promised at booking time;
-      rejecting changes nothing; staff can correct either decision (bookings.noshow.reverse_report)
-    - rows are never deleted
+    - bir bronǵa bir `pending` esabat (bólekleyin unique constraint); esabat tek
+      tastıyıqlanǵan yamasa juwmaqlanǵan bron ushın, kiriwden keyingi kúnnen shıǵıwdan keyingi NO_SHOW_REPORT_WINDOW_DAYS
+      kúnge shekem ruxsat etiledi (bookings.noshow.create_report)
+    - tastıyıqlaw bronnı no_show ǵa ótkizedi hám bron waqtında wáde etilgen qaytarıwdı tóleydi;
+      biykar etiw hesh nárseni ózgertpeydi; staff eki qararın da túzete aladı (bookings.noshow.reverse_report)
+    - qatarlar hesh qashan óshirilmeydi
     """
     STATUS_CHOICES = [
         ('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn'),

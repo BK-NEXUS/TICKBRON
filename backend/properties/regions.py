@@ -1,16 +1,16 @@
 """
-Region of a property.
+Mehmanxananıń regionı.
 
-The region is stored in the existing `Property.state` field (the partner wizard
-labels it "State/Region"). Geography levels: country > region > hotel (the town is plain text).
+Region bar `Property.state` maydanında saqlanadı (partner wizard onı "State/Region" dep ataydı).
+Geografiya dárejeleri: mámleket > region > mehmanxana (qala ápiwayı tekst).
 """
 from django.db.models import CharField, Case, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce, Lower, NullIf, Trim
 
-# Label for hotels without a region (Status views group them under it)
+# Regionı joq mehmanxanalar ushın belgi (Status view leri olardı sonıń astında toparlaydı)
 UNSPECIFIED_REGION = 'Unspecified'
 
-# Cities whose region is obvious: the regional centre gives the region its name
+# Regionı anıq bolǵan qalalar: regionlıq oray regionǵa óz atın beredi
 CITY_REGIONS = {
     'tashkent': 'Tashkent',
     'samarkand': 'Samarkand',
@@ -20,10 +20,10 @@ CITY_REGIONS = {
 
 def backfill_regions_from_city(property_model):
     """
-    Set the region of properties in an obvious city when they have none.
+    Anıq qaladaǵı regionı joq mehmanxanalardıń regionın belgilew.
 
-    Takes the model class so data migrations can pass their historical model.
-    Never overwrites a region that is already set. Returns the number of rows updated.
+    Data migration lar óz tariyxıy modelin bere alıwı ushın model klasın aladı.
+    Aldınan belgilengen regionnıń ústinen hesh qashan jazılmaydı. Jańalanǵan qatarlar sanın qaytaradı.
     """
     no_region = Q(state__isnull=True) | Q(state__regex=r'^\s*$')
     updated = 0
@@ -39,8 +39,8 @@ def backfill_regions_from_city(property_model):
 
 def region_expression(prefix=''):
     """
-    Query expression for the region of a property, UNSPECIFIED_REGION when it has none
-    (NULL or blank). `prefix` is the path to Property, e.g. 'property__' from Booking.
+    Mehmanxana regionı ushın query ańlatpası, regionı joq bolsa (NULL yamasa bos) UNSPECIFIED_REGION.
+    `prefix` Property ge jol, mısalı Booking ten 'property__'.
     """
     return Coalesce(NullIf(Trim(f'{prefix}state'), Value('')), Value(UNSPECIFIED_REGION),
                     output_field=CharField())
@@ -48,9 +48,9 @@ def region_expression(prefix=''):
 
 def hotel_name_expression(prefix=''):
     """
-    Query expression for a property's name, the same choice as Property.display_name():
-    the English translation, else any translation, else the first address line.
-    `prefix` is the path to Property, e.g. 'property__' from Booking (R12).
+    Mehmanxana atı ushın query ańlatpası, Property.display_name() penen birdey tańlaw:
+    inglizsha awdarma, bolmasa qálegen awdarma, bolmasa birinshi mánzil qatarı.
+    `prefix` Property ge jol, mısalı Booking ten 'property__' (R12).
     """
     from properties.models import PropertyTranslation
 

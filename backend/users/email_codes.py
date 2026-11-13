@@ -1,12 +1,13 @@
 """
-Six-digit codes mailed to an address, to show that the person at the keyboard has the mailbox: at sign-up (the account
-is made only after the code is typed) and at every sign-in of a guest or a hotel owner (after the password, before the
-session starts). Plan: .ai/PLAN_EMAIL_CODES.md.
+Mánzilge e-mail penen jiberiletuǵın altı sanlı kodlar, klaviatura artındaǵı adamda poshta qutısı barlıǵın kórsetiw ushın:
+dizimnen ótkende (akkaunt
+kod terilgennen keyin ǵana jaratıladı) hám mehmann yamasa mehmanxana iyesiniń hár kirisiwinde (paroldan keyin,
+session baslanbastan aldın). Reje: .ai/PLAN_EMAIL_CODES.md.
 
-- The code is random (`secrets`), lives 10 minutes, works once, and is kept only as a keyed hash in the cache.
-- 5 wrong tries burn it. A new code can be asked for after a minute, at most 5 mails an hour to one address.
-- A waiting sign-up keeps the typed data, the password already hashed, in the cache for those 10 minutes.
-- The mail is sent inside the request, not through the task queue, so the code never passes through the queue's logs.
+- Kod tosınarlıq (`secrets`), 10 minut jasaydı, bir márte isleydi hám keshte tek kiltli hash retinde saqlanadı.
+- 5 qáte urınıw onı jaǵıp jiberedi. Jańa kod bir minuttan keyin soralıwı múmkin, bir mánzilge saatına eń kóbi 5 xat.
+- Kútip turǵan dizimnen ótiw terilgen maǵlıwmattı, aldınan hash langan paroldi usı 10 minut keshte saqlaydı.
+- E-mail soraw ishinde jiberiledi, task náwbeti arqalı emes, sol sebepli kod hesh qashan náwbet log larınan ótpeydi.
 """
 import hashlib
 import hmac
@@ -30,11 +31,11 @@ LOGIN_PENDING_KEY = 'email_code_login'
 
 
 class SendFailed(Exception):
-    """The mail server did not take the mail."""
+    """E-mail server xattı qabıllamadı."""
 
 
 class TooSoon(Exception):
-    """A new code was asked for too early or too often; `retry_after` is in seconds."""
+    """Jańa kod júdá erte yamasa júdá kóp soraldı; `retry_after` sekundlarda."""
 
     def __init__(self, retry_after):
         super().__init__(retry_after)
@@ -54,7 +55,7 @@ def looks_like_a_code(value):
 
 
 def hint(email):
-    """"o***@gmail.com": enough for a person to recognise their own address."""
+    """"o***@gmail.com": adam óz mánzilin tanıw ushın jeterli."""
     name, _, domain = email.partition('@')
     return f'{name[:1]}***@{domain}'
 
@@ -103,14 +104,16 @@ def _send(email, code):
     body = render_to_string('users/email_code_email.txt', {'code': code, 'minutes': LIFETIME_SECONDS // 60})
     try:
         send_mail(EMAIL_SUBJECT, body, None, [email])
-    except Exception as error:  # SMTP errors are many kinds (refused, timeout, auth): all mean "not sent"
+    except Exception as error:  # SMTP qátelikleri kóp túrli: hámmesi "jiberilmedi" degendi bildiredi
         raise SendFailed(type(error).__name__) from error
 
 
 def issue(purpose, ident, email, payload=None, keep_payload_of=None):
     """
-    Make a new code for `ident`, keep its hash, mail it to `email`. Raises TooSoon or SendFailed; a failed mail leaves
-    nothing waiting. `keep_payload_of`: reuse the waiting data of an earlier code (a resend) instead of `payload`.
+    `ident` ushın jańa kod jasaw, onıń hash in saqlaw, `email` ge jiberiw. TooSoon yamasa SendFailed kóteredi; sátsiz
+    e-mail
+    hesh nárse kútip turmaydı. `keep_payload_of`: `payload` tıń ornına aldınǵı kodtıń (qayta jiberiw) kútip turǵan
+    maǵlıwmatın qayta paydalanıw.
     """
     _check_may_send(purpose, ident)
     if keep_payload_of is not None:
@@ -134,15 +137,15 @@ def issue(purpose, ident, email, payload=None, keep_payload_of=None):
 
 
 def waiting(purpose, ident):
-    """True while a code for `ident` has been issued and has not expired or been used up."""
+    """`ident` ushın kod berilgen hám múddeti ótpegen yamasa tawsılmaǵansha True."""
     entry = cache.get(entry_key(purpose, ident))
     return entry is not None and entry['expires_at'] > _now()
 
 
 def verify(purpose, ident, code):
     """
-    The data kept with the code ({} when none) if `code` is the live code of `ident`, else None. A right code is
-    used up. Wrong tries are counted atomically; the fifth burns the code.
+    `code` `ident` tiń tiri kodı bolsa kodtıń maǵlıwmatı (joq bolsa {}), bolmasa None. Durıs kod
+    paydalanılıp bitedi. Qáte urınıwlar atomic túrde sanaladı; besinshisi kodtı jaǵadı.
     """
     key = entry_key(purpose, ident)
     entry = cache.get(key)
@@ -162,7 +165,7 @@ def verify(purpose, ident, code):
         if tries >= MAX_ATTEMPTS:
             cache.delete(key)
         return None
-    # Only the request that actually removes the entry owns the code; parallel requests with the same right code lose
+    # Jazbanı haqıyqatında alıp taslaǵan soraw ǵana kodtıń iyesi; birdey durıs kodlı paralel sorawlar jeńiledi
     if not cache.delete(key):
         return None
     cache.delete(tries_key)
@@ -170,7 +173,8 @@ def verify(purpose, ident, code):
 
 
 def needs_code_at_login(user):
-    """Guests and hotel owners: staff have the authenticator app (users.two_factor) and are never asked for this."""
+    """Mehmanlar hám mehmanxana iyeleri: staff ta authenticator ilovası bar (users.two_factor) hám olardan bul hesh qashan
+    soralmaydı."""
     return settings.EMAIL_LOGIN_CODE_REQUIRED and not (user.is_staff or user.is_superuser or user.two_factor_enabled)
 
 

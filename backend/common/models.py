@@ -1,15 +1,15 @@
 """
-Common models and mixins for TICKBRON
+TICKBRON ushın ulıwma model ler hám mixin ler
 
-This module contains base models and mixins that provide shared functionality
-across all TICKBRON applications.
+Bul modul barlıq TICKBRON app larında ortaq funkciyanı beretuǵın tiykarǵı model ler hám
+mixin lerdi óz ishine aladı.
 """
 from django.db import models
 
 
 class TimeStampedModel(models.Model):
     """
-    Abstract base model that provides timestamp fields for creation and modification.
+    Jaratıw hám ózgertiw waqıt maydanların beretuǵın abstract tiykarǵı model.
     """
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -21,8 +21,8 @@ class TimeStampedModel(models.Model):
 
 class SoftDeleteModel(models.Model):
     """
-    Abstract base model that provides soft delete functionality.
-    Records are marked as deleted rather than being removed from the database.
+    Soft delete funkciyasın beretuǵın abstract tiykarǵı model.
+    Jazbalar database den alıp taslanbastan óshirilgen dep belgilenedi.
     """
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
@@ -32,14 +32,14 @@ class SoftDeleteModel(models.Model):
         ordering = ['-created_at']
 
     def soft_delete(self):
-        """Mark the record as deleted without removing it from the database."""
+        """Jazbanı database den alıp taslamastan óshirilgen dep belgilew."""
         from django.utils import timezone
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save()
 
     def restore(self):
-        """Restore a soft-deleted record."""
+        """Soft-delete etilgen jazbanı qayta tiklew."""
         self.is_deleted = False
         self.deleted_at = None
         self.save()
@@ -47,7 +47,7 @@ class SoftDeleteModel(models.Model):
 
 class ActiveModel(models.Model):
     """
-    Abstract base model that provides active/inactive status.
+    Aktiv/aktiv emes statusın beretuǵın abstract tiykarǵı model.
     """
     is_active = models.BooleanField(default=True, db_index=True)
 
@@ -58,24 +58,24 @@ class ActiveModel(models.Model):
 
 class BaseQuerySet(models.QuerySet):
     """
-    Custom queryset with common filtering methods.
+    Ulıwma filterlew metodları bar óz queryset i.
     """
     def active(self):
-        """Return only active records."""
+        """Tek aktiv jazbalardı qaytaradı."""
         return self.filter(is_active=True)
 
     def deleted(self):
-        """Return only soft-deleted records."""
+        """Tek soft-delete etilgen jazbalardı qaytaradı."""
         return self.filter(is_deleted=True)
 
     def not_deleted(self):
-        """Return only non-deleted records."""
+        """Tek óshirilmegen jazbalardı qaytaradı."""
         return self.filter(is_deleted=False)
 
 
 class BaseModel(TimeStampedModel, SoftDeleteModel, ActiveModel):
     """
-    Combined base model with timestamp, soft delete, and active status functionality.
+    Waqıt belgisi, soft delete hám aktiv status funkciyaların birlestirgen tiykarǵı model.
     """
     objects = BaseQuerySet.as_manager()
 

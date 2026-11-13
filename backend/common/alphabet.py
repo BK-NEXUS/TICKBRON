@@ -1,10 +1,10 @@
 """
-The alphabet filter of the lists of people and hotels: ?letter=A shows only the names that start with A, ?letter=#
-the names that do not start with a letter at all (a digit, a quote). One place, so every list does the same.
+Adamlar hám mehmanxanalar dizimleriniń alfavit filter i: ?letter=A tek A dan baslanatuǵın atlardı kórsetedi, ?letter=#
+hesh qanday háripten baslanbaytuǵın atlardı (san, tırnaq). Bir orın, sol sebepli hár dizim birdey isleydi.
 
-The name of a person is the one the panels show (full name, else first and last name, else the e-mail address); a
-hotel matches when its name in ANY language starts with the letter. Both cases are asked for by hand: a database
-with a plain "C" locale does not fold the case of Cyrillic letters by itself.
+Adamnıń atı panellerde kórsetiletuǵın at (tolıq at, bolmasa atı hám familiyası, bolmasa e-mail mánzil); mehmanxana
+qálegen tildegi atı háripten baslansa sáykes keledi. Eki register de qolda soraladı: ápiwayı "C" locale
+database Kirill háripleriniń registrin ózi tekseriwdi bilmeydi.
 """
 from django.db.models import CharField, Exists, OuterRef, Q, Value
 from django.db.models.functions import Coalesce, Concat, NullIf, Trim
@@ -25,7 +25,7 @@ DISPLAY_NAME = Coalesce(
 
 
 def letter_from(request):
-    """The wanted letter (upper case) or '#', or None when the request asks for no filter; anything else is a 400."""
+    """Kerekli háripti (úlken) yamasa '#', yamasa soraw filter sorawlamasa None; basqa hár nárse 400."""
     raw = (request.query_params.get('letter') or '').strip()
     if not raw:
         return None
@@ -43,14 +43,14 @@ def letter_q(field, letter):
 
 
 def people_with_letter(queryset, letter):
-    """Users whose shown name starts with `letter` (the queryset is returned as it is for None)."""
+    """Kórsetilgen atı `letter` den baslanatuǵın paydalanıwshılar (None ushın queryset ózgerissiz qaytarıladı)."""
     if letter is None:
         return queryset
     return queryset.annotate(alphabet_name=DISPLAY_NAME).filter(letter_q('alphabet_name', letter))
 
 
 def hotels_with_letter(queryset, letter):
-    """Properties with a name, in any language, that starts with `letter`."""
+    """Qálegen tildegi atı `letter` den baslanatuǵın mehmanxanalar."""
     if letter is None:
         return queryset
     named = PropertyTranslation.objects.filter(property=OuterRef('pk')).filter(letter_q('name', letter))

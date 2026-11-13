@@ -1,8 +1,8 @@
 """
-Django management command to process expired bookings.
+Múddeti ótken bronlardı islew ushın Django management command ı.
 
-This command should be run periodically (e.g., via cron or Celery beat)
-to clean up expired pending bookings and restore their inventory.
+Bul command waqtı-waqtı menen isletiliwi kerek (mısalı cron yamasa Celery beat arqalı),
+múddeti ótken kútip turǵan bronlardı tazalaw hám olardıń inventory in qaytarıw ushın.
 """
 import logging
 
@@ -35,7 +35,7 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
         verbose = options.get('verbose', False)
 
-        # Find expired pending bookings
+        # Múddeti ótken kútip turǵan bronlardı tabıw
         expired_bookings = Booking.objects.filter(
             status='pending',
             expires_at__lt=timezone.now(),
@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 )
             return
 
-        # Process expired bookings
+        # Múddeti ótken bronlardı islew
         processed_count = 0
         failed_count = 0
         for booking in expired_bookings:
@@ -87,6 +87,6 @@ class Command(BaseCommand):
             )
         )
 
-        # Non-zero exit status so cron/monitoring notices failures
+        # Nol emes shıǵıw statusı, sonda cron/monitoring qátelerdi sezedi
         if failed_count:
             raise CommandError(f'{failed_count} expired booking(s) could not be processed.')

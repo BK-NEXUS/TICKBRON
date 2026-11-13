@@ -1,12 +1,12 @@
 """
-Central Bank of Uzbekistan rate fetch (R6). Called ONLY by the Celery task
-currency.tasks.fetch_exchange_rates and the fetch_exchange_rates management
-command, never while handling a user request.
+Ózbekstan Orayılıq banki kursın alıw (R6). TEK Celery task
+currency.tasks.fetch_exchange_rates hám fetch_exchange_rates management
+command ı shaqıradı, hesh qashan paydalanıwshı sorawın islew waqtında emes.
 
-Verified API (2026-10-03): GET https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/YYYY-MM-DD/
-returns [{"Ccy": "USD", "Code": "840", "Nominal": "1", "Rate": "11772.95",
-"Date": "03.10.2026", ...}]: strings, dd.mm.yyyy, latest published rate when the
-date is in the future. One unit = Rate / Nominal.
+Tekserilgen API (2026-10-03): GET https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/YYYY-MM-DD/
+qaytaradı [{"Ccy": "USD", "Code": "840", "Nominal": "1", "Rate": "11772.95",
+"Date": "03.10.2026", ...}]: qatarlar, dd.mm.yyyy, sana keleshekte bolsa eń sońǵı járiyalanǵan
+kurs. Bir birlik = Rate / Nominal.
 """
 import json
 import logging
@@ -24,10 +24,10 @@ from currency.models import ExchangeRate, ExchangeRateFetch
 logger = logging.getLogger(__name__)
 
 CBU_URL = 'https://cbu.uz/uz/arkhiv-kursov-valyut/json/{currency}/{day}/'
-# ISO 4217 numeric code of each fetched currency (the CBU answer must carry it). To add a currency:
-# add it to common.money.CURRENCIES, here, and in RATE_SANITY_SHARE.
+# Alınatuǵın hár valyutanıń ISO 4217 san kodı (CBU juwabında bolıwı shárt). Valyuta qosıw ushın:
+# common.money.CURRENCIES ke, usı jerge hám RATE_SANITY_SHARE ge qosıń.
 CBU_CODES = {'USD': '840', 'KZT': '398', 'RUB': '643'}
-# FX_MIN_RATE / FX_MAX_RATE are written for one US dollar; a currency worth less gets its share of them
+# FX_MIN_RATE / FX_MAX_RATE bir AQSh dolları ushın jazılǵan; arzanıraq valyuta olardıń óz úlesin aladı
 RATE_SANITY_SHARE = {'USD': Decimal('1'), 'KZT': Decimal('0.002'), 'RUB': Decimal('0.01')}
 FETCHED_CURRENCIES = tuple(c for c in SUPPORTED_BASE_CURRENCIES if c != CHARGE_CURRENCY)
 MAX_BODY_BYTES = 64 * 1024
@@ -35,22 +35,22 @@ MAX_RATE_AGE_DAYS = 10
 
 
 class FetchError(Exception):
-    """The CBU answer could not be used; the last accepted rate stays in use."""
+    """CBU juwabın paydalanıp bolmadı; sońǵı qabıllanǵan kurs paydalanılıwın dawam etedi."""
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Any redirect is a failure: the rate must come from the fixed CBU URL itself."""
+    """Hár qanday redirect sátsizlik: kurs belgili CBU URL inen ózinen kelwi kerek."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise FetchError(f'redirect {code} refused')
 
 
-# build_opener replaces the default HTTPRedirectHandler with this subclass
+# build_opener ádetdegi HTTPRedirectHandler di usı subclass penen almastıradı
 _OPENER = urllib.request.build_opener(_NoRedirect)
 
 
 def tashkent_today():
-    """The CBU rate date: the business date (R12, common.dates.business_today)."""
+    """CBU kurs sanası: is sanası (R12, common.dates.business_today)."""
     return business_today()
 
 
@@ -66,7 +66,7 @@ def _download(currency, day):
             body = response.read(MAX_BODY_BYTES + 1)
     except FetchError:
         raise
-    except Exception as e:  # URLError, HTTPError, timeouts, TLS errors
+    except Exception as e:  # URLError, HTTPError, timeout lar, TLS qátelikleri
         raise FetchError(f'request failed: {type(e).__name__}')
     if len(body) > MAX_BODY_BYTES:
         raise FetchError('response too large')
@@ -112,7 +112,7 @@ def _rejection_reason(currency, rate):
 
 
 def _store(currency, rate, nominal, rate_date):
-    """Save one parsed rate as accepted or rejected. Returns the row (or the existing one)."""
+    """Bir oqılǵan kursı qabıllanǵan yamasa biykar etilgen retinde saqlaw. Qatardı (yamasa bar bolǵanın) qaytaradı."""
     existing = ExchangeRate.objects.filter(currency=currency, rate_date=rate_date, source='cbu.uz',
                                            status='accepted').first()
     if existing is not None:
@@ -124,7 +124,7 @@ def _store(currency, rate, nominal, rate_date):
                 currency=currency, rate=rate, nominal=nominal, rate_date=rate_date, source='cbu.uz',
                 status='rejected' if reason else 'accepted', note=f'rejected: {reason}' if reason else '',
             )
-    except IntegrityError:  # a concurrent run stored the same day first
+    except IntegrityError:  # birdey isleniw sol kúndi aldın saqlap qoydı
         return ExchangeRate.objects.get(currency=currency, rate_date=rate_date, source='cbu.uz', status='accepted')
     if reason:
         logger.error(f'CBU {currency} rate {rate} for {rate_date} rejected ({reason}); keeping the previous rate')
@@ -132,7 +132,7 @@ def _store(currency, rate, nominal, rate_date):
 
 
 def fetch_and_store(today=None):
-    """Fetch every non-UZS supported currency once. Returns {currency: row or None}."""
+    """Hár UZS emes qollap-quwatlanatuǵın valyutanı bir márte alıw. {valyuta: qatar yamasa None} qaytaradı."""
     today = today or tashkent_today()
     results = {}
     for currency in FETCHED_CURRENCIES:

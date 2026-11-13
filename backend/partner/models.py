@@ -1,9 +1,9 @@
 """
-Partner models for TICKBRON.
+TICKBRON ushın partner model leri.
 
-This module contains models for partner/hotel-owner property management.
-Currently uses existing Property, RoomType, RatePlan, DateInventory models
-from properties app with owner-based scoping.
+Bul modul partner/mehmanxana iyesi mehmanxanalardı basqarıw model lerin óz ishine aladı.
+Házir properties app ınan bar Property, RoomType, RatePlan, DateInventory model leri
+iye boyınsha shekemlenip paydalanıladı.
 """
 
 from django.conf import settings
@@ -14,9 +14,9 @@ from common.models import BaseModel
 
 class OwnerPlace(BaseModel):
     """
-    Where the hotels of a hotel-owner account appear (country > region): chosen by the super admin
-    when the account is created. The owner's hotels are created in this place and the owner cannot move them.
-    PROTECT: a place in use by an account is hidden, never deleted.
+    Mehmanxana iyesi akkauntınıń mehmanxanaları qayerde kórinedi (mámleket > region): super admin tańlaydı,
+    akkaunt jaratılǵanda. Iyeniń mehmanxanaları usı orında jaratıladı hám iye olardı kóshire almaydı.
+    PROTECT: akkaunt paydalanıp atırǵan orın jasırıladı, hesh qashan óshirilmeydi.
     """
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assigned_place')
     country = models.ForeignKey('geography.Country', on_delete=models.PROTECT, related_name='+')
@@ -28,9 +28,9 @@ class OwnerPlace(BaseModel):
 
 class CommissionRate(models.Model):
     """
-    The percent of each counted booking that the site takes from a hotel owner, from the first day of
-    `effective_from` (always a month start). One row per owner per month; the rate of a month is the latest
-    row not after it, so a change never rewrites an earlier month and an owner with no row has no commission.
+    Sayt hár esaplanatuǵın bronnan mehmanxana iyesinen alatuǵın procent, `effective_from` niń birinshi
+    kúninen baslap (hárdayım ay baslanıwı). Hár iye ushın hár ay bir qatar; aydıń kursı sol aydan keyin bolmaǵan eń sońǵı
+    qatar, sol sebepli ózgeris aldınǵı aydı hesh qashan qayta jazbaydı hám qatarı joq iyede komissiya joq.
     """
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='commission_rates')
     percent = models.DecimalField(max_digits=5, decimal_places=2)
@@ -49,9 +49,9 @@ class CommissionRate(models.Model):
 
 class CommissionPayment(models.Model):
     """
-    "This owner paid the commission of this month", confirmed by a super admin or a staff admin. The name and
-    role of the confirmer and the amounts are copied here, so the record stays true if the account is renamed
-    or later bookings change the month's figures.
+    "Bul iye usı aydıń komissiyasın tólegen", super admin yamasa staff admin tastıyıqlaǵan. Tastıyıqlawshınıń atı hám
+    roli hám summalar usı jerge kóshiriledi, sol sebepli akkaunt atın ózgertse yamasa keyingi bronlar aydıń
+    sanların ózgertse de jazba durıs qaladı.
     """
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='commission_payments')
     month = models.DateField()

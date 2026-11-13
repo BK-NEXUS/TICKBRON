@@ -1,4 +1,4 @@
-"""The super admin's Renewals section: ads waiting for the answer "did the hotel pay for the next month?"."""
+"""Super admin tiń Jańalawlar bólimi: "mehmanxana keyingi ay ushın tóledi me?" juwabın kútip turǵan reklamalar."""
 from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -44,7 +44,7 @@ def _queryset():
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def renewal_list(request):
-    """Renewals by status (`?status=`, default pending), nearest deadline first; the others newest first."""
+    """Jańalawlar status boyınsha (`?status=`, ádetde pending), eń jaqın deadline birinshi; qalǵanları eń jańası birinshi."""
     wanted = request.query_params.get('status', AdRenewal.STATUS_PENDING)
     if wanted not in STATUSES:
         return Response({'error': _('Choose one of: pending, renewed, declined, expired.'), 'code': 'invalid_query'},

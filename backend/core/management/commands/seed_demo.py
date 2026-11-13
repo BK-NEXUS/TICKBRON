@@ -1,12 +1,12 @@
 """
-Demo data for local development: users, three active properties with rooms,
-rate plans and 90 days of availability.
+Jergilikli development ushın demo maǵlıwmat: paydalanıwshılar, xonaları,
+rate plan ları hám 90 kúnlik bos orınları bar úsh aktiv mehmanxana.
 
     python manage.py seed_demo
 
-Safe to run repeatedly (everything is matched by email/slug/date and updated
-in place; booked room counts are kept). Refuses to run when DEBUG is off,
-because the demo accounts have well-known passwords.
+Qayta-qayta isletiw qáwipsiz (hár nárse email/slug/sana boyınsha tabıladı hám ornında
+jańalanadı; bronlanǵan xona sanları saqlanadı). DEBUG óshken bolsa islewden bas tartadı,
+sebebi demo akkauntlardıń paroli ámelde belgili.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -25,11 +25,11 @@ from properties.models import (
 from users.models import User
 
 INVENTORY_DAYS = 90
-# R6: the demo hotels are priced in USD and USD hotels cannot be booked without a rate.
-# Used only when no accepted rate exists (offline dev machines, E2E); a real one comes
-# from `python manage.py fetch_exchange_rates`.
+# R6: demo mehmanxanalar USD de bahalanǵan hám USD mehmanxanalardı kurssız bronlap bolmaydı.
+# Tek qabıllanǵan kurs joq bolǵanda paydalanıladı (internetsiz development mashinaları, E2E); haqıyqıy kurs
+# `python manage.py fetch_exchange_rates` ten keledi.
 DEMO_USD_RATE = Decimal('12000.00')
-# So'm per one unit; tenge and roubles are shown by the site too, and a currency without a rate shows no price
+# Bir birlikke som; tenge hám rubl da saytta kórsetiledi, kursı joq valyutada baha kórsetilmeydi
 DEMO_RATES = {'USD': DEMO_USD_RATE, 'KZT': Decimal('24.00'), 'RUB': Decimal('140.00')}
 
 DEMO_USERS = [
@@ -47,7 +47,7 @@ DEMO_USERS = [
     },
 ]
 
-# Each property: (slug suffix, room types); each room type: (name, occupancy, max, rooms, price, bed)
+# Hár mehmanxana: (slug sufiksi, xona túrleri); hár xona túri: (at, sıyımlılıq, eń kóp, xonalar, baha, tósek)
 DEMO_PROPERTIES = [
     {
         'city': 'Tashkent', 'state': 'Tashkent', 'address': '15 Amir Temur Avenue',
@@ -91,7 +91,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             users = self._seed_users()
             properties = self._seed_properties(owner=users['owner'], approver=users['admin'])
-            # Geography refs from the text location (only these demo properties)
+            # Tekst jaylasıwdan Geography ref leri (tek usı demo mehmanxanalar ushın)
             map_properties(Property, Country, Region,
                            queryset=Property.objects.filter(pk__in=[prop.pk for prop, _ in properties]))
             demo_rate = self._seed_demo_rate()
@@ -105,7 +105,7 @@ class Command(BaseCommand):
             ))
 
     def _seed_demo_rate(self):
-        """Demo rates for the currencies that have no accepted rate yet; the ones stored are returned."""
+        """Qabıllanǵan kursı ele joq valyutalar ushın demo kurslar; saqlanǵanları qaytarıladı."""
         from currency.cbu import tashkent_today
         from currency.models import ExchangeRate
 
@@ -230,14 +230,14 @@ class Command(BaseCommand):
             )
             for offset in range(INVENTORY_DAYS):
                 date = today + timedelta(days=offset)
-                # Weekend nights cost 15% more, so the calendar shows real price differences
+                # Dem alıs túnleri 15% qımbat, sol sebepli kalendar haqıyqıy baha ayırmashılıqların kórsetedi
                 nightly = rate_price * Decimal('1.15') if date.weekday() >= 4 else rate_price
                 inventory, created = DateInventory.objects.get_or_create(
                     rate_plan=rate_plan,
                     date=date,
                     defaults={'available_rooms': total_rooms, 'booked_rooms': 0},
                 )
-                # Refresh availability and price but never touch booked_rooms (real bookings)
+                # Bos orındı hám bahanı jańalaw, biraq booked_rooms ǵa (haqıyqıy bronlar) hesh qashan tiymew
                 inventory.available_rooms = max(total_rooms, inventory.booked_rooms)
                 inventory.price = nightly.quantize(Decimal('0.01'))
                 inventory.currency = 'USD'

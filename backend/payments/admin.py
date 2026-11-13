@@ -1,2 +1,2 @@
 
-# Register your models here.
+# Model lerińizdi usı jerde dizimnen ótkiziń.

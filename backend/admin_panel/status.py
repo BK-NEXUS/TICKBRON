@@ -1,14 +1,14 @@
 """
-Admin Status section: /api/v1/admin-panel/status/ (staff and super-admin only).
+Admin Status bólimi: /api/v1/admin-panel/status/ (tek staff hám super-admin).
 
-Countries > regions > hotels > hotel detail, plus the guests ranking (users), one guest's
-detail (R12), and a flat hotels list with search, filters and ordering (R12). Hotels are grouped by
-their Geography refs: a country by its ISO code, a region by its id, and hotels without the ref under
-"unspecified" in the URL and "Unspecified" in the label. Lists accept
+Mámleketler > regionlar > mehmanxanalar > mehmanxana tolıq maǵlıwmatı, hám mehmanlar reytingi (users), bir mehmannıń
+tolıq maǵlıwmatı (R12), hám izlew, filter hám tártiplew menen tegis mehmanxanalar dizimi (R12). Mehmanxanalar
+Geography ref leri boyınsha toparlanadı: mámleket ISO kodı boyınsha, region id si boyınsha, al ref i joq mehmanxanalar
+URL de "unspecified" hám belgide "Unspecified" astında. Dizimler mınalardı qabıllaydı:
 ?period= (all, today, last_7_days, last_30_days, this_year, last_5_years, last_10_years,
-custom with ?from=&to=, YYYY, YYYY-MM), ?search= (inside the current list only) and
-?page= / ?page_size= (20 by default, 100 at most). Definitions of counted bookings,
-guests, nights, stays and revenue: bookings/metrics.py.
+?from=&to= penen custom, YYYY, YYYY-MM), ?search= (tek házirgi dizim ishinde) hám
+?page= / ?page_size= (ádetde 20, eń kóbi 100). Esaplanatuǵın bronlar, mehmanlar, túnler, turıwlar
+hám dáramat anıqlamaları: bookings/metrics.py.
 """
 from common.alphabet import hotels_with_letter, letter_from, people_with_letter
 from django.db.models import Avg, CharField, Count, DecimalField, F, Max, OuterRef, Q, Subquery, Sum, Value
@@ -37,7 +37,7 @@ TOP_COUNTRIES = 100
 TOP_REGIONS = 100
 TOP_HOTELS = 1000
 TOP_USERS = 1000
-TOP_OVERVIEW = 5   # busiest regions and room types on the overview
+TOP_OVERVIEW = 5   # sholıwdaǵı eń bánt regionlar hám xona túrleri
 
 
 class StatusPagination(PageNumberPagination):
@@ -46,16 +46,16 @@ class StatusPagination(PageNumberPagination):
     max_page_size = 100
 
 
-UNSPECIFIED = 'unspecified'  # URL segment and group key of hotels without a country / region ref
+UNSPECIFIED = 'unspecified'  # Mámleket / region ref i joq mehmanxanalardıń URL bólegi hám topar kilti
 
 
 def country_key(prefix=''):
-    """Group key of a hotel's country: ISO code, or UNSPECIFIED. `prefix`: path to Property."""
+    """Mehmanxana mámleketiniń topar kilti: ISO kod, yamasa UNSPECIFIED. `prefix`: Property ge jol."""
     return Coalesce(f'{prefix}country_ref__code', Value(UNSPECIFIED), output_field=CharField())
 
 
 def region_key(prefix=''):
-    """Group key of a hotel's region: the region id as text, or UNSPECIFIED."""
+    """Mehmanxana regionınıń topar kilti: region id si tekst retinde, yamasa UNSPECIFIED."""
     return Coalesce(Cast(f'{prefix}region_ref_id', CharField()), Value(UNSPECIFIED), output_field=CharField())
 
 
@@ -65,11 +65,11 @@ def is_iso_code(value):
 
 def country_q(segment, path):
     """
-    Q for the country named by a URL segment, behind the relation `path` ('country_ref',
-    'property__country_ref'; '' when the query is on Country itself).
+    URL bólegi atap kórsetken mámleket ushın Q, `path` qatnası artında ('country_ref',
+    'property__country_ref'; soraw Country degi ózinde bolsa '').
 
-    The segment is an ISO code (any case) or "unspecified" (no country); anything else matches nothing
-    (country names stopped working as keys on 2026-10-19).
+    Bólek ISO kod (qálegen register) yamasa "unspecified" (mámleket joq); basqa hámme nárse hesh nárseni tańlamaydı
+    (mámleket atları 2026-10-19 de kilt retinde islewdi toqtattı).
     """
     base = f'{path}__' if path else ''
     if segment.lower() == UNSPECIFIED:
@@ -81,10 +81,10 @@ def country_q(segment, path):
 
 def region_q(segment, path):
     """
-    Q for the region named by a URL segment, behind `path` ('region_ref'; '' on Region itself).
+    URL bólegi atap kórsetken region ushın Q, `path` artında ('region_ref'; Region degi ózinde '').
 
-    The segment is a region id or "unspecified" (no region); anything else matches nothing (region
-    names stopped working as keys on 2026-10-19).
+    Bólek region id si yamasa "unspecified" (region joq); basqa hámme nárse hesh nárseni tańlamaydı (region
+    atları 2026-10-19 de kilt retinde islewdi toqtattı).
     """
     if segment.lower() == UNSPECIFIED:
         return Q(**{f'{path}__isnull': True}) if path else Q(pk__in=[])
@@ -102,32 +102,32 @@ def region_filter(segment, prefix=''):
 
 
 def echo_key(segment):
-    """The key as the response reports it: codes upper-case, "unspecified" lower-case, anything else as sent."""
+    """Juwapta kórsetiletuǵın kilt: kodlar úlken háriplerde, "unspecified" kishi háriplerde, qalǵanı qanday jiberilse sonday."""
     if segment.lower() == UNSPECIFIED:
         return UNSPECIFIED
     return segment.upper() if is_iso_code(segment) else segment
 
 
 def names_filter(prefix, term):
-    """Q matching the term in the uz, ru or en name behind `prefix` (e.g. 'country_ref__')."""
+    """`prefix` artındaǵı uz, ru yamasa en atında sózdi izleytuǵın Q (mısalı 'country_ref__')."""
     return (Q(**{f'{prefix}name_uz__icontains': term}) | Q(**{f'{prefix}name_ru__icontains': term})
             | Q(**{f'{prefix}name_en__icontains': term}))
 
 
 def names(item, prefix):
-    """uz/ru/en names of a grouped row; "Unspecified" in all three when the group has no ref."""
+    """Toparlanǵan qatardıń uz/ru/en atları; toparda ref joq bolsa úshewinde de "Unspecified"."""
     return {language: item[f'{prefix}name_{language}'] or UNSPECIFIED_REGION for language in ('uz', 'ru', 'en')}
 
 
 def country_name(segment):
-    """English name for the breadcrumb; None for a country that does not exist."""
+    """Belgi (breadcrumb) ushın inglizsha at; joq mámleket ushın None."""
     if segment.lower() == UNSPECIFIED:
         return UNSPECIFIED_REGION
     return Country.objects.filter(country_q(segment, '')).values_list('name_en', flat=True).first()
 
 
 def region_name(country, region):
-    """English name of the region inside the country; None when there is no such region."""
+    """Mámleket ishindegi regionnıń inglizsha atı; sonday region joq bolsa None."""
     if region.lower() == UNSPECIFIED:
         return UNSPECIFIED_REGION
     return (Region.objects.filter(region_q(region, ''), country_q(country, 'country'))
@@ -143,7 +143,7 @@ def search_term(request):
 
 
 def page_money(bookings, booking_key, keys, date_range):
-    """Revenue and booking value per key for one page (three aggregated queries, none when empty)."""
+    """Bir bet ushın hár kilt boyınsha dáramat hám bron mánisi (úsh jıynaqlanǵan query, bos bolsa joq)."""
     if not keys:
         return {}, {}
     on_page = bookings.filter(**{f'{booking_key}__in': keys})
@@ -157,11 +157,11 @@ def period_extra(period, date_range):
 
 def ranked_page(request, rows, limit, key, bookings, booking_key, to_row, extra, date_range=None):
     """
-    One page of the top `limit` grouped rows, ranked, with per-currency revenue.
+    Eń joqarı `limit` toparlanǵan qatardıń bir beti, ráteli, hár valyuta boyınsha dáramat penen.
 
-    `rows` are ordered dicts annotated with metrics.metric_annotations(); revenue and booking
-    value are aggregated for the keys on this page only (`bookings` = a not-deleted Booking
-    queryset narrowed to the list, `booking_key` = the same key seen from Booking).
+    `rows` metrics.metric_annotations() menen belgilengen tártiplengen dict ler; dáramat hám bron
+    mánisi tek usı bettegi kilt ler ushın jıynaqlanadı (`bookings` = dizimge shekemlengen óshirilmegen
+    Booking queryset i, `booking_key` = sol kilttiń Booking tan kórinisi).
     """
     paginator = StatusPagination()
     page = list(paginator.paginate_queryset(rows[:limit], request))
@@ -187,7 +187,7 @@ def ranked_page(request, rows, limit, key, bookings, booking_key, to_row, extra,
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_countries(request):
-    """Top 100 countries by counted bookings: bookings, guests, revenue, hotel count."""
+    """Esaplanǵan bronlar boyınsha eń jaqsı 100 mámleket: bronlar, mehmanlar, dáramat, mehmanxana sanı."""
     try:
         period, date_range = period_from_request(request)
     except InvalidPeriod as error:
@@ -221,7 +221,7 @@ def status_countries(request):
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_regions(request, country):
-    """Top 100 regions of one country; hotels without a region are grouped as "Unspecified"."""
+    """Bir mámlekettegi eń jaqsı 100 region; regionı joq mehmanxanalar "Unspecified" retinde toparlanadı."""
     try:
         period, date_range = period_from_request(request)
     except InvalidPeriod as error:
@@ -264,7 +264,7 @@ def status_regions(request, country):
 @api_view(['GET'])
 @permission_classes([IsSuperAdminOrStaff])
 def status_hotels(request, country, region):
-    """Top 1000 hotels of one region ("Unspecified" = hotels without a region)."""
+    """Bir regiondaǵı eń jaqsı 1000 mehmanxana ("Unspecified" = regionı joq mehmanxanalar)."""
     try:
         period, date_range = period_from_request(request)
     except InvalidPeriod as error:
@@ -295,7 +295,7 @@ def status_hotels(request, country, region):
 
 
 def status_scope(**filters):
-    """Not-deleted bookings narrowed to a hotel or a guest (the base of metrics.metric_totals)."""
+    """Mehmanxanaǵa yamasa mehmanǵa shekemlengen óshirilmegen bronlar (metrics.metric_totals tiń tiykarı)."""
     return metrics.all_bookings().filter(**filters)
 
 
@@ -308,10 +308,10 @@ def granularity_from(request, default='month'):
 @permission_classes([IsSuperAdminOrStaff])
 def status_hotel_detail(request, property_id):
     """
-    One hotel: info, owner contact, totals for ?period= (with booking_status), a series for
-    ?granularity=day|week|month|year over the period, the reconciliation block (today, this
-    week, this month, this year, all time), and the monthly series for ?year= (default: the
-    current year).
+    Bir mehmanxana: maǵlıwmat, iyeniń baylanısı, ?period= ushın jıynaqlar (booking_status penen), dáwir boyınsha
+    ?granularity=day|week|month|year seriyası, sáykeslestiriw bloǵı (búgin, usı
+    hápte, usı ay, usı jıl, barlıq waqıt), hám ?year= ushın ayliq seriya (ádetde
+    házirgi jıl).
     """
     try:
         period, date_range = period_from_request(request)
@@ -359,13 +359,13 @@ def status_hotel_detail(request, property_id):
 
 
 def _no_show_rate(totals):
-    """No-shows of all bookings that were not left unpaid (same base as the cancellation rate), in percent."""
+    """Tólenbey qaldırılmaǵan barlıq bronlardıń no-show ı (biykar etiw dárejesi menen birdey tiykar), procent penen."""
     status = totals['booking_status']
     return metrics._percent(totals['no_show'], status['cancelled'] + totals['bookings'] + totals['no_show'])
 
 
 def _new_users(first, after):
-    """Guests (not staff) who registered in [first, after), by business date like every other Status number."""
+    """[first, after) aralıǵında dizimnen ótken mehmanlar (staff emes), basqa hár Status sanı sıyaqlı is kúni boyınsha."""
     day = TruncDate('date_joined', tzinfo=business_time_zone())
     return User.objects.filter(is_staff=False).annotate(day=day).filter(day__gte=first, day__lt=after).count()
 
@@ -409,9 +409,9 @@ def _busiest_room_types(scope, date_range):
 @permission_classes([IsSuperAdminOrStaff])
 def status_overview(request):
     """
-    The whole platform at a glance for ?period= (and ?year= for the monthly chart): this month against last
-    month, guests arriving in the next 7 days, totals and insights (cancellation, no-show, booked-ahead days,
-    returning guests), new guests, active hotels, the 5 busiest regions and room types, and the yearly series.
+    ?period= ushın (hám ayliq grafik ushın ?year=) pútkil platforma bir qarawda: usı ay aldınǵı aymen salıstırılǵanda,
+    keyingi 7 kúnde keletuǵın mehmanlar, jıynaqlar hám insight ler (biykar etiw, no-show, aldınan bronlaǵan kúnler,
+    qaytıp kelgen mehmanlar), jańa mehmanlar, aktiv mehmanxanalar, eń bánt 5 region hám xona túrleri, hám jıllıq seriya.
     """
     try:
         period, date_range = period_from_request(request)
@@ -456,10 +456,10 @@ USERS_CSV_HEADER = ['rank', 'id', 'full_name', 'phone', 'email', 'bookings', 'gu
 @permission_classes([IsSuperAdminOrStaff])
 def status_users(request):
     """
-    Top 1000 guests by counted bookings in ?period=: name, phone, email, bookings, guests
-    (persons), nights, total spent (completed bookings, per currency) and the check-in date of
-    their latest counted booking. ?search= matches first/last/full name, phone, email or ID
-    (partial, any case). ?export=csv downloads the whole top 1000.
+    ?period= degi esaplanǵan bronlar boyınsha eń jaqsı 1000 mehmann: at, telefon, e-mail, bronlar, mehmanlar
+    (adamlar), túnler, jámi sarıplanǵanı (juwmaqlanǵan bronlar, hár valyuta boyınsha) hám
+    eń sońǵı esaplanǵan bronınıń kiriw sanası. ?search= atı/familiyası/tolıq atı, telefon, e-mail yamasa ID ge
+    sáykes keledi (bólek, qálegen register). ?export=csv pútkil eń jaqsı 1000 di júklep aladı.
     """
     try:
         period, date_range = period_from_request(request)
@@ -561,10 +561,10 @@ def _history_row(booking):
 @permission_classes([IsSuperAdminOrStaff])
 def status_user_detail(request, user_id):
     """
-    One guest (R12): totals for ?period= (with booking_status), hotels visited, a per-hotel
-    breakdown (bookings, nights, guests, spent per currency) and the paginated booking
-    history (every status, newest check-in first). ?export=csv downloads the history.
-    Audit-logged (`status_user_view`, or `export_csv`).
+    Bir mehmann (R12): ?period= ushın jıynaqlar (booking_status penen), barılǵan mehmanxanalar, hár mehmanxana
+    boyınsha bólistiriw (bronlar, túnler, mehmanlar, hár valyutada sarıplanǵanı) hám betlerge bólingen bron
+    tariyxı (hár status, eń jańa kiriw birinshi). ?export=csv tariyxtı júklep aladı.
+    Audit log qa jazıladı (`status_user_view` yamasa `export_csv`).
     """
     try:
         period, date_range = period_from_request(request)
@@ -648,7 +648,7 @@ def csv_limit():
     return max_rows()
 
 
-# --- flat hotels list (R12) ------------------------------------------------------------
+# --- tegis mehmanxanalar dizimi (R12) ----------------------------------------------------
 
 HOTEL_ORDERING = {
     'revenue': 'revenue_uzs', 'bookings': 'bookings_count', 'guests': 'guests_count',
@@ -671,7 +671,8 @@ def parse_hotel_ordering(value):
 
 
 def uzs_revenue_by_hotel(properties, date_range):
-    """{hotel id: UZS revenue (completed bookings' total price)} for ordering the hotels list by revenue."""
+    """{mehmanxana id: UZS dáramatı (juwmaqlanǵan bronlardıń jámi bahası)} mehmanxanalar dizimin dáramat boyınsha tártiplew
+    ushın."""
     bookings = (metrics.all_bookings().filter(property__in=properties.values('id'), currency='UZS')
                 .filter(metrics.revenue_q('', date_range)))
     return {row['property_id']: row['total']
@@ -679,7 +680,7 @@ def uzs_revenue_by_hotel(properties, date_range):
 
 
 def _sorted_by_revenue(rows, revenue, descending):
-    """Rows (dicts) by UZS revenue, then the same tie-breakers as the SQL ordering."""
+    """Qatarlar (dict ler) UZS dáramatı boyınsha, keyin SQL tártiplewi menen birdey teń jaǵdaylar."""
     rows = sorted(rows, key=lambda item: (item['name'] or '', item['id']))
     rows.sort(key=lambda item: -item['bookings_count'])
     rows.sort(key=lambda item: revenue.get(item['id'], 0), reverse=descending)
@@ -704,12 +705,12 @@ def hotel_search_q(term):
 @permission_classes([IsSuperAdminOrStaff])
 def status_hotels_flat(request):
     """
-    Flat list of hotels (R12), next to the countries > regions > hotels drill-down.
-    ?period (+from/to), ?search= (hotel name in any language, city, region, country name or
-    code), filters ?country= (ISO code or "unspecified"), ?region= (id or "unspecified"),
+    Mehmanxanalardıń tegis dizimi (R12), mámleketler > regionlar > mehmanxanalar tereńlew janında.
+    ?period (+from/to), ?search= (qálegen tildegi mehmanxana atı, city, region, mámleket atı yamasa
+    kodı), filter ler ?country= (ISO kod yamasa "unspecified"), ?region= (id yamasa "unspecified"),
     ?status= (property status), ?ordering= revenue|bookings|guests|nights|rating|created_at
-    with "-" for descending (default -bookings; revenue = UZS revenue), top 1000, paginated
-    (page_size max 100). ?export=csv downloads the whole top 1000.
+    kemeyiw ushın "-" penen (ádetde -bookings; revenue = UZS dáramatı), eń jaqsı 1000, betlerge bólingen
+    (page_size eń kóbi 100). ?export=csv pútkil eń jaqsı 1000 di júklep aladı.
     """
     try:
         period, date_range = period_from_request(request)

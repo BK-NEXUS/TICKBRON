@@ -1,9 +1,9 @@
 """
-Storage abstraction for TICKBRON media handling.
+TICKBRON media islewi ushın storage abstrakciyası.
 
-This module provides a unified storage interface that works across different environments:
-- Local filesystem for development
-- S3-compatible storage for staging/production
+Bul modul túrli ortalıqlarda isleytuǵın birden-bir storage interfeysin usınadı:
+- Development ushın jergilikli fayl sisteması
+- Staging/production ushın S3 menen sáykes storage
 """
 import os
 from django.conf import settings
@@ -15,11 +15,11 @@ from django.utils.translation import gettext as _
 @deconstructible
 class TickBronStorage:
     """
-    Unified storage abstraction for TICKBRON media files.
+    TICKBRON media fayllar ushın birden-bir storage abstrakciyası.
 
-    This class provides a consistent interface for media storage across different
-    environments (local, staging, production) while allowing environment-specific
-    implementations.
+    Bul klas túrli ortalıqlarda (local, staging, production) media saqlawdıń birdey
+    interfeysin beredi, sonıń menen birge ortalıqqa tiyisli
+    ámelge asırıwlarǵa ruxsat beredi.
     """
 
     def __init__(self):
@@ -27,10 +27,10 @@ class TickBronStorage:
 
     def _get_storage_backend(self):
         """
-        Determine the appropriate storage backend based on environment.
+        Ortalıqqa qarap tiyisli storage backend ti anıqlaw.
 
-        Returns:
-            Storage backend instance (FileSystemStorage, S3Storage, etc.)
+        Qaytaradı:
+            Storage backend nusqası (FileSystemStorage, S3Storage hám t.b.)
         """
         storage_type = getattr(settings, 'STORAGE_TYPE', 'local')
 
@@ -39,52 +39,52 @@ class TickBronStorage:
         elif storage_type == 's3':
             return S3Storage()
         else:
-            # Default to local storage
+            # Ádetde jergilikli storage
             return LocalStorage()
 
     def url(self, name):
-        """Get URL for the given file name."""
+        """Berilgen fayl atı ushın URL alıw."""
         return self._storage_backend.url(name)
 
     def path(self, name):
-        """Get local filesystem path for the given file name."""
+        """Berilgen fayl atı ushın jergilikli fayl sisteması jolın alıw."""
         return self._storage_backend.path(name)
 
     def exists(self, name):
-        """Check if a file exists."""
+        """Fayldıń bar-joqlıǵın tekseriw."""
         return self._storage_backend.exists(name)
 
     def save(self, name, content, max_length=None):
-        """Save a file."""
+        """Fayldı saqlaw."""
         return self._storage_backend.save(name, content, max_length=max_length)
 
     def delete(self, name):
-        """Delete a file."""
+        """Fayldı óshiriw."""
         return self._storage_backend.delete(name)
 
     def listdir(self, path):
-        """List contents of a directory."""
+        """Papka mazmunın dizimlew."""
         return self._storage_backend.listdir(path)
 
     def size(self, name):
-        """Get file size in bytes."""
+        """Fayl ólshemin baytlarda alıw."""
         return self._storage_backend.size(name)
 
     def get_available_name(self, name, max_length=None):
-        """Get an available filename for the given name."""
+        """Berilgen at ushın bos fayl atın alıw."""
         return self._storage_backend.get_available_name(name, max_length)
 
     def generate_filename(self, filename):
-        """Generate a unique filename for the given filename."""
+        """Berilgen fayl atı ushın unikal at jaratıw."""
         return self._storage_backend.generate_filename(filename)
 
 
 class LocalStorage(FileSystemStorage):
     """
-    Local filesystem storage for development.
+    Development ushın jergilikli fayl sisteması storage ı.
 
-    This storage backend stores files on the local filesystem and is suitable
-    for development and testing environments.
+    Bul storage backend fayllardı jergilikli fayl sistemasında saqlaydı hám development
+    hám test ortalıqları ushın jaraydı.
     """
 
     def __init__(self):
@@ -98,19 +98,19 @@ class LocalStorage(FileSystemStorage):
 
     def get_available_name(self, name, max_length=None):
         """
-        Get an available filename while preserving the original file extension.
+        Fayldıń dáslepki keńeytpesin saqlap, bos fayl atın alıw.
 
-        This method ensures that uploaded files maintain their original extensions
-        while avoiding name collisions.
+        Bul metod júklengen fayllar dáslepki keńeytpesin saqlawın hám
+        at tuwra kelmewin támiyinleydi.
         """
-        # Split the name into base and extension
+        # Atın tiykar hám keńeytpege bóliw
         base, ext = os.path.splitext(name)
 
-        # If the name is already available, return it
+        # At aldınan bos bolsa, qaytarıw
         if not self.exists(name):
             return name
 
-        # Otherwise, add a counter to make it unique
+        # Bolmasa, unikal etiw ushın sanaǵısh qosıw
         counter = 1
         while True:
             new_name = f"{base}_{counter}{ext}"
@@ -121,17 +121,17 @@ class LocalStorage(FileSystemStorage):
 
 class S3Storage:
     """
-    S3-compatible storage for staging/production.
+    Staging/production ushın S3 menen sáykes storage.
 
-    This storage backend uses S3-compatible object storage (AWS S3, MinIO, etc.)
-    for production environments. Placeholder implementation - requires boto3.
+    Bul storage backend production ortalıqları ushın S3 menen sáykes obyekt storage ın (AWS S3, MinIO hám t.b.)
+    paydalanadı. Waqtınsha ámelge asırıw (placeholder) - boto3 kerek.
 
-    Note: This is a placeholder. In production, you would use django-storages
-    with proper S3 configuration.
+    Eskertiw: Bul placeholder. Production ta durıs S3 sazlaması menen
+    django-storages paydalanıń.
     """
 
     def __init__(self):
-        # Placeholder for S3 configuration
+        # S3 sazlaması ushın placeholder
         self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'tickbron-media')
         self.access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', '')
         self.secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', '')
@@ -139,48 +139,48 @@ class S3Storage:
         self.custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None)
 
     def url(self, name):
-        """Get URL for the given file name."""
+        """Berilgen fayl atı ushın URL alıw."""
         if self.custom_domain:
             return f"https://{self.custom_domain}/{name}"
         return f"https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{name}"
 
     def path(self, name):
-        """S3 storage doesn't have local paths."""
+        """S3 storage ında jergilikli jollar joq."""
         raise NotImplementedError("S3 storage doesn't support local paths")
 
     def exists(self, name):
-        """Check if a file exists in S3."""
-        # Placeholder implementation
-        # In production, this would use boto3 to check S3
+        """Fayldıń S3 te bar-joqlıǵın tekseriw."""
+        # Placeholder ámelge asırıw
+        # Production ta bul S3 ti tekseriw ushın boto3 paydalanar edi
         return False
 
     def save(self, name, content, max_length=None):
-        """Save a file to S3."""
-        # Placeholder implementation
-        # In production, this would use boto3 to upload to S3
+        """Fayldı S3 ke saqlaw."""
+        # Placeholder ámelge asırıw
+        # Production ta bul S3 ke júklew ushın boto3 paydalanar edi
         raise NotImplementedError("S3 storage not yet implemented")
 
     def delete(self, name):
-        """Delete a file from S3."""
-        # Placeholder implementation
-        # In production, this would use boto3 to delete from S3
+        """Fayldı S3 ten óshiriw."""
+        # Placeholder ámelge asırıw
+        # Production ta bul S3 ten óshiriw ushın boto3 paydalanar edi
         raise NotImplementedError("S3 storage not yet implemented")
 
     def listdir(self, path):
-        """List contents of an S3 directory."""
-        # Placeholder implementation
-        # In production, this would use boto3 to list S3 objects
+        """S3 papkasınıń mazmunın dizimlew."""
+        # Placeholder ámelge asırıw
+        # Production ta bul S3 obyektlerin dizimlew ushın boto3 paydalanar edi
         raise NotImplementedError("S3 storage not yet implemented")
 
     def size(self, name):
-        """Get file size from S3."""
-        # Placeholder implementation
-        # In production, this would use boto3 to get S3 object size
+        """S3 ten fayl ólshemin alıw."""
+        # Placeholder ámelge asırıw
+        # Production ta bul S3 obyekt ólshemin alıw ushın boto3 paydalanar edi
         raise NotImplementedError("S3 storage not yet implemented")
 
     def get_available_name(self, name, max_length=None):
-        """Get an available filename for S3."""
-        # S3 handles naming differently, but we'll use similar logic
+        """S3 ushın bos fayl atın alıw."""
+        # S3 atawdı basqasha isleydi, biraq biz uqsas logikanı paydalanamız
         base, ext = os.path.splitext(name)
         counter = 1
         while True:
@@ -190,57 +190,57 @@ class S3Storage:
             counter += 1
 
     def generate_filename(self, filename):
-        """Generate a unique filename for S3."""
+        """S3 ushın unikal fayl atın jaratıw."""
         return self.get_available_name(filename)
 
 
 def get_media_upload_path(instance, filename):
     """
-    Generate upload path for property media files.
+    Mehmanxana media fayllarınıń júklew jolın jaratıw.
 
-    Args:
-        instance: The model instance (PropertyPhoto)
-        filename: The original filename
+    Argumentler:
+        instance: Model nusqası (PropertyPhoto)
+        filename: Dáslepki fayl atı
 
-    Returns:
-        Path string for storing the file
+    Qaytaradı:
+        Fayldı saqlaw ushın jol qatarı
     """
     if hasattr(instance, 'property'):
         property_id = instance.property.id
     elif hasattr(instance, 'room_type'):
         property_id = instance.room_type.property_id
     else:
-        # Fallback if property is not set yet
+        # Mehmanxana ele belgilenbegen bolsa zapas jol
         property_id = 'temp'
 
-    # Generate path: properties/{property_id}/photos/{filename}
+    # Jol jaratıw: properties/{property_id}/photos/{filename}
     return f'properties/{property_id}/photos/{filename}'
 
 
 def validate_image_file(file):
     """
-    Validate uploaded image files.
+    Júklengen súwret fayllardı tekseriw.
 
-    Args:
-        file: UploadedFile instance
+    Argumentler:
+        file: UploadedFile nusqası
 
-    Returns:
+    Qaytaradı:
         tuple (is_valid, error_message)
     """
 
-    # Check file size (max 10MB)
+    # Fayl ólshemin tekseriw (eń kóbi 10MB)
     max_size = 10 * 1024 * 1024  # 10MB
     if file.size > max_size:
         return False, _('File size exceeds maximum allowed size of %(size)sMB') % {'size': max_size / (1024*1024)}
 
-    # Check file extension
+    # Fayl keńeytpesin tekseriw
     allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     file_ext = os.path.splitext(file.name)[1].lower()
     if file_ext not in allowed_extensions:
         return False, _('File type %(ext)s is not allowed. Allowed types: %(types)s') % {
             'ext': file_ext, 'types': ', '.join(allowed_extensions)}
 
-    # Check if file is actually an image (basic check)
+    # Fayldıń haqıyqatında súwret ekenin tekseriw (ápiwayı tekseriw)
     if not file.content_type.startswith('image/'):
         return False, _('File content type %(type)s is not a valid image') % {'type': file.content_type}
 

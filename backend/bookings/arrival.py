@@ -1,10 +1,10 @@
 """
-Arrival of a guest who pays cash at the hotel (plan .ai/PLAN_CASH_ONLY.md stage 2).
+Mehmanxanada naqd tóleytuǵın mehmannıń keliwi (reje .ai/PLAN_CASH_ONLY.md 2-basqısh).
 
-The guest names the time they will arrive on the check-in day. The hotel marks "guest arrived"
-(mark_arrived). A confirmed booking with no arrival mark ARRIVAL_GRACE_HOURS after that time is cancelled
-and its rooms are released (cancel_unarrived_bookings). All times are business time (Asia/Tashkent).
-Bookings made before this existed have no arrival time and are never cancelled here.
+Mehmann kiriw kúni qaysı waqıtta keletuǵının aytadı. Mehmanxana "mehmann keldi" dep belgileydi
+(mark_arrived). Sol waqıttan keyin ARRIVAL_GRACE_HOURS saat ótip, keliw belgisi joq tastıyıqlanǵan bron biykar etiledi
+hám xonaları bosatıladı (cancel_unarrived_bookings). Barlıq waqıtlar is waqtı (Asia/Tashkent).
+Bul bolmastan burın jasalǵan bronlarda keliw waqtı joq hám bul jerde hesh qashan biykar etilmeydi.
 """
 import logging
 from datetime import date, datetime, time, timedelta
@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 class ArrivalCancellationError(Exception):
-    """Raised after a run in which one or more unarrived bookings could not be cancelled."""
+    """Bir yamasa birneshe kelmegen bron biykar etilmegen isleniwden keyin kóteriledi."""
 
 
 def arrival_deadline(booking):
-    """Moment after which the guest counts as not arrived, or None when no arrival time was given."""
+    """Mehmann kelmedi dep esaplanatuǵın waqıt, yamasa keliw waqtı berilmegen bolsa None."""
     if booking.expected_arrival_time is None:
         return None
     start = datetime.combine(booking.check_in, booking.expected_arrival_time, tzinfo=business_time_zone())
@@ -32,7 +32,7 @@ def arrival_deadline(booking):
 
 
 def arrival_time_error(check_in: date, arrival: time, now=None):
-    """A message when the guest arrives today at a time that has already passed, else None."""
+    """Mehmann búgin ótip ketken waqıtta keletuǵın bolsa xabar, bolmasa None."""
     now = (now or timezone.now()).astimezone(business_time_zone())
     if check_in == now.date() and arrival <= now.time().replace(tzinfo=None):
         return 'The arrival time has already passed today.'
@@ -40,7 +40,7 @@ def arrival_time_error(check_in: date, arrival: time, now=None):
 
 
 def mark_arrived(booking, now=None):
-    """The hotel says the guest arrived. Idempotent: the first time stays. ValueError says why it cannot be done."""
+    """Mehmanxana mehmannıń kelgenin aytadı. Idempotent: birinshi ret saqlanadı. ValueError nege islep bolmaytuǵının aytadı."""
     if booking.status != 'confirmed':
         raise ValueError('Only a confirmed booking can be marked as arrived.')
     if booking.check_in > business_today():
@@ -58,7 +58,7 @@ def _tell(booking):
 
 
 def cancel_unarrived_bookings(now=None):
-    """Cancel every confirmed booking past its arrival deadline. Returns {'cancelled': n, 'failed': n}."""
+    """Keliw múddetinen ótken hár tastıyıqlanǵan bronnı biykar etiw. {'cancelled': n, 'failed': n} qaytaradı."""
     now = now or timezone.now()
     candidates = (
         Booking.objects.filter(status='confirmed', arrived_at__isnull=True, expected_arrival_time__isnull=False,

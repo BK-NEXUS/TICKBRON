@@ -1,9 +1,9 @@
 """
-Two-step sign-in: a code from an authenticator app (TOTP, RFC 6238) or a one-time backup code.
+Eki basqıshlı kirisiw: authenticator ilovasınan kod (TOTP, RFC 6238) yamasa bir márte paydalanılatuǵın zapas kod.
 
-The app's secret is stored sealed (Fernet) so a leaked database alone is no use; backup codes are stored
-only as hashes. The password step and the code step are two requests: the first leaves a short-lived note
-in the session, the second turns it into a sign-in (users/views/two_factor.py).
+Ilovanıń sırı shifrlanıp saqlanadı (Fernet), sol sebepli aǵıp ketken database tek paydasız; zapas kodlar tek
+hash retinde saqlanadı. Parol qádemi hám kod qádemi eki soraw: birinshisi session da qısqa múddetli
+belgi qaldıradı, ekinshisi onı kirisiwge ótkizedi (users/views/two_factor.py).
 """
 import hashlib
 import json
@@ -37,7 +37,7 @@ def _now():
 
 
 def needs_setup(user):
-    """An administrator or staff member who must have two-step sign-in and has not set it up yet."""
+    """Eki basqıshlı kirisiwge iye bolıwı shárt hám ele sazlamaǵan administrator yamasa staff aǵzası."""
     return bool(
         settings.TWO_FACTOR_REQUIRED_FOR_ADMINS and (user.is_staff or user.is_superuser) and not user.two_factor_enabled
     )
@@ -45,7 +45,7 @@ def needs_setup(user):
 
 def _fernet():
     key = settings.TWO_FACTOR_KEY
-    if not key:  # development and tests only: production refuses to start without TWO_FACTOR_KEY
+    if not key:  # tek development hám testler: production TWO_FACTOR_KEY sız iske túspeydi
         key = urlsafe_b64encode(hashlib.sha256(f'two-factor:{settings.SECRET_KEY}'.encode()).digest())
     return Fernet(key)
 
@@ -63,12 +63,12 @@ def new_secret():
 
 
 def provisioning_uri(secret, email):
-    """The otpauth:// link an authenticator app reads from the QR code."""
+    """Authenticator ilovası QR koddan oqıytuǵın otpauth:// siltemesi."""
     return pyotp.TOTP(secret).provisioning_uri(name=email, issuer_name=ISSUER)
 
 
 def matching_step(secret, code, now=None):
-    """The 30 second step the code belongs to (this one or one either side, for a slow phone clock), else None."""
+    """Kod tiyisli 30 sekundlıq qádem (usı yamasa sekin telefon saatı ushın eki jaqtan biri), bolmasa None."""
     code = (code or '').replace(' ', '')
     if len(code) != CODE_DIGITS or not code.isdigit():
         return None
@@ -80,23 +80,23 @@ def matching_step(secret, code, now=None):
 
 
 def accept_code(user, code):
-    """True if the code is right and newer than the last one used; it then cannot be used again."""
+    """Kod durıs hám sońǵı paydalanılǵannan jańa bolsa True; sonnan keyin onı qayta paydalanıp bolmaydı."""
     step = matching_step(unseal(user.two_factor_secret), code)
     if step is None:
         return False
-    # The check and the write are one statement, so two requests carrying one code cannot both pass
+    # Tekseriw hám jazıw bir statement, sol sebepli bir kodtı alıp júrgen eki soraw ekewi de ótip ala almaydı
     unused = Q(two_factor_last_step__isnull=True) | Q(two_factor_last_step__lt=step)
     return User.objects.filter(unused, pk=user.pk).update(two_factor_last_step=step) == 1
 
 
 def _backup_hash(code):
-    # Backup codes are random, so a fast keyed hash is enough (no one can guess them offline)
+    # Zapas kodlar tosınarlıq, sol sebepli tez kiltli hash jeterli (hesh kim olardı internetsiz boljaya almaydı)
     clean = (code or '').strip().lower().replace('-', '').replace(' ', '')
     return salted_hmac('two-factor-backup-code', clean, algorithm='sha256').hexdigest()
 
 
 def use_backup_code(user, code):
-    """True if the code is one of the user's unused backup codes; it is then used up."""
+    """Kod paydalanıwshınıń paydalanılmaǵan zapas kodlarınıń biri bolsa True; sonda ol paydalanılıp bitedi."""
     digest = _backup_hash(code)
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
@@ -111,7 +111,7 @@ def use_backup_code(user, code):
 
 
 def enable(user, secret, step):
-    """Switch two-step sign-in on and return the backup codes (shown once, never stored in the clear)."""
+    """Eki basqıshlı kirisiwdi qosıw hám zapas kodlardı qaytarıw (bir márte kórsetiledi, hesh qashan ashıq saqlanbaydı)."""
     codes = [secrets.token_hex(5) for _ in range(BACKUP_CODE_COUNT)]
     user.two_factor_secret = seal(secret)
     user.two_factor_enabled = True
@@ -122,7 +122,8 @@ def enable(user, secret, step):
 
 
 def end_sessions(user, keep_key=None):
-    """Sign the user out everywhere (except the session `keep_key`, if given); sessions are rows in the database."""
+    """Paydalanıwshını hár jerden shıǵarıw (berilgen bolsa `keep_key` session ınan basqa); session lar database degi
+    qatarlar."""
     sessions = Session.objects.filter(expire_date__gt=timezone.now())
     if keep_key:
         sessions = sessions.exclude(session_key=keep_key)
@@ -132,7 +133,8 @@ def end_sessions(user, keep_key=None):
 
 
 def reset(user):
-    """Switch two-step sign-in off and forget the secret and backup codes (a lost phone); the user is signed out everywhere."""
+    """Eki basqıshlı kirisiwdi óshiriw hám sır hám zapas kodlardı umıtıw (telefon joǵaldı); paydalanıwshı hár jerden
+    shıǵarıladı."""
     user.two_factor_enabled = False
     user.two_factor_secret = None
     user.two_factor_backup_codes = None
@@ -150,7 +152,7 @@ def forget_password_step(request):
 
 
 def pending_user(request):
-    """The user whose password was accepted in the last 5 minutes on this session, or None."""
+    """Usı session da sońǵı 5 minutta paroli qabıllanǵan paydalanıwshı, yamasa None."""
     pending = request.session.get(PENDING_KEY)
     if not pending or _now() - pending['at'] > PENDING_SECONDS:
         return None

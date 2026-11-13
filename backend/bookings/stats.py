@@ -1,18 +1,18 @@
 """
-Booking statistics shared by the admin and partner Status sections.
+Admin hám partner Status bólimleri ortaq paydalanatuǵın bron statistikası.
 
-R12: the definitions live in bookings/metrics.py (guests = persons, unique customers,
-nights, stays, revenue = completed bookings' total price per currency, periods, series).
-This module keeps the old public names as thin wrappers so older callers keep working:
+R12: anıqlamalar bookings/metrics.py de (mehmanlar = adamlar, unikal mijozlar,
+túnler, turıwlar, dáramat = hár valyuta boyınsha juwmaqlanǵan bronlardıń jámi bahası, dáwirler, seriyalar).
+Bul modul eski ashıq atlardı jińishke wrapper retinde saqlaydı, sonda eski shaqırıwshılar islewin dawam etedi:
 
 - parse_period, parse_year, InvalidPeriod, counted_q, counted_bookings, available_years,
-  COUNTED_STATUSES, PERIOD_ALL: re-exported from metrics.
-- revenue_by / revenue_total / metric_totals(bookings): the PRE-R12 shape over an
-  already-filtered queryset - `revenue` there is the booking value (SUM(total_price) per
-  booking currency, metrics.booking_value_*) and `guests` the distinct accounts
-  (metrics `unique_customers`). The Status views use metrics directly.
+  COUNTED_STATUSES, PERIOD_ALL: metrics ten qayta eksport etiledi.
+- revenue_by / revenue_total / metric_totals(bookings): aldınan filterlengen queryset ushın
+  R12 ge shekemgi forma - ondaǵı `revenue` bron mánisi (hár bron valyutası boyınsha SUM(total_price),
+  metrics.booking_value_*) hám `guests` ayrıqsha akkauntlar
+  (metrics `unique_customers`). Status view leri metrics ti tikkeley paydalanadı.
 
-All aggregation runs in the database; Python only reshapes already-aggregated rows.
+Barlıq jıynaqlaw database de isleydi; Python tek aldınan jıynaqlanǵan qatarlardı qayta qurıp shıǵadı.
 """
 from django.db.models import Count
 
@@ -24,25 +24,25 @@ from bookings.metrics import (  # noqa: F401  (re-exported)
 
 def commission_amount(gross_revenue, currency):
     """
-    Platform commission on gross booking value.
+    Bronnıń jalpı mánisinen platforma komissiyası.
 
-    COMMISSION IS NOT DEFINED YET: this is the one place to add the rule.
-    Returns None until then, and the Status views do not report a commission.
+    KOMISSIYA ELE ANIQLANBAǴAN: qaǵıydanı qosıwdıń birden-bir orını usı.
+    Sol waqıtqa shekem None qaytaradı, hám Status view leri komissiyanı xabarlamaydı.
     """
     return None
 
 
 def revenue_by(bookings, key):
-    """{key value: [{'currency', 'amount'}, ...]} of booking value (pre-R12 `revenue`)."""
+    """Bron mánisiniń {kilt mánisi: [{'currency', 'amount'}, ...]} ı (R12 ge shekemgi `revenue`)."""
     return booking_value_by(bookings, key)
 
 
 def revenue_total(bookings):
-    """[{'currency', 'amount'}, ...] of booking value (pre-R12 `revenue`)."""
+    """Bron mánisiniń [{'currency', 'amount'}, ...] ı (R12 ge shekemgi `revenue`)."""
     return booking_value_total(bookings)
 
 
 def metric_totals(bookings):
-    """Pre-R12 {'bookings', 'guests' (distinct accounts), 'revenue' (booking value)}."""
+    """R12 ge shekemgi {'bookings', 'guests' (ayrıqsha akkauntlar), 'revenue' (bron mánisi)}."""
     totals = bookings.aggregate(bookings=Count('id'), guests=Count('guest', distinct=True))
     return {'bookings': totals['bookings'], 'guests': totals['guests'], 'revenue': revenue_total(bookings)}

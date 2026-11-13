@@ -1,7 +1,7 @@
 """
-Custom decorators for TICKBRON Backend.
+TICKBRON Backend ushın óz decorator ları.
 
-Provides rate limiting, caching, and other utility decorators.
+Rate limit, keshlew hám basqa járdemshi decorator lardı usınadı.
 """
 from django.core.cache import cache
 from common.request import get_client_ip as _get_client_ip
@@ -16,13 +16,13 @@ logger = logging.getLogger('tickbron')
 
 def rate_limit(limit='100/h', key_func=None):
     """
-    Rate limiting decorator for API endpoints.
+    API endpoint leri ushın rate limit decorator ı.
 
-    Args:
-        limit: Rate limit string (e.g., '100/h', '1000/d', '10/m')
-        key_func: Function to generate cache key (defaults to user ID or IP)
+    Argumentler:
+        limit: Rate limit qatarı (mısalı '100/h', '1000/d', '10/m')
+        key_func: Kesh kiltin jasaytuǵın funkciya (ádetde paydalanıwshı ID si yamasa IP)
 
-    Usage:
+    Paydalanıw:
         @rate_limit('100/h')
         def my_view(request):
             ...
@@ -30,7 +30,7 @@ def rate_limit(limit='100/h', key_func=None):
     def decorator(view_func):
         @wraps(view_func)
         def wrapped_view(request, *args, **kwargs):
-            # Generate cache key
+            # Kesh kiltin jasaw
             if key_func:
                 cache_key = key_func(request)
             elif request.user.is_authenticated:
@@ -38,7 +38,7 @@ def rate_limit(limit='100/h', key_func=None):
             else:
                 cache_key = f"rate_limit:{network_key(get_client_ip(request))}"
 
-            # Parse limit (e.g., '100/h' -> 100 requests per hour)
+            # Limit ti oqıw (mısalı '100/h' -> saatına 100 soraw)
             try:
                 count, period = limit.split('/')
                 count = int(count)
@@ -53,14 +53,14 @@ def rate_limit(limit='100/h', key_func=None):
                 count = 100
                 period_seconds = 3600
 
-            # Check rate limit
+            # Rate limit ti tekseriw
             current_count = cache.get(cache_key, 0)
 
             if current_count >= count:
                 logger.warning(f"Rate limit exceeded for {cache_key}")
                 raise PermissionDenied("Rate limit exceeded. Please try again later.")
 
-            # Increment counter
+            # Sanaǵıshtı arttırıw
             cache.set(cache_key, current_count + 1, period_seconds)
 
             return view_func(request, *args, **kwargs)
@@ -71,15 +71,15 @@ def rate_limit(limit='100/h', key_func=None):
 
 
 def get_client_ip(request):
-    """Get the client IP address from the request."""
+    """Sorawdan klient IP mánzilin alıw."""
     return _get_client_ip(request)
 
 
 def class_rate_limit(limit='100/h', key_func=None):
     """
-    Rate limiting decorator for class-based views.
+    Class tiykarlı view ler ushın rate limit decorator ı.
 
-    Usage:
+    Paydalanıw:
         @class_rate_limit('100/h')
         class MyView(View):
             ...

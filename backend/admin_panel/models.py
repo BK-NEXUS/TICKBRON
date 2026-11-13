@@ -1,9 +1,9 @@
 """
-Admin models for TICKBRON.
+TICKBRON ushın admin model leri.
 
-This module contains models for admin-specific functionality.
-Currently uses existing models from other apps with admin-specific
-endpoints for moderation and management.
+Bul modul admin funkciyalarına tiyisli model lerdi óz ishine aladı.
+Házir basqa app lardaǵı bar model ler paydalanıladı, moderation hám basqarıw ushın
+admin endpoint leri menen.
 """
 from django.db import models
 
@@ -14,11 +14,11 @@ from common.models import TimeStampedModel, SoftDeleteModel
 
 class InternalNote(TimeStampedModel, SoftDeleteModel):
     """
-    Internal notes for customers, visible only to staff/admins.
+    Mijozlar haqqındaǵı ishki jazbalar, tek staff/admin ler kóre aladı.
 
-    These are staff-only free-text entries for customer management,
-    fully CRUD-able, each stamped with the author (staff member) and timestamp.
-    Never exposed to customers.
+    Bular mijozlardı basqarıw ushın tek staff ke arnalǵan erkin tekst jazbaları,
+    tolıq CRUD isleydi, hár birinde avtor (staff ǵa tiyisli adam) hám waqıt belgisi bar.
+    Mijozlarǵa hesh qashan kórsetilmeydi.
     """
     customer = models.ForeignKey(
         'users.User',
@@ -54,7 +54,7 @@ class InternalNote(TimeStampedModel, SoftDeleteModel):
 
 
 class AppendOnlyQuerySet(models.QuerySet):
-    """Bulk update/delete are refused, so audit rows cannot be rewritten in bulk either."""
+    """Kóp jazbanı birden ózgertiw/óshiriw qadaǵan etilgen, sol sebepli audit qatarların da birden qayta jazıp bolmaydı."""
 
     def update(self, **kwargs):
         raise PermissionError('Audit log entries cannot be changed')
@@ -65,11 +65,11 @@ class AppendOnlyQuerySet(models.QuerySet):
 
 class AdminAccessLog(models.Model):
     """
-    Who on the staff opened which customer's data, and when (R4, audit #21).
+    Staff tan kim qaysı mijozdıń maǵlıwmatın qashan ashtı (R4, audit #21).
 
-    Ids only: no names, phones, emails or search terms, so the log itself holds no
-    copy of personal data. Plain integer ids (not foreign keys) keep the history
-    even if a user row is ever removed. Append-only: rows are never changed or deleted.
+    Tek id ler: at, telefon, e-mail yamasa izlew sózleri joq, sol sebepli log tıń ózinde jeke
+    maǵlıwmat nusqası bolmaydı. Ápiwayı integer id ler (foreign key emes) paydalanıwshı qatarı
+    keyin óshirilse de tariyxtı saqlaydı. Tek qosıladı (append-only): qatarlar hesh qashan ózgertilmeydi yamasa óshirilmeydi.
     """
     ACTION_CHOICES = [
         ('customer_list', 'Customer list'),
@@ -132,9 +132,9 @@ class AdminAccessLog(models.Model):
     action = models.CharField(max_length=32, choices=ACTION_CHOICES, db_index=True)
     target_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     target_booking_id = models.BigIntegerField(null=True, blank=True)
-    # Non-personal facts about the action (R6: currency, old and new rate of an accepted rate)
+    # Háreket haqqında jeke emes faktlar (R6: valyuta, qabıllanǵan kurstıń eski hám jańa mánisi)
     details = models.JSONField(null=True, blank=True)
-    # Where the action came from (RequestLoggingMiddleware); empty outside a request
+    # Háreket qayaqtan kelgeni (RequestLoggingMiddleware); soraw sırtında bos
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -147,7 +147,7 @@ class AdminAccessLog(models.Model):
     def __str__(self):
         return f'{self.created_at} user:{self.actor_id} {self.action} target:{self.target_user_id}'
 
-    # The only keys `details` may hold: non-personal facts, flat scalar values
+    # `details` ishinde bolıwı múmkin bolǵan jalǵız kilt ler: jeke emes faktlar, tegis ápiwayı mánisler
     DETAIL_KEYS = frozenset({'currency', 'rate_date', 'old_rate', 'new_rate', 'rejected_id', 'accepted_id',
                              'refund_id', 'export', 'rows', 'format', 'report_id',
                              'promotion_id', 'property_id', 'start_date', 'end_date', 'amount',

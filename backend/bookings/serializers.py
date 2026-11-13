@@ -1,5 +1,5 @@
 """
-Serializers for TICKBRON booking endpoints.
+TICKBRON bron endpoint leri ushın serializer ler.
 """
 import logging
 from common.validators import validate_person_name
@@ -21,7 +21,7 @@ logger = logging.getLogger('tickbron')
 
 
 class BookingItemSerializer(serializers.ModelSerializer):
-    """Serializer for booking items."""
+    """Bron elementleri ushın serializer."""
 
     room_type_name = serializers.CharField(source='room_type.name', read_only=True)
     rate_plan_name = serializers.CharField(source='rate_plan.name', read_only=True)
@@ -36,7 +36,7 @@ class BookingItemSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    """Serializer for bookings."""
+    """Bronlar ushın serializer."""
 
     booking_items = BookingItemSerializer(many=True, read_only=True)
     guest_name = serializers.CharField(source='guest.get_full_name', read_only=True)
@@ -56,19 +56,19 @@ class BookingSerializer(serializers.ModelSerializer):
             'charge_amount', 'charge_currency', 'exchange_rate',
             'expected_arrival_time', 'arrived_at', 'arrival_deadline',
         ]
-        # Output-only serializer: bookings are created via BookingCreateSerializer
-        # and changed only through model methods, never written from request data.
+        # Tek shıǵıw serializer i: bronlar BookingCreateSerializer arqalı jaratıladı
+        # hám tek model metodları arqalı ózgeredi, soraw maǵlıwmatınan hesh qashan jazılmaydı.
         read_only_fields = fields
 
     @extend_schema_field(OpenApiTypes.DATETIME)
     def get_arrival_deadline(self, obj):
-        """When the guest counts as not arrived (ISO, business time), or null for an old booking."""
+        """Mehmann qashan kelmedi dep esaplanadı (ISO, is waqtı), yamasa eski bron ushın null."""
         deadline = arrival_deadline(obj)
         return deadline.isoformat() if deadline else None
 
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_exchange_rate(self, obj):
-        """The rate the charge was computed with (R6 snapshot), in the quote's format."""
+        """Alınatuǵın summa esaplanǵan kurs (R6 snapshot), quote formatında."""
         return {
             'rate': f'{obj.exchange_rate:.6f}',
             'date': obj.exchange_rate_date.isoformat() if obj.exchange_rate_date else None,
@@ -78,7 +78,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
 
 class BookingCreateSerializer(serializers.Serializer):
-    """Serializer for creating bookings with transaction-safe inventory locking."""
+    """Transaction qáwipsiz inventory qulıplaw menen bron jaratıw ushın serializer."""
 
     property_id = serializers.IntegerField()
     room_type_id = serializers.IntegerField()
@@ -88,16 +88,16 @@ class BookingCreateSerializer(serializers.Serializer):
     guest_count = serializers.IntegerField(min_value=1)
     special_requests = serializers.CharField(required=False, allow_blank=True, max_length=1000)
 
-    # Guest contact details (optional - will be pre-filled from user profile)
+    # Mehmannıń baylanıs maǵlıwmatı (ıqtıyarıy - paydalanıwshı profilinen aldınan toltırıladı)
     guest_full_name = serializers.CharField(
         required=False, allow_blank=True, max_length=300, validators=[validate_person_name],
-    )  # the column's size
+    )  # baǵanıń ólshemi
     guest_phone = serializers.CharField(required=False, allow_blank=True)
-    # Cash at the hotel: when the guest will arrive on the check-in day (HH:MM)
+    # Mehmanxanada naqd: mehmann kiriw kúni qaysı waqıtta keledi (HH:MM)
     expected_arrival_time = serializers.TimeField(input_formats=['%H:%M', '%H:%M:%S'])
     guest_email = serializers.EmailField(required=False, allow_blank=True)
 
-    # Room and children information
+    # Xona hám balalar maǵlıwmatı
     number_of_rooms = serializers.IntegerField(min_value=1, max_value=10, default=1)
     children = serializers.ListField(
         child=serializers.IntegerField(min_value=0, max_value=17),
@@ -106,13 +106,13 @@ class BookingCreateSerializer(serializers.Serializer):
     )
 
     def validate_guest_phone(self, value):
-        """The profile number is used when blank (the booking needs one of the two); stored as E.164."""
+        """Bos bolsa profil nomeri paydalanıladı (bron ekewiniń birewin talap etedi); E.164 formatında saqlanadı."""
         if not value.strip():
             return ''
         return validate_phone_number_format(value)
 
     def validate(self, data):
-        """Validate booking creation parameters."""
+        """Bron jaratıw parametrlerin tekseriw."""
         from properties.models import Property, RoomType, RatePlan
 
         arrival_error = arrival_time_error(data['check_in'], data['expected_arrival_time'])
@@ -122,7 +122,7 @@ class BookingCreateSerializer(serializers.Serializer):
         if not (data.get('guest_phone') or self.context['request'].user.phone_number):
             raise serializers.ValidationError({'guest_phone': _('A phone number is required.')})
 
-        # Validate date range
+        # Sana aralıǵın tekseriw
         if data['check_out'] <= data['check_in']:
             raise ValidationError({
                 'check_out': _('Check-out date must be after check-in date')
@@ -133,9 +133,9 @@ class BookingCreateSerializer(serializers.Serializer):
                 'check_in': _('Check-in date cannot be in the past')
             })
 
-        # Validate property exists and is active
+        # Mehmanxananıń bar hám aktiv ekenin tekseriw
         try:
-            # Only approved (status='active') properties can be booked
+            # Tek tastıyıqlanǵan (status='active') mehmanxanalardı bronlaw múmkin
             property_obj = Property.objects.get(
                 id=data['property_id'],
                 status='active',
@@ -147,7 +147,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 'property_id': _('Property not found or not available')
             })
 
-        # Validate room type exists and belongs to property
+        # Xona túriniń bar hám mehmanxanaǵa tiyisli ekenin tekseriw
         try:
             room_type = RoomType.objects.get(
                 id=data['room_type_id'],
@@ -159,7 +159,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 'room_type_id': _('Room type not found or does not belong to this property')
             })
 
-        # Validate rate plan exists and belongs to room type
+        # Rate plan nıń bar hám xona túrine tiyisli ekenin tekseriw
         try:
             rate_plan = RatePlan.objects.get(
                 id=data['rate_plan_id'],
@@ -172,14 +172,14 @@ class BookingCreateSerializer(serializers.Serializer):
                 'rate_plan_id': _('Rate plan not found or does not belong to this room type')
             })
 
-        # Validate guest count against the capacity of all booked rooms
+        # Mehmanlar sanın barlıq bronlanǵan xonalardıń sıyımlılıǵı menen tekseriw
         capacity = room_type.max_occupancy * data.get('number_of_rooms', 1)
         if data['guest_count'] > capacity:
             raise ValidationError({
                 'guest_count': _('Guest count exceeds maximum occupancy of %(capacity)s for the booked rooms') % {'capacity': capacity}
             })
 
-        # Validate rate plan constraints
+        # Rate plan shekleulerin tekseriw
         number_of_nights = (data['check_out'] - data['check_in']).days
 
         if rate_plan.min_nights and number_of_nights < rate_plan.min_nights:
@@ -192,7 +192,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 'check_in': _('Booking duration exceeds maximum nights requirement (%(nights)s)') % {'nights': rate_plan.max_nights}
             })
 
-        # Store validated objects for later use
+        # Tekserilgen obyektlerdi keyingi paydalanıw ushın saqlaw
         self.validated_objects = {
             'property': property_obj,
             'room_type': room_type,
@@ -202,13 +202,13 @@ class BookingCreateSerializer(serializers.Serializer):
         return data
 
     def create(self, validated_data):
-        """Create booking with transaction-safe inventory locking."""
+        """Transaction qáwipsiz inventory qulıplaw menen bron jaratıw."""
         guest = self.context['request'].user
         property_obj = self.validated_objects['property']
         room_type = self.validated_objects['room_type']
         rate_plan = self.validated_objects['rate_plan']
 
-        # Pre-fill guest details from user profile if not provided
+        # Berilmegen bolsa, mehmann maǵlıwmatın paydalanıwshı profilinen aldınan toltırıw
         guest_full_name = validated_data.get('guest_full_name') or guest.get_full_name()
         guest_phone = validated_data.get('guest_phone') or guest.phone_number
         guest_email = validated_data.get('guest_email') or guest.email
@@ -236,18 +236,18 @@ class BookingCreateSerializer(serializers.Serializer):
         except ExchangeRateUnavailable:
             raise
         except ValidationError as e:
-            # Convert Django ValidationError to DRF ValidationError
+            # Django ValidationError di DRF ValidationError ge ózgertiw
             if hasattr(e, 'message_dict'):
                 refused = serializers.ValidationError(e.message_dict)
-                refused.reason = refusal_reason(e)  # the view sends it on, so the site can translate the refusal
+                refused.reason = refusal_reason(e)  # view onı alıp ótedi, sonda sayt biykar etiwdi awdara aladı
                 raise refused
             else:
                 raise serializers.ValidationError({'non_field_errors': str(e)})
         except DatabaseError:
-            # An outage is a server error (5xx), not something the guest can fix by retrying the form
+            # Toqtap qalıw server qátesi (5xx), mehmann formanı qayta jiberip túzete almaytuǵın nárse
             raise
         except Exception:
-            # Unexpected/internal error: never echo str(e) to the client, only log it server-side.
+            # Kútilmegen/ishki qátelik: str(e) di klientke hesh qashan qaytarmań, tek serverde log qa jazıń.
             logger.exception('Unexpected error creating booking')
             raise serializers.ValidationError({
                 'non_field_errors': _('Failed to create booking. Please try again.')
@@ -255,12 +255,12 @@ class BookingCreateSerializer(serializers.Serializer):
 
 
 class BookingCancelSerializer(serializers.Serializer):
-    """Serializer for cancelling bookings."""
+    """Bronlardı biykar etiw ushın serializer."""
 
     cancellation_reason = serializers.CharField(required=False, allow_blank=True, max_length=1000)
 
     def validate(self, data):
-        """Validate cancellation parameters."""
+        """Biykar etiw parametrlerin tekseriw."""
         booking = self.context['booking']
 
         if booking.status in ['cancelled', 'completed', 'no_show']:
@@ -268,8 +268,8 @@ class BookingCancelSerializer(serializers.Serializer):
                 'status': _('Booking cannot be cancelled in current status')
             })
 
-        # Once the stay has started, cancelling would free rooms the guest used and leave the money
-        # captured; the hotel and support handle that case by hand
+        # Turıw baslanǵannan keyin biykar etiw mehmann paydalanǵan xonalardı bosatıp, alınǵan
+        # pulǵa tiymey qaldırar edi; bul jaǵdaydı mehmanxana hám qollap-quwatlaw qolda sheshedi
         if booking.status == 'confirmed' and booking.check_in <= business_today():
             raise ValidationError({
                 'status': _('A stay that has started cannot be cancelled online. Please contact the hotel.')
@@ -278,7 +278,7 @@ class BookingCancelSerializer(serializers.Serializer):
         return data
 
     def update(self, instance, validated_data):
-        """Cancel booking and restore inventory."""
+        """Bronnan bas tartıw hám inventory di qaytarıw."""
         try:
             instance.cancel_booking(validated_data.get('cancellation_reason'))
             tell_cancelled_by_guest(instance)

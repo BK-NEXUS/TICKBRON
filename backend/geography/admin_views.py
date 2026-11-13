@@ -1,8 +1,9 @@
 """
-Super-admin geography API (Geography plan G3), mounted at /api/v1/admin-panel/geography/.
+Super-admin geografiya API ı (Geography reje G3), /api/v1/admin-panel/geography/ ge ornatılǵan.
 
-Countries and regions: list (search, filters, hidden rows included), create, edit,
-hide/show (PATCH is_active) and reorder. A row in use cannot be deleted (PROTECT): 409, hide it instead.
+Mámleketler hám regionlar: dizim (izlew, filter ler, jasırılǵan qatarlar da), jaratıw, ózgertiw,
+jasırıw/kórsetiw (PATCH is_active) hám tártipke keltiriw. Paydalanılıp atırǵan qatardı óshirip bolmaydı (PROTECT): 409, onıń
+ornına jasırıń.
 """
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -35,12 +36,12 @@ class GeographyPagination(PageNumberPagination):
 
 class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsSuperAdmin]
-    parser_classes = [SafeJSONParser, MultiPartParser, FormParser]  # countries and regions upload a picture
+    parser_classes = [SafeJSONParser, MultiPartParser, FormParser]  # mámleketler hám regionlar súwret júkleydi
     pagination_class = GeographyPagination
     audit_name = 'geography'
     model = None
     search_extra = ()
-    parent_param = None  # query parameter that filters by the parent id
+    parent_param = None  # ata-ana id si boyınsha filterleytuǵın query parametri
 
     def filter_queryset(self, queryset):
         params = self.request.query_params
@@ -75,7 +76,7 @@ class BaseGeographyViewSet(AuditedModelViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='reorder')
     def reorder(self, request):
-        """POST {"ids": [..]}: sort_order becomes the position of each id in the list."""
+        """POST {"ids": [..]}: sort_order hár id niń dizimdegi orni boladı."""
         ids = request.data.get('ids') if hasattr(request.data, 'get') else None
         if not isinstance(ids, list) or not ids \
                 or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):

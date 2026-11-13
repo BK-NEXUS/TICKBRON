@@ -1,16 +1,16 @@
 """
-No-show report endpoints (R12 phase 3, .ai/PLAN_R12.md section 3).
+No-show esabat endpoint leri (R12 3-basqısh, .ai/PLAN_R12.md 3-bólim).
 
-Owner (/api/v1/partner/):
-  POST bookings/{id}/no-show-report/        {comment}  report that the guest did not arrive
-  GET  no-show-reports/                     own reports (?status, ?property), paginated
-  POST no-show-reports/{id}/withdraw/       own pending report only
+Iye (/api/v1/partner/):
+  POST bookings/{id}/no-show-report/        {comment}  mehmannıń kelmegeni haqqında esabat
+  GET  no-show-reports/                     óz esabatları (?status, ?property), betlerge bólingen
+  POST no-show-reports/{id}/withdraw/       tek óziniń kútip turǵan esabatı
 Staff (/api/v1/admin-panel/):
-  GET  no-show-reports/                     pending first (oldest first); ?status, ?property, ?from, ?to
+  GET  no-show-reports/                     kútip turǵanı birinshi (eń eskisi birinshi); ?status, ?property, ?from, ?to
   GET  no-show-reports/{id}/
-  POST no-show-reports/{id}/approve|reject|reverse/   {decision_comment} (10-500 characters)
+  POST no-show-reports/{id}/approve|reject|reverse/   {decision_comment} (10-500 belgi)
 
-Another owner's booking or report is a 404, never a 403, so ids do not leak. Owners never decide.
+Basqa iyeniń broni yamasa esabatı 404, hesh qashan 403 emes, sol sebepli id ler aǵıp ketpeydi. Iyeler hesh qashan sheshpeydi.
 """
 import sys
 import os
@@ -39,7 +39,7 @@ TESTING = 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST')
 
 
 class NoShowReportThrottle(UserRateThrottle):
-    """Filing no-show reports: 20 per hour per user (settings: THROTTLE_NO_SHOW_REPORT_RATE)."""
+    """No-show esabatların jiberiw: paydalanıwshı boyınsha saatına 20 (sazlama: THROTTLE_NO_SHOW_REPORT_RATE)."""
     scope = 'no_show_report'
 
     def allow_request(self, request, view):
@@ -76,7 +76,7 @@ def _status_param(request):
     return value, None
 
 
-# --- owner ---------------------------------------------------------------------------------
+# --- iye ---------------------------------------------------------------------------------
 
 @extend_schema(request=ReportCommentSerializer, responses=OwnerReportSerializer)
 @api_view(['POST'])
@@ -124,10 +124,10 @@ def partner_no_show_report_withdraw(request, report_id):
     return Response(OwnerReportSerializer(_owner_queryset().get(pk=report.pk)).data)
 
 
-# --- staff ---------------------------------------------------------------------------------
+# --- staff -------------------------------------------------------------------------------
 
 def _staff_context(reports):
-    """Everything the staff rows need, in a fixed number of queries whatever the page size."""
+    """Staff qatarlarına kerek hámme nárse, bet ólshemi qanday bolsa da belgili sandaǵı query menen."""
     return {
         'flagged': noshow.flagged_property_ids({report.property_id for report in reports}) if reports else set(),
     }

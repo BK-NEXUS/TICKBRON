@@ -1,8 +1,8 @@
 """
-Search service for TICKBRON property search using database capabilities.
+Database múmkinshiliklerin paydalanıp TICKBRON mehmanxana izlewi ushın izlew xızmeti.
 
-This module provides text search, geographic search, and comprehensive filtering
-using database features that work with both SQLite (development) and PostgreSQL (production).
+Bul modul SQLite (development) hám PostgreSQL (production) de isleytuǵın database imkaniyatların
+paydalanıp tekst izlew, geografiyalıq izlew hám tolıq filterlewdi usınadı.
 """
 from django.db.models import Q, F, FloatField, Prefetch, Avg, Count, Exists, OuterRef, Subquery, IntegerField
 from django.db.models.functions import Coalesce
@@ -12,7 +12,7 @@ import math
 import re
 
 
-# Search `features` value -> Property flag. Order is the order the sidebar shows them.
+# `features` mánisin izlew -> Property belgisi. Tártip jan panel kórsetetuǵın tártip.
 FEATURES = {
     'wifi': ('has_wifi', 'WiFi'),
     'parking': ('has_parking', 'Parking'),
@@ -31,15 +31,15 @@ SORT_OPTIONS = [
 
 
 def searchable_properties():
-    """Properties that search can return: approved, active and not deleted."""
+    """Izlew qaytara alatuǵın mehmanxanalar: tastıyıqlanǵan, aktiv hám óshirilmegen."""
     from properties.models import Property
     return Property.objects.filter(is_active=True, is_deleted=False, status='active')
 
 
 def card_prices_prefetch(prefix=''):
     """
-    R16: the active rate plans (with the owner's prices) a hotel card needs for its "from" price in every
-    currency, as `card_room_types` on the property; `prefix` is the path to the property ("property__").
+    R16: mehmanxana kartasına hár valyutadaǵı "dan" bahası ushın kerek aktiv rate plan lar (iyeniń bahaları menen),
+    mehmanxanada `card_room_types` retinde; `prefix` mehmanxanaǵa jol ("property__").
     """
     from properties.models import RatePlan, RoomType
 
@@ -54,7 +54,7 @@ MAX_SEARCH_WORDS = 8
 
 
 def geography_name_filter(term):
-    """Q matching the term in the uz/ru/en name of the property's region or country (via the refs)."""
+    """Mehmanxananıń regionı yamasa mámleketiniń uz/ru/en atında sózdi izleytuǵın Q (ref ler arqalı)."""
     query = Q()
     for level in GEOGRAPHY_LEVELS:
         for language in GEOGRAPHY_LANGUAGES:
@@ -64,8 +64,8 @@ def geography_name_filter(term):
 
 def with_review_scores(queryset):
     """
-    Annotate average_rating (None without reviews) and review_count from approved reviews.
-    Subqueries, so joins added by other filters cannot multiply the counts.
+    Tastıyıqlanǵan sharhlardan average_rating (sharh joq bolsa None) hám review_count di belgilew.
+    Sub-query ler, sol sebepli basqa filter ler qosqan join lar sanlardı kóbeytip jibere almaydı.
     """
     from accounts.models import Review
 
@@ -85,25 +85,25 @@ def with_review_scores(queryset):
 
 class PropertySearchService:
     """
-    Service class for property search using PostgreSQL capabilities.
+    PostgreSQL imkaniyatların paydalanıp mehmanxana izlewi ushın xızmet klası.
 
-    Provides full-text search, geographic search, fuzzy matching, and comprehensive filtering.
+    Tolıq tekst izlew, geografiyalıq izlew, anıq emes sáykeslew hám tolıq filterlewdi usınadı.
     """
 
     def __init__(self):
         self.base_queryset = self._get_base_queryset()
 
     def _get_base_queryset(self):
-        """Get the base queryset for property search."""
+        """Mehmanxana izlewi ushın tiykarǵı queryset ti alıw."""
         from properties.models import PropertyAmenity, PropertyPhoto, PropertyTranslation
 
         return with_review_scores(searchable_properties()).select_related(
             'owner',
             'property_type'
         ).prefetch_related(
-            # One query for every result's translations (serialized as `translations`)
+            # Hár nátiyjeniń awdarmaları ushın bir query (`translations` retinde serializer den ótedi)
             Prefetch('translations', queryset=PropertyTranslation.objects.filter(is_deleted=False)),
-            # Filtered here, not in the serializer, so a result page costs the same queries for any size
+            # Serializer de emes, usı jerde filterlenedi, sol sebepli nátiyje beti qálegen ólshemde birdey query ge túsedi
             Prefetch('property_amenities', to_attr='searchable_amenities', queryset=PropertyAmenity.objects.filter(
                 is_available=True, amenity__is_searchable=True, is_deleted=False).select_related('amenity__category')),
             Prefetch('photos', to_attr='active_photos', queryset=PropertyPhoto.objects.filter(
@@ -113,10 +113,10 @@ class PropertySearchService:
 
     def _validate_search_params(self, search_params):
         """
-        Validate and sanitize search parameters.
+        Izlew parametrlerin tekseriw hám tazalaw.
 
-        Returns a dict of the cleaned parameters (defaults filled in for sort and paging).
-        Raises ValueError with a message for the first parameter that is invalid.
+        Tazalanǵan parametrler dict in qaytaradı (tártiplew hám betlew ushın ádetdegi mánisler toltırılǵan).
+        Birinshi jaramsız parametr ushın xabarı bar ValueError kóteredi.
         """
         validated_params = {}
         for check in (
@@ -134,7 +134,7 @@ class PropertySearchService:
         q = str(params['q']).strip()
         if len(q) > 500:
             raise ValueError("Search query too long (max 500 characters)")
-        # Remove potentially dangerous characters
+        # Potencial qáwipli belgilerdi alıp taslaw
         q = re.sub(r'[<>"\']', '', q)
         out['q'] = q if q else None
 
@@ -149,7 +149,7 @@ class PropertySearchService:
 
     @staticmethod
     def _optional_pair(params, low_key, high_key, convert):
-        """The two ends of a range as numbers; an end that was not sent is None."""
+        """Aralıqtıń eki ushı san retinde; jiberilmegen ushı None."""
         low = convert(params[low_key]) if low_key in params else None
         high = convert(params[high_key]) if high_key in params else None
         return low, high
@@ -276,7 +276,7 @@ class PropertySearchService:
 
     @staticmethod
     def _positive_int(params, key, default, message, maximum=None):
-        """An integer parameter of at least 1 (and at most `maximum`), or the default when it is not sent."""
+        """Eń keminde 1 (hám eń kóbi `maximum`) bolǵan integer parametr, yamasa jiberilmegen bolsa ádetdegi mánis."""
         if key not in params:
             return default
         try:
@@ -293,50 +293,50 @@ class PropertySearchService:
 
     def _parse_date(self, date_str):
         """
-        Parse date string in various formats.
+        Túrli formatlardaǵı sana qatarın oqıw.
 
-        Args:
-            date_str: date string (YYYY-MM-DD format preferred)
+        Argumentler:
+            date_str: sana qatarı (YYYY-MM-DD formatı jaqsı)
 
-        Returns:
-            datetime.date object
+        Qaytaradı:
+            datetime.date obyekti
 
-        Raises:
-            ValueError: if date format is invalid
+        Kóteredi:
+            ValueError: sana formatı jaramsız bolsa
         """
         if not date_str:
             return None
-        # SearchParamsSerializer has already turned the query value into a date
+        # SearchParamsSerializer query mánisin aldınan sanaǵa ótkizgen
         if isinstance(date_str, date):
             return date_str
 
         try:
-            # Try YYYY-MM-DD format first
+            # Aldın YYYY-MM-DD formatın sınap kóriw
             return datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             try:
-                # Try other common formats
+                # Basqa ulıwma formatlardı sınap kóriw
                 return datetime.strptime(date_str, '%Y/%m/%d').date()
             except ValueError:
                 raise ValueError(f"Invalid date format: {date_str}. Use YYYY-MM-DD format.")
 
     def filtered_queryset(self, search_params):
-        """The searchable properties that match every filter, before sorting and paging."""
+        """Tártiplew hám betlewden aldın hár filterge sáykes keletuǵın izlenetuǵın mehmanxanalar."""
         return self._apply_filters(self.base_queryset, self._validate_search_params(search_params))
 
     def _apply_filters(self, queryset, search_params):
 
-        # Apply text search
+        # Tekst izlewdi qollanıw
         if search_params.get('q'):
             queryset = self._apply_text_search(queryset, search_params['q'])
 
-        # Apply location search
+        # Jaylasıw izlewin qollanıw
         if search_params.get('location'):
             queryset = self._apply_location_search(queryset, search_params['location'])
 
-        # Apply geographic search
+        # Geografiyalıq izlewdi qollanıw
         if all(k in search_params for k in ['lat', 'lng']):
-            radius = search_params.get('radius', 10)  # default 10km
+            radius = search_params.get('radius', 10)  # ádetde 10km
             queryset = self._apply_geographic_search(
                 queryset,
                 search_params['lat'],
@@ -344,7 +344,7 @@ class PropertySearchService:
                 radius
             )
 
-        # Apply price filtering
+        # Baha filterin qollanıw
         if search_params.get('min_price') is not None or search_params.get('max_price') is not None:
             queryset = self._apply_price_filter(
                 queryset,
@@ -352,7 +352,7 @@ class PropertySearchService:
                 search_params.get('max_price')
             )
 
-        # Apply guest capacity filtering
+        # Mehmanlar sıyımlılıǵı filterin qollanıw
         if search_params.get('min_guests') is not None or search_params.get('max_guests') is not None:
             queryset = self._apply_guest_filter(
                 queryset,
@@ -360,23 +360,23 @@ class PropertySearchService:
                 search_params.get('max_guests')
             )
 
-        # Apply amenity filtering
+        # Amenity filterin qollanıw
         if search_params.get('amenities'):
             queryset = self._apply_amenity_filter(queryset, search_params['amenities'])
 
-        # Apply feature filtering (every requested flag must be set)
+        # Feature filterin qollanıw (hár soralǵan belgi qoyılǵan bolıwı kerek)
         if search_params.get('features'):
             queryset = queryset.filter(**{FEATURES[f][0]: True for f in search_params['features']})
 
-        # Apply minimum rating filtering (unrated properties have no rating, so they drop out)
+        # Eń kem reyting filterin qollanıw (bahalanbaǵan mehmanxanalarda reyting joq, sol sebepli olar túsip qaladı)
         if search_params.get('min_rating') is not None:
             queryset = queryset.filter(average_rating__gte=search_params['min_rating'])
 
-        # Apply property type filtering
+        # Mehmanxana túri filterin qollanıw
         if search_params.get('property_type'):
             queryset = self._apply_property_type_filter(queryset, search_params['property_type'])
 
-        # Apply date availability filtering
+        # Sana boyınsha bos orın filterin qollanıw
         if search_params.get('check_in') and search_params.get('check_out'):
             queryset = self._apply_date_filter(
                 queryset,
@@ -388,38 +388,38 @@ class PropertySearchService:
 
     def search(self, search_params):
         """
-        Perform property search based on provided parameters.
+        Berilgen parametrler boyınsha mehmanxana izlewin orınlaw.
 
-        Args:
-            search_params: dict containing search parameters
-                - q: text search query
-                - location: location search (city, country)
-                - lat, lng, radius: geographic search
-                - min_price, max_price: price range
-                - min_guests, max_guests: guest capacity
-                - amenities: list of amenity IDs
-                - property_type: property type ID
-                - check_in, check_out: date range for availability
-                - sort: sorting method (relevance, price_asc, price_desc, rating, distance)
-                - page: page number
-                - page_size: results per page
+        Argumentler:
+            search_params: izlew parametrleri bar dict
+                - q: tekst izlew sorawı
+                - location: jaylasıw izlewi (city, country)
+                - lat, lng, radius: geografiyalıq izlew
+                - min_price, max_price: baha aralıǵı
+                - min_guests, max_guests: mehmanlar sıyımlılıǵı
+                - amenities: amenity ID lar dizimi
+                - property_type: mehmanxana túri ID si
+                - check_in, check_out: bos orın ushın sana aralıǵı
+                - sort: tártiplew usılı (relevance, price_asc, price_desc, rating, distance)
+                - page: bet nomeri
+                - page_size: bettegi nátiyjeler
 
-        Returns:
-            dict with search results and metadata
+        Qaytaradı:
+            Izlew nátiyjeleri hám metadata menen dict
 
-        Raises:
-            ValueError: if search parameters are invalid
+        Kóteredi:
+            ValueError: izlew parametrleri jaramsız bolsa
         """
-        # Validate and sanitize search parameters
+        # Izlew parametrlerin tekseriw hám tazalaw
         search_params = self._validate_search_params(search_params)
 
         queryset = self._apply_filters(self.base_queryset, search_params)
 
-        # Apply sorting
+        # Tártiplewdi qollanıw
         sort_method = search_params.get('sort', 'relevance')
         queryset = self._apply_sorting(queryset, sort_method, search_params)
 
-        # Apply pagination with standardized error handling
+        # Standartlastırılǵan qátelik islew menen betlewdi qollanıw
         page = search_params.get('page', 1)
         page_size = search_params.get('page_size', 20)
 
@@ -427,7 +427,7 @@ class PropertySearchService:
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
         except (EmptyPage, PageNotAnInteger):
-            # Handle pagination errors gracefully
+            # Betlew qátelikların durıs islew
             page = 1
             paginator = Paginator(queryset, page_size)
             page_obj = paginator.get_page(page)
@@ -444,24 +444,24 @@ class PropertySearchService:
 
     def _apply_text_search(self, queryset, query):
         """
-        Apply text search using Django ORM icontains (works with SQLite and PostgreSQL).
+        Django ORM icontains di paydalanıp tekst izlewdi qollanıw (SQLite hám PostgreSQL de isleydi).
 
-        Args:
-            queryset: base queryset
-            query: sanitized search query string
+        Argumentler:
+            queryset: tiykarǵı queryset
+            query: tazalanǵan izlew sorawı qatarı
 
-        Returns:
-            filtered queryset
+        Qaytaradı:
+            filterlengen queryset
         """
         if not query or len(query) < 2:
             return queryset
 
         from properties.models import PropertyTranslation
 
-        # Each word is matched on its own, and every word must match somewhere (a word may match a
-        # different field than another). With OR, "Pricey Street" matched every property on any "Street".
-        # The word count is capped and translations are matched with EXISTS, so the SQL does not grow
-        # with a long query (one join per word let a single anonymous request pin the database).
+        # Hár sóz óz aldına sáykeslenedi, hám hár sóz qayda bolsa da sáykes keliwi kerek (sóz basqa
+        # maydanǵa sáykes keliwi múmkin). OR menen "Pricey Street" qálegen "Street" bar hár mehmanxananı tabar edi.
+        # Sóz sanı shegaralanǵan hám awdarmalar EXISTS penen sáykeslenedi, sol sebepli SQL uzın
+        # sorawda ósip ketpeydi (hár sózge bir join bir anonim sorawǵa database di ustap qalıwǵa múmkinshilik berdi).
         for word in self._search_words(query):
             queryset = queryset.filter(
                 Q(address_line1__icontains=word) |
@@ -475,7 +475,7 @@ class PropertySearchService:
 
     @staticmethod
     def _search_words(query):
-        """The first MAX_SEARCH_WORDS distinct words of 2+ characters (case-insensitive)."""
+        """2+ belgili birinshi MAX_SEARCH_WORDS ayrıqsha sóz (register ti esapqa almay)."""
         words = []
         for word in query.split():
             if len(word) >= 2 and word.lower() not in (seen.lower() for seen in words):
@@ -484,8 +484,8 @@ class PropertySearchService:
 
     def _apply_location_search(self, queryset, location):
         """
-        Apply location-based search: names in all three languages through the Geography refs,
-        plus the text fields (the only location unmapped properties have).
+        Jaylasıw tiykarındaǵı izlewdi qollanıw: Geography ref leri arqalı úsh tildegi atlar,
+        hám tekst maydanlar (sáykeslenbegen mehmanxanalardaǵı jalǵız jaylasıw).
         """
         return queryset.filter(
             geography_name_filter(location) |
@@ -496,16 +496,16 @@ class PropertySearchService:
 
     def _apply_geographic_search(self, queryset, lat, lng, radius_km):
         """
-        Apply geographic search using simplified bounding box approach.
+        Ápiwayılastırılǵan bounding box usılı menen geografiyalıq izlewdi qollanıw.
 
-        Args:
-            queryset: base queryset
-            lat: latitude of search center
-            lng: longitude of search center
-            radius_km: search radius in kilometers
+        Argumentler:
+            queryset: tiykarǵı queryset
+            lat: izlew orayınıń latitude ı
+            lng: izlew orayınıń longitude ı
+            radius_km: kilometrlerde izlew radiusı
         """
-        # Simple bounding box approach for cross-database compatibility
-        # Convert radius to approximate degrees (1 degree ≈ 111 km)
+        # Database ler arası sáykeslik ushın ápiwayı bounding box usılı
+        # Radiusti shama menen gradusqa ótkiziw (1 gradus ≈ 111 km)
         lat_range = radius_km / 111.0
         lng_range = radius_km / (111.0 * math.cos(math.radians(float(lat))))
 
@@ -518,15 +518,15 @@ class PropertySearchService:
 
     def _apply_price_filter(self, queryset, min_price=None, max_price=None):
         """
-        Apply price range filtering with standardized behavior.
+        Standartlastırılǵan minez benen baha aralıǵı filterin qollanıw.
 
-        Args:
-            queryset: base queryset
-            min_price: minimum price (validated)
-            max_price: maximum price (validated)
+        Argumentler:
+            queryset: tiykarǵı queryset
+            min_price: eń kem baha (tekserilgen)
+            max_price: eń kóp baha (tekserilgen)
 
-        Returns:
-            filtered queryset
+        Qaytaradı:
+            filterlengen queryset
         """
         if min_price is not None:
             queryset = queryset.filter(base_price__gte=min_price)
@@ -537,15 +537,15 @@ class PropertySearchService:
 
     def _apply_guest_filter(self, queryset, min_guests=None, max_guests=None):
         """
-        Apply guest capacity filtering with standardized behavior.
+        Standartlastırılǵan minez benen mehmanlar sıyımlılıǵı filterin qollanıw.
 
-        Args:
-            queryset: base queryset
-            min_guests: minimum number of guests (validated)
-            max_guests: maximum number of guests (validated)
+        Argumentler:
+            queryset: tiykarǵı queryset
+            min_guests: mehmanlardıń eń kem sanı (tekserilgen)
+            max_guests: mehmanlardıń eń kóp sanı (tekserilgen)
 
-        Returns:
-            filtered queryset
+        Qaytaradı:
+            filterlengen queryset
         """
         if min_guests is not None:
             queryset = queryset.filter(max_guests__gte=min_guests)
@@ -556,17 +556,17 @@ class PropertySearchService:
 
     def _apply_amenity_filter(self, queryset, amenity_ids):
         """
-        Apply amenity filtering with standardized behavior.
+        Standartlastırılǵan minez benen amenity filterin qollanıw.
 
-        Args:
-            queryset: base queryset
-            amenity_ids: list of amenity IDs (validated)
+        Argumentler:
+            queryset: tiykarǵı queryset
+            amenity_ids: amenity ID lar dizimi (tekserilgen)
 
-        Returns:
-            filtered queryset
+        Qaytaradı:
+            filterlengen queryset
         """
 
-        # Filter properties that have all specified amenities
+        # Barlıq kórsetilgen amenity i bar mehmanxanalardı filterlew
         for amenity_id in amenity_ids:
             queryset = queryset.filter(
                 property_amenities__amenity_id=amenity_id,
@@ -576,18 +576,17 @@ class PropertySearchService:
         return queryset.distinct()
 
     def _apply_property_type_filter(self, queryset, property_type_id):
-        """Apply property type filtering."""
+        """Mehmanxana túri filterin qollanıw."""
         return queryset.filter(property_type_id=property_type_id)
 
     def _apply_date_filter(self, queryset, check_in, check_out):
         """
-        Keep properties that can be booked for the whole stay: one active rate plan
-        (on an active room type) whose rate plan min/max nights allow the stay, which
-        has an open DateInventory row (price/rules) for every night from check_in up to,
-        not including, check_out, and whose room type has a physical room left every one
-        of those nights in RoomInventory -- the shared count since 3.3 (audit #31); a
-        night with no RoomInventory row is unmanaged and open at the room type's full
-        total_rooms. The same rules as quote_stay.
+        Pútkil turıw ushın bronlanıwı múmkin mehmanxanalardı qaldırıw: rate plan nıń eń kem/eń kóp túnleri turıwǵa
+        ruxsat beretuǵın bir aktiv rate plan (aktiv xona túrinde), check_in nen check_out qa shekem (kirmeydi)
+        hár tún ushın ashıq DateInventory qatarı (baha/qaǵıydalar) bar, hám xona túrinde sol túnlerdiń hárqaysısında
+        RoomInventory de fizikalıq xona qalǵan -- 3.3 ten beri ortaq san (audit #31); RoomInventory
+        qatarı joq tún basqarılmaydı hám xona túriniń tolıq total_rooms ı menen ashıq.
+        quote_stay penen birdey qaǵıydalar.
         """
         from properties.models import DateInventory, RatePlan, RoomInventory
 
@@ -608,8 +607,8 @@ class PropertySearchService:
             Q(maximum_stay__isnull=True) | Q(maximum_stay__gte=nights),
         ).order_by().values('rate_plan').annotate(n=Count('id')).values('n')
 
-        # Nights where the room type's shared RoomInventory row exists and is sold out
-        # or closed. A missing row is unmanaged (open), so it never counts here.
+        # Xona túriniń ortaq RoomInventory qatarı bar hám satılıp bolǵan yamasa jabıq túnler.
+        # Joq qatar basqarılmaydı (ashıq), sol sebepli bul jerde hesh qashan esaplanbaydı.
         room_short_nights = RoomInventory.objects.filter(
             room_type=OuterRef('room_type'),
             date__gte=check_in,
@@ -640,18 +639,18 @@ class PropertySearchService:
 
     def _apply_sorting(self, queryset, sort_method, search_params):
         """
-        Apply sorting to search results with standardized behavior.
+        Izlew nátiyjelerine standartlastırılǵan minez benen tártiplewdi qollanıw.
 
-        Args:
-            queryset: base queryset
-            sort_method: validated sorting method
-            search_params: search parameters for context
+        Argumentler:
+            queryset: tiykarǵı queryset
+            sort_method: tekserilgen tártiplew usılı
+            search_params: kontekst ushın izlew parametrleri
 
-        Returns:
-            sorted queryset
+        Qaytaradı:
+            tártiplengen queryset
         """
         if sort_method == 'relevance':
-            # Sort by search rank if available, otherwise by created_at
+            # Bar bolsa izlew rankı boyınsha, bolmasa created_at boyınsha tártiplew
             if hasattr(queryset.model, 'rank'):
                 return queryset.order_by('-rank', '-created_at')
             return queryset.order_by('-created_at')
@@ -663,7 +662,7 @@ class PropertySearchService:
             return queryset.order_by('-base_price', '-created_at')
 
         elif sort_method == 'rating':
-            # Highest average first, unrated last; more reviews wins a tie
+            # Eń joqarı ortasha birinshi, bahalanbaǵanı aqırǵı; kóp sharh teń jaǵdayda jeńedi
             return queryset.order_by(
                 F('average_rating').desc(nulls_last=True), '-review_count', '-created_at'
             )
@@ -674,32 +673,32 @@ class PropertySearchService:
             )
 
         elif sort_method == 'distance':
-            # Sort by distance from search center (simplified approach)
-            # For now, sort by created_at as proper distance sorting requires complex calculation
+            # Izlew orayınan qashıqlıq boyınsha tártiplew (ápiwayılastırılǵan usıl)
+            # Házirshe created_at boyınsha tártiplew, sebebi haqıyqıy qashıqlıq tártiplewi quramalı esaplawdı talap etedi
             return queryset.order_by('-created_at')
 
-        # Default sorting
+        # Ádetdegi tártiplew
         return queryset.order_by('-created_at')
 
     def get_search_suggestions(self, query, limit=5):
         """
-        Get search suggestions for autocomplete.
+        Avtotolıqtırıw ushın izlew usınısların alıw.
 
-        Args:
-            query: partial search query
-            limit: maximum number of suggestions
+        Argumentler:
+            query: bólekleyin izlew sorawı
+            limit: usınıslardıń eń kóp sanı
 
-        Returns:
-            list of suggestion strings
+        Qaytaradı:
+            usınıs qatarları dizimi
         """
         from properties.models import Property
 
         if not query or len(query) < 2:
             return []
 
-        # Places (region, country) that have public hotels, named in whichever language matched
-        # what was typed; so the suggestion finds the same hotels when it is searched for.
-        # Properties never mapped to the dictionary fall back to their text city / country.
+        # Ashıq mehmanxanaları bar orınlar (region, mámleket), terilgenge sáykes kelgen tilde atalǵan;
+        # sol sebepli usınıs izlengende birdey mehmanxanalardı tabadı.
+        # Sózlikke hesh qashan sáykeslenbegen mehmanxanalar óz tekst qala / mámleketine qaytadı.
         public = Property.objects.filter(is_active=True, is_deleted=False, status='active')
         suggestions = []
 

@@ -1,5 +1,5 @@
 """
-Request body parsers shared across apps.
+App lar ortaq paydalanatuǵın request body parser leri.
 """
 from django.utils.translation import gettext as _
 from rest_framework.exceptions import ParseError
@@ -7,10 +7,10 @@ from rest_framework.parsers import JSONParser
 
 
 class SafeJSONParser(JSONParser):
-    """JSONParser that answers 400, not 500, to JSON nested deeper than Python can read.
+    """Python oqıy alatuǵınnan tereń oralǵan JSON ǵa 500 emes 400 menen juwap beretuǵın JSONParser.
 
-    `json.loads` raises RecursionError (not ValueError) on a body such as 20000 opening brackets, which DRF does not catch.
-    A few kilobytes from an anonymous caller would otherwise reach the error log as a server error.
+    `json.loads` 20000 ashıq jaqshası bar denede RecursionError (ValueError emes) kóteredi, DRF onı tutpaydı.
+    Anonim shaqırıwshıdan kelgen bir neshe kilobayt basqasha server qátesi retinde qátelik log ına túsedi.
     """
 
     def parse(self, stream, media_type=None, parser_context=None):

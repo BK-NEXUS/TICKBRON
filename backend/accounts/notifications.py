@@ -1,12 +1,12 @@
 """
-R12 1d: in-app notifications with a machine-readable code.
+R12 1d: mashinanıń oqıytuǵın kodı bar ilova ishindegi bildiriwler.
 
-`notify(user, code, params, booking=None)` stores the code, the params and an English
-fallback title/message. The frontend renders its own uz/ru/en text from `code` + `params`.
+`notify(user, code, params, booking=None)` kodtı, params ti hám inglizsha zapas
+title/message di saqlaydı. Frontend óziniń uz/ru/en tekstin `code` + `params` ten jasaydı.
 
-`params` hold ids, amounts, currencies, percents and dates only, never personal data
-(names, emails, phones, free text): every key must be known and every value must pass the
-validator of its key, otherwise `NotificationParamsError` is raised and nothing is stored.
+`params` ishinde tek id, summa, valyuta, procent hám sana boladı, hesh qashan jeke maǵlıwmat
+(at, e-mail, telefon, erkin tekst) bolmaydı: hár kilt belgili bolıwı kerek, hár mánis óz kiltiniń
+validator ınan ótiwi kerek, bolmasa `NotificationParamsError` kóteriledi hám hesh nárse saqlanbaydı.
 """
 import re
 from datetime import date
@@ -73,7 +73,7 @@ def _date(value):
     raise NotificationParamsError('must be an ISO date')
 
 
-# The only keys a notification may carry. Anything else (email, phone, name, comment ...) is refused.
+# Bildiriwde bolıwı múmkin bolǵan jalǵız kilt ler. Basqa hámme nárse (email, phone, name, comment ...) qabıllanbaydı.
 PARAM_VALIDATORS = {
     'booking_id': _id,
     'report_id': _id,
@@ -91,7 +91,7 @@ PARAM_VALIDATORS = {
     'until_date': _date,
 }
 
-# code -> notification type, required params and the English fallback text (str.format on params).
+# code -> bildiriw túri, májbúriy params hám inglizsha zapas tekst (params ke str.format).
 NOTIFICATION_CODES = {
     'no_show_report_approved': {
         'type': 'booking',
@@ -238,7 +238,7 @@ def clean_params(code, params):
 
 
 def notify(user, code, params, booking=None):
-    """Create one in-app notification for `user` with `code` + `params` and an English fallback."""
+    """`user` ushın `code` + `params` hám inglizsha zapas tekst penen bir ilova ishindegi bildiriw jasaydı."""
     if code not in NOTIFICATION_CODES:
         raise ValueError(f'unknown notification code: {code}')
     spec = NOTIFICATION_CODES[code]

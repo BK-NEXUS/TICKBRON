@@ -1,10 +1,10 @@
 """
-Add the standard property types (hotel, hostel, guest house, apartment, resort).
+Standart mehmanxana túrlerin qosıw (hotel, hostel, guest house, apartment, resort).
 
-A new server starts with none, and the owner's "add a hotel" form needs one. Safe to run again: a type
-that already exists (same slug) is left as it is.
+Jańa server olarsız baslanadı, hám iyeniń "mehmanxana qosıw" formasına biri kerek. Qayta isletiw qáwipsiz: bar
+túr (birdey slug) ózgerissiz qaladı.
 
-Usage: python manage.py seed_property_types
+Paydalanıw: python manage.py seed_property_types
 """
 from django.core.management.base import BaseCommand
 

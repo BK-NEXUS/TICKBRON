@@ -3,7 +3,7 @@ from celery import shared_task
 
 @shared_task
 def end_expired_promotions():
-    """Scheduled at 00:10 Asia/Tashkent (CELERY_BEAT_SCHEDULE): tidy promotion statuses for the new business day."""
+    """Asia/Tashkent 00:10 de rejelestirilgen (CELERY_BEAT_SCHEDULE): jańa is kúni ushın reklama statuslarin tazalaw."""
     from promotions.service import tidy_statuses
 
     return tidy_statuses()
@@ -11,7 +11,8 @@ def end_expired_promotions():
 
 @shared_task
 def run_ad_renewals():
-    """Scheduled at 00:05 Asia/Tashkent, before the 00:10 tidy: open the renewal questions, remove overdue ads, remind owners."""
+    """Asia/Tashkent 00:05 te rejelestirilgen, 00:10 tazalawdan aldın: jańalaw sorawların ashıw, múddeti ótken reklamalardı
+    alıp taslaw, iyelerge eskertiw."""
     from promotions.renewals import run_daily
 
     return run_daily()

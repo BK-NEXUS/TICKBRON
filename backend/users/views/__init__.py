@@ -1,8 +1,8 @@
 """
-Views for user authentication and account management.
+Paydalanıwshı autentifikaciyası hám akkauntti basqarıw ushın view ler.
 
-auth: sign-up, login, logout, CSRF token. profile: the user's own account.
-password: reset by e-mail link and change.
+auth: dizimnen ótiw, kirisiw, shıǵıw, CSRF token. profile: paydalanıwshınıń óz akkaunt ı.
+password: e-mail silteme arqalı tiklew hám ózgertiw.
 """
 from users.views.auth import csrf_token, login_view, logout_view, register
 from users.views.password import change_password, confirm_password_reset, request_password_reset

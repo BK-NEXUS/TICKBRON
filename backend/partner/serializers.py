@@ -1,8 +1,8 @@
 """
-Serializers for partner API endpoints.
+Partner API endpoint leri ushın serializer ler.
 
-This module contains serializers for property, room, rate, and availability
-management scoped to hotel-owner accounts.
+Bul modul mehmanxana iyesi akkaunt larına shekemlengen mehmanxana, xona, baha hám bos orınlardı
+basqarıw serializer lerin óz ishine aladı.
 """
 from collections.abc import Mapping
 import os
@@ -30,11 +30,11 @@ from properties.models import (
 )
 
 
-# Upload limits: 40 megapixels per photo, 50 photos per property, 20 per room type
+# Júklew shekleri: hár súwret 40 megapiksel, hár mehmanxana 50 súwret, hár xona túri 20
 MAX_PHOTOS_PER_PROPERTY = 50
 MAX_PHOTOS_PER_ROOM_TYPE = 20
 
-# Sanity limits for the owner forms (a typing slip must not make a room that can never be booked)
+# Iye formaları ushın aqılǵa muwapıq shekler (jazıwdaǵı qátelik hesh qashan bronlap bolmaytuǵın xona jaratpawı kerek)
 MIN_PRICE = Decimal('0.01')
 MAX_BEDROOMS = 50
 MAX_BATHROOMS = 20
@@ -49,16 +49,16 @@ PROPERTY_LIMITS = {
 
 
 def _check_price_unit(currency, amount, field):
-    """UZS prices are whole so'm (R6)."""
+    """UZS bahaları pútin som (R6)."""
     if currency == 'UZS' and amount is not None and not is_whole_som(amount):
         raise serializers.ValidationError({field: _("UZS prices must be whole so'm.")})
 
 
 class PropertyCurrencyMixin:
     """
-    R6: a property is priced in USD or UZS. Default: its country's currency when supported
-    (Uzbekistan -> UZS), else USD. It cannot change once the property has room types,
-    because every room type, rate plan and nightly price uses it.
+    R6: mehmanxana USD yamasa UZS de bahalanadı. Ádetde: qollap-quwatlansa mámleketiniń valyutası
+    (Ózbekstan -> UZS), bolmasa USD. Mehmanxanada xona túrleri payda bolǵannan keyin ózgertip bolmaydı,
+    sebebi hár xona túri, rate plan hám túngi baha onı paydalanadı.
     """
 
     def validate_currency(self, value):
@@ -84,8 +84,8 @@ class PropertyCurrencyMixin:
 
 class ChildCurrencyMixin:
     """
-    R6: room types, rate plans and nightly prices use their property's currency. Omitted means
-    the property's; anything else is rejected. `price_field` must be whole so'm for UZS.
+    R6: xona túrleri, rate plan lar hám túngi bahalar óz mehmanxanasınıń valyutasın paydalanadı. Ótkizip jiberilse
+    mehmanxananıń valyutası; basqası biykar etiledi. UZS ushın `price_field` pútin som bolıwı kerek.
     """
     price_field = 'base_price'
 
@@ -107,15 +107,15 @@ class ChildCurrencyMixin:
 
 class SlugFromNameMixin:
     """
-    The owner types a name only. A missing slug is made from the name and kept unique inside
-    the parent (hotel for a room type, room type for a rate plan): deluxe-suite, deluxe-suite-2.
-    A slug the client sends is used as it is.
+    Iye tek at jazadı. Joq slug attan jasaladı hám ata-ana ishinde unikal saqlanadı
+    (xona túri ushın mehmanxana, rate plan ushın xona túri): deluxe-suite, deluxe-suite-2.
+    Klient jibergen slug sol qalpında paydalanıladı.
     """
     slug_parent_field = None
     slug_fallback = 'item'
 
     def to_internal_value(self, data):
-        # anything that is not a JSON object goes to the base class, which answers 400 "Expected a dictionary"
+        # JSON obyekti bolmaǵan hár nárse tiykarǵı klasqa baradı, ol 400 "Expected a dictionary" menen juwap beredi
         if isinstance(data, Mapping) and self.instance is None and not str(data.get('slug') or '').strip():
             data = data.copy()
             data['slug'] = self._free_slug(data)
@@ -137,7 +137,7 @@ class SlugFromNameMixin:
 
 
 class AssignedPlaceMixin:
-    """An owner whose account has a place (set by the super admin) creates hotels there and cannot move them."""
+    """Akkauntında orını bar (super admin belgilegen) iye mehmanxanalardı sol jerde jaratadı hám kóshire almaydı."""
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -160,8 +160,8 @@ HOTEL_TEXT_LANGUAGES = ('uz', 'ru', 'en')
     'type': 'object', 'properties': {'name': {'type': 'string'}, 'description': {'type': 'string'}}}})
 class HotelTextsField(serializers.Field):
     """
-    {language: {name, description}} of a hotel (uz / ru / en). Read: the saved texts. Write: the
-    languages sent are replaced, the others stay; every language sent needs a name.
+    Mehmanxananıń {til: {name, description}} i (uz / ru / en). Oqıw: saqlanǵan tekstler. Jazıw:
+    jiberilgen tiller almastırıladı, qalǵanları qaladı; jiberilgen hár tilge at kerek.
     """
     default_error_messages = {
         'not_a_map': _lazy('Send an object like {{"en": {{"name": "Hotel", "description": "..."}}}}.'),
@@ -212,12 +212,12 @@ def save_hotel_texts(prop, texts):
 
 class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
-    Serializer for property management by hotel-owners.
+    Mehmanxana iyeleri tárepinen mehmanxanalardı basqarıw ushın serializer.
 
-    Limited to properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalar menen shekemlengen.
     """
     full_address = serializers.SerializerMethodField()
-    # Hotel name for the partner cards: English translation, else any, else the address
+    # Partner kartaları ushın mehmanxana atı: inglizsha awdarma, bolmasa qálegen, bolmasa mánzil
     name = serializers.SerializerMethodField()
     translations = HotelTextsField(required=False)
 
@@ -231,13 +231,13 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
             'has_elevator', 'has_parking', 'has_wifi', 'has_ac', 'has_heating',
             'full_address', 'created_at', 'updated_at'
         ]
-        # status is set by admin moderation (approve/suspend), never by the owner. The text location
-        # (city / state / country) is derived from the Geography refs (English names) and read-only.
+        # status admin moderation ı (tastıyıqlaw/toqtatıw) arqalı belgilenedi, hesh qashan iye tárepinen emes. Tekst jaylasıw
+        # (city / state / country) Geography ref leri (inglizsha atlar) nan alınadı hám tek oqıw.
         read_only_fields = ['id', 'owner', 'status', 'city', 'state', 'country', 'created_at', 'updated_at']
         extra_kwargs = PROPERTY_LIMITS
 
     def get_full_address(self, obj) -> str:
-        """Get the full address as a string."""
+        """Tolıq mánzildi qatar retinde alıw."""
         return obj.get_full_address()
 
     def get_name(self, obj) -> str:
@@ -254,9 +254,9 @@ class PartnerPropertySerializer(AssignedPlaceMixin, PropertyCurrencyMixin, Geogr
 
 class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin, GeographyRefsMixin, serializers.ModelSerializer):
     """
-    Serializer for creating new properties by hotel-owners.
+    Mehmanxana iyeleri jańa mehmanxanalar jaratıwı ushın serializer.
 
-    Owner is automatically set to the authenticated user.
+    Iye avtomat túrde kirgen paydalanıwshı etip belgilenedi.
     """
     translations = HotelTextsField()
 
@@ -273,7 +273,7 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
 
     @transaction.atomic
     def create(self, validated_data):
-        """Create property with owner set to authenticated user."""
+        """Iyesi kirgen paydalanıwshı bolǵan mehmanxana jaratıw."""
         texts = validated_data.pop('translations')
         validated_data['owner'] = self.context['request'].user
         prop = super().create(validated_data)
@@ -283,9 +283,9 @@ class PartnerPropertyCreateSerializer(AssignedPlaceMixin, PropertyCurrencyMixin,
 
 class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
-    Serializer for room type management by hotel-owners.
+    Mehmanxana iyeleri xona túrlerin basqarıw ushın serializer.
 
-    Limited to room types in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı xona túrleri menen shekemlengen.
     """
     slug_parent_field = 'property'
     slug_fallback = 'room'
@@ -312,7 +312,7 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         }
 
     def _photos(self, obj):
-        # The list view prefetches `live_photos`; a single room type reads them here
+        # Dizim view si `live_photos` ti aldınan júkleydi; jeke xona túri olardı usı jerde oqıydı
         if hasattr(obj, 'live_photos'):
             return obj.live_photos
         return list(obj.photos.filter(is_deleted=False, is_active=True).order_by('display_order', 'id'))
@@ -340,7 +340,7 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         return attrs
 
     def validate_property(self, value):
-        """Ensure the property belongs to the authenticated hotel-owner."""
+        """Mehmanxananıń kirgen mehmanxana iyesine tiyisli ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.owner != request.user:
@@ -353,9 +353,9 @@ class PartnerRoomTypeSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
 @extend_schema_field({'type': 'object', 'additionalProperties': {'type': 'string'}})
 class PriceMapField(serializers.Field):
     """
-    R16: {currency: price} of a rate plan: the main price (`base_price`, the property's currency)
-    and the owner's own price in each other currency. Read: what the owner entered. Write: a map
-    whose keys are supported currencies and whose amounts fit the currency's smallest unit.
+    R16: rate plan nıń {valyuta: baha} ı: tiykarǵı baha (`base_price`, mehmanxananıń valyutası)
+    hám iyeniń basqa hár valyutadaǵı óz bahası. Oqıw: iye kirgizgeni. Jazıw: kilt leri qollap-quwatlanatuǵın
+    valyutalar hám summaları valyutanıń eń kishi birligine sáykes keletuǵın map.
     """
     default_error_messages = {'not_a_map': _lazy('Send an object like {{"USD": "65.00", "UZS": "800000"}}.')}
 
@@ -394,9 +394,9 @@ class PriceMapField(serializers.Field):
 
 class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serializers.ModelSerializer):
     """
-    Serializer for rate plan management by hotel-owners.
+    Mehmanxana iyeleri rate plan larǵı basqarıw ushın serializer.
 
-    Limited to rate plans in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı rate plan lar menen shekemlengen.
     """
     slug_parent_field = 'room_type'
     slug_fallback = 'rate'
@@ -415,7 +415,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
             'description': {'max_length': 2000, 'validators': [validate_free_text]},
             'cancellation_policy': {'max_length': 2000, 'validators': [validate_free_text]},
             'slug': {'required': False},
-            # Optional when `prices` carries the main price
+            # `prices` tiykarǵı bahanı alıp júrse ıqtıyarıy
             'base_price': {'required': False, 'min_value': MIN_PRICE},
             'min_nights': {'max_value': MAX_STAY_NIGHTS},
             'max_nights': {'max_value': MAX_STAY_NIGHTS},
@@ -426,7 +426,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
         return room_type.property if room_type else None
 
     def validate_room_type(self, value):
-        """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
+        """Xona túriniń kirgen mehmanxana iyesine tiyisli mehmanxanaǵa baylanıslı ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
@@ -465,7 +465,7 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
             raise serializers.ValidationError({'max_nights': _('Cannot be less than the minimum nights.')})
 
     def _check_prices_present_when_required(self, prop):
-        """With RATE_PLAN_PRICES_REQUIRED a plan is never saved without the owner's price in every currency."""
+        """RATE_PLAN_PRICES_REQUIRED menen plan hár valyutada iyeniń bahasız hesh qashan saqlanbaydı."""
         if not settings.RATE_PLAN_PRICES_REQUIRED:
             return
         known = set() if self.instance is None else set(self.instance.prices.values_list('currency', flat=True))
@@ -500,11 +500,11 @@ class PartnerRatePlanSerializer(SlugFromNameMixin, ChildCurrencyMixin, serialize
 
 class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerializer):
     """
-    Serializer for date inventory management by hotel-owners.
+    Mehmanxana iyeleri bos orınlar (date inventory) basqarıw ushın serializer.
 
-    Limited to date inventory in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı date inventory menen shekemlengen.
     """
-    # Bookings are counted on the room type's shared RoomInventory, not on this rate plan's row
+    # Bronlar usı rate plan nıń qatarında emes, xona túriniń ortaq RoomInventory sında esaplanadı
     booked_rooms = serializers.SerializerMethodField()
     remaining_rooms = serializers.SerializerMethodField()
 
@@ -536,7 +536,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         return rate_plan.room_type.property if rate_plan else None
 
     def validate_rate_plan(self, value):
-        """Ensure the rate plan belongs to a property owned by the authenticated hotel-owner."""
+        """Rate plan nıń kirgen mehmanxana iyesine tiyisli mehmanxanaǵa baylanıslı ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.room_type.property.owner != request.user:
@@ -546,7 +546,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
         return value
 
     def validate_date(self, value):
-        """A new or moved night cannot be in the past; a past night keeps being editable where it is."""
+        """Jańa yamasa kóshirilgen tún ótken waqıtta bola almaydı; ótken tún óz ornında ózgertiliwin dawam etedi."""
         moved = self.instance is None or value != self.instance.date
         if moved and value < business_today():
             raise serializers.ValidationError(_('The date cannot be in the past.'))
@@ -570,11 +570,11 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
 
 class PartnerRoomInventorySerializer(serializers.ModelSerializer):
     """
-    Serializer for room inventory (RoomInventory, audit #31) management by hotel-owners.
+    Mehmanxana iyeleri xona inventory sın (RoomInventory, audit #31) basqarıw ushın serializer.
 
-    This is the room type's real, shared physical room count -- the booking engine locks
-    and updates it. DateInventory (PartnerDateInventorySerializer) still holds the price
-    and each rate plan's own rules.
+    Bul xona túriniń haqıyqıy, ortaq fizikalıq xona sanı -- bron sisteması onı qulıplaydı
+    hám jańalaydı. DateInventory (PartnerDateInventorySerializer) ele baha hám
+    hár rate plan nıń óz qaǵıydaların saqlaydı.
     """
     remaining_rooms = serializers.IntegerField(read_only=True)
 
@@ -584,7 +584,7 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'booked_rooms', 'remaining_rooms']
 
     def validate_room_type(self, value):
-        """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
+        """Xona túriniń kirgen mehmanxana iyesine tiyisli mehmanxanaǵa baylanıslı ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
@@ -595,9 +595,9 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Mirror RoomInventory.clean(): available_rooms cannot exceed the room type's
-        total_rooms. DRF's create/update flow never calls full_clean(), so this has to
-        be enforced here too.
+        RoomInventory.clean() di kóshiriw: available_rooms xona túriniń
+        total_rooms ınan asa almaydı. DRF tiń create/update aǵımı full_clean() di hesh qashan shaqırmaydı, sol sebepli bul
+        usı jerde de májbúrlenwi kerek.
         """
         room_type = data.get('room_type') or (self.instance.room_type if self.instance else None)
         available_rooms = data.get(
@@ -613,8 +613,8 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
 
 class PartnerRoomInventoryBulkSerializer(serializers.Serializer):
     """
-    Request body for POST /partner/room-inventory/bulk/ (3.6 calendar date-range edit):
-    sets available_rooms and/or is_available for every night in [date_from, date_to).
+    POST /partner/room-inventory/bulk/ ushın request body (3.6 kalendar sana aralıǵın ózgertiw):
+    [date_from, date_to) degi hár tún ushın available_rooms hám/yamasa is_available di belgileydi.
     """
     room_type = serializers.PrimaryKeyRelatedField(queryset=RoomType.objects.filter(is_deleted=False))
     date_from = serializers.DateField()
@@ -634,8 +634,8 @@ class PartnerRoomInventoryBulkSerializer(serializers.Serializer):
 
 class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
     """
-    Request body for POST /partner/inventory/bulk-price/ (3.7 bulk price edit): sets the
-    nightly price for one rate plan over every night in [date_from, date_to).
+    POST /partner/inventory/bulk-price/ ushın request body (3.7 kóp bahanı ózgertiw): bir rate plan ushın
+    [date_from, date_to) degi hár tún ushın túngi bahanı belgileydi.
     """
     rate_plan = serializers.PrimaryKeyRelatedField(queryset=RatePlan.objects.filter(is_deleted=False))
     date_from = serializers.DateField()
@@ -658,11 +658,11 @@ class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
 
 class PartnerBlockSerializer(serializers.ModelSerializer):
     """
-    Serializer for external-booking blocks (RoomBlock, 3.5) by hotel-owners.
+    Mehmanxana iyeleri tárepinen sırtqı bron bloklarınıń (RoomBlock, 3.5) serializer i.
 
-    Creating a block locks and decrements the affected RoomInventory rows
-    (RoomBlock.create_block); it cannot push a night's room count below what is already
-    booked on TICKBRON. Deleting a block restores them (release()).
+    Blok jaratıw tásirlengen RoomInventory qatarların qulıplaydı hám kemeytedi
+    (RoomBlock.create_block); ol túnniń xona sanın TICKBRON da aldınan
+    bronlanǵannan tómen túsire almaydı. Blokti óshiriw olardı qaytaradı (release()).
     """
     class Meta:
         model = RoomBlock
@@ -670,7 +670,7 @@ class PartnerBlockSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by', 'created_at']
 
     def validate_room_type(self, value):
-        """Ensure the room type belongs to a property owned by the authenticated hotel-owner."""
+        """Xona túriniń kirgen mehmanxana iyesine tiyisli mehmanxanaǵa baylanıslı ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.property.owner != request.user:
@@ -696,22 +696,23 @@ class PartnerBlockSerializer(serializers.ModelSerializer):
 
 class PartnerPhotoSerializer(serializers.ModelSerializer):
     """
-    What property photos and room photos share, for hotel-owners: the file rules, the cover rules, the end of the
-    line for a new photo and the random stored file name. A subclass names the model and, in `parent_field`, the
-    field that points at the hotel or room type the photo belongs to.
+    Mehmanxana iyeleri ushın mehmanxana súwretleri menen xona súwretleri ortaq paydalanatuǵın nárse: fayl qaǵıydaları, muqaba
+    qaǵıydaları,
+    jańa súwrettiń izbe-iz aqırı hám tosınarlıq saqlanǵan fayl atı. Subclass modeldi ataydı hám `parent_field` de
+    súwret tiyisli mehmanxanaǵa yamasa xona túrine bar maydandı kórsetedi.
     """
     parent_field = None
-    rule = None  # the size rule of this kind of photo (common/image_rules.py)
+    rule = None  # bul súwret túriniń ólshem qaǵıydası (common/image_rules.py)
     photo_url = serializers.SerializerMethodField()
 
     def get_photo_url(self, obj):
-        """Get the absolute URL for the photo."""
+        """Súwret ushın absolyut URL di alıw."""
         if obj.photo:
             return obj.photo.url
         return None
 
     def validate_is_primary(self, value):
-        # A hotel or room type always keeps one cover; it moves by making another photo the cover.
+        # Mehmanxana yamasa xona túri hárdayım bir muqabanı saqlaydı; ol basqa súwretti muqaba etip kóshedi.
         if self.instance is not None and not value:
             raise serializers.ValidationError(_('Make another photo the cover instead.'))
         return value
@@ -721,7 +722,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
         validated_data['display_order'] = (photos.aggregate(top=Max('display_order'))['top'] or 0) + 1
         if not photos.filter(is_primary=True).exists():
             validated_data['is_primary'] = True
-        # The client's file name is never used: stored paths are public and must not be guessable.
+        # Klienttiń fayl atı hesh qashan paydalanılmaydı: saqlanǵan jollar ashıq hám boljawǵa bolmaytuǵın bolıwı kerek.
         upload = validated_data['photo'] = shrink_upload(validated_data['photo'], self.rule.max_side)
         extension = os.path.splitext(upload.name)[1].lower()
         upload.name = f'{uuid.uuid4().hex}{extension}'
@@ -733,8 +734,9 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
 
     def validate_photo(self, value):
         """
-        Enforce the picture rules here: DRF's create/update flow never calls full_clean(), and the model's own check
-        knows nothing about the sizes the site shows well.
+        Súwret qaǵıydaların usı jerde májbúrlew: DRF tiń create/update aǵımı full_clean() di hesh qashan shaqırmaydı, hám
+        modeldiń óz tekseriwi
+        saytta jaqsı kórinetuǵın ólshemler haqqında hesh nárse bilmeydi.
         """
         error_message = image_upload_error(value, self.rule)
         if error_message:
@@ -743,7 +745,7 @@ class PartnerPhotoSerializer(serializers.ModelSerializer):
 
 
 class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
-    """Serializer for property photo management by hotel-owners (only photos of their own properties)."""
+    """Mehmanxana iyeleri tárepinen mehmanxana súwretlerin basqarıw ushın serializer (tek óz mehmanxanalarınıń súwretleri)."""
     rule = HOTEL_PHOTO
     parent_field = 'property'
 
@@ -756,7 +758,7 @@ class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
         read_only_fields = ['id']
 
     def validate_property(self, value):
-        """Ensure the property belongs to the authenticated hotel-owner."""
+        """Mehmanxananıń kirgen mehmanxana iyesine tiyisli ekenin támiyinlew."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             if value.owner != request.user:
@@ -767,7 +769,7 @@ class PartnerPropertyPhotoSerializer(PartnerPhotoSerializer):
 
 
 class PartnerRoomPhotoSerializer(PartnerPhotoSerializer):
-    """Serializer for room photo management by hotel-owners (the view only hands over their own room types)."""
+    """Mehmanxana iyeleri tárepinen xona súwretlerin basqarıw ushın serializer (view tek olardıń óz xona túrlerin beredi)."""
     rule = ROOM_PHOTO
     parent_field = 'room_type'
 

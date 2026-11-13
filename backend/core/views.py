@@ -1,2 +1,2 @@
 
-# Create your views here.
+# View lerińizdi usı jerde jaratıń.

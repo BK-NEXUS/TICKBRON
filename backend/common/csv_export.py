@@ -1,13 +1,14 @@
 """
-CSV and Excel export for the Status sections (R12 phase 2): `?export=csv` or `?export=xlsx` on a
-list endpoint (`export_response` picks the format; any other value gives the normal JSON).
+Status bólimleri ushın CSV hám Excel eksport (R12 2-basqısh): dizim endpoint inde `?export=csv` yamasa `?export=xlsx`
+(`export_response` formattı tańlaydı; basqa mánis ádettegi JSON beredi).
 
-UTF-8 with a BOM (Excel opens Cyrillic and Uzbek text correctly), streamed, at most
-CSV_EXPORT_MAX_ROWS data rows followed by a final "truncated" line when there were more.
-Cells that a spreadsheet would run as a formula (starting with = + - @, tab or CR) get a
-leading apostrophe; in Excel files every text is written as text, so nothing runs as a formula.
-Every export is written to the admin access log (`export_csv`, export name, row count and, for
-Excel, `format: xlsx`).
+BOM menen UTF-8 (Excel Kirill hám ózbek tekstin durıs ashadı), aǵım menen, eń kóbi
+CSV_EXPORT_MAX_ROWS maǵlıwmat qatarı, kóbi bolsa aqırında "truncated" qatarı.
+Elektron kestede formula retinde isleytuǵın (= + - @, tab yamasa CR den baslanatuǵın) kataklar
+aldına apostrof alıp turadı; Excel fayllarında hár tekst tekst retinde jazıladı, sol sebepli hesh nárse formula bolıp
+islemeydi.
+Hár eksport admin kirisiw logına jazıladı (`export_csv`, eksport atı, qatar sanı hám Excel
+ushın `format: xlsx`).
 """
 import csv
 import io
@@ -27,7 +28,7 @@ XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 def export_format(request):
-    """'csv', 'xlsx' or None."""
+    """'csv', 'xlsx' yamasa None."""
     value = (request.query_params.get('export') or '').strip().lower()
     return value if value in ('csv', 'xlsx') else None
 
@@ -56,9 +57,8 @@ class _Echo:
 
 def export_response(request, name, header, rows):
     """
-    CSV or Excel file (per `?export=`) with `header` and up to max_rows() of `rows` (an iterable of
-    lists). Records AdminAccessLog `export_csv` with {export: name, rows: n} (+ format for Excel)
-    before sending.
+    `?export=` ke qarap CSV yamasa Excel fayl, `header` hám max_rows() ke shekem `rows` (list lerdiń iterable ı) menen.
+    Jiberiwden aldın AdminAccessLog `export_csv` di {export: name, rows: n} (+ Excel ushın format) menen jazadı.
     """
     from admin_panel.models import AdminAccessLog
 

@@ -1,8 +1,8 @@
 """
-Views for partner API endpoints.
+Partner API endpoint leri ushın view ler.
 
-This module contains views for property, room, rate, and availability
-management scoped to hotel-owner accounts.
+Bul modul mehmanxana iyesi akkaunt larına shekemlengen mehmanxana, xona, baha hám bos orınlardı
+basqarıw view lerin óz ishine aladı.
 """
 from common.alphabet import hotels_with_letter, letter_from
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -39,19 +39,19 @@ from django.utils.translation import gettext as _
 
 class IsHotelOwner(IsAuthenticated):
     """
-    Custom permission to ensure user is a hotel-owner.
+    Paydalanıwshınıń mehmanxana iyesi ekenin támiyinleytuǵın ruxsat.
 
-    Checks if the authenticated user has the hotel-owner role or staff status.
+    Kirgen paydalanıwshıda mehmanxana iyesi roli yamasa staff statusı barlıǵın tekseredi.
     """
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
 
-        # Allow staff users (super-admin and admin)
+        # Staff paydalanıwshılarına ruxsat beriw (super-admin hám admin)
         if request.user.is_staff:
             return True
 
-        # Check if user has hotel-owner role
+        # Paydalanıwshıda mehmanxana iyesi roli barlıǵın tekseriw
         if request.user.role and request.user.role.name == 'hotel-owner':
             return True
 
@@ -60,8 +60,9 @@ class IsHotelOwner(IsAuthenticated):
 
 class SoftDeleteDestroyMixin:
     """
-    DELETE hides the record instead of erasing it. Bookings keep pointing at the property, room type and
-    rate plan they were made for (PROTECT), so a real delete would be a 500 or would lose the hotel's data.
+    DELETE jazbanı óshirmey, jasıradı. Bronlar óz mehmanxanasına, xona túrine hám
+    rate plan ına (PROTECT) baylanıp qaladı, sol sebepli haqıyqıy óshiriw 500 bolar edi yamasa mehmanxana maǵlıwmatın
+    joǵaltar edi.
     """
 
     def perform_destroy(self, instance):
@@ -69,21 +70,21 @@ class SoftDeleteDestroyMixin:
 
 
 class PartnerAPIRootView(routers.APIRootView):
-    """The router's endpoint index; the default one is open to any logged-in user."""
+    """Router diń endpoint dizimi; ádetdegisi kirgen qálegen paydalanıwshıǵa ashıq."""
     permission_classes = [IsHotelOwner]
 
 
 class PartnerPropertyViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
-    ViewSet for property management by hotel-owners.
+    Mehmanxana iyeleri mehmanxanalardı basqarıw ushın ViewSet.
 
-    Scoped to properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalarǵa shekemlengen.
     """
     permission_classes = [IsHotelOwner]
 
     def get_queryset(self):
-        """Filter queryset to properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalarǵa shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         properties = Property.objects.filter(
             owner=self.request.user,
@@ -92,28 +93,28 @@ class PartnerPropertyViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
         return hotels_with_letter(properties, letter_from(self.request))
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on action."""
+        """Háreketke qarap tiyisli serializer di qaytaradı."""
         if self.action == 'create':
             return PartnerPropertyCreateSerializer
         return PartnerPropertySerializer
 
     def perform_create(self, serializer):
-        """Ensure owner is set to authenticated user."""
+        """Iyeniń kirgen paydalanıwshı etip belgilenwin támiyinlew."""
         serializer.save(owner=self.request.user)
 
 
 class PartnerRoomTypeViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
-    ViewSet for room type management by hotel-owners.
+    Mehmanxana iyeleri xona túrlerin basqarıw ushın ViewSet.
 
-    Scoped to room types in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı xona túrlerine shekemlengen.
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerRoomTypeSerializer
 
     def get_queryset(self):
-        """Filter queryset to room types in properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalardaǵı xona túrlerine shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         live_photos = Prefetch(
             'photos', queryset=RoomPhoto.objects.filter(is_deleted=False, is_active=True).order_by('display_order', 'id'),
@@ -126,16 +127,16 @@ class PartnerRoomTypeViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 class PartnerRatePlanViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
-    ViewSet for rate plan management by hotel-owners.
+    Mehmanxana iyeleri rate plan larǵı basqarıw ushın ViewSet.
 
-    Scoped to rate plans in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı rate plan larǵa shekemlengen.
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerRatePlanSerializer
 
     def get_queryset(self):
-        """Filter queryset to rate plans in properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalardaǵı rate plan larǵa shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         return RatePlan.objects.filter(
             room_type__property__owner=self.request.user,
@@ -145,16 +146,16 @@ class PartnerRatePlanViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
 class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for date inventory management by hotel-owners.
+    Mehmanxana iyeleri date inventory di basqarıw ushın ViewSet.
 
-    Scoped to date inventory in properties owned by the authenticated hotel-owner.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı date inventory ge shekemlengen.
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerDateInventorySerializer
 
     def get_queryset(self):
-        """Filter queryset to date inventory in properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalardaǵı date inventory ge shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         queryset = DateInventory.objects.filter(
             rate_plan__room_type__property__owner=self.request.user,
@@ -169,8 +170,8 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
 
     def _filter_list(self, queryset):
         """
-        Optional list filters: ?rate_plan=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
-        (both dates inclusive). Invalid values are a 400, not a silently ignored filter.
+        Ixtıyarıy dizim filter leri: ?rate_plan=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+        (ekewi de kiredi). Jaramsız mánisler 400, ún-túnsiz itibarǵa alınbaǵan filter emes.
         """
         params = self.request.query_params
         errors = {}
@@ -189,7 +190,7 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
                 continue
             try:
                 parsed = parse_date(value) if len(value) == 10 else None
-            except ValueError:  # well formed but impossible, e.g. 2026-02-30
+            except ValueError:  # durıs jazılǵan, biraq múmkin emes, mısalı 2026-02-30
                 parsed = None
             if parsed is None:
                 errors[name] = ['Must be a date in YYYY-MM-DD format.']
@@ -210,12 +211,12 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='bulk-price')
     def bulk_price(self, request):
         """
-        3.7 bulk price edit: set one rate plan's nightly price over a date range.
+        3.7 kóp bahanı ózgertiw: bir rate plan nıń túngi bahasın sana aralıǵı boyınsha belgilew.
 
-        Body: {rate_plan, date_from, date_to, price}. date_to is exclusive, same
-        convention as a booking's check_in/check_out (unlike this list's own date_from/
-        date_to filters, which are inclusive). Creates any missing row (opened at the
-        room type's full total_rooms); an existing row's other fields are untouched.
+        Body: {rate_plan, date_from, date_to, price}. date_to kirmeydi (exclusive), bronnıń
+        check_in/check_out ı sıyaqlı kelisim (bul dizimniń óz date_from/date_to
+        filter lerinen ayrıqsha, olar kiredi). Joq qatardı jaratadı (xona túriniń tolıq
+        total_rooms ı menen ashılǵan); bar qatardıń basqa maydanlarına tiyilmeydi.
         """
         serializer = PartnerDateInventoryBulkPriceSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -229,18 +230,18 @@ class PartnerDateInventoryViewSet(viewsets.ModelViewSet):
 
 class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for room inventory (RoomInventory, audit #31) management by hotel-owners.
+    Mehmanxana iyeleri xona inventory sın (RoomInventory, audit #31) basqarıw ushın ViewSet.
 
-    Scoped to room inventory in properties owned by the authenticated hotel-owner. This
-    is the room type's real, shared physical room count; DateInventory (see
-    PartnerDateInventoryViewSet) still holds the price and each rate plan's own rules.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı xona inventory sine shekemlengen. Bul
+    xona túriniń haqıyqıy, ortaq fizikalıq xona sanı; DateInventory (qarań
+    PartnerDateInventoryViewSet) ele baha hám hár rate plan nıń óz qaǵıydaların saqlaydı.
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerRoomInventorySerializer
 
     def get_queryset(self):
-        """Filter queryset to room inventory in properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalardaǵı xona inventory sine shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         queryset = RoomInventory.objects.filter(
             room_type__property__owner=self.request.user,
@@ -252,8 +253,8 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
 
     def _filter_list(self, queryset):
         """
-        Optional list filters: ?room_type=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
-        (both dates inclusive). Invalid values are a 400, not a silently ignored filter.
+        Ixtıyarıy dizim filter leri: ?room_type=<id>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+        (ekewi de kiredi). Jaramsız mánisler 400, ún-túnsiz itibarǵa alınbaǵan filter emes.
         """
         params = self.request.query_params
         errors = {}
@@ -272,7 +273,7 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
                 continue
             try:
                 parsed = parse_date(value) if len(value) == 10 else None
-            except ValueError:  # well formed but impossible, e.g. 2026-02-30
+            except ValueError:  # durıs jazılǵan, biraq múmkin emes, mısalı 2026-02-30
                 parsed = None
             if parsed is None:
                 errors[name] = ['Must be a date in YYYY-MM-DD format.']
@@ -293,15 +294,15 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def bulk(self, request):
         """
-        3.6 calendar date-range edit: set available_rooms and/or is_available for one
-        room type over a date range in one call.
+        3.6 kalendar sana aralıǵın ózgertiw: bir xona túri ushın available_rooms hám/yamasa is_available di
+        bir shaqırıwda sana aralıǵı boyınsha belgilew.
 
-        Body: {room_type, date_from, date_to, available_rooms?, is_available?} (at least
-        one of the two). date_to is exclusive, same convention as a booking's
-        check_in/check_out (unlike this list's own date_from/date_to filters, which are
-        inclusive). Creates any missing, unmanaged row (opened at the room type's full
-        total_rooms) first. 400 naming the date if available_rooms would drop a night
-        below what is already booked on TICKBRON.
+        Body: {room_type, date_from, date_to, available_rooms?, is_available?} (ekewiniń
+        keminde biri). date_to kirmeydi (exclusive), bronnıń check_in/check_out ı sıyaqlı
+        kelisim (bul dizimniń óz date_from/date_to filter lerinen ayrıqsha, olar
+        kiredi). Aldın joq, basqarılmaytuǵın qatardı jaratadı (xona túriniń tolıq
+        total_rooms ı menen ashılǵan). available_rooms túnni TICKBRON da aldınan bronlanǵannan
+        tómenge túsirse, sananı atap 400.
         """
         serializer = PartnerRoomInventoryBulkSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -318,20 +319,20 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
 
 class PartnerBlockViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for external-booking blocks (RoomBlock, 3.5) by hotel-owners.
+    Mehmanxana iyeleri sırtqı bron bloklarınıń (RoomBlock, 3.5) ViewSet i.
 
-    Scoped to blocks on room types in properties owned by the authenticated hotel-owner.
-    Creating one locks and decrements the affected RoomInventory rows
-    (RoomBlock.create_block, via the serializer); deleting one restores them (release()).
-    No PATCH/PUT: a block is created or undone (deleted), never edited in place.
+    Kirgen mehmanxana iyesine tiyisli mehmanxanalardaǵı xona túrleri bloklarına shekemlengen.
+    Birin jaratıw tásirlengen RoomInventory qatarların qulıplaydı hám kemeytedi
+    (RoomBlock.create_block, serializer arqalı); birin óshiriw olardı qaytaradı (release()).
+    PATCH/PUT joq: blok jaratıladı yamasa biykar etiledi (óshiriledi), ornında hesh qashan ózgertilmeydi.
     """
     permission_classes = [IsHotelOwner]
     serializer_class = PartnerBlockSerializer
     http_method_names = ['get', 'post', 'delete', 'head', 'options']
 
     def get_queryset(self):
-        """Filter queryset to blocks on room types in properties owned by the authenticated user."""
-        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
+        """Queryset ti kirgen paydalanıwshıǵa tiyisli mehmanxanalardaǵı xona túrleri bloklarına shekemlew."""
+        if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema jasaw: paydalanıwshı joq
             return self.get_serializer_class().Meta.model.objects.none()
         queryset = RoomBlock.objects.filter(
             room_type__property__owner=self.request.user,
@@ -347,7 +348,7 @@ class PartnerBlockViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_destroy(self, instance):
-        """Deleting a block undoes it: restores the blocked rooms, then soft-deletes it."""
+        """Blokti óshiriw onı biykar etedi: bloklanǵan xonalardı qaytaradı, keyin soft-delete etedi."""
         instance.release()
 
 
@@ -360,10 +361,10 @@ def _owned_property(request, property_id):
 @permission_classes([IsHotelOwner])
 def partner_property_photos(request, property_id):
     """
-    GET: the owner's photos of one property, cover and order as stored.
-    POST: upload a photo (multipart: photo, photo_type, caption, alt_text).
-    The first photo becomes the cover; new photos go to the end; the stored
-    file name is random.
+    GET: iyeniń bir mehmanxanasınıń súwretleri, muqaba hám tártip saqlanǵanday.
+    POST: súwret júklew (multipart: photo, photo_type, caption, alt_text).
+    Birinshi súwret muqaba boladı; jańa súwretler aqırına baradı; saqlanǵan
+    fayl atı tosınarlıq.
     """
     property = _owned_property(request, property_id)
 
@@ -389,8 +390,8 @@ def partner_property_photos(request, property_id):
 @permission_classes([IsHotelOwner])
 def partner_property_photo_detail(request, property_id, photo_id):
     """
-    PATCH: caption, alt_text, photo_type, is_primary=true (makes it the cover).
-    DELETE: remove the photo; a removed cover passes to the first remaining photo.
+    PATCH: caption, alt_text, photo_type, is_primary=true (onı muqaba etedi).
+    DELETE: súwretti alıp taslaw; alıp taslanǵan muqaba qalǵan birinshi súwretke ótedi.
     """
     property = _owned_property(request, property_id)
     photo = get_object_or_404(PropertyPhoto, id=photo_id, property=property, is_deleted=False)
@@ -415,9 +416,9 @@ def _owned_room_type(request, room_type_id):
 @permission_classes([IsHotelOwner])
 def partner_room_photos(request, room_type_id):
     """
-    GET: the photos of one of the owner's room types, cover and order as stored.
-    POST: upload a photo (multipart: photo, photo_type, caption, alt_text). The first photo becomes the cover; new
-    photos go to the end; the stored file name is random; at most MAX_PHOTOS_PER_ROOM_TYPE per room type.
+    GET: iyeniń bir xona túriniń súwretleri, muqaba hám tártip saqlanǵanday.
+    POST: súwret júklew (multipart: photo, photo_type, caption, alt_text). Birinshi súwret muqaba boladı; jańa
+    súwretler aqırına baradı; saqlanǵan fayl atı tosınarlıq; hár xona túrine eń kóbi MAX_PHOTOS_PER_ROOM_TYPE.
     """
     room_type = _owned_room_type(request, room_type_id)
     photos = RoomPhoto.objects.filter(room_type=room_type, is_deleted=False)
@@ -444,8 +445,8 @@ def partner_room_photos(request, room_type_id):
 @permission_classes([IsHotelOwner])
 def partner_room_photo_detail(request, room_type_id, photo_id):
     """
-    PATCH: caption, alt_text, photo_type, is_primary=true (makes it the cover).
-    DELETE: remove the photo; a removed cover passes to the first remaining photo.
+    PATCH: caption, alt_text, photo_type, is_primary=true (onı muqaba etedi).
+    DELETE: súwretti alıp taslaw; alıp taslanǵan muqaba qalǵan birinshi súwretke ótedi.
     """
     room_type = _owned_room_type(request, room_type_id)
     photo = get_object_or_404(RoomPhoto, id=photo_id, room_type=room_type, is_deleted=False)
@@ -466,8 +467,8 @@ def partner_room_photo_detail(request, room_type_id, photo_id):
 @permission_classes([IsHotelOwner])
 def partner_booking_arrived(request, booking_id):
     """
-    The hotel says the guest of one of its own bookings has arrived (cash at the hotel). Idempotent: the first
-    time stays. Only a confirmed booking, from the check-in day on (400 otherwise).
+    Mehmanxana óz bronlarınıń birindegi mehmannıń kelgenin aytadı (mehmanxanada naqd). Idempotent: birinshi
+    ret saqlanadı. Tek tastıyıqlanǵan bron, kiriw kúninen baslap (basqa jaǵdayda 400).
     """
     booking = get_object_or_404(Booking, id=booking_id, property__owner=request.user, is_deleted=False)
     try:
@@ -481,7 +482,7 @@ def partner_booking_arrived(request, booking_id):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_assigned_place(request):
-    """The place the super admin gave this account: {country_ref, region_ref}, both null when none."""
+    """Super admin usı akkauntqa bergen orın: {country_ref, region_ref}, joq bolsa ekewi de null."""
     place = OwnerPlace.objects.filter(owner=request.user).first()
     return Response({
         'country_ref': place.country_id if place else None,
@@ -493,12 +494,12 @@ def partner_assigned_place(request):
 @api_view(['GET'])
 @permission_classes([IsHotelOwner])
 def partner_property_types(request):
-    """Every property type for the "add a hotel" form: [{id, name, slug}], also the types no hotel uses yet."""
+    """"Mehmanxana qosıw" formasınıń hár mehmanxana túri: [{id, name, slug}], ele hesh bir mehmanxana paydalanbaǵan túrler de."""
     types = PropertyType.objects.filter(is_deleted=False).order_by('name')
     return Response([{'id': kind.id, 'name': kind.name, 'slug': kind.slug} for kind in types])
 
 
-# The owner's bookings file: what the bookings list shows without the guest (no name, e-mail, phone or request)
+# Iyeniń bronlar fayli: bronlar dizimi mehmansız kórsetetuǵını (at, e-mail, telefon yamasa soraw joq)
 BOOKINGS_EXPORT_HEADER = ['reference', 'hotel', 'status', 'payment_status', 'check_in', 'check_out', 'nights', 'rooms',
                           'guests', 'total', 'currency', 'booked_on', 'arrival_time', 'arrived']
 
@@ -519,22 +520,22 @@ def _bookings_export_row(booking):
 @permission_classes([IsHotelOwner])
 def partner_bookings(request):
     """
-    List bookings for properties owned by the hotel-owner.
+    Mehmanxana iyesine tiyisli mehmanxanalardıń bronların dizimlew.
 
-    Query Parameters:
-        status: Filter by booking status (optional)
-        payment_status: Filter by payment status (optional)
-        reportable: true keeps only bookings the owner can report as no-show today (optional)
-        export: csv or xlsx downloads the same list as a file (no guest details), see BOOKINGS_EXPORT_HEADER
+    Query parametrleri:
+        status: Bron statusı boyınsha filter (ıqtıyarıy)
+        payment_status: Tólem statusı boyınsha filter (ıqtıyarıy)
+        reportable: true tek iye búgin no-show dep xabarlay alatuǵın bronlardı qaldıradı (ıqtıyarıy)
+        export: csv yamasa xlsx sol dizimdi fayl retinde júklep aladı (mehmann maǵlıwmatısız), qarań BOOKINGS_EXPORT_HEADER
 
-    Returns:
-        List of bookings for the hotel-owner's properties
+    Qaytaradı:
+        Mehmanxana iyesiniń mehmanxanaları bronları dizimi
     """
     bookings = Booking.objects.filter(
         property__owner=request.user, is_deleted=False,
     ).select_related('property').prefetch_related('property__translations')
 
-    # Apply filters
+    # Filter lerdi qollanıw
     status_filter = request.query_params.get('status')
     if status_filter:
         bookings = bookings.filter(status=status_filter)
@@ -553,7 +554,7 @@ def partner_bookings(request):
         rows = (_bookings_export_row(booking) for booking in bookings.order_by('-check_in', '-id'))
         return export_response(request, 'partner_bookings', BOOKINGS_EXPORT_HEADER, rows)
 
-    # Serialize bookings
+    # Bronlardı serializer den ótkiziw
     bookings_data = []
     for booking in bookings:
         property_name = booking.property.display_name()

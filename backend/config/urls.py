@@ -1,5 +1,5 @@
 """
-URL configuration for TICKBRON Backend
+TICKBRON Backend ushın URL sazlaması
 """
 from common.health import healthz, readyz
 from django.conf import settings
@@ -9,16 +9,16 @@ from common.permissions import StaffOrDebug
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
-    # Probes for the load balancer / uptime monitor (no authentication, no detail in the answers)
+    # Load balancer / uptime monitor ushın tekseriwler (kirisiw joq, juwaplarda tolıq maǵlıwmat joq)
     path('healthz/', healthz, name='healthz'),
     path('readyz/', readyz, name='readyz'),
 
-    # API Documentation
+    # API hújjetlestiriw
     path('api/schema/', SpectacularAPIView.as_view(permission_classes=[StaffOrDebug]), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema', permission_classes=[StaffOrDebug]), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema', permission_classes=[StaffOrDebug]), name='redoc'),
 
-    # API v1 endpoints
+    # API v1 endpoint leri
     path('api/v1/auth/', include('users.urls')),
     path('api/v1/', include('properties.urls')),
     path('api/v1/', include('bookings.urls')),
@@ -30,5 +30,5 @@ urlpatterns = [
     path('api/v1/chat/', include('chat.urls')),
 ]
 
-# Local development only: with DEBUG off `static()` adds nothing and the web server serves /media/
+# Tek jergilikli development: DEBUG óshirilgende `static()` hesh nárse qospaydı hám web server /media/ di beredi
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
