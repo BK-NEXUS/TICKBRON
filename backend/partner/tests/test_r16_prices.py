@@ -1,7 +1,7 @@
 """
-R16 slice 1: the owner enters the price of a rate plan in every currency (USD, UZS, KZT, RUB).
-The plan's main price (`base_price`, in the property's currency) is one of them. Fixture
-`inventory`: a USD property with one rate plan.
+R16 1-bólim: iye rate plan nıń bahasın hár valyutada (USD, UZS, KZT, RUB) kirgizedi.
+Plannıń tiykarǵı bahası (`base_price`, mehmanxananıń valyutasında) olardıń biri. Fixture
+`inventory`: bir rate plan lı USD mehmanxana.
 """
 import pytest
 from partner.tests.test_property_create_access import client_for, inventory, owner, owner_role  # noqa: F401
@@ -23,7 +23,7 @@ class TestWritePrices:
         response = client_for(owner).post(f'{P}/rates/', new_plan(inventory, prices=FULL), format='json')
         assert response.status_code == 201, response.data
         plan = RatePlan.objects.get(pk=response.data['id'])
-        assert str(plan.base_price) == '65.00'      # the main price is the property's currency (USD)
+        assert str(plan.base_price) == '65.00'      # tiykarǵı baha mehmanxananıń valyutası (USD)
         assert {row.currency: str(row.amount) for row in plan.prices.all()} == {
             'UZS': '800000.00', 'KZT': '29000.00', 'RUB': '5800.00'}
         assert response.data['prices'] == {'USD': '65.00', 'UZS': '800000.00', 'KZT': '29000.00', 'RUB': '5800.00'}
@@ -42,9 +42,9 @@ class TestWritePrices:
 
     @pytest.mark.parametrize('prices', [
         {**FULL, 'EUR': '60'},
-        {**FULL, 'UZS': '800000.50'},       # so'm are whole
-        {**FULL, 'KZT': '29000.5'},         # tenge are whole
-        {**FULL, 'USD': '65.001'},          # cents
+        {**FULL, 'UZS': '800000.50'},       # som pútin
+        {**FULL, 'KZT': '29000.5'},         # tenge pútin
+        {**FULL, 'USD': '65.001'},          # sent
         {**FULL, 'RUB': '-1'},
         {**FULL, 'UZS': 'abc'},
     ])
@@ -91,7 +91,7 @@ class TestWritePrices:
 
 @pytest.mark.django_db
 class TestPricesRequired:
-    """The owner decided (2026-10-19): all four currencies are mandatory."""
+    """Iye sheshti (2026-10-19): tórt valyuta da májbúriy."""
 
     @pytest.fixture(autouse=True)
     def required(self, settings):

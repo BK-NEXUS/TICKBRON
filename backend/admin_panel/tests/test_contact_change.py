@@ -1,4 +1,5 @@
-"""Only a super admin or a staff admin changes a person's phone number or e-mail (a lost SIM, a closed mailbox)."""
+"""Tek super admin yamasa staff admin adamnıń telefon nomerin yamasa e-mail ın ózgertedi (joǵalǵan SIM, jabılǵan poshta
+qutısı)."""
 import pytest
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.auth import SESSION_KEY

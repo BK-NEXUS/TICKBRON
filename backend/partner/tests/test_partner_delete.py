@@ -1,8 +1,9 @@
 """
-A hotel owner's DELETE hides the record (soft delete) instead of erasing it.
+Mehmanxana iyesiniń DELETE i jazbanı óshirmey jasıradı (soft delete).
 
-Bookings point at the property, room type and rate plan with PROTECT, so a real delete of one that has
-a booking used to end in a 500; without a booking it erased the hotel's rooms and rates for good.
+Bronlar mehmanxanaǵa, xona túrine hám rate plan ǵa PROTECT penen baylanǵan, sol sebepli bronı bar birin
+haqıyqıy óshiriw aldın 500 menen tawsılatuǵın edi; bronsız bolsa mehmanxananıń xonaların hám bahaların mángige óshirer
+edi.
 """
 from datetime import timedelta
 

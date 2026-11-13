@@ -1,4 +1,4 @@
-"""A mailed code is single use even when two requests present it at the same moment."""
+"""Pochta menen jiberilgen kod eki sorawdıń birdey waqıtta usınıwında da bir ret qollanıladı."""
 import re
 import threading
 import uuid
@@ -16,13 +16,13 @@ class VerifyOnceTests(SimpleTestCase):
         email_codes.issue('signup', ident, 'race@example.com', payload={'k': 'v'})
         code = re.search(r'\b(\d{6})\b', mail.outbox[-1].body).group(1)
 
-        # The race window: both requests have read the live code before the first one removes it. A real cache
-        # (Redis) opens this window by itself under load; the barrier makes it certain here.
+        # Jarıs aralıǵı: eki soraw da birinshisi alıp taslamastan aldın tiri kodtı oqıp bolǵan. Haqıyqıy cache
+        # (Redis) júklemede bul aralıqtı ózi ashadı; barrier bul jerde onı anıq etedi.
         both_have_read = threading.Barrier(2)
         outcomes = []
 
         def attempt():
-            # Django hands every thread its own cache object, so the patch has to be made inside the thread.
+            # Django hár thread ke óz cache obyektin beredi, sol sebepli patch thread tiń ishinde islenwi kerek.
             real_get = email_codes.cache.get
 
             def get_then_wait(key, *args):

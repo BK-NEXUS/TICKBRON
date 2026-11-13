@@ -1,6 +1,6 @@
 """
-R12 additions slice 3: `?export=xlsx` next to `?export=csv` on every Status export
-(same permissions, row limit and audit log).
+R12 qosımshaları 3-bólim: hár Status eksportında `?export=csv` janında `?export=xlsx`
+(birdey ruxsatlar, qatar shegi hám audit log).
 """
 import io
 import zipfile
@@ -20,7 +20,7 @@ P = '/api/v1/partner/status'
 
 
 def read_xlsx(response):
-    """Rows of the first sheet as lists (numbers stay numbers, text stays text) and the raw sheet xml."""
+    """Birinshi sheet tiń qatarları dizimler retinde (sanlar san, tekst tekst bolıp qaladı) hám xom sheet xml i."""
     archive = zipfile.ZipFile(io.BytesIO(response.content))
     strings = []
     if 'xl/sharedStrings.xml' in archive.namelist():

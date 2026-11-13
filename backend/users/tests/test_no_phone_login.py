@@ -1,6 +1,6 @@
 """
-There is no SMS login and no phone verification: the removed endpoints answer 404 and a phone and a
-code cannot log anyone in. The number itself is only stored data (see test_phone_number.py).
+SMS arqalı kiriw da, telefondı tastıyıqlaw da joq: alıp taslanǵan endpoint ler 404 qaytaradı hám telefon menen
+kod hesh kimdi kirgize almaydı. Nomerdiń ózi tek saqlanǵan maǵlıwmat (test_phone_number.py qarań).
 """
 import pytest
 from rest_framework.test import APIClient

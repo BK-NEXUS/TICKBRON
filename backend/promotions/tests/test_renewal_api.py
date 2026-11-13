@@ -1,4 +1,4 @@
-"""The super admin's Renewals section: ads waiting for the answer "did the hotel pay for the next month?"."""
+"""Super admin niń Jańalawlar bólimi: "mehmanxana keyingi ay ushın tóledi me?" juwabın kútip turǵan reklamalar."""
 from datetime import date, timedelta
 
 import pytest
@@ -28,7 +28,7 @@ def boss():
 
 @pytest.fixture
 def waiting():
-    """Two ads whose renewal is open: one ends today, one ended three days ago."""
+    """Jańalawı ashıq eki reklama: biri búgin pitedi, biri úsh kún aldın pitti."""
     first = ad(end=END, hotel=make_hotel(make_owner('a@example.com'), name='Alpha'))
     second = ad(end=END - timedelta(days=3), hotel=make_hotel(make_owner('b@example.com'), name='Beta'))
     renewals.open_due(today=END)

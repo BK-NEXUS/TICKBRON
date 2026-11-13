@@ -1,9 +1,9 @@
 """
-Tests for the partner room inventory API (3.4, audit #31).
+Partner xona inventory API ı ushın testler (3.4, audit #31).
 
-RoomInventory is the room type's real, shared physical room count (the booking engine
-locks and updates it since 3.3); DateInventory (still at /partner/inventory/) keeps only
-the price and each rate plan's own rules (open/closed, min/max stay).
+RoomInventory xona túriniń haqıyqıy, ortaq fizikalıq xona sanı (bron sisteması onı 3.3 ten beri
+qulıplaydı hám jańalaydı); DateInventory (ele /partner/inventory/ de) tek bahanı hám
+hár rate plan nıń óz qaǵıydaların (ashıq/jabıq, eń kem/eń kóp turıw) saqlaydı.
 """
 from datetime import date, timedelta
 
@@ -74,12 +74,12 @@ class PartnerRoomInventoryTests(TestCase):
         self.assertEqual(RoomInventory.objects.count(), 2)
 
     def test_available_rooms_cannot_exceed_room_type_total(self):
-        """The model enforces this in clean(); DRF never calls it, so the serializer must too."""
+        """Model bunı clean() de májbúrleydi; DRF onı hesh qashan shaqırmaydı, sol sebepli serializer de de májbúrlewi kerek."""
         self.client.force_authenticate(user=self.hotel_owner)
         data = {
             'room_type': self.room_type.id,
             'date': date.today() + timedelta(days=2),
-            'available_rooms': 6,  # room_type.total_rooms is 5
+            'available_rooms': 6,  # room_type.total_rooms 5
         }
         response = self.client.post('/api/v1/partner/room-inventory/', data)
 
@@ -95,7 +95,7 @@ class PartnerRoomInventoryTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.row.refresh_from_db()
-        self.assertEqual(self.row.booked_rooms, 0)  # read-only, should remain unchanged
+        self.assertEqual(self.row.booked_rooms, 0)  # tek oqıw, ózgerissiz qalıwı kerek
 
     def test_hotel_owner_cannot_create_room_inventory_for_other_property(self):
         other_owner = User.objects.create_user(

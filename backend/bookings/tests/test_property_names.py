@@ -1,5 +1,5 @@
 """
-Bookings and support lookup show the hotel name, not the address (E2E UX 13).
+Bronlar hám qollap-quwatlaw izlewi mánzildi emes, mehmanxana atın kórsetedi (E2E UX 13).
 """
 from rest_framework.test import APIClient
 
@@ -49,7 +49,7 @@ class TestPropertyNameInBookings(BookingLogicTestBase):
         assert [b['property_name'] for b in response.data['bookings']] == ['Test Hotel']
 
     def test_partner_bookings_show_the_hotel_name(self):
-        # BookingLogicTestBase makes the guest the property owner
+        # BookingLogicTestBase mehmandı mehmanxana iyesi etedi
         client = APIClient()
         from permissions.models import Role
         self.user.role = Role.objects.create(name='hotel-owner')

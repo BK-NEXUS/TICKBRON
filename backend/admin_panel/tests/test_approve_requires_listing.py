@@ -1,7 +1,7 @@
 """
-QA finding F3: approving a hotel that has no room, no active rate or no photo made it public with an
-empty page. Approval is refused (400, with the list of what is missing) until all three exist.
-Rejecting is never blocked.
+QA tabılması F3: xonası, aktiv bahası yamasa súwreti joq mehmanxananı tastıyıqlaw onı bos bet penen ashıq etti.
+Úshewi de bolmaǵansha tastıyıqlaw biykar etiledi (400, jetispeytuǵınlar dizimi menen).
+Biykar etiw hesh qashan tosılmaydı.
 """
 from decimal import Decimal
 

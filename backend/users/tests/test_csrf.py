@@ -1,8 +1,8 @@
 """
-Tests for GET /api/v1/auth/csrf/ and the is_staff / is_superuser flags on /auth/me/.
+GET /api/v1/auth/csrf/ hám /auth/me/ degi is_staff / is_superuser belgileri ushın testler.
 
-The client enforces CSRF like a browser would, so these cover the full SPA
-flow: fetch token -> send it in X-CSRFToken -> refetch after login.
+Client CSRF di brauzerdey májbúrleydi, sol sebepli bular tolıq SPA process in qamtıydı:
+token alıw -> X-CSRFToken de jiberiw -> kirgennen keyin qayta alıw.
 """
 import pytest
 from django.conf import settings
@@ -33,7 +33,7 @@ def _token(client):
 
 
 def _login(client, user):
-    # N-8: login itself needs a token now, like every other call the SPA makes
+    # N-8: kiriwdiń ózine de endi token kerek, SPA nıń basqa hár bir sorawı sıyaqlı
     response = client.post(
         '/api/v1/auth/login/', {'email': user.email, 'password': PASSWORD}, format='json',
         HTTP_X_CSRFTOKEN=_token(client),
@@ -111,7 +111,7 @@ class TestMeIsStaff:
 
 @pytest.mark.django_db
 class TestMeIsSuperuser:
-    """F6: the admin UI shows super-admin actions from /auth/me is_superuser."""
+    """F6: admin UI super-admin háreketlerin /auth/me is_superuser nan kórsetedi."""
 
     def test_regular_user_is_not_superuser(self, user):
         client = APIClient()

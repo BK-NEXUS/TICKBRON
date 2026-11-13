@@ -1,4 +1,4 @@
-"""Two-step sign-in: password, then a code from an authenticator app (or a backup code) for administrators and staff."""
+"""Eki basqıshlı kiriw: parol, keyin administratorlar hám staff ushın authenticator app tan kod (yamasa rezerv kod)."""
 import logging
 from unittest import mock
 
@@ -21,7 +21,7 @@ ME = '/api/v1/auth/me/'
 ADMIN_ONLY = '/api/v1/admin-panel/properties/'
 
 
-NOW = 1_000_000_010.0  # 10 seconds into a 30 second step, so a test never straddles a step change
+NOW = 1_000_000_010.0  # 30 sekundlıq qadamnıń 10 sekundında, sol sebepli test hesh qashan qadam ózgeriwine tuspaydı
 
 
 @pytest.fixture(autouse=True)
@@ -37,7 +37,7 @@ def make_user(email='admin@example.com', **extra):
 
 
 def enrolled_admin(email='admin@example.com'):
-    """An administrator who has finished the setup: returns the user, the app's secret and the backup codes."""
+    """Sazlawdı pitkergen administrator: paydalanıwshını, app tıń secret in hám rezerv kodlardı qaytaradı."""
     user = make_user(email, is_staff=True, is_superuser=True)
     secret = two_factor.new_secret()
     codes = two_factor.enable(user, secret, step=0)
@@ -95,7 +95,7 @@ class TestLoginWithTwoFactor:
 
     def test_a_code_works_once(self):
         _, secret, _ = enrolled_admin()
-        code = pyotp.TOTP(secret).at(NOW)  # one string for both tries, so a step change in between cannot matter
+        code = pyotp.TOTP(secret).at(NOW)  # eki urınıs ushın bir tekst, sol sebepli ortadaǵı qadam ózgeriwi áhmiyetsiz
         first, _ = password_step()
         assert first.post(LOGIN_2FA, {'code': code}, format='json').status_code == 200
 
@@ -273,7 +273,7 @@ class TestSetup:
 
 class TestCodeCheck:
     def test_matches_the_rfc_6238_test_value(self):
-        # RFC 6238 appendix B: secret "12345678901234567890", time 59 s -> 8 digit 94287082, 6 digit 287082
+        # RFC 6238 B qosımshası: secret "12345678901234567890", waqıt 59 s -> 8 sanlı 94287082, 6 sanlı 287082
         secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
 
         assert two_factor.matching_step(secret, '287082', now=59) == 1

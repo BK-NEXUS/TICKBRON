@@ -1,4 +1,4 @@
-"""Shared builders for the promotions (R10) tests."""
+"""Reklama (R10) testleri ushın ortaq qurıwshılar."""
 from datetime import timedelta
 from decimal import Decimal
 

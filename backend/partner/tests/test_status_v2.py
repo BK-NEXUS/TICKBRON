@@ -1,6 +1,6 @@
 """
-Owner Status v2 (.ai/PLAN_STATUS_V2.md): this month against last month, guests arriving in the next 7 days, how far
-ahead guests book, repeat guests, and which room types are booked most (GET /partner/status/rooms/).
+Iye Status v2 (.ai/PLAN_STATUS_V2.md): usı ay aldınǵı ayǵa qarata, keyingi 7 kúnde keletuǵın mehmanlar, mehmanlar
+qansha aldınan bronlaydı, qaytıp kelgen mehmanlar, hám qaysı xona túrleri kóbirek bronlanadı (GET /partner/status/rooms/).
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -35,7 +35,7 @@ def first_of_month(day):
 
 
 def month_start(offset):
-    """First day of the month `offset` months from this one (0 = this month, -1 = last month)."""
+    """Usınan `offset` ay aldındaǵı/keyingi aydıń birinshi kúni (0 = usı ay, -1 = aldınǵı ay)."""
     today = business_today()
     index = today.year * 12 + today.month - 1 + offset
     return today.replace(year=index // 12, month=index % 12 + 1, day=1)
@@ -74,7 +74,7 @@ def world(db):
 
 
 def book(world, guest, prop, check_in, kind, nights=2, status='confirmed', rooms=1, guests=2, price='100.00'):
-    """A booking with one item of `kind` (a (room type, rate plan) pair); total = price per night * nights * rooms."""
+    """`kind` degi bir elementi bar bron ((xona túri, rate plan) jubı); jámi = túngi baha * túnler * xonalar."""
     room_type, plan = world[kind] if isinstance(kind, str) else kind
     booking = Booking.objects.create(
         guest=guest, property=prop, status=status, payment_status='paid', check_in=check_in,
@@ -92,8 +92,8 @@ class TestMonthComparison:
         book(world, g[0], alpha, month_start(0), 'standard', status='completed', price='100.00', guests=2)   # 200
         book(world, g[1], alpha, month_start(0), 'standard', status='completed', price='50.00', guests=3)    # 100
         book(world, g[0], alpha, month_start(-1), 'standard', status='completed', price='100.00', guests=2)  # 200
-        book(world, g[2], alpha, month_start(-2), 'standard', status='completed', price='999.00')            # older: not in it
-        book(world, g[3], world['foreign'], month_start(0), 'foreign_room', status='completed')              # not mine
+        book(world, g[2], alpha, month_start(-2), 'standard', status='completed', price='999.00')            # eski
+        book(world, g[3], world['foreign'], month_start(0), 'foreign_room', status='completed')              # meniki emes
         months = get_as(world['owner'], f'{P}/').data['months']
         assert (months['current']['month'], months['previous']['month']) == (
             month_start(0).strftime('%Y-%m'), month_start(-1).strftime('%Y-%m'))
@@ -120,11 +120,11 @@ class TestMonthComparison:
 
     def test_guests_arriving_in_the_next_seven_days(self, world):
         today, g, alpha = business_today(), world['guests'], world['alpha']
-        book(world, g[0], alpha, today, 'standard', guests=2)                                   # today counts
-        book(world, g[1], alpha, today + timedelta(days=6), 'standard', guests=3)               # day 7 counts
-        book(world, g[2], alpha, today + timedelta(days=7), 'standard', guests=4)               # day 8 does not
-        book(world, g[2], alpha, today + timedelta(days=2), 'standard', status='cancelled')     # cancelled does not
-        book(world, g[3], world['foreign'], today + timedelta(days=1), 'foreign_room')          # not mine
+        book(world, g[0], alpha, today, 'standard', guests=2)                                   # búgin esaplanadı
+        book(world, g[1], alpha, today + timedelta(days=6), 'standard', guests=3)               # 7-kún esaplanadı
+        book(world, g[2], alpha, today + timedelta(days=7), 'standard', guests=4)               # 8-kún esaplanbaydı
+        book(world, g[2], alpha, today + timedelta(days=2), 'standard', status='cancelled')     # biykar etilgen emes
+        book(world, g[3], world['foreign'], today + timedelta(days=1), 'foreign_room')          # meniki emes
         soon = get_as(world['owner'], f'{P}/').data['months']['next_7_days']
         assert soon == {'bookings': 2, 'guests': 5}
 
@@ -132,12 +132,12 @@ class TestMonthComparison:
 class TestInsightAdditions:
     def test_average_lead_days_and_repeat_guests(self, world):
         today, g, alpha = business_today(), world['guests'], world['alpha']
-        book(world, g[0], alpha, today + timedelta(days=10), 'standard')   # booked today: 10 days ahead
-        book(world, g[0], alpha, today + timedelta(days=20), 'standard')   # 20 days ahead
-        book(world, g[1], alpha, today + timedelta(days=30), 'standard')   # 30 days ahead
+        book(world, g[0], alpha, today + timedelta(days=10), 'standard')   # búgin: 10 kún aldınan
+        book(world, g[0], alpha, today + timedelta(days=20), 'standard')   # 20 kún aldınan
+        book(world, g[1], alpha, today + timedelta(days=30), 'standard')   # 30 kún aldınan
         insights = get_as(world['owner'], f'{P}/').data['insights']
         assert insights['average_lead_days'] == '20.0'
-        assert insights['repeat_guest_pct'] == '50.00'   # one of the two guests came twice
+        assert insights['repeat_guest_pct'] == '50.00'   # eki mehmannıń biri eki ret keldi
 
     def test_a_booking_made_earlier_counts_its_real_lead(self, world):
         booking = book(world, world['guests'][0], world['alpha'], business_today() + timedelta(days=10), 'standard')
@@ -162,18 +162,18 @@ class TestRooms:
             book(world, guest, alpha, month_start(0), 'standard', nights=2)
         book(world, g[0], alpha, month_start(0), 'suite', nights=3, status='completed', price='300.00')
         book(world, g[1], beta, month_start(0), 'double', nights=1, rooms=2, status='completed', price='80.00')
-        book(world, g[1], alpha, month_start(0), 'standard', status='cancelled')   # not counted
-        book(world, g[2], world['foreign'], month_start(0), 'foreign_room')        # not mine
+        book(world, g[1], alpha, month_start(0), 'standard', status='cancelled')   # esaplanbaydı
+        book(world, g[2], world['foreign'], month_start(0), 'foreign_room')        # meniki emes
         response = get_as(world['owner'], f'{P}/rooms/')
         names = [row['name'] for row in response.data['rows']]
-        # 3, 1 and 1 bookings; the tie goes to the room type with more room nights (Suite 3, Double 2)
+        # 3, 1 hám 1 bron; teń jaǵday xona túni kóbirek xona túrine ótedi (Suite 3, Double 2)
         assert names == ['Standard', 'Suite', 'Double']
         assert set(names) == {'Standard', 'Suite', 'Double'}
         assert 'Other' not in names
 
     def test_numbers_per_room_type(self, world):
         g, alpha, beta = world['guests'], world['alpha'], world['beta']
-        book(world, g[0], alpha, month_start(0), 'standard', nights=2)                       # counted, no revenue yet
+        book(world, g[0], alpha, month_start(0), 'standard', nights=2)                       # esaplanadı, dáramat joq
         book(world, g[1], alpha, month_start(0), 'standard', nights=3, rooms=2, status='completed', price='60.00')
         book(world, g[0], alpha, month_start(0), 'suite', nights=1, status='completed', price='300.00')
         book(world, g[2], beta, month_start(0), 'double', nights=1, rooms=1, status='completed', price='80.00')

@@ -1,3 +1,3 @@
 """
-Tests for the accounts app.
+accounts app ı ushın testler.
 """

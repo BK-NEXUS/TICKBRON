@@ -1,9 +1,9 @@
 """
-Review integrity rules (audit #20).
+Sharh pútinligi qaǵıydaları (audit #20).
 
-A review needs the reviewer's own completed booking and must be for that
-booking's property. One review per booking. booking/property cannot be changed
-after creation, and editing an approved review sends it back to moderation.
+Sharh ushın sharh jazıwshınıń óz juwmaqlanǵan broni kerek hám ol sol
+bronnıń mehmanxanasına tiyisli bolıwı kerek. Hár bronǵa bir sharh. booking/property
+jaratılǵannan keyin ózgertilmeydi, hám tastıyıqlanǵan sharhtı ózgertiw onı qayta moderation ǵa jiberedi.
 """
 from django.test import TestCase
 from rest_framework import status

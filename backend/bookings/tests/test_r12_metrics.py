@@ -1,5 +1,5 @@
 """
-R12 phase 2: the Status definitions in bookings/metrics.py (PLAN_R12 section 1).
+R12 2-basqısh: bookings/metrics.py degi Status anıqlamaları (PLAN_R12 1-bólim).
 """
 from datetime import date, timedelta
 from decimal import Decimal
@@ -14,7 +14,7 @@ from users.models import User
 
 pytestmark = pytest.mark.django_db
 
-TODAY = date(2026, 10, 6)   # a Tuesday
+TODAY = date(2026, 10, 6)   # seyshembi
 
 
 @pytest.fixture
@@ -74,9 +74,9 @@ class TestPeriods:
         assert parse_period('custom', '2006-01-02', '2026-01-01', today=TODAY)[1][0] == date(2006, 1, 2)
 
     @pytest.mark.parametrize('date_from, date_to', [
-        ('2026-01-20', '2026-01-10'),       # from after to
-        ('2006-01-01', '2026-01-01'),       # more than 20 years
-        ('2026-13-01', '2026-01-10'),       # bad date
+        ('2026-01-20', '2026-01-10'),       # aldın dan keyin
+        ('2006-01-01', '2026-01-01'),       # 20 jıldan kóp
+        ('2026-13-01', '2026-01-10'),       # jaramsız sana
         ('yesterday', '2026-01-10'),
         (None, '2026-01-10'),
         ('2026-01-10', None),
@@ -146,11 +146,11 @@ class TestCounting:
     def test_upcoming_is_not_limited_by_the_period(self, hotel, guest):
         make_booking(hotel, guest, TODAY + timedelta(days=1))
         make_booking(hotel, guest, TODAY + timedelta(days=400))
-        make_booking(hotel, guest, TODAY)                       # today is not "after today"
+        make_booking(hotel, guest, TODAY)                       # búgin "búgennen keyin" emes
         make_booking(hotel, guest, TODAY + timedelta(days=5), status='pending')
         t = totals(hotel, 'last_7_days')
         assert t['upcoming'] == 2
-        assert t['bookings'] == 1                                # only today's check-in is in the period
+        assert t['bookings'] == 1                                # dáwirde tek búgingi kiriw bar
 
     def test_soft_deleted_bookings_never_count(self, hotel, guest):
         b = make_booking(hotel, guest, TODAY - timedelta(days=3), status='completed')
@@ -161,7 +161,7 @@ class TestCounting:
 
 
 class TestCashRevenue:
-    """Cash at the hotel: revenue is the total price of completed bookings, per currency."""
+    """Mehmanxanada naqd: dáramat juwmaqlanǵan bronlardıń jámi bahası, hár valyuta boyınsha."""
 
     def test_revenue_is_the_total_price_of_completed_bookings(self, hotel, guest):
         make_booking(hotel, guest, TODAY - timedelta(days=10), status='completed')
@@ -234,11 +234,11 @@ class TestSeries:
 class TestReconciliation:
 
     def test_windows(self, hotel, guest):
-        make_booking(hotel, guest, TODAY, guest_count=2)                                   # today
-        make_booking(hotel, guest, TODAY - timedelta(days=1), status='completed')           # Monday
-        make_booking(hotel, guest, date(2026, 10, 2), status='completed', guest_count=3)    # this month
-        make_booking(hotel, guest, date(2026, 3, 2), status='completed')                    # this year
-        make_booking(hotel, guest, date(2025, 3, 2), status='completed')                    # earlier
+        make_booking(hotel, guest, TODAY, guest_count=2)                                   # búgin
+        make_booking(hotel, guest, TODAY - timedelta(days=1), status='completed')           # dúyshembi
+        make_booking(hotel, guest, date(2026, 10, 2), status='completed', guest_count=3)    # usı ay
+        make_booking(hotel, guest, date(2026, 3, 2), status='completed')                    # usı jıl
+        make_booking(hotel, guest, date(2025, 3, 2), status='completed')                    # aldın
         make_booking(hotel, guest, TODAY, status='cancelled')
         r = metrics.reconciliation(metrics.all_bookings().filter(property=hotel), today=TODAY)
         assert (r['today']['from'], r['today']['to']) == ('2026-10-06', '2026-10-06')

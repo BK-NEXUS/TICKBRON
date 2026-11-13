@@ -1,4 +1,4 @@
-"""Local development (DEBUG) serves the uploaded photos at /media/; production does not (the web server does)."""
+"""Jergilikli development (DEBUG) júklengen súwretlerdi /media/ de beredi; production bermeydi (web server beredi)."""
 import importlib
 
 import pytest

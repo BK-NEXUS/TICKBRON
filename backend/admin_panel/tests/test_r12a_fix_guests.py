@@ -1,9 +1,8 @@
 """
-R12a-fix: the Status numbers exist as bookings AND as persons.
+R12a-fix: Status sanları bronlar HÁM adamlar retinde bar.
 
-stayed_guests / counted_guests / upcoming_guests next to stayed / counted / upcoming, on every
-statistics endpoint (admin and owner), plus `business_date` and `no_show_report_window_days`
-in the response meta.
+stayed_guests / counted_guests / upcoming_guests stayed / counted / upcoming janında, hár
+statistika endpoint inde (admin hám iye), hám juwap metasında `business_date` hám `no_show_report_window_days`.
 """
 from datetime import datetime, timedelta, timezone
 from unittest import mock
@@ -44,8 +43,8 @@ def persons(booking, count):
 @pytest.fixture
 def people(status_world):
     """
-    Hotel Beta. status_world already gives it one completed (1 person) and one confirmed (1 person)
-    booking; these add 4 + 3 persons completed, 2 + 5 confirmed (the last one in the future), 7 cancelled.
+    Hotel Beta. status_world oǵan aldınan bir juwmaqlanǵan (1 adam) hám bir tastıyıqlanǵan (1 adam)
+    bron beredi; bular 4 + 3 adam juwmaqlanǵan, 2 + 5 tastıyıqlanǵan (sońǵısı keleshekte), 7 biykar etilgenin qosadı.
     """
     beta, guest = status_world['hotels']['beta'], status_world['guests'][0]
     today = business_today()
@@ -70,7 +69,7 @@ class TestPersonsAreNotBookings:
 
     def test_counted_and_upcoming_guests(self, get, people):
         totals = beta_totals(get, people)
-        # confirmed + completed, all time: 2 from the fixture + 4 + 3 + 2 + the future one (5)
+        # confirmed + completed, pútkil waqıt: fixture den 2 + 4 + 3 + 2 + keleshektegi (5)
         assert totals['counted_guests'] == totals['guests'] == 16
         assert (totals['upcoming'], totals['upcoming_guests']) == (1, 5)
 
@@ -160,7 +159,7 @@ class TestFieldsOnEveryEndpoint:
 
 
 class TestBusinessDate:
-    """Tashkent is UTC+5: just after its midnight it is already the next day."""
+    """Tashkent UTC+5: yarım túnnen keyin ol aldınan keyingi kún."""
 
     @pytest.mark.parametrize('utc, expected', [
         (datetime(2026, 10, 6, 18, 59, tzinfo=timezone.utc), '2026-10-06'),

@@ -1,5 +1,5 @@
-"""The commission the site takes from each hotel owner: a percent per owner, figures per month and per year,
-and the confirmation that a month was paid (by a super admin or a staff admin, shown by name)."""
+"""Sayt hár mehmanxana iyesinen alatuǵın komissiya: hár iye ushın procent, ay hám jıl boyınsha sanlar,
+hám ay tólengenin tastıyıqlaw (super admin yamasa staff admin, at penen kórsetiledi)."""
 from datetime import date, datetime, timezone
 from unittest import mock
 
@@ -224,7 +224,7 @@ class TestAdminList:
         assert row['this_month'] == {'month': '2026-05', 'bookings': 1,
                                      'gross': [{'currency': 'USD', 'amount': '1000.00'}],
                                      'commission': [{'currency': 'USD', 'amount': '20.00'}]}
-        assert row['unpaid'] == [{'currency': 'USD', 'amount': '20.00'}]  # March only: May has not ended
+        assert row['unpaid'] == [{'currency': 'USD', 'amount': '20.00'}]  # Tek mart: may ele pitpegen
 
     @pytest.mark.parametrize('term', ['Olim', 'karimov', 'mine@example', '901112233', 'My Hotel', 'my hotel'])
     def test_search_finds_the_owner_by_name_email_phone_or_hotel(self, term, world):

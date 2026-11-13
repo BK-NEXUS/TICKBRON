@@ -1,8 +1,8 @@
 """
-R12 1b: confirmed bookings whose check-out date is before the business date become
-`completed`, every night at 00:05 Asia/Tashkent and by a one-off command. A missed
-run heals itself (check_out < today, not "== yesterday"). Every real run is recorded
-(time, number changed) and shown to super-admins.
+R12 1b: shıǵıw sanası is sanasınan aldın bolǵan tastıyıqlanǵan bronlar hár túni Asia/Tashkent 00:05 te
+hám bir márte command penen `completed` boladı. Ótkizip jiberilgen isleniw
+ózi túzeledi (check_out < today, "== yesterday" emes). Hár haqıyqıy isleniw jazıladı
+(waqıt, ózgergen sanı) hám super-adminlerge kórsetiledi.
 """
 from datetime import datetime, timedelta, timezone as dt_timezone
 from io import StringIO
@@ -48,8 +48,8 @@ class TestCompletion:
 
     def test_only_confirmed_stays_that_ended_before_today_complete(self, hotel, guest):
         today = business_today()
-        ended = make_booking(hotel, guest, today - timedelta(days=3), nights=2)          # out yesterday
-        leaving_today = make_booking(hotel, guest, today - timedelta(days=2), nights=2)  # out today
+        ended = make_booking(hotel, guest, today - timedelta(days=3), nights=2)          # keshe shıqtı
+        leaving_today = make_booking(hotel, guest, today - timedelta(days=2), nights=2)  # búgin shıqtı
         future = make_booking(hotel, guest, today + timedelta(days=5))
         others = [make_booking(hotel, guest, today - timedelta(days=9), status=s)
                   for s in ('pending', 'cancelled', 'no_show', 'completed')]
@@ -119,16 +119,16 @@ class TestCompletion:
         assert AutoCompletionRun.objects.get().trigger == 'beat'
 
     def test_business_date_decides_at_half_past_midnight_tashkent(self, hotel, guest):
-        # 00:30 Tashkent on D+1 is 19:30 UTC on D. Check-out on D has passed in Tashkent.
+        # D+1 degi 00:30 Tashkent D degi 19:30 UTC. D degi shıǵıw Tashkent te ótip ketti.
         day = business_today() + timedelta(days=30)
-        booking = make_booking(hotel, guest, day - timedelta(days=2), nights=2)   # check-out D
+        booking = make_booking(hotel, guest, day - timedelta(days=2), nights=2)   # D shıǵıw
         with at_tashkent(day + timedelta(days=1), 0, 30):
             assert complete_finished_stays()['changed'] == 1
         assert _status(booking) == 'completed'
 
     def test_at_half_past_eleven_the_same_day_is_not_over(self, hotel, guest):
         day = business_today() + timedelta(days=30)
-        booking = make_booking(hotel, guest, day - timedelta(days=2), nights=2)   # check-out D
+        booking = make_booking(hotel, guest, day - timedelta(days=2), nights=2)   # D shıǵıw
         with at_tashkent(day, 23, 30):
             assert complete_finished_stays()['changed'] == 0
         assert _status(booking) == 'confirmed'
@@ -172,14 +172,14 @@ class TestSchedule:
     def test_completion_fires_at_0005_tashkent(self):
         entry = settings.CELERY_BEAT_SCHEDULE['complete-finished-stays']
         assert entry['task'] == 'bookings.tasks.complete_finished_stays'
-        # Monday 23:00 Tashkent (18:00 UTC), last run at 00:05 that morning
+        # Dúyshembi 23:00 Tashkent (18:00 UTC), sońǵı isleniw sol tańda 00:05 te
         now = datetime(2026, 10, 5, 18, 0, tzinfo=dt_timezone.utc)
         last = datetime(2026, 10, 4, 19, 5, tzinfo=dt_timezone.utc)
         assert self._next_run_utc('complete-finished-stays', now, last) == datetime(
-            2026, 10, 5, 19, 5, tzinfo=dt_timezone.utc)   # = 00:05 on 6 October in Tashkent
+            2026, 10, 5, 19, 5, tzinfo=dt_timezone.utc)   # = Tashkent te 6-oktyabr 00:05
 
     def test_exchange_rate_fetch_keeps_its_real_times(self):
-        # 09:00 and 18:00 Tashkent = 04:00 and 13:00 UTC, unchanged by the Celery time zone move
+        # 09:00 hám 18:00 Tashkent = 04:00 hám 13:00 UTC, Celery waqıt zonası kóshiwi ózgertpegen
         now = datetime(2026, 10, 5, 3, 0, tzinfo=dt_timezone.utc)
         last = datetime(2026, 10, 4, 13, 0, tzinfo=dt_timezone.utc)
         assert self._next_run_utc('fetch-exchange-rates', now, last) == datetime(
@@ -211,7 +211,7 @@ class TestStatusEndpoint:
     def test_super_admin_sees_last_run_and_waiting_count(self, people, hotel, guest):
         make_booking(hotel, guest, business_today() - timedelta(days=4))
         complete_finished_stays(trigger='beat')
-        make_booking(hotel, guest, business_today() - timedelta(days=5))   # arrived after the run
+        make_booking(hotel, guest, business_today() - timedelta(days=5))   # isleniwden keyin keldi
 
         response = self._get(people['super'])
 

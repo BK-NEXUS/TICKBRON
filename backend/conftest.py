@@ -1,7 +1,7 @@
 """
-Pytest configuration for TICKBRON backend tests.
+TICKBRON backend testleri ushın pytest konfiguraciyası.
 
-This file contains pytest fixtures and configuration for reproducible testing.
+Bul fayl qaytalanatuǵın testlew ushın pytest fixture lerin hám konfiguraciyanı óz ishine aladı.
 """
 import os
 import sys
@@ -10,40 +10,40 @@ from pathlib import Path
 import pytest
 
 
-# Add the backend directory to the Python path
+# Backend papkasın Python jolına qosıw
 sys.path.insert(0, str(Path(__file__).parent))
 
-# Set Django settings module for pytest
+# pytest ushın Django sazlama modulin belgilew
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-# Shared data for the Status endpoint tests (admin_panel and partner)
+# Status endpoint testleri ushın ortaq maǵlıwmat (admin_panel hám partner)
 pytest_plugins = ['admin_panel.tests.status_fixtures']
 
 
-# Test database: pytest-django's built-in django_db_setup creates a separate
-# test database and runs migrations. Do not override it with a no-op, or tests
-# run against the configured development database instead.
+# Test database: pytest-django tiń ishki django_db_setup ı bólek test database
+# jaratadı hám migration lardı isletedi. Onı bosı menen almastırmań, bolmasa testler
+# sazlanǵan development database ge qarsı isleydi.
 
 
 @pytest.fixture(autouse=True)
 def geography_dictionary(request, django_db_blocker):
     """
-    Keep the Geography dictionary available for normal database tests.
+    Geografiya sózligin ádettegi database testleri ushın bar etip saqlaw.
 
-    Geography data is loaded by the geography data migration. Some
-    TransactionTestCase-based migration tests intentionally manipulate
-    database state and use serialized rollback. Injecting Geography data
-    into those tests can conflict with Django's serialized database restore.
+    Geografiya maǵlıwmatı geografiya data migration ı tárepinen júklenedi. Ayırım
+    TransactionTestCase tiykarındaǵı migration testleri ataylap database jaǵdayın ózgertedi
+    hám serialized rollback paydalanadı. Geografiya maǵlıwmatın olarǵa kirgiziw
+    Django nıń serialized database tikleniwi menen qaqtıǵıwı múmkin.
 
-    Therefore this fixture only reloads Geography data for normal database
-    tests and explicitly skips TransactionTestCase-based tests.
+    Sol sebepli bul fixture Geografiya maǵlıwmatın tek ádettegi database
+    testleri ushın qayta júkleydi hám TransactionTestCase tiykarındaǵı testlerdi anıq ótkizip jiberedi.
     """
     from django.test import TransactionTestCase
 
     test_instance = getattr(request.node, 'instance', None)
 
-    # Migration/TransactionTestCase tests must control their own database
-    # state. Do not inject Geography rows into their serialized rollback.
+    # Migration/TransactionTestCase testleri óz database jaǵdayın ózleri basqarıwı kerek.
+    # Geografiya qatarların olardıń serialized rollback ına kirgizbeń.
     if isinstance(test_instance, TransactionTestCase):
         yield
         return
@@ -54,15 +54,15 @@ def geography_dictionary(request, django_db_blocker):
     )
 
     if uses_db:
-        # Ensure the test database exists before accessing Geography.
+        # Geografiyaǵa kiriwden aldın test database bar ekenin támiyinlew.
         request.getfixturevalue('django_db_setup')
 
         with django_db_blocker.unblock():
             from geography.data import load_geography
             from geography.models import Country, Region
 
-            # A previous TransactionTestCase can empty the dictionary.
-            # Reload it only when it is genuinely empty.
+            # Aldınǵı TransactionTestCase sózlikti bosatıp jiberiwi múmkin.
+            # Tek haqıyqatında bos bolǵanda qayta júkleń.
             if not Country.objects.exists():
                 load_geography(Country, Region)
 
@@ -82,15 +82,15 @@ def pytest_configure(config):
 @pytest.fixture(autouse=True)
 def default_exchange_rate(request, django_db_blocker):
     """
-    Give normal database tests an accepted USD rate (R6).
+    Ádettegi database testlerine qabıllanǵan USD kursın beriw (R6).
 
-    A USD-priced hotel cannot be booked without a rate (503 exchange_rate_unavailable),
-    as in a running system after the first CBU fetch. Tests about rates themselves
-    (no rate yet, stale rate, fetch, accept) use the no_default_exchange_rate marker
-    and create their own rows. The source is 'test-default', so a rate a test stores
-    with make_usd_rate() (source cbu.uz, created later) is the one in use.
-    TransactionTestCase tests (not django.test.TestCase) are skipped for the same reason
-    as geography_dictionary.
+    USD de bahalanǵan mehmanxananı kurssız bronlap bolmaydı (503 exchange_rate_unavailable),
+    birinshi CBU alıwdan keyin isleytuǵın sistemadaǵıday. Kurslardıń ózi haqqındaǵı testler
+    (kurs ele joq, eskirgen kurs, alıw, qabıllaw) no_default_exchange_rate belgisin paydalanadı
+    hám óz qatarların jaratadı. Dereg 'test-default', sol sebepli testtiń make_usd_rate() penen saqlaǵan kursı
+    (cbu.uz dereg i, keyin jaratılǵan) paydalanılatuǵını.
+    TransactionTestCase testleri (django.test.TestCase emes) geography_dictionary menen birdey sebepten ótkizip
+    jiberiledi.
     """
     from django.test import TestCase, TransactionTestCase
 
@@ -103,7 +103,7 @@ def default_exchange_rate(request, django_db_blocker):
         yield
         return
 
-    # django.test.TestCase: the row is written inside the class transaction and rolled back with it
+    # django.test.TestCase: qatar klas transaction ı ishinde jazıladı hám onıń menen qaytadı
     uses_db = (
         is_django_testcase
         or request.node.get_closest_marker('django_db') is not None
@@ -112,7 +112,8 @@ def default_exchange_rate(request, django_db_blocker):
     if uses_db:
         request.getfixturevalue('django_db_setup')
         if not is_django_testcase:
-            # The row must be written inside the test's own transaction (or removed by its flush), never committed
+            # Qatar testtiń óz transaction ı ishinde jazılıwı kerek (yamasa flush penen alıp taslanadı), hesh qashan commit
+            # qılınbaydı
             request.getfixturevalue('transactional_db' if 'transactional_db' in request.fixturenames else 'db')
         with django_db_blocker.unblock():
             from decimal import Decimal
@@ -131,9 +132,11 @@ def default_exchange_rate(request, django_db_blocker):
 @pytest.fixture(autouse=True)
 def mailed_codes_off_by_default(settings):
     """
-    The mailed six-digit codes are on in a running system, but most tests sign people up and in through the API with
-    a password only: they run with the codes off. The tests of the codes themselves (users/tests/test_email_codes.py)
-    switch them on.
+    E-mail ge jiberiletuǵın altı sanlı kodlar isleytuǵın sistemada qosılǵan, biraq kópshilik testler adamlardı API arqalı
+    tek
+    parol menen dizimnen ótkizedi hám kirgizedi: olar kodlarsız isleydi. Kodlardıń ózi haqqındaǵı testler
+    (users/tests/test_email_codes.py)
+    olardı qosadı.
     """
     settings.EMAIL_VERIFICATION_REQUIRED = False
     settings.EMAIL_LOGIN_CODE_REQUIRED = False
@@ -141,7 +144,7 @@ def mailed_codes_off_by_default(settings):
 
 @pytest.fixture(autouse=True)
 def clear_cache():
-    """Start every test with an empty cache."""
+    """Hár testti bos kesh penen baslaw."""
     from django.core.cache import cache
 
     cache.clear()
@@ -152,7 +155,7 @@ def clear_cache():
 @pytest.fixture
 def sample_system_settings():
     """
-    Provide sample system settings data for testing.
+    Testlew ushın úlgi sistema sazlamaları maǵlıwmatın beriw.
     """
     return {
         'key': 'test_setting',

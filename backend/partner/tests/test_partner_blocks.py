@@ -1,5 +1,5 @@
 """
-Tests for the partner external-booking blocks API (3.5, audit #31 follow-up).
+Partner sırtqı bron bloklar API ı ushın testler (3.5, audit #31 dawamı).
 """
 from datetime import date, timedelta
 
@@ -78,7 +78,7 @@ class PartnerBlockTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         row = RoomInventory.objects.get(room_type=self.room_type, date=self.start)
         self.assertEqual(row.available_rooms, 5)
-        self.assertTrue(RoomBlock.objects.get(id=block.id).is_deleted)  # soft-deleted, not gone
+        self.assertTrue(RoomBlock.objects.get(id=block.id).is_deleted)  # soft-delete etilgen, joq emes
 
     def test_hotel_owner_cannot_see_or_delete_another_owners_block(self):
         other_owner = User.objects.create_user(

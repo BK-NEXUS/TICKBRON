@@ -1,5 +1,6 @@
-"""The site sends no SMS: the support team's reply reaches the user by e-mail only (chat/tests/test_notify.py).
-Nothing of the old SMS notice stays: no sender, no limits, no consent box, no tables or columns."""
+"""Sayt SMS jibermeydi: qollap-quwatlaw komandasınıń juwabı paydalanıwshıǵa tek e-mail arqalı jetedi
+(chat/tests/test_notify.py).
+Eski SMS xabarlandırıwınan hesh nárse qalmaydı: jiberiwshi, shekler, rozılıq qutısı, kestelar yamasa baǵanalar joq."""
 import importlib
 
 import pytest
@@ -37,7 +38,7 @@ def test_there_is_no_sms_model_table_or_user_column():
 
 
 class TestRemovalIsReversible(TransactionTestCase):
-    """Going back one step brings the SMS table and the consent column back (empty), going forward drops them again."""
+    """Bir qádem artqa qaytıw SMS kestesin hám rozılıq baǵanasın qaytaradı (bos), alǵa barıw olardı qayta óshiredi."""
 
     def _migrate(self, targets):
         executor = MigrationExecutor(connection)

@@ -1,5 +1,5 @@
 """
-Tests for property availability API endpoint.
+Mehmanxana bos orınları API endpoint i ushın testler.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -16,10 +16,10 @@ User = get_user_model()
 
 
 class PropertyAvailabilityEndpointTest(TestCase):
-    """Test cases for property availability API endpoint."""
+    """Mehmanxana bos orınları API endpoint i ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
         self.user = User.objects.create_user(
@@ -65,14 +65,14 @@ class PropertyAvailabilityEndpointTest(TestCase):
             currency='USD'
         )
 
-        # Add amenities to property
+        # Mehmanxanaǵa amenity lerdi qosıw
         PropertyAmenity.objects.create(
             property=self.property,
             amenity=self.wifi_amenity,
             is_available=True
         )
 
-        # Add room type with rate plans
+        # Rate plan lı xona túrin qosıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -85,14 +85,14 @@ class PropertyAvailabilityEndpointTest(TestCase):
             total_rooms=5
         )
 
-        # Add room amenities
+        # Xona amenity lerin qosıw
         RoomAmenity.objects.create(
             room_type=self.room_type,
             amenity=self.wifi_amenity,
             is_available=True
         )
 
-        # Add rate plan
+        # Rate plan dı qosıw
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -105,7 +105,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
             is_active=True
         )
 
-        # Add date inventory for next 7 days
+        # Keyingi 7 kún ushın date inventory qosıw
         today = date.today()
         for i in range(1, 8):
             inventory_date = today + timedelta(days=i)
@@ -119,7 +119,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
                 is_available=True
             )
 
-        # Add another room type
+        # Taǵı bir xona túrin qosıw
         self.room_type_2 = RoomType.objects.create(
             property=self.property,
             name='Deluxe Room',
@@ -132,7 +132,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
             total_rooms=3
         )
 
-        # Add rate plan for second room type
+        # Ekinshi xona túri ushın rate plan qosıw
         self.rate_plan_2 = RatePlan.objects.create(
             room_type=self.room_type_2,
             name='Deluxe Rate',
@@ -145,7 +145,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
             is_active=True
         )
 
-        # Add date inventory for second rate plan
+        # Ekinshi rate plan ushın date inventory qosıw
         for i in range(1, 8):
             inventory_date = today + timedelta(days=i)
             DateInventory.objects.create(
@@ -159,7 +159,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
             )
 
     def test_availability_success(self):
-        """Test successful availability request."""
+        """Tabıslı bos orın sorawın testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -168,7 +168,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('room_types', response.data)
 
     def test_availability_includes_property_info(self):
-        """Test that availability includes basic property information."""
+        """Bos orın tiykarǵı mehmanxana maǵlıwmatın óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -178,7 +178,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertEqual(str(response.data['base_price']), '50.00')
 
     def test_availability_includes_room_types(self):
-        """Test that availability includes room types."""
+        """Bos orın xona túrlerin óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -186,7 +186,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         room_types = response.data['room_types']
         self.assertGreater(len(room_types), 0)
 
-        # Check room type structure
+        # Xona túri dúzilisin tekseriw
         first_room_type = room_types[0]
         self.assertIn('id', first_room_type)
         self.assertIn('name', first_room_type)
@@ -195,7 +195,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('rate_plans', first_room_type)
 
     def test_availability_includes_rate_plans(self):
-        """Test that room types include rate plans."""
+        """Xona túrleri rate plan lardı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -206,7 +206,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         rate_plans = first_room_type['rate_plans']
         self.assertGreater(len(rate_plans), 0)
 
-        # Check rate plan structure
+        # Rate plan dúzilisin tekseriw
         first_rate_plan = rate_plans[0]
         self.assertIn('id', first_rate_plan)
         self.assertIn('name', first_rate_plan)
@@ -215,7 +215,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('min_nights', first_rate_plan)
 
     def test_availability_includes_date_inventory(self):
-        """Test that rate plans include date inventory."""
+        """Rate plan lar date inventory di óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -228,7 +228,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         date_inventory = first_rate_plan['date_inventory']
         self.assertGreater(len(date_inventory), 0)
 
-        # Check date inventory structure
+        # Date inventory dúzilisin tekseriw
         first_inventory = date_inventory[0]
         self.assertIn('date', first_inventory)
         self.assertIn('available_rooms', first_inventory)
@@ -238,7 +238,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('is_available', first_inventory)
 
     def test_availability_with_date_range(self):
-        """Test availability with date range parameters."""
+        """Sana aralıǵı parametrleri menen bos orındı testlew."""
         today = date.today()
         check_in = (today + timedelta(days=1)).strftime('%Y-%m-%d')
         check_out = (today + timedelta(days=3)).strftime('%Y-%m-%d')
@@ -250,18 +250,18 @@ class PropertyAvailabilityEndpointTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that date inventory is filtered by date range
+        # Date inventory sana aralıǵı boyınsha filterlengenin tekseriw
         room_types = response.data['room_types']
         first_room_type = room_types[0]
         rate_plans = first_room_type['rate_plans']
         first_rate_plan = rate_plans[0]
         date_inventory = first_rate_plan['date_inventory']
 
-        # Should only include dates within the range
+        # Tek aralıqtaǵı sanalardı óz ishine alıwı kerek
         self.assertLessEqual(len(date_inventory), 3)
 
     def test_availability_with_only_check_in(self):
-        """Test availability with only check_in parameter."""
+        """Tek check_in parametri menen bos orındı testlew."""
         today = date.today()
         check_in = (today + timedelta(days=2)).strftime('%Y-%m-%d')
 
@@ -272,18 +272,18 @@ class PropertyAvailabilityEndpointTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that date inventory is filtered from check_in onwards
+        # Date inventory check_in nen baslap filterlengenin tekseriw
         room_types = response.data['room_types']
         first_room_type = room_types[0]
         rate_plans = first_room_type['rate_plans']
         first_rate_plan = rate_plans[0]
         date_inventory = first_rate_plan['date_inventory']
 
-        # Should only include dates from check_in onwards
+        # Tek check_in nen baslap sanalardı óz ishine alıwı kerek
         self.assertGreater(len(date_inventory), 0)
 
     def test_availability_invalid_date_format(self):
-        """Test availability with invalid date format."""
+        """Jaramsız sana formatı menen bos orındı testlew."""
         response = self.client.get(
             f'/api/v1/properties/{self.property.id}/availability/',
             {'check_in': 'invalid-date', 'check_out': '2024-01-10'}
@@ -293,7 +293,7 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_availability_invalid_date_range(self):
-        """Test availability with invalid date range (check_out before check_in)."""
+        """Jaramsız sana aralıǵı (check_in nen aldın check_out) menen bos orındı testlew."""
         today = date.today()
         check_in = (today + timedelta(days=5)).strftime('%Y-%m-%d')
         check_out = (today + timedelta(days=2)).strftime('%Y-%m-%d')
@@ -307,15 +307,15 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_availability_property_not_found(self):
-        """Test availability with non-existent property ID."""
+        """Joq mehmanxana ID si menen bos orındı testlew."""
         response = self.client.get('/api/v1/properties/99999/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
 
     def test_availability_deleted_property(self):
-        """Test availability with deleted property."""
-        # Soft delete the property
+        """Óshirilgen mehmanxana menen bos orındı testlew."""
+        # Mehmanxananı soft-delete etiw
         self.property.is_deleted = True
         self.property.save()
 
@@ -325,8 +325,8 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_availability_inactive_property(self):
-        """Test availability with inactive property."""
-        # Deactivate the property
+        """Aktiv emes mehmanxana menen bos orındı testlew."""
+        # Mehmanxananı aktiv emes etiw
         self.property.is_active = False
         self.property.save()
 
@@ -336,19 +336,19 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_availability_public_access(self):
-        """Test that availability endpoint is publicly accessible."""
+        """Bos orın endpoint i ashıq qol jetimli ekenin testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
-        # Should work without authentication
+        # Autentifikaciyasız islewi kerek
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_availability_deterministic_pricing(self):
-        """Test that availability pricing is deterministic (same inputs = same outputs)."""
+        """Bos orın bahası anıq ekenin testlew (birdey kirisiw = birdey shıǵıs)."""
         today = date.today()
         check_in = (today + timedelta(days=1)).strftime('%Y-%m-%d')
         check_out = (today + timedelta(days=3)).strftime('%Y-%m-%d')
 
-        # Make the same request twice
+        # Birdey sorawdı eki ret islew
         response1 = self.client.get(
             f'/api/v1/properties/{self.property.id}/availability/',
             {'check_in': check_in, 'check_out': check_out}
@@ -362,11 +362,11 @@ class PropertyAvailabilityEndpointTest(TestCase):
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
         self.assertEqual(response2.status_code, status.HTTP_200_OK)
 
-        # Compare the responses
+        # Juwaplardı salıstırıw
         self.assertEqual(response1.data, response2.data)
 
     def test_availability_remaining_rooms_calculation(self):
-        """Test that remaining_rooms is calculated correctly."""
+        """remaining_rooms durıs esaplanatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -376,14 +376,14 @@ class PropertyAvailabilityEndpointTest(TestCase):
         first_rate_plan = rate_plans[0]
         date_inventory = first_rate_plan['date_inventory']
 
-        # Check remaining_rooms calculation
+        # remaining_rooms esaplawın tekseriw
         first_inventory = date_inventory[0]
         expected_remaining = first_inventory['available_rooms'] - first_inventory['booked_rooms']
         self.assertEqual(first_inventory['remaining_rooms'], expected_remaining)
 
     def test_availability_filters_inactive_rate_plans(self):
-        """Test that inactive rate plans are filtered out."""
-        # Deactivate one rate plan
+        """Aktiv emes rate plan lar filterlenip taslanatuǵının testlew."""
+        # Bir rate plan dı aktiv emes etiw
         self.rate_plan.is_active = False
         self.rate_plan.save()
 
@@ -394,46 +394,46 @@ class PropertyAvailabilityEndpointTest(TestCase):
         first_room_type = room_types[0]
         rate_plans = first_room_type['rate_plans']
 
-        # Should not include the inactive rate plan
+        # Aktiv emes rate plan kirmewi kerek
         rate_plan_ids = [rp['id'] for rp in rate_plans]
         self.assertNotIn(self.rate_plan.id, rate_plan_ids)
 
     def test_availability_multiple_room_types(self):
-        """Test availability with multiple room types."""
+        """Bir neshe xona túri menen bos orındı testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         room_types = response.data['room_types']
 
-        # Should include both room types
+        # Eki xona túri de kiriwi kerek
         self.assertEqual(len(room_types), 2)
         room_type_ids = [rt['id'] for rt in room_types]
         self.assertIn(self.room_type.id, room_type_ids)
         self.assertIn(self.room_type_2.id, room_type_ids)
 
     def test_availability_no_date_range(self):
-        """Test availability without date range parameters."""
+        """Sana aralıǵı parametrlerisiz bos orındı testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/availability/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Should return all date inventory
+        # Barlıq date inventory di qaytarıwı kerek
         room_types = response.data['room_types']
         first_room_type = room_types[0]
         rate_plans = first_room_type['rate_plans']
         first_rate_plan = rate_plans[0]
         date_inventory = first_rate_plan['date_inventory']
 
-        # Should include all 7 days of inventory
+        # Barlıq 7 kúnlik inventory di óz ishine alıwı kerek
         self.assertEqual(len(date_inventory), 7)
 
 
 class PropertyAvailabilityUsesRoomInventoryTest(TestCase):
     """
-    3.4 (audit #31): the public availability response's remaining_rooms (and
-    available_rooms/booked_rooms) must come from RoomInventory, the room type's shared
-    physical room count, not from DateInventory's own columns -- the booking engine
-    stopped writing those in 3.3, so they can drift from what is actually booked.
+    3.4 (audit #31): ashıq bos orın juwabınıń remaining_rooms (hám
+    available_rooms/booked_rooms) DateInventory diń óz baǵanalarınan emes, RoomInventory den,
+    xona túriniń ortaq fizikalıq xona sanınan kelwi kerek -- bron sisteması olardı 3.3 te jazıwdı toqtattı,
+    sol sebepli olar haqıyqatında bronlanǵannan ayrılıp ketiwi múmkin.
     """
 
     def setUp(self):
@@ -454,12 +454,12 @@ class PropertyAvailabilityUsesRoomInventoryTest(TestCase):
             base_price=50.00, currency='USD', min_nights=1, is_active=True,
         )
         self.date = date.today() + timedelta(days=1)
-        # DateInventory says fully free -- stale, the booking engine no longer writes this
+        # DateInventory pútkilley bos deydi -- eskirgen, bron sisteması bunı endi jazbaydı
         DateInventory.objects.create(
             rate_plan=self.rate_plan, date=self.date, available_rooms=5, booked_rooms=0,
             price=50.00, currency='USD', is_available=True,
         )
-        # RoomInventory (audit #31) is what the booking engine actually updates
+        # RoomInventory (audit #31) bron sisteması haqıyqatında jańalaytuǵın nárse
         RoomInventory.objects.create(
             room_type=self.room_type, date=self.date, available_rooms=5, booked_rooms=3, is_available=True,
         )
@@ -473,11 +473,11 @@ class PropertyAvailabilityUsesRoomInventoryTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         row = self._date_row(response, self.date)
-        self.assertEqual(row['booked_rooms'], 3)  # RoomInventory's real count, not DateInventory's stale 0
+        self.assertEqual(row['booked_rooms'], 3)  # RoomInventory diń haqıyqıy sanı, DateInventory diń eskirgen 0 emes
         self.assertEqual(row['remaining_rooms'], 2)
 
     def test_unmanaged_night_falls_back_to_room_type_total(self):
-        """A night with no RoomInventory row is unmanaged: open at the room type's full total_rooms."""
+        """RoomInventory qatarı joq tún basqarılmaydı: xona túriniń tolıq total_rooms ı menen ashıq."""
         other_date = self.date + timedelta(days=1)
         DateInventory.objects.create(
             rate_plan=self.rate_plan, date=other_date, available_rooms=1, booked_rooms=1,

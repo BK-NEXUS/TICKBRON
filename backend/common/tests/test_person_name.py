@@ -1,4 +1,4 @@
-"""Person names take letters, never digits or symbols (the frontend filters the same way)."""
+"""Adam atları háripti qabıllaydı, hesh qashan san yamasa belgilerdi emes (frontend de sol usılda filterleydi)."""
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase, TestCase

@@ -1,8 +1,8 @@
 """
-OWASP A07-1: a forgotten password can be reset by e-mail, and a known password can be changed.
+OWASP A07-1: umıtılǵan paroldi e-mail arqalı tiklewge, bilinetuǵın paroldi ózgertiwge boladı.
 
-The reset link is a signed, single-use token (valid for PASSWORD_RESET_TIMEOUT). The request
-endpoint answers the same for every address, so it cannot be used to find out who has an account.
+Tiklew siltemesi qol qoyılǵan, bir ret qollanılatuǵın token (PASSWORD_RESET_TIMEOUT ge shekem jaramlı). Soraw
+endpoint i hár mánzil ushın birdey juwap beredi, sol sebepli kimde akkaunt barın anıqlawǵa bolmaydı.
 """
 import logging
 import re
@@ -35,7 +35,7 @@ def _clean_cache():
 
 @pytest.fixture(autouse=True)
 def send_mail_immediately():
-    """The Celery task runs inline, so a test sees the mail the worker would send."""
+    """Celery tapsırması inline isleydi, sol sebepli test worker jiberetuǵın xattı kóredi."""
     with mock.patch('users.tasks.send_password_reset_email.delay',
                     side_effect=lambda user_id: send_password_reset_email.run(user_id)):
         yield
@@ -53,13 +53,13 @@ def security(caplog):
 
 
 def browser():
-    """A client that enforces CSRF like a real browser."""
+    """CSRF di haqıyqıy brauzerdey májbúrleytuǵın client."""
     client = APIClient(enforce_csrf_checks=True)
     return client, client.get('/api/v1/auth/csrf/').data['csrf_token']
 
 
 def reset_link_from(mailbox):
-    """(uid, token) from the only mail in the outbox."""
+    """Jalǵız xat qutısındaǵı xattan (uid, token)."""
     [message] = mailbox
     return LINK_PATTERN.search(message.body).groups()
 
@@ -203,7 +203,7 @@ class TestConfirmingAReset:
     def test_a_locked_account_can_sign_in_again_after_a_reset(self, user, mailoutbox):
         for _ in range(6):
             login('wrong-password-123')
-        assert login(OLD_PASSWORD).status_code == 401  # locked out of this account from this address
+        assert login(OLD_PASSWORD).status_code == 401  # bul mánzilden usı akkauntqa kiriw bloklanǵan
         uid, token = self.reset_link(mailoutbox)
 
         confirm(uid, token)

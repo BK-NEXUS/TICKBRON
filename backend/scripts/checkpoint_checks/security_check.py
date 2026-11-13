@@ -1,34 +1,34 @@
 """
-Security Foundations Check for TICKBRON Backend Checkpoint 01
+TICKBRON Backend 01-checkpoint ushın qáwipsizlik tiykarların tekseriw
 
-This script verifies that the basic security foundations are in place.
+Bul skript tiykarǵı qáwipsizlik tiykarları ornatılǵanın tastıyıqlaydı.
 """
 import os
 from pathlib import Path
 
 def check_security_foundations():
-    """Verify basic security foundations are configured."""
+    """Tiykarǵı qáwipsizlik tiykarları sazlanǵanın tastıyıqlaw."""
 
     print("TICKBRON Backend Security Foundations Check")
     print("=" * 50)
 
     checks = []
 
-    # Check 1: Environment-based configuration
+    # 1-tekseriw: Environment tiykarındaǵı sazlama
     env_file = Path('.env')
     if not env_file.exists():
         checks.append(("PASS", "Environment file not committed (security best practice)"))
     else:
         checks.append(("WARN", "Environment file exists - ensure it's not committed"))
 
-    # Check 2: .env.example exists
+    # 2-tekseriw: .env.example bar
     env_example = Path('.env.example')
     if env_example.exists():
         checks.append(("PASS", "Environment template exists for setup"))
     else:
         checks.append(("FAIL", "Missing .env.example template"))
 
-    # Check 3: .gitignore includes sensitive files
+    # 3-tekseriw: .gitignore sezgir fayllardı óz ishine alǵan
     gitignore = Path('.gitignore')
     if gitignore.exists():
         gitignore_content = gitignore.read_text()
@@ -44,7 +44,7 @@ def check_security_foundations():
     else:
         checks.append(("FAIL", "Missing .gitignore"))
 
-    # Check 4: Security settings in Django settings
+    # 4-tekseriw: Django sazlamalarındaǵı qáwipsizlik sazlamaları
     settings_file = Path('config/settings.py')
     if settings_file.exists():
         settings_content = settings_file.read_text()
@@ -81,7 +81,7 @@ def check_security_foundations():
     else:
         checks.append(("FAIL", "Settings file not found"))
 
-    # Check 5: Django security middleware
+    # 5-tekseriw: Django qáwipsizlik middleware i
     if settings_file.exists():
         settings_content = settings_file.read_text()
         if 'django.middleware.csrf.CsrfViewMiddleware' in settings_content:
@@ -94,7 +94,7 @@ def check_security_foundations():
         else:
             checks.append(("FAIL", "Security middleware not enabled"))
 
-    # Print results
+    # Nátiyjelerdi shıǵarıw
     print("\nSecurity Foundations Status:")
     print("-" * 50)
 

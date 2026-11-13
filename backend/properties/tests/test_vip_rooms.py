@@ -1,6 +1,7 @@
 """
-R9 VIP rooms (.ai/PLAN_R9_VIP.md v2): the hotel owner marks a room type as VIP, or not, whenever they want;
-no admin approval. Guests see the flag, and VIP room types come first on the property page.
+R9 VIP xonalar (.ai/PLAN_R9_VIP.md v2): mehmanxana iyesi xona túrin qálegen waqıtta VIP dep belgileydi yamasa
+belgilemeydi;
+admin tastıyıqlawı kerek emes. Mehmanlar belgini kóredi, hám VIP xona túrleri mehmanxana betinde birinshi turadı.
 """
 from datetime import timedelta
 

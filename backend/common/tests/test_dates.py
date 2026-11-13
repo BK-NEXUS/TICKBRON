@@ -1,6 +1,6 @@
 """
-R12 1a: the business date. TIME_ZONE stays UTC; "today" for bookings, statistics and
-auto-completion is the date in BUSINESS_TIME_ZONE (default Asia/Tashkent, UTC+5).
+R12 1a: is sanası. TIME_ZONE UTC bolıp qaladı; bronlar, statistika hám
+avtomat juwmaqlaw ushın "búgin" BUSINESS_TIME_ZONE degi sana (ádetde Asia/Tashkent, UTC+5).
 """
 from datetime import date, datetime, timezone as dt_timezone
 from unittest import mock
@@ -20,12 +20,12 @@ def test_default_business_time_zone_is_tashkent(settings):
 
 
 def test_0030_tashkent_is_already_the_next_day():
-    with _at_utc(2026, 10, 5, 19, 30):   # 00:30 on 6 October in Tashkent
+    with _at_utc(2026, 10, 5, 19, 30):   # Tashkent te 6-oktyabr 00:30
         assert business_today() == date(2026, 10, 6)
 
 
 def test_2330_tashkent_is_still_the_same_day():
-    with _at_utc(2026, 10, 5, 18, 30):   # 23:30 on 5 October in Tashkent
+    with _at_utc(2026, 10, 5, 18, 30):   # Tashkent te 5-oktyabr 23:30
         assert business_today() == date(2026, 10, 5)
 
 

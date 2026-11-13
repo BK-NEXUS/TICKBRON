@@ -1,6 +1,6 @@
 """
-R12 phase 3: Status numbers fed by the no-show workflow. no_show and no_show_reported hold
-real values; an approved no-show is not a guest who stayed and is not revenue.
+R12 3-basqısh: no-show process inen kelgen Status sanları. no_show hám no_show_reported haqıyqıy
+mánislerdi saqlaydı; tastıyıqlanǵan no-show turǵan mehman emes hám dáramat emes.
 """
 from datetime import timedelta
 
@@ -36,13 +36,13 @@ def money(rows):
 class TestPendingReport:
 
     def test_counts_as_reported_not_confirmed(self, world):
-        past_stay(world)                              # confirmed, no report
-        reported = past_stay(world)                   # confirmed, pending report
+        past_stay(world)                              # tastıyıqlanǵan, esabat joq
+        reported = past_stay(world)                   # tastıyıqlanǵan, kútip turǵan esabat
         report(world, reported)
         t = totals(world)
         assert t['no_show_reported'] == 1
         assert t['booking_status']['no_show_reported'] == 1
-        assert t['booking_status']['confirmed'] == 1             # not 2: the reported one is in its own bucket
+        assert t['booking_status']['confirmed'] == 1             # 2 emes: xabarlanǵanı óz bólek toparında
         assert t['no_show'] == 0
 
     def test_a_completed_stay_with_a_pending_report_leaves_the_completed_count(self, world):
@@ -59,7 +59,7 @@ class TestPendingReport:
         assert t['no_show_reported'] == 0 and t['booking_status']['confirmed'] == 1
 
     def test_rows_are_not_duplicated_by_old_reports(self, world):
-        """Several reports of one booking (withdrawn, then pending) never multiply any count."""
+        """Bir bronnıń bir neshe esabatı (qaytarıp alınǵan, keyin pending) hesh qanday sanǵa kóbeymeydi."""
         booking = past_stay(world, status='completed')
         first = report(world, booking)
         client_for(world['owner']).post(f'{P}/no-show-reports/{first}/withdraw/')
@@ -79,7 +79,7 @@ class TestPendingReport:
 class TestApprovedNoShow:
 
     def test_no_show_is_counted_and_is_not_a_guest_who_stayed(self, world, django_capture_on_commit_callbacks):
-        past_stay(world, status='completed')           # one real stay
+        past_stay(world, status='completed')           # bir haqıyqıy turıw
         booking = past_stay(world)
         decide(world, report(world, booking), 'approve', django_capture_on_commit_callbacks)
         t = totals(world)

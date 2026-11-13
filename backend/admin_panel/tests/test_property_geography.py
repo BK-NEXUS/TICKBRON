@@ -1,8 +1,9 @@
 """
-Admins fix a property's location with geography refs (Geography plan G4, city level removed 2026-11-10):
-PATCH /api/v1/admin-panel/properties/{id}/region/ with country_ref, region_ref.
-The old { "state": "..." } body keeps working until the frontend has moved.
-Access (staff only) is covered by test_access_matrix.py.
+Adminler mehmanxananıń jaylasıwın geografiya ref leri menen túzeydi (Geography reje G4, qala dárejesi 2026-11-10 de alıp
+taslandı):
+PATCH /api/v1/admin-panel/properties/{id}/region/ country_ref, region_ref penen.
+Eski { "state": "..." } deneni frontend kóship bolǵansha islewin dawam etedi.
+Kirisiw (tek staff) test_access_matrix.py de qaplanǵan.
 """
 from decimal import Decimal
 
@@ -90,7 +91,7 @@ class TestAdminSetsGeography:
 
     def test_partial_body_is_merged_with_the_current_location(self, staff, prop, world):
         patch(staff, prop.id, refs(world['xland'], world['east']))
-        # the new region is in the same country, so the country can stay out of the body
+        # jańa region sol mámlekette, sol sebepli mámleket denede bolmawı múmkin
         response = patch(staff, prop.id, {'region_ref': world['west'].id})
         assert response.status_code == 200, response.data
         prop.refresh_from_db()

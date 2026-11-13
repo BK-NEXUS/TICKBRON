@@ -1,7 +1,9 @@
 """
-Django 6.1 passes `fetch_mode` to Model.from_db() and deprecates (RemovedInDjango2028Warning) a from_db()
-that does not accept it. Booking.from_db records the price snapshot, so it must take the keyword and
-pass it on, and keep working on the Django version pinned in requirements.txt (which has no such keyword).
+Django 6.1 Model.from_db() ǵa `fetch_mode` beredi hám oǵan sıymaytuǵın from_db() di eskertedi
+(RemovedInDjango2028Warning).
+Booking.from_db baha snapshot ın jazadı, sol sebepli ol keyword dı qabıllawı hám alıp ótiwi, hám requirements.txt te
+bekitilgen
+Django nusqasında (onda sonday keyword joq) islewin dawam etiwi kerek.
 """
 import inspect
 from datetime import timedelta

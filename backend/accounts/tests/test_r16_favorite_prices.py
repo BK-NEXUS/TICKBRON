@@ -1,7 +1,8 @@
 """
-R16: a favorite carries the "from" price of its hotel in every currency (`property_prices`, the same list a hotel
-card has: the lowest price of the active rate plans, the owner's own or a conversion). `property_base_price` and
-`property_currency` stay as they were.
+R16: favorit óz mehmanxanasınıń hár valyutadaǵı "dan" bahasın alıp júredi (`property_prices`, mehmanxana
+kartasındaǵı birdey dizim: aktiv rate plan lardıń eń arzan bahası, iyeniń óz bahası yamasa konvertaciya).
+`property_base_price` hám
+`property_currency` burınǵıday qaladı.
 """
 from decimal import Decimal
 
@@ -65,7 +66,7 @@ def test_a_currency_without_an_owner_price_is_converted_or_empty(guest):
     hotel(guest, 1)
     prices = favorites(guest)[0][0]['property_prices']
     assert prices['KZT'] == {'amount': '29388.00', 'source': 'converted'}
-    assert prices['RUB'] == {'amount': None, 'source': 'converted'}   # no ruble rate yet
+    assert prices['RUB'] == {'amount': None, 'source': 'converted'}   # Rubl kursı ele joq
 
 
 def test_the_number_of_queries_does_not_grow_with_the_favorites_and_rates_are_read_once(guest):

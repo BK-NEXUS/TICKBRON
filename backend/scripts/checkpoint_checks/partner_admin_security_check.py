@@ -1,12 +1,12 @@
 """
-Security review script for Checkpoint 18 - Partner APIs and Admin Moderation.
+Checkpoint 18 qáwipsizlik tekseriw skripti - Partner API ları hám Admin moderaciyası.
 
-This script performs a comprehensive security review of the new partner and admin endpoints.
+Bul skript jańa partner hám admin endpoint lerin tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 
 
 def check_partner_security():
-    """Check security aspects of partner API endpoints."""
+    """Partner API endpoint lerinin qáwipsizlik tárepların tekseriw."""
     print("=" * 60)
     print("PARTNER API SECURITY REVIEW")
     print("=" * 60)
@@ -14,7 +14,7 @@ def check_partner_security():
     checks_passed = 0
     checks_total = 0
 
-    # Check 1: Hotel-owner permission class
+    # 1-tekseriw: Mehmanxana iyesi ruxsat klası
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -27,7 +27,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 1: partner/views.py not found")
 
-    # Check 2: Property ownership scoping
+    # 2-tekseriw: Mehmanxana iyeligi menen sheklew
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -40,7 +40,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 2: partner/views.py not found")
 
-    # Check 3: Room type ownership validation
+    # 3-tekseriw: Xona túri iyeligin tekseriw
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
@@ -53,7 +53,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 3: partner/serializers.py not found")
 
-    # Check 4: Rate plan ownership validation
+    # 4-tekseriw: Rate plan iyeligin tekseriw
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
@@ -66,7 +66,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 4: partner/serializers.py not found")
 
-    # Check 5: Date inventory ownership validation
+    # 5-tekseriw: Date inventory iyeligin tekseriw
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
@@ -79,7 +79,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 5: partner/serializers.py not found")
 
-    # Check 6: Booked rooms read-only protection
+    # 6-tekseriw: Bronlanǵan xonalar tek oqıw ushın qorǵalǵan
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
@@ -92,7 +92,7 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 6: partner/serializers.py not found")
 
-    # Check 7: Authentication required for all partner endpoints
+    # 7-tekseriw: Barlıq partner endpoint leri ushın autentifikaciya kerek
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -105,17 +105,17 @@ def check_partner_security():
     except FileNotFoundError:
         print("✗ Check 7: partner/views.py not found")
 
-    # Check 8: No password exposure in logs/responses
+    # 8-tekseriw: Log/juwaplarda parol ashılmaǵan
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
             content = f.read()
-            if 'password' not in content.lower():  # Partner serializers shouldn't handle passwords
+            if 'password' not in content.lower():  # Partner serializer leri parollerdi islemewi kerek
                 print("✓ Check 8: No password handling in partner serializers")
                 checks_passed += 1
             else:
                 print("⚠ Check 8: Password field found in partner serializers (review if intentional)")
-                checks_passed += 1  # Still pass if it's intentional
+                checks_passed += 1  # Qásten bolsa ele de ótedi
     except FileNotFoundError:
         print("✗ Check 8: partner/serializers.py not found")
 
@@ -124,7 +124,7 @@ def check_partner_security():
 
 
 def check_admin_security():
-    """Check security aspects of admin API endpoints."""
+    """Admin API endpoint lerinin qáwipsizlik tárepların tekseriw."""
     print("\n" + "=" * 60)
     print("ADMIN API SECURITY REVIEW")
     print("=" * 60)
@@ -132,7 +132,7 @@ def check_admin_security():
     checks_passed = 0
     checks_total = 0
 
-    # Check 1: Super-admin permission class
+    # 1-tekseriw: Super-admin ruxsat klası
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -145,7 +145,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 1: admin/views.py not found")
 
-    # Check 2: Staff permission class
+    # 2-tekseriw: Staff ruxsat klası
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -158,7 +158,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 2: admin/views.py not found")
 
-    # Check 3: Hotel-owner creation restricted to super-admin
+    # 3-tekseriw: Mehmanxana iyesin jaratıw super-admin menen sheklengen
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -171,7 +171,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 3: admin/views.py not found")
 
-    # Check 4: Password hashing in user creation
+    # 4-tekseriw: Paydalanıwshı jaratıwda parol hashlenedi
     checks_total += 1
     try:
         with open('admin/serializers.py', 'r') as f:
@@ -184,7 +184,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 4: admin/serializers.py not found")
 
-    # Check 5: Password not returned in response
+    # 5-tekseriw: Parol juwapta qaytarılmaydı
     checks_total += 1
     try:
         with open('admin/serializers.py', 'r') as f:
@@ -197,7 +197,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 5: admin/serializers.py not found")
 
-    # Check 6: Password confirmation validation
+    # 6-tekseriw: Parol tastıyıqlaw validaciyası
     checks_total += 1
     try:
         with open('admin/serializers.py', 'r') as f:
@@ -210,7 +210,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 6: admin/serializers.py not found")
 
-    # Check 7: Role assignment in hotel-owner creation
+    # 7-tekseriw: Mehmanxana iyesin jaratıwda rol beriw
     checks_total += 1
     try:
         with open('admin/serializers.py', 'r') as f:
@@ -223,7 +223,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 7: admin/serializers.py not found")
 
-    # Check 8: Authentication required for all admin endpoints
+    # 8-tekseriw: Barlıq admin endpoint leri ushın autentifikaciya kerek
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -236,7 +236,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 8: admin/views.py not found")
 
-    # Check 9: Property approval tracking
+    # 9-tekseriw: Mehmanxananı tastıyıqlawdı qadaǵalaw
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -249,7 +249,7 @@ def check_admin_security():
     except FileNotFoundError:
         print("✗ Check 9: admin/views.py not found")
 
-    # Check 10: Rejection reason tracking
+    # 10-tekseriw: Bas tartıw sebebin qadaǵalaw
     checks_total += 1
     try:
         with open('admin/views.py', 'r') as f:
@@ -267,7 +267,7 @@ def check_admin_security():
 
 
 def check_cross_owner_access():
-    """Check that hotel-owners cannot access other owners' data."""
+    """Mehmanxana iyeleri basqa iyelerdiń maǵlıwmatına qol jetkere almaytuǵının tekseriw."""
     print("\n" + "=" * 60)
     print("CROSS-OWNER ACCESS SECURITY REVIEW")
     print("=" * 60)
@@ -275,7 +275,7 @@ def check_cross_owner_access():
     checks_passed = 0
     checks_total = 0
 
-    # Check 1: Property queryset filtering
+    # 1-tekseriw: Mehmanxana queryset filterlewi
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -288,7 +288,7 @@ def check_cross_owner_access():
     except FileNotFoundError:
         print("✗ Check 1: partner/views.py not found")
 
-    # Check 2: Room type queryset filtering
+    # 2-tekseriw: Xona túri queryset filterlewi
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -301,7 +301,7 @@ def check_cross_owner_access():
     except FileNotFoundError:
         print("✗ Check 2: partner/views.py not found")
 
-    # Check 3: Rate plan queryset filtering
+    # 3-tekseriw: Rate plan queryset filterlewi
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -314,7 +314,7 @@ def check_cross_owner_access():
     except FileNotFoundError:
         print("✗ Check 3: partner/views.py not found")
 
-    # Check 4: Date inventory queryset filtering
+    # 4-tekseriw: Date inventory queryset filterlewi
     checks_total += 1
     try:
         with open('partner/views.py', 'r') as f:
@@ -327,13 +327,13 @@ def check_cross_owner_access():
     except FileNotFoundError:
         print("✗ Check 4: partner/views.py not found")
 
-    # Check 5: Serializer validation for cross-owner access
+    # 5-tekseriw: Basqa iyege qol jetkeriw ushın serializer validaciyası
     checks_total += 1
     try:
         with open('partner/serializers.py', 'r') as f:
             content = f.read()
             validation_count = content.count('validate_')
-            if validation_count >= 3:  # Should have validation for property, room_type, rate_plan
+            if validation_count >= 3:  # property, room_type, rate_plan ushın validaciya bolıwı kerek
                 print("✓ Check 5: Serializer validation for cross-owner access prevention")
                 checks_passed += 1
             else:
@@ -346,7 +346,7 @@ def check_cross_owner_access():
 
 
 def main():
-    """Run all security checks."""
+    """Barlıq qáwipsizlik tekseriwlerin islew."""
     print("\n")
     print("╔" + "=" * 58 + "╗")
     print("║" + " " * 10 + "CHECKPOINT 18 SECURITY REVIEW" + " " * 22 + "║")

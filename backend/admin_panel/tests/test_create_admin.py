@@ -1,4 +1,4 @@
-"""A super-admin adds another administrator (staff, not super-admin) from the panel; plan .ai/PLAN_ADMIN_ACCOUNTS.md."""
+"""Super-admin panelden basqa administrator (staff, super-admin emes) qosadı; reje .ai/PLAN_ADMIN_ACCOUNTS.md."""
 import pytest
 from rest_framework.test import APIClient
 

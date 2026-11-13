@@ -1,5 +1,5 @@
 """
-Tests for accounts models.
+accounts model leri ushın testler.
 """
 from django.test import TestCase
 from django.core.exceptions import ValidationError
@@ -10,10 +10,10 @@ from accounts.models import Favorite, Review, Notification, AccountHistory
 
 
 class FavoriteModelTest(TestCase):
-    """Test cases for Favorite model."""
+    """Favorite modeli ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -39,7 +39,7 @@ class FavoriteModelTest(TestCase):
         )
 
     def test_favorite_creation(self):
-        """Test creating a favorite."""
+        """Favorit jaratıwdı testlew."""
         favorite = Favorite.objects.create(
             user=self.user,
             property=self.property,
@@ -52,24 +52,24 @@ class FavoriteModelTest(TestCase):
         self.assertFalse(favorite.is_deleted)
 
     def test_favorite_unique_constraint(self):
-        """Test that user can only favorite a property once."""
+        """Paydalanıwshı mehmanxananı tek bir márte favorit etiwi múmkinligin testlew."""
         Favorite.objects.create(user=self.user, property=self.property)
 
         with self.assertRaises(Exception):
             Favorite.objects.create(user=self.user, property=self.property)
 
     def test_favorite_str(self):
-        """Test favorite string representation."""
+        """Favorit tiń qatar kórinisin testlew."""
         favorite = Favorite.objects.create(user=self.user, property=self.property)
         expected = f"{self.user.email} - {self.property.city}"
         self.assertEqual(str(favorite), expected)
 
 
 class ReviewModelTest(TestCase):
-    """Test cases for Review model."""
+    """Review modeli ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -106,7 +106,7 @@ class ReviewModelTest(TestCase):
         )
 
     def test_review_creation(self):
-        """Test creating a review."""
+        """Sharh jaratıwdı testlew."""
         review = Review.objects.create(
             user=self.user,
             property=self.property,
@@ -124,7 +124,7 @@ class ReviewModelTest(TestCase):
         self.assertIsNone(review.reviewed_at)
 
     def test_review_approval_sets_reviewed_at(self):
-        """Test that approving a review sets reviewed_at timestamp."""
+        """Sharhtı tastıyıqlaw reviewed_at waqıt belgisin belgilewin testlew."""
         review = Review.objects.create(
             user=self.user,
             property=self.property,
@@ -141,17 +141,17 @@ class ReviewModelTest(TestCase):
         self.assertIsNotNone(review.reviewed_at)
 
     def test_review_rating_validation(self):
-        """Test that ratings must be between 1 and 5."""
+        """Bahalar 1 hám 5 aralıǵında bolıwı kerekligin testlew."""
         with self.assertRaises(ValidationError):
             review = Review(
                 user=self.user,
                 property=self.property,
-                overall_rating=6  # Invalid rating
+                overall_rating=6  # Jaramsız baha
             )
             review.full_clean()
 
     def test_review_unique_booking_constraint(self):
-        """Test that user can only review a booking once."""
+        """Paydalanıwshı bir bronǵa tek bir márte sharh jaza alatuǵının testlew."""
         Review.objects.create(
             user=self.user,
             property=self.property,
@@ -168,7 +168,7 @@ class ReviewModelTest(TestCase):
             )
 
     def test_review_str(self):
-        """Test review string representation."""
+        """Sharhtıń qatar kórinisin testlew."""
         review = Review.objects.create(
             user=self.user,
             property=self.property,
@@ -179,10 +179,10 @@ class ReviewModelTest(TestCase):
 
 
 class NotificationModelTest(TestCase):
-    """Test cases for Notification model."""
+    """Notification modeli ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -208,7 +208,7 @@ class NotificationModelTest(TestCase):
         )
 
     def test_notification_creation(self):
-        """Test creating a notification."""
+        """Bildiriw jaratıwdı testlew."""
         notification = Notification.objects.create(
             user=self.user,
             notification_type='booking',
@@ -222,7 +222,7 @@ class NotificationModelTest(TestCase):
         self.assertIsNone(notification.read_at)
 
     def test_mark_as_read(self):
-        """Test marking notification as read."""
+        """Bildiriwdi oqılǵan dep belgilewdi testlew."""
         notification = Notification.objects.create(
             user=self.user,
             notification_type='booking',
@@ -240,7 +240,7 @@ class NotificationModelTest(TestCase):
         self.assertIsNotNone(notification.read_at)
 
     def test_notification_str(self):
-        """Test notification string representation."""
+        """Bildiriwdiń qatar kórinisin testlew."""
         notification = Notification.objects.create(
             user=self.user,
             notification_type='booking',
@@ -253,10 +253,10 @@ class NotificationModelTest(TestCase):
 
 
 class AccountHistoryModelTest(TestCase):
-    """Test cases for AccountHistory model."""
+    """AccountHistory modeli ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -282,7 +282,7 @@ class AccountHistoryModelTest(TestCase):
         )
 
     def test_account_history_creation(self):
-        """Test creating account history entry."""
+        """Akkaunt tariyxı jazbasın jaratıwdı testlew."""
         history = AccountHistory.objects.create(
             user=self.user,
             action='login',
@@ -296,7 +296,7 @@ class AccountHistoryModelTest(TestCase):
         self.assertEqual(history.ip_address, '127.0.0.1')
 
     def test_account_history_with_metadata(self):
-        """Test account history with JSON metadata."""
+        """JSON metadata menen akkaunt tariyxın testlew."""
         metadata = {'key': 'value', 'number': 123}
         history = AccountHistory.objects.create(
             user=self.user,
@@ -307,7 +307,7 @@ class AccountHistoryModelTest(TestCase):
         self.assertEqual(history.metadata, metadata)
 
     def test_account_history_str(self):
-        """Test account history string representation."""
+        """Akkaunt tariyxınıń qatar kórinisin testlew."""
         history = AccountHistory.objects.create(
             user=self.user,
             action='login',

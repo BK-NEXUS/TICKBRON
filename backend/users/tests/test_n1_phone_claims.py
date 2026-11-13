@@ -1,6 +1,6 @@
 """
-History of migration 0007 (unique only for verified numbers). The constraint itself was dropped
-by migration 0009; these tests run the old migrations forward and back.
+0007 migration tariyxı (tek tastıyıqlanǵan nomerler ushın unikal). Constraint tiń ózi
+0009 migration menen alıp taslandı; bul testler eski migration lardı alǵa hám artqa isleydi.
 """
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
@@ -8,7 +8,7 @@ from django.test import TransactionTestCase
 
 
 class PartialUniqueMigrationTests(TransactionTestCase):
-    """Migration 0007 replaces the global unique with 'unique among verified'."""
+    """0007 migration global unikal di 'tastıyıqlanǵanlar arasında unikal' ǵa almastıradı."""
 
     before = [('users', '0006_user_phone_number_unique')]
     after = [('users', '0007_phone_number_unique_when_verified')]
@@ -25,7 +25,7 @@ class PartialUniqueMigrationTests(TransactionTestCase):
         return executor.loader.graph.leaf_nodes('users')
 
     def tearDown(self):
-        # Back to the newest users migration, whatever it is, so later tests see the full schema
+        # Eń sońǵı users migration ına qaytıw, ol qanday bolsa da, keyingi testler tolıq sxemanı kóriw ushın
         self._migrate(self._latest())
 
     def test_forward_keeps_existing_numbers_and_allows_unverified_duplicates(self):

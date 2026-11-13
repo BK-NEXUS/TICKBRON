@@ -1,5 +1,5 @@
 """
-Tests for property detail API endpoint.
+Mehmanxana tolıq maǵlıwmatı API endpoint i ushın testler.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -15,10 +15,10 @@ User = get_user_model()
 
 
 class PropertyDetailEndpointTest(TestCase):
-    """Test cases for property detail API endpoint."""
+    """Mehmanxana tolıq maǵlıwmatı API endpoint i ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
         self.user = User.objects.create_user(
@@ -72,7 +72,7 @@ class PropertyDetailEndpointTest(TestCase):
             currency='USD'
         )
 
-        # Add translations
+        # Awdarmalardı qosıw
         PropertyTranslation.objects.create(
             property=self.property,
             language='en',
@@ -80,7 +80,7 @@ class PropertyDetailEndpointTest(TestCase):
             description='A beautiful modern apartment in the city center'
         )
 
-        # Add amenities to property
+        # Mehmanxanaǵa amenity lerdi qosıw
         PropertyAmenity.objects.create(
             property=self.property,
             amenity=self.wifi_amenity,
@@ -93,7 +93,7 @@ class PropertyDetailEndpointTest(TestCase):
             is_available=True
         )
 
-        # Add policies
+        # Siyasatlardı qosıw
         PropertyPolicy.objects.create(
             property=self.property,
             policy_type='check_in',
@@ -110,11 +110,11 @@ class PropertyDetailEndpointTest(TestCase):
             is_strict=False
         )
 
-        # Add photos (without actual file upload for testing)
+        # Súwretlerdi qosıw (testlew ushın haqıyqıy fayl júklewsiz)
         from django.core.files.uploadedfile import SimpleUploadedFile
         import io
 
-        # Create a simple image file for testing
+        # Testlew ushın ápiwayı súwret faylın jaratıw
         image_content = io.BytesIO(b'fake image content')
         image_file = SimpleUploadedFile(
             "test.jpg",
@@ -131,7 +131,7 @@ class PropertyDetailEndpointTest(TestCase):
             display_order=1
         )
 
-        # Create another image file
+        # Taǵı bir súwret faylın jaratıw
         image_content2 = io.BytesIO(b'fake image content 2')
         image_file2 = SimpleUploadedFile(
             "test2.jpg",
@@ -148,7 +148,7 @@ class PropertyDetailEndpointTest(TestCase):
             display_order=2
         )
 
-        # Add room type with rate plans
+        # Rate plan lı xona túrin qosıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -161,14 +161,14 @@ class PropertyDetailEndpointTest(TestCase):
             total_rooms=5
         )
 
-        # Add room amenities
+        # Xona amenity lerin qosıw
         RoomAmenity.objects.create(
             room_type=self.room_type,
             amenity=self.wifi_amenity,
             is_available=True
         )
 
-        # Add rate plan
+        # Rate plan dı qosıw
         self.rate_plan = RatePlan.objects.create(
             room_type=self.room_type,
             name='Standard Rate',
@@ -181,7 +181,7 @@ class PropertyDetailEndpointTest(TestCase):
             is_active=True
         )
 
-        # Add date inventory
+        # Date inventory di qosıw
         from datetime import date, timedelta
         tomorrow = date.today() + timedelta(days=1)
         DateInventory.objects.create(
@@ -195,7 +195,7 @@ class PropertyDetailEndpointTest(TestCase):
         )
 
     def test_property_detail_success(self):
-        """Test successful property detail request."""
+        """Tabıslı mehmanxana tolıq maǵlıwmatı sorawın testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -208,7 +208,7 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('translations', response.data)
 
     def test_property_detail_includes_basic_info(self):
-        """Test that property detail includes basic information."""
+        """Mehmanxana tolıq maǵlıwmatı tiykarǵı maǵlıwmattı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -218,7 +218,7 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertEqual(str(response.data['base_price']), '50.00')
 
     def test_property_detail_includes_gallery(self):
-        """Test that property detail includes gallery organized by type."""
+        """Mehmanxana tolıq maǵlıwmatı túri boyınsha shólkemlestirilgen galereyanı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -233,7 +233,7 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertGreater(len(gallery['interior']), 0)
 
     def test_property_detail_includes_amenities(self):
-        """Test that property detail includes amenities with categories."""
+        """Mehmanxana tolıq maǵlıwmatı kategoriyaları menen amenity lerdi óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -241,14 +241,14 @@ class PropertyDetailEndpointTest(TestCase):
         amenities = response.data['amenities']
         self.assertGreater(len(amenities), 0)
 
-        # Check amenity structure
+        # Amenity dúzilisin tekseriw
         first_amenity = amenities[0]
         self.assertIn('amenity', first_amenity)
         self.assertIn('is_available', first_amenity)
         self.assertIn('category', first_amenity['amenity'])
 
     def test_property_detail_includes_policies(self):
-        """Test that property detail includes policies."""
+        """Mehmanxana tolıq maǵlıwmatı siyasatlardı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -256,7 +256,7 @@ class PropertyDetailEndpointTest(TestCase):
         policies = response.data['policies']
         self.assertGreater(len(policies), 0)
 
-        # Check policy structure
+        # Siyasat dúzilisin tekseriw
         first_policy = policies[0]
         self.assertIn('policy_type', first_policy)
         self.assertIn('title', first_policy)
@@ -264,7 +264,7 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('is_strict', first_policy)
 
     def test_property_detail_includes_translations(self):
-        """Test that property detail includes translations."""
+        """Mehmanxana tolıq maǵlıwmatı awdarmalardı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -272,14 +272,14 @@ class PropertyDetailEndpointTest(TestCase):
         translations = response.data['translations']
         self.assertGreater(len(translations), 0)
 
-        # Check translation structure
+        # Awdarma dúzilisin tekseriw
         first_translation = translations[0]
         self.assertIn('language', first_translation)
         self.assertIn('name', first_translation)
         self.assertIn('description', first_translation)
 
     def test_property_detail_includes_room_types(self):
-        """Test that property detail includes room types with rate plans."""
+        """Mehmanxana tolıq maǵlıwmatı rate plan lı xona túrlerin óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -287,7 +287,7 @@ class PropertyDetailEndpointTest(TestCase):
         room_types = response.data['room_types']
         self.assertGreater(len(room_types), 0)
 
-        # Check room type structure
+        # Xona túri dúzilisin tekseriw
         first_room_type = room_types[0]
         self.assertIn('id', first_room_type)
         self.assertIn('name', first_room_type)
@@ -298,7 +298,7 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('amenities', first_room_type)
 
     def test_property_detail_room_types_includes_rate_plans(self):
-        """Test that room types include rate plans."""
+        """Xona túrleri rate plan lardı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -309,7 +309,7 @@ class PropertyDetailEndpointTest(TestCase):
         rate_plans = first_room_type['rate_plans']
         self.assertGreater(len(rate_plans), 0)
 
-        # Check rate plan structure
+        # Rate plan dúzilisin tekseriw
         first_rate_plan = rate_plans[0]
         self.assertIn('id', first_rate_plan)
         self.assertIn('name', first_rate_plan)
@@ -318,15 +318,15 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('min_nights', first_rate_plan)
 
     def test_property_detail_not_found(self):
-        """Test property detail with non-existent property ID."""
+        """Joq mehmanxana ID si menen mehmanxana tolıq maǵlıwmatın testlew."""
         response = self.client.get('/api/v1/properties/99999/')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
 
     def test_property_detail_deleted_property(self):
-        """Test property detail with deleted property."""
-        # Soft delete the property
+        """Óshirilgen mehmanxana menen mehmanxana tolıq maǵlıwmatın testlew."""
+        # Mehmanxananı soft-delete etiw
         self.property.is_deleted = True
         self.property.save()
 
@@ -336,8 +336,8 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_property_detail_inactive_property(self):
-        """Test property detail with inactive property."""
-        # Deactivate the property
+        """Aktiv emes mehmanxana menen mehmanxana tolıq maǵlıwmatın testlew."""
+        # Mehmanxananı aktiv emes etiw
         self.property.is_active = False
         self.property.save()
 
@@ -347,14 +347,14 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('error', response.data)
 
     def test_property_detail_public_access(self):
-        """Test that property detail endpoint is publicly accessible."""
+        """Mehmanxana tolıq maǵlıwmatı endpoint i ashıq qol jetimli ekenin testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
-        # Should work without authentication
+        # Autentifikaciyasız islewi kerek
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_property_detail_includes_full_address(self):
-        """Test that property detail includes full address."""
+        """Mehmanxana tolıq maǵlıwmatı tolıq mánzildi óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -363,20 +363,20 @@ class PropertyDetailEndpointTest(TestCase):
         self.assertIn('Uzbekistan', response.data['full_address'])
 
     def test_property_detail_gallery_photo_ordering(self):
-        """Test that gallery photos are ordered by display_order."""
+        """Galereya súwretleri display_order boyınsha tártiplengenin testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         gallery = response.data['gallery']
 
-        # Check that exterior photos are ordered
+        # Sırtqı súwretler tártiplengenin tekseriw
         exterior_photos = gallery['exterior']
         if len(exterior_photos) > 1:
             display_orders = [photo['display_order'] for photo in exterior_photos]
             self.assertEqual(display_orders, sorted(display_orders))
 
     def test_property_detail_includes_metadata(self):
-        """Test that property detail includes metadata."""
+        """Mehmanxana tolıq maǵlıwmatı metadata nı óz ishine alatuǵının testlew."""
         response = self.client.get(f'/api/v1/properties/{self.property.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

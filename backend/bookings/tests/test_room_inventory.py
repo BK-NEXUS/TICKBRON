@@ -1,8 +1,8 @@
 """
-Rooms are counted per room type and date, not per rate plan (audit #31, Phase 3).
+Xonalar xona túri hám sana boyınsha sanaladı, rate plan boyınsha emes (audit #31, 3-basqısh).
 
-Before: every rate plan had its own DateInventory room count, so one physical room
-could be sold once through each rate plan of its room type.
+Aldın: hár rate plan nıń óz DateInventory xona sanı bar edi, sol sebepli bir fizikalıq xonanı
+óz xona túriniń hár rate plan ı arqalı bir márteden satıw múmkin edi.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -21,7 +21,7 @@ from currency.testing import make_usd_rate
 
 class RoomInventoryFixture(TestCase):
     def setUp(self):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         self.owner = User.objects.create_user(email='owner@example.com', password='x')
         self.guest = User.objects.create_user(email='guest@example.com', password='x')
         hotel = PropertyType.objects.create(name='Hotel', slug='hotel')
@@ -29,7 +29,7 @@ class RoomInventoryFixture(TestCase):
             owner=self.owner, property_type=hotel, status='active', max_guests=4,
             address_line1='1 Main St', city='Tashkent', country='Uzbekistan', base_price=Decimal('60.00'),
         )
-        # One physical room, sold through two rate plans
+        # Bir fizikalıq xona, eki rate plan arqalı satılǵan
         self.room_type = RoomType.objects.create(
             property=self.property, name='Double', slug='double', base_occupancy=2, max_occupancy=2,
             base_price=Decimal('60.00'), total_rooms=1,

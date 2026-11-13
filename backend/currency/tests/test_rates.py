@@ -1,6 +1,6 @@
 """
-R6: reading the current rate (DB only, never HTTP), staleness, and the
-request-level cache used for informational UZS prices.
+R6: házirgi kurstı oqıw (tek DB, hesh qashan HTTP), eskiriw, hám
+maǵlıwmat ushın UZS bahaları ushın soraw dárejesindegi kesh.
 """
 from datetime import date, timedelta
 from decimal import Decimal
@@ -12,7 +12,7 @@ from django.test import RequestFactory, override_settings
 from currency.models import ExchangeRate
 from currency.rates import current_rate, rate_for_request
 
-# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+# R6: bul testler valyuta kurslarin ózleri basqaradı (kurs joq, eskirgen, alıw, qabıllaw)
 pytestmark = pytest.mark.no_default_exchange_rate
 
 TODAY = date(2026, 10, 3)

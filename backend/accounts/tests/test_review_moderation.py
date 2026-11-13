@@ -1,6 +1,7 @@
 """
-Reviews reach the public only after the staff approves them, and then show on the hotel page:
-a public list of approved reviews (the reviewer as "Aziz K.", never an address) and the staff's moderation list.
+Sharhlar tek staff tastıyıqlaǵannan keyin ǵana ashıqqa shıǵadı, keyin mehmanxana betinde kórinedi:
+tastıyıqlanǵan sharhlardıń ashıq dizimi (sharh jazıwshı "Aziz K." sıyaqlı, hesh qashan mánzil emes) hám staff tıń
+moderation dizimi.
 """
 from datetime import date
 from decimal import Decimal

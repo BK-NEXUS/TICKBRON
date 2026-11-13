@@ -1,5 +1,5 @@
 """
-Tests for booking business rules from the audit (#7, #13, #17, #19, #29).
+Audit daǵı bron biznes qaǵıydaları ushın testler (#7, #13, #17, #19, #29).
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -25,10 +25,10 @@ BOOKINGS_URL = '/api/v1/bookings/'
 
 
 class BookingLogicTestBase(TestCase):
-    """An active property with one room type (5 rooms, 4 guests each) and 10 days of inventory."""
+    """Bir xona túri (5 xona, hárbirinde 4 mehman) hám 10 kúnlik inventory bar aktiv mehmanxana."""
 
     def setUp(self):
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         self.user = User.objects.create_user(phone_number='+998901112233', email='guest@example.com', password='testpass123')
         property_type = PropertyType.objects.create(name='Hotel', slug='hotel')
         self.property = Property.objects.create(
@@ -57,8 +57,8 @@ class BookingLogicTestBase(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def inventory(self, day_offset=0):
-        # RoomInventory: the booking engine's room count, shared by every rate plan
-        # of this room type (audit #31). DateInventory keeps price and rate rules.
+        # RoomInventory: bron sistemasınıń xona sanı, usı xona túriniń hár rate plan ı ortaq
+        # paydalanadı (audit #31). DateInventory baha hám rate qaǵıydaların saqlaydı.
         return RoomInventory.objects.get(room_type=self.room_type, date=self.start + timedelta(days=day_offset))
 
     def create_booking(self, nights=1, day_offset=0, **extra):
@@ -83,7 +83,7 @@ class BookingLogicTestBase(TestCase):
 
 
 class TestExpiredBookingErrors(BookingLogicTestBase):
-    """#29: failures while expiring bookings are logged and reported, not swallowed."""
+    """#29: bronlardıń múddetin ótkeriwdegi qátelikler log qa jazıladı hám xabarlanadı, jutılıp ketpeydi."""
 
     def setUp(self):
         super().setUp()
@@ -127,13 +127,13 @@ class TestExpiredBookingErrors(BookingLogicTestBase):
 
 
 class TestMultiRoomBooking(BookingLogicTestBase):
-    """#7: every booked room is priced and taken from inventory."""
+    """#7: hár bronlanǵan xona bahalanadı hám inventory den alınadı."""
 
     def test_price_and_inventory_scale_with_room_count(self):
         response = self.post_booking(nights=2, number_of_rooms=3)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Decimal(response.data['total_price']) == Decimal('600.00')  # 2 nights x 100 x 3 rooms
+        assert Decimal(response.data['total_price']) == Decimal('600.00')  # 2 tún x 100 x 3 xona
         assert self.inventory(0).booked_rooms == 3
         assert self.inventory(1).booked_rooms == 3
 
@@ -155,7 +155,7 @@ class TestMultiRoomBooking(BookingLogicTestBase):
         assert self.inventory(0).booked_rooms == 0
 
     def test_more_rooms_than_remaining_is_rejected(self):
-        # another guest holds 4 rooms (1 left); the same guest could not overlap his own stay (409)
+        # basqa mehman 4 xonanı ustap tur (1 qaldı); sol mehman óz turıwın kesistire almaydı (409)
         other = User.objects.create_user(phone_number='+998901112244', email='other-guest@example.com', password='testpass123')
         Booking.create_booking(
             guest=other, property_obj=self.property, room_type=self.room_type, rate_plan=self.rate_plan,
@@ -174,7 +174,7 @@ class TestMultiRoomBooking(BookingLogicTestBase):
 
 
 class TestBookingInputValidation(BookingLogicTestBase):
-    """#19: past dates, room capacity and the stored nightly price."""
+    """#19: ótken sanalar, xona sıyımlılıǵı hám saqlanǵan túngi baha."""
 
     def test_past_check_in_is_rejected(self):
         yesterday = timezone.localdate() - timedelta(days=1)
@@ -191,7 +191,7 @@ class TestBookingInputValidation(BookingLogicTestBase):
         assert not Booking.objects.exists()
 
     def test_check_in_today_is_allowed(self):
-        # "Today" is the business date (Tashkent); it differs from the UTC date for 5 hours a day
+        # "Búgin" is sanası (Tashkent); ol UTC sanasınan kúnine 5 saat ayrıladı
         today = business_today()
         DateInventory.objects.create(
             rate_plan=self.rate_plan, date=today, available_rooms=5, booked_rooms=0,
@@ -203,7 +203,7 @@ class TestBookingInputValidation(BookingLogicTestBase):
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_guest_count_is_checked_against_all_booked_rooms(self):
-        # max_occupancy is 4 per room
+        # max_occupancy hár xonaǵa 4
         assert self.post_booking(number_of_rooms=2, guest_count=8).status_code == status.HTTP_201_CREATED
         assert self.post_booking(number_of_rooms=2, guest_count=9).status_code == status.HTTP_400_BAD_REQUEST
         with pytest.raises(ValidationError):
@@ -222,7 +222,7 @@ class TestBookingInputValidation(BookingLogicTestBase):
 
         item = booking.booking_items.get()
         assert item.price_per_night == Decimal('135.00')  # (100 + 150 + 155) / 3
-        assert booking.total_price == Decimal('810.00')  # 405 x 2 rooms
+        assert booking.total_price == Decimal('810.00')  # 405 x 2 xona
 
     def test_availability_rejects_past_dates(self):
         yesterday = timezone.localdate() - timedelta(days=1)
@@ -236,7 +236,7 @@ class TestBookingInputValidation(BookingLogicTestBase):
 
 
 class TestOnlyActivePropertiesArePublic(BookingLogicTestBase):
-    """#13: only approved (status='active') properties can be booked or seen publicly."""
+    """#13: tek tastıyıqlanǵan (status='active') mehmanxanalardı bronlap yamasa ashıq kóre aladı."""
 
     NON_ACTIVE_STATUSES = ('draft', 'pending_approval', 'suspended', 'rejected')
 
@@ -276,7 +276,7 @@ class TestOnlyActivePropertiesArePublic(BookingLogicTestBase):
 
 
 class TestExpiredBookingTask(BookingLogicTestBase):
-    """#17: a Celery beat task expires pending bookings; expired bookings cannot be paid."""
+    """#17: Celery beat task kútip turǵan bronlardıń múddetin ótkeredi; múddeti ótken bronlardı tólep bolmaydı."""
 
     def test_task_expires_overdue_bookings_and_releases_rooms(self):
         from bookings.tasks import expire_pending_bookings
@@ -301,7 +301,7 @@ class TestExpiredBookingTask(BookingLogicTestBase):
 
         schedule = settings.CELERY_BEAT_SCHEDULE['expire-pending-bookings']
         assert schedule['task'] == 'bookings.tasks.expire_pending_bookings'
-        assert schedule['schedule'] <= 15 * 60  # bookings expire after 15 minutes
+        assert schedule['schedule'] <= 15 * 60  # bronlardıń múddeti 15 minuttan keyin ótedi
         assert app.conf.beat_schedule['expire-pending-bookings']['task'] == schedule['task']
 
     def test_task_fails_visibly_when_a_booking_cannot_be_expired(self):

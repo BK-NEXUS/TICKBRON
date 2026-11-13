@@ -1,4 +1,4 @@
-"""Home carousel, click endpoint and the view/click counters with their per-visitor dedupe."""
+"""Bas bet karuseli, klik endpoint i hám kelwshi boyınsha qaytalanbaytuǵın kóriw/klik sanaǵıshları."""
 from unittest.mock import patch
 
 import pytest

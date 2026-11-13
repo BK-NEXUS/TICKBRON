@@ -1,11 +1,12 @@
 """
-Admin Status: countries > regions > hotels (Status plan S2).
+Admin Status: mámleketler > regionlar > mehmanxanalar (Status reje S2).
 
-A booking counts when it is confirmed or completed and not soft-deleted; it belongs
-to the period of its check-in date; revenue is grouped per currency.
-Hotels are grouped by their Geography refs (Geography plan G4): countries by ISO code, regions by id,
-hotels without a ref under "unspecified" (URL segment) / "Unspecified" (label).
-Access is covered by test_access_matrix.py. Data: the status_world fixture (status_fixtures.py).
+Bron tastıyıqlanǵan yamasa juwmaqlanǵan hám soft-delete etilmegen bolsa esaplanadı; ol
+kiriw sanası dáwirine tiyisli; dáramat hár valyuta boyınsha toparlanadı.
+Mehmanxanalar Geography ref leri boyınsha toparlanadı (Geography reje G4): mámleketler ISO kodı boyınsha, regionlar id
+boyınsha,
+ref i joq mehmanxanalar "unspecified" (URL bólegi) / "Unspecified" (belgi) astında.
+Kirisiw test_access_matrix.py de qaplanǵan. Maǵlıwmat: status_world fixture si (status_fixtures.py).
 """
 import pytest
 from rest_framework.test import APIClient
@@ -47,9 +48,9 @@ class TestCountries:
         assert response.data['count'] == 2
         uz, kz = response.data['results']
         assert (uz['rank'], uz['code'], uz['country'], uz['hotels'], uz['bookings'], uz['guests']) == \
-            (1, 'UZ', 'Uzbekistan', 3, 5, 5)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
+            (1, 'UZ', 'Uzbekistan', 3, 5, 5)  # R12: mehmanlar = adamlar (guest_count), burın 3
         assert (uz['name_uz'], uz['name_ru'], uz['name_en']) == ("O'zbekiston", 'Узбекистан', 'Uzbekistan')
-        # Revenue is grouped per currency, never mixed
+        # Dáramat hár valyuta boyınsha toparlanadı, hesh qashan aralastırılmaydı
         assert revenue(uz) == {'USD': '230.00'}
         assert (kz['rank'], kz['code'], kz['country'], kz['hotels'], kz['bookings'], kz['guests']) == \
             (2, 'KZ', 'Kazakhstan', 1, 1, 1)
@@ -68,7 +69,7 @@ class TestCountries:
         assert response.data['period'] == '2025'
         rows = {row['code']: row for row in response.data['results']}
         assert (rows['UZ']['bookings'], revenue(rows['UZ'])) == (1, {'USD': '80.00'})
-        # Countries without bookings in the period stay listed with zeros
+        # Dáwirde bronı joq mámleketler nollar menen dizimde qaladı
         assert (rows['KZ']['bookings'], rows['KZ']['revenue']) == (0, [])
 
     @pytest.mark.parametrize('period', ['2026-13', '26', 'last-month', '2026-4', '1999'])
@@ -105,7 +106,7 @@ class TestCountries:
         assert (rows[None]['country'], rows[None]['hotels'], rows[None]['bookings']) == ('Unspecified', 1, 0)
 
     def test_text_fields_do_not_decide_the_group(self, get, status_world):
-        # The old text location is only a copy: grouping follows the refs
+        # Eski tekst jaylasıw tek nusqa: toparlaw ref lerdi izleydi
         alpha = status_world['hotels']['alpha']
         type(alpha).objects.filter(pk=alpha.pk).update(country='Atlantis')
         assert 'Atlantis' not in [row['country'] for row in get(f'{S}/countries/').data['results']]
@@ -121,7 +122,7 @@ class TestRegions:
         assert response.status_code == 200
         tashkent, unspecified = response.data['results']
         assert (tashkent['id'], tashkent['region'], tashkent['hotels'], tashkent['bookings'], tashkent['guests']) == \
-            (tashkent_id(), 'Tashkent', 2, 5, 5)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
+            (tashkent_id(), 'Tashkent', 2, 5, 5)  # R12: mehmanlar = adamlar (guest_count), burın 3
         assert (tashkent['name_uz'], tashkent['name_ru'], tashkent['name_en']) == \
             ('Toshkent shahri', 'город Ташкент', 'Tashkent')
         assert revenue(tashkent) == {'USD': '230.00'}
@@ -161,7 +162,7 @@ class TestHotels:
         assert response.status_code == 200
         alpha, beta = response.data['results']
         assert (alpha['id'], alpha['name'], alpha['city'], alpha['bookings'], alpha['guests']) == \
-            (status_world['hotels']['alpha'].id, 'Alpha Hotel', 'Tashkent', 3, 3)  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
+            (status_world['hotels']['alpha'].id, 'Alpha Hotel', 'Tashkent', 3, 3)  # R12: mehmanlar = adamlar (guest_count), burın 2
         assert revenue(alpha) == {'USD': '150.00'}
         assert (beta['name'], beta['bookings'], revenue(beta)) == ('Beta Hotel', 2, {'USD': '80.00'})
         assert (response.data['country'], response.data['country_name']) == ('UZ', 'Uzbekistan')
@@ -191,18 +192,18 @@ class TestHotels:
 @pytest.mark.django_db
 @pytest.mark.usefixtures('status_world')
 class TestAggregatesInTheDatabase:
-    """A fixed number of queries per page, however many rows there are."""
+    """Qatarlar qansha bolsa da hár bet ushın belgili sandaǵı query."""
 
-    # R12: count, page, revenue, booking value
-    # (was 3: count, page, revenue)
+    # R12: san, bet, dáramat, bron mánisi
+    # (burın 3: san, bet, dáramat)
     @pytest.mark.parametrize('url,queries', [
         (f'{S}/countries/', 6),
-        # plus one lookup per parent for the breadcrumb names (country; country and region)
+        # hám breadcrumb atları ushın hár ata-anaǵa bir izlew (mámleket; mámleket hám region)
         (f'{S}/countries/UZ/regions/', 7),
         (f'{S}/countries/UZ/regions/{{region}}/hotels/', 8),
     ])
     def test_query_count_is_constant(self, get, django_assert_max_num_queries, url, queries):
-        url = url.format(region=tashkent_id())  # looked up outside the counted block
+        url = url.format(region=tashkent_id())  # counted blok sırtında izlengen
         with django_assert_max_num_queries(queries):
             response = get(url)
         assert response.status_code == 200
@@ -212,8 +213,8 @@ class TestAggregatesInTheDatabase:
 @pytest.mark.usefixtures('status_world')
 class TestOnlyCodesAndIdsAreKeys:
     """
-    Since 2026-10-19 the URL keys are an ISO country code (any case), a region id or "unspecified";
-    the names shown in the lists no longer work as keys (they used to until the frontend moved to ids).
+    2026-10-19 dan beri URL kilt leri ISO mámleket kodı (qálegen register), region id si yamasa "unspecified";
+    dizimlerde kórsetilgen atlar endi kilt retinde islemeydi (frontend id lerge kóskenshe islegen edi).
     """
 
     @staticmethod

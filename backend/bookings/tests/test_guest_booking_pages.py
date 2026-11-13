@@ -1,6 +1,6 @@
 """
-GET /bookings/ (the guest's own bookings) is paginated like the other lists:
-{count, next, previous, results}, newest first, filters kept, never another guest's booking.
+GET /bookings/ (mehmannıń óz bronları) basqa dizimler sıyaqlı betlenedi:
+{count, next, previous, results}, eń jańası birinshi, filterler saqlanadı, hesh qashan basqa mehmannıń broni emes.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -17,7 +17,7 @@ URL = '/api/v1/bookings/'
 
 class GuestBookingPagesTests(APITestCase):
     def setUp(self):
-        test_views.BookingViewTests.setUp(self)  # property, room type and rate plan of the booking tests
+        test_views.BookingViewTests.setUp(self)  # bron testleriniń mehmanxanası, xona túri hám rate plan ı
 
     def add_bookings(self, count, guest=None, status='confirmed'):
         guest = guest or self.user

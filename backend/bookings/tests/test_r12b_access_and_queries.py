@@ -1,6 +1,6 @@
 """
-R12 phase 3: access matrix for every new endpoint (anonymous, guest, owner, staff, super-admin)
-and constant query counts for the lists.
+R12 3-basqısh: hár jańa endpoint ushın kirisiw matricası (anonim, mehman, iye, staff, super-admin)
+hám dizimler ushın turaqlı query sanları.
 """
 from datetime import timedelta
 
@@ -46,7 +46,7 @@ class TestAccessMatrix:
 
     @pytest.mark.parametrize('method,url', OWNER_ENDPOINTS)
     def test_hotel_owner_is_let_through_to_their_own_data(self, world, method, url):
-        # 400/404 are fine (empty body, ids that do not exist); only 401/403 are not
+        # 400/404 mashqala emes (bos dene, joq id ler); tek 401/403 emes
         assert call(world['owner'], method, url).status_code not in (401, 403)
 
     @pytest.mark.parametrize('method,url', STAFF_ENDPOINTS)
@@ -74,7 +74,7 @@ class TestAccessMatrix:
 class TestConstantQueries:
 
     def _count(self, client, url):
-        client.get(url)                                    # warm caches (content types, permissions)
+        client.get(url)                                    # keshti ısıtıw (content type ler, ruxsatlar)
         with CaptureQueriesContext(connection) as queries:
             response = client.get(url)
         assert response.status_code == 200

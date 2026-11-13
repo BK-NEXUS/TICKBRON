@@ -1,9 +1,9 @@
 """
-Search and suggestions match location names in all three languages through the
-Geography refs (country and region) and still fall back to the old text fields (country, state, city) for
-unmapped rows (Geography plan G4, city level removed 2026-11-10).
+Izlew hám usınıslar jaylasıw atların úsh tilde Geography ref leri (mámleket hám region)
+arqalı taba aladı hám sáykeslenbegen qatarlar ushın eski tekst maydanlarǵa (country, state, city)
+qaytıp túsedi (Geography reje G4, qala dárejesi 2026-11-10 de alıp taslandı).
 
-"Toshkent", "Ташкент" and "Tashkent" must find the same hotel.
+"Toshkent", "Ташкент" hám "Tashkent" birdey mehmanxananı tabıwı kerek.
 """
 from decimal import Decimal
 
@@ -29,7 +29,7 @@ def hotel_type(db):
 
 
 def make(owner, hotel_type, n, region=None, **extra):
-    """A public hotel in a dictionary region (by English name), or with text-only location."""
+    """Sózlik regionındaǵı (inglizsha atı boyınsha) yamasa tek tekst jaylasıwlı ashıq mehmanxana."""
     fields = dict(status='active', max_guests=2, address_line1=f'{n} Main St', base_price=Decimal('60.00'))
     if region:
         row = Region.objects.select_related('country').get(country__code='UZ', name_en=region)
@@ -39,7 +39,7 @@ def make(owner, hotel_type, n, region=None, **extra):
 
 
 def legacy(owner, hotel_type, n, city, country):
-    """A public hotel that was never mapped to the dictionary: text location only."""
+    """Sózlikke hesh qashan sáykeslenbegen ashıq mehmanxana: tek tekst jaylasıw."""
     return Property.objects.create(
         owner=owner, property_type=hotel_type, status='active', max_guests=2, address_line1=f'{n} Old St',
         base_price=Decimal('40.00'), city=city, country=country)
@@ -87,7 +87,7 @@ class TestSearchAcrossLanguages:
 
     def test_no_duplicate_rows_when_several_names_match(self, owner, hotel_type):
         tashkent = make(owner, hotel_type, 1, region='Tashkent')
-        # "Tash" matches the region and its text copies at once
+        # "Tash" region menen onıń tekst nusqalarına birdey sáykes keledi
         assert ids(APIClient().get(SEARCH, {'location': 'Tash'})).count(tashkent.id) == 1
         assert ids(APIClient().get(SEARCH, {'q': 'Tash'})).count(tashkent.id) == 1
 
@@ -130,5 +130,5 @@ class TestSuggestions:
         suggestions = self.get('Tashkent')
         assert len(suggestions) == len(set(suggestions))
         response = APIClient().get(SUGGEST, {'q': 'a', 'limit': 3})
-        assert response.data['suggestions'] == []  # still needs two characters
+        assert response.data['suggestions'] == []  # ele de eki belgi kerek
         assert len(APIClient().get(SUGGEST, {'q': 'Ta', 'limit': 1}).data['suggestions']) <= 1

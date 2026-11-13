@@ -1,6 +1,6 @@
 """
-Tests for RoomInventory.bulk_set and DateInventory.bulk_set_price (3.6/3.7): the
-calendar UI's date-range room-count/open-close edit and the bulk price edit.
+RoomInventory.bulk_set hám DateInventory.bulk_set_price (3.6/3.7) ushın testler: kalendar
+UI diń sana aralıǵı boyınsha xona sanı/ashıw-jabıw ózgertiwi hám kóp bahanı ózgertiw.
 """
 from datetime import date, timedelta
 from decimal import Decimal
@@ -50,7 +50,7 @@ class RoomInventoryBulkSetTests(TestCase):
         with self.assertRaises(ValidationError) as ctx:
             RoomInventory.bulk_set(self.room_type, self.start, self.end, available_rooms=2)
         self.assertIn(booked_date.isoformat(), str(ctx.exception))
-        # nothing partially applied
+        # hesh nárse bólekleyin qollanılmaǵan
         row = RoomInventory.objects.get(room_type=self.room_type, date=booked_date)
         self.assertEqual(row.available_rooms, 5)
         self.assertFalse(RoomInventory.objects.filter(room_type=self.room_type, date=self.start).exists())
@@ -94,7 +94,7 @@ class DateInventoryBulkSetPriceTests(TestCase):
         for offset in range(3):
             row = DateInventory.objects.get(rate_plan=self.rate_plan, date=self.start + timedelta(days=offset))
             self.assertEqual(row.price, Decimal('75.00'))
-            self.assertEqual(row.available_rooms, 4)  # defaults to the room type's total
+            self.assertEqual(row.available_rooms, 4)  # xona túriniń jámine ádetde teń
             self.assertTrue(row.is_available)
 
     def test_updates_price_of_an_existing_row_without_touching_its_rules(self):

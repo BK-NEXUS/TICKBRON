@@ -1,14 +1,14 @@
 """
-Security Review Script for Checkpoint 13 - Booking Engine
+Checkpoint 13 qáwipsizlik tekseriw skripti - Booking Engine
 
-This script performs a comprehensive security review of the booking engine implementation.
+Bul skript booking engine iske asırılıwın tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 
 import os
 import sys
 import django
 
-# Setup Django
+# Django dı tayarlaw
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 os.environ.setdefault('ALLOWED_HOSTS', 'testserver,localhost,127.0.0.1')
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -25,10 +25,10 @@ User = get_user_model()
 
 
 class BookingSecurityCheck(TestCase):
-    """Security checks for booking engine implementation."""
+    """Booking engine iske asırılıwı ushın qáwipsizlik tekseriwleri."""
 
     def setUp(self):
-        """Set up test data for security checks."""
+        """Qáwipsizlik tekseriwleri ushın test maǵlıwmatın tayarlaw."""
         self.user = User.objects.create_user(
             email='security@example.com',
             password='SecurePassword123!',
@@ -85,7 +85,7 @@ class BookingSecurityCheck(TestCase):
             is_active=True
         )
 
-        # Create date inventory
+        # Date inventory di jaratıw
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
 
@@ -105,7 +105,7 @@ class BookingSecurityCheck(TestCase):
         self.client = Client()
 
     def test_01_authentication_required_for_booking_creation(self):
-        """Test that booking creation requires authentication."""
+        """Bron jaratıw autentifikaciyanı talap etetuǵının testlew."""
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
@@ -116,17 +116,17 @@ class BookingSecurityCheck(TestCase):
         }
 
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
-        # 403 for unauthorized, 400 for bad host, both indicate authentication is needed
-        self.assertIn(response.status_code, [403, 400])  # Forbidden or Bad Request
+        # Ruxsatsızlar ushın 403, qáte host ushın 400, ekewi de autentifikaciya kerekligin bildiredi
+        self.assertIn(response.status_code, [403, 400])  # Forbidden yamasa Bad Request
 
     def test_02_authentication_required_for_booking_list(self):
-        """Test that booking list requires authentication."""
+        """Bron dizimi autentifikaciyanı talap etetuǵının testlew."""
         response = self.client.get('/api/v1/bookings/')
-        self.assertIn(response.status_code, [403, 400])  # Forbidden or Bad Request
+        self.assertIn(response.status_code, [403, 400])  # Forbidden yamasa Bad Request
 
     def test_03_authentication_required_for_booking_retrieve(self):
-        """Test that booking retrieve requires authentication."""
-        # Create a booking first
+        """Bronnı alıw autentifikaciyanı talap etetuǵının testlew."""
+        # Aldın bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -138,11 +138,11 @@ class BookingSecurityCheck(TestCase):
         )
 
         response = self.client.get(f'/api/v1/bookings/{booking.id}/')
-        self.assertIn(response.status_code, [403, 400])  # Forbidden or Bad Request
+        self.assertIn(response.status_code, [403, 400])  # Forbidden yamasa Bad Request
 
     def test_04_authentication_required_for_booking_cancel(self):
-        """Test that booking cancellation requires authentication."""
-        # Create a booking first
+        """Bronnı biykar etiw autentifikaciyanı talap etetuǵının testlew."""
+        # Aldın bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -155,11 +155,11 @@ class BookingSecurityCheck(TestCase):
 
         data = {'cancellation_reason': 'Test cancellation'}
         response = self.client.post(f'/api/v1/bookings/{booking.id}/cancel/', data, content_type='application/json')
-        self.assertIn(response.status_code, [403, 400])  # Forbidden or Bad Request
+        self.assertIn(response.status_code, [403, 400])  # Forbidden yamasa Bad Request
 
     def test_05_user_cannot_access_other_users_bookings(self):
-        """Test that users cannot access other users' bookings."""
-        # Create booking for user
+        """Paydalanıwshılar basqalardıń bronlarına qol jetkere almaytuǵının testlew."""
+        # Paydalanıwshı ushın bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -170,17 +170,17 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Login as other user
+        # Basqa paydalanıwshı retinde kiriw
         self.client.login(email='other@example.com', password='OtherPassword123!')
 
-        # Try to access the booking
+        # Bronǵa qol jetkeriwge urınıw
         response = self.client.get(f'/api/v1/bookings/{booking.id}/')
-        # 404 for not found (due to user filtering), 400 for bad host
+        # Tabılmadı ushın 404 (paydalanıwshı filteri sebepli), qáte host ushın 400
         self.assertIn(response.status_code, [404, 400])
 
     def test_06_user_cannot_cancel_other_users_bookings(self):
-        """Test that users cannot cancel other users' bookings."""
-        # Create booking for user
+        """Paydalanıwshılar basqalardıń bronların biykar ete almaytuǵının testlew."""
+        # Paydalanıwshı ushın bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -191,18 +191,18 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Login as other user
+        # Basqa paydalanıwshı retinde kiriw
         self.client.login(email='other@example.com', password='OtherPassword123!')
 
-        # Try to cancel the booking
+        # Bronnı biykar etiwge urınıw
         data = {'cancellation_reason': 'Test cancellation'}
         response = self.client.post(f'/api/v1/bookings/{booking.id}/cancel/', data, content_type='application/json')
-        # 404 for not found (due to user filtering), 400 for bad host
+        # Tabılmadı ushın 404 (paydalanıwshı filteri sebepli), qáte host ushın 400
         self.assertIn(response.status_code, [404, 400])
 
     def test_07_confirmation_code_generation_is_secure(self):
-        """Test that confirmation code generation uses cryptographically secure random."""
-        # Test that the generate_confirmation_code method uses secrets module
+        """Tastıyıqlaw kodın jaratıw kriptografiyalıq qáwipsiz random paydalanatuǵının testlew."""
+        # generate_confirmation_code metodı secrets modulin paydalanatuǵının testlew
         import inspect
         from bookings.models import Booking
 
@@ -211,8 +211,8 @@ class BookingSecurityCheck(TestCase):
         self.assertNotIn('random.choices', source)
 
     def test_08_transaction_safety_for_double_booking_prevention(self):
-        """Test that transactions prevent double booking."""
-        # Create first booking
+        """Tranzakciyalar eki ret bronlawdıń aldın alatuǵının testlew."""
+        # Birinshi bronnı jaratıw
         Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -223,14 +223,14 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Set available rooms to 1 to test double booking prevention
+        # Eki ret bronlawdıń aldın alıwdı testlew ushın bos xonalardı 1 ge qoyıw
         DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
             date__lt=self.check_out
         ).update(available_rooms=1)
 
-        # Try to create second booking (should fail)
+        # Ekinshi bronnı jaratıwǵa urınıw (sátsiz bolıwı kerek)
         try:
             Booking.create_booking(
                 guest=self.user,
@@ -243,21 +243,21 @@ class BookingSecurityCheck(TestCase):
             )
             self.fail("Second booking should have failed due to insufficient inventory")
         except Exception as e:
-            # Expected to fail
+            # Sátsiz bolıwı kútiledi
             self.assertIn('availability', str(e).lower())
 
     def test_09_inventory_consistency_after_rollback(self):
-        """Test that inventory remains consistent after transaction rollback."""
+        """Tranzakciya qaytarılǵannan keyin inventory izbe-iz qalatuǵının testlew."""
         from django.db import transaction
 
-        # Get initial inventory state
+        # Inventory diń dáslepki jaǵdayın alıw
         initial_inventory = list(DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
             date__lt=self.check_out
         ))
 
-        # Try to create booking with forced rollback
+        # Májbúriy qaytarıw menen bron jaratıwǵa urınıw
         try:
             with transaction.atomic():
                 Booking.create_booking(
@@ -269,12 +269,12 @@ class BookingSecurityCheck(TestCase):
                     check_out=self.check_out,
                     guest_count=2
                 )
-                # Force rollback
+                # Qaytarıwdı májbúrlew
                 raise ValueError("Test rollback")
         except ValueError:
             pass
 
-        # Check inventory remains unchanged
+        # Inventory ózgermey qalǵanın tekseriw
         final_inventory = list(DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
@@ -285,11 +285,11 @@ class BookingSecurityCheck(TestCase):
             self.assertEqual(initial.booked_rooms, final.booked_rooms)
 
     def test_10_input_validation_for_sql_injection(self):
-        """Test that input validation prevents SQL injection."""
-        # Login as user
+        """Kiriwdi tekseriw SQL injection nıń aldın alatuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try SQL injection in property_id
+        # property_id de SQL injection di sınap kóriw
         data = {
             'property_id': "1 OR 1=1",
             'room_type_id': self.room_type.id,
@@ -300,14 +300,14 @@ class BookingSecurityCheck(TestCase):
         }
 
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
-        self.assertEqual(response.status_code, 400)  # Bad request due to validation
+        self.assertEqual(response.status_code, 400)  # Validaciya sebepli Bad request
 
     def test_11_date_range_validation(self):
-        """Test that date range validation prevents invalid dates."""
-        # Login as user
+        """Sana aralıǵın tekseriw jaramsız sanalardıń aldın alatuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try invalid date range (check_out before check_in)
+        # Jaramsız sana aralıǵın sınap kóriw (check_out check_in nen aldın)
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
@@ -321,11 +321,11 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(response.status_code, 400)  # Bad request
 
     def test_12_property_existence_validation(self):
-        """Test that property existence validation prevents booking non-existent properties."""
-        # Login as user
+        """Mehmanxana barlıǵın tekseriw joq mehmanxanalardı bronlawdıń aldın alatuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try booking non-existent property
+        # Joq mehmanxanani bronlawǵa urınıw
         data = {
             'property_id': 99999,
             'room_type_id': self.room_type.id,
@@ -339,39 +339,39 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(response.status_code, 400)  # Bad request
 
     def test_13_room_type_capacity_validation(self):
-        """Test that room type capacity validation prevents overbooking."""
-        # Login as user
+        """Xona túri sıyımlılıǵın tekseriw artıq bronlawdıń aldın alatuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try booking with guest count exceeding max occupancy
+        # Mehman sanı max occupancy den asqan halda bronlawǵa urınıw
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
             'check_out': self.check_out.strftime('%Y-%m-%d'),
-            'guest_count': 10  # Exceeds max_occupancy of 4
+            'guest_count': 10  # max_occupancy = 4 ten asadı
         }
 
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
         self.assertEqual(response.status_code, 400)  # Bad request
 
     def test_14_rate_plan_constraints_validation(self):
-        """Test that rate plan constraints validation prevents invalid bookings."""
-        # Update rate plan to have min_nights requirement
+        """Rate plan sheklewlerin tekseriw jaramsız bronlardıń aldın alatuǵının testlew."""
+        # Rate plan dı min_nights shárti menen jańalaw
         self.rate_plan.min_nights = 5
         self.rate_plan.save()
 
-        # Login as user
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try booking with insufficient nights
+        # Túnler jetispegen halda bronlawǵa urınıw
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
             'rate_plan_id': self.rate_plan.id,
             'check_in': self.check_in.strftime('%Y-%m-%d'),
-            'check_out': self.check_out.strftime('%Y-%m-%d'),  # Only 2 nights
+            'check_out': self.check_out.strftime('%Y-%m-%d'),  # Tek 2 tún
             'guest_count': 2
         }
 
@@ -379,8 +379,8 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(response.status_code, 400)  # Bad request
 
     def test_15_cancellation_status_validation(self):
-        """Test that cancellation status validation prevents invalid cancellations."""
-        # Create and cancel a booking
+        """Biykar etiw status ın tekseriw jaramsız biykar etiwlerdiń aldın alatuǵının testlew."""
+        # Bronnı jaratıw hám biykar etiw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -393,16 +393,16 @@ class BookingSecurityCheck(TestCase):
 
         booking.cancel_booking('Test cancellation')
 
-        # Login as user
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try to cancel already cancelled booking
+        # Aldın biykar etilgen bronnı taǵı biykar etiwge urınıw
         data = {'cancellation_reason': 'Test cancellation'}
         response = self.client.post(f'/api/v1/bookings/{booking.id}/cancel/', data, content_type='application/json')
         self.assertEqual(response.status_code, 400)  # Bad request
 
     def test_16_booking_item_creation_integrity(self):
-        """Test that booking items are created with proper integrity."""
+        """Bron elementleri durıs putinlik penen jaratılatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -413,7 +413,7 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Check that booking item was created
+        # Bron elementi jaratılǵanın tekseriw
         self.assertEqual(booking.booking_items.count(), 1)
 
         booking_item = booking.booking_items.first()
@@ -423,14 +423,14 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booking_item.number_of_rooms, 1)
 
     def test_17_inventory_update_atomicity(self):
-        """Test that inventory updates are atomic."""
-        # Get initial booked_rooms
+        """Inventory jańalanıwları atomar ekenin testlew."""
+        # Dáslepki booked_rooms ti alıw
         initial_booked = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
         ).first().booked_rooms
 
-        # Create booking
+        # Bronnı jaratıw
         Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -441,7 +441,7 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Check that booked_rooms was incremented atomically
+        # booked_rooms atomar túrde arttırılǵanın tekseriw
         final_booked = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
@@ -450,8 +450,8 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(final_booked, initial_booked + 1)
 
     def test_18_cancellation_inventory_restoration(self):
-        """Test that cancellation properly restores inventory."""
-        # Create booking
+        """Biykar etiw inventory di durıs tiklewin testlew."""
+        # Bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -462,16 +462,16 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Get booked_rooms after booking
+        # Bronlawdan keyingi booked_rooms ti alıw
         booked_after_booking = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
         ).first().booked_rooms
 
-        # Cancel booking
+        # Bronnı biykar etiw
         booking.cancel_booking('Test cancellation')
 
-        # Check that inventory was restored
+        # Inventory tiklengenin tekseriw
         booked_after_cancellation = DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date=self.check_in
@@ -480,8 +480,8 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booked_after_cancellation, booked_after_booking - 1)
 
     def test_19_booking_filtering_security(self):
-        """Test that booking filtering does not expose other users' data."""
-        # Create booking for user
+        """Bron filterlewi basqa paydalanıwshılardıń maǵlıwmatın ashpaytuǵının testlew."""
+        # Paydalanıwshı ushın bron jaratıw
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -492,7 +492,7 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Create booking for other user
+        # Basqa paydalanıwshı ushın bron jaratıw
         booking2 = Booking.create_booking(
             guest=self.other_user,
             property_obj=self.property,
@@ -503,28 +503,28 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Login as user
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Get bookings list
+        # Bronlar dizimin alıw
         response = self.client.get('/api/v1/bookings/')
-        # Handle possible 400 response due to host issues
+        # Host mashqalası sebepli 400 juwabın islew múmkin
         if response.status_code == 400:
             self.skipTest("Skipping due to ALLOWED_HOSTS configuration issue")
 
         self.assertEqual(response.status_code, 200)
 
-        # Check that only user's booking is returned
+        # Tek paydalanıwshınıń broni qaytarılǵanın tekseriw
         booking_ids = [booking['id'] for booking in response.data]
         self.assertIn(booking1.id, booking_ids)
         self.assertNotIn(booking2.id, booking_ids)
 
     def test_20_error_handling_does_not_leak_sensitive_info(self):
-        """Test that error handling does not leak sensitive information."""
-        # Login as user
+        """Qátelerdi islew sezgir maǵlıwmattı sızdırmaytuǵının testlew."""
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Try booking with invalid data
+        # Jaramsız maǵlıwmat penen bronlawǵa urınıw
         data = {
             'property_id': 99999,
             'room_type_id': self.room_type.id,
@@ -535,21 +535,21 @@ class BookingSecurityCheck(TestCase):
         }
 
         response = self.client.post('/api/v1/bookings/', data, content_type='application/json')
-        # Handle possible 400 response due to host issues
+        # Host mashqalası sebepli 400 juwabın islew múmkin
         if response.status_code == 400 and 'testserver' in str(response.content):
             self.skipTest("Skipping due to ALLOWED_HOSTS configuration issue")
 
         self.assertEqual(response.status_code, 400)
 
-        # Check that error response does not contain sensitive information
+        # Qátelik juwabında sezgir maǵlıwmat joq ekenin tekseriw
         response_str = str(response.content)
         self.assertNotIn('password', response_str.lower())
         self.assertNotIn('secret', response_str.lower())
         self.assertNotIn('sql', response_str.lower())
 
     def test_21_booking_status_transition_validation(self):
-        """Test that booking status transitions are properly validated."""
-        # Create booking
+        """Bron status ótiwleri durıs tekserilgenin testlew."""
+        # Bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -560,16 +560,16 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Initial status should be pending
+        # Dáslepki status pending bolıwı kerek
         self.assertEqual(booking.status, 'pending')
 
-        # Try to cancel booking
+        # Bronnı biykar etiwge urınıw
         booking.cancel_booking('Test cancellation')
         self.assertEqual(booking.status, 'cancelled')
 
     def test_22_confirmation_code_uniqueness(self):
-        """Test that confirmation codes are unique."""
-        # Create multiple bookings
+        """Tastıyıqlaw kodları unikal ekenin testlew."""
+        # Bir neshe bronnı jaratıw
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -580,7 +580,7 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Create inventory for second booking
+        # Ekinshi bron ushın inventory jaratıw
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
 
@@ -607,11 +607,11 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Check that confirmation codes are unique
+        # Tastıyıqlaw kodları unikal ekenin tekseriw
         self.assertNotEqual(booking1.confirmation_code, booking2.confirmation_code)
 
     def test_23_booking_total_price_calculation(self):
-        """Test that booking total price is calculated correctly."""
+        """Bronnıń jámi bahası durıs esaplanatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -622,12 +622,12 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Calculate expected price (2 nights * $100/night)
+        # Kútilgen bahanı esaplaw (2 tún * $100/tún)
         expected_price = Decimal('200.00')
         self.assertEqual(booking.total_price, expected_price)
 
     def test_24_number_of_nights_calculation(self):
-        """Test that number of nights is calculated correctly."""
+        """Túnler sanı durıs esaplanatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -642,8 +642,8 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booking.number_of_nights, expected_nights)
 
     def test_25_soft_delete_filtering(self):
-        """Test that soft-deleted bookings are filtered out."""
-        # Create booking
+        """Soft delete etilgen bronlar filterlep taslanatuǵının testlew."""
+        # Bronnı jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -654,27 +654,27 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Soft delete booking
+        # Bronnı soft delete etiw
         booking.is_deleted = True
         booking.save()
 
-        # Login as user
+        # Paydalanıwshı retinde kiriw
         self.client.login(email='security@example.com', password='SecurePassword123!')
 
-        # Get bookings list
+        # Bronlar dizimin alıw
         response = self.client.get('/api/v1/bookings/')
-        # Handle possible 400 response due to host issues
+        # Host mashqalası sebepli 400 juwabın islew múmkin
         if response.status_code == 400:
             self.skipTest("Skipping due to ALLOWED_HOSTS configuration issue")
 
         self.assertEqual(response.status_code, 200)
 
-        # Check that deleted booking is not returned
+        # Óshirilgen bron qaytarılmaǵanın tekseriw
         booking_ids = [booking['id'] for booking in response.data]
         self.assertNotIn(booking.id, booking_ids)
 
     def test_26_booking_item_currency_consistency(self):
-        """Test that booking item currency matches rate plan currency."""
+        """Bron elementi valyutası rate plan valyutasına sáykes keletuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -690,7 +690,7 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booking.currency, self.rate_plan.currency)
 
     def test_27_booking_persistence_after_transaction(self):
-        """Test that booking persists after successful transaction."""
+        """Tabıslı tranzakciyadan keyin bron saqlanıp qalatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -701,16 +701,16 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Refresh from database
+        # Database den jańalaw
         booking.refresh_from_db()
 
-        # Check that booking persists
+        # Bron saqlanǵanın tekseriw
         self.assertIsNotNone(booking.id)
         self.assertEqual(booking.status, 'pending')
         self.assertEqual(booking.guest, self.user)
 
     def test_28_concurrent_booking_safety(self):
-        """Test that concurrent booking requests are handled safely."""
+        """Bir waqıttaǵı bron sorawları qáwipsiz islenetuǵının testlew."""
         import threading
 
         results = []
@@ -730,14 +730,14 @@ class BookingSecurityCheck(TestCase):
             except Exception:
                 results.append(False)
 
-        # Set limited inventory
+        # Sheklengen inventory di ornatıw
         DateInventory.objects.filter(
             rate_plan=self.rate_plan,
             date__gte=self.check_in,
             date__lt=self.check_out
         ).update(available_rooms=1)
 
-        # Create first booking
+        # Birinshi bronnı jaratıw
         Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -748,16 +748,16 @@ class BookingSecurityCheck(TestCase):
             guest_count=2
         )
 
-        # Try concurrent booking (should fail)
+        # Bir waqıttaǵı bronlawdı sınap kóriw (sátsiz bolıwı kerek)
         thread = threading.Thread(target=create_booking)
         thread.start()
         thread.join()
 
-        # Only one should succeed
-        self.assertEqual(sum(results), 0)  # Second booking should fail
+        # Tek biri tabıslı bolıwı kerek
+        self.assertEqual(sum(results), 0)  # Ekinshi bron sátsiz bolıwı kerek
 
     def test_29_booking_item_number_of_rooms_validation(self):
-        """Test that booking item number of rooms is validated."""
+        """Bron elementindegi xonalar sanı tekserilgenin testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -772,7 +772,7 @@ class BookingSecurityCheck(TestCase):
         self.assertGreaterEqual(booking_item.number_of_rooms, 1)
 
     def test_30_booking_price_per_night_validation(self):
-        """Test that booking item price per night is validated."""
+        """Bron elementindegi bir túnlik baha tekserilgenin testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -787,7 +787,7 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booking_item.price_per_night, self.rate_plan.base_price)
 
     def test_31_booking_special_requests_handling(self):
-        """Test that special requests are handled properly."""
+        """Arnawlı sorawlar durıs islenetuǵının testlew."""
         special_requests = "Late check-in requested, ground floor preferred"
 
         booking = Booking.create_booking(
@@ -804,7 +804,7 @@ class BookingSecurityCheck(TestCase):
         self.assertEqual(booking.special_requests, special_requests)
 
     def test_32_cancellation_reason_tracking(self):
-        """Test that cancellation reason is properly tracked."""
+        """Biykar etiw sebebi durıs qadaǵalanatuǵının testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -825,15 +825,15 @@ class BookingSecurityCheck(TestCase):
 if __name__ == '__main__':
     import unittest
 
-    # Create test suite
+    # Test toplamın jaratıw
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(BookingSecurityCheck)
 
-    # Run tests
+    # Testlerdi islew
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
 
-    # Print summary
+    # Juwmaqtı shıǵarıw
     print("\n" + "="*70)
     print("SECURITY REVIEW SUMMARY - CHECKPOINT 13")
     print("="*70)

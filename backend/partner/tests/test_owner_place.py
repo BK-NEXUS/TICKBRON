@@ -1,7 +1,8 @@
 """
-The place of a hotel-owner account (plan .ai/PLAN_GEO_IMAGES.md, step 3; city level removed 2026-11-10): the super
-admin picks country > region when creating the account; the owner's hotels are created in that place
-(there is no town or district) and cannot be moved by the owner.
+Mehmanxana iyesi akkauntınıń orını (reje .ai/PLAN_GEO_IMAGES.md, 3-qádem; qala dárejesi 2026-11-10 de alıp taslandı):
+super
+admin akkaunt jaratqanda mámleket > regionnı tańlaydı; iyeniń mehmanxanaları sol orında jaratıladı
+(qala yamasa tuman joq) hám iye olardı kóshire almaydı.
 """
 import pytest
 from rest_framework.test import APIClient

@@ -1,4 +1,4 @@
-"""JSON nested too deeply to read is a 400, never a 500 (Python's RecursionError is not a ValueError)."""
+"""Oqıwǵa júdá tereń oralǵan JSON 400, hesh qashan 500 emes (Python tiń RecursionError ı ValueError emes)."""
 import pytest
 from rest_framework.test import APIClient
 
@@ -30,7 +30,7 @@ def test_ordinary_nested_json_still_parses():
 
 
 def test_the_geography_admin_reads_deep_json_as_a_client_error(clients):  # noqa: F811
-    # this view lists its own parsers (it takes pictures), so the default parser does not reach it
+    # bul view óz parser lerin dizimleydi (ol súwret aladı), sol sebepli ádetdegi parser oǵan jetpeydi
     api = clients['superadmin']
     api.raise_request_exception = False
 

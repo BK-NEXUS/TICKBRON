@@ -1,4 +1,4 @@
-"""A hotel owner reads the approved reviews of their own hotels and answers them in public."""
+"""Mehmanxana iyesi óz mehmanxanalarınıń tastıyıqlanǵan sharhların oqıydı hám olarǵa ashıq juwap beredi."""
 from decimal import Decimal
 
 import pytest

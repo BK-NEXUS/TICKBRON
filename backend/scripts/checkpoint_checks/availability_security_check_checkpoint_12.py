@@ -1,21 +1,21 @@
 """
-Security Review Script for Checkpoint 12 - Availability API/Pricing Preview
+Checkpoint 12 qáwipsizlik tekseriw skripti - Availability API/Baha aldınan kóriw
 
-This script performs a comprehensive security review of the availability API:
-- Availability endpoint implementation
-- Deterministic pricing behavior
-- Date range parameter validation
-- Security for sensitive data
+Bul skript availability API dı tolıq qáwipsizlik tekseriwinen ótkeredi:
+- Availability endpoint iske asırılıwı
+- Anıq (deterministic) baha qásiyeti
+- Sana aralıǵı parametrlerin tekseriw
+- Sezgir maǵlıwmat qáwipsizligi
 """
 
 import sys
 from pathlib import Path
 
-# Add backend to path
+# Backend ti jolǵa qosıw
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def check_availability_endpoint_exists():
-    """Check if availability endpoint exists."""
+    """Availability endpoint barlıǵın tekseriw."""
     print("[*] Checking availability endpoint...")
 
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
@@ -40,7 +40,7 @@ def check_availability_endpoint_exists():
     return passed == total
 
 def check_availability_serializer_completeness():
-    """Check if availability serializer includes all required sections."""
+    """Availability serializer barlıq kerekli bólimlerdi óz ishine alǵanın tekseriw."""
     print("[*] Checking availability serializer completeness...")
 
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
@@ -67,7 +67,7 @@ def check_availability_serializer_completeness():
     return passed == total
 
 def check_availability_date_range_validation():
-    """Check if date range parameters are properly validated."""
+    """Sana aralıǵı parametrleri durıs tekserilgenin tekseriw."""
     print("[*] Checking date range validation...")
 
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
@@ -92,7 +92,7 @@ def check_availability_date_range_validation():
     return passed == total
 
 def check_availability_deterministic_behavior():
-    """Check if availability behavior is deterministic."""
+    """Availability qásiyeti anıq (deterministic) ekenin tekseriw."""
     print("[*] Checking deterministic availability behavior...")
 
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
@@ -117,7 +117,7 @@ def check_availability_deterministic_behavior():
     return passed == total
 
 def check_availability_security():
-    """Check if availability endpoint has proper security."""
+    """Availability endpoint inde tiyisli qáwipsizlik barlıǵın tekseriw."""
     print("[*] Checking availability security...")
 
     views_file = Path(__file__).parent.parent.parent / 'properties' / 'views.py'
@@ -144,23 +144,23 @@ def check_availability_security():
     return passed == total
 
 def sensitive_data_exposure_check(views_content):
-    """Check that sensitive data is not exposed."""
-    # Check that we're not exposing sensitive fields like owner email, phone, etc.
+    """Sezgir maǵlıwmat ashılmaǵanın tekseriw."""
+    # Iye email i, telefonı hám basqa sezgir maydanlar ashılmaǵanın tekseriw
 
-    # In the availability view, we should not be exposing owner's sensitive data
-    # The PropertyAvailabilitySerializer should not include owner's email/phone
+    # Availability view de iyeniń sezgir maǵlıwmatın ashpawımız kerek
+    # PropertyAvailabilitySerializer iyeniń email i/telefonın óz ishine almawı kerek
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
     serializers_content = serializers_file.read_text()
 
-    # Check that owner field is read-only and limited
+    # Iye maydanı tek oqıw ushın hám sheklengen ekenin tekseriw
     if 'owner' in serializers_content:
-        # Owner should be read-only and probably just an ID
+        # Iye tek oqıw ushın hám tiykarınan tek ID bolıwı kerek
         return "'owner'" in serializers_content and "read_only_fields" in serializers_content
 
-    return True  # If owner is not included at all, that's also safe
+    return True  # Iye pútkilley kirmese, bul da qáwipsiz
 
 def check_availability_url_configuration():
-    """Check if availability URL is properly configured."""
+    """Availability URL durıs sazlanǵanın tekseriw."""
     print("[*] Checking URL configuration...")
 
     urls_file = Path(__file__).parent.parent.parent / 'properties' / 'urls.py'
@@ -184,7 +184,7 @@ def check_availability_url_configuration():
     return passed == total
 
 def check_availability_test_coverage():
-    """Check if availability has comprehensive test coverage."""
+    """Availability tolıq test qamtıwına iye ekenin tekseriw."""
     print("[*] Checking test coverage...")
 
     test_file = Path(__file__).parent.parent.parent / 'properties' / 'tests' / 'test_availability.py'
@@ -217,7 +217,7 @@ def check_availability_test_coverage():
     return passed == total
 
 def check_availability_pricing_preview():
-    """Check if pricing preview is properly implemented."""
+    """Baha aldınan kóriw durıs iske asırılǵanın tekseriw."""
     print("[*] Checking pricing preview implementation...")
 
     serializers_file = Path(__file__).parent.parent.parent / 'properties' / 'serializers.py'
@@ -244,7 +244,7 @@ def check_availability_pricing_preview():
     return passed == total
 
 def run_security_review():
-    """Run the complete security review."""
+    """Tolıq qáwipsizlik tekseriwin islew."""
     print("=" * 60)
     print("CHECKPOINT 12 SECURITY REVIEW: Availability API/Pricing Preview")
     print("=" * 60)

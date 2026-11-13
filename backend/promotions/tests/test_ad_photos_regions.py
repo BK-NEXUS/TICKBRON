@@ -1,6 +1,6 @@
 """
-Ad photos (up to 10 per promotion, set by the super-admin), what the banner shows, and the per-region view
-of the advertising panel (.ai/PLAN_AD_REGIONS.md).
+Reklama súwretleri (hár reklamaǵa 10 ǵa shekem, super-admin belgileydi), banner ne kórsetedi, hám reklama
+panelinıń region boyınsha kórinisi (.ai/PLAN_AD_REGIONS.md).
 """
 import io
 import shutil
@@ -214,7 +214,7 @@ class TestRegionPanel:
         assert (samarkand['running'], samarkand['waiting']) == (1, 1)
         assert [hotel['name'] for hotel in samarkand['hotels']] == ['Samarkand Inn']
         assert (rows['Bukhara']['running'], rows['Bukhara']['waiting']) == (1, 0)
-        # A region nobody advertises in is still there, so the admin sees where ads can be sold
+        # Hesh kim reklama bermeytuǵın region de bar, sol sebepli admin reklamanı qayerde satıw múmkinligin kóredi
         assert rows['Tashkent']['running'] == 0 and rows['Tashkent']['hotels'] == []
 
     def test_unpaid_and_cancelled_ads_do_not_run(self, admin, world):
@@ -264,7 +264,7 @@ class TestPromotionModel:
 
 
 class TestAdBannerRules:
-    """An ad banner is at least 1600 x 600 px, from 16:9 to 16:5; it is stored at most 2400 px wide."""
+    """Reklama bannerı eń kemi 1600 x 600 px, 16:9 dan 16:5 ke shekem; ol eń kóbi 2400 px ende saqlanadı."""
 
     def test_a_banner_that_is_too_small_is_refused(self, admin, promo):
         response = upload(admin, promo, file=banner(width=1200, height=450))

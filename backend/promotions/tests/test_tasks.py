@@ -1,4 +1,4 @@
-"""Nightly tidy-up: expired promotions end, paid ones that started become active (00:10 Asia/Tashkent)."""
+"""Túngi tazalaw: múddeti ótken reklamalar pitedi, baslanǵan tólengenleri aktiv boladı (00:10 Asia/Tashkent)."""
 from datetime import date, datetime, timezone as dt_timezone
 from decimal import Decimal
 from unittest.mock import patch
@@ -42,7 +42,7 @@ def test_beat_entry_runs_at_0010_tashkent():
 
 def test_last_day_is_still_running_at_2330_tashkent():
     promo = make('a@example.com', date(2026, 10, 3), LAST_DAY, 'active')
-    with at(18):  # 23:30 on 9 Oct in Tashkent
+    with at(18):  # Tashkent te 9-oktyabr 23:30
         result = end_expired_promotions()
         assert reload(promo) == 'active'
         assert list(service.shown_now()) == [promo]
@@ -51,7 +51,7 @@ def test_last_day_is_still_running_at_2330_tashkent():
 
 def test_it_ends_after_midnight_tashkent():
     promo = make('b@example.com', date(2026, 10, 3), LAST_DAY, 'active')
-    with at(19):  # 00:30 on 10 Oct in Tashkent (19:30 UTC on the 9th)
+    with at(19):  # Tashkent te 10-oktyabr 00:30 (9-kúni 19:30 UTC)
         result = end_expired_promotions()
         assert list(service.shown_now()) == []
     assert reload(promo) == 'ended'

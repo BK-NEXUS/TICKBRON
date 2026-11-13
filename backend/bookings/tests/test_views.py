@@ -1,5 +1,5 @@
 """
-Tests for TICKBRON booking views and API endpoints.
+TICKBRON bron view leri hám API endpoint leri ushın testler.
 """
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -12,11 +12,11 @@ from currency.testing import make_usd_rate
 
 
 class BookingViewTests(APITestCase):
-    """Test cases for booking views."""
+    """Bron view leri ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
-        make_usd_rate()  # R6: a USD hotel is bookable only once a rate exists
+        """Test maǵlıwmatın tayarlaw."""
+        make_usd_rate()  # R6: USD mehmanxanasın tek kurs bar bolǵanda bronlap boladı
         self.client = APIClient()
 
         self.user = User.objects.create_user(phone_number='+998901112233',
@@ -68,7 +68,7 @@ class BookingViewTests(APITestCase):
             is_active=True
         )
 
-        # Create date inventory
+        # Date inventory jaratıw
         self.check_in = date.today() + timedelta(days=10)
         self.check_out = date.today() + timedelta(days=12)
 
@@ -86,7 +86,7 @@ class BookingViewTests(APITestCase):
             current_date += timedelta(days=1)
 
     def test_create_booking_authenticated(self):
-        """Test creating booking as authenticated user."""
+        """Kirgen paydalanıwshı sıpatında bron jaratıwdı testlew."""
         self.client.force_authenticate(user=self.user)
 
         data = {
@@ -103,11 +103,11 @@ class BookingViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('confirmation_code', response.data)
-        self.assertEqual(response.data['status'], 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
+        self.assertEqual(response.data['status'], 'confirmed')  # mehmanxanada naqd: bron API birden tastıyıqlaydı (burın 'pending')
         self.assertEqual(response.data['guest_count'], 2)
 
     def test_create_booking_unauthenticated(self):
-        """Test creating booking as unauthenticated user."""
+        """Kirmegen paydalanıwshı sıpatında bron jaratıwdı testlew."""
         data = {
             'property_id': self.property.id,
             'room_type_id': self.room_type.id,
@@ -122,8 +122,8 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_list_bookings_authenticated(self):
-        """Test listing bookings as authenticated user."""
-        # Create a booking
+        """Kirgen paydalanıwshı sıpatında bronlardı dizimlewdi testlew."""
+        # Bron jaratıw
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -142,13 +142,13 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.data['results'][0]['confirmation_code'], booking.confirmation_code)
 
     def test_list_bookings_unauthenticated(self):
-        """Test listing bookings as unauthenticated user."""
+        """Kirmegen paydalanıwshı sıpatında bronlardı dizimlewdi testlew."""
         response = self.client.get('/api/v1/bookings/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_booking_authenticated(self):
-        """Test retrieving a specific booking as authenticated user."""
+        """Kirgen paydalanıwshı sıpatında belgili bronnı alıwdı testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -166,7 +166,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.data['confirmation_code'], booking.confirmation_code)
 
     def test_retrieve_booking_unauthenticated(self):
-        """Test retrieving a specific booking as unauthenticated user."""
+        """Kirmegen paydalanıwshı sıpatında belgili bronnı alıwdı testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -182,7 +182,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_cancel_booking_authenticated(self):
-        """Test cancelling a booking as authenticated user."""
+        """Kirgen paydalanıwshı sıpatında bronnan bas tartıwdı testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -206,7 +206,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.data['cancellation_reason'], 'Test cancellation')
 
     def test_cancel_booking_unauthenticated(self):
-        """Test cancelling a booking as unauthenticated user."""
+        """Kirmegen paydalanıwshı sıpatında bronnan bas tartıwdı testlew."""
         booking = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -226,7 +226,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_booking_invalid_date_range(self):
-        """Test creating booking with invalid date range."""
+        """Jaramsız sana aralıǵı menen bron jaratıwdı testlew."""
         self.client.force_authenticate(user=self.user)
 
         data = {
@@ -244,8 +244,8 @@ class BookingViewTests(APITestCase):
         self.assertIn('check_out', response.data['details'])
 
     def test_create_booking_insufficient_inventory(self):
-        """Test creating booking when inventory is insufficient."""
-        # RoomInventory is what the engine gates room count on (audit #31)
+        """Inventory jetispegende bron jaratıwdı testlew."""
+        # RoomInventory xona sanın sistema basqaratuǵın qatar (audit #31)
         current_date = self.check_in
         while current_date < self.check_out:
             RoomInventory.objects.create(room_type=self.room_type, date=current_date, available_rooms=0)
@@ -265,12 +265,12 @@ class BookingViewTests(APITestCase):
         response = self.client.post('/api/v1/bookings/', data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # Check that the error contains availability information
+        # Qátelikte bos orın maǵlıwmatı bar ekenin tekseriw
         self.assertIn('availability', str(response.data).lower())
 
     def test_filter_bookings_by_status(self):
-        """Test filtering bookings by status."""
-        # Create multiple bookings
+        """Bronlardı status boyınsha filterlewdi testlew."""
+        # Bir neshe bron jaratıw
         booking1 = Booking.create_booking(
             guest=self.user,
             property_obj=self.property,
@@ -281,7 +281,7 @@ class BookingViewTests(APITestCase):
             guest_count=2
         )
 
-        # Create inventory for second booking dates
+        # Ekinshi bron sanaları ushın inventory jaratıw
         check_in2 = date.today() + timedelta(days=20)
         check_out2 = date.today() + timedelta(days=22)
 
@@ -308,12 +308,12 @@ class BookingViewTests(APITestCase):
             guest_count=2
         )
 
-        # Cancel one booking
+        # Bir bronnan bas tartıw
         booking1.cancel_booking('Test cancellation')
 
         self.client.force_authenticate(user=self.user)
 
-        # Filter by status
+        # Status boyınsha filterlew
         response = self.client.get('/api/v1/bookings/?status=cancelled')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -334,7 +334,7 @@ class BookingViewTests(APITestCase):
         return Booking.objects.get(id=response.data['id'])
 
     def test_guest_cannot_patch_or_put_booking(self):
-        """Guests cannot rewrite status, payment status or price via PUT/PATCH."""
+        """Mehmanlar status, tólem statusı yamasa bahanı PUT/PATCH arqalı qayta jaza almaydı."""
         booking = self._create_booking_via_api()
         tampered = {'status': 'confirmed', 'payment_status': 'paid', 'total_price': '0.01'}
 
@@ -344,12 +344,12 @@ class BookingViewTests(APITestCase):
         self.assertEqual(patch_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(put_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         booking.refresh_from_db()
-        self.assertEqual(booking.status, 'confirmed')  # cash at the hotel: the booking API confirms at once (was 'pending')
+        self.assertEqual(booking.status, 'confirmed')  # mehmanxanada naqd: bron API birden tastıyıqlaydı (burın 'pending')
         self.assertEqual(booking.payment_status, 'pending')
         self.assertEqual(booking.total_price, Decimal('200.00'))
 
     def test_guest_cannot_delete_booking(self):
-        """DELETE is not allowed; the booking and its inventory hold stay intact."""
+        """DELETE ruxsat etilmeydi; bron hám onıń inventory ustawı saqlanıp qaladı."""
         booking = self._create_booking_via_api()
 
         response = self.client.delete(f'/api/v1/bookings/{booking.id}/')
@@ -360,7 +360,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(inventory.booked_rooms, 1)
 
     def test_booking_serializer_fields_are_read_only(self):
-        """BookingSerializer ignores all input, so it cannot be used to write bookings."""
+        """BookingSerializer hár kirisiwdi itibarǵa almaydı, sol sebepli onı bron jazıw ushın paydalanıp bolmaydı."""
         from bookings.serializers import BookingSerializer
 
         booking = self._create_booking_via_api()
@@ -374,7 +374,7 @@ class BookingViewTests(APITestCase):
         self.assertEqual(serializer.validated_data, {})
 
     def test_create_booking_internal_error_does_not_leak_details(self):
-        """An unexpected internal error (e.g. a raw DB error) must not reach the client (audit #24)."""
+        """Kútilmegen ishki qátelik (mısalı xom DB qátesi) klientke jetpewi kerek (audit #24)."""
         from unittest.mock import patch
 
         self.client.force_authenticate(user=self.user)
@@ -395,7 +395,7 @@ class BookingViewTests(APITestCase):
         self.assertNotIn(secret, str(response.data))
 
     def test_cancel_booking_internal_error_does_not_leak_details(self):
-        """An unexpected internal error while cancelling must not reach the client (audit #24)."""
+        """Bronnan bas tartıw waqtındaǵı kútilmegen ishki qátelik klientke jetpewi kerek (audit #24)."""
         from unittest.mock import patch
 
         booking = self._create_booking_via_api()

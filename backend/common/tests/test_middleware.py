@@ -1,5 +1,5 @@
 """
-Tests for custom middleware.
+Óz middleware ushın testler.
 """
 from django.test import TestCase, RequestFactory
 from django.http import HttpResponse
@@ -11,15 +11,15 @@ from common.middleware import (
 
 
 class SecurityHeadersMiddlewareTest(TestCase):
-    """Tests for SecurityHeadersMiddleware."""
+    """SecurityHeadersMiddleware ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.factory = RequestFactory()
         self.middleware = SecurityHeadersMiddleware(lambda request: HttpResponse())
 
     def test_security_headers_added(self):
-        """Test that security headers are added to responses."""
+        """Qáwipsizlik header leri juwaplarǵa qosılatuǵının testlew."""
         request = self.factory.get('/')
         response = self.middleware(request)
 
@@ -31,7 +31,7 @@ class SecurityHeadersMiddlewareTest(TestCase):
         self.assertIn('Permissions-Policy', response)
 
     def test_permissions_policy_restricts_access(self):
-        """Test that Permissions-Policy restricts sensitive APIs."""
+        """Permissions-Policy jasırın API lardı sheklewin testlew."""
         request = self.factory.get('/')
         response = self.middleware(request)
 
@@ -42,15 +42,15 @@ class SecurityHeadersMiddlewareTest(TestCase):
 
 
 class RequestLoggingMiddlewareTest(TestCase):
-    """Tests for RequestLoggingMiddleware."""
+    """RequestLoggingMiddleware ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.factory = RequestFactory()
         self.middleware = RequestLoggingMiddleware(lambda request: HttpResponse())
 
     def test_response_time_header_added(self):
-        """Test that response time header is added."""
+        """Juwap waqtı header i qosılatuǵının testlew."""
         request = self.factory.get('/')
         response = self.middleware(request)
 
@@ -58,7 +58,7 @@ class RequestLoggingMiddlewareTest(TestCase):
         self.assertTrue(response['X-Response-Time'].endswith('s'))
 
     def test_authenticated_request_log_does_not_contain_user_email(self):
-        """audit #24: every request logs the user -- it must not be their email (PII)."""
+        """audit #24: hár soraw paydalanıwshını log qa jazadı -- ol onıń e-mail ı (PII) bolmawı kerek."""
         from users.models import User
 
         user = User.objects.create_user(
@@ -77,15 +77,15 @@ class RequestLoggingMiddlewareTest(TestCase):
 
 
 class PerformanceMonitoringMiddlewareTest(TestCase):
-    """Tests for PerformanceMonitoringMiddleware."""
+    """PerformanceMonitoringMiddleware ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.factory = RequestFactory()
         self.middleware = PerformanceMonitoringMiddleware(lambda request: HttpResponse())
 
     def test_middleware_does_not_break_normal_requests(self):
-        """Test that middleware doesn't break normal requests."""
+        """Middleware ápiwayı sorawlardı buzbaytuǵının testlew."""
         request = self.factory.get('/')
         response = self.middleware(request)
 
@@ -93,7 +93,7 @@ class PerformanceMonitoringMiddlewareTest(TestCase):
 
 
 class HstsHeaderTest(TestCase):
-    """N-6: HSTS belongs to HTTPS responses only; it must not depend on the redirect setting."""
+    """N-6: HSTS tek HTTPS juwaplarına tiyisli; ol redirect sazlamasına baylanıslı bolmawı kerek."""
 
     def test_no_hsts_on_a_plain_http_request(self):
         with self.settings(SECURE_SSL_REDIRECT=True, SECURE_HSTS_SECONDS=3600):

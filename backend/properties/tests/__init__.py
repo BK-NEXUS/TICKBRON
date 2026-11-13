@@ -1,3 +1,3 @@
 """
-Tests for the properties app.
+properties app ı ushın testler.
 """

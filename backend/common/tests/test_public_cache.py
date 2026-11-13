@@ -1,6 +1,8 @@
 """
-A short copy of the answers that every visitor gets the same (hotel page, availability, search results, filter options):
-a few seconds old at most, never for anything that changes with who asks, never for an error, never for the paid banners.
+Hár kelwshi birdey alatuǵın juwaplardıń qısqa nusqası (mehmanxana beti, bos orınlar, izlew nátiyjeleri, filter
+variantları):
+eń kóbi bir neshe sekund eski, hesh qashan kim soraǵanına baylanıslı nárse ushın, hesh qashan qátelik ushın, hesh qashan
+tólengen banner ler ushın emes.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -132,7 +134,7 @@ class TestSearch:
 
     def test_a_paid_banner_is_counted_for_every_visitor_even_when_the_results_come_from_the_copy(self, hotel):
         promotion = make_promotion(hotel)
-        for visitor in range(3):  # a banner is counted once per visitor and hour: three different visitors
+        for visitor in range(3):  # banner hár kelwshi hám saat ushın bir márte sanaladı: úsh túrli kelwshi
             assert APIClient().get(self.URL, REMOTE_ADDR=f'203.0.113.{visitor + 1}').status_code == 200
 
         stat = PromotionDailyStat.objects.get(promotion=promotion, date=business_today())
@@ -216,19 +218,20 @@ def any_host(settings):
 
 @CACHE_ON
 class TestWhenTheCacheStaysDown:
-    """Every call to a dead Redis waits for its timeout: after one failure the pages stop asking for a while."""
+    """Óship qalǵan Redis ke hár shaqırıw onıń timeout ın kútedi: bir qátelikten keyin betler bir waqıtqa soramaydı."""
 
     def test_after_one_failure_the_cache_is_left_alone_until_the_pause_ends(self, hotel):
         clock = mock.Mock()
-        # the time of each look at the clock: is it paused (1st request), start the pause, paused? (2nd), paused? (3rd)
+        # saatqa hár qarawdıń waqtı: toqtatılǵan ba (1-soraw), toqtawdı baslaw, toqtatılǵan ba? (2-soraw), toqtatılǵan ba?
+        # (3-soraw)
         clock.monotonic.side_effect = [100.0, 100.0, 105.0, 200.0, 200.0]
         with mock.patch.object(public_cache.cache, 'get', side_effect=ConnectionError('redis is down')) as get, \
                 mock.patch.object(public_cache.cache, 'set') as put, mock.patch.object(public_cache, 'time', clock):
-            APIClient().get(detail_url(hotel))      # fails once and starts the pause
-            APIClient().get(detail_url(hotel))      # inside the pause: no call to the cache at all
+            APIClient().get(detail_url(hotel))      # bir márte qátelesedi hám toqtawdı baslaydı
+            APIClient().get(detail_url(hotel))      # toqtaw ishinde: keshke hesh qanday shaqırıw joq
             assert get.call_count == 1 and put.call_count == 0
 
-            APIClient().get(detail_url(hotel))      # pause over: tries again
+            APIClient().get(detail_url(hotel))      # toqtaw pitti: qayta uradı
             assert get.call_count == 2
 
 

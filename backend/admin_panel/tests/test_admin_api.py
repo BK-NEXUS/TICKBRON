@@ -1,8 +1,8 @@
 """
-Tests for admin API endpoints.
+Admin API endpoint leri ushın testler.
 
-This module contains tests for property moderation, user management,
-and amenity management.
+Bul modul mehmanxana moderation ı, paydalanıwshılardı basqarıw
+hám amenity di basqarıw ushın testlerdi óz ishine aladı.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -22,13 +22,13 @@ User = get_user_model()
 
 
 class AdminPropertyTests(TestCase):
-    """Tests for admin property moderation endpoints."""
+    """Admin mehmanxana moderation endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -36,7 +36,7 @@ class AdminPropertyTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -45,7 +45,7 @@ class AdminPropertyTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -53,7 +53,7 @@ class AdminPropertyTests(TestCase):
             last_name='User'
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -76,36 +76,36 @@ class AdminPropertyTests(TestCase):
         make_listable(self.property)
 
     def test_super_admin_can_list_all_properties(self):
-        """Test that super-admin can list all properties."""
+        """Super-admin barlıq mehmanxanalardı dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/properties/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check that at least our test property is in the list (paginated response)
+        # Keminde bizdiń test mehmanxanamız dizimde ekenin tekseriw (betlengen juwap)
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         property_ids = [prop['id'] for prop in results]
         self.assertIn(self.property.id, property_ids)
 
     def test_staff_can_list_all_properties(self):
-        """Test that staff can list all properties."""
+        """Staff barlıq mehmanxanalardı dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/properties/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check that at least our test property is in the list (paginated response)
+        # Keminde bizdiń test mehmanxanamız dizimde ekenin tekseriw (betlengen juwap)
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         property_ids = [prop['id'] for prop in results]
         self.assertIn(self.property.id, property_ids)
 
     def test_regular_user_cannot_list_admin_properties(self):
-        """Test that regular user cannot access admin property endpoints."""
+        """Ápiwayı paydalanıwshı admin mehmanxana endpoint lerine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/properties/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_super_admin_can_approve_property(self):
-        """Test that super-admin can approve property."""
+        """Super-admin mehmanxananı tastıyıqlay alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/')
 
@@ -116,7 +116,7 @@ class AdminPropertyTests(TestCase):
         self.assertIsNotNone(self.property.approved_at)
 
     def test_staff_can_approve_property(self):
-        """Test that staff can approve property."""
+        """Staff mehmanxananı tastıyıqlay alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/')
 
@@ -125,7 +125,7 @@ class AdminPropertyTests(TestCase):
         self.assertEqual(self.property.status, 'active')
 
     def test_admin_can_reject_property_with_reason(self):
-        """Test that admin can reject property with reason."""
+        """Admin mehmanxananı sebep penen biykar ete alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {'rejection_reason': 'Property does not meet standards'}
         response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/approve/', data)
@@ -136,7 +136,7 @@ class AdminPropertyTests(TestCase):
         self.assertEqual(self.property.rejection_reason, 'Property does not meet standards')
 
     def test_admin_can_suspend_property(self):
-        """Test that admin can suspend property."""
+        """Admin mehmanxananı toqtata alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.post(f'/api/v1/admin-panel/properties/{self.property.id}/suspend/')
 
@@ -146,13 +146,13 @@ class AdminPropertyTests(TestCase):
 
 
 class AdminUserTests(TestCase):
-    """Tests for admin user management endpoints."""
+    """Admin paydalanıwshılardı basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -160,7 +160,7 @@ class AdminUserTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -169,7 +169,7 @@ class AdminUserTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -178,15 +178,15 @@ class AdminUserTests(TestCase):
         )
 
     def test_super_admin_can_list_all_users(self):
-        """Test that super-admin can list all users."""
+        """Super-admin barlıq paydalanıwshılardı dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/users/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['count'], 3)  # a page at a time since the alphabet filter (2026-11-01)
+        self.assertEqual(response.data['count'], 3)  # alfavit filterinen (2026-11-01) beri bir waqıtta bir bet
 
     def test_staff_can_list_all_users(self):
-        """Test that staff can list all users."""
+        """Staff barlıq paydalanıwshılardı dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/users/')
 
@@ -194,14 +194,14 @@ class AdminUserTests(TestCase):
         self.assertEqual(response.data['count'], 3)
 
     def test_regular_user_cannot_list_admin_users(self):
-        """Test that regular user cannot access admin user endpoints."""
+        """Ápiwayı paydalanıwshı admin paydalanıwshı endpoint lerine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/users/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_super_admin_can_create_hotel_owner_account(self):
-        """Test that super-admin can create hotel-owner account."""
+        """Super-admin mehmanxana iyesi akkaunt ın jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {
             'email': 'hotelowner@example.com',
@@ -210,19 +210,19 @@ class AdminUserTests(TestCase):
             'phone_number': '+998901234567',
             'password': 'Owner#Secret2026',
             'password_confirm': 'Owner#Secret2026',
-            **uzbek_location('Tashkent'),  # a new account needs a place
+            **uzbek_location('Tashkent'),  # jańa akkauntqa orın kerek
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), 4)
 
-        # Verify user has hotel-owner role
+        # Paydalanıwshıda mehmanxana iyesi roli barlıǵın tekseriw
         new_user = User.objects.get(email='hotelowner@example.com')
         self.assertEqual(new_user.role.name, 'hotel-owner')
 
     def test_staff_cannot_create_hotel_owner_account(self):
-        """Test that staff cannot create hotel-owner account."""
+        """Staff mehmanxana iyesi akkaunt ın jarata almaytuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         data = {
             'email': 'hotelowner2@example.com',
@@ -249,7 +249,7 @@ class AdminUserTests(TestCase):
         self.assertFalse(User.objects.filter(email='digitowner@example.com').exists())
 
     def test_password_mismatch_validation(self):
-        """Test that password mismatch is validated."""
+        """Parol sáykes kelmewi tekserilgenin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {
             'email': 'hotelowner3@example.com',
@@ -257,8 +257,8 @@ class AdminUserTests(TestCase):
             'last_name': 'Owner',
             'password': 'testpassword123',
             'password_confirm': 'differentpassword',
-            **uzbek_location('Tashkent'),  # a new account needs a place
-            'phone_number': '+998901234567',  # a new account needs a phone number
+            **uzbek_location('Tashkent'),  # jańa akkauntqa orın kerek
+            'phone_number': '+998901234567',  # jańa akkauntqa telefon nomeri kerek
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
 
@@ -266,7 +266,7 @@ class AdminUserTests(TestCase):
         self.assertIn('password_confirm', response.data)
 
     def test_password_not_returned_in_response(self):
-        """Test that password is not returned in response."""
+        """Parol juwapta qaytarılmaytuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {
             'email': 'hotelowner4@example.com',
@@ -274,8 +274,8 @@ class AdminUserTests(TestCase):
             'last_name': 'Owner',
             'password': 'Owner#Secret2026',
             'password_confirm': 'Owner#Secret2026',
-            **uzbek_location('Tashkent'),  # a new account needs a place
-            'phone_number': '+998901234567',  # a new account needs a phone number
+            **uzbek_location('Tashkent'),  # jańa akkauntqa orın kerek
+            'phone_number': '+998901234567',  # jańa akkauntqa telefon nomeri kerek
         }
         response = self.client.post('/api/v1/admin-panel/users/create-hotel-owner/', data, format='json')
 
@@ -285,13 +285,13 @@ class AdminUserTests(TestCase):
 
 
 class AdminAmenityTests(TestCase):
-    """Tests for admin amenity management endpoints."""
+    """Admin amenity di basqarıw endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -299,7 +299,7 @@ class AdminAmenityTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -308,7 +308,7 @@ class AdminAmenityTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -316,7 +316,7 @@ class AdminAmenityTests(TestCase):
             last_name='User'
         )
 
-        # Create amenity category
+        # Amenity kategoriyasın jaratıw
         self.amenity_category = AmenityCategory.objects.create(
             name='Kitchen',
             slug='kitchen',
@@ -324,7 +324,7 @@ class AdminAmenityTests(TestCase):
             sort_order=1
         )
 
-        # Create amenity
+        # Amenity jaratıw
         self.amenity = Amenity.objects.create(
             category=self.amenity_category,
             name='WiFi',
@@ -335,36 +335,36 @@ class AdminAmenityTests(TestCase):
         )
 
     def test_super_admin_can_list_all_amenities(self):
-        """Test that super-admin can list all amenities."""
+        """Super-admin barlıq amenity lerdi dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/amenities/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check that at least our test amenity is in the list (paginated response)
+        # Keminde bizdiń test amenity miz dizimde ekenin tekseriw (betlengen juwap)
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         amenity_ids = [amenity['id'] for amenity in results]
         self.assertIn(self.amenity.id, amenity_ids)
 
     def test_staff_can_list_all_amenities(self):
-        """Test that staff can list all amenities."""
+        """Staff barlıq amenity lerdi dizimley alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/amenities/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check that at least our test amenity is in the list (paginated response)
+        # Keminde bizdiń test amenity miz dizimde ekenin tekseriw (betlengen juwap)
         results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         amenity_ids = [amenity['id'] for amenity in results]
         self.assertIn(self.amenity.id, amenity_ids)
 
     def test_regular_user_cannot_list_admin_amenities(self):
-        """Test that regular user cannot access admin amenity endpoints."""
+        """Ápiwayı paydalanıwshı admin amenity endpoint lerine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/amenities/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_super_admin_can_create_amenity(self):
-        """Test that super-admin can create amenity."""
+        """Super-admin amenity jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {
             'category': self.amenity_category.id,
@@ -380,7 +380,7 @@ class AdminAmenityTests(TestCase):
         self.assertEqual(Amenity.objects.count(), 2)
 
     def test_super_admin_can_update_amenity(self):
-        """Test that super-admin can update amenity."""
+        """Super-admin amenity di jańalay alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         data = {
             'name': 'Wireless Internet',
@@ -393,20 +393,20 @@ class AdminAmenityTests(TestCase):
         self.assertEqual(self.amenity.name, 'Wireless Internet')
 
     def test_super_admin_can_delete_amenity(self):
-        """Test that super-admin can delete amenity (soft delete)."""
+        """Super-admin amenity di óshire alatuǵının testlew (soft delete)."""
         self.client.force_authenticate(user=self.super_admin)
         amenity_id = self.amenity.id
         response = self.client.delete(f'/api/v1/admin-panel/amenities/{amenity_id}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        # Check that amenity is no longer in the active queryset
+        # Amenity endi aktiv queryset te joq ekenin tekseriw
         self.assertFalse(Amenity.objects.filter(id=amenity_id).exists())
 
     def test_super_admin_can_manage_amenity_categories(self):
-        """Test that super-admin can manage amenity categories."""
+        """Super-admin amenity kategoriyaların basqara alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
 
-        # Create category
+        # Kategoriya jaratıw
         data = {
             'name': 'Bathroom',
             'slug': 'bathroom',
@@ -420,13 +420,13 @@ class AdminAmenityTests(TestCase):
 
 
 class AdminPermissionTests(TestCase):
-    """Tests for admin permission scoping."""
+    """Admin ruxsatların shekemlew ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -434,7 +434,7 @@ class AdminPermissionTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -443,7 +443,7 @@ class AdminPermissionTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -452,7 +452,7 @@ class AdminPermissionTests(TestCase):
         )
 
     def test_unauthenticated_user_cannot_access_admin_endpoints(self):
-        """Test that unauthenticated users cannot access admin endpoints."""
+        """Kirmegen paydalanıwshılar admin endpoint lerge kire almaytuǵının testlew."""
         endpoints = [
             '/api/v1/admin-panel/properties/',
             '/api/v1/admin-panel/users/',
@@ -461,11 +461,11 @@ class AdminPermissionTests(TestCase):
 
         for endpoint in endpoints:
             response = self.client.get(endpoint)
-            # DRF returns 403 for unauthenticated users when authentication is required
+            # Autentifikaciya kerek bolǵanda DRF kirmegen paydalanıwshılarǵa 403 qaytaradı
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_non_staff_user_cannot_access_admin_endpoints(self):
-        """Test that non-staff users cannot access admin endpoints."""
+        """Staff emes paydalanıwshılar admin endpoint lerge kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         endpoints = [
             '/api/v1/admin-panel/properties/',
@@ -478,7 +478,7 @@ class AdminPermissionTests(TestCase):
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_non_superuser_cannot_create_hotel_owner(self):
-        """Test that non-superuser cannot create hotel-owner account."""
+        """Super-admin emes paydalanıwshı mehmanxana iyesi akkaunt ın jarata almaytuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         data = {
             'email': 'hotelowner@example.com',
@@ -493,13 +493,13 @@ class AdminPermissionTests(TestCase):
 
 
 class AdminBookingLookupTests(TestCase):
-    """Tests for admin booking lookup by reference code endpoint."""
+    """Admin bronlardı reference code boyınsha izlew endpoint i ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -507,7 +507,7 @@ class AdminBookingLookupTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -516,7 +516,7 @@ class AdminBookingLookupTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -524,7 +524,7 @@ class AdminBookingLookupTests(TestCase):
             last_name='User'
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -545,7 +545,7 @@ class AdminBookingLookupTests(TestCase):
             currency='USD'
         )
 
-        # Create room type and rate plan
+        # Xona túrin hám rate plan dı jaratıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -569,7 +569,7 @@ class AdminBookingLookupTests(TestCase):
             is_active=True
         )
 
-        # Create booking
+        # Bron jaratıw
         self.booking = Booking.objects.create(
             guest=self.regular_user,
             property=self.property,
@@ -588,7 +588,7 @@ class AdminBookingLookupTests(TestCase):
             children=[]
         )
 
-        # Create booking item
+        # Bron elementin jaratıw
         BookingItem.objects.create(
             booking=self.booking,
             room_type=self.room_type,
@@ -599,7 +599,7 @@ class AdminBookingLookupTests(TestCase):
         )
 
     def test_super_admin_can_lookup_booking_by_reference_code(self):
-        """Test that super-admin can lookup booking by reference code."""
+        """Super-admin bronnı reference code boyınsha izley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
 
@@ -608,29 +608,29 @@ class AdminBookingLookupTests(TestCase):
         self.assertIn('customer', response.data)
         self.assertIn('property', response.data)
 
-        # Verify booking details
+        # Bron maǵlıwmatın tekseriw
         booking_data = response.data['booking']
         self.assertEqual(booking_data['reference_code'], self.booking.confirmation_code)
         self.assertEqual(booking_data['status'], 'confirmed')
         self.assertEqual(booking_data['payment_status'], 'paid')
 
-        # Verify customer details
+        # Mijoz maǵlıwmatın tekseriw
         customer_data = response.data['customer']
         self.assertEqual(customer_data['email'], 'regular@example.com')
         self.assertEqual(customer_data['full_name'], 'Regular User')
 
-        # Verify property details
+        # Mehmanxana maǵlıwmatın tekseriw
         property_data = response.data['property']
         self.assertEqual(property_data['id'], self.property.id)
-        # The display name is the hotel name (translation); this property has none,
-        # so it falls back to the address instead of a made-up "Property N - city" label
+        # Kórsetiletuǵın at mehmanxana atı (awdarma); bul mehmanxanada ol joq,
+        # sol sebepli oylap tabılǵan "Property N - city" belgisi emes, mánzilge qaytadı
         self.assertEqual(
             property_data['name'],
             '123 Main St, Tashkent, Uzbekistan'
         )
 
     def test_staff_can_lookup_booking_by_reference_code(self):
-        """Test that staff can lookup booking by reference code."""
+        """Staff bronnı reference code boyınsha izley alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
 
@@ -638,20 +638,20 @@ class AdminBookingLookupTests(TestCase):
         self.assertIn('booking', response.data)
 
     def test_regular_user_cannot_lookup_booking_by_reference_code(self):
-        """Test that regular user cannot access booking lookup endpoint."""
+        """Ápiwayı paydalanıwshı bron izlew endpoint ine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cannot_lookup_booking(self):
-        """Test that unauthenticated user cannot access booking lookup endpoint."""
+        """Kirmegen paydalanıwshı bron izlew endpoint ine kire almaytuǵının testlew."""
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_lookup_with_missing_reference_code_parameter(self):
-        """Test that missing reference_code parameter returns 400 error."""
+        """reference_code parametri joq bolsa 400 qátelik qaytarılatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/bookings/lookup/')
 
@@ -659,7 +659,7 @@ class AdminBookingLookupTests(TestCase):
         self.assertIn('error', response.data)
 
     def test_lookup_with_invalid_reference_code(self):
-        """Test that invalid reference code returns 404 error."""
+        """Jaramsız reference code 404 qátelik qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/bookings/lookup/?reference_code=INVALID')
 
@@ -667,23 +667,23 @@ class AdminBookingLookupTests(TestCase):
         self.assertIn('error', response.data)
 
     def test_lookup_case_insensitive(self):
-        """Test that reference code lookup is case-insensitive."""
+        """Reference code izlewi register ti esapqa almaytuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
 
-        # Test with lowercase
+        # Kishi háripler menen testlew
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code.lower()}')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['booking']['reference_code'], self.booking.confirmation_code)
 
     def test_lookup_returns_all_required_fields(self):
-        """Test that lookup returns all required customer and booking details."""
+        """Izlew kerek mijoz hám bron maǵlıwmatınıń hámmesin qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/bookings/lookup/?reference_code={self.booking.confirmation_code}')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check booking fields
+        # Bron maydanların tekseriw
         booking_data = response.data['booking']
         required_booking_fields = [
             'id', 'reference_code', 'status', 'payment_status', 'check_in', 'check_out',
@@ -693,13 +693,13 @@ class AdminBookingLookupTests(TestCase):
         for field in required_booking_fields:
             self.assertIn(field, booking_data)
 
-        # Check customer fields
+        # Mijoz maydanların tekseriw
         customer_data = response.data['customer']
         required_customer_fields = ['id', 'full_name', 'email', 'phone_number', 'whatsapp', 'telegram', 'preferred_contact_method']
         for field in required_customer_fields:
             self.assertIn(field, customer_data)
 
-        # Check property fields
+        # Mehmanxana maydanların tekseriw
         property_data = response.data['property']
         required_property_fields = ['id', 'name', 'property_type', 'status', 'address_line1', 'city', 'state', 'country', 'base_price', 'currency', 'owner']
         for field in required_property_fields:
@@ -707,13 +707,13 @@ class AdminBookingLookupTests(TestCase):
 
 
 class AdminCustomersDirectoryTests(TestCase):
-    """Tests for admin customers directory API endpoint."""
+    """Admin mijozlar dizimi API endpoint i ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -721,7 +721,7 @@ class AdminCustomersDirectoryTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -730,7 +730,7 @@ class AdminCustomersDirectoryTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -742,7 +742,7 @@ class AdminCustomersDirectoryTests(TestCase):
             preferred_contact_method='whatsapp'
         )
 
-        # Create another customer user
+        # Basqa mijoz paydalanıwshı jaratıw
         self.customer2 = User.objects.create_user(
             email='customer2@example.com',
             password='testpassword123',
@@ -751,7 +751,7 @@ class AdminCustomersDirectoryTests(TestCase):
             phone_number='+998901234568'
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -772,7 +772,7 @@ class AdminCustomersDirectoryTests(TestCase):
             currency='USD'
         )
 
-        # Create room type and rate plan
+        # Xona túrin hám rate plan dı jaratıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -796,7 +796,7 @@ class AdminCustomersDirectoryTests(TestCase):
             is_active=True
         )
 
-        # Create booking for regular_user
+        # regular_user ushın bron jaratıw
         self.booking1 = Booking.objects.create(
             guest=self.regular_user,
             property=self.property,
@@ -826,7 +826,7 @@ class AdminCustomersDirectoryTests(TestCase):
 
 
     def test_super_admin_can_access_customers_directory(self):
-        """Test that super-admin can access customers directory."""
+        """Super-admin mijozlar dizimine kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
@@ -835,7 +835,7 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertIsInstance(response.data['results'], list)
 
     def test_staff_can_access_customers_directory(self):
-        """Test that staff can access customers directory."""
+        """Staff mijozlar dizimine kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
@@ -843,26 +843,26 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertIn('results', response.data)
 
     def test_regular_user_cannot_access_customers_directory(self):
-        """Test that regular user cannot access customers directory."""
+        """Ápiwayı paydalanıwshı mijozlar dizimine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cannot_access_customers_directory(self):
-        """Test that unauthenticated user cannot access customers directory."""
+        """Kirmegen paydalanıwshı mijozlar dizimine kire almaytuǵının testlew."""
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_customers_directory_returns_required_fields(self):
-        """Test that customers directory returns all required fields."""
+        """Mijozlar dizimi kerek maydanlardıń hámmesin qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check first customer has all required fields
+        # Birinshi mijozda kerek maydanlardıń hámmesi barlıǵın tekseriw
         if response.data['results']:
             customer_data = response.data['results'][0]
             required_fields = [
@@ -874,13 +874,13 @@ class AdminCustomersDirectoryTests(TestCase):
                 self.assertIn(field, customer_data)
 
     def test_customers_directory_includes_booking_aggregates(self):
-        """Test that customers directory includes booking aggregates."""
+        """Mijozlar dizimi bron jıynaqların óz ishine alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Find regular_user in results
+        # Nátiyjelerde regular_user dı tabıw
         regular_user_data = None
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -893,13 +893,13 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertIsNotNone(regular_user_data['last_booking_date'])
 
     def test_search_by_name(self):
-        """Test searching customers by name."""
+        """Mijozlardı at boyınsha izlewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?search=Regular')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Should find regular_user
+        # regular_user tabılıwı kerek
         found = False
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -908,13 +908,13 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertTrue(found)
 
     def test_search_by_email(self):
-        """Test searching customers by email."""
+        """Mijozlardı e-mail boyınsha izlewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?search=regular@example.com')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Should find regular_user
+        # regular_user tabılıwı kerek
         found = False
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -923,13 +923,13 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertTrue(found)
 
     def test_search_by_phone(self):
-        """Test searching customers by phone."""
+        """Mijozlardı telefon boyınsha izlewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?search=+998901234567')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Should find regular_user
+        # regular_user tabılıwı kerek
         found = False
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -938,13 +938,13 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertTrue(found)
 
     def test_search_by_customer_id(self):
-        """Test searching customers by customer ID."""
+        """Mijozlardı mijoz ID si boyınsha izlewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/?search={self.regular_user.id}')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Should find regular_user
+        # regular_user tabılıwı kerek
         found = False
         for customer in response.data['results']:
             if customer['id'] == self.regular_user.id:
@@ -953,7 +953,7 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertTrue(found)
 
     def test_pagination_works(self):
-        """Test that pagination works correctly."""
+        """Betlew durıs islewin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?page_size=1')
 
@@ -965,32 +965,32 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertLessEqual(len(response.data['results']), 1)
 
     def test_sorting_by_registration_date(self):
-        """Test sorting by registration date."""
+        """Dizimnen ótiw sanası boyınsha tártiplewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
 
-        # Sort ascending
+        # Ósiw tártibinde tártiplew
         response = self.client.get('/api/v1/admin-panel/customers/?sort_by=registration_date&sort_order=asc')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Sort descending
+        # Kemeyiw tártibinde tártiplew
         response = self.client.get('/api/v1/admin-panel/customers/?sort_by=registration_date&sort_order=desc')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_sorting_by_total_booking_count(self):
-        """Test sorting by total booking count."""
+        """Jámi bron sanı boyınsha tártiplewdi testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?sort_by=total_booking_count&sort_order=desc')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_customer_status_active_for_recent_booking(self):
-        """Test that customer with recent booking is marked as active."""
+        """Jaqında broni bar mijoz aktiv dep belgilenetuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Find regular_user in results
+        # Nátiyjelerde regular_user dı tabıw
         regular_user_data = None
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -1001,13 +1001,13 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(regular_user_data['customer_status'], 'active')
 
     def test_customer_status_inactive_for_no_booking(self):
-        """Test that customer with no bookings is marked as active (new customer)."""
+        """Broni joq mijoz aktiv dep belgilenetuǵının testlew (jańa mijoz)."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Find customer2 in results (has no bookings)
+        # Nátiyjelerde customer2 ni tabıw (broni joq)
         customer2_data = None
         for customer in response.data['results']:
             if customer['email'] == 'customer2@example.com':
@@ -1015,17 +1015,17 @@ class AdminCustomersDirectoryTests(TestCase):
                 break
 
         self.assertIsNotNone(customer2_data)
-        # Customer with no bookings should be active (new customer)
+        # Broni joq mijoz aktiv bolıwı kerek (jańa mijoz)
         self.assertEqual(customer2_data['customer_status'], 'active')
 
     def test_contact_method_fields_returned(self):
-        """Test that contact method fields are returned correctly."""
+        """Baylanıs usılı maydanları durıs qaytarılatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Find regular_user in results
+        # Nátiyjelerde regular_user dı tabıw
         regular_user_data = None
         for customer in response.data['results']:
             if customer['email'] == 'regular@example.com':
@@ -1038,15 +1038,15 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(regular_user_data['preferred_contact_method'], 'whatsapp')
 
     def test_invalid_sort_field_defaults_to_registration_date(self):
-        """Test that invalid sort field defaults to registration_date."""
+        """Jaramsız tártiplew maydanı registration_date ǵa qaytatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?sort_by=invalid_field')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Should still return results with default sorting
+        # Ádetdegi tártiplew menen ele nátiyjeler qaytıwı kerek
 
     def test_invalid_sort_order_defaults_to_desc(self):
-        """Test that invalid sort order defaults to desc."""
+        """Jaramsız tártiplew baǵıtı desc ke qaytatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/?sort_order=invalid')
 
@@ -1059,7 +1059,7 @@ class AdminCustomersDirectoryTests(TestCase):
         return [customer['email'] for customer in response.data['results']]
 
     def test_staff_and_superusers_are_not_listed(self):
-        """Only customers are listed; staff and super-admins are not."""
+        """Tek mijozlar dizimlenedi; staff hám super-admin ler emes."""
         superuser_only = User.objects.create_user(
             email='root@example.com', password='testpassword123', is_superuser=True
         )
@@ -1074,7 +1074,7 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(len(emails), 2)
 
     def test_aggregates_are_not_multiplied_by_joins(self):
-        """Several bookings of one customer are each counted once."""
+        """Bir mijozdıń bir neshe broni hárbiri bir márte esaplanadı."""
         Booking.objects.create(
             guest=self.regular_user,
             property=self.property,
@@ -1096,7 +1096,7 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertEqual(customer['total_booking_count'], 2)
 
     def test_sorting_and_pagination_happen_in_the_database(self):
-        """The page is fetched with LIMIT instead of loading every user into memory."""
+        """Bet barlıq paydalanıwshını jaddıǵa júklewdiń ornına LIMIT penen alınadı."""
         from django.db import connection
         from django.test.utils import CaptureQueriesContext
         self.client.force_authenticate(user=self.super_admin)
@@ -1113,20 +1113,21 @@ class AdminCustomersDirectoryTests(TestCase):
         self.assertTrue(any('LIMIT' in sql for sql in user_queries), user_queries)
 
     def test_sorting_by_full_name_uses_display_name(self):
-        """full_name sorting follows the displayed name (full_name, else first + last, else email), case-insensitively."""
+        """full_name boyınsha tártiplew kórsetilgen atqa ılayıq (full_name, bolmasa first + last, bolmasa email), register ti
+        esapqa almay."""
         User.objects.create_user(email='zed@example.com', password='testpassword123', full_name='Aaron Zed')
         User.objects.create_user(email='anon@example.com', password='testpassword123')
 
         emails = self._directory_emails('?sort_by=full_name&sort_order=asc')
 
-        # Display names: 'Aaron Zed', 'anon@example.com', 'Customer Two', 'Regular User'
+        # Kórsetiletuǵın atlar: 'Aaron Zed', 'anon@example.com', 'Customer Two', 'Regular User'
         self.assertEqual(
             emails,
             ['zed@example.com', 'anon@example.com', 'customer2@example.com', 'regular@example.com'],
         )
 
     def test_sorting_by_customer_status(self):
-        """Inactive customers sort after active ones in ascending order."""
+        """Aktiv emes mijozlar ósiw tártibinde aktivlerden keyin turadı."""
         self.customer2.is_active = False
         self.customer2.save()
 
@@ -1138,17 +1139,17 @@ class AdminCustomersDirectoryTests(TestCase):
             self._directory_emails('?sort_by=customer_status&sort_order=desc'),
             ['customer2@example.com', 'regular@example.com'],
         )
-        # Should still return results with default sorting
+        # Ádetdegi tártiplew menen ele nátiyjeler qaytıwı kerek
 
 
 class AdminCustomerDetailTests(TestCase):
-    """Tests for admin customer detail API endpoint."""
+    """Admin mijoz tolıq maǵlıwmatı API endpoint i ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -1156,7 +1157,7 @@ class AdminCustomerDetailTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -1165,7 +1166,7 @@ class AdminCustomerDetailTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user (customer)
+        # Ápiwayı paydalanıwshı (mijoz) jaratıw
         self.customer = User.objects.create_user(
             email='customer@example.com',
             password='testpassword123',
@@ -1177,7 +1178,7 @@ class AdminCustomerDetailTests(TestCase):
             preferred_contact_method='whatsapp'
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -1198,7 +1199,7 @@ class AdminCustomerDetailTests(TestCase):
             currency='USD'
         )
 
-        # Create room type and rate plan
+        # Xona túrin hám rate plan dı jaratıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -1222,7 +1223,7 @@ class AdminCustomerDetailTests(TestCase):
             is_active=True
         )
 
-        # Create bookings with different statuses
+        # Túrli statuslı bronlardı jaratıw
         self.booking_confirmed = Booking.objects.create(
             guest=self.customer,
             property=self.property,
@@ -1304,7 +1305,7 @@ class AdminCustomerDetailTests(TestCase):
             currency='USD'
         )
 
-        # Create internal notes
+        # Ishki jazbalardı jaratıw
         self.note1 = InternalNote.objects.create(
             customer=self.customer,
             author=self.super_admin,
@@ -1318,7 +1319,7 @@ class AdminCustomerDetailTests(TestCase):
         )
 
     def test_super_admin_can_access_customer_detail(self):
-        """Test that super-admin can access customer detail."""
+        """Super-admin mijoz tolıq maǵlıwmatına kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1330,7 +1331,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertIn('last_activity', response.data)
 
     def test_staff_can_access_customer_detail(self):
-        """Test that staff can access customer detail."""
+        """Staff mijoz tolıq maǵlıwmatına kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1338,14 +1339,14 @@ class AdminCustomerDetailTests(TestCase):
         self.assertIn('customer', response.data)
 
     def test_regular_user_cannot_access_customer_detail(self):
-        """Test that regular user cannot access customer detail."""
+        """Ápiwayı paydalanıwshı mijoz tolıq maǵlıwmatına kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.customer)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_customer_detail_returns_contact_info(self):
-        """Test that customer detail returns full contact information."""
+        """Mijoz tolıq maǵlıwmatı tolıq baylanıs maǵlıwmatın qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1359,7 +1360,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(customer_data['preferred_contact_method'], 'whatsapp')
 
     def test_customer_detail_returns_all_bookings(self):
-        """Test that customer detail returns all bookings by default."""
+        """Mijoz tolıq maǵlıwmatı ádetde barlıq bronlardı qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1368,7 +1369,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(len(bookings), 3)
 
     def test_customer_detail_filters_upcoming_bookings(self):
-        """Test that customer detail can filter upcoming bookings."""
+        """Mijoz tolıq maǵlıwmatı keletuǵın bronlardı filterley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=upcoming')
 
@@ -1378,7 +1379,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(bookings[0]['status'], 'confirmed')
 
     def test_upcoming_follows_the_business_day_not_the_utc_day(self):
-        """At 21:00 UTC it is already 02:00 of the next day in Tashkent: a stay that began that day is no longer upcoming."""
+        """21:00 UTC te Tashkent te ol aldınan keyingi kúnniń 02:00 i: sol kúni baslanǵan turıw endi keletuǵın emes."""
         Booking.objects.filter(pk=self.booking_confirmed.pk).update(check_in=date(2026, 11, 10), check_out=date(2026, 11, 12))
         self.client.force_authenticate(user=self.super_admin)
         at = datetime(2026, 11, 10, 21, 0, tzinfo=dt_timezone.utc)
@@ -1389,7 +1390,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(response.data['bookings'], [])
 
     def test_customer_detail_filters_completed_bookings(self):
-        """Test that customer detail can filter completed bookings."""
+        """Mijoz tolıq maǵlıwmatı juwmaqlanǵan bronlardı filterley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=completed')
 
@@ -1399,7 +1400,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(bookings[0]['status'], 'completed')
 
     def test_customer_detail_filters_cancelled_bookings(self):
-        """Test that customer detail can filter cancelled bookings."""
+        """Mijoz tolıq maǵlıwmatı biykar etilgen bronlardı filterley alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/?booking_filter=cancelled')
 
@@ -1409,8 +1410,8 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(bookings[0]['status'], 'cancelled')
 
     def test_customer_detail_returns_internal_notes(self):
-        """Test that customer detail returns internal notes."""
-        # Make the creation order unambiguous (both notes are created in setUp)
+        """Mijoz tolıq maǵlıwmatı ishki jazbalardı qaytaratuǵının testlew."""
+        # Jaratıw tártibin anıq etiw (eki jazba da setUp te jaratıladı)
         InternalNote.objects.filter(pk=self.note1.pk).update(created_at=timezone.now() - timedelta(hours=1))
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
@@ -1418,12 +1419,12 @@ class AdminCustomerDetailTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         notes = response.data['internal_notes']
         self.assertEqual(len(notes), 2)
-        # Newest first: the WhatsApp note (note2) was added after the VIP note
+        # Eń jańası birinshi: WhatsApp jazbası (note2) VIP jazbasınan keyin qosılǵan
         self.assertIn('Prefers WhatsApp', notes[0]['note'])
         self.assertIn('VIP customer', notes[1]['note'])
 
     def test_customer_detail_returns_last_activity(self):
-        """Test that customer detail returns last activity timestamp."""
+        """Mijoz tolıq maǵlıwmatı sońǵı aktivlik waqıt belgisin qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1432,7 +1433,7 @@ class AdminCustomerDetailTests(TestCase):
         self.assertIsNotNone(response.data['last_activity'])
 
     def test_customer_detail_not_found(self):
-        """Test that customer detail returns 404 for non-existent customer."""
+        """Joq mijoz ushın tolıq maǵlıwmat 404 qaytaratuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/customers/99999/')
 
@@ -1440,13 +1441,13 @@ class AdminCustomerDetailTests(TestCase):
 
 
 class AdminInternalNotesTests(TestCase):
-    """Tests for admin internal notes CRUD operations."""
+    """Admin ishki jazbalar CRUD ámelleri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -1454,7 +1455,7 @@ class AdminInternalNotesTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -1463,7 +1464,7 @@ class AdminInternalNotesTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user (customer)
+        # Ápiwayı paydalanıwshı (mijoz) jaratıw
         self.customer = User.objects.create_user(
             email='customer@example.com',
             password='testpassword123',
@@ -1471,7 +1472,7 @@ class AdminInternalNotesTests(TestCase):
             last_name='Test'
         )
 
-        # Create initial internal note
+        # Dáslepki ishki jazbanı jaratıw
         self.note = InternalNote.objects.create(
             customer=self.customer,
             author=self.super_admin,
@@ -1479,7 +1480,7 @@ class AdminInternalNotesTests(TestCase):
         )
 
     def test_staff_can_create_internal_note(self):
-        """Test that staff can create internal note."""
+        """Staff ishki jazba jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.post(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
@@ -1491,7 +1492,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.data['author_email'], 'staff@example.com')
 
     def test_super_admin_can_create_internal_note(self):
-        """Test that super-admin can create internal note."""
+        """Super-admin ishki jazba jarata alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.post(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
@@ -1502,7 +1503,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.data['note'], 'New note from admin')
 
     def test_note_is_created_for_customer_in_url_not_body(self):
-        """The customer comes from the URL; a customer id in the body is ignored."""
+        """Mijoz URL den keledi; denedegi mijoz id si itibarǵa alınbaydı."""
         other_customer = User.objects.create_user(email='other-customer@example.com', password='testpassword123')
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.post(
@@ -1515,7 +1516,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertFalse(InternalNote.objects.filter(customer=other_customer).exists())
 
     def test_note_cannot_be_moved_to_another_customer(self):
-        """Editing a note cannot reassign it to a different customer."""
+        """Jazbanı ózgertiw onı basqa mijozǵa ótkize almaydı."""
         other_customer = User.objects.create_user(email='other-customer@example.com', password='testpassword123')
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.put(
@@ -1529,7 +1530,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(self.note.note, 'Edited')
 
     def test_note_author_cannot_be_changed(self):
-        """Editing a note cannot rewrite who wrote it."""
+        """Jazbanı ózgertiw kim jazǵanın qayta jaza almaydı."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.put(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
@@ -1542,7 +1543,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(self.note.note, 'Edited')
 
     def test_note_author_only_update_leaves_note_untouched(self):
-        """The note PUT is partial; a body with only author must not change the author."""
+        """Jazba PUT i bólekleyin; tek author bar dene avtordı ózgertpewi kerek."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.put(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
@@ -1555,7 +1556,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.data['author_email'], 'admin@example.com')
 
     def test_regular_user_cannot_create_internal_note(self):
-        """Test that regular user cannot create internal note."""
+        """Ápiwayı paydalanıwshı ishki jazba jarata almaytuǵının testlew."""
         self.client.force_authenticate(user=self.customer)
         response = self.client.post(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
@@ -1565,7 +1566,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_note_requires_note_content(self):
-        """Test that creating note requires note content."""
+        """Jazba jaratıw jazba mazmunın talap etetuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.post(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/',
@@ -1575,7 +1576,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_staff_can_update_internal_note(self):
-        """Test that staff can update internal note."""
+        """Staff ishki jazbanı jańalay alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.put(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
@@ -1586,7 +1587,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.data['note'], 'Updated note content')
 
     def test_staff_can_delete_internal_note(self):
-        """Test that staff can delete internal note."""
+        """Staff ishki jazbanı óshire alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.delete(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/'
@@ -1594,12 +1595,12 @@ class AdminInternalNotesTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        # Verify note is soft-deleted
+        # Jazba soft-delete etilgenin tekseriw
         self.note.refresh_from_db()
         self.assertTrue(self.note.is_deleted)
 
     def test_regular_user_cannot_update_internal_note(self):
-        """Test that regular user cannot update internal note."""
+        """Ápiwayı paydalanıwshı ishki jazbanı jańalay almaytuǵının testlew."""
         self.client.force_authenticate(user=self.customer)
         response = self.client.put(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/',
@@ -1609,7 +1610,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_regular_user_cannot_delete_internal_note(self):
-        """Test that regular user cannot delete internal note."""
+        """Ápiwayı paydalanıwshı ishki jazbanı óshire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.customer)
         response = self.client.delete(
             f'/api/v1/admin-panel/customers/{self.customer.id}/notes/{self.note.id}/'
@@ -1618,7 +1619,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_cannot_access_note_for_different_customer(self):
-        """Test that user cannot access note for different customer."""
+        """Paydalanıwshı basqa mijozdıń jazbasına kire almaytuǵının testlew."""
         other_customer = User.objects.create_user(
             email='other@example.com',
             password='testpassword123',
@@ -1635,7 +1636,7 @@ class AdminInternalNotesTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_author_name_in_note_response(self):
-        """Test that note response includes author name."""
+        """Jazba juwabı avtor atın óz ishine alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get(f'/api/v1/admin-panel/customers/{self.customer.id}/')
 
@@ -1646,13 +1647,13 @@ class AdminInternalNotesTests(TestCase):
 
 
 class AdminStatisticsTests(TestCase):
-    """Tests for admin statistics endpoints."""
+    """Admin statistika endpoint leri ushın testler."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
 
-        # Create super-admin user
+        # Super-admin paydalanıwshı jaratıw
         self.super_admin = User.objects.create_superuser(
             email='admin@example.com',
             password='testpassword123',
@@ -1660,7 +1661,7 @@ class AdminStatisticsTests(TestCase):
             last_name='User'
         )
 
-        # Create staff user
+        # Staff paydalanıwshı jaratıw
         self.staff_user = User.objects.create_user(
             email='staff@example.com',
             password='testpassword123',
@@ -1669,7 +1670,7 @@ class AdminStatisticsTests(TestCase):
             is_staff=True
         )
 
-        # Create regular user
+        # Ápiwayı paydalanıwshı jaratıw
         self.regular_user = User.objects.create_user(
             email='regular@example.com',
             password='testpassword123',
@@ -1677,7 +1678,7 @@ class AdminStatisticsTests(TestCase):
             last_name='User'
         )
 
-        # Create property type and property
+        # Mehmanxana túrin hám mehmanxananı jaratıw
         self.property_type = PropertyType.objects.create(
             name='Apartment',
             slug='apartment',
@@ -1698,7 +1699,7 @@ class AdminStatisticsTests(TestCase):
             currency='USD'
         )
 
-        # Create room type and rate plan
+        # Xona túrin hám rate plan dı jaratıw
         self.room_type = RoomType.objects.create(
             property=self.property,
             name='Standard Room',
@@ -1722,7 +1723,7 @@ class AdminStatisticsTests(TestCase):
             is_active=True
         )
 
-        # Create users with different registration dates for statistics
+        # Statistika ushın túrli dizimnen ótiw sanalı paydalanıwshılardı jaratıw
         self.user1 = User.objects.create_user(
             email='user1@example.com',
             password='testpassword123',
@@ -1747,10 +1748,10 @@ class AdminStatisticsTests(TestCase):
             first_name='User',
             last_name='Three'
         )
-        self.user3.date_joined = timezone.now() - timedelta(days=400)  # Over a year ago
+        self.user3.date_joined = timezone.now() - timedelta(days=400)  # Bir jıldan aldın
         self.user3.save()
 
-        # Create bookings for leaderboard tests
+        # Reyting testleri ushın bronlar jaratıw
         self.booking1 = Booking.objects.create(
             guest=self.user1,
             property=self.property,
@@ -1832,7 +1833,7 @@ class AdminStatisticsTests(TestCase):
             currency='USD'
         )
 
-        # Create a cancelled booking (should not count in leaderboard)
+        # Biykar etilgen bron jaratıw (reytingte esaplanbawı kerek)
         self.booking_cancelled = Booking.objects.create(
             guest=self.user2,
             property=self.property,
@@ -1861,7 +1862,7 @@ class AdminStatisticsTests(TestCase):
         )
 
     def test_super_admin_can_access_registration_statistics(self):
-        """Test that super-admin can access registration statistics."""
+        """Super-admin dizimnen ótiw statistikasına kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
 
@@ -1870,27 +1871,27 @@ class AdminStatisticsTests(TestCase):
         self.assertIn('statistics', response.data)
 
     def test_staff_can_access_registration_statistics(self):
-        """Test that staff can access registration statistics."""
+        """Staff dizimnen ótiw statistikasına kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_regular_user_cannot_access_registration_statistics(self):
-        """Test that regular user cannot access registration statistics."""
+        """Ápiwayı paydalanıwshı dizimnen ótiw statistikasına kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cannot_access_registration_statistics(self):
-        """Test that unauthenticated user cannot access registration statistics."""
+        """Kirmegen paydalanıwshı dizimnen ótiw statistikasına kire almaytuǵının testlew."""
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_registration_statistics_rolling_12_months(self):
-        """Test registration statistics for rolling 12-month window."""
+        """Júrip turatuǵın 12 ay aynası ushın dizimnen ótiw statistikasın testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=rolling_12_months')
 
@@ -1902,7 +1903,7 @@ class AdminStatisticsTests(TestCase):
         self.assertIsInstance(response.data['statistics'], list)
 
     def test_registration_statistics_calendar_year(self):
-        """Test registration statistics for calendar year."""
+        """Kalendar jıl ushın dizimnen ótiw statistikasın testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=calendar_year')
 
@@ -1912,7 +1913,7 @@ class AdminStatisticsTests(TestCase):
         self.assertIsInstance(response.data['statistics'], list)
 
     def test_registration_statistics_defaults_to_rolling_12_months(self):
-        """Test that registration statistics defaults to rolling 12-month window."""
+        """Dizimnen ótiw statistikası ádetde júrip turatuǵın 12 ay aynasın paydalanatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/')
 
@@ -1920,10 +1921,10 @@ class AdminStatisticsTests(TestCase):
         self.assertEqual(response.data['type'], 'rolling_12_months')
 
     def test_registration_statistics_no_registrations_in_period(self):
-        """Test registration statistics when no registrations in period."""
+        """Dáwirde dizimnen ótiw joq bolǵanda dizimnen ótiw statistikasın testlew."""
         self.client.force_authenticate(user=self.super_admin)
 
-        # Create a user that was deleted
+        # Óshirilgen paydalanıwshı jaratıw
         deleted_user = User.objects.create_user(
             email='deleted@example.com',
             password='testpassword123',
@@ -1932,15 +1933,15 @@ class AdminStatisticsTests(TestCase):
         )
         deleted_user.soft_delete()
 
-        # Get statistics for a period where no active registrations exist
-        # This tests the edge case of empty statistics
+        # Aktiv dizimnen ótiw joq dáwir ushın statistikanı alıw
+        # Bul bos statistika shegaralıq jaǵdayın testleydi
         response = self.client.get('/api/v1/admin-panel/statistics/registrations/?type=calendar_year')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data['statistics'], list)
 
     def test_super_admin_can_access_top_bookers_leaderboard(self):
-        """Test that super-admin can access top bookers leaderboard."""
+        """Super-admin eń kóp bronlaǵan mijozlar reytingine kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
 
@@ -1950,27 +1951,27 @@ class AdminStatisticsTests(TestCase):
         self.assertIn('leaderboard', response.data)
 
     def test_staff_can_access_top_bookers_leaderboard(self):
-        """Test that staff can access top bookers leaderboard."""
+        """Staff eń kóp bronlaǵan mijozlar reytingine kire alatuǵının testlew."""
         self.client.force_authenticate(user=self.staff_user)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_regular_user_cannot_access_top_bookers_leaderboard(self):
-        """Test that regular user cannot access top bookers leaderboard."""
+        """Ápiwayı paydalanıwshı eń kóp bronlaǵan mijozlar reytingine kire almaytuǵının testlew."""
         self.client.force_authenticate(user=self.regular_user)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cannot_access_top_bookers_leaderboard(self):
-        """Test that unauthenticated user cannot access top bookers leaderboard."""
+        """Kirmegen paydalanıwshı eń kóp bronlaǵan mijozlar reytingine kire almaytuǵının testlew."""
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_top_bookers_leaderboard_all_time(self):
-        """Test top bookers leaderboard for all time period."""
+        """Pútkil waqıt dáwiri ushın eń kóp bronlaǵan mijozlar reytingin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
 
@@ -1979,13 +1980,13 @@ class AdminStatisticsTests(TestCase):
         self.assertIn('leaderboard', response.data)
         self.assertIsInstance(response.data['leaderboard'], list)
 
-        # Check that user1 is at the top (2 completed bookings)
+        # user1 joqarıda ekenin tekseriw (2 juwmaqlanǵan bron)
         if response.data['leaderboard']:
             self.assertEqual(response.data['leaderboard'][0]['customer_name'], 'User One')
             self.assertEqual(response.data['leaderboard'][0]['completed_booking_count'], 2)
 
     def test_top_bookers_leaderboard_this_month(self):
-        """Test top bookers leaderboard for this month period."""
+        """Usı ay dáwiri ushın eń kóp bronlaǵan mijozlar reytingin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_month')
 
@@ -1994,7 +1995,7 @@ class AdminStatisticsTests(TestCase):
         self.assertIn('leaderboard', response.data)
 
     def test_top_bookers_leaderboard_this_year(self):
-        """Test top bookers leaderboard for this year period."""
+        """Usı jıl dáwiri ushın eń kóp bronlaǵan mijozlar reytingin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_year')
 
@@ -2003,7 +2004,7 @@ class AdminStatisticsTests(TestCase):
         self.assertIn('leaderboard', response.data)
 
     def test_top_bookers_leaderboard_defaults_to_all_time(self):
-        """Test that top bookers leaderboard defaults to all time."""
+        """Eń kóp bronlaǵan mijozlar reytingi ádetde pútkil waqıt ekenin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/')
 
@@ -2011,7 +2012,7 @@ class AdminStatisticsTests(TestCase):
         self.assertEqual(response.data['period'], 'all_time')
 
     def test_top_bookers_leaderboard_limit_parameter(self):
-        """Test that limit parameter works correctly."""
+        """limit parametri durıs islewin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=2')
 
@@ -2020,7 +2021,7 @@ class AdminStatisticsTests(TestCase):
         self.assertLessEqual(len(response.data['leaderboard']), 2)
 
     def test_top_bookers_leaderboard_limit_max_constraint(self):
-        """Test that limit parameter respects max constraint of 100."""
+        """limit parametri 100 lik eń kóp shekke boysınatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=200')
 
@@ -2028,7 +2029,7 @@ class AdminStatisticsTests(TestCase):
         self.assertEqual(response.data['limit'], 100)
 
     def test_top_bookers_leaderboard_invalid_limit_defaults(self):
-        """Test that invalid limit parameter defaults to 10."""
+        """Jaramsız limit parametri 10 ǵa qaytatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?limit=invalid')
 
@@ -2036,14 +2037,14 @@ class AdminStatisticsTests(TestCase):
         self.assertEqual(response.data['limit'], 10)
 
     def test_top_bookers_leaderboard_only_completed_bookings(self):
-        """Test that only completed bookings count in leaderboard."""
+        """Reytingte tek juwmaqlanǵan bronlar esaplanatuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # user2 has 1 completed booking and 1 cancelled booking
-        # Should only count the completed one
+        # user2 de 1 juwmaqlanǵan hám 1 biykar etilgen bron bar
+        # Tek juwmaqlanǵanı esaplanıwı kerek
         user2_entry = None
         for entry in response.data['leaderboard']:
             if entry['customer_name'] == 'User Two':
@@ -2054,25 +2055,25 @@ class AdminStatisticsTests(TestCase):
         self.assertEqual(user2_entry['completed_booking_count'], 1)
 
     def test_top_bookers_leaderboard_no_bookings_in_period(self):
-        """Test leaderboard when no bookings in period."""
+        """Dáwirde bron joq bolǵanda reytingti testlew."""
         self.client.force_authenticate(user=self.super_admin)
 
-        # Request leaderboard for this month when we have no bookings this month
-        # (our test bookings are from previous days/months)
+        # Usı ay ushın reytingti sorawlaw, usı ayda bronlarımız joq bolǵanda
+        # (test bronlarımız aldınǵı kúnlerden/aylardan)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=this_month')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data['leaderboard'], list)
-        # May be empty if no bookings this month
+        # Usı ayda bron joq bolsa bos bolıwı múmkin
 
     def test_top_bookers_leaderboard_ranking_order(self):
-        """Test that leaderboard is correctly ranked by booking count."""
+        """Reytingtiń bron sanı boyınsha durıs reytingleniwin testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that entries are in descending order of booking count
+        # Jazbalar bron sanı boyınsha kemeyiw tártibinde ekenin tekseriw
         leaderboard = response.data['leaderboard']
         for i in range(len(leaderboard) - 1):
             self.assertGreaterEqual(
@@ -2081,26 +2082,26 @@ class AdminStatisticsTests(TestCase):
             )
 
     def test_top_bookers_leaderboard_rank_field(self):
-        """Test that leaderboard entries include rank field."""
+        """Reyting jazbalarında rank maydanı barlıǵın testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that entries have rank field starting from 1
+        # Jazbalarda rank maydanı 1 den baslanatuǵının tekseriw
         if response.data['leaderboard']:
             self.assertEqual(response.data['leaderboard'][0]['rank'], 1)
             if len(response.data['leaderboard']) > 1:
                 self.assertEqual(response.data['leaderboard'][1]['rank'], 2)
 
     def test_top_bookers_leaderboard_sensitive_data_not_leaked(self):
-        """Test that leaderboard doesn't leak sensitive customer data."""
+        """Reyting mijozdıń jasırın maǵlıwmatın sızdırmaytuǵının testlew."""
         self.client.force_authenticate(user=self.super_admin)
         response = self.client.get('/api/v1/admin-panel/statistics/top-bookers/?period=all_time')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that only necessary fields are returned
+        # Tek kerekli maydanlar qaytarılǵanın tekseriw
         if response.data['leaderboard']:
             entry = response.data['leaderboard'][0]
             self.assertIn('rank', entry)
@@ -2108,7 +2109,7 @@ class AdminStatisticsTests(TestCase):
             self.assertIn('customer_name', entry)
             self.assertIn('completed_booking_count', entry)
 
-            # Should NOT include sensitive data
+            # Jasırın maǵlıwmat BOLMAWI kerek
             self.assertNotIn('email', entry)
             self.assertNotIn('phone_number', entry)
             self.assertNotIn('address', entry)

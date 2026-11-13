@@ -1,4 +1,5 @@
-"""Monthly ad renewal: asked on the end day, the ad stays visible 5 more days, then it is removed (plan .ai/PLAN_AD_RENEWAL.md)."""
+"""Ayliq reklama jańalaw: pitken kúni soraladı, reklama taǵı 5 kún kórinip turadı, keyin alıp taslanadı (reje
+.ai/PLAN_AD_RENEWAL.md)."""
 from datetime import date, timedelta
 from decimal import Decimal
 from unittest import mock

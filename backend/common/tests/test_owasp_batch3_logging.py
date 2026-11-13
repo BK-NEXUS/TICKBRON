@@ -1,9 +1,9 @@
 """
-OWASP 2025 A09: security events are recorded where an investigator can find them.
+OWASP 2025 A09: qáwipsizlik waqıyaları izertlewshi taba alatuǵın jerde jazıladı.
 
-Before: logins, failures, lockouts, logouts and registrations left no trace; refused requests
-(401/403/429) were logged without who, from where or which URL; production dropped INFO lines
-and several modules logged to stdout only; staff actions had no source address.
+Aldın: kirisiwler, qátelikler, lockout lar, shıǵıwlar hám dizimnen ótiwler iz qaldırmadı; qabıllanbaǵan sorawlar
+(401/403/429) kim, qayaqtan yamasa qaysı URL bolǵanın jazbastan log lanǵan; production INFO qatarların taslaǵan
+hám kóp modul tek stdout qa jazǵan; staff háreketlerinde derek mánzili joq edi.
 """
 import logging
 from unittest import mock

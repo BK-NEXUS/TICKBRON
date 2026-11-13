@@ -1,6 +1,6 @@
 """
-R12 1d: notifications carry a machine-readable `code` + `params` (ids, amounts, dates only)
-and an English fallback title/message, created through `accounts.notify()`.
+R12 1d: bildiriwler mashina oqıytuǵın `code` + `params` (tek id ler, summalar, sanalar)
+hám inglizsha zapas sarlawha/xabar alıp júredi, `accounts.notify()` arqalı jaratıladı.
 """
 from datetime import date, timedelta
 from decimal import Decimal

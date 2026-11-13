@@ -1,7 +1,7 @@
 """
-The Docker files (docker-compose.yml, the two Dockerfiles, the Caddyfile and the env example) stay usable:
-the right services, nothing but the web server open to the internet, no secret inside an image or a file
-in git, and every variable the compose file reads is in the env example the owner fills in.
+Docker fayllar (docker-compose.yml, eki Dockerfile, Caddyfile hám env úlgisi) paydalanıwǵa jaramlı qaladı:
+durıs xızmetler, internetke tek web server ashıq, hesh bir sır image yamasa git degi fayl ishinde joq,
+hám compose fayl oqıytuǵın hár ózgeriwshi iye toltıratuǵın env úlgisinde bar.
 """
 import re
 from pathlib import Path
@@ -29,7 +29,7 @@ NGINX_EXAMPLE = REPO / 'deploy' / 'nginx.conf.example'
 
 
 class TestIsolationHeaders:
-    """The site is never framed or opened by a window of another site, and its files are not read cross-site."""
+    """Sayt hesh qashan basqa saytiń oynasında ashılmaydı yamasa oralmaydı, hám onıń fayllardı basqa saytlar oqıy almaydı."""
 
     @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
     def test_other_sites_get_no_handle_on_the_page_or_its_files(self, path):
@@ -38,13 +38,13 @@ class TestIsolationHeaders:
         assert re.search(r'Cross-Origin-Resource-Policy"?\s+"?same-origin', text)
 
     def test_every_nginx_block_that_sets_headers_repeats_them(self):
-        # nginx drops the headers of the server block in a location that has its own add_header
+        # nginx óz add_header i bar location da server blokınıń header lerin taslaydı
         text = NGINX_EXAMPLE.read_text()
         assert text.count('add_header Cross-Origin-Opener-Policy') == text.count('add_header X-Frame-Options')
 
 
 class TestBrowserCaching:
-    """Thousands of visitors must not download the same built files again on every page."""
+    """Mıńlaǵan kelwshi birdey qurılǵan fayllardı hár bette qayta júklemewi kerek."""
 
     @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
     def test_hashed_site_files_are_kept_by_the_browser_for_good(self, path):
@@ -91,7 +91,8 @@ class TestCompose:
         assert not re.search(r'(PASSWORD|SECRET_KEY)\s*[:=]\s*[^$\s]', text)
 
     def test_the_health_check_looks_like_a_request_from_the_proxy(self, compose):
-        # Without these two the app answers 400 (host not allowed) or 301 (to https) and never looks healthy
+        # Bul ekewisiz ilova 400 (host ruxsat etilmegen) yamasa 301 (https ke) menen juwap beredi hám hesh qashan sawlıq
+        # kórinbeydi
         check = ' '.join(compose['services']['web']['healthcheck']['test'])
         assert "'Host': os.environ['DOMAIN']" in check
         assert "'X-Forwarded-Proto': 'https'" in check
@@ -108,14 +109,14 @@ class TestCompose:
                 assert service['restart'] == 'unless-stopped', name
 
     def test_every_service_caps_its_log_files(self, compose):
-        # Docker keeps every log line for good by default: after some months the server disk would be full
+        # Docker ádetde hár log qatarın mángige saqlaydı: bir neshe aydan keyin server diski tolıp qalar edi
         for name, service in compose['services'].items():
             logging = service.get('logging', {})
             assert logging.get('driver') == 'json-file', name
             assert logging['options']['max-size'] and logging['options']['max-file'], name
 
     def test_every_variable_the_compose_file_reads_is_in_the_env_example(self):
-        # ${NAME} without a default; `$${NAME}` is the container's own variable and ${NAME:-x} has a default
+        # ádetdegisi joq ${NAME}; `$${NAME}` konteynerdiń óz ózgeriwshisi hám ${NAME:-x} ádetdegisi bar
         used = set(re.findall(r'(?<!\$)\$\{([A-Z_]+)\}', COMPOSE.read_text()))
         assert used, 'the compose file reads no variable'
         assert used <= env_keys(ENV_EXAMPLE), sorted(used - env_keys(ENV_EXAMPLE))

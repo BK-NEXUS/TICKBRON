@@ -1,4 +1,4 @@
-"""A photo an owner uploads is stored shrunk (longest side 1600 px) and without the camera's hidden data."""
+"""Iye júkleǵen súwret kishireytilip (eń uzın tárep 1600 px) hám kameranıń jasırın maǵlıwmatısız saqlanadı."""
 import io
 
 import pytest

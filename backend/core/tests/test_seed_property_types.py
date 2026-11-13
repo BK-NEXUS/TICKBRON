@@ -1,4 +1,4 @@
-"""A new server has no property types, and a hotel cannot be created without one: the command adds the standard ones."""
+"""Jańa serverde mehmanxana túrleri joq, hám mehmanxananı birisiz jaratıp bolmaydı: command standart túrlerdi qosadı."""
 import pytest
 from django.core.management import call_command
 

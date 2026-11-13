@@ -1,10 +1,10 @@
 """
-Migration 0008 backfills RoomInventory from DateInventory + active bookings
-(audit #31, Phase 3 step 3.2).
+0008 migration RoomInventory di DateInventory + aktiv bronlardan toltıradı
+(audit #31, 3-basqısh 3.2 qádem).
 
-Runs the real migration executor against the test database, so it migrates
-the schema back and forth and truncates tables as it goes. Keep these out of
-the normal test run:
+Haqıyqıy migration executor di test database ge qarsı isletedi, sol sebepli
+sxemanı alǵa-artqa kóshiredi hám kestelerdi bosatıp baradı. Olardı ádettegi test
+isleniwinen sırtta saqlań:
 
     pytest --create-db properties/tests/test_room_inventory_migration.py
 """
@@ -18,9 +18,10 @@ from django.utils import timezone
 
 
 class Migrate0007To0008(TransactionTestCase):
-    """Migrates the test database from 0007 to 0008 and back, with historical models."""
-    # No serialized_rollback: an earlier TransactionTestCase flush re-creates content types with new
-    # keys, so restoring the creation-time snapshot collides. conftest reloads Geography instead.
+    """Test database di 0007 den 0008 ge hám artqa tariyxıy model ler menen kóshiredi."""
+    # serialized_rollback joq: aldınǵı TransactionTestCase flush ı content type lerdi jańa
+    # kilt ler menen qayta jaratadı, sol sebepli jaratılǵan waqıttaǵı snapshot ti tiklew qaqtıǵısadı. conftest ornına
+    # Geografiyanı qayta júkleydi.
 
     migrate_from = [
         ('properties', '0007_room_inventory'),
@@ -43,7 +44,7 @@ class Migrate0007To0008(TransactionTestCase):
         self._executor = executor
 
     def tearDown(self):
-        # Always land back on the latest migration for whatever test runs next.
+        # Keyin isleytuǵın test ushın hárdayım eń sońǵı migration ǵa qaytıw.
         executor = MigrationExecutor(connection)
         executor.loader.build_graph()
         executor.migrate(executor.loader.graph.leaf_nodes())
@@ -89,7 +90,7 @@ class Migrate0007To0008(TransactionTestCase):
         _, room_type, rate_a, rate_b = self._seed_common(apps)
         day = timezone.localdate() + timedelta(days=10)
 
-        # total_rooms=3; rate_a offers 2, rate_b offers 5 -> capped at 3
+        # total_rooms=3; rate_a 2 usınadı, rate_b 5 usınadı -> 3 ke shekemlengen
         DateInventory.objects.create(rate_plan=rate_a, date=day, available_rooms=2, price=Decimal('70'))
         DateInventory.objects.create(rate_plan=rate_b, date=day, available_rooms=5, price=Decimal('60'))
 
@@ -108,7 +109,7 @@ class Migrate0007To0008(TransactionTestCase):
         guest = User.objects.create(email='guest@example.com', password='x')
         day = timezone.localdate() + timedelta(days=10)
 
-        # Old counter says 1 booked; the real bookings below say 2 rooms are held.
+        # Eski sanaǵısh 1 bronlanǵan deydi; tómendegi haqıyqıy bronlar 2 xona ustalǵanın aytadı.
         DateInventory.objects.create(
             rate_plan=rate_a, date=day, available_rooms=3, booked_rooms=1, price=Decimal('70'),
         )
@@ -130,7 +131,7 @@ class Migrate0007To0008(TransactionTestCase):
             booking=confirmed, room_type=room_type, rate_plan=rate_b, number_of_rooms=1,
             price_per_night=Decimal('60'),
         )
-        # A cancelled booking must not count.
+        # Biykar etilgen bron esaplanbawı kerek.
         cancelled = Booking.objects.create(
             guest=guest, property=room_type.property, status='cancelled', payment_status='refunded',
             check_in=day, check_out=day + timedelta(days=1), number_of_nights=1, guest_count=2,
@@ -196,7 +197,7 @@ class Migrate0007To0008(TransactionTestCase):
         new_apps = self.migrate_forward()
         RoomInventory = new_apps.get_model('properties', 'RoomInventory')
         row = RoomInventory.objects.get(room_type_id=room_type.pk, date=day)
-        # total_rooms=3 caps available at 1 (only rate plan offered 1); 3 bookings held -> oversold
+        # total_rooms=3 bos orındı 1 ge shekemleydi (tek rate plan 1 usındı); 3 bron ustalǵan -> artıq satılǵan
         self.assertEqual(row.available_rooms, 1)
         self.assertEqual(row.booked_rooms, 3)
 

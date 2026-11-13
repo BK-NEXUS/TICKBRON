@@ -1,5 +1,5 @@
 """
-Tests for user models.
+Paydalanıwshı model leri ushın testler.
 """
 import pytest
 from django.test import TestCase
@@ -11,10 +11,10 @@ User = get_user_model()
 
 
 class TestUserModel(TestCase):
-    """Test cases for User model."""
+    """User modeli ushın test jaǵdayları."""
 
     def test_create_user(self):
-        """Test creating a regular user."""
+        """Ápiwayı paydalanıwshı jaratıwdı testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -31,7 +31,7 @@ class TestUserModel(TestCase):
         assert user.is_active is True
 
     def test_create_superuser(self):
-        """Test creating a superuser."""
+        """Superuser jaratıwdı testlew."""
         user = User.objects.create_superuser(
             email='admin@example.com',
             password='adminpass123',
@@ -45,18 +45,18 @@ class TestUserModel(TestCase):
         assert user.is_active is True
 
     def test_user_email_normalized(self):
-        """Test that email is normalized."""
+        """Email normalizaciya etilgenin testlew."""
         email = 'Test@Example.com'
         user = User.objects.create_user(
             email=email,
             password='testpass123'
         )
 
-        # The whole address is lowercased (see users/tests/test_email_case.py)
+        # Pútkil mánzil kishi háripke ótkeriledi (users/tests/test_email_case.py ge qarań)
         assert user.email == 'test@example.com'
 
     def test_user_without_email_raises_error(self):
-        """Test that creating user without email raises ValueError."""
+        """Email siz paydalanıwshı jaratıw ValueError shıǵaratuǵının testlew."""
         with pytest.raises(ValueError):
             User.objects.create_user(
                 email=None,
@@ -64,7 +64,7 @@ class TestUserModel(TestCase):
             )
 
     def test_user_str_representation(self):
-        """Test string representation of User."""
+        """User diń tekst kórinisin testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
@@ -73,7 +73,7 @@ class TestUserModel(TestCase):
         assert str(user) == 'test@example.com'
 
     def test_get_full_name(self):
-        """Test get_full_name method with full_name field."""
+        """full_name maydanı menen get_full_name metodın testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -83,7 +83,7 @@ class TestUserModel(TestCase):
         assert user.get_full_name() == 'John Doe'
 
     def test_get_full_name_from_first_last(self):
-        """Test get_full_name method falling back to first_name/last_name."""
+        """first_name/last_name ge qaytıp túsetuǵın get_full_name metodın testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -94,7 +94,7 @@ class TestUserModel(TestCase):
         assert user.get_full_name() == 'John Doe'
 
     def test_get_full_name_empty(self):
-        """Test get_full_name when all name fields are empty."""
+        """Barlıq at maydanları bos bolǵanda get_full_name di testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
@@ -103,7 +103,7 @@ class TestUserModel(TestCase):
         assert user.get_full_name() == 'test@example.com'
 
     def test_get_short_name(self):
-        """Test get_short_name method."""
+        """get_short_name metodın testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -114,7 +114,7 @@ class TestUserModel(TestCase):
         assert user.get_short_name() == 'John'
 
     def test_user_email_unique(self):
-        """Test that email field is unique."""
+        """Email maydanı unikal ekenin testlew."""
         User.objects.create_user(
             email='unique@example.com',
             password='testpass123'
@@ -127,13 +127,13 @@ class TestUserModel(TestCase):
             )
 
     def test_user_inherits_base_model(self):
-        """Test that User inherits from BaseModel."""
+        """User BaseModel den miras alatuǵının testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
 
-        # Check BaseModel fields
+        # BaseModel maydanların tekseriw
         assert hasattr(user, 'created_at')
         assert hasattr(user, 'updated_at')
         assert hasattr(user, 'is_deleted')
@@ -143,7 +143,7 @@ class TestUserModel(TestCase):
         assert user.is_active is True
 
     def test_user_whatsapp_field(self):
-        """Test whatsapp field can be set and retrieved."""
+        """whatsapp maydanı qoyılıp, qayta oqıla alatuǵının testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -153,7 +153,7 @@ class TestUserModel(TestCase):
         assert user.whatsapp == '+1234567890'
 
     def test_user_telegram_field(self):
-        """Test telegram field can be set and retrieved."""
+        """telegram maydanı qoyılıp, qayta oqıla alatuǵının testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',
@@ -163,7 +163,7 @@ class TestUserModel(TestCase):
         assert user.telegram == '@telegramuser'
 
     def test_user_preferred_contact_method_default(self):
-        """Test preferred_contact_method defaults to email."""
+        """preferred_contact_method ádetde email ekenin testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123'
@@ -172,7 +172,7 @@ class TestUserModel(TestCase):
         assert user.preferred_contact_method == 'email'
 
     def test_user_preferred_contact_method_choices(self):
-        """Test preferred_contact_method accepts valid choices."""
+        """preferred_contact_method jaramlı tańlawlardı qabıllaytuǵının testlew."""
         for method in ['phone', 'whatsapp', 'telegram', 'email']:
             user = User.objects.create_user(
                 email=f'test{method}@example.com',
@@ -182,7 +182,7 @@ class TestUserModel(TestCase):
             assert user.preferred_contact_method == method
 
     def test_user_all_contact_fields(self):
-        """Test user with all contact fields set."""
+        """Barlıq baylanıs maydanları qoyılǵan paydalanıwshını testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='testpass123',

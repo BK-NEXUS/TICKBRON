@@ -1,7 +1,7 @@
 """
-Property.country_ref / region_ref (Geography plan G2, city level removed 2026-11-10): the old text fields
-country / state / city are filled from the English names whenever the refs are set (the city copy is the name of
-the region), so older code that reads the text keeps working.
+Property.country_ref / region_ref (Geography reje G2, qala dárejesi 2026-11-10 de alıp taslandı): ref ler belgilengende
+eski tekst maydanlar country / state / city inglizsha atlardan toltırıladı (city nusqası regionnıń atı),
+sol sebepli tekstti oqıytuǵın eski kod islewin dawam etedi.
 """
 from decimal import Decimal
 
@@ -28,7 +28,7 @@ class TestPropertyGeographyRefs:
 
     def test_refs_are_optional(self, prop):
         assert (prop.country_ref, prop.region_ref) == (None, None)
-        # Without refs the text is left as it is
+        # Ref siz tekst sol qalpında qaladı
         prop.save()
         prop.refresh_from_db()
         assert (prop.country, prop.state, prop.city) == ('old country', 'old state', 'old city')

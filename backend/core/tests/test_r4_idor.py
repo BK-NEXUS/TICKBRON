@@ -1,8 +1,8 @@
 """
-R4 security review: a guest cannot read or change another guest's objects by
-putting their id in the URL or body (booking, favorite, review,
-notification, account history). Hotel-owner to hotel-owner isolation is covered
-by partner/tests/test_access_matrix.py and the partner block/inventory tests.
+R4 qáwipsizlik tekseriwi: mehman basqa mehmannıń obyektlerin URL yamasa denege
+olardıń id sin qoyıp oqıy yamasa ózgerte almaydı (bron, favorit, sharh,
+bildiriw, akkaunt tariyxı). Mehmanxana iyesi menen mehmanxana iyesi ajıratılıwı
+partner/tests/test_access_matrix.py hám partner blok/inventory testlerinde qaplanǵan.
 """
 from datetime import timedelta
 from decimal import Decimal

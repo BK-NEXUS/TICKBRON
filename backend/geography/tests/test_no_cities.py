@@ -1,5 +1,5 @@
-"""The city level of the geography is gone (plan .ai/PLAN_GEO_REMOVE_CITY.md): only country and region are dictionaries,
-the town of a hotel is plain text."""
+"""Geografiyanıń qala dárejesi joq (reje .ai/PLAN_GEO_REMOVE_CITY.md): tek mámleket hám region sózlikler,
+mehmanxananıń qalası ápiwayı tekst."""
 import pytest
 from rest_framework.test import APIClient
 

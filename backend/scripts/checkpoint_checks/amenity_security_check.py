@@ -1,14 +1,14 @@
 """
-Security review script for amenity models (Checkpoint 06).
+Amenity model leri ushın qáwipsizlik tekseriw skripti (Checkpoint 06).
 
-This script performs a comprehensive security review of the amenity models
-to ensure they meet TICKBRON security standards.
+Bul skript amenity model lerin TICKBRON qáwipsizlik standartlarına say ekenine
+isenim hasıl etiw ushın tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 import os
 import sys
 import django
 
-# Setup Django
+# Django dı tayarlaw
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -20,7 +20,7 @@ from properties.models import (
 
 
 def print_security_check(title, passed, details=""):
-    """Print formatted security check result."""
+    """Qáwipsizlik tekseriw nátiyjesin formatlap shıǵarıw."""
     status = "[PASS]" if passed else "[FAIL]"
     print(f"{status}: {title}")
     if details:
@@ -29,7 +29,7 @@ def print_security_check(title, passed, details=""):
 
 
 def run_security_checks():
-    """Run comprehensive security checks for amenity models."""
+    """Amenity model leri ushın tolıq qáwipsizlik tekseriwlerin islew."""
     print("=" * 60)
     print("AMENITY MODELS SECURITY REVIEW - CHECKPOINT 06")
     print("=" * 60)
@@ -38,22 +38,22 @@ def run_security_checks():
     passed_checks = 0
     total_checks = 0
 
-    # Clean up any existing test data - delete amenities first due to PROTECT constraint
+    # Bar test maǵlıwmatın tazalaw - PROTECT constraint sebepli aldın amenity lerdi óshiriw
     Amenity.objects.filter(name__contains='Test').delete()
     Amenity.objects.filter(category__name__contains='Test').delete()
     AmenityCategory.objects.filter(name__contains='Test').delete()
 
-    # Check 1: Model field security
+    # 1-tekseriw: Model maydanlarınıń qáwipsizligi
     print("1. Model Field Security")
     print("-" * 40)
     try:
-        # Check that sensitive fields are properly protected
+        # Sezgir maydanlardıń durıs qorǵalǵanın tekseriw
         category = AmenityCategory.objects.create(
             name='Field Security Test',
             slug='field-security-test'
         )
 
-        # Check string representation doesn't expose sensitive data
+        # Tekst kórinisi sezgir maǵlıwmattı ashpaytuǵının tekseriw
         str_repr = str(category)
         passed = 'email' not in str_repr.lower() and 'password' not in str_repr.lower()
         total_checks += 1
@@ -68,7 +68,7 @@ def run_security_checks():
         total_checks += 1
         print_security_check("Model field security", False, str(e))
 
-    # Check 2: Unique constraints
+    # 2-tekseriw: Unikal constraint ler
     print("\n2. Unique Constraints")
     print("-" * 40)
     try:
@@ -77,7 +77,7 @@ def run_security_checks():
             slug='unique-constraint-test'
         )
 
-        # Try to create duplicate
+        # Dublikat jaratıwǵa urınıw
         try:
             duplicate = AmenityCategory(
                 name='Unique Constraint Test',
@@ -99,7 +99,7 @@ def run_security_checks():
         total_checks += 1
         print_security_check("Unique constraints", False, str(e))
 
-    # Check 3: Foreign key security
+    # 3-tekseriw: Foreign key qáwipsizligi
     print("\n3. Foreign Key Security")
     print("-" * 40)
     total_checks += 2
@@ -114,16 +114,16 @@ def run_security_checks():
             slug='fk-test-amenity'
         )
 
-        # Check that amenity is properly linked to category
+        # Amenity diń kategoriyaǵa durıs baylanısqanın tekseriw
         passed = amenity.category == category
         passed_checks += print_security_check(
             "Amenity-Category foreign key relation",
             passed
         )
 
-        # Check CASCADE deletion
+        # CASCADE óshiriwdi tekseriw
         amenity_id = amenity.id
-        amenity.delete()  # Delete amenity first since category is PROTECT
+        amenity.delete()  # Kategoriya PROTECT bolǵanı ushın aldın amenity di óshiriw
         category.delete()
         passed = not Amenity.objects.filter(id=amenity_id).exists()
         passed_checks += print_security_check(
@@ -135,7 +135,7 @@ def run_security_checks():
         print_security_check("Foreign key security", False, str(e))
         print_security_check("CASCADE deletion", False, "Skipped due to error")
 
-    # Check 4: Soft delete security
+    # 4-tekseriw: Soft delete qáwipsizligi
     print("\n4. Soft Delete Security")
     print("-" * 40)
     try:
@@ -144,7 +144,7 @@ def run_security_checks():
             slug='soft-delete-test'
         )
 
-        # Test soft delete
+        # Soft delete di testlew
         category.soft_delete()
         passed = category.is_deleted and category.deleted_at is not None
         total_checks += 1
@@ -153,7 +153,7 @@ def run_security_checks():
             passed
         )
 
-        # Test restore
+        # Restore di testlew
         category.restore()
         passed = not category.is_deleted and category.deleted_at is None
         total_checks += 1
@@ -168,7 +168,7 @@ def run_security_checks():
         total_checks += 2
         print_security_check("Soft delete security", False, str(e))
 
-    # Check 5: Translation uniqueness
+    # 5-tekseriw: Awdarma unikallıǵı
     print("\n5. Translation Uniqueness")
     print("-" * 40)
     try:
@@ -183,7 +183,7 @@ def run_security_checks():
             name='Translation Test'
         )
 
-        # Try to create duplicate translation
+        # Dublikat awdarma jaratıwǵa urınıw
         try:
             translation2 = AmenityCategoryTranslation(
                 category=category,
@@ -207,11 +207,11 @@ def run_security_checks():
         total_checks += 1
         print_security_check("Translation uniqueness", False, str(e))
 
-    # Check 6: PropertyAmenity relation security
+    # 6-tekseriw: PropertyAmenity baylanısı qáwipsizligi
     print("\n6. PropertyAmenity Relation Security")
     print("-" * 40)
     try:
-        # Simplified test - just test the model directly without Property/User dependencies
+        # Ápiwayılastırılǵan test - Property/User baylanıslarısız model di tuwrıdan-tuwrı testlew
         category = AmenityCategory.objects.create(
             name='PA Relation Test Category',
             slug='pa-relation-test-category'
@@ -222,9 +222,9 @@ def run_security_checks():
             slug='pa-relation-test-amenity'
         )
 
-        # Test the model validation without actual Property relation
+        # Haqıyqıy Property baylanısısız model validaciyasın testlew
         try:
-            # Test that the model has the expected fields
+            # Modelde kútilgen maydanlar bar ekenin testlew
             passed = hasattr(PropertyAmenity, 'property') and hasattr(PropertyAmenity, 'amenity')
             total_checks += 1
             passed_checks += print_security_check(
@@ -232,7 +232,7 @@ def run_security_checks():
                 passed
             )
 
-            # Test unique constraint definition
+            # Unikal constraint anıqlamasın testlew
             unique_together = PropertyAmenity._meta.unique_together
             passed = ('property', 'amenity') in unique_together
             total_checks += 1
@@ -246,7 +246,7 @@ def run_security_checks():
             print_security_check("PropertyAmenity model structure", False, str(model_error))
             print_security_check("PropertyAmenity unique constraint", False, "Skipped due to error")
 
-        # Cleanup
+        # Tazalaw
         amenity.delete()
         category.delete()
 
@@ -255,7 +255,7 @@ def run_security_checks():
         print_security_check("PropertyAmenity relation security", False, str(e))
         print_security_check("PropertyAmenity unique constraint", False, "Skipped due to error")
 
-    # Check 7: Searchable flag security
+    # 7-tekseriw: Izlenetuǵın belgi qáwipsizligi
     print("\n7. Searchable Flag Security")
     print("-" * 40)
     try:
@@ -278,7 +278,7 @@ def run_security_checks():
             is_searchable=False
         )
 
-        # Check filtering works correctly
+        # Filterlew durıs islewin tekseriw
         searchable_count = Amenity.objects.filter(is_searchable=True).count()
         non_searchable_count = Amenity.objects.filter(is_searchable=False).count()
 
@@ -290,7 +290,7 @@ def run_security_checks():
             f"Searchable: {searchable_count}, Non-searchable: {non_searchable_count}"
         )
 
-        # Cleanup
+        # Tazalaw
         searchable_amenity.delete()
         non_searchable_amenity.delete()
         category.delete()
@@ -299,14 +299,14 @@ def run_security_checks():
         total_checks += 1
         print_security_check("Searchable flag security", False, str(e))
 
-    # Check 8: Database indexes
+    # 8-tekseriw: Database indeksleri
     print("\n8. Database Indexes")
     print("-" * 40)
     try:
-        # Check that models have proper indexes
+        # Model lerde tiyisli indeksler barlıǵın tekseriw
         pass
 
-        # Check AmenityCategory indexes
+        # AmenityCategory indekslerin tekseriw
         category_indexes = AmenityCategory._meta.indexes
         passed = len(category_indexes) > 0
         total_checks += 1
@@ -316,7 +316,7 @@ def run_security_checks():
             f"Found {len(category_indexes)} indexes"
         )
 
-        # Check Amenity indexes
+        # Amenity indekslerin tekseriw
         amenity_indexes = Amenity._meta.indexes
         passed = len(amenity_indexes) > 0
         total_checks += 1
@@ -326,7 +326,7 @@ def run_security_checks():
             f"Found {len(amenity_indexes)} indexes"
         )
 
-        # Check PropertyAmenity indexes
+        # PropertyAmenity indekslerin tekseriw
         property_amenity_indexes = PropertyAmenity._meta.indexes
         passed = len(property_amenity_indexes) > 0
         total_checks += 1
@@ -342,7 +342,7 @@ def run_security_checks():
         print_security_check("Amenity indexes", False, "Skipped due to error")
         print_security_check("PropertyAmenity indexes", False, "Skipped due to error")
 
-    # Summary
+    # Juwmaq
     print("\n" + "=" * 60)
     print("SECURITY REVIEW SUMMARY")
     print("=" * 60)

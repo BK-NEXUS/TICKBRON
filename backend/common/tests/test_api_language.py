@@ -1,6 +1,7 @@
 """
-Refusal texts follow the page language: the site sends Accept-Language (uz, ru or en) and the API words
-its validation errors in it, DRF's own texts included (DRF ships no Uzbek, so the project has its own).
+Biykar etiw tekstleri bet tilin izleydi: sayt Accept-Language (uz, ru yamasa en) jiberedi hám API óz
+validation qátelikların sol tilde jazadı, DRF tiń óz tekstleri de (DRF de ózbek tili joq, sol sebepli proektiń óziniki
+bar).
 """
 import pytest
 from django.utils import translation

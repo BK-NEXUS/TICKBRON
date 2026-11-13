@@ -1,7 +1,9 @@
 """
-Every text the API can show a visitor is worded in the page language: the plain English messages of the
-bookings, accounts, users, properties, geography, currency, promotions and admin code are wrapped in
-gettext and translated in the uz and ru catalogs (locale/). A new refusal text with no translation fails here.
+API kelwshige kórsete alatuǵın hár tekst bet tilinde jazılǵan: bron, akkaunt, paydalanıwshı, mehmanxana, geografiya,
+valyuta,
+reklama hám admin kodındaǵı ápiwayı inglizsha xabarlar gettext ke oralǵan hám uz hám ru kataloglarında awdarılǵan
+(locale/).
+Awdarması joq jańa biykar etiw teksti usı jerde sátsiz boladı.
 """
 import ast
 import pathlib
@@ -16,12 +18,12 @@ from users.models import User
 
 BACKEND = pathlib.Path(__file__).resolve().parents[2]
 APPS = ['bookings', 'users', 'accounts', 'properties', 'promotions', 'admin_panel', 'geography', 'currency', 'partner', 'common']
-# Raised or returned to a client: these calls carry the text
+# Klientke kóterilgen yamasa qaytarılǵan: bul shaqırıwlar tekstti alıp júredi
 CARRIERS = {'ValidationError', 'Response', 'JsonResponse', 'PermissionDenied', 'NotFound', 'ParseError'}
 GETTEXT = {'_', 'gettext', 'gettext_lazy', '_lazy'}
-# Not shown to visitors: the payments tables are dropped (cash only); the generic server envelope is the client's own fallback
+# Kelwshilerge kórsetilmeydi: tólem kesteleri óshirilgen (tek naqd); ulıwma server konverti klienttiń óz zapası
 LEFT_ALONE = {'payments', 'common/exception_handlers.py', 'common/middleware.py', 'common/decorators.py'}
-# The hotel page shows its own translated "not found" text; the client reads this one only as a status
+# Mehmanxana beti óz awdarılǵan "tabılmadı" tekstin kórsetedi; klient bunı tek status retinde oqıydı
 ENGLISH_BY_DESIGN = {('properties/views.py', 'Property not found'), ('properties/views.py', 'Property with ID ')}
 
 
@@ -56,7 +58,7 @@ def parent_map(tree):
 
 
 def texts():
-    """(file, line, msgid, wrapped) for every literal English sentence a carrier call is given."""
+    """Shaqırıwshı shaqırıw berilgen hár haqıyqıy inglizsha gáp ushın (fayl, qatar, msgid, oralǵan)."""
     for relative, tree in sources():
         parents = parent_map(tree)
         for node in ast.walk(tree):

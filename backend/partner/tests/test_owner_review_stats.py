@@ -1,4 +1,5 @@
-"""The owner's Status shows how guests rate each hotel: the average, how many reviews, the 1-5 split and the categories."""
+"""Iyeniń Status ı mehmanlar hár mehmanxananı qalay bahalaytuǵının kórsetedi: ortasha, neshe sharh, 1-5 bólisiwi hám
+kategoriyalar."""
 import pytest
 from rest_framework.test import APIClient
 

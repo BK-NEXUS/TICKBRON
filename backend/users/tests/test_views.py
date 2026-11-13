@@ -1,5 +1,5 @@
 """
-Tests for user authentication views.
+Paydalanıwshı autentifikaciya view leri ushın testler.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -11,10 +11,10 @@ User = get_user_model()
 
 
 class TestAuthViews(TestCase):
-    """Test cases for authentication views."""
+    """Autentifikaciya view leri ushın test jaǵdayları."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = APIClient()
         self.user_data = {
             'email': 'test@example.com',
@@ -25,7 +25,7 @@ class TestAuthViews(TestCase):
         }
 
     def test_register_user(self):
-        """Test user registration endpoint with simplified fields."""
+        """Ápiwayılastırılǵan maydanlar menen paydalanıwshı dizimnen ótiw endpoint in testlew."""
         response = self.client.post('/api/v1/auth/register/', self.user_data)
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -33,33 +33,33 @@ class TestAuthViews(TestCase):
         assert 'email' in response.data
         assert response.data['email'] == 'test@example.com'
         assert response.data['full_name'] == 'Test User'
-        assert response.data['phone_number'] == '+998901234567'  # was None while no phone was collected
+        assert response.data['phone_number'] == '+998901234567'  # telefon jıynalmaǵan waqıtta None edi
 
     def test_register_user_auto_login(self):
-        """Test that user is automatically logged in after registration."""
+        """Dizimnen ótkennen keyin paydalanıwshı avtomatik kirgenin testlew."""
         response = self.client.post('/api/v1/auth/register/', self.user_data)
 
-        # Check if session was created (user should be logged in)
+        # Session jaratılǵanın tekseriw (paydalanıwshı kirgen bolıwı kerek)
         assert response.status_code == status.HTTP_201_CREATED
-        # In a real scenario, we'd check session cookies, but for API testing
-        # we verify the user was created successfully
+        # Haqıyqıy jaǵdayda session cookie lerdi tekserer edik, biraq API testlew ushın
+        # paydalanıwshı sátli jaratılǵanın tekseremiz
 
     def test_register_duplicate_email(self):
-        """Test registration with duplicate email."""
-        # Create first user
+        """Birdey email menen dizimnen ótiwdi testlew."""
+        # Birinshi paydalanıwshını jaratıw
         User.objects.create_user(
             email='test@example.com',
             password='testpass123'
         )
 
-        # Try to register with same email
+        # Birdey email menen dizimnen ótiwge urınıw
         response = self.client.post('/api/v1/auth/register/', self.user_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_login_valid_credentials(self):
-        """Test login with valid credentials."""
-        # Create user with old format (first_name/last_name)
+        """Jaramlı credential ler menen kiriwdi testlew."""
+        # Eski formatlı paydalanıwshı jaratıw (first_name/last_name)
         User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -67,7 +67,7 @@ class TestAuthViews(TestCase):
             last_name='User'
         )
 
-        # Login
+        # Kiriw
         login_data = {
             'email': 'test@example.com',
             'password': 'SecureP@ssw0rd123'
@@ -78,7 +78,7 @@ class TestAuthViews(TestCase):
         assert response.data['email'] == 'test@example.com'
 
     def test_login_invalid_credentials(self):
-        """Test login with invalid credentials."""
+        """Jaramsız credential ler menen kiriwdi testlew."""
         login_data = {
             'email': 'test@example.com',
             'password': 'WrongP@ssw0rd123'
@@ -88,8 +88,8 @@ class TestAuthViews(TestCase):
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_login_inactive_user(self):
-        """Test login with inactive user."""
-        # Create inactive user
+        """Aktiv emes paydalanıwshı menen kiriwdi testlew."""
+        # Aktiv emes paydalanıwshını jaratıw
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -107,8 +107,8 @@ class TestAuthViews(TestCase):
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_logout_authenticated(self):
-        """Test logout for authenticated user."""
-        # Create and authenticate user
+        """Autentifikaciyadan ótken paydalanıwshı ushın shıǵıwdı testlew."""
+        # Paydalanıwshını jaratıw hám autentifikaciyadan ótkeriw
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -122,15 +122,15 @@ class TestAuthViews(TestCase):
         assert 'detail' in response.data
 
     def test_logout_unauthenticated(self):
-        """Test logout for unauthenticated user."""
+        """Autentifikaciyadan ótpegen paydalanıwshı ushın shıǵıwdı testlew."""
         response = self.client.post('/api/v1/auth/logout/')
 
-        # Should work even for unauthenticated users (AllowAny permission)
+        # Autentifikaciyasız paydalanıwshılar ushın da islewi kerek (AllowAny ruxsatı)
         assert response.status_code == status.HTTP_200_OK
 
     def test_me_authenticated(self):
-        """Test getting current user info when authenticated."""
-        # Create and authenticate user
+        """Autentifikaciyadan ótkende házirgi paydalanıwshı maǵlıwmatın alıwdı testlew."""
+        # Paydalanıwshını jaratıw hám autentifikaciyadan ótkeriw
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -145,13 +145,13 @@ class TestAuthViews(TestCase):
         assert response.data['full_name'] == 'Test User'
 
     def test_me_unauthenticated(self):
-        """Test getting current user info when not authenticated."""
+        """Autentifikaciyadan ótpegende házirgi paydalanıwshı maǵlıwmatın alıwdı testlew."""
         response = self.client.get('/api/v1/auth/me/')
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_refresh_session_authenticated(self):
-        """Test session refresh when authenticated."""
+        """Autentifikaciyadan ótkende session di jańalawdı testlew."""
         user = User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
@@ -165,21 +165,21 @@ class TestAuthViews(TestCase):
         assert response.data['email'] == 'test@example.com'
 
     def test_refresh_session_unauthenticated(self):
-        """Test session refresh when not authenticated."""
+        """Autentifikaciyadan ótpegende session di jańalawdı testlew."""
         response = self.client.post('/api/v1/auth/refresh/')
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_account_lockout_after_failed_attempts(self):
-        """Test account lockout after multiple failed login attempts."""
-        # Create user
+        """Bir neshe sátsiz kiriw urınısınan keyin akkauntti bloklawdı testlew."""
+        # Paydalanıwshını jaratıw
         User.objects.create_user(
             email='test@example.com',
             password='SecureP@ssw0rd123',
             full_name='Test User'
         )
 
-        # Simulate 5 failed login attempts
+        # 5 sátsiz kiriw urınısın uqsatıw
         for _ in range(5):
             login_data = {
                 'email': 'test@example.com',
@@ -187,8 +187,8 @@ class TestAuthViews(TestCase):
             }
             self.client.post('/api/v1/auth/login/', login_data)
 
-        # Try to login with correct password from the same IP (locked for this IP;
-        # the response is the generic failure so it does not reveal the lock)
+        # Durıs parol menen sol IP den kiriwge urınıw (bul IP ushın bloklanǵan;
+        # juwap ulıwma sátsizlik bolıp, bloklawdı ashpaydı)
         login_data = {
             'email': 'test@example.com',
             'password': 'SecureP@ssw0rd123'

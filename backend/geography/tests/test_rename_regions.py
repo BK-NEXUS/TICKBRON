@@ -1,9 +1,9 @@
 """
-Migration geography/0003 gives the Uzbek regions plain English names (2026-10-02):
-"Samarkand Region" -> "Samarkand", "Tashkent City" -> "Tashkent". Only the English names change.
+geography/0003 migration ózbek regionlarına ápiwayı inglizsha at beredi (2026-10-02):
+"Samarkand Region" -> "Samarkand", "Tashkent City" -> "Tashkent". Tek inglizsha atlar ózgeredi.
 
-The migration functions are called directly on the test database (a fresh database already has the
-new names, so each test first puts the old names back, as an existing database has them).
+Migration funkciyaları test database de tikkeley shaqırıladı (taza database te aldınan jańa atlar
+bar, sol sebepli hár test aldın eski atlardı qaytaradı, bar database degidey).
 """
 import importlib
 
@@ -24,7 +24,7 @@ def region(name_en):
 
 @pytest.fixture
 def old_names(db):
-    """The database as it was before the migration: the 11 renamed regions hold their old names."""
+    """Migration aldınaǵı database: 11 qayta atalǵan region eski atların saqlaydı."""
     for old, new in migration.RENAMES:
         Region.objects.filter(country__code='UZ', name_en=new).update(name_en=old)
 
@@ -45,7 +45,7 @@ class TestRename:
         for old, new in migration.RENAMES:
             assert not Region.objects.filter(country__code='UZ', name_en=old).exists(), old
             assert Region.objects.filter(country__code='UZ', name_en=new).exists(), new
-        # uz and ru names (the official forms) and the slugs are untouched
+        # uz hám ru atları (rásmiy formalar) hám slug lar ózgermeydi
         after = {r.slug: (r.name_uz, r.name_ru) for r in Region.objects.filter(country__code='UZ')}
         assert after == before
         assert region('Tashkent').slug == 'uz-tashkent-city'
@@ -82,7 +82,7 @@ class TestRename:
         prop.refresh_from_db()
         other.refresh_from_db()
         assert prop.state == 'Samarkand'
-        assert other.state == 'My own text'  # only the copies of the old name change
+        assert other.state == 'My own text'  # tek eski attıń nusqaları ózgeredi
 
     def test_a_name_edited_by_an_admin_is_left_alone(self, old_names):
         Region.objects.filter(name_en='Bukhara Region').update(name_en='Bukhara Oasis')
@@ -94,7 +94,7 @@ class TestRename:
         uz = Country.objects.get(code='UZ')
         Region.objects.create(country=uz, name_uz='Boshqa', name_ru='Другая', name_en='Khorezm', slug='uz-other')
         migration.forward(apps, None)
-        assert region('Khorezm Region').slug == 'uz-khorezm-region'  # kept its old name, no IntegrityError
+        assert region('Khorezm Region').slug == 'uz-khorezm-region'  # eski atın saqladı, IntegrityError joq
 
     def test_running_forward_twice_changes_nothing_more(self, old_names):
         migration.forward(apps, None)
@@ -108,7 +108,7 @@ class TestRename:
         for old, new in migration.RENAMES:
             assert Region.objects.filter(country__code='UZ', name_en=old).exists(), old
             assert not Region.objects.filter(country__code='UZ', name_en=new).exists(), new
-        assert region('Tashkent Region')  # never renamed
+        assert region('Tashkent Region')  # hesh qashan qayta atalmaǵan
 
 
 @pytest.mark.django_db

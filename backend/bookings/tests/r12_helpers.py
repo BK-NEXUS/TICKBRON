@@ -1,4 +1,4 @@
-"""Shared helpers for the R12 tests: bookings written directly (past stays, any status)."""
+"""R12 testleri ushın ortaq járdemshiler: tikkeley jazılǵan bronlar (ótken turıwlar, qálegen status)."""
 from datetime import datetime, time, timedelta, timezone as dt_timezone
 from decimal import Decimal
 from unittest import mock
@@ -10,14 +10,14 @@ TASHKENT = zoneinfo.ZoneInfo('Asia/Tashkent')
 
 
 def at_tashkent(day, hour, minute=0):
-    """Patch "now" to a local Tashkent time on `day`."""
+    """"Házir" di `day` kúnindegi jergilikli Tashkent waqtına yamalaw."""
     moment = datetime.combine(day, time(hour, minute), tzinfo=TASHKENT).astimezone(dt_timezone.utc)
     return mock.patch('django.utils.timezone.now', return_value=moment)
 
 
 def make_booking(prop, guest, check_in, nights=2, status='confirmed', rooms=1, guest_count=1,
                  price=Decimal('500000'), currency='UZS', payment_status=None):
-    """A booking row as the engine leaves it (no inventory; for status and statistics tests)."""
+    """Bron qatarı sistema qaldırǵanday (inventory siz; status hám statistika testleri ushın)."""
     if payment_status is None:
         payment_status = 'paid' if status in ('confirmed', 'completed', 'no_show') else 'pending'
     return Booking.objects.create(

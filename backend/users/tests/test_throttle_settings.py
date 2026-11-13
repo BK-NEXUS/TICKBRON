@@ -1,4 +1,5 @@
-"""The login and sign-up limits are settings with the documented defaults, so a busy shared address can be tuned without code."""
+"""Kiriw hám dizimnen ótiw shekleri hújjetlestirilgen ádettegi mánisli sazlamalar, sol sebepli bánt ortaq mánzildi kodsız
+sazlawǵa boladı."""
 from django.conf import settings
 
 from users.throttles import LoginRateThrottle, RegisterRateThrottle

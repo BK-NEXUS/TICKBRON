@@ -1,4 +1,4 @@
-"""Owner photo management: list, change, delete, cover rules, random file names."""
+"""Iye súwretlerin basqarıw: dizimlew, ózgertiw, óshiriw, muqaba qaǵıydaları, tosınarlıq fayl atları."""
 import shutil
 import tempfile
 
@@ -58,7 +58,7 @@ class OwnerPhotoTests(TestCase):
     def detail(self, photo, prop=None):
         return f'/api/v1/partner/properties/{(prop or self.prop).id}/photos/{photo.id}/'
 
-    # list
+    # dizim
     def test_owner_lists_own_photos_in_order(self):
         second = self._photo(display_order=2)
         first = self._photo(display_order=1)
@@ -83,7 +83,7 @@ class OwnerPhotoTests(TestCase):
         self.client.force_authenticate(self.owner)
         self.assertEqual(self.client.get(self.url).data, [])
 
-    # upload rules
+    # júklew qaǵıydaları
     def test_first_photo_becomes_cover_and_next_one_does_not(self):
         self.client.force_authenticate(self.owner)
         first = self._upload()
@@ -110,7 +110,7 @@ class OwnerPhotoTests(TestCase):
         response = self._upload(url=f'/api/v1/partner/properties/{self.foreign.id}/photos/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # change
+    # ózgertiw
     def test_owner_changes_caption_and_type(self):
         photo = self._photo()
         self.client.force_authenticate(self.owner)
@@ -157,7 +157,7 @@ class OwnerPhotoTests(TestCase):
         response = self.client.patch(self.detail(foreign_photo), {'caption': 'x'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # delete
+    # óshiriw
     def test_delete_soft_deletes(self):
         photo = self._photo()
         self.client.force_authenticate(self.owner)

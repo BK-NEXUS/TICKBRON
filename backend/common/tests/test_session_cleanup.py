@@ -1,4 +1,4 @@
-"""Sign-in sessions are rows in the database. Django never removes the expired ones by itself, so a nightly task does."""
+"""Kirisiw session ları database degi qatarlar. Django múddeti ótkenlerin ózi óshirmeydi, sol sebepli túngi task óshiredi."""
 from datetime import timedelta
 
 import pytest

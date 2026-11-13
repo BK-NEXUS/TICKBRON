@@ -1,10 +1,11 @@
 """
-R16 slice 2: every hotel card (search, map, home promotions) carries a "from" price in every currency, and the
-calendar rows of the availability endpoint carry the night price in every currency.
+R16 2-bólim: hár mehmanxana kartası (izlew, karta, bas bet reklamaları) hár valyutada "dan" bahasın alıp júredi, hám
+bos orın endpoint inin kalendar qatarları hár valyutada túngi bahanı alıp júredi.
 
-A hotel's "from" price in a currency = the lowest price of its active rate plans in that currency (the owner's own
-price, or a conversion when the owner entered none). `base_price` and `currency` stay as they were (filters use them).
-Fixture `stay`: a USD hotel, plan "Standard Rate" 60 USD, nights +2 = 69 USD.
+Mehmanxananıń valyutadaǵı "dan" bahası = sol valyutadaǵı aktiv rate plan larınıń eń arzan bahası (iyeniń óz
+bahası, yamasa iye kirgizbegen bolsa konvertaciya). `base_price` hám `currency` burınǵıday qaladı (filterler olardı
+paydalanadı).
+Fixture `stay`: USD mehmanxana, "Standard Rate" planı 60 USD, +2 túnler = 69 USD.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -103,7 +104,7 @@ class TestCalendarRows:
         plan, rows = self.rows(stay)
         normal = rows[(stay['start'] + timedelta(days=1)).isoformat()]['prices']
         special = rows[(stay['start'] + timedelta(days=2)).isoformat()]['prices']     # 69 USD (+15%)
-        base_night = rows[(stay['start'] + timedelta(days=3)).isoformat()]['prices']  # no own price: the plan's
+        base_night = rows[(stay['start'] + timedelta(days=3)).isoformat()]['prices']  # óz bahası joq: plannıń
         assert normal == {'USD': '60.00', 'UZS': '750000.00', 'KZT': '27000.00', 'RUB': '5400.00'}
         assert special == {'USD': '69.00', 'UZS': '862500.00', 'KZT': '31050.00', 'RUB': '6210.00'}
         assert base_night == normal

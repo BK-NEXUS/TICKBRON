@@ -1,6 +1,7 @@
 """
-Initial geography data (Geography plan G1): loaded by a data migration, and by
-`python manage.py load_geography` (idempotent). The city level was removed 2026-11-10: only countries and regions.
+Dáslepki geografiya maǵlıwmatı (Geography reje G1): data migration arqalı júklenedi, hám
+`python manage.py load_geography` arqalı (idempotent). Qala dárejesi 2026-11-10 de alıp taslandı: tek mámleketler hám
+regionlar.
 """
 from io import StringIO
 
@@ -18,14 +19,14 @@ UZ_REGIONS_EN = {
 
 @pytest.mark.django_db
 class TestInitialData:
-    """The migration has already loaded the data into the test database."""
+    """Migration maǵlıwmattı test database ge aldınan júkledi."""
 
     def test_countries(self):
         uz, kz, tr = (Country.objects.get(code=code) for code in ('UZ', 'KZ', 'TR'))
         assert (uz.name_uz, uz.name_ru, uz.name_en, uz.currency) == ("O'zbekiston", 'Узбекистан', 'Uzbekistan', 'UZS')
         assert (kz.name_en, kz.currency) == ('Kazakhstan', 'KZT')
         assert (tr.name_en, tr.currency) == ('Turkey', 'TRY')
-        # Uzbekistan first
+        # Aldın Ózbekstan
         assert Country.objects.order_by('sort_order', 'name_en').first() == uz
 
     def test_uzbekistan_has_its_14_first_level_regions(self):

@@ -1,8 +1,8 @@
 """
-Partner Status: an owner's own numbers only (Status plan S4).
+Partner Status: tek iyeniń óz sanları (Status reje S4).
 
 GET /api/v1/partner/status/?period=all|YYYY|YYYY-MM&year=YYYY
-Access is covered by test_access_matrix.py. Data: the status_world fixture (admin_panel/tests/status_fixtures.py).
+Kirisiw test_access_matrix.py de qaplanǵan. Maǵlıwmat: status_world fixture si (admin_panel/tests/status_fixtures.py).
 """
 import pytest
 from rest_framework.test import APIClient
@@ -35,7 +35,7 @@ class TestPartnerStatus:
         assert response.data['period'] == 'all'
         totals = response.data['totals']
         assert (totals['bookings'], totals['guests'], revenue(totals)) == \
-            (5, 5, {'USD': '230.00'})  # R12: guests = persons (SUM guest_count), was distinct accounts (was 3)
+            (5, 5, {'USD': '230.00'})  # R12: mehmanlar = adamlar (guest_count), burın 3
 
     def test_per_property_breakdown_lists_only_own_hotels(self, status_world):
         owner1 = status_world['owners'][0]
@@ -44,7 +44,7 @@ class TestPartnerStatus:
         rows = get_as(owner1).data['properties']
 
         assert [(row['id'], row['name'], row['bookings'], row['guests']) for row in rows] == [
-            (hotels['alpha'].id, 'Alpha Hotel', 3, 3),  # R12: guests = persons (SUM guest_count), was distinct accounts (was 2)
+            (hotels['alpha'].id, 'Alpha Hotel', 3, 3),  # R12: mehmanlar = adamlar (guest_count), burın 2
             (hotels['beta'].id, 'Beta Hotel', 2, 2),
         ]
         assert revenue(rows[1]) == {'USD': '80.00'}
@@ -93,9 +93,9 @@ class TestPartnerStatus:
         assert get_as(status_world['owners'][0], **params).status_code == 400
 
     def test_query_count_is_constant(self, status_world, django_assert_max_num_queries):
-        # R12 (was 8): role check, totals (4), series (4),
-        # reconciliation, years, monthly (3), properties, their revenue (2) and booking value = 19; Status v2 adds
-        # lead days, repeat guests and the month comparison (+3 in the test data); the guest ratings of all
-        # hotels are one grouped query (+1, however many hotels there are)
+        # R12 (burın 8): rol tekseriwi, jıynaqlar (4), seriya (4),
+        # sáykeslestiriw, jıllar, ayliq (3), mehmanxanalar, olardıń dáramatı (2) hám bron mánisi = 19; Status v2
+        # aldınan kúnlerdi, qaytıp kelgen mehmanlardı hám ay salıstırıwın qosadı (test maǵlıwmatında +3); barlıq
+        # mehmanxanalardıń mehmanlar bahaları bir toparlanǵan query (+1, mehmanxana qansha bolsa da)
         with django_assert_max_num_queries(25):
             assert get_as(status_world['owners'][0], year=2026).status_code == 200

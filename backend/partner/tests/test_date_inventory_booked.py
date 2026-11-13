@@ -1,4 +1,5 @@
-"""The owner's date list must show the real booked rooms, which the booking engine keeps on the room type's RoomInventory."""
+"""Iyeniń sana dizimi haqıyqıy bronlanǵan xonalardı kórsetiwi kerek, olardı bron sisteması xona túriniń RoomInventory sında
+saqlaydı."""
 from datetime import timedelta
 
 from django.test import TestCase

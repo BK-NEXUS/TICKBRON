@@ -1,6 +1,6 @@
 """
-Security tests for promotions (R10): injection, mass assignment, CSRF, spoofed counters,
-information leaks, privilege boundaries and abuse limits.
+Reklama (R10) qáwipsizlik testleri: injection, mass assignment, CSRF, jalǵan sanaǵıshlar,
+maǵlıwmat sızıwı, huquq shegaraları hám paydalanıwdı sheklew.
 """
 from datetime import timedelta
 from unittest.mock import patch

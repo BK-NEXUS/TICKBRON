@@ -1,6 +1,6 @@
-"""QA: free-text fields written by guests and hotel owners have a length limit.
+"""QA: mehmanlar hám mehmanxana iyeleri jazatuǵın erkin tekst maydanlarında uzınlıq shegi bar.
 
-A 200 KB favorite note was accepted (201) because the model column is an unbounded TextField.
+200 KB favorit jazbası qabıllandı (201), sebebi model baǵanası shekleusiz TextField.
 """
 import pytest
 from rest_framework.exceptions import ValidationError
@@ -23,7 +23,7 @@ CASES = [
 
 
 def accepts(serializer_class, field, length):
-    """True when the field itself accepts a string of this length (other fields are not involved)."""
+    """Maydannıń ózi usı uzınlıqtaǵı qatardı qabıllasa True (basqa maydanlar qatnaspaydı)."""
     try:
         serializer_class().fields[field].run_validation('x' * length)
     except ValidationError:

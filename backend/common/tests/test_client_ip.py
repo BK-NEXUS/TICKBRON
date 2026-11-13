@@ -1,5 +1,5 @@
 """
-Tests for client IP detection behind proxies (audit #10).
+Proxy lerdiń artında klient IP sin anıqlaw ushın testler (audit #10).
 """
 from unittest import mock
 
@@ -24,7 +24,7 @@ class TestGetClientIp(TestCase):
 
     @override_settings(NUM_PROXIES=1)
     def test_one_proxy_uses_the_address_it_appended(self):
-        # Client forged "6.6.6.6"; the proxy appended the real peer 203.0.113.7
+        # Klient "6.6.6.6" di jalǵan etti; proxy haqıyqıy peer 203.0.113.7 ni qostı
         request = self.request(forwarded_for='6.6.6.6, 203.0.113.7')
         assert get_client_ip(request) == '203.0.113.7'
 
@@ -74,7 +74,7 @@ class TestForgedForwardedForDoesNotBypassThrottling(TestCase):
 
 @mock.patch('users.throttles.TESTING', False)
 class TestBehindOneProxy(TestCase):
-    """N-3: with NUM_PROXIES=1 every visitor keeps their own throttle bucket."""
+    """N-3: NUM_PROXIES=1 bolǵanda hár kelwshi óz throttle sebetin saqlaydı."""
 
     def setUp(self):
         cache.clear()
@@ -99,7 +99,7 @@ class TestBehindOneProxy(TestCase):
         assert other == 401
 
     def test_without_the_setting_every_visitor_shares_the_proxy_bucket(self):
-        # Documents why production must set NUM_PROXIES: all visitors collapse into one bucket
+        # Production nege NUM_PROXIES di belgilewi kerekligin hújjetlestiredi: barlıq kelwshiler bir sebetke jıynaladı
         with override_settings(NUM_PROXIES=0):
             statuses = [self._login(f'203.0.113.{i}').status_code for i in range(11)]
 

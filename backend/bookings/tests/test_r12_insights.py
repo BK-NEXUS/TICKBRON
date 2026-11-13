@@ -1,6 +1,6 @@
 """
-R12 additions slice 1 (.ai/PLAN_R12_ADDITIONS.md): comparison with the previous period,
-cancellation rate, occupancy rate, average booking value and average stay length.
+R12 qosımshaları 1-bólim (.ai/PLAN_R12_ADDITIONS.md): aldınǵı dáwir menen salıstırıw,
+biykar etiw dárejesi, bantlıq dárejesi, ortasha bron mánisi hám ortasha turıw uzınlıǵı.
 """
 from datetime import date
 
@@ -32,7 +32,7 @@ class TestPreviousPeriod:
     def test_compares_with_the_period_of_the_same_length_right_before(self, hotel, guest):
         for day in (date(2026, 9, 30), date(2026, 10, 2), date(2026, 10, 4)):   # last_7_days: 3
             make_booking(hotel, guest, day, status='completed')
-        make_booking(hotel, guest, date(2026, 9, 25), status='completed')       # before: 1
+        make_booking(hotel, guest, date(2026, 9, 25), status='completed')       # aldın: 1
         result = insights(hotel, 'last_7_days')
         assert result['previous_period']['range'] == {'from': '2026-09-23', 'to': '2026-09-29'}
         assert result['previous_period']['totals']['bookings'] == 1
@@ -63,15 +63,15 @@ class TestRates:
         make_booking(hotel, guest, date(2026, 10, 3), status='no_show')
         make_booking(hotel, guest, date(2026, 10, 4), status='cancelled')
         make_booking(hotel, guest, date(2026, 10, 5), status='pending')
-        assert insights(hotel, 'last_7_days')['cancellation_rate'] == '25.00'   # 1 cancelled of 4 (pending left out)
+        assert insights(hotel, 'last_7_days')['cancellation_rate'] == '25.00'   # 4 ten 1 biykar etilgen (pending taslanǵan)
 
     def test_cancellation_rate_is_none_without_bookings(self, hotel):
         assert insights(hotel, 'last_7_days')['cancellation_rate'] is None
 
     def test_occupancy_is_room_nights_over_rooms_times_days(self, hotel, guest):
         add_rooms(hotel, 5)
-        make_booking(hotel, guest, date(2026, 10, 1), nights=2, rooms=2, status='completed')   # 4 room nights
-        # 7 days x 5 rooms = 35 room nights
+        make_booking(hotel, guest, date(2026, 10, 1), nights=2, rooms=2, status='completed')   # 4 xona túni
+        # 7 kún x 5 xona = 35 xona túni
         assert insights(hotel, 'last_7_days', rooms=5)['occupancy_rate'] == '11.43'
 
     def test_occupancy_never_exceeds_100(self, hotel, guest):

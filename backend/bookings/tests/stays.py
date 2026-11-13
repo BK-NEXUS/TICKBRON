@@ -1,4 +1,4 @@
-"""Back-to-back stays for tests of the one-account rules (two upcoming bookings, no overlapping dates)."""
+"""Bir akkaunt qaǵıydaları testleri ushın izbe-iz turıwlar (eki keletuǵın bron, sanalar kesilispeydi)."""
 from datetime import timedelta
 from decimal import Decimal
 
@@ -8,8 +8,8 @@ from properties.models import DateInventory
 
 def stay(testcase, index, nights=2, first_day=10):
     """
-    check_in / check_out of the index-th stay of `nights` nights, each starting the day the previous one ends,
-    for the hotel fixture of the booking view tests; the nights are added to the inventory when missing.
+    Hár biri aldınǵısı pitken kúni baslanatuǵın `nights` túnlik turıwlardıń index-shi turıwdıń check_in / check_out ı,
+    bron view testleri mehmanxana fixture si ushın; túnler joq bolsa inventory ge qosıladı.
     """
     check_in = business_today() + timedelta(days=first_day + index * nights)
     for offset in range(nights):

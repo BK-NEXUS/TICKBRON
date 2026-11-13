@@ -1,7 +1,7 @@
 """
-backend/.env.dev.example is the ready-to-copy file for a developer's own machine (also when shared through ngrok):
-nothing in it is commented out, it reads only variables the settings know, and it can never be mistaken for a
-server file (DEBUG on, a dev-only secret, no real password).
+backend/.env.dev.example programmistiń óz mashinası ushın (ngrok arqalı bólisilgende de) kóshiriwge tayar fayl:
+ishinde hesh nárse komentariyaǵa alınbaǵan, ol tek sazlamalar biletuǵın ózgeriwshilerdi oqıydı, hám ol
+hesh qashan server faylı dep shatastırılmaydı (DEBUG qosıq, tek dev ushın sır, haqıyqıy parol joq).
 """
 from pathlib import Path
 

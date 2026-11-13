@@ -1,6 +1,6 @@
-"""Indexes for the queries that run all the time: a hotel's arrivals and calendar (bookings of one property by
-check-in date), the public reviews of a hotel (one property, approved, newest first) and the advertising that is
-shown now (status and dates). They exist in the database itself, not only in the models."""
+"""Hár waqıt isleytuǵın query ler ushın indekslar: mehmanxananıń keliwleri hám kalendarı (bir mehmanxananıń bronları
+kiriw sanası boyınsha), mehmanxananıń ashıq sharhları (bir mehmanxana, tastıyıqlanǵan, eń jańası birinshi) hám házir
+kórsetiletuǵın reklama (status hám sanalar). Olar tek model lerde emes, database tiń ózinde bar."""
 import pytest
 from django.apps import apps
 from django.db import connection

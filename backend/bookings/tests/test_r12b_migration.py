@@ -1,6 +1,6 @@
 """
-R12 phase 3: bookings/0010 adds Booking.no_show_refund_percent (existing rows get 0 = nothing
-promised) and the NoShowReport table; it reverses cleanly.
+R12 3-basqısh: bookings/0010 Booking.no_show_refund_percent di qosadı (bar qatarlar 0 aladı = hesh nárse
+wáde etilmegen) hám NoShowReport kestesin; ol taza qaytadı.
 """
 from decimal import Decimal
 

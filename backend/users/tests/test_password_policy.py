@@ -1,8 +1,8 @@
 """
-Password policy: at least 8 characters with a letter (any case), a digit and a special character.
+Parol siyasatı: keminde 8 belgi, háripti (qálegen registr), sandı hám arnawlı belgini óz ishine alıwı kerek.
 
-Upper/lower case are not required separately, and 8 to 11 characters are allowed (it was 12).
-The rule is enforced on every API that sets a password.
+Úlken/kishi háripler ayrıqsha talap etilmeydi, hám 8 den 11 belgige shekem ruxsat (burın 12 edi).
+Qaǵıyda parol qoyatuǵın hár bir API da májbúrlenedi.
 """
 import pytest
 from django.contrib.auth.password_validation import validate_password
@@ -15,20 +15,20 @@ from users.validators import StrongPasswordValidator
 REGISTER_URL = '/api/v1/auth/register/'
 
 ACCEPTED = [
-    'kitob7#yoz',      # lowercase only, 10 characters
-    'KITOB7#YOZ',      # uppercase only
-    'sayr5$ol',        # exactly 8 characters
-    'sayr5_ol',        # underscore counts as a special character
-    'Хорошо7!ok',  # letters of other alphabets count (Cyrillic)
-    'bu yol9! ok',     # spaces are allowed inside
+    'kitob7#yoz',      # tek kishi háripler, 10 belgi
+    'KITOB7#YOZ',      # tek úlken háripler
+    'sayr5$ol',        # dál 8 belgi
+    'sayr5_ol',        # astı sızıq arnawlı belgi esaplanadı
+    'Хорошо7!ok',  # basqa alfavit háripleri esaplanadı (Kirill)
+    'bu yol9! ok',     # ishinde bos orınlarǵa ruxsat
 ]
 REJECTED = [
-    ('sayr5$o', 'password_too_short'),       # 7 characters
-    ('12345678', 'password_no_letter'),      # digits only
-    ('!@#$%^&*', 'password_no_letter'),      # specials only
-    ('kitobyoz#', 'password_no_digit'),      # no digit
-    ('kitobyoz7', 'password_no_special'),    # no special character
-    ('kitob7  yoz', 'password_no_special'),  # a space is not a special character
+    ('sayr5$o', 'password_too_short'),       # 7 belgi
+    ('12345678', 'password_no_letter'),      # tek sanlar
+    ('!@#$%^&*', 'password_no_letter'),      # tek arnawlı belgiler
+    ('kitobyoz#', 'password_no_digit'),      # san joq
+    ('kitobyoz7', 'password_no_special'),    # arnawlı belgi joq
+    ('kitob7  yoz', 'password_no_special'),  # bos orın arnawlı belgi emes
     ('Admin7!xy', 'password_common_pattern'),
 ]
 

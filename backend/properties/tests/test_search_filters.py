@@ -1,7 +1,7 @@
 """
-Search filters that the results page sidebar uses (Phase 2 item 2):
-features (has_wifi, ...), min_rating, real date availability, sorting by
-rating and review count, and GET /properties/filter-options/.
+Nátiyjeler betiniń janındaǵı panel paydalanatuǵın izlew filterleri (2-basqısh 2-punkt):
+imkaniyatlar (has_wifi, ...), min_rating, haqıyqıy sana bos orını, reyting hám
+sholıw sanı boyınsha tártiplew, hám GET /properties/filter-options/.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -53,13 +53,13 @@ class SearchFiltersBase(TestCase):
         )
         for offset in range(nights):
             day = start + timedelta(days=offset)
-            # DateInventory still gates the rate plan's own open/closed flag and rules.
+            # DateInventory ele de rate plan nıń óz ashıq/jabıq belgisin hám qaǵıydaların tekseredi.
             DateInventory.objects.create(
                 rate_plan=rate_plan, date=day, available_rooms=rooms,
                 booked_rooms=rooms if day in booked else 0, is_available=day not in closed,
             )
-            # RoomInventory (audit #31) is the room type's real, shared room count since
-            # 3.3 -- what actually decides whether a room is sold out.
+            # RoomInventory (audit #31) 3.3 ten beri xona túriniń haqıyqıy ortaq xona sanı --
+            # xonanıń tolıq satılǵanın sol sheshedi.
             RoomInventory.objects.create(
                 room_type=room_type, date=day, available_rooms=rooms,
                 booked_rooms=rooms if day in booked else 0,
@@ -118,16 +118,16 @@ class TestAmenityAndTypeFilters(SearchFiltersBase):
 class TestRatingFilterAndSorting(SearchFiltersBase):
     def setUp(self):
         super().setUp()
-        self.great = self.make_property('Great')      # 5, 5 -> 5.0 (2 reviews)
-        self.good = self.make_property('Good')        # 4, 4, 4 -> 4.0 (3 reviews)
-        self.poor = self.make_property('Poor')        # 2 -> 2.0 (1 review)
-        self.unrated = self.make_property('Unrated')  # no approved reviews
+        self.great = self.make_property('Great')      # 5, 5 -> 5.0 (2 sholıw)
+        self.good = self.make_property('Good')        # 4, 4, 4 -> 4.0 (3 sholıw)
+        self.poor = self.make_property('Poor')        # 2 -> 2.0 (1 sholıw)
+        self.unrated = self.make_property('Unrated')  # tastıyıqlanǵan sholıw joq
         for rating in (5, 5):
             self.review(self.great, rating)
         for rating in (4, 4, 4):
             self.review(self.good, rating)
         self.review(self.poor, 2)
-        # Pending and rejected reviews do not count
+        # Kútip turǵan hám biykar etilgen sholıwlar esaplanbaydı
         self.review(self.unrated, 5, status='pending')
         self.review(self.poor, 5, status='rejected')
 
@@ -249,7 +249,7 @@ class TestFilterOptions(SearchFiltersBase):
         self.make_property('A', price='40.00', has_wifi=True)
         self.make_property('B', price='120.00', has_wifi=True, has_parking=True)
         self.make_property('C', property_type=self.hostel, price='15.00')
-        # Not searchable: does not count anywhere
+        # Izlenbeydi: hesh qayda esaplanbaydı
         draft = self.make_property('Draft', price='999.00', has_wifi=True)
         draft.status = 'draft'
         draft.save()

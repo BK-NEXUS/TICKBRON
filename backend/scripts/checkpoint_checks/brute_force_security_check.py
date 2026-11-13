@@ -1,13 +1,13 @@
 """
-TICKBRON Backend Brute Force Security Check
+TICKBRON Backend brute force qáwipsizligin tekseriw
 
-This script checks the brute force protection and security controls for TICKBRON.
+Bul skript TICKBRON ushın brute force qorǵanısın hám qáwipsizlik basqarıwların tekseredi.
 """
 import os
 import sys
 from pathlib import Path
 
-# Add the backend directory to the Python path
+# Backend papkasın Python jolına qosıw
 backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
@@ -21,7 +21,7 @@ from django.conf import settings
 
 def check_brute_force_security():
     """
-    Check brute force protection and security controls.
+    Brute force qorǵanısın hám qáwipsizlik basqarıwların tekseriw.
     """
     print("TICKBRON Backend Brute Force Security Check")
     print("=" * 50)
@@ -30,7 +30,7 @@ def check_brute_force_security():
     checks = []
     warnings = []
 
-    # Check 1: User model has security fields
+    # 1-tekseriw: User modelde qáwipsizlik maydanları bar
     print("Brute Force Protection Status:")
     print("-" * 50)
 
@@ -52,20 +52,20 @@ def check_brute_force_security():
         else:
             print(f"WARN User model missing security fields: {missing_fields}")
             warnings.append(True)
-            checks.append(True)  # Acceptable for partial implementation
+            checks.append(True)  # Bólekshe iske asırıw ushın maqul
 
     except Exception as e:
         print(f"FAIL Error checking user model: {str(e)}")
         checks.append(False)
 
-    # Check 2: Password strength requirements
+    # 2-tekseriw: Parol kúshine talaplar
     password_validators = settings.AUTH_PASSWORD_VALIDATORS
     min_length_found = False
 
     for validator in password_validators:
         if 'MinimumLengthValidator' in validator.get('NAME', ''):
             min_length = validator.get('OPTIONS', {}).get('min_length', 8)
-            # 8 characters with a letter, a digit and a special character is the owner's rule for everybody (2026-10-29)
+            # Háriptiń, sannıń hám arnawlı belginiń bar 8 belgi - hámme ushın iyeniń qaǵıydası (2026-10-29)
             if min_length >= 8:
                 print(f"PASS Password minimum length: {min_length} characters")
                 min_length_found = True
@@ -80,7 +80,7 @@ def check_brute_force_security():
         warnings.append(True)
         checks.append(True)
 
-    # Check 3: RBAC foundation exists
+    # 3-tekseriw: RBAC tiykarı bar
     try:
         print("PASS RBAC foundation (Role/Permission models) exists")
         checks.append(True)
@@ -89,7 +89,7 @@ def check_brute_force_security():
         warnings.append(True)
         checks.append(True)
 
-    # Check 4: 2FA foundation exists
+    # 4-tekseriw: 2FA tiykarı bar
     try:
         from django.contrib.auth import get_user_model
         User = get_user_model()
@@ -111,7 +111,7 @@ def check_brute_force_security():
         warnings.append(True)
         checks.append(True)
 
-    # Check 5: Email verification foundation
+    # 5-tekseriw: Email tastıyıqlaw tiykarı
     try:
         from django.contrib.auth import get_user_model
         User = get_user_model()

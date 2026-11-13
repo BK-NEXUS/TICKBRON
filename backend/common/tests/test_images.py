@@ -1,5 +1,5 @@
-"""Owner photos are shrunk before they are stored: a phone photo of 6 MB becomes a few hundred KB, and the
-camera's hidden data (place, time, device) is not kept."""
+"""Iye súwretleri saqlanbastan aldın kishireytiledi: 6 MB telefon súwreti bir neshe júz KB boladı, hám
+kameranıń jasırın maǵlıwmatı (orın, waqıt, qurılma) saqlanbaydı."""
 import io
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -26,7 +26,7 @@ def test_a_large_photo_is_scaled_down_to_the_longest_side_and_is_smaller():
     shrunk = shrink_upload(original)
     image = opened(shrunk)
     assert max(image.size) == MAX_SIDE
-    assert image.size == (MAX_SIDE, 1200)  # the shape stays 4:3
+    assert image.size == (MAX_SIDE, 1200)  # forma 4:3 qaladı
     assert shrunk.size < original.size / 3
     assert image.format == 'WEBP'
 
@@ -43,11 +43,11 @@ def test_a_jpeg_is_stored_as_webp_with_a_matching_name_and_type():
 
 def test_hidden_camera_data_is_dropped_and_the_turn_is_applied():
     exif = Image.Exif()
-    exif[0x0112] = 6  # the camera was held sideways: rotate 90 degrees to show it upright
+    exif[0x0112] = 6  # kamera jantaytıp tutıldı: tik kórsetiw ushın 90 gradusqa burıw
     exif[0x010F] = 'PrivateCameraMaker'
     shrunk = shrink_upload(picture(size=(2000, 1000), exif=exif.tobytes()))
     image = opened(shrunk)
-    assert image.size == (800, 1600)  # turned upright (1000 x 2000), then scaled to the longest side
+    assert image.size == (800, 1600)  # tik burıldı (1000 x 2000), keyin eń uzın tárepke shekem kishireytildi
     assert not image.getexif()
     shrunk.seek(0)
     assert b'PrivateCameraMaker' not in shrunk.read()
@@ -55,7 +55,7 @@ def test_hidden_camera_data_is_dropped_and_the_turn_is_applied():
 
 def test_a_png_with_transparency_becomes_webp_and_keeps_its_transparency():
     buffer = io.BytesIO()
-    Image.new('RGBA', (2400, 1200), (200, 30, 30, 0)).save(buffer, format='PNG')  # fully transparent
+    Image.new('RGBA', (2400, 1200), (200, 30, 30, 0)).save(buffer, format='PNG')  # pútkilley tiniq
     logo = SimpleUploadedFile('logo.png', buffer.getvalue(), content_type='image/png')
     image = opened(shrink_upload(logo))
     assert image.format == 'WEBP' and image.mode == 'RGBA'
@@ -63,7 +63,7 @@ def test_a_png_with_transparency_becomes_webp_and_keeps_its_transparency():
     assert max(image.size) == MAX_SIDE
 
 
-def test_webp_and_gif_keep_their_format():  # a GIF may be animated, so it is left alone
+def test_webp_and_gif_keep_their_format():  # GIF animaciyalı bolıwı múmkin, sol sebepli tiymeydi
     assert opened(shrink_upload(picture(fmt='WEBP', name='a.webp'))).format == 'WEBP'
     assert opened(shrink_upload(picture(size=(10, 10), fmt='GIF', mode='P', name='a.gif'))).format == 'GIF'
 

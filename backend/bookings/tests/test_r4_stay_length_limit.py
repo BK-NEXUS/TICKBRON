@@ -1,11 +1,10 @@
 """
-R4 security review: a stay is at most MAX_STAY_NIGHTS nights.
+R4 qáwipsizlik tekseriwi: turıw eń kóbi MAX_STAY_NIGHTS tún.
 
-A rate plan may leave max_nights empty ("unlimited"). quote_stay then built a list
-of every night up to check_out, so one anonymous GET /quote/ with check_out in the
-year 9999 made the server build ~2.9 million dates and send them in one SQL IN
-list; a booking request with lock=True also created a RoomInventory row for every
-missing night before checking availability.
+Rate plan max_nights di bos qaldıra aladı ("shekleusiz"). Sonda quote_stay check_out qa shekem hár túnniń
+dizimin qurar edi, sol sebepli 9999 jılǵa check_out menen bir anonim GET /quote/ serverdi ~2.9 million sandı
+qurıwǵa hám olardı bir SQL IN dizimine jiberiwge májbúr etti; lock=True menen bron sorawı da
+bos orındı tekseriwden aldın hár joq túnge RoomInventory qatarın jaratar edi.
 """
 from datetime import timedelta
 
@@ -90,8 +89,8 @@ def test_stay_within_the_limit_still_gets_a_normal_answer(stay):
     assert response.status_code == 200
 
 
-# The partner bulk tools write one row per day in the range (owner calendar, bulk
-# price, external blocks), so their ranges are capped the same way.
+# Partner kóp ǵana quralları aralıqtaǵı hár kúnge bir qatar jazadı (iye kalendarı, kóp baha,
+# sırtqı bloklar), sol sebepli olardıń aralıqları da usınday shekleneni.
 BULK_CALLS = {
     'bulk_set_price': lambda s, d_from, d_to: DateInventory.bulk_set_price(s['rate'], d_from, d_to, 50),
     'bulk_set': lambda s, d_from, d_to: RoomInventory.bulk_set(s['room'], d_from, d_to, available_rooms=2),

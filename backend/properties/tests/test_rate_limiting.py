@@ -1,5 +1,5 @@
 """
-Tests for rate limiting on search endpoint.
+Izlew endpoint inde rate limit ushın testler.
 """
 from django.test import TestCase, Client
 from rest_framework import status
@@ -7,28 +7,28 @@ from unittest.mock import patch
 
 
 class SearchRateLimitingTest(TestCase):
-    """Tests for search endpoint rate limiting - 100 requests per minute per IP."""
+    """Izlew endpoint i rate limit i ushın testler - hár IP ge minutına 100 soraw."""
 
     def setUp(self):
-        """Set up test data."""
+        """Test maǵlıwmatın tayarlaw."""
         self.client = Client()
 
     def test_search_endpoint_works(self):
-        """Test that search endpoint works."""
+        """Izlew endpoint i islewin testlew."""
         response = self.client.get('/api/v1/properties/search/')
 
-        # Should return 200 for valid search
+        # Jaramlı izlew ushın 200 qaytarıwı kerek
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
 
     @patch('properties.views.TESTING', False)
     def test_search_rate_limit_triggers(self):
-        """Test that search rate limit triggers after 100 requests."""
-        # Make 101 search requests (limit is 100/min)
+        """Izlew rate limit i 100 sorawdan keyin iske túsetuǵının testlew."""
+        # 101 izlew sorawın islew (shek minutına 100)
         responses = []
         for i in range(101):
             response = self.client.get('/api/v1/properties/search/')
             responses.append(response.status_code)
 
-        # At least one should be rate limited (429)
+        # Keminde biri rate limit lengen (429) bolıwı kerek
         self.assertIn(status.HTTP_429_TOO_MANY_REQUESTS, responses,
                      "Expected rate limit (429) to trigger after 100 search requests")

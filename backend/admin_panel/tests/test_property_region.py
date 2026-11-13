@@ -1,7 +1,7 @@
 """
-Admins set a property's region (Status plan S1):
-PATCH /api/v1/admin-panel/properties/{id}/region/ with { "state": "..." }.
-Access (staff only) is covered by test_access_matrix.py.
+Adminler mehmanxananıń regionın belgileydi (Status reje S1):
+PATCH /api/v1/admin-panel/properties/{id}/region/ { "state": "..." } penen.
+Kirisiw (tek staff) test_access_matrix.py de qaplanǵan.
 """
 from decimal import Decimal
 

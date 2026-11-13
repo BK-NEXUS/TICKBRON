@@ -1,12 +1,12 @@
 """
-A02 (OWASP 2025) configuration gaps found by the audit.
+A02 (OWASP 2025) audit tapqan konfiguraciya kemshilikleri.
 
-- DEBUG=True with a real domain was never checked (the start-up guard only ran with DEBUG off)
-- production could boot on the SQLite default when DB_* were forgotten (no row locks: double bookings)
-- the DRF browsable API stayed on in production
-- ALLOWED_HOSTS="a.com, b.com" silently lost the second host
-- no health check on persistent DB connections, no timeouts on the cache
-- one huge JSON body was buffered by a worker
+- haqıyqıy domen menen DEBUG=True hesh qashan tekserilmedi (iske túsiriw qorǵawı tek DEBUG óshkende isledi)
+- DB_* umıtılsa production SQLite ádetdegisinde iske túsiwi múmkin edi (qatar qulıpları joq: qos bronlaw)
+- DRF browsable API production ta qosıq qaldı
+- ALLOWED_HOSTS="a.com, b.com" ekinshi hostti ún-túnsiz joǵaltıp qoydı
+- turaqlı DB ulanıwlarında sawlıq tekseriwi joq, keshte timeout lar joq
+- bir úlken JSON denesi worker ge buffer ge alındı
 """
 import os
 import subprocess
@@ -53,7 +53,7 @@ class TestDebugGuard:
 
     @pytest.mark.parametrize('debug', ['True', 'False'])
     def test_database_is_always_postgresql(self, debug):
-        """No setting can switch the project to SQLite (no row locks: double bookings)."""
+        """Hesh qanday sazlama proektti SQLite ke ótkize almaydı (qatar qulıpları joq: qos bronlaw)."""
         overrides = {'DEBUG': 'True', 'ALLOWED_HOSTS': 'localhost', 'SECRET_KEY': None} if debug == 'True' else {}
 
         engine = _value("settings.DATABASES['default']['ENGINE']", DB_ENGINE='django.db.backends.sqlite3', **overrides)
@@ -68,7 +68,8 @@ class TestDebugGuard:
 
 
 class TestPasswordResetMailSettings:
-    """Password reset links point to the frontend and are sent by e-mail: production must be set up for both."""
+    """Parol tiklew silteme leri frontend ke baradı hám e-mail arqalı jiberiledi: production ekewi ushın da sazlanǵan bolıwı
+    kerek."""
 
     def test_production_needs_an_https_frontend_address(self):
         for url in (None, 'http://tickbron.uz'):

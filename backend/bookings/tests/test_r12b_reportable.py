@@ -1,4 +1,4 @@
-"""R12 phase 3: the owner's bookings list says which bookings can be reported as no-show."""
+"""R12 3-basqısh: iyeniń bronlar dizimi qaysı bronlar no-show dep xabarlana alatuǵının aytadı."""
 from datetime import timedelta
 
 import pytest
@@ -17,7 +17,7 @@ def listing(world, query=''):
 
 
 def stay_ending(world, days_after_check_out, nights=2, **kwargs):
-    """A stay whose check-out was `days_after_check_out` days ago."""
+    """Shıǵıwı `days_after_check_out` kún aldın bolǵan turıw."""
     check_in = world['today'] - timedelta(days=nights + days_after_check_out)
     return make_stay(world['prop'], world['guest'], check_in, nights=nights, room=world['room'],
                      rate=world['rate'], **kwargs)

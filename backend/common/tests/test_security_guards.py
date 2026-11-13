@@ -1,7 +1,10 @@
 """
-Guards that keep the code base free of the usual ways to open a hole: raw SQL built from text, eval/exec, pickle,
-shell calls, switched-off certificate checks and "safe" HTML. They read the source files of the apps (not the tests,
-migrations or scripts). A new line that matches fails the test and must be justified or rewritten.
+Kod bazasın ádetdegi ádettegi qáwipsizlik tesiklerinen qorǵaytuǵın qorǵawshılar: tekstten qurılǵan xom SQL, eval/exec,
+pickle,
+shell shaqırıwları, óshirilgen sertifikat tekseriwleri hám "qáwipsiz" HTML. Olar app lardıń source faylların oqıydı
+(testlerdi,
+migration lardı yamasa skriptlerdi emes). Sáykes keletuǵın jańa qatar testti sátsiz etedi hám tiykarlanıwı yamasa qayta
+jazılıwı kerek.
 """
 import re
 from pathlib import Path
@@ -21,7 +24,7 @@ FORBIDDEN = {
     'raw SQL through the ORM': re.compile(r'\.raw\(|\.extra\(|\bRawSQL\('),
     'SQL built from an f-string': re.compile(r'execute\(\s*f[\'"]'),
 }
-# The only direct SQL of the project: constant probes of the database connection (no text from outside)
+# Proekttiń jalǵız tikkeley SQL ı: database ulanıwınıń turaqlı tekseriwleri (sırttan tekst joq)
 ALLOWED_EXECUTE = re.compile(r"execute\('SELECT (1|version\(\))'\)")
 EXECUTE_CALL = re.compile(r'\.execute\(')
 
@@ -33,7 +36,7 @@ def source_files():
 
 
 def problems_in(text):
-    """What is wrong with a piece of source code, as ('kind', line number) pairs."""
+    """Source kodtıń bir bólegindegi ne qáte, ('kind', qatar nomeri) juplıqları retinde."""
     found = []
     for number, line in enumerate(text.splitlines(), start=1):
         code = line.split('#', 1)[0]

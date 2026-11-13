@@ -1,6 +1,6 @@
 """
-Server-side phone number validation: every endpoint that takes a phone number
-accepts only a valid international number and stores it as E.164.
+Server tárepindegi telefon nomeri validaciyası: telefon nomerin alatuǵın hár bir endpoint
+tek jaramlı xalıqaralıq nomerdi qabıllaydı hám E.164 formatında saqlaydı.
 """
 from datetime import date, timedelta
 
@@ -10,12 +10,12 @@ from rest_framework.test import APIClient
 from users.models import User
 
 INVALID_NUMBERS = [
-    '+99890123456',     # one digit short
-    '+9989012345678',   # one digit too many
-    '901234567',        # no country code
+    '+99890123456',     # bir san jetispeydi
+    '+9989012345678',   # bir san artıq
+    '901234567',        # mámleket kodı joq
     '+998 90 ABC 45 67',
-    '+1234567890',      # right shape, but not a real number
-    '+' + '9' * 30,     # longer than the column
+    '+1234567890',      # forması durıs, biraq haqıyqıy nomer emes
+    '+' + '9' * 30,     # baǵanadan uzın
 ]
 PHONE_ERROR = 'Enter a valid phone number in international format, e.g. +998 90 123 45 67.'
 
@@ -53,5 +53,5 @@ class TestBookingGuestPhone:
             'guest_count': 1, 'guest_phone': phone,
         }, format='json')
         assert response.status_code == 400
-        # Booking errors use the standard envelope
+        # Bron qátelerı standart juwap dúzilisin paydalanadı
         assert error_text(response, 'guest_phone', response.data['details']) == PHONE_ERROR

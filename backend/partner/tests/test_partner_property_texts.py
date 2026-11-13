@@ -1,7 +1,7 @@
 """
-A hotel owner names and describes a hotel in uz / ru / en and edits it afterwards (PLAN_NEXT step 2).
-`translations` is {language: {name, description}}; saved as PropertyTranslation rows, shown on the cards.
-Default rule: name, description and address change at once, no new approval; status and place stay locked.
+Mehmanxana iyesi mehmanxananı uz / ru / en de ataydı hám táriyplaydı hám keyin ózgertedi (PLAN_NEXT 2-qádem).
+`translations` {til: {name, description}}; PropertyTranslation qatarları retinde saqlanadı, kartalarda kórsetiledi.
+Ádetdegi qaǵıyda: at, táripleme hám mánzil birden ózgeredi, jańa tastıyıqlaw joq; status hám orın bekitilgen qaladı.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -13,7 +13,7 @@ from permissions.models import Role
 from properties.models import Property, PropertyTranslation, PropertyType
 from users.models import User
 
-# The marker (not only the `db` fixture) puts the default exchange-rate row of conftest inside the test transaction
+# Belgi (tek `db` fixture emes) conftest tiń ádetdegi valyuta kursı qatarın test transaction ı ishine qoyadı
 pytestmark = pytest.mark.django_db
 
 URL = '/api/v1/partner/properties/'

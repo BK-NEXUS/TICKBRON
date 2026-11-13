@@ -1,10 +1,11 @@
 """
-Public geography API (Geography plan G3):
+Ashıq geografiya API ı (Geography reje G3):
 
     GET /api/v1/geography/countries/
     GET /api/v1/geography/countries/{code}/regions/
 
-(The cities list was removed 2026-11-10.) Active rows only, all three names in every row, hotel counts from one annotated query.
+(Qalalar dizimi 2026-11-10 de alıp taslandı.) Tek aktiv qatarlar, hár qatarda úsh at, mehmanxana sanları bir annotation
+lanǵan query den.
 """
 from decimal import Decimal
 

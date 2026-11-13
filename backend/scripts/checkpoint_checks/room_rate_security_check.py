@@ -1,14 +1,14 @@
 """
-Security review script for room/rate plan/inventory models (Checkpoint 08).
+Xona/rate plan/inventory model leri ushın qáwipsizlik tekseriw skripti (Checkpoint 08).
 
-This script performs a comprehensive security review of the room, rate plan, 
-and inventory models to ensure they meet TICKBRON security standards.
+Bul skript xona, rate plan hám inventory model lerin TICKBRON qáwipsizlik
+standartlarına say ekenine isenim hasıl etiw ushın tolıq qáwipsizlik tekseriwinen ótkeredi.
 """
 import os
 import sys
 import django
 
-# Setup Django
+# Django dı tayarlaw
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -23,7 +23,7 @@ from datetime import date
 
 
 def print_security_check(title, passed, details=""):
-    """Print formatted security check result."""
+    """Qáwipsizlik tekseriw nátiyjesin formatlap shıǵarıw."""
     status = "[PASS]" if passed else "[FAIL]"
     print(f"{status}: {title}")
     if details:
@@ -32,7 +32,7 @@ def print_security_check(title, passed, details=""):
 
 
 def run_security_checks():
-    """Run comprehensive security checks for room/rate plan/inventory models."""
+    """Xona/rate plan/inventory model leri ushın tolıq qáwipsizlik tekseriwlerin islew."""
     print("=" * 60)
     print("ROOM/RATE PLAN/INVENTORY SECURITY REVIEW - CHECKPOINT 08")
     print("=" * 60)
@@ -41,13 +41,13 @@ def run_security_checks():
     passed_checks = 0
     total_checks = 0
 
-    # Clean up any existing test data
+    # Bar test maǵlıwmatın tazalaw
     User.objects.filter(email__contains='securitytest').delete()
     Property.objects.filter(address_line1__contains='Security Test').delete()
     PropertyType.objects.filter(name__contains='Security Test').delete()
     AmenityCategory.objects.filter(name__contains='Security Test').delete()
 
-    # Set up test data
+    # Test maǵlıwmatın tayarlaw
     user = User.objects.create_user(
         email='securitytest@example.com',
         password='TestPassword123!',
@@ -77,7 +77,7 @@ def run_security_checks():
         slug='security-test-amenity'
     )
 
-    # Check 1: RoomType model field security
+    # 1-tekseriw: RoomType model maydanlarınıń qáwipsizligi
     print("1. RoomType Model Field Security")
     print("-" * 40)
     try:
@@ -90,7 +90,7 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Check string representation doesn't expose sensitive data
+        # Tekst kórinisi sezgir maǵlıwmattı ashpaytuǵının tekseriw
         str_repr = str(room_type)
         passed = 'email' not in str_repr.lower() and 'password' not in str_repr.lower()
         total_checks += 1
@@ -100,13 +100,13 @@ def run_security_checks():
             f"String repr: {str_repr}"
         )
 
-        # Check validation for occupancy
+        # Sıyımlılıq validaciyasın tekseriw
         invalid_room = RoomType(
             property=property,
             name='Invalid Room',
             slug='invalid-room',
             base_occupancy=4,
-            max_occupancy=2,  # Invalid: max < base
+            max_occupancy=2,  # Jaramsız: max < base
             base_price=Decimal('80.00')
         )
         try:
@@ -128,7 +128,7 @@ def run_security_checks():
         print_security_check("RoomType field security", False, str(e))
         print_security_check("RoomType occupancy validation", False, "Skipped due to error")
 
-    # Check 2: RoomType unique constraints
+    # 2-tekseriw: RoomType unikal constraint leri
     print("\n2. RoomType Unique Constraints")
     print("-" * 40)
     try:
@@ -141,12 +141,12 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Try to create duplicate slug for same property
+        # Sol mehmanxana ushın dublikat slug jaratıwǵa urınıw
         try:
             duplicate = RoomType(
                 property=property,
                 name='Different Room',
-                slug='unique-test-room',  # Same slug
+                slug='unique-test-room',  # Birdey slug
                 base_occupancy=2,
                 max_occupancy=4,
                 base_price=Decimal('90.00')
@@ -168,7 +168,7 @@ def run_security_checks():
         total_checks += 1
         print_security_check("RoomType unique constraints", False, str(e))
 
-    # Check 3: RoomPhoto model security
+    # 3-tekseriw: RoomPhoto model qáwipsizligi
     print("\n3. RoomPhoto Model Security")
     print("-" * 40)
     try:
@@ -181,7 +181,7 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Check primary photo constraint
+        # Tiykarǵı súwret constraint in tekseriw
         from django.core.files.uploadedfile import SimpleUploadedFile
         image = SimpleUploadedFile(
             name='test_photo.jpg',
@@ -201,7 +201,7 @@ def run_security_checks():
             is_primary=True
         )
 
-        # Refresh and check only one is primary
+        # Jańalap, tek biri tiykarǵı ekenin tekseriw
         photo1.refresh_from_db()
         photo2.refresh_from_db()
         passed = not photo1.is_primary and photo2.is_primary
@@ -211,7 +211,7 @@ def run_security_checks():
             passed
         )
 
-        # Check image validation
+        # Súwret validaciyasın tekseriw
         invalid_file = SimpleUploadedFile(
             name='test.txt',
             content=b'This is not an image',
@@ -243,7 +243,7 @@ def run_security_checks():
         print_security_check("RoomPhoto primary constraint", False, str(e))
         print_security_check("RoomPhoto image validation", False, "Skipped due to error")
 
-    # Check 4: RoomAmenity model security
+    # 4-tekseriw: RoomAmenity model qáwipsizligi
     print("\n4. RoomAmenity Model Security")
     print("-" * 40)
     try:
@@ -262,11 +262,11 @@ def run_security_checks():
             is_available=True
         )
 
-        # Try to create duplicate
+        # Dublikat jaratıwǵa urınıw
         try:
             duplicate = RoomAmenity(
                 room_type=room_type,
-                amenity=amenity,  # Same amenity for same room type
+                amenity=amenity,  # Sol xona túri ushın birdey amenity
                 is_available=False
             )
             duplicate.full_clean()
@@ -287,7 +287,7 @@ def run_security_checks():
         total_checks += 1
         print_security_check("RoomAmenity unique constraints", False, str(e))
 
-    # Check 5: RatePlan model security
+    # 5-tekseriw: RatePlan model qáwipsizligi
     print("\n5. RatePlan Model Security")
     print("-" * 40)
     try:
@@ -300,13 +300,13 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Check nights validation
+        # Túnler validaciyasın tekseriw
         invalid_rate = RatePlan(
             room_type=room_type,
             name='Invalid Rate',
             slug='invalid-rate',
             min_nights=7,
-            max_nights=3,  # Invalid: max < min
+            max_nights=3,  # Jaramsız: max < min
             base_price=Decimal('80.00')
         )
         try:
@@ -321,14 +321,14 @@ def run_security_checks():
             passed
         )
 
-        # Check deposit validation
+        # Depozit validaciyasın tekseriw
         invalid_deposit = RatePlan(
             room_type=room_type,
             name='Invalid Deposit Rate',
             slug='invalid-deposit-rate',
             base_price=Decimal('80.00'),
             deposit_required=True,
-            deposit_percentage=None  # Invalid: required when deposit_required is True
+            deposit_percentage=None  # Jaramsız: deposit_required True bolǵanda kerek
         )
         try:
             invalid_deposit.full_clean()
@@ -342,7 +342,7 @@ def run_security_checks():
             passed
         )
 
-        # Check unique constraint
+        # Unikal constraint ti tekseriw
         rate_plan = RatePlan.objects.create(
             room_type=room_type,
             name='Test Rate',
@@ -354,7 +354,7 @@ def run_security_checks():
             duplicate = RatePlan(
                 room_type=room_type,
                 name='Different Rate',
-                slug='test-rate',  # Same slug
+                slug='test-rate',  # Birdey slug
                 base_price=Decimal('90.00')
             )
             duplicate.full_clean()
@@ -377,7 +377,7 @@ def run_security_checks():
         print_security_check("RatePlan deposit validation", False, "Skipped due to error")
         print_security_check("RatePlan unique constraint", False, "Skipped due to error")
 
-    # Check 6: DateInventory model security
+    # 6-tekseriw: DateInventory model qáwipsizligi
     print("\n6. DateInventory Model Security")
     print("-" * 40)
     try:
@@ -396,12 +396,12 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Check booked_rooms validation
+        # booked_rooms validaciyasın tekseriw
         invalid_inventory = DateInventory(
             rate_plan=rate_plan,
             date=date(2024, 6, 16),
             available_rooms=3,
-            booked_rooms=5  # Invalid: more than available
+            booked_rooms=5  # Jaramsız: bos barınan kóp
         )
         try:
             invalid_inventory.full_clean()
@@ -415,14 +415,14 @@ def run_security_checks():
             passed
         )
 
-        # Check stay validation
+        # Turıw validaciyasın tekseriw
         invalid_stay = DateInventory(
             rate_plan=rate_plan,
             date=date(2024, 6, 17),
             available_rooms=5,
             booked_rooms=2,
             minimum_stay=7,
-            maximum_stay=3  # Invalid: max < min
+            maximum_stay=3  # Jaramsız: max < min
         )
         try:
             invalid_stay.full_clean()
@@ -436,7 +436,7 @@ def run_security_checks():
             passed
         )
 
-        # Check unique constraint
+        # Unikal constraint ti tekseriw
         inventory = DateInventory.objects.create(
             rate_plan=rate_plan,
             date=date(2024, 6, 15),
@@ -447,7 +447,7 @@ def run_security_checks():
         try:
             duplicate = DateInventory(
                 rate_plan=rate_plan,
-                date=date(2024, 6, 15),  # Same date for same rate plan
+                date=date(2024, 6, 15),  # Sol rate plan ushın birdey sana
                 available_rooms=3
             )
             duplicate.full_clean()
@@ -461,7 +461,7 @@ def run_security_checks():
             passed
         )
 
-        # Check remaining_rooms property
+        # remaining_rooms qásiyetin tekseriw
         inventory.booked_rooms = 2
         inventory.save()
         passed = inventory.remaining_rooms == 3  # 5 - 2 = 3
@@ -472,7 +472,7 @@ def run_security_checks():
             f"Available: 5, Booked: 2, Remaining: {inventory.remaining_rooms}"
         )
 
-        # Check is_available_for_booking method
+        # is_available_for_booking metodın tekseriw
         passed = inventory.is_available_for_booking(nights=5)
         total_checks += 1
         passed_checks += print_security_check(
@@ -492,7 +492,7 @@ def run_security_checks():
         print_security_check("DateInventory remaining_rooms", False, "Skipped due to error")
         print_security_check("DateInventory availability check", False, "Skipped due to error")
 
-    # Check 7: CASCADE deletion security
+    # 7-tekseriw: CASCADE óshiriw qáwipsizligi
     print("\n7. CASCADE Deletion Security")
     print("-" * 40)
     try:
@@ -505,7 +505,7 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Create related objects
+        # Baylanıslı obyektlerdi jaratıw
         from django.core.files.uploadedfile import SimpleUploadedFile
         image = SimpleUploadedFile(
             name='test_photo.jpg',
@@ -540,7 +540,7 @@ def run_security_checks():
         )
         inventory_id = inventory.id
 
-        # Delete room type and check cascade
+        # Xona túrin óshiriw hám cascade di tekseriw
         room_type.delete()
 
         passed = not RoomPhoto.objects.filter(id=photo_id).exists()
@@ -578,11 +578,11 @@ def run_security_checks():
         print_security_check("CASCADE deletion: RoomType -> RatePlan", False, "Skipped due to error")
         print_security_check("CASCADE deletion: RatePlan -> DateInventory", False, "Skipped due to error")
 
-    # Check 8: Database indexes
+    # 8-tekseriw: Database indeksleri
     print("\n8. Database Indexes")
     print("-" * 40)
     try:
-        # Check RoomType indexes
+        # RoomType indekslerin tekseriw
         room_type_indexes = RoomType._meta.indexes
         passed = len(room_type_indexes) > 0
         total_checks += 1
@@ -592,7 +592,7 @@ def run_security_checks():
             f"Found {len(room_type_indexes)} indexes"
         )
 
-        # Check RatePlan indexes
+        # RatePlan indekslerin tekseriw
         rate_plan_indexes = RatePlan._meta.indexes
         passed = len(rate_plan_indexes) > 0
         total_checks += 1
@@ -602,7 +602,7 @@ def run_security_checks():
             f"Found {len(rate_plan_indexes)} indexes"
         )
 
-        # Check DateInventory indexes
+        # DateInventory indekslerin tekseriw
         date_inventory_indexes = DateInventory._meta.indexes
         passed = len(date_inventory_indexes) > 0
         total_checks += 1
@@ -618,7 +618,7 @@ def run_security_checks():
         print_security_check("RatePlan indexes", False, "Skipped due to error")
         print_security_check("DateInventory indexes", False, "Skipped due to error")
 
-    # Check 9: Soft delete security
+    # 9-tekseriw: Soft delete qáwipsizligi
     print("\n9. Soft Delete Security")
     print("-" * 40)
     try:
@@ -631,7 +631,7 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Test soft delete
+        # Soft delete di testlew
         room_type.soft_delete()
         passed = room_type.is_deleted and room_type.deleted_at is not None
         total_checks += 1
@@ -640,7 +640,7 @@ def run_security_checks():
             passed
         )
 
-        # Test restore
+        # Restore di testlew
         room_type.restore()
         passed = not room_type.is_deleted and room_type.deleted_at is None
         total_checks += 1
@@ -656,7 +656,7 @@ def run_security_checks():
         print_security_check("Soft delete security", False, str(e))
         print_security_check("Soft delete restore", False, "Skipped due to error")
 
-    # Check 10: Price validation security
+    # 10-tekseriw: Baha validaciyası qáwipsizligi
     print("\n10. Price Validation Security")
     print("-" * 40)
     try:
@@ -669,14 +669,14 @@ def run_security_checks():
             base_price=Decimal('80.00')
         )
 
-        # Check negative price validation
+        # Teris baha validaciyasın tekseriw
         invalid_price_room = RoomType(
             property=property,
             name='Invalid Price Room',
             slug='invalid-price-room',
             base_occupancy=2,
             max_occupancy=4,
-            base_price=Decimal('-10.00')  # Invalid: negative
+            base_price=Decimal('-10.00')  # Jaramsız: teris
         )
         try:
             invalid_price_room.full_clean()
@@ -690,12 +690,12 @@ def run_security_checks():
             passed
         )
 
-        # Check negative price for RatePlan
+        # RatePlan ushın teris bahanı tekseriw
         invalid_price_rate = RatePlan(
             room_type=room_type,
             name='Invalid Price Rate',
             slug='invalid-price-rate',
-            base_price=Decimal('-10.00')  # Invalid: negative
+            base_price=Decimal('-10.00')  # Jaramsız: teris
         )
         try:
             invalid_price_rate.full_clean()
@@ -716,14 +716,14 @@ def run_security_checks():
         print_security_check("RoomType price validation", False, str(e))
         print_security_check("RatePlan price validation", False, "Skipped due to error")
 
-    # Cleanup
+    # Tazalaw
     amenity.delete()
     category.delete()
     property.delete()
     property_type.delete()
     user.delete()
 
-    # Summary
+    # Juwmaq
     print("\n" + "=" * 60)
     print("SECURITY REVIEW SUMMARY")
     print("=" * 60)

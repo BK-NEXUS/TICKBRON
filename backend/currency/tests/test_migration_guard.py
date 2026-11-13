@@ -1,7 +1,6 @@
 """
-R6 decision B: the first R6 migration stops, before changing anything, if a
-property is priced in a currency other than the supported ones, and says which
-properties and how to fix them.
+R6 B sheshimi: birinshi R6 migration, hesh nárse ózgermesten aldın, mehmanxana qollap-quwatlanatuǵınlardan basqa
+valyutada bahalanǵan bolsa toqtaydı, hám qaysı mehmanxanalar hám qalay túzetiw kerekligin aytadı.
 """
 from decimal import Decimal
 

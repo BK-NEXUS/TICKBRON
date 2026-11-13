@@ -1,7 +1,7 @@
 """
-Admin Status: hotel detail and the guests ranking (Status plan S3).
+Admin Status: mehmanxana tolıq maǵlıwmatı hám mehmanlar reytingi (Status reje S3).
 
-Access is covered by test_access_matrix.py. Data: the status_world fixture (status_fixtures.py).
+Kirisiw test_access_matrix.py de qaplanǵan. Maǵlıwmat: status_world fixture si (status_fixtures.py).
 """
 import pytest
 from rest_framework.test import APIClient
@@ -92,7 +92,7 @@ class TestUsers:
 
         assert response.status_code == 200
         rows = response.data['results']
-        # Everyone has 2 counted bookings: ties go to the most recent stay first
+        # Hárkimde 2 counted bron bar: teń jaǵdaylarda eń jańa turıw birinshi
         assert [row['id'] for row in rows] == [g2.id, g1.id, g3.id]
         first = rows[0]
         assert (first['rank'], first['full_name'], first['first_name'], first['last_name']) == \
@@ -101,7 +101,7 @@ class TestUsers:
             ('+998903330002', 'guest2@example.com', 2, '2026-04-12')
         assert revenue({'revenue': first['total_spent']}) == {'USD': '80.00'}
         assert revenue({'revenue': rows[2]['total_spent']}) == {}
-        # Hotel owners and staff without counted bookings are not listed
+        # Counted broni joq mehmanxana iyeleri hám staff dizimlenbeydi
         assert response.data['count'] == 3
 
     def test_period(self, get, status_world):
@@ -110,10 +110,10 @@ class TestUsers:
         assert [(row['id'], row['bookings']) for row in rows] == [(g2.id, 1)]
 
     @pytest.mark.parametrize('search,expected', [
-        ('naz', ['guest2@example.com']),          # last name, partial
-        ('TIM', ['guest3@example.com']),          # first name, any case
-        ('guest1@', ['guest1@example.com']),      # email
-        ('3330003', ['guest3@example.com']),      # phone, partial
+        ('naz', ['guest2@example.com']),          # familiya, bólekleyin
+        ('TIM', ['guest3@example.com']),          # at, qálegen register
+        ('guest1@', ['guest1@example.com']),      # e-mail
+        ('3330003', ['guest3@example.com']),      # telefon, bólekleyin
     ])
     def test_search(self, get, status_world, search, expected):
         rows = get(f'{S}/users/', search=search).data['results']
@@ -130,17 +130,17 @@ class TestUsers:
 
 @pytest.mark.django_db
 class TestAggregatesInTheDatabase:
-    """A fixed number of queries, however many bookings or guests there are."""
+    """Bronlar yamasa mehmanlar qansha bolsa da belgili sandaǵı query."""
 
     def test_hotel_detail(self, get, status_world, django_assert_max_num_queries):
         alpha = status_world['hotels']['alpha']
-        # R12 (was 6): hotel, totals (counts, revenue x2, booking value),
-        # series (span, counts, revenue x2), reconciliation, years, monthly (counts, revenue x2) = 15
+        # R12 (burın 6): mehmanxana, jıynaqlar (sanlar, dáramat x2, bron mánisi),
+        # seriya (aralıq, sanlar, dáramat x2), sáykeslestiriw, jıllar, ayliq (sanlar, dáramat x2) = 15
         with django_assert_max_num_queries(17):
             assert get(f'{S}/hotels/{alpha.id}/', year=2026).status_code == 200
 
     def test_users(self, get, status_world, django_assert_max_num_queries):
-        # count, page, total spent for the page's guests, the AdminAccessLog insert (R4)
+        # san, bet, bettegi mehmanlar ushın jámi sarıplanǵanı, AdminAccessLog qosıwı (R4)
         with django_assert_max_num_queries(6):
             assert get(f'{S}/users/').status_code == 200
 

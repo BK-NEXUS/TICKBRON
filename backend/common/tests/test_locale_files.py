@@ -1,4 +1,4 @@
-"""The compiled catalogs (.mo) are committed next to their sources (.po); they must be the same."""
+"""Kompilyaciyalanǵan kataloglar (.mo) óz derekleri (.po) janında commit qılınǵan; olar birdey bolıwı kerek."""
 from pathlib import Path
 
 import pytest

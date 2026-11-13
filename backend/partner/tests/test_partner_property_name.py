@@ -1,6 +1,6 @@
 """
-Partner property cards show the hotel name, not the city (E2E flow E, Phase 2 item 4):
-GET /partner/properties/ and /partner/properties/{id}/ return a read-only `name`.
+Partner mehmanxana kartaları qalanı emes, mehmanxana atın kórsetedi (E2E flow E, 2-basqısh 4-element):
+GET /partner/properties/ hám /partner/properties/{id}/ tek oqıw `name` qaytaradı.
 """
 from decimal import Decimal
 
@@ -40,7 +40,7 @@ class TestPartnerPropertyName(TestCase):
         rows = response.data['results'] if isinstance(response.data, dict) else response.data
         names = {row['id']: row['name'] for row in rows}
         assert names[self.named.id] == 'Hotel Tashkent'
-        # Without a translation the name falls back to the address, never empty
+        # Awdarmasız at mánzilge qaytadı, hesh qashan bos emes
         assert names[self.unnamed.id] == self.unnamed.get_full_address()
 
     def test_detail_has_the_hotel_name(self):

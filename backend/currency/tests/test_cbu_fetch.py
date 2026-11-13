@@ -1,6 +1,6 @@
 """
-R6: the CBU rate fetch. Runs only in the Celery task / management command, with
-mocked HTTP here. A bad answer never replaces the last good rate.
+R6: CBU kursın alıw. Tek Celery task / management command ta isleydi, bul jerde
+mock HTTP penen. Jaman juwap sońǵı jaqsı kurstı hesh qashan almastırmaydı.
 """
 import json
 import urllib.error
@@ -16,7 +16,7 @@ from django.test import override_settings
 from currency import cbu
 from currency.models import ExchangeRate, ExchangeRateFetch
 
-# R6: these tests control the exchange rates themselves (no rate, stale, fetch, accept)
+# R6: bul testler valyuta kurslarin ózleri basqaradı (kurs joq, eskirgen, alıw, qabıllaw)
 pytestmark = pytest.mark.no_default_exchange_rate
 
 TODAY = date(2026, 10, 3)
@@ -24,7 +24,7 @@ TODAY = date(2026, 10, 3)
 
 @pytest.fixture(autouse=True)
 def only_the_dollar(request):
-    """These tests are about one fetch (the dollar); the other currencies are covered in TestMoreCurrencies."""
+    """Bul testler bir alıw (dollar) haqqında; basqa valyutalar TestMoreCurrencies te qaplanǵan."""
     if request.node.get_closest_marker('all_currencies') is not None:
         yield
         return
@@ -55,7 +55,7 @@ class FakeResponse:
 
 
 def _serve(*responses):
-    """Patch the opener: each call returns the next response (or raises it)."""
+    """Opener di yamalaw: hár shaqırıw keyingi juwaptı qaytaradı (yamasa kóteredi)."""
     calls = []
 
     def fake_open(request, timeout):
@@ -126,9 +126,9 @@ class TestFailuresKeepTheOldRate:
         FakeResponse(_body(rate='-5')),
         FakeResponse(_body(nominal='0')),
         FakeResponse(_body(day='2026-10-03')),
-        FakeResponse(_body(day='04.10.2026')),        # in the future
-        FakeResponse(_body(day='20.09.2026')),        # older than 10 days
-        FakeResponse(b'[' + b' ' * 70000 + b']'),     # over the 64 KB cap
+        FakeResponse(_body(day='04.10.2026')),        # keleshekte
+        FakeResponse(_body(day='20.09.2026')),        # 10 kúnnen eski
+        FakeResponse(b'[' + b' ' * 70000 + b']'),     # 64 KB shegi nen asqan
     ])
     def test_bad_answer(self, response, caplog):
         _seed('11700.00', TODAY - timedelta(days=1))
@@ -194,7 +194,7 @@ class TestSanityChecks:
 @pytest.mark.django_db
 @pytest.mark.all_currencies
 class TestMoreCurrencies:
-    """R16: tenge and ruble rates are fetched like the dollar, with their own sane range."""
+    """R16: tenge hám rubl kursları dollar sıyaqlı alınadı, óz aqılǵa muwapıq aralıǵı menen."""
 
     def test_every_supported_currency_but_the_so_m_is_fetched(self):
         assert cbu.FETCHED_CURRENCIES == ('USD', 'KZT', 'RUB')
@@ -245,8 +245,8 @@ def test_beat_schedule_runs_the_task_twice_a_day():
     from django.conf import settings
     entry = settings.CELERY_BEAT_SCHEDULE['fetch-exchange-rates']
     assert entry['task'] == 'currency.tasks.fetch_exchange_rates'
-    # 09:00 and 18:00 Asia/Tashkent. R12: CELERY_TIMEZONE is now Asia/Tashkent (was UTC: {4, 13});
-    # the same real times in UTC are checked in bookings/tests/test_r12_auto_completion.py
+    # 09:00 hám 18:00 Asia/Tashkent. R12: CELERY_TIMEZONE endi Asia/Tashkent (burın UTC edi: {4, 13});
+    # UTC degi sol haqıyqıy waqıtlar bookings/tests/test_r12_auto_completion.py de tekseriledi
     assert settings.CELERY_TIMEZONE == 'Asia/Tashkent'
     assert entry['schedule'].hour == {9, 18}
 
