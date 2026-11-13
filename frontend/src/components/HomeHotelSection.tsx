@@ -9,23 +9,23 @@ const SKELETON_CARDS = 4
 
 interface HomeHotelSectionProps {
   title: string
-  /** The search page showing the same list, with its own filters */
+  /** Sol dizimdi óz filterleri menen kórsetetuǵın izlew beti */
   seeAllTo: string
-  /** What this list is: a sort order and how many hotels */
+  /** Bul dizim ne: tártiplew usılı hám neshe mehmanxana */
   search: SearchParams
 }
 
 /**
- * One list of real hotels on the home page (for example "Top rated"): a heading, a grid of hotel cards
- * and a link to the full list. While loading it shows card skeletons; with an error or no hotels it
- * shows nothing, so the home page never has an empty frame.
+ * Bas bette haqıyqıy mehmanxanalardıń bir dizimi (mısalı "Eń jaqsı bahalanǵan"): sarlawha, mehmanxana kartaları toru
+ * hám tolıq dizimge silteme. Júklenip atırǵanda karta skeleton lardı kórsetedi; qátelik yamasa mehmanxana joq bolsa
+ * hesh nárse kórsetpeydi, sol sebepli bas bette hesh qashan bos shereń bolmaydı.
  */
 export function HomeHotelSection({ title, seeAllTo, search }: HomeHotelSectionProps) {
   const { t } = useI18n()
   const [hotels, setHotels] = useState<Property[] | null>(null)
   const [failed, setFailed] = useState(false)
 
-  // The search object is rebuilt on every render of the page, so the request is keyed by its content
+  // Izlew obyekti bettiń hár render inde qayta quriladı, sol sebepli soraw onıń mazmunı boyınsha kiltlenedi
   const key = JSON.stringify(search)
   useEffect(() => {
     let cancelled = false

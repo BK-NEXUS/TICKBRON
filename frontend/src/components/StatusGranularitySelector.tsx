@@ -17,7 +17,7 @@ const TEXT_KEYS = textKeys({
 
 const GRANULARITIES: StatusGranularity[] = ['day', 'week', 'month', 'year']
 
-/** Bucket size of the Status series chart */
+/** Status seriya grafiginiń bucket ólshemi */
 export function StatusGranularitySelector({ value, onChange }: StatusGranularitySelectorProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const id = useId()

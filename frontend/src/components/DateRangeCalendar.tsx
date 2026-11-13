@@ -3,28 +3,28 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { businessToday, toLocalDate } from '../utils/dates'
 
 export interface CalendarDayInfo {
-  /** Can a stay start on this day? */
+  /** Turıw usı kúnnen baslana ala ma? */
   selectable: boolean
-  /** Extra modifier, e.g. "available" -> availability-calendar-day--available */
+  /** Qosımsha modifikator, mısalı "available" -> availability-calendar-day--available */
   status?: string
-  /** Shown under the day number (e.g. the price) */
+  /** Kún nomeri astında kórsetiledi (mısalı baha) */
   content?: ReactNode
 }
 
 interface DateRangeCalendarProps {
   checkIn: string | null
   checkOut: string | null
-  /** Called with (checkIn, null) after the first click and (checkIn, checkOut) after the second */
+  /** Birinshi klikten keyin (checkIn, null) menen, ekinshisinen keyin (checkIn, checkOut) penen shaqırıladı */
   onChange: (checkIn: string | null, checkOut: string | null) => void
-  /** Per-day state; by default every day from minDate on can start a stay */
+  /** Kún boyınsha jaǵday; ádetde minDate nan baslap hár kún turıwdı baslay aladı */
   describeDay?: (date: string) => CalendarDayInfo
-  /** Reason the range [checkIn, checkOut) cannot be booked, or null */
+  /** [checkIn, checkOut) aralıǵın bronlap bolmaytuǵın sebep, yamasa null */
   validateRange?: (checkIn: string, checkOut: string) => string | null
-  /** YYYY-MM-DD; earlier days cannot be picked */
+  /** YYYY-MM-DD; aldınǵı kúnlerdi tańlap bolmaydı */
   minDate?: string
-  /** YYYY-MM shown first; defaults to the check-in month, then the current month */
+  /** Aldın kórsetiletuǵın YYYY-MM; ádetde check-in ayı, keyin házirgi ay */
   initialMonth?: string
-  /** Called with 'YYYY-MM' when the calendar first shows a month and every time the month changes */
+  /** Kalendar aydı birinshi ret kórsetkende hám ay ózgergen hár waqıtta 'YYYY-MM' penen shaqırıladı */
   onMonthChange?: (month: string) => void
   className?: string
   children?: ReactNode
@@ -40,9 +40,9 @@ function monthStart(value?: string | null): Date {
 }
 
 /**
- * Month calendar for choosing a stay: first click is the check-in, second click
- * the check-out, and the nights in between are highlighted. A day that cannot
- * start a stay can still be the check-out day, since no night is spent on it.
+ * Turıwdı tańlaw ushın ay kalendarı: birinshi klik check-in, ekinshisi
+ * check-out, hám aradaǵı túnler ajıratıladı. Turıwdı baslay almaytuǵın kún
+ * ele check-out kúni bola aladı, sebebi onda tún ótkizilmeydi.
  */
 export function DateRangeCalendar({
   checkIn,
@@ -96,7 +96,7 @@ export function DateRangeCalendar({
     ...Array.from({ length: daysInMonth }, (_, i) => toLocalDate(new Date(year, monthIndex, i + 1))),
   ]
   const title = formatDate(month, { month: 'long', year: 'numeric' })
-  // 2024-01-07 is a Sunday: the seven short weekday names in the page language, Sunday first
+  // 2024-01-07 jekshembi: bet tilindegi jeti qısqa hápte kúni atı, jekshembi birinshi
   const weekdays = Array.from({ length: 7 }, (_, i) => formatDate(new Date(2024, 0, 7 + i), { weekday: 'short' }))
 
   const rangeClass = (date: string) => {

@@ -9,7 +9,7 @@ interface PartnerPropertyEditProps {
   onSaved: (property: PartnerProperty) => void
 }
 
-/** The owner changes the hotel's name, description and address; the place and the status are not editable. */
+/** Iye mehmanxananıń atın, tárıpın hám mánzilin ózgertedi; orın hám status ózgertilmeydi. */
 export function PartnerPropertyEdit({ property, onSaved }: PartnerPropertyEditProps) {
   const { t } = useI18n()
   const [texts, setTexts] = useState<HotelTextsForm>(() => hotelTextsFromApi(property.translations))

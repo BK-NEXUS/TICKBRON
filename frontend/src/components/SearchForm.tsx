@@ -5,7 +5,7 @@ import { DateRangeCalendar } from './DateRangeCalendar'
 import { keepFilterParams } from '../utils/searchFilters'
 import { businessToday } from '../utils/dates'
 
-// Search form state interface
+// Izlew forması jaǵdayı interface i
 export interface SearchFormData {
   destination: string
   checkIn: string
@@ -16,7 +16,7 @@ export interface SearchFormData {
   rooms: number
 }
 
-// Validation errors interface
+// Validation qátelikleri interface i
 export interface SearchFormErrors {
   destination?: string
   checkIn?: string
@@ -27,7 +27,7 @@ export interface SearchFormErrors {
   rooms?: string
 }
 
-// Default form values
+// Ádetdegi forma mánisleri
 const DEFAULT_VALUES: SearchFormData = {
   destination: '',
   checkIn: '',
@@ -38,7 +38,7 @@ const DEFAULT_VALUES: SearchFormData = {
   rooms: 1,
 }
 
-// URL parameter names
+// URL parametr atları
 const URL_PARAMS = {
   DESTINATION: 'destination',
   CHECK_IN: 'check_in',
@@ -50,11 +50,11 @@ const URL_PARAMS = {
 }
 
 /**
- * SearchForm component with URL state synchronization
- * Handles search parameters through URL query parameters for:
- * - Shareable search URLs
- * - Browser refresh preservation
- * - Browser back/forward navigation
+ * URL jaǵdayı sinxronizaciyası menen SearchForm komponenti
+ * Izlew parametrlerin URL query parametrleri arqalı isleydi:
+ * - Bólisiwge bolatuǵın izlew URL leri
+ * - Brauzerdi jańalaǵanda saqlanıw
+ * - Brauzer artqa/aldıǵa navigaciyası
  */
 export function SearchForm() {
   const { t } = useI18n()
@@ -66,14 +66,14 @@ export function SearchForm() {
   const [touched, setTouched] = useState<Set<keyof SearchFormData>>(new Set())
   const [calendarOpen, setCalendarOpen] = useState(false)
 
-  // Range calendar: first click is the check-in, second the check-out
+  // Aralıq kalendarı: birinshi klik check-in, ekinshisi check-out
   const handleRangeChange = (checkIn: string | null, checkOut: string | null) => {
     setFormData(prev => ({ ...prev, checkIn: checkIn ?? '', checkOut: checkOut ?? '' }))
     setErrors(prev => ({ ...prev, checkIn: undefined, checkOut: undefined }))
     if (checkIn && checkOut) setCalendarOpen(false)
   }
 
-  // Initialize form from URL parameters on mount
+  // Ornatılǵanda formanı URL parametrlerinen baslaw
   useEffect(() => {
     const urlDestination = searchParams.get(URL_PARAMS.DESTINATION)
     const urlCheckIn = searchParams.get(URL_PARAMS.CHECK_IN)
@@ -94,11 +94,11 @@ export function SearchForm() {
     })
   }, [searchParams])
 
-  // Validate form data
+  // Forma maǵlıwmatın tekseriw
   const validateForm = (data: SearchFormData): SearchFormErrors => {
     const newErrors: SearchFormErrors = {}
 
-    // Destination validation
+    // Barar orındı tekseriw
     if (!data.destination.trim()) {
       newErrors.destination = t('searchForm.error.destinationRequired')
     } else if (data.destination.length < 2) {
@@ -107,7 +107,7 @@ export function SearchForm() {
       newErrors.destination = t('searchForm.error.destinationLong')
     }
 
-    // Dates are optional (search by city only), but a range needs both ends
+    // Sanalar ıqtıyarıy (tek qala boyınsha izlew), biraq aralıqtıń eki ushı da kerek
     if (!data.checkIn && data.checkOut) {
       newErrors.checkIn = t('searchForm.error.checkInRequired')
     } else if (data.checkIn) {
@@ -116,7 +116,7 @@ export function SearchForm() {
       }
     }
 
-    // Check-out date validation
+    // Check-out sanasın tekseriw
     if (!data.checkOut && data.checkIn) {
       newErrors.checkOut = t('searchForm.error.checkOutRequired')
     } else if (data.checkOut && data.checkIn) {
@@ -128,35 +128,35 @@ export function SearchForm() {
       }
     }
 
-    // Guests validation
+    // Mehmanlardı tekseriw
     if (data.guests < 1) {
       newErrors.guests = t('searchForm.error.guestsMin')
     } else if (data.guests > 50) {
       newErrors.guests = t('searchForm.error.guestsMax')
     }
 
-    // Adults validation
+    // Úlken adamlardı tekseriw
     if (data.adults < 1) {
       newErrors.adults = t('searchForm.error.adultsMin')
     } else if (data.adults > 50) {
       newErrors.adults = t('searchForm.error.adultsMax')
     }
 
-    // Children validation
+    // Balalardı tekseriw
     if (data.children < 0) {
       newErrors.children = t('searchForm.error.childrenNegative')
     } else if (data.children > 20) {
       newErrors.children = t('searchForm.error.childrenMax')
     }
 
-    // Rooms validation
+    // Xonalardı tekseriw
     if (data.rooms < 1) {
       newErrors.rooms = t('searchForm.error.roomsMin')
     } else if (data.rooms > 20) {
       newErrors.rooms = t('searchForm.error.roomsMax')
     }
 
-    // Validate guest composition
+    // Mehmanlar quramın tekseriw
     if (data.adults + data.children !== data.guests) {
       newErrors.guests = t('searchForm.error.guestsTotal')
     }
@@ -164,17 +164,17 @@ export function SearchForm() {
     return newErrors
   }
 
-  // Handle input change
+  // Kirisiw ózgeriwin islew
   const handleChange = (field: keyof SearchFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
-    // Clear error for this field when user starts typing
+    // Paydalanıwshı teriwdi baslaǵanda usı maydan ushın qátelikti tazalaw
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
     }
   }
 
-  // Handle field blur (for validation on blur)
+  // Maydan blur ın islew (blur da tekseriw ushın)
   const handleBlur = (field: keyof SearchFormData) => {
     setTouched(prev => new Set(prev).add(field))
     const fieldErrors = validateForm(formData)
@@ -183,23 +183,23 @@ export function SearchForm() {
     }
   }
 
-  // Handle form submission
+  // Forma jiberiwin islew
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate all fields
+    // Barlıq maydanlardı tekseriw
     const validationErrors = validateForm(formData)
     setErrors(validationErrors)
     
-    // Mark all fields as touched
+    // Barlıq maydanlardı tiyilgen dep belgilew
     setTouched(new Set(Object.keys(DEFAULT_VALUES) as Array<keyof SearchFormData>))
     
-    // If there are errors, don't submit
+    // Qátelik bolsa jibermew
     if (Object.keys(validationErrors).length > 0) {
       return
     }
 
-    // Update URL parameters
+    // URL parametrlerin jańalaw
     const newParams = new URLSearchParams()
     
     if (formData.destination) {
@@ -215,14 +215,14 @@ export function SearchForm() {
     newParams.set(URL_PARAMS.ADULTS, formData.adults.toString())
     newParams.set(URL_PARAMS.CHILDREN, formData.children.toString())
     newParams.set(URL_PARAMS.ROOMS, formData.rooms.toString())
-    // Searching again from the results page keeps the sidebar filters and sort
+    // Nátiyjeler betinen qayta izlew jan panel filterlerin hám tártipti saqlaydı
     keepFilterParams(searchParams, newParams)
 
-    // Navigate to search results page with parameters
+    // Parametrler menen izlew nátiyjeleri betine ótiw
     navigate(`/search?${newParams.toString()}`)
   }
 
-  // Handle field-specific change handlers
+  // Maydanǵa tiyisli ózgeris handler lerin islew
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleChange('destination', e.target.value)
   }
@@ -258,7 +258,7 @@ export function SearchForm() {
   return (
     <form className="search-form" onSubmit={handleSubmit} noValidate>
       <div className="search-form-grid">
-        {/* Destination */}
+        {/* Barar orın */}
         <div className="search-form-field">
           <label htmlFor="destination" className="search-form-label">
             {t('searchForm.destination')}
@@ -281,7 +281,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Check-in Date */}
+        {/* Kiriw sanası */}
         <div className="search-form-field">
           <label htmlFor="checkIn" className="search-form-label">
             {t('searchForm.checkIn')}
@@ -306,7 +306,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Check-out Date */}
+        {/* Shıǵıw sanası */}
         <div className="search-form-field">
           <label htmlFor="checkOut" className="search-form-label">
             {t('searchForm.checkOut')}
@@ -354,7 +354,7 @@ export function SearchForm() {
           </div>
         )}
 
-        {/* Guests */}
+        {/* Mehmanlar */}
         <div className="search-form-field">
           <label htmlFor="guests" className="search-form-label">
             {t('searchForm.guests')}
@@ -378,7 +378,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Adults */}
+        {/* Úlken adamlar */}
         <div className="search-form-field">
           <label htmlFor="adults" className="search-form-label">
             {t('searchForm.adults')}
@@ -402,7 +402,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Children */}
+        {/* Balalar */}
         <div className="search-form-field">
           <label htmlFor="children" className="search-form-label">
             {t('searchForm.children')}
@@ -426,7 +426,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Rooms */}
+        {/* Xonalar */}
         <div className="search-form-field">
           <label htmlFor="rooms" className="search-form-label">
             {t('searchForm.rooms')}
@@ -450,7 +450,7 @@ export function SearchForm() {
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Jiberiw túymesi */}
         <div className="search-form-field search-form-submit">
           <button type="submit" className="btn btn-primary btn-large">
             {t('searchForm.search')}

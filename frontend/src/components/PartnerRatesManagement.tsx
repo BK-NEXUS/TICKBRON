@@ -8,9 +8,9 @@ import { rateTypeLabel } from '../utils/rateType'
 interface PartnerRatesManagementProps {
   roomTypeId: number
   roomTypeName: string
-  /** The hotel's currency: the main price of every rate plan of this room type */
+  /** Mehmanxananıń valyutası: usı xona túriniń hár rate plan ınıń tiykarǵı bahası */
   currency?: string
-  /** Open the per-date availability of a rate plan */
+  /** Rate plan nıń sana boyınsha bos orınların ashıw */
   onManageAvailability?: (ratePlan: { id: number; name: string }) => void
 }
 
@@ -18,10 +18,10 @@ type ViewMode = 'list' | 'create' | 'edit'
 
 const PRICE_FORMAT = /^\d+(\.\d+)?$/
 
-/** True when the plan carries the owner's own price in every currency */
+/** Plan hár valyutada iyeniń óz bahasın alıp júrse true */
 const hasAllPrices = (plan: PartnerRatePlan) => CURRENCIES.every(({ code }) => plan.prices?.[code] !== undefined)
 
-/** What the owner already entered for a plan; an old plan only has its main price */
+/** Iye plan ushın aldınan kirgizgeni; eski planda tek tiykarǵı bahası bar */
 const pricesOf = (plan: PartnerRatePlan): Record<string, string> =>
   plan.prices ?? { [plan.currency]: String(plan.base_price) }
 
@@ -34,7 +34,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // The main price is in the hotel's currency; an existing plan knows it too
+  // Tiykarǵı baha mehmanxananıń valyutasında; bar plan da onı biledi
   const mainCurrency = currency ?? selectedRatePlan?.currency ?? ratePlans[0]?.currency ?? 'USD'
 
   const [formData, setFormData] = useState<CreateRatePlanRequest>({
@@ -54,7 +54,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
 
   useEffect(() => {
     loadRatePlans()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomTypeId])
 
@@ -68,7 +68,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
       if (response.error) {
         setError(response.error)
       } else if (response.data) {
-        // Filter rate plans for this room type
+        // Usı xona túri ushın rate plan lardı filterlew
         const roomTypeRatePlans = response.data.filter(rp => rp.room_type === roomTypeId)
         setRatePlans(roomTypeRatePlans)
       }
@@ -192,7 +192,7 @@ export function PartnerRatesManagement({ roomTypeId, roomTypeName, currency, onM
     setViewMode('edit')
   }
 
-  /** The first problem with the prices typed so far, as a message, or null. The backend checks again. */
+  /** Házirge shekem terilgen bahalardıń birinshi mashqalası, xabar retinde, yamasa null. Backend qayta tekseredi. */
   const firstPriceError = (): string | null => {
     for (const { code, decimals } of CURRENCIES) {
       const raw = (formData.prices[code] ?? '').trim()

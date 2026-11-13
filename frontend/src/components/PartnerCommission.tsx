@@ -4,7 +4,7 @@ import type { CommissionStatement as Statement } from '../adapters/commissionTyp
 import { useI18n } from '../i18n/I18nContext'
 import { CommissionStatement } from './CommissionStatement'
 
-/** What the owner owes the site: the agreed percent, the commission of each month, and which months are confirmed as paid. */
+/** Iyeniń saytqa qarızı: kelisilgen procent, hár ayıń komissiyası hám qaysı aylar tólengen dep tastıyıqlanǵan. */
 export function PartnerCommission() {
   const { t } = useI18n()
   const [statement, setStatement] = useState<Statement | null>(null)

@@ -7,8 +7,8 @@ interface NearbyPlacesProps {
 }
 
 /**
- * NearbyPlaces component for displaying nearby attractions and places
- * Shows distance, rating, and category information
+ * Jaqındaǵı kórneklı orınlar hám orınlardı kórsetiw ushın NearbyPlaces komponenti
+ * Qashıqlıq, reyting hám kategoriya maǵlıwmatın kórsetedi
  */
 export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
   const { t } = useI18n()
@@ -20,7 +20,7 @@ export function NearbyPlaces({ places = [] }: NearbyPlacesProps) {
     )
   }
 
-  // Sort by distance
+  // Qashıqlıq boyınsha tártiplew
   const sortedPlaces = [...places].sort((a, b) => a.distance - b.distance)
 
   return (

@@ -14,7 +14,7 @@ const CATEGORY_KEYS = {
   amenities: 'amenities_rating', service: 'service_rating',
 } as const
 
-/** What the guest-facing rating block shows, built from the owner's numbers (text with one decimal -> numbers) */
+/** Mehmanlarǵa kórinetuǵın reyting bloǵı neni kórsetedi, iyeniń sanlarınan qurılǵan (bir onlıq belgili tekst -> sanlar) */
 function toScores(hotelId: number, reviews: ReviewSummary): PropertyScores {
   const category_scores: PropertyScores['category_scores'] = {}
   for (const [name, key] of Object.entries(CATEGORY_KEYS) as Array<[keyof typeof CATEGORY_KEYS, string]>) {
@@ -27,7 +27,10 @@ function toScores(hotelId: number, reviews: ReviewSummary): PropertyScores {
   }
 }
 
-/** Owner Status > one hotel: how guests rate it (the same block guests see), plus how many gave 5, 4, 3, 2 and 1 stars. */
+/**
+ * Iye Status > bir mehmanxana: mehmanlar onı qalay bahalaydı (mehmanlar kóretuǵın blok), hám neshe adam 5, 4, 3, 2 hám 1
+ * juldız bergeni.
+ */
 export function OwnerHotelRating({ hotelId, reviews }: OwnerHotelRatingProps) {
   const { t } = useI18n()
   const stars = [5, 4, 3, 2, 1]

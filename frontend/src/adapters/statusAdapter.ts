@@ -1,6 +1,6 @@
-// Status sections API adapter: admin panel /api/v1/admin-panel/status/, partner panel /api/v1/partner/status/
-// Contract: .ai/API_CONTRACT.md "admin Status" (Status plan S2/S3). A booking counts when it is
-// confirmed or completed; it belongs to the period of its check-in date; revenue is per currency.
+// Status bólimleri API adapteri: admin panel /api/v1/admin-panel/status/, partner panel /api/v1/partner/status/
+// Contract: .ai/API_CONTRACT.md "admin Status" (Status reje S2/S3). Bron tastıyıqlanǵan yamasa
+// juwmaqlanǵan bolsa esaplanadı; ol kiriw sanası dáwirine tiyisli; dáramat hár valyuta boyınsha.
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch } from '../utils/api'
@@ -9,18 +9,21 @@ import { API_BASE_URL } from '../utils/apiBase'
 
 const STATUS_URL = `${API_BASE_URL}/api/v1/admin-panel/status`
 
-/** 'all' | 'today' | 'last_7_days' | 'last_30_days' | 'this_year' | 'last_5_years' | 'last_10_years' | 'custom' | 'YYYY' | 'YYYY-MM' */
+/**
+ * 'all' | 'today' | 'last_7_days' | 'last_30_days' | 'this_year' | 'last_5_years' | 'last_10_years' | 'custom' | 'YYYY' |
+ * 'YYYY-MM'
+ */
 export type StatusPeriod = string
 
 export type StatusGranularity = 'day' | 'week' | 'month' | 'year'
 
-/** Inclusive ISO dates; null for the whole time */
+/** Shegarası kiretuǵın ISO sanalar; pútkil waqıt ushın null */
 export interface PeriodRange {
   from: string | null
   to: string | null
 }
 
-/** One currency's total; amount is a decimal string. Currencies are never added together. */
+/** Bir valyutanıń jıyındısı; amount onlıq qatar. Valyutalar hesh qashan qosılmaydı. */
 export interface Money {
   currency: string
   amount: string
@@ -33,7 +36,7 @@ interface RankedRow {
   revenue: Money[]
 }
 
-/** Names of a place in the three languages; the "Unspecified" group carries the English word in all three. */
+/** Orınnıń úsh tildegi atları; "Unspecified" topar úshewinde de inglizsha sózdi alıp júredi. */
 interface PlaceNames {
   name_uz: string
   name_ru: string
@@ -41,14 +44,14 @@ interface PlaceNames {
 }
 
 export interface StatusCountry extends RankedRow, PlaceNames {
-  /** ISO code, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  /** ISO kod, "Unspecified" topar ushın null (sonda URL bólegi "unspecified") */
   code: string | null
   country: string
   hotels: number
 }
 
 export interface StatusRegion extends RankedRow, PlaceNames {
-  /** Region id, null for the "Unspecified" group (the URL segment is then "unspecified") */
+  /** Region id si, "Unspecified" topar ushın null (sonda URL bólegi "unspecified") */
   id: number | null
   region: string
   hotels: number
@@ -85,7 +88,7 @@ export interface BookingStatusCounts {
   no_show_reported: number
 }
 
-/** Totals of R12a hotel, user and owner views; `stayed` is the headline, `counted` is separate */
+/** R12a mehmanxana, paydalanıwshı hám iye kórinisleriniń jıynaqları; `stayed` tiykarǵı san, `counted` bólek */
 export interface StatusFullTotals extends StatusTotals {
   stayed: number
   counted: number
@@ -100,7 +103,7 @@ export interface StatusFullTotals extends StatusTotals {
 }
 
 export interface StatusSeriesRow {
-  /** YYYY-MM-DD for day and week, YYYY-MM for month, YYYY for year */
+  /** Kún hám hápte ushın YYYY-MM-DD, ay ushın YYYY-MM, jıl ushın YYYY */
   period: string
   start: string
   bookings: number
@@ -130,15 +133,15 @@ export interface StatusMonth extends StatusTotals {
   month: string
 }
 
-/** R12 additions: read-only derived numbers; rates are percent strings, null when there is nothing to divide by */
+/** R12 qosımshaları: tek oqıw tuwındı sanlar; dárejeler procent qatarları, bóliwge hesh nárse bolmasa null */
 export interface StatusInsights {
   cancellation_rate: string | null
   occupancy_rate: string | null
   average_booking_value: Money[]
   average_stay_nights: string | null
-  /** Days between making a booking and its check-in, on average (Status v2) */
+  /** Bron jasalǵannan kiriwge shekemgi kúnler ortashası (Status v2) */
   average_lead_days: string | null
-  /** Percent of the guests who booked more than once (Status v2) */
+  /** Birneshe ret bronlaǵan mehmanlardıń procenti (Status v2) */
   repeat_guest_pct: string | null
   previous_period: {
     range: PeriodRange
@@ -153,7 +156,7 @@ export interface StatusInsights {
   } | null
 }
 
-/** The owner's place among the active hotels of the region (the API hides it below 5 hotels) */
+/** Iyeniń regiondaǵı aktiv mehmanxanalar arasındaǵı orni (API 5 mehmanxanadan tómende jasıradı) */
 export interface StatusRank {
   position: number
   of: number
@@ -193,7 +196,7 @@ export interface AdminStatusHotel {
   country_code: string
   status: string
   created_at: string
-  /** "4.50", or null without approved reviews */
+  /** "4.50", yamasa tastıyıqlanǵan sharh joq bolsa null */
   rating: string | null
   bookings: number
   guests: number
@@ -220,7 +223,7 @@ export interface StatusUser {
   email: string
   bookings: number
   total_spent: Money[]
-  /** YYYY-MM-DD: check-in of the latest counted booking */
+  /** YYYY-MM-DD: eń sońǵı counted bronnıń kiriwi */
   last_booking_date: string
   guests?: number
   nights?: number
@@ -272,14 +275,17 @@ export interface StatusUserDetail {
   history: Omit<StatusPage<StatusUserBooking>, 'period'>
 }
 
-/** How guests rate one hotel: approved reviews, all time. `average` is text with one decimal, null without reviews. */
+/**
+ * Mehmanlar bir mehmanxananı qalay bahalaydı: tastıyıqlanǵan sharhlar, pútkil waqıt. `average` bir onlıq belgili tekst, sharh
+ * joq bolsa null.
+ */
 export interface ReviewRating {
   count: number
   average: string | null
 }
 
 export interface ReviewSummary extends ReviewRating {
-  /** How many reviews gave 1, 2, 3, 4 and 5 stars */
+  /** Neshe sharh 1, 2, 3, 4 hám 5 juldız bergeni */
   distribution: number[]
   categories: Record<'cleanliness' | 'location' | 'value' | 'amenities' | 'service', string | null>
 }
@@ -299,7 +305,7 @@ export interface PartnerStatusProperty extends StatusTotals {
   status: string
 }
 
-/** One calendar month of the owner's numbers (Status v2) */
+/** Iyeniń sanlarınıń bir kalendar ayı (Status v2) */
 export interface MonthBlock {
   /** YYYY-MM */
   month: string
@@ -309,7 +315,7 @@ export interface MonthBlock {
   revenue: Money[]
 }
 
-/** This month against last month and the next 7 days, whatever period the page shows (Status v2) */
+/** Bet qaysı dáwirdi kórsetpesin, usı ay aldınǵı ayǵa hám keyingi 7 kúnge qarata (Status v2) */
 export interface MonthComparison {
   current: MonthBlock
   previous: MonthBlock
@@ -317,7 +323,7 @@ export interface MonthComparison {
   next_7_days: { bookings: number; guests: number }
 }
 
-/** One room type of GET /partner/status/rooms/ (Status v2) */
+/** GET /partner/status/rooms/ tiń bir xona túri (Status v2) */
 export interface RoomStatusRow {
   room_type_id: number
   name: string
@@ -326,9 +332,9 @@ export interface RoomStatusRow {
   bookings: number
   room_nights: number
   revenue: Money[]
-  /** Percent of all the counted room-type bookings; null when there are none */
+  /** Barlıq counted xona túri bronlarınıń procenti; joq bolsa null */
   share_pct: string | null
-  /** Percent; null for all time or without rooms */
+  /** Procent; pútkil waqıt yamasa xonalarsız null */
   occupancy_rate: string | null
 }
 
@@ -338,7 +344,7 @@ export interface PartnerRoomsStatus {
   rows: RoomStatusRow[]
 }
 
-/** One of the busiest regions on the admin overview */
+/** Admin sholıwındaǵı eń bánt regionlardıń biri */
 export interface OverviewRegion extends PlaceNames {
   id: number | null
   hotels: number
@@ -346,16 +352,16 @@ export interface OverviewRegion extends PlaceNames {
   guests: number
 }
 
-/** GET /api/v1/admin-panel/status/overview/ (the whole platform; Status v2) */
+/** GET /api/v1/admin-panel/status/overview/ (pútkil platforma; Status v2) */
 export interface AdminOverview {
   period: StatusPeriod
   period_range: PeriodRange
   months: MonthComparison
   totals: StatusFullTotals
   insights: StatusInsights
-  /** Percent of the bookings that were no-shows; null without bookings */
+  /** No-show bolǵan bronlardıń procenti; bron joq bolsa null */
   no_show_rate: string | null
-  /** Guests (not staff) who registered this month, last month and in the period (null for all time) */
+  /** Usı ayda, aldınǵı ayda hám dáwirde dizimnen ótken mehmanlar (staff emes) (pútkil waqıt ushın null) */
   new_users: { current_month: number; previous_month: number; in_period: number | null }
   hotels: { total: number; active: number }
   top_regions: OverviewRegion[]
@@ -365,9 +371,9 @@ export interface AdminOverview {
   monthly: StatusMonth[]
 }
 
-/** GET /api/v1/partner/status/ (the owner's own properties only). Contract: S4 */
+/** GET /api/v1/partner/status/ (tek iyeniń óz mehmanxanaları). Contract: S4 */
 export interface PartnerStatus {
-  /** YYYY-MM-DD: when the owner's account was created */
+  /** YYYY-MM-DD: iyeniń akkaunt ı jaratılǵan waqıt */
   since: string
   period: StatusPeriod
   period_range: PeriodRange
@@ -383,7 +389,7 @@ export interface PartnerStatus {
   monthly: StatusMonth[]
 }
 
-/** GET /api/v1/partner/status/hotels/{id}/ (own hotel only) */
+/** GET /api/v1/partner/status/hotels/{id}/ (tek óz mehmanxana) */
 export interface PartnerHotelStatus extends Omit<StatusHotelDetail, 'hotel'> {
   hotel: { id: number; name: string; status: string; address: string; city: string; region: string; country: string }
   rank: StatusRank | null
@@ -404,12 +410,12 @@ export interface PartnerArrival {
   check_in: string
   check_out: string
   special_requests: string
-  /** Only the last 4 digits of the phone */
-  /** The whole number, so the hotel can call a late guest; only in the arrivals of today and tomorrow */
+  /** Telefonnıń tek sońǵı 4 sanı */
+  /** Tolıq nomer, sonda mehmanxana keshikken mehmanǵa qońıraw ete aladı; tek búgin hám erteńgi keliwlerde */
   phone: string
-  /** Cash at the hotel: when the guest said they will arrive ('HH:MM'); null on old bookings */
+  /** Mehmanxanada naqd: mehmann qashan keletuǵının aytqan ('HH:MM'); eski bronlarda null */
   expected_arrival_time: string | null
-  /** When the hotel marked the guest as arrived */
+  /** Mehmanxana mehmandı kelgen dep belgilegen waqıt */
   arrived_at: string | null
 }
 
@@ -431,7 +437,7 @@ export interface CsvFile {
 
 export interface StatusPeriodParams {
   period: StatusPeriod
-  /** YYYY-MM-DD; sent only with period "custom" */
+  /** YYYY-MM-DD; tek "custom" dáwir menen jiberiledi */
   from?: string
   to?: string
   granularity?: StatusGranularity
@@ -439,13 +445,13 @@ export interface StatusPeriodParams {
 
 export interface StatusListParams extends StatusPeriodParams {
   search?: string
-  /** First letter of the name (or '#'): only the hotels and the guests lists take it */
+  /** Attıń birinshi háripi (yamasa '#'): tek mehmanxanalar hám mehmanlar dizimleri qabıllaydı */
   letter?: string
   page?: number
 }
 
 export interface AdminHotelsParams extends StatusListParams {
-  /** revenue | bookings | guests | nights | rating | created_at, "-" prefix for descending */
+  /** revenue | bookings | guests | nights | rating | created_at, kemeyiw ushın "-" prefiksi */
   ordering?: string
   pageSize?: number
   country?: string
@@ -464,11 +470,11 @@ export interface UserDetailParams extends StatusPeriodParams {
 export interface StatusResponse<T> {
   data: T | null
   error: string | null
-  /** HTTP status of a failed response, e.g. 404 for another owner's hotel */
+  /** Sátsiz juwaptıń HTTP statusı, mısalı basqa iyeniń mehmanxanası ushın 404 */
   status?: number
 }
 
-// Getters: the text is chosen when an error happens, in the language the page is in then
+// Getterler: tekst qátelik bolǵanda, bet sol waqıtta qaysı tilde bolsa sol tilde tańlanadı
 const ERROR_MESSAGES = {
   get 401() { return translateNow('apiError.authRequired') },
   get 403() { return translateNow('apiError.adminRequired') },
@@ -491,14 +497,14 @@ function query(params: Record<string, string | number | undefined>): string {
 
 type QueryValues = Record<string, string | number | undefined>
 
-/** The owner's bookings screen filters; the export carries the same ones */
+/** Iyeniń bronlar ekranı filterleri; eksport sol filterlerdi alıp júredi */
 export interface PartnerBookingsExportFilters {
   status?: string
   paymentStatus?: string
   reportableOnly?: boolean
 }
 
-/** from and to belong to the custom period only; other periods ignore them */
+/** from hám to tek custom dáwirge tiyisli; basqa dáwirler olardı itibarǵa almaydı */
 function periodValues({ period, from, to, granularity }: StatusPeriodParams): QueryValues {
   const custom = period === 'custom'
   return { period, from: custom ? from : undefined, to: custom ? to : undefined, granularity }
@@ -544,7 +550,10 @@ function filenameFrom(response: Response, fallback: string): string {
   return match ? match[1] : fallback
 }
 
-/** CSV and Excel go through apiFetch (session cookie + CSRF) and comes back as a blob; a plain link would not carry auth headers */
+/**
+ * CSV hám Excel apiFetch arqalı ótedi (session cookie + CSRF) hám blob retinde qaytadı; ápiwayı silteme auth header lerin alıp
+ * júrmeydi
+ */
 async function requestCsv(
   url: string,
   fallbackName: string,
@@ -569,7 +578,7 @@ const hotelsValues = ({ ordering, pageSize, country, region, status, ...list }: 
 
 const detailQuery = ({ year, ...period }: StatusDetailParams) => query({ ...periodValues(period), year })
 
-/** The export covers the whole list, so it never carries a page */
+/** Eksport pútkil dizimdi qaplaydı, sol sebepli hesh qashan betti alıp júrmeydi */
 const exportValues = (values: QueryValues, format: ExportFormat): QueryValues =>
   ({ ...values, page: undefined, export: format })
 
@@ -659,7 +668,7 @@ export const statusAdapter = {
       `${PARTNER_URL}/arrivals/${query({ day, property, page })}`, { method: 'GET' }, PARTNER_ERROR_MESSAGES)
   },
 
-  /** Admin sets a property's country and region by id (both null clears it: "Unspecified"). */
+  /** Admin mehmanxananıń mámleketin hám regionın id boyınsha belgileydi (ekewi null bolsa tazalanadı: "Unspecified"). */
   setPropertyLocation(propertyId: number, location: { country_ref: number | null; region_ref: number | null }) {
     return request<{ id: number; country_ref: number | null; region_ref: number | null }>(
       `${API_BASE_URL}/api/v1/admin-panel/properties/${propertyId}/region/`,

@@ -7,12 +7,15 @@ import type { PropertyPhoto } from '../adapters/propertyAdapter'
 interface PhotoLightboxProps {
   photos: PropertyPhoto[]
   startIndex: number
-  /** The property name, for the dialog title and the generated alt text */
+  /** Mehmanxana atı, dialog sarlawhası hám jaratılǵan alt teksti ushın */
   name: string
   onClose: () => void
 }
 
-/** The photos of a property full screen: arrows or keys to move, Escape or a click beside the photo to close. */
+/**
+ * Mehmanxananıń pútkil ekrandaǵı súwretleri: kóshiw ushın strelkalar yamasa klavishler, jawıw ushın Escape yamasa súwret
+ * janına klik.
+ */
 export function PhotoLightbox({ photos, startIndex, name, onClose }: PhotoLightboxProps) {
   const { t } = useI18n()
   const [index, setIndex] = useState(startIndex)
@@ -22,7 +25,7 @@ export function PhotoLightbox({ photos, startIndex, name, onClose }: PhotoLightb
 
   const step = (by: 1 | -1) => setIndex(i => (i + by + photos.length) % photos.length)
 
-  // Arrow keys move through the photos while the lightbox is open (Escape and Tab are the dialog's own)
+  // Lightbox ashıq waqıtta strelka klavishleri súwretler boylap júrgizedi (Escape hám Tab dialogtıń óziki)
   useEffect(() => {
     if (!many) return
     const onKeyDown = (event: KeyboardEvent) => {
@@ -31,11 +34,11 @@ export function PhotoLightbox({ photos, startIndex, name, onClose }: PhotoLightb
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-    // `step` only uses the setter and the list length
+    // `step` tek setter di hám dizim uzınlıǵın paydalanadı
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [many, photos.length])
 
-  // Only a click on the empty area closes it, not one on a button or the photo
+  // Tek bos orınǵa klik onı jabadı, túymege yamasa súwretke klik emes
   const closeOnEmptyArea = (event: React.MouseEvent) => {
     if (event.target === event.currentTarget) onClose()
   }

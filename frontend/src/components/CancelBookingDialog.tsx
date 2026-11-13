@@ -6,11 +6,11 @@ import { DialogModal } from './DialogModal'
 interface CancelBookingDialogProps {
   bookingId: number
   onClose: () => void
-  /** The cancelled booking */
+  /** Biykar etilgen bron */
   onCancelled: (booking: Booking) => void
 }
 
-/** The guest cancels a booking. Cancelling is free (cash at the hotel); nothing happens until they confirm. */
+/** Mehmann bronnan bas tartadı. Biykar etiw tegin (mehmanxanada naqd); olar tastıyıqlamaǵansha hesh nárse bolmaydı. */
 export function CancelBookingDialog({ bookingId, onClose, onCancelled }: CancelBookingDialogProps) {
   const { t } = useI18n()
   const titleId = useId()

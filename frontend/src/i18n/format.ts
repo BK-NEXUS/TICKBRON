@@ -8,7 +8,7 @@ export interface MoneyOptions {
   maxDecimals?: number
 }
 
-// Grouping is done by hand so the output does not depend on the ICU data of the browser or Node
+// Toparlaw qolda isleniledi, sol sebepli nátiyje brauzer yamasa Node tiń ICU maǵlıwmatına baylanıslı emes
 const group = (digits: string, separator: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, separator)
 
 function formatOther(value: number, currency: string, options: MoneyOptions): string {
@@ -18,14 +18,14 @@ function formatOther(value: number, currency: string, options: MoneyOptions): st
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency, ...digits }).format(value)
   } catch {
-    // Not an ISO 4217 code: show it as it is
+    // ISO 4217 kodı emes: sol qalpında kórsetiw
     return `${currency} ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, ...digits }).format(value)}`
   }
 }
 
 /**
- * Display only: the backend computes every amount. Accepts the decimal strings the API returns.
- * UZS is written in whole sums with the word of the page language; every other code the English way.
+ * Tek kórsetiw ushın: hár summanı backend esaplaydı. API qaytaratuǵın onlıq qatarlardı qabıllaydı.
+ * UZS pútin sum menen bet tilindegi sóz menen jazıladı; basqa hár kod inglizsha usılda.
  */
 export function formatMoney(
   amount: number | string,

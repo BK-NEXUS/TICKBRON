@@ -5,9 +5,9 @@ import { Link, useLocation, useNavigate } from 'react-router'
 
 export interface Crumb {
   label: string
-  /** Where the crumb leads; the last crumb (the current page) has none */
+  /** Crumb qayaqqa alıp baradı; aqırǵı crumb (házirgi bet) ta joq */
   to?: string
-  /** An in-page level (e.g. a partner dashboard view): a button instead of a link */
+  /** Bet ishindegi dárejesi (mısalı partner dashboard kórinisi): silteme ornına túyme */
   onClick?: () => void
 }
 
@@ -16,7 +16,7 @@ interface TrailEntry {
   to?: string
 }
 
-/** Default trail per route (after Home) when the page does not set its own */
+/** Bet óz izin belgilemese, hár route ushın ádetdegi iz (Bas bet ten keyin) */
 const ROUTE_TRAILS: Array<[RegExp, TrailEntry[]]> = [
   [/^\/login$/, [{ labelKey: 'auth.signIn' }]],
   [/^\/register$/, [{ labelKey: 'auth.createAccount' }]],
@@ -66,17 +66,17 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Give the current page its own trail after Home, e.g. [{ label: 'Tashkent', to }, { label: 'Hotel' }].
- * Pass null while the data is loading (the route's default trail shows meanwhile).
+ * Házirgi betke Bas bet ten keyin óz izin beriw, mısalı [{ label: 'Tashkent', to }, { label: 'Hotel' }].
+ * Maǵlıwmat júklenip atırǵanda null beriń (sol waqıtta route tiń ádetdegi izi kórinedi).
  */
 export function usePageTrail(trail: Crumb[] | null) {
   const { setTrail } = useContext(BreadcrumbContext)
-  // Labels and links decide when the trail changed (onClick handlers are new functions every render)
+  // Belgiler hám silteme ler izdiń ózgergenin sheshedi (onClick handler ler hár render de jańa funkciya)
   const key = JSON.stringify(trail?.map(crumb => [crumb.label, crumb.to ?? null, !!crumb.onClick]) ?? null)
   const latest = useRef(trail)
   latest.current = trail
   useEffect(() => {
-    // Clicks call the handler from the latest render, not the one from when the labels last changed
+    // Klikler belgiler eń sońǵı ózgergen waqıttaǵı emes, eń sońǵı render degi handler di shaqıradı
     setTrail(latest.current?.map((crumb, index) =>
       crumb.onClick ? { ...crumb, onClick: () => latest.current?.[index]?.onClick?.() } : crumb
     ) ?? null)
@@ -84,7 +84,7 @@ export function usePageTrail(trail: Crumb[] | null) {
   useEffect(() => () => setTrail(null), [setTrail])
 }
 
-/** Back button and "Home › ... › Current page" on every page except home */
+/** Bas bet ten basqa hár bette Artqa túymesi hám "Bas bet › ... › Házirgi bet" */
 export function Breadcrumbs() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -97,13 +97,13 @@ export function Breadcrumbs() {
   const crumbs: Crumb[] = [{ label: t('crumb.home'), to: '/' }, ...trail]
 
   const handleBack = () => {
-    // Inside a page with its own levels, Back steps up one level first
+    // Óz dárejeleri bar bet ishinde Artqa aldın bir dárejege joqarı shıǵadı
     const parentCrumb = crumbs[crumbs.length - 2]
     if (parentCrumb?.onClick) {
       parentCrumb.onClick()
       return
     }
-    // The first page the app was opened on has key "default": there is nothing in the app to go back to
+    // Ilova ashılǵan birinshi bet "default" kiltine iye: ilova ishinde qaytatuǵın hesh nárse joq
     if (location.key !== 'default') {
       navigate(-1)
       return

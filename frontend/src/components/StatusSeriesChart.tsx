@@ -6,7 +6,7 @@ import { formatCount, formatMoney, monthLabel } from '../utils/statusFormat'
 interface StatusSeriesChartProps {
   series: StatusSeriesRow[]
   granularity: StatusGranularity
-  /** 'revenue' needs `currency` */
+  /** 'revenue' `currency` di talap etedi */
   metric: 'stayed' | 'guests' | 'revenue'
   currency?: string
 }
@@ -17,7 +17,7 @@ const METRIC_TITLE: Record<'stayed' | 'guests' | 'revenue', MessageKey> = {
 const PER: Record<StatusGranularity, MessageKey> = {
   day: 'status.perDay', week: 'status.perWeek', month: 'status.perMonth', year: 'status.perYear',
 }
-/** Above this many bars the value labels would overlap; the tooltip still has them */
+/** Usınshama barda mánis jazıwları bir-birin jabadı; tooltip te ele bar */
 const MAX_LABELLED_BARS = 14
 
 /** "2026-10" -> "Oct", "2026-10-05" -> "10-05", "2026" -> "2026" */
@@ -27,7 +27,7 @@ function bucketLabel(period: string, granularity: StatusGranularity, i18n: I18nV
   return period.slice(5)
 }
 
-/** Bar chart of one series metric (same approach as the statistics dashboard): one bar per bucket */
+/** Bir seriya metrikasınıń bar grafigi (statistika dashboard sıyaqlı): hár bucket ke bir bar */
 export function StatusSeriesChart({ series, granularity, metric, currency }: StatusSeriesChartProps) {
   const i18n = useI18n()
   const { t } = i18n

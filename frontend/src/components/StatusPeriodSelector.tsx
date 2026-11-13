@@ -3,14 +3,14 @@ import { useId, useState } from 'react'
 import { STATUS_PRESET_PERIODS, validateCustomRange, type DateRange } from '../utils/statusPeriod'
 
 interface StatusPeriodSelectorProps {
-  /** 'all' | a preset | 'custom' | 'YYYY' | 'YYYY-MM' */
+  /** 'all' | tayar variant | 'custom' | 'YYYY' | 'YYYY-MM' */
   value: string
   onChange: (period: string) => void
-  /** The applied custom range (value "custom") */
+  /** Qollanılǵan custom aralıq (mánis "custom") */
   range?: DateRange | null
-  /** Passing this handler turns on the custom range option */
+  /** Bul handler di beriw custom aralıq variantın qosadı */
   onRangeChange?: (range: DateRange) => void
-  /** For tests; defaults to now */
+  /** Testler ushın; ádetde házir */
   today?: Date
 }
 
@@ -35,7 +35,7 @@ function modeOf(value: string): string {
   return value.length === 4 ? 'year' : 'month'
 }
 
-/** Period filter for the Status sections: all time, a preset, a year, a month or a custom range */
+/** Status bólimleri ushın dáwir filteri: pútkil waqıt, tayar variant, jıl, ay yamasa custom aralıq */
 export function StatusPeriodSelector({ value, onChange, range, onRangeChange, today = new Date() }: StatusPeriodSelectorProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const i18n = useI18n()

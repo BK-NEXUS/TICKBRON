@@ -11,7 +11,7 @@ import { newPasswordProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordR
 
 const INVALID_LINK_CODE = 'invalid_reset_link'
 
-/** The page the e-mailed link opens: /reset-password?uid=...&token=... */
+/** E-mail ge jiberilgen silteme ashatuǵın bet: /reset-password?uid=...&token=... */
 export function ResetPasswordPage() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()

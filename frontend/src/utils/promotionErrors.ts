@@ -6,7 +6,7 @@ const KNOWN_CODES = [
   'too_many_photos', 'bad_image', 'already_decided',
 ] as const
 
-/** Message key for a backend promotion error code; unknown codes get the generic message. */
+/** Backend reklama qátelik kodı ushın xabar kilti; belgisiz kodlar ulıwma xabar aladı. */
 export function promotionErrorKey(code: string | null): MessageKey {
   const known = (KNOWN_CODES as readonly string[]).includes(code ?? '')
   return (known ? `promoAdmin.error.${code}` : 'promoAdmin.error.generic') as MessageKey

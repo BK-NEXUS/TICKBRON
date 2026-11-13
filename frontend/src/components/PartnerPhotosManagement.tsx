@@ -7,10 +7,10 @@ interface PartnerPhotosManagementProps {
   propertyId: number
 }
 
-// Same as MAX_PHOTOS_PER_PROPERTY on the backend
+// Backend degi MAX_PHOTOS_PER_PROPERTY penen birdey
 const MAX_PHOTOS = 50
 
-/** The photos of one hotel (owner panel > Photos). */
+/** Bir mehmanxananıń súwretleri (iye paneli > Súwretler). */
 export function PartnerPhotosManagement({ propertyId }: PartnerPhotosManagementProps) {
   const api = useMemo<PhotoApi>(() => ({
     list: () => partnerAdapter.getPropertyPhotos(propertyId),

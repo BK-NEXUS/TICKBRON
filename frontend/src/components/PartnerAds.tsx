@@ -7,7 +7,7 @@ const BADGE: Record<OwnerPromotion['status'], string> = {
   active: 'active', scheduled: 'pending', paused: 'pending', ended: 'completed', cancelled: 'cancelled',
 }
 
-/** The ads of the owner's hotels in the banner: whether they are shown now, views, clicks, and the open renewal question. */
+/** Iyeniń mehmanxanaları bannerdegi reklamaları: házir kórsetiliwde me, kóriwler, bosıwlar hám ashıq jańalaw sorawı. */
 export function PartnerAds() {
   const { t, formatDate } = useI18n()
   const [status, setStatus] = useState<OwnerPromotion['status'] | ''>('')

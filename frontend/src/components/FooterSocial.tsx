@@ -5,12 +5,12 @@ import { SOCIAL_LINKS } from '../utils/socialLinks'
 
 const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const
 
-/** React's useId() can contain characters (like «») that break url(#id) references in some browsers. */
+/** React tiń useId() ı belgiler (mısalı «») alıp júriwi múmkin, olar ayırım brauzerlerde url(#id) siltemelerin buzadı. */
 function useSvgId() {
   return `ig-${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
 }
 
-/** lucide-react has no brand icons, so Instagram's logo (rounded square, its own gradient) is drawn here. */
+/** lucide-react te brend ikonkaları joq, sol sebepli Instagram logotipi (jumalaq kvadrat, óz gradienti) usı jerde sızıladı. */
 function InstagramLogo({ size, id }: { size: number; id: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false">
@@ -42,7 +42,7 @@ export function BrandInstagramLink() {
   )
 }
 
-/** A small "Developer" entry among the Legal links: opens a card with the developer's Telegram and Instagram. */
+/** Huquqıy siltemeler arasında kishi "Developer" jazbası: programmistiń Telegram hám Instagram ı bar kartanı ashadı. */
 export function DeveloperContacts() {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)

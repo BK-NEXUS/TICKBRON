@@ -2,14 +2,14 @@ import { useI18n } from '../i18n/I18nContext'
 import type { ExchangeRateInfo } from '../adapters/bookingAdapter'
 
 interface PriceApproxProps {
-  /** `base_price_uzs_approx` from the backend: whole so'm as a string, null while no rate exists yet */
+  /** Backend ten `base_price_uzs_approx`: pútin som qatar retinde, kurs ele joq bolsa null */
   approx?: string | null
   rate?: ExchangeRateInfo | null
-  /** The date of the CBU rate and the out-of-date warning (the property page; cards stay compact) */
+  /** CBU kursı sanası hám eskirgen kurs eskertpesi (mehmanxana beti; kartalar ıqsham qaladı) */
   showRate?: boolean
 }
 
-/** "≈ 1 177 295 so'm" next to the price of a hotel priced in dollars. Informational: the charge comes from the booking. */
+/** Dollarda bahalanǵan mehmanxananıń bahası janında "≈ 1 177 295 som". Maǵlıwmat ushın: alınatuǵın summa bronnan keledi. */
 export function PriceApprox({ approx, rate, showRate = false }: PriceApproxProps) {
   const { t, formatMoney, formatDate } = useI18n()
   if (approx === null || approx === undefined) return null

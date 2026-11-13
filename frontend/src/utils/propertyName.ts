@@ -5,7 +5,7 @@ interface Named {
   city?: string
 }
 
-/** The name people see: English translation, else any translation, else `name`, else the address */
+/** Adamlar kóretuǵın at: inglizsha awdarma, bolmasa qálegen awdarma, bolmasa `name`, bolmasa mánzil */
 export function propertyDisplayName(property: Named): string {
   const translations = (property.translations ?? []).filter(t => t.name)
   return (

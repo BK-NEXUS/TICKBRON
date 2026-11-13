@@ -1,6 +1,6 @@
 import type { ImageSize } from './imageRules'
 
-/** Through an image element and a blob address: for a browser without createImageBitmap */
+/** Súwret elementi hám blob mánzili arqalı: createImageBitmap joq brauzer ushın */
 function readWithImageElement(file: File): Promise<ImageSize | null> {
   return new Promise(resolve => {
     if (typeof URL.createObjectURL !== 'function') {
@@ -20,9 +20,9 @@ function readWithImageElement(file: File): Promise<ImageSize | null> {
 }
 
 /**
- * The width and height of a chosen picture as the browser shows it (a phone photo stored sideways is already turned),
- * or null when the browser cannot read it. createImageBitmap decodes the file itself, so it needs no blob address that
- * the page's policy could refuse for images. Kept apart so the screens' tests can answer it without decoding a picture.
+ * Tańlanǵan súwrettiń brauzer kórsetkenindey eni hám boyı (jantaytıp saqlanǵan telefon súwreti aldınan burılǵan),
+ * yamasa brauzer oqıy almasa null. createImageBitmap fayldıń ózin ashadı, sol sebepli bettiń siyasatı súwretler ushın
+ * biykar etiwi múmkin blob mánzili kerek emes. Ekranlar testleri súwretti ashpastan juwap bere alıwı ushın bólek saqlanǵan.
  */
 export async function readImageSize(file: File): Promise<ImageSize | null> {
   if (typeof createImageBitmap !== 'function') return readWithImageElement(file)

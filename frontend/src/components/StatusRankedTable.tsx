@@ -19,53 +19,53 @@ export interface StatusColumn<T> {
 interface StatusRankedTableProps<T> {
   title: string
   subtitle?: string
-  /** e.g. "countries": used in the search label and the empty message */
+  /** mısalı "mámleketler": izlew belgisinde hám bos xabarda paydalanıladı */
   noun: string
   period: string
   onPeriodChange: (period: string) => void
-  /** The applied custom range; with `onRangeChange` the selector offers the custom option */
+  /** Qollanılǵan custom aralıq; `onRangeChange` penen tańlaǵısh custom variantın usınadı */
   range?: DateRange | null
   onRangeChange?: (range: DateRange) => void
-  /** Extra controls next to the search box, e.g. a sort order */
+  /** Izlew qutısı janındaǵı qosımsha basqarıwlar, mısalı tártiplew */
   toolbar?: ReactNode
-  /** Extra actions that need the current search, e.g. an export button */
+  /** Házirgi izlewdi talap etetuǵın qosımsha háreketler, mısalı eksport túymesi */
   renderActions?: (state: { search: string; letter: string }) => ReactNode
-  /** Show the alphabet filter: only for lists whose endpoint takes ?letter= (the hotels and the guests) */
+  /** Alfavit filterin kórsetiw: tek endpoint i ?letter= qabıllaytuǵın dizimler ushın (mehmanxanalar hám mehmanlar) */
   alphabet?: boolean
-  /** Changing it reloads the list from the first page (use it for the options `load` closes over) */
+  /** Onı ózgertiw dizimdi birinshi betten qayta júkleydi (`load` jawıp turǵan variantlar ushın paydalanıń) */
   reloadKey?: string
   load: (params: StatusListParams) => Promise<StatusResponse<StatusPage<T>>>
   rowKey: (row: T) => string | number
-  /** Text of the row's link button (the first column) */
+  /** Qatardıń silteme túymesiniń teksti (birinshi baǵana) */
   rowLabel: (row: T) => string
   onOpen: (row: T) => void
   columns: StatusColumn<T>[]
 }
 
 /**
- * One ranked, paginated Status list with its own search box (searches this list only)
- * and the shared period selector. Loading, empty and error states included.
+ * Óz izlew qutısı (tek usı dizimdi izleydi) hám ortaq dáwir tańlaǵıshı menen bir ráteli, betlerge bólingen Status dizimi.
+ * Júklew, bos hám qátelik jaǵdayları kiredi.
  */
 export function StatusRankedTable<T>({
   title, subtitle, noun, period, onPeriodChange, range, onRangeChange, toolbar, renderActions, alphabet = false, reloadKey = '',
   load, rowKey, rowLabel, onOpen, columns,
 }: StatusRankedTableProps<T>) {
   const { t } = useI18n()
-  // `noun` is a message key (or a plain word, which comes back unchanged)
+  // `noun` xabar kilti (yamasa ápiwayı sóz, ol ózgerissiz qaytadı)
   const nounText = t(noun as MessageKey)
   const id = useId()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [letter, setLetter] = useState('')
   const [pageState, setPageState] = useState({ key: reloadKey, page: 1 })
-  // A new reloadKey starts again from the first page without a second request
+  // Jańa reloadKey ekinshi sorawsız birinshi betten qayta baslanadı
   const page = pageState.key === reloadKey ? pageState.page : 1
   const goToPage = (next: number) => setPageState({ key: reloadKey, page: next })
   const [data, setData] = useState<StatusPage<T> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Search after the user stops typing, from the first page
+  // Paydalanıwshı teriwdi toqtatqannan keyin, birinshi betten izlew
   useEffect(() => {
     if (searchInput === search) return
     const timer = setTimeout(() => {
@@ -87,7 +87,7 @@ export function StatusRankedTable<T>({
       setLoading(false)
     })
     return () => { cancelled = true }
-    // `load` is a new function every render; the list depends on what it is asked for
+    // `load` hár render de jańa funkciya; dizim neni soraǵanına baylanıslı
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, range, search, letter, page, reloadKey])
 

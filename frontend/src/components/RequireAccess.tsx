@@ -6,13 +6,13 @@ import { AccessDeniedPage } from '../pages/AccessDeniedPage'
 
 interface RequireAccessProps {
   allow: (user: User | null) => boolean
-  /** Used in the denial message */
+  /** Ruxsat berilmegen xabarda paydalanıladı */
   area: 'partner' | 'admin'
 }
 
 /**
- * Route guard: renders the child routes only for users that pass `allow`.
- * The backend still checks every request; this keeps the panels from rendering at all.
+ * Route qorǵawshı: ishki route larǵı tek `allow` dan ótken paydalanıwshılarǵa kórsetedi.
+ * Backend ele hár sorawdı tekseredi; bul panellerdiń kórsetiliwiniń aldın aladı.
  */
 export function RequireAccess({ allow, area }: RequireAccessProps) {
   const { t } = useI18n()

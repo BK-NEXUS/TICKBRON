@@ -10,15 +10,15 @@ const NAME_FIELDS = ['name_uz', 'name_ru', 'name_en'] as const
 
 interface GeographyRowDialogProps {
   kind: GeographyKind
-  /** The open country (for a region) or region (for a city); null for a country */
+  /** Ashıq mámleket (region ushın) yamasa region (qala ushın); mámleket ushın null */
   parentId: number | null
-  /** The row being edited; absent when adding */
+  /** Ózgertilip atırǵan qatar; qosqanda joq */
   row?: AdminGeographyRow
   onSaved: () => void
   onClose: () => void
 }
 
-/** Add or edit one country, region or city. The code, currency and parent are set only when adding. */
+/** Bir mámleket, region yamasa qalanı qosıw yamasa ózgertiw. Kod, valyuta hám ata-ana tek qosqanda belgilenedi. */
 export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: GeographyRowDialogProps) {
   const { t } = useI18n()
   const id = useId()
@@ -48,7 +48,7 @@ export function GeographyRowDialog({ kind, parentId, row, onSaved, onClose }: Ge
     setImage(problem ? null : file)
     setError(problem ? t(problem) : null)
     if (!file || problem) return
-    // The size is read after the type and file size are known to be fine; a wrong size drops the picture again
+    // Ólshem túri hám fayl ólshemi durıs ekeni belgili bolǵannan keyin oqıladı; qáte ólshem súwretti qaytadan taslaydı
     void imageProblem(file, 'place').then(sizeProblem => {
       if (!sizeProblem || chosen.current !== file) return
       setImage(null)

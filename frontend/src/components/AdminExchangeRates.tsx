@@ -12,13 +12,13 @@ import { DialogModal } from './DialogModal'
 import { StatusPagination } from './StatusPagination'
 
 interface AdminExchangeRatesProps {
-  /** The fetch status and accepting a rejected rate are for the super-admin; the backend enforces it too. */
+  /** Alıw statusı hám biykar etilgen kurstı qabıllaw super-admin ushın; backend te de májbúrlenedi. */
   isSuperAdmin: boolean
 }
 
 const LOCALES = { uz: 'uz', ru: 'ru', en: 'en' } as const
 
-/** Admin: the CBU rates the guests are charged at, their history, and what needs a decision. */
+/** Admin: mehmanlardan alınatuǵın CBU kursları, olardıń tariyxı hám sheshimdi talap etetuǵınlar. */
 export function AdminExchangeRates({ isSuperAdmin }: AdminExchangeRatesProps) {
   const { t, tp, language, formatDate } = useI18n()
   const [page, setPage] = useState(1)
@@ -33,7 +33,7 @@ export function AdminExchangeRates({ isSuperAdmin }: AdminExchangeRatesProps) {
   const formatRate = (rate: string) =>
     Number(rate).toLocaleString(LOCALES[language], { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  // Doubles as the Try Again button and the refresh after accepting a rate
+  // Try Again túymesi hám kurstı qabıllaǵannan keyingi jańalaw sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)

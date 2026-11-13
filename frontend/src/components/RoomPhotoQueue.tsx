@@ -11,7 +11,7 @@ interface RoomPhotoQueueProps {
   disabled?: boolean
 }
 
-/** Photos chosen while the room type is not saved yet: they are uploaded right after it is created. */
+/** Xona túri ele saqlanbaǵan waqıtta tańlanǵan súwretler: olar xona túri jaratılǵannan keyin birden júklenedi. */
 export function RoomPhotoQueue({ files, onChange, max, disabled }: RoomPhotoQueueProps) {
   const { t } = useI18n()
   const [problems, setProblems] = useState<string[]>([])

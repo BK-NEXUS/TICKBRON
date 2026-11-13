@@ -1,4 +1,4 @@
-/** Shortest password the backend accepts (AUTH_PASSWORD_VALIDATORS); the server checks the rest. */
+/** Backend qabıllaytuǵın eń qısqa parol (AUTH_PASSWORD_VALIDATORS); qalǵanın server tekseredi. */
 export const MIN_PASSWORD_LENGTH = 8
 
 export type PasswordFormatProblem = 'short' | 'noLetter' | 'noDigit' | 'noSpecial'
@@ -12,7 +12,7 @@ export const PASSWORD_PROBLEM_MESSAGE = {
   noSpecial: 'auth.errorPasswordSpecial',
 } as const satisfies Record<NewPasswordProblem, string>
 
-/** The first rule the password breaks (same rules as the backend: length, a letter, a digit, a special character). */
+/** Parol buzatuǵın birinshi qaǵıyda (backend penen birdey qaǵıydalar: uzınlıq, háripler, san, arnawlı belgi). */
 export function passwordFormatProblem(password: string, minLength = MIN_PASSWORD_LENGTH): PasswordFormatProblem | null {
   if (password.length < minLength) return 'short'
   if (!/\p{L}/u.test(password)) return 'noLetter'
@@ -21,7 +21,7 @@ export function passwordFormatProblem(password: string, minLength = MIN_PASSWORD
   return null
 }
 
-/** The first problem the browser can see before sending a new password, or null. */
+/** Jańa parol jiberilmesten aldın brauzer kóre alatuǵın birinshi mashqala, yamasa null. */
 export function newPasswordProblem(password: string, confirmation: string): NewPasswordProblem | null {
   if (password !== confirmation) return 'mismatch'
   return passwordFormatProblem(password)

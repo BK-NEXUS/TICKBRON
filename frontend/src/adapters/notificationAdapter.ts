@@ -1,10 +1,10 @@
-// The in-app notices of the logged-in account. Contract: .ai/API_CONTRACT.md, "Notifications API".
+// Kirgen akkauntıń ilova ishindegi xabarlandırıwları. Contract: .ai/API_CONTRACT.md, "Notifications API".
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 
-/** `title` and `message` are the English fallback; screens write their own text from `code` + `params` */
+/** `title` hám `message` inglizsha zapas; ekranlar óz tekstin `code` + `params` ten jazadı */
 export interface AppNotification {
   id: number
   code: string | null
@@ -22,7 +22,7 @@ export interface NotificationResult<T> {
 }
 
 const BASE = '/api/v1/me/notifications/'
-// A getter: the text is chosen when an error happens, in the language the page is in then
+// Getter: tekst qátelik bolǵanda, bet sol waqıtta qaysı tilde bolsa sol tilde tańlanadı
 const STATUS_MESSAGES = {
   get 401() { return translateNow('apiError.authRequired') },
 }
@@ -45,7 +45,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<Noti
 }
 
 export const notificationAdapter = {
-  /** One page of the notices, newest first; `hasMore` is true while the server has a next page */
+  /** Xabarlandırıwlardıń bir beti, eń jańası birinshi; server de keyingi bet bar bolsa `hasMore` true */
   async list(page = 1): Promise<NotificationResult<{ items: AppNotification[]; hasMore: boolean }>> {
     const result = await request<{ results: AppNotification[]; next: string | null }>(`?page=${page}`)
     if (!result.data) return { data: null, error: result.error }

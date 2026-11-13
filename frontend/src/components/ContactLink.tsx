@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
 interface ContactLinkProps {
-  /** Null when the typed value is not safe to turn into a link */
+  /** Terilgen mánisti siltemege aylandırıw qáwipsiz bolmasa null */
   href: string | null
   className: string
   ariaLabel?: string
-  /** Plain text shown instead of the link when href is null */
+  /** href null bolǵanda silteme ornına kórsetiletuǵın ápiwayı tekst */
   fallback?: string
   children: ReactNode
 }

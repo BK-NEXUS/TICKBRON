@@ -2,17 +2,17 @@ import type { MessageKey } from '../i18n/messages/en'
 import type { SearchParams } from '../adapters/propertyAdapter'
 
 /**
- * Search sidebar filters and sorting, kept in the results page URL so a search
- * can be shared, refreshed and reached again with the back button.
- * Values match GET /api/v1/properties/search/ (see .ai/API_CONTRACT.md).
+ * Izlew jan paneli filterleri hám tártiplew, nátiyjeler beti URL inde saqlanadı, sonda izlewdi
+ * bólisiw, jańalaw hám artqa túymesi menen qayta ashıw múmkin.
+ * Mánisler GET /api/v1/properties/search/ ke sáykes (qarań .ai/API_CONTRACT.md).
  */
 export interface FilterState {
   property_type?: number
   min_price?: number
   max_price?: number
-  /** Property flags: wifi, parking, ac, heating, elevator (the backend `features` param) */
+  /** Mehmanxana belgileri: wifi, parking, ac, heating, elevator (backend `features` parametri) */
   features: string[]
-  /** Searchable amenity ids */
+  /** Izlenetuǵın amenity id leri */
   amenities: number[]
   min_rating?: number
 }
@@ -50,7 +50,7 @@ export const SORT_OPTIONS: Array<{ id: string; labelKey: MessageKey }> = [
   { id: 'reviews', labelKey: 'sort.reviews' },
 ]
 
-/** URL params owned by the sidebar and the sort select (the search form owns the rest) */
+/** Jan panel hám tártiplew tańlaǵıshı iyelik etetuǵın URL parametrleri (izlew formasında qalǵanı) */
 export const FILTER_URL_KEYS = [
   'property_type', 'min_price', 'max_price', 'features', 'amenities', 'min_rating', 'sort',
 ] as const
@@ -84,7 +84,7 @@ export function filtersFromUrl(params: URLSearchParams): { filters: FilterState;
   }
 }
 
-/** A copy of `current` with the filter and sort params replaced (other params are kept) */
+/** Filter hám tártiplew parametrleri almastırılǵan `current` nusqası (basqa parametrler saqlanadı) */
 export function writeFiltersToUrl(current: URLSearchParams, filters: FilterState, sort: string): URLSearchParams {
   const next = new URLSearchParams(current)
   FILTER_URL_KEYS.forEach(key => next.delete(key))
@@ -98,7 +98,7 @@ export function writeFiltersToUrl(current: URLSearchParams, filters: FilterState
   return next
 }
 
-/** Copy the filter and sort params from one URL to another (a new search keeps the sidebar) */
+/** Filter hám tártiplew parametrlerin bir URL den ekinshisine kóshiriw (jańa izlew jan panelin saqlaydı) */
 export function keepFilterParams(from: URLSearchParams, to: URLSearchParams): URLSearchParams {
   FILTER_URL_KEYS.forEach(key => {
     const value = from.get(key)
@@ -132,16 +132,16 @@ export function hasActiveFilters(filters: FilterState): boolean {
 
 const LAST_SEARCH_KEY = 'tickbron:lastSearch'
 
-/** Remember the results page query so breadcrumbs can lead back to it with its filters */
+/** Nátiyjeler beti query sin yadta saqlaw, sonda breadcrumb ler onı filterleri menen qaytara aladı */
 export function rememberSearch(queryString: string) {
   try {
     window.sessionStorage.setItem(LAST_SEARCH_KEY, queryString)
   } catch {
-    // Storage blocked: breadcrumbs fall back to a plain city search
+    // Saqlaw bloklanǵan: breadcrumb ler ápiwayı qala izlewine qaytadı
   }
 }
 
-/** The last search for this city (with its dates, guests, filters and sort), else a plain city search */
+/** Usı qala ushın sońǵı izlew (sanaları, mehmanları, filterleri hám tártibi menen), bolmasa ápiwayı qala izlewi */
 export function searchUrlForCity(city: string): string {
   try {
     const last = window.sessionStorage.getItem(LAST_SEARCH_KEY)
@@ -150,7 +150,7 @@ export function searchUrlForCity(city: string): string {
       if (destination.trim().toLowerCase() === city.trim().toLowerCase()) return `/search?${last}`
     }
   } catch {
-    // Storage blocked
+    // Saqlaw bloklanǵan
   }
   return `/search?${new URLSearchParams({ destination: city }).toString()}`
 }

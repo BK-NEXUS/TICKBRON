@@ -54,7 +54,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
       return
     }
 
-    // The backend ties every review to a completed stay (booking)
+    // Backend hár sharhtı juwmaqlanǵan turıwǵa (bronǵa) baylaydı
     if (!bookingId) {
       setError(t('reviews.errorStay'))
       setIsLoading(false)
@@ -66,7 +66,7 @@ export function ReviewForm({ propertyId, bookingId, onSubmitSuccess, onCancel }:
       booking: bookingId,
       overall_rating: overallRating,
     }
-    // Category ratings are optional; 0 means "not rated" and is not sent
+    // Kategoriya bahaları ıqtıyarıy; 0 "bahalanbaǵan" degendi bildiredi hám jiberilmeydi
     if (cleanlinessRating > 0) request.cleanliness_rating = cleanlinessRating
     if (locationRating > 0) request.location_rating = locationRating
     if (valueRating > 0) request.value_rating = valueRating

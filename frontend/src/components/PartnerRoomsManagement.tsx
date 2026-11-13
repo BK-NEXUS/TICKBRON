@@ -10,11 +10,11 @@ import { partnerAdapter, PartnerRoomType, CreateRoomTypeRequest, UpdateRoomTypeR
 interface PartnerRoomsManagementProps {
   propertyId: number
   propertyName: string
-  /** The hotel's currency: room types are priced in it (the server refuses any other) */
+  /** Mehmanxananıń valyutası: xona túrleri sonda bahalanadı (server basqasın qabıllamaydı) */
   currency?: string
-  /** Open the rate plans (and from there availability) of a room type */
+  /** Xona túriniń rate planların (hám sonnan bos orınların) ashıw */
   onManageRates?: (roomType: { id: number; name: string; currency: string }) => void
-  /** Open the calendar (RoomInventory + external-booking blocks) of a room type */
+  /** Xona túriniń kalendarın (RoomInventory + sırtqı bron bloklar) ashıw */
   onManageCalendar?: (roomType: { id: number; name: string; totalRooms: number }) => void
 }
 
@@ -46,7 +46,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
 
   useEffect(() => {
     loadRoomTypes()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId])
 
@@ -60,7 +60,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       if (response.error) {
         setError(response.error)
       } else if (response.data) {
-        // Filter room types for this property
+        // Usı mehmanxana ushın xona túrlerin filterlew
         const propertyRoomTypes = response.data.filter(rt => rt.property === propertyId)
         setRoomTypes(propertyRoomTypes)
       }
@@ -95,7 +95,7 @@ export function PartnerRoomsManagement({ propertyId, propertyName, currency, onM
       setQueuedPhotos([])
       loadRoomTypes()
       if (failures.length > 0) {
-        // The room type exists: stay on it so the owner can add the missing photos
+        // Xona túri bar: iye joq súwretlerdi qosıwı ushın onda qalıw
         setSelectedRoomType(created)
         setViewMode('edit')
         setError([t('roomForm.photosFailed'), ...failures].join(' '))

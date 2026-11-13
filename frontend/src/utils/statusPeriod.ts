@@ -1,6 +1,6 @@
 import { englishI18n, type I18nValue } from '../i18n/I18nContext'
-// Period choices of the Status sections and the client-side check of a custom range.
-// The backend validates again and its message is shown when it disagrees.
+// Status bólimleriniń dáwir tańlawları hám custom aralıqtı klient tárepinde tekseriw.
+// Backend qayta tekseredi hám kelispegende onıń xabarı kórsetiledi.
 
 export interface DateRange {
   /** YYYY-MM-DD */
@@ -24,7 +24,7 @@ function addYears(isoDate: string, years: number): string {
   return new Date(Date.UTC(year + years, month - 1, day)).toISOString().slice(0, 10)
 }
 
-/** Returns the message to show (in the page language), or null when the range is acceptable */
+/** Kórsetiletuǵın xabardı (bet tilinde) qaytaradı, yamasa aralıq qabıllanıwı múmkin bolsa null */
 export function validateCustomRange(from: string, to: string, i18n: I18nValue = englishI18n): string | null {
   if (!from || !to) return i18n.t('status.chooseBoth')
   if (from > to) return i18n.t('status.rangeOrder')

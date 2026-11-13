@@ -11,7 +11,7 @@ interface StatusYearChartsProps {
   onYearChange: (year: number) => void
 }
 
-/** The year selector, the revenue chart (one currency at a time) and the guests chart. */
+/** Jıl tańlaǵısh, dáramat grafigi (bir waqıtta bir valyuta) hám mehmanlar grafigi. */
 export function StatusYearCharts({ months, year, availableYears, onYearChange }: StatusYearChartsProps) {
   const { t } = useI18n()
   const id = useId()

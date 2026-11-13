@@ -1,5 +1,5 @@
-// Number formatting for the Status sections (admin and partner): thousand separators,
-// one amount per currency (never added together).
+// Status bólimleri ushın san formatlaw (admin hám partner): mıńlıq ajıratıwshılar,
+// hár valyuta ushın bir summa (hesh qashan qosılmaydı).
 
 import type { Money } from '../adapters/statusAdapter'
 import { STATUS_PRESET_PERIODS } from './statusPeriod'
@@ -16,12 +16,12 @@ export function formatMoney({ currency, amount }: Money): string {
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
   } catch {
-    // Not an ISO 4217 code: show it as it is
+    // ISO 4217 kodı emes: sol qalpında kórsetiw
     return `${currency} ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(value)}`
   }
 }
 
-/** A short amount for a chart label: "$54.2M", "UZS 1.2K" (the full amount stays in the bar's title) */
+/** Grafik belgisi ushın qısqa summa: "$54.2M", "UZS 1.2K" (tolıq summa barnıń title ında qaladı) */
 export function formatMoneyCompact({ currency, amount }: Money): string {
   const value = Number(amount)
   try {
@@ -31,27 +31,27 @@ export function formatMoneyCompact({ currency, amount }: Money): string {
   }
 }
 
-/** "€60.00 · $530.00", or a dash when there is none */
+/** "€60.00 · $530.00", yamasa joq bolsa sızıqsha */
 export function formatMoneyList(list: Money[]): string {
   return list.length ? list.map(formatMoney).join(' · ') : '—'
 }
 
-/** A card value that would break inside its digits in one column: amounts in several currencies, or one long amount */
+/** Bir baǵanada óz sanlarınıń ishinde úziliwi múmkin karta mánisi: bir neshe valyutadaǵı summalar, yamasa bir uzın summa */
 export function isLongValue(value: string): boolean {
   return value.length > 14
 }
 
-/** "status-card", plus the modifiers a card needs (the headline look, two columns for a long value) */
+/** "status-card", hám kartaǵa kerek modifikatorlar (tiykarǵı kórinis, uzın mánis ushın eki baǵana) */
 export function statusCardClass(value: string, headline = false): string {
   return ['status-card', headline && 'status-card--headline', isLongValue(value) && 'status-card--wide'].filter(Boolean).join(' ')
 }
 
-/** "2026-04" -> "Apr" (in the page language) */
+/** "2026-04" -> "Apr" (bet tilinde) */
 export function monthLabel(month: string, i18n: I18nValue = englishI18n): string {
   return /^\d{4}-\d{2}$/.test(month) ? i18n.formatDate(`${month}-01`, { month: 'short' }) : month
 }
 
-/** "all" -> "All time", "last_7_days" -> "Last 7 days", "2026-04" -> "April 2026", custom -> its dates */
+/** "all" -> "Pútkil waqıt", "last_7_days" -> "Sońǵı 7 kún", "2026-04" -> "Aprel 2026", custom -> onıń sanaları */
 export function periodLabel(
   period: string,
   range?: { from: string | null; to: string | null },
@@ -69,7 +69,7 @@ export function formatDate(value: string, i18n: I18nValue = englishI18n): string
   return i18n.formatDate(value)
 }
 
-/** Currencies with revenue in a series, the largest total first (the chart's default) */
+/** Seriyada dáramatı bar valyutalar, eń úlken jıyındı birinshi (grafiktiń ádetdegisi) */
 export function chartCurrencies(months: { revenue: Money[] }[]): string[] {
   const sums = new Map<string, number>()
   months.forEach(month => month.revenue.forEach(({ currency, amount }) => {

@@ -2,7 +2,7 @@ import './styles/tokens.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-// Brand fonts, bundled with the app (the CSP only allows same-origin styles and fonts)
+// Ilova menen birge qaptalǵan brend shriftleri (CSP tek bir kelip shıǵıwdaǵı stil hám shriftlerge ruxsat beredi)
 import '@fontsource/pt-sans/400.css'
 import '@fontsource/pt-sans/700.css'
 import '@fontsource/pt-serif/400.css'

@@ -21,7 +21,7 @@ export function AdminCustomersList() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Search and filter state
+  // Izlew hám filter jaǵdayı
   const [searchQuery, setSearchQuery] = useState('')
   const [letter, setLetter] = useState('')
   const [sortBy, setSortBy] = useState('registration_date')
@@ -29,14 +29,14 @@ export function AdminCustomersList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   
-  // Pagination metadata
+  // Betlew metadata sı
   const [totalCount, setTotalCount] = useState(0)
   const [nextPage, setNextPage] = useState<string | null>(null)
   const [previousPage, setPreviousPage] = useState<string | null>(null)
 
   useEffect(() => {
     loadCustomers()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, letter, sortBy, sortOrder, currentPage, pageSize])
 
@@ -73,7 +73,7 @@ export function AdminCustomersList() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
-    setCurrentPage(1) // Reset to first page on new search
+    setCurrentPage(1) // Jańa izlewde birinshi betke qaytarıw
   }
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -86,7 +86,7 @@ export function AdminCustomersList() {
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPageSize(Number(e.target.value))
-    setCurrentPage(1) // Reset to first page on page size change
+    setCurrentPage(1) // Bet ólshemi ózgergende birinshi betke qaytarıw
   }
 
   const handlePreviousPage = () => {
@@ -134,7 +134,7 @@ export function AdminCustomersList() {
         </div>
       )}
 
-      {/* Search and Filter Controls */}
+      {/* Izlew hám filter basqarıwları */}
       <div className="customers-controls">
         <div className="search-bar">
           <label htmlFor="customer-search" className="search-label">
@@ -202,7 +202,7 @@ export function AdminCustomersList() {
 
       <AlphabetFilter value={letter} onChange={(next) => { setLetter(next); setCurrentPage(1) }} />
 
-      {/* Loading State */}
+      {/* Júklew jaǵdayı */}
       {loading ? (
         <div className="loading-state" role="status" aria-live="polite">
           {t('admin.loadingCustomers')}
@@ -214,7 +214,7 @@ export function AdminCustomersList() {
         </div>
       ) : (
         <>
-          {/* Customers Table */}
+          {/* Mijozlar kestesi */}
           <div className="customers-table-container">
             <div className="customers-count">
               <p>{t('admin.totalCustomers', { count: totalCount })}</p>
@@ -268,7 +268,7 @@ export function AdminCustomersList() {
             </table>
           </div>
 
-          {/* Pagination Controls */}
+          {/* Betlew basqarıwları */}
           <div className="pagination-controls" role="navigation" aria-label={t('status.pagination')}>
             <button
               className="btn btn-secondary btn-sm"

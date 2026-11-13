@@ -9,7 +9,7 @@ interface PromotionHotelFinderProps {
   onPromote: (hotel: HotelSearchRow) => void
 }
 
-/** Find a hotel by name; the "Promote" button of a row starts the create form. */
+/** Mehmanxananı atı boyınsha tabıw; qatardıń "Reklamalaw" túymesi jaratıw formasın baslaydı. */
 export function PromotionHotelFinder({ onPromote }: PromotionHotelFinderProps) {
   const { t } = useI18n()
   const [text, setText] = useState('')

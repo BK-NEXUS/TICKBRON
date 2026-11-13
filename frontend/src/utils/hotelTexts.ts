@@ -3,7 +3,7 @@ import type { PropertyTexts } from '../adapters/partnerAdapter'
 export const HOTEL_TEXT_LANGUAGES = ['uz', 'ru', 'en'] as const
 export type HotelTextLanguage = (typeof HOTEL_TEXT_LANGUAGES)[number]
 
-/** One name and one description per language, as typed in the form (empty strings for what is not filled). */
+/** Hár til ushın bir at hám bir táripleme, formada terilgenindey (toltırılmaǵanlar ushın bos qatarlar). */
 export type HotelTextsForm = Record<HotelTextLanguage, { name: string; description: string }>
 
 export const emptyHotelTexts = (): HotelTextsForm => ({
@@ -21,7 +21,7 @@ export function hotelTextsFromApi(saved: PropertyTexts | undefined): HotelTextsF
   return form
 }
 
-/** The languages with a name; a language without a name is left out (the API keeps what it has). */
+/** Atı bar tiller; atı joq til taslanıp ketedi (API bar nárseni saqlaydı). */
 export function hotelTextsToApi(form: HotelTextsForm): PropertyTexts {
   const texts: PropertyTexts = {}
   for (const language of HOTEL_TEXT_LANGUAGES) {

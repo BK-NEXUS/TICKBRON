@@ -16,7 +16,7 @@ interface PartnerStatusOverviewProps {
 const DASH = '—'
 const percent = (value: string | null) => (value === null ? DASH : `${value}%`)
 
-/** This month against last month, the next 7 days, a few key numbers of the chosen period, the yearly charts and the hotels. */
+/** Usı ay aldınǵı ayǵa qarata, keyingi 7 kún, tańlanǵan dáwirdiń bir neshe tiykarǵı sanı, jıllıq grafikler hám mehmanxanalar. */
 export function PartnerStatusOverview({ data, onYearChange, onOpenHotel }: PartnerStatusOverviewProps) {
   const i18n = useI18n()
   const { t } = i18n

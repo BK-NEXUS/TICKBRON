@@ -4,9 +4,9 @@ import type { PeriodRange } from '../adapters/statusAdapter'
 import { STATUS_NOTE } from '../utils/statusNote'
 
 interface StatusStayedNoteProps {
-  /** Hidden when the period ended before the window; omit to always show */
+  /** Dáwir oynadan aldın pitkende jasırıladı; hárdayım kórsetiw ushın qaldırıń */
   periodRange?: PeriodRange
-  /** For tests; defaults to now */
+  /** Testler ushın; ádetde házir */
   today?: Date
 }
 
@@ -16,7 +16,7 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-/** Small caveat next to "stayed" numbers of recent periods */
+/** Jaqın dáwirlerdiń "stayed" sanları janındaǵı kishi eskertiw */
 export function StatusStayedNote({ periodRange, today = STATUS_NOTE.businessDate() }: StatusStayedNoteProps) {
   const { t } = useI18n()
   const windowStart = new Date(today)

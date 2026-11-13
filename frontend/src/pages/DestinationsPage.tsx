@@ -13,13 +13,13 @@ interface CountryDestinations {
   regions: GeographyRegion[]
 }
 
-/** Unwraps an adapter result or throws its message, so one failure ends the whole load. */
+/** Adapter nátiyjesin ashadı yamasa xabarın taslaydı, sol sebepli bir qátelik pútkil júklewdi tawsadı. */
 function unwrap<T>(result: { data: T | null; error: string | null }): T {
   if (result.data === null) throw new Error(result.error ?? '')
   return result.data
 }
 
-/** Only countries with public hotels are asked for their regions. */
+/** Tek ashıq mehmanxanaları bar mámleketlerden regionları soraladı. */
 async function loadDestinations(): Promise<CountryDestinations[]> {
   const countries = unwrap(await geographyAdapter.getCountries()).filter(c => c.hotel_count > 0)
   return Promise.all(countries.map(async country => {
@@ -28,11 +28,11 @@ async function loadDestinations(): Promise<CountryDestinations[]> {
   }))
 }
 
-/** Regions that have properties, grouped by country, each linking to a search for that region */
+/** Mehmanxanaları bar regionlar, mámleket boyınsha toparlanǵan, hárbiri sol region ushın izlewge silteme */
 export function DestinationsPage() {
   const { t, tp, language } = useI18n()
   const [destinations, setDestinations] = useState<CountryDestinations[] | null>(null)
-  // A message from the backend, or '' for a failure we describe ourselves (so it follows the page language)
+  // Backend ten xabar, yamasa ózimiz táriyplep beretuǵın qátelik ushın '' (sol sebepli ol bet tilin izleydi)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {

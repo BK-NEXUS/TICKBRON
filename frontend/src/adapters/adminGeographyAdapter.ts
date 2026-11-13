@@ -1,5 +1,5 @@
-// Super-admin geography management: Country > Region > City.
-// Contract: .ai/API_CONTRACT.md, section "Geography: Country > Region > City" (Super-admin only).
+// Super-admin geografiya basqarıwı: Country > Region > City.
+// Contract: .ai/API_CONTRACT.md, "Geography: Country > Region > City" bólimi (tek super-admin).
 import { apiFetch, type Paginated } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { GeographyNames } from './geographyAdapter'
@@ -32,21 +32,21 @@ export type AdminGeographyRow = AdminCountry | AdminRegion
 
 export interface GeographyListParams {
   search?: string
-  /** Regions of this country id */
+  /** Usı mámleket id sine tiyisli regionlar */
   country?: number
 }
 
-/** Fields of a create or edit; the parent and the code of an existing row cannot change. */
+/** Jaratıw yamasa ózgertiw maydanları; bar qatardıń ata-anası hám kodın ózgertip bolmaydı. */
 export interface GeographyWrite extends Partial<GeographyNames> {
   code?: string
   currency?: string
   country?: number
   is_active?: boolean
-  /** Required when adding, optional when editing */
+  /** Qosqanda májbúriy, ózgertkende ıqtıyarıy */
   image?: File
 }
 
-/** JSON, or multipart when a picture is attached (the browser sets the boundary header) */
+/** JSON, yamasa súwret qosılǵanda multipart (brauzer boundary header in ózi belgileydi) */
 function writeInit(method: string, body: GeographyWrite): RequestInit {
   if (!body.image) return { method, body: JSON.stringify(body) }
   const form = new FormData()
@@ -93,7 +93,7 @@ export class AdminGeographyAdapter {
     return this.send<AdminGeographyRow>(this.url(kind, `${id}/`), writeInit('PATCH', body))
   }
 
-  /** 409 means the row is in use (children or hotels): the screen then suggests hiding it. */
+  /** 409 qatar paydalanılıp atırǵanın bildiredi (balalar yamasa mehmanxanalar): ekran sonda onı jasırıwdı usınadı. */
   async remove(kind: GeographyKind, id: number): Promise<{ error: string | null; inUse: boolean }> {
     try {
       const response = await apiFetch(this.url(kind, `${id}/`), { method: 'DELETE' })

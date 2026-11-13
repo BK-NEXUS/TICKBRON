@@ -2,16 +2,16 @@ import { DEFAULT_LANGUAGE, isLanguage, type Language } from './options'
 
 export const LANGUAGE_KEY = 'tickbron.language'
 
-// Browser storage can be blocked (private window, site data off): the app must work without it
+// Brauzer saqlawı bloklanǵan bolıwı múmkin (jeke oyna, sayt maǵlıwmatı óshken): ilova onsız islewi kerek
 export const readStored = (key: string): string | null => {
   try { return localStorage.getItem(key) } catch { return null }
 }
 
 export const writeStored = (key: string, value: string) => {
-  try { localStorage.setItem(key, value) } catch { /* the choice just is not remembered */ }
+  try { localStorage.setItem(key, value) } catch { /* tańlaw tek yadta saqlanbaydı */ }
 }
 
-/** The remembered language, else the browser's when the site has it, else the default */
+/** Yadta saqlanǵan til, bolmasa saytta bar bolsa brauzerdiń tili, bolmasa ádetdegi */
 export function initialLanguage(): Language {
   const stored = readStored(LANGUAGE_KEY)
   if (isLanguage(stored)) return stored
@@ -21,7 +21,7 @@ export function initialLanguage(): Language {
 
 let active: Language | null = null
 
-/** The provider tells plain code (the API wrapper) which language the page is in right now */
+/** Provider ápiwayı kodqa (API wrapper) bet házir qaysı tilde ekenin aytadı */
 export function setActiveLanguage(language: Language): void {
   active = language
 }

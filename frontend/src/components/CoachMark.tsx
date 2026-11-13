@@ -22,17 +22,17 @@ export function CoachMark({
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    // Check if this coach mark has been shown before
+    // Bul coach mark tıń aldın kórsetilgenin tekseriw
     const storageKey = `coachmark-${featureId}-shown`
     const hasBeenShown = localStorage.getItem(storageKey)
 
     if (showOnce) {
-      // Only show if never shown before
+      // Tek hesh qashan kórsetilmegen bolsa kórsetiw
       if (!hasBeenShown) {
         setIsVisible(true)
       }
     } else {
-      // Always show when showOnce is false
+      // showOnce false bolǵanda hárdayım kórsetiw
       setIsVisible(true)
     }
   }, [featureId, showOnce])

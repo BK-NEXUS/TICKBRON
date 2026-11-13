@@ -9,14 +9,14 @@ import { StatusMetricCard } from './StatusMetricCard'
 import { StatusYearCharts } from './StatusYearCharts'
 
 interface AdminStatusOverviewProps {
-  /** Period params of the page's period selector */
+  /** Bet dáwir tańlaǵıshınıń dáwir parametrleri */
   params: StatusPeriodParams
 }
 
 const DASH = '—'
 const percent = (value: string | null) => (value === null ? DASH : `${value}%`)
 
-/** The whole platform at a glance: this month, key numbers of the period, busiest regions and room types, yearly charts. */
+/** Pútkil platforma bir qarawda: usı ay, dáwirdiń tiykarǵı sanları, eń bánt regionlar hám xona túrleri, jıllıq grafikler. */
 export function AdminStatusOverview({ params }: AdminStatusOverviewProps) {
   const i18n = useI18n()
   const { t, language } = i18n

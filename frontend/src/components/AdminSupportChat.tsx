@@ -4,7 +4,7 @@ import { ChatThread } from './ChatThread'
 import { useI18n } from '../i18n/I18nContext'
 
 interface AdminSupportChatProps {
-  /** Told when the team's unread number may have changed */
+  /** Komandanıń oqılmaǵan sanı ózgergen bolıwı múmkin bolǵanda xabarlanadı */
   onSeen?: () => void
 }
 

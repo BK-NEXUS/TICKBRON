@@ -20,7 +20,7 @@ interface NoShowDecisionDialogProps {
   onClose: () => void
 }
 
-/** Staff decide a report. A comment is required: the hotel reads it. */
+/** Staff esabatqa qarar beredi. Komment májbúriy: mehmanxana onı oqıydı. */
 export function NoShowDecisionDialog({ report, decision, onDone, onClose }: NoShowDecisionDialogProps) {
   const { t } = useI18n()
   const [comment, setComment] = useState('')

@@ -1,12 +1,13 @@
-// The size rules of every picture upload. Same numbers as the backend (`backend/common/image_rules.py`), which is the
-// authority and checks again; these only show the sizes to the person and refuse a wrong picture before it is sent.
+// Hár súwret júklewdiń ólshem qaǵıydaları. Backend penen birdey sanlar (`backend/common/image_rules.py`), ol
+// tiykarǵı hújjet hám qayta tekseredi; bular tek ólshemlerdi adamǵa kórsetedi hám qáte súwretti jiberilmesten aldın biykar
+// etedi.
 
 export type ImageRuleKind = 'hotel' | 'room' | 'ad' | 'place'
 
 export interface ImageRule {
   minWidth: number
   minHeight: number
-  /** [narrowest, widest] width : height, each as [width, height] parts of the ratio */
+  /** [eń tar, eń keń] eni : boyı, hárbiri qatnastıń [eni, boyı] bólekleri retinde */
   shape: [[number, number], [number, number]]
   shapeLabels: [string, string]
   recommended: [number, number]
@@ -20,9 +21,9 @@ const PHOTO: ImageRule = {
 export const IMAGE_RULES: Record<ImageRuleKind, ImageRule> = {
   hotel: PHOTO,
   room: PHOTO,
-  // The ad carousel is 16:9 on a phone and 16:5 on a wide screen
+  // Reklama karuseli telefonda 16:9 hám keń ekranda 16:5
   ad: { minWidth: 1600, minHeight: 600, shape: [[16, 9], [16, 5]], shapeLabels: ['16:9', '16:5'], recommended: [1920, 720], recommendedShape: '8:3' },
-  // The "where to" cards of the home page are 4:3
+  // Bas bettiń "qayaqqa" kartaları 4:3
   place: { minWidth: 800, minHeight: 600, shape: [[6, 5], [9, 5]], shapeLabels: ['6:5', '9:5'], recommended: [1200, 900], recommendedShape: '4:3' },
 }
 
@@ -34,7 +35,7 @@ export interface SizeProblem {
   params: Record<string, string | number>
 }
 
-/** What is wrong with a picture of this size for this kind of place, or null when it fits (an exact edge fits). */
+/** Usı túrdegi orın ushın usı ólshemdegi súwrette ne qáte, yamasa sıyssa null (anıq shegara sıyadı). */
 export function imageSizeProblem({ width, height }: ImageSize, kind: ImageRuleKind): SizeProblem | null {
   const rule = IMAGE_RULES[kind]
   const params = {
@@ -43,7 +44,7 @@ export function imageSizeProblem({ width, height }: ImageSize, kind: ImageRuleKi
   }
   if (width < rule.minWidth || height < rule.minHeight) return { key: 'image.errTooSmall', params }
   const [[lowW, lowH], [highW, highH]] = rule.shape
-  // Cross-multiplied, so the edges are exact whole-number comparisons
+  // Kóbeytip salıstırıladı, sol sebepli shegaralar anıq pútin san salıstırıwları
   if (width * lowH < height * lowW || width * highH > height * highW) return { key: 'image.errShape', params }
   return null
 }

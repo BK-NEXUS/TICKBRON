@@ -5,9 +5,9 @@ export interface StayDates {
 }
 
 /**
- * True when one of the guest's live bookings shares a night with these dates (YYYY-MM-DD).
- * The check-out day is free, so a stay may start the day another ends. The backend decides; this
- * only tells the guest before sending.
+ * Mehmannıń aktiv bronlarınıń biri usı sanalar menen bir túndi bólisse true (YYYY-MM-DD).
+ * Shıǵıw kúni bos, sol sebepli turıw basqası pitken kúni baslana aladı. Backend sheshedi; bul
+ * tek jibermesten aldın mehmanǵa aytadı.
  */
 export function overlapsOwnStay(own: StayDates[], checkIn: string, checkOut: string): boolean {
   return own.some(stay =>

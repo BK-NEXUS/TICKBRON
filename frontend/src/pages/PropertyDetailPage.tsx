@@ -24,8 +24,8 @@ import { ErrorState } from '../components/ErrorState'
 import { SearchX } from 'lucide-react'
 
 /**
- * PropertyDetailPage component for displaying detailed property information
- * Includes gallery, header, and responsive interaction patterns
+ * Mehmanxana tolıq maǵlıwmatın kórsetiw ushın PropertyDetailPage komponenti
+ * Galereya, header hám responsive óz-ara tásir úlgilerin óz ishine aladı
  */
 const NOT_FOUND_TEXT = 'Property not found'
 
@@ -36,7 +36,7 @@ export function PropertyDetailPage() {
   const { isAuthenticated } = useAuth()
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
-  // A message from the backend (text) or one of ours (key), so ours follow the page language
+  // Backend xabarı (tekst) yamasa bizdiń biri (kilt), sol sebepli bizdikiler bet tilin izleydi
   const [error, setError] = useState<{ text: string } | { key: MessageKey } | null>(null)
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function PropertyDetailPage() {
         const response = await propertyAdapter.getPropertyById(propertyId)
         
         if (response.error) {
-          // The adapter's plain 404 text repeats the title, so the explanation replaces it
+          // Adapterdiń ápiwayı 404 teksti sarlawhanı qaytalaydı, sol sebepli túsindirme onı almastıradı
           setError(response.error === NOT_FOUND_TEXT ? { key: 'property.notFoundText' } : { text: response.error })
           setLoading(false)
         } else if (response.data) {
@@ -83,7 +83,7 @@ export function PropertyDetailPage() {
       const translation = property.translations[0] || { name: property.name || '', description: property.description || '' }
       document.title = `${translation.name} | TICKBRON — Online Booking`
       
-      // Update meta description
+      // Meta táripti jańalaw
       const metaDescription = document.querySelector('meta[name="description"]')
       if (metaDescription) {
         metaDescription.setAttribute('content', translation.description)
@@ -96,7 +96,7 @@ export function PropertyDetailPage() {
     }
   }, [property])
 
-  // Home › City (back to the last search there, with its filters) › Hotel
+  // Bas bet › Qala (sol jerdegi sońǵı izlewge, filterleri menen qaytıw) › Mehmanxana
   usePageTrail(property ? [
     { label: property.city, to: searchUrlForCity(property.city) },
     { label: propertyDisplayName(property) },
@@ -107,7 +107,7 @@ export function PropertyDetailPage() {
       <div className="property-detail-page property-detail-page--loading">
         <div className="container">
           <p className="sr-only" role="status" aria-live="polite">{t('property.loading')}</p>
-          {/* The shape of the page, so the content does not jump when it arrives */}
+          {/* Bettiń forması, sonda mazmun kelgende bet sekirmeydi */}
           <div className="property-detail-skeleton" aria-hidden="true">
             <div className="skeleton skeleton-title"></div>
             <div className="skeleton skeleton-gallery"></div>
@@ -146,7 +146,7 @@ export function PropertyDetailPage() {
 
   const translation = property.translations[0] || { name: property.name || t('property.defaultName'), description: property.description || '' }
 
-  // The "from" price in the chosen currency: the lowest room price, else the hotel's own price
+  // Tańlanǵan valyutadaǵı "dan" bahası: eń arzan xona bahası, bolmasa mehmanxananıń óz bahası
   const shownFrom = propertyFromPrice(property, property.room_types ?? [], currency)
   const fromText = formatMoney(shownFrom.amount, shownFrom.currency, { minDecimals: 0, maxDecimals: 0 })
 
@@ -244,7 +244,7 @@ export function PropertyDetailPage() {
               </span>
               <span className="property-detail-price-period">{t('card.perNight')}</span>
               <PriceNote shown={shownFrom} />
-              {/* The date of the CBU rate (and its out-of-date warning) belongs to the so'm equivalent of the hotel's own price */}
+              {/* CBU kursı sanası (hám onıń eskirgen eskertpesi) mehmanxananıń óz bahasınıń som ekvivalentine tiyisli */}
               {shownFrom.currency === property.currency && (
                 <PriceApprox approx={property.base_price_uzs_approx} rate={property.uzs_rate} showRate />
               )}
@@ -261,16 +261,16 @@ export function PropertyDetailPage() {
               className="btn btn-primary btn-large property-detail-cta"
               onClick={() => {
                 if (isAuthenticated) {
-                  // Scroll to room selection section
+                  // Xona tańlaw bólimine scroll etiw
                   const roomSelectionSection = document.querySelector<HTMLElement>('.room-selection')
                   if (roomSelectionSection) {
                     roomSelectionSection.scrollIntoView({ behavior: 'smooth' })
-                    // Focus too: keyboard users land on the rooms, and the click visibly does something
-                    // even when the rooms are already on screen
+                    // Fokus ta: klaviatura paydalanıwshıları xonalarǵa túsedi, hám klik xonalar ekranda bolsa da kórinetuǵın
+                    // nárse isleydi
                     roomSelectionSection.focus({ preventScroll: true })
                   }
                 } else {
-                  // Redirect to login with return state
+                  // Qaytıw jaǵdayı menen kirisiwge burıw
                   navigate('/login', { state: { from: `/property/${id}` } })
                 }
               }}

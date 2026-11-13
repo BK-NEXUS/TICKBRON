@@ -3,9 +3,9 @@ import { useEffect, useRef } from 'react'
 const FINE_POINTER = '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)'
 
 /**
- * Tilts an element towards the pointer by up to `maxDeg` degrees: it sets --tilt-x and --tilt-y on the element and
- * the CSS (`.tilt-card`) turns them into a 3D rotation. Does nothing on touch screens, without a real pointer, or
- * when the user asked for reduced motion.
+ * Elementti kursor tárepke `maxDeg` gradusqa shekem iyiledi: elementte --tilt-x hám --tilt-y belgileydi hám
+ * CSS (`.tilt-card`) olardı 3D buraw ǵa aylandıradı. Sensorlı ekranlarda, haqıyqıy kursorsız, yamasa
+ * paydalanıwshı háreketti azaytıwdı sorasa hesh nárse islemeydi.
  */
 export function useTilt<T extends HTMLElement>(maxDeg = 5) {
   const ref = useRef<T>(null)

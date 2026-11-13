@@ -5,7 +5,7 @@ interface ShowOnMapCardProps {
   onShow: () => void
 }
 
-/** The card above the filters that opens the results on the map. */
+/** Nátiyjelerdi kartada ashatuǵın filterler ústindegi karta. */
 export function ShowOnMapCard({ onShow }: ShowOnMapCardProps) {
   const { t } = useI18n()
   return (

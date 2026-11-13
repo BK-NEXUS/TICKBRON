@@ -3,8 +3,8 @@ import { useI18n } from '../i18n/I18nContext'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 /**
- * TICKBRON's own picture: the hotel in a night cap, asleep under the moon between two palms, with a suitcase at
- * the door and a "no signal" badge. Colours follow the theme; the moving parts are named in styles/index.css.
+ * TICKBRON nıń óz súwreti: eki palma arasında, aydıń astında, tún bas kiyimli uyqıdaǵı mehmanxana, esiginde sumka hám
+ * "signal joq" belgisi menen. Reńler temaǵa ılayıq; háreketlenetuǵın bólekler styles/index.css te atalǵan.
  */
 function SleepingHotel() {
   const fill = (color: string) => ({ fill: `var(${color})` })
@@ -117,7 +117,7 @@ function SleepingHotel() {
   )
 }
 
-/** Covers the app while the device has no internet; goes away by itself when it is back. */
+/** Qurılmada internet joq waqıtta ilovanı jawıp turadı; qaytqanda ózi joǵaladı */
 export function OfflineScreen() {
   const { t } = useI18n()
   const { online, recheck } = useOnlineStatus()
@@ -130,7 +130,7 @@ export function OfflineScreen() {
 
   if (online) return null
 
-  /** Touching the picture wakes the hotel up for a moment: it jumps, then falls asleep again */
+  /** Súwretke tiyiw mehmanxananı bir sátke oyatadı: ol sekiredi, keyin qayta uyıqlaydı */
   const wake = () => {
     window.clearTimeout(joltTimer.current)
     setJolt(true)

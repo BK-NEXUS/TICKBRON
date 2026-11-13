@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nContext'
 import { IMAGE_RULES, type ImageRuleKind } from '../utils/imageRules'
 
-/** Under every upload box: the size to use, the smallest size, the shape and the file types, written in pixels. */
+/** Hár júklew qutısı astında: paydalanatuǵın ólshem, eń kishi ólshem, forma hám fayl túrleri, piksellerde jazılǵan. */
 export function ImageRequirements({ kind }: { kind: ImageRuleKind }) {
   const { t } = useI18n()
   const rule = IMAGE_RULES[kind]

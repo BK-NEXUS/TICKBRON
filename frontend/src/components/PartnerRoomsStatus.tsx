@@ -6,14 +6,14 @@ import { formatCount, formatMoneyList } from '../utils/statusFormat'
 
 interface PartnerRoomsStatusProps {
   params: StatusPeriodParams
-  /** The owner's hotels, for the hotel filter */
+  /** Iyeniń mehmanxanaları, mehmanxana filteri ushın */
   hotels: { id: number; name: string }[]
 }
 
 const DASH = '—'
 const percent = (value: string | null) => (value === null ? DASH : `${value}%`)
 
-/** Which room types are booked most: counted bookings, share, room nights, occupancy and revenue per room type. */
+/** Qaysı xona túrleri kóbirek bronlanadı: hár xona túri ushın counted bronlar, úles, xona túnleri, bantlıq hám dáramat. */
 export function PartnerRoomsStatus({ params, hotels }: PartnerRoomsStatusProps) {
   const { t } = useI18n()
   const id = useId()

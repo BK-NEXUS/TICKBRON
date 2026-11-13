@@ -1,5 +1,5 @@
-// Chat with the TICKBRON team: the account's own thread and the team's inbox.
-// Contract: .ai/API_CONTRACT.md, section "Support chat".
+// TICKBRON komandası menen chat: akkauntıń óz thread i hám komandanıń kiriwshi qutısı.
+// Contract: .ai/API_CONTRACT.md, "Support chat" bólimi.
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
@@ -19,7 +19,10 @@ export interface ChatUser {
   role: 'customer' | 'hotel-owner'
 }
 
-/** One answer of the thread: the new messages (the last 100 on the first read), the unread count (user side) or the user (team side) */
+/**
+ * Thread tiń bir juwabı: jańa xabarlar (birinshi oqıwda sońǵı 100), oqılmaǵan sanı (paydalanıwshı tárepi) yamasa paydalanıwshı
+ * (komanda tárepi)
+ */
 export interface ThreadPage {
   messages: ChatMessage[]
   unread?: number
@@ -41,14 +44,14 @@ export interface Inbox {
   results: InboxRow[]
 }
 
-/** `code` is the backend's stable error name (empty, too_long, bad_text) so screens can translate it. */
+/** `code` backend tiń turaqlı qátelik atı (empty, too_long, bad_text), sol sebepli ekranlar onı awdara aladı. */
 export interface ChatResult<T> {
   data: T | null
   error: string | null
   code: string | null
 }
 
-/** What a chat window needs, whichever side it is: read new messages, write one, tell that the thread was seen */
+/** Chat oynası ne talap etedi, qaysı tárep bolsa da: jańa xabarlardı oqıw, birin jazıw, thread kórilgenin aytıw */
 export interface ChatApi {
   load: (after: number) => Promise<ChatResult<ThreadPage>>
   send: (text: string) => Promise<ChatResult<ChatMessage>>
@@ -57,7 +60,7 @@ export interface ChatApi {
 
 const MY = '/api/v1/chat'
 const ADMIN = '/api/v1/admin-panel/chat'
-// A getter: the text is chosen when an error happens, in the language the page is in then
+// Getter: tekst qátelik bolǵanda, bet sol waqıtta qaysı tilde bolsa sol tilde tańlanadı
 const STATUS_MESSAGES = {
   get 401() { return translateNow('apiError.authRequired') },
   403: 'Not allowed',
@@ -90,9 +93,9 @@ export class ChatAdapter {
     return this.request<T>(endpoint, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) })
   }
 
-  // The account's own thread
+  // Akkauntıń óz thread i
 
-  /** The chat window of the logged-in account */
+  /** Kirgen akkauntıń chat oynası */
   mine(): ChatApi {
     return {
       load: after => this.request<ThreadPage>(`${MY}/messages/${after ? `?after=${after}` : ''}`),
@@ -101,12 +104,12 @@ export class ChatAdapter {
     }
   }
 
-  /** How many messages from the team the account has not read (the badge) */
+  /** Komandadan kelgen neshe xabardı akkaunt oqımaǵan (belgi) */
   async myUnread(): Promise<ChatResult<{ unread: number }>> {
     return this.request<{ unread: number }>(`${MY}/unread/`)
   }
 
-  // The team's side
+  // Komandanıń tárepi
 
   async inbox(params: { q?: string; unread?: boolean; page?: number } = {}): Promise<ChatResult<Inbox>> {
     const query = new URLSearchParams()
@@ -117,7 +120,7 @@ export class ChatAdapter {
     return this.request<Inbox>(`${ADMIN}/conversations/${text ? `?${text}` : ''}`)
   }
 
-  /** The chat window of one thread, for the team */
+  /** Bir thread tiń chat oynası, komanda ushın */
   thread(conversationId: number): ChatApi {
     return {
       load: after => this.request<ThreadPage>(`${ADMIN}/conversations/${conversationId}/${after ? `?after=${after}` : ''}`),
@@ -126,7 +129,7 @@ export class ChatAdapter {
     }
   }
 
-  /** How many threads have messages the team has not read (the badge on the admin tab) */
+  /** Neshe thread te komanda oqımaǵan xabar bar (admin tabındaǵı belgi) */
   async staffUnread(): Promise<ChatResult<{ unread_threads: number }>> {
     return this.request<{ unread_threads: number }>(`${ADMIN}/unread/`)
   }

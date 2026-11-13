@@ -15,7 +15,7 @@ interface Place extends GeographyNames {
 
 function PlaceCard({ place, children }: { place: Place; children: (body: ReactElement) => ReactElement }) {
   const { tp, language } = useI18n()
-  // A picture whose file is gone from the server shows the same placeholder as a place without one
+  // Faylı serverde joq súwret súwretsiz orın menen birdey placeholder kórsetedi
   const [pictureMissing, setPictureMissing] = useState(false)
   const body = (
     <>
@@ -32,12 +32,12 @@ function PlaceCard({ place, children }: { place: Place; children: (body: ReactEl
 }
 
 /**
- * "Where to?" under the search form: the active countries with their pictures; choosing one lists its
- * regions, and a region opens the search for that place. The names come from the Geography dictionary
- * the super admin keeps. Nothing is shown while there is no active country.
+ * Izlew formasınıń astında "Qayaqqa?": súwretleri menen aktiv mámleketler; birin tańlaw onıń
+ * regionların dizimleydi, hám region sol orın ushın izlewdi ashadı. Atlar super admin saqlaytuǵın
+ * Geography sózliginen keledi. Aktiv mámleket joq waqıtta hesh nárse kórsetilmeydi.
  */
 interface HomeWhereToProps {
-  /** Called with the country the guest opened, or null when they went back to all countries */
+  /** Mehmann ashqan mámleket penen shaqırıladı, yamasa barlıq mámleketlerge qaytqanda null */
   onCountryChange?: (country: GeographyCountry | null) => void
 }
 

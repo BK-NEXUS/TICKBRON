@@ -24,14 +24,14 @@ export function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  // The data was accepted and a code was mailed: the account is made when it is typed
+  // Maǵlıwmat qabıllandı hám kod e-mail ge jiberildi: akkaunt kod terilgende jaratıladı
   const [mailedCode, setMailedCode] = useState<{ email: string; resendAfter: number } | null>(null)
   
   const { register, verifyRegistration, resendRegistrationCode, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Redirect if already authenticated
+  // Aldınan kirgen bolsa burıw
   if (isAuthenticated) {
     return <Navigate to={redirectPathFrom(location.state)} replace />
   }
@@ -47,7 +47,7 @@ export function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    // Basic validation
+    // Ápiwayı tekseriw
     const problem = authFormProblem([formData.full_name, formData.email, formData.phone_number, formData.password, formData.password_confirm], formData.email)
     if (problem) {
       setError(t(problem === 'required' ? 'auth.errRequired' : 'auth.errEmail'))

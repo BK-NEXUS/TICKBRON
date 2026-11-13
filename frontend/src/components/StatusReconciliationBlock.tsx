@@ -5,7 +5,7 @@ import { StatusStayedNote } from './StatusStayedNote'
 
 interface StatusReconciliationBlockProps {
   reconciliation: StatusReconciliation
-  /** For tests; defaults to now */
+  /** Testler ushın; ádetde házir */
   today?: Date
 }
 
@@ -35,7 +35,7 @@ const ROW_KEYS: [keyof StatusReconciliation, keyof typeof TEXT_KEYS][] = [
 
 const datesOf = ({ from, to }: ReconciliationWindow) => (from && to ? `${from} – ${to}` : '—')
 
-/** Fixed windows next to the period numbers, so an owner can check them against their own books */
+/** Dáwir sanlarınıń janındaǵı turaqlı oynalar, sonda iye olardı óz esap kitabı menen salıstıra aladı */
 export function StatusReconciliationBlock({ reconciliation, today }: StatusReconciliationBlockProps) {
   const TEXT = useTexts(TEXT_KEYS)
   return (

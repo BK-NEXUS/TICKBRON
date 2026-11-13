@@ -1,9 +1,9 @@
-// Shared fetch wrapper for all adapters: session cookies plus CSRF protection.
+// Barlıq adapterler ushın ortaq fetch wrapper: session cookie ler hám CSRF qorǵawı.
 //
-// The backend uses Django session auth, which rejects POST/PUT/PATCH/DELETE from a
-// logged-in session without an X-CSRFToken header. The csrftoken cookie is HttpOnly,
-// so the token comes from GET /api/v1/auth/csrf/ (see .ai/contracts/auth.md).
-// Django rotates the token on login and logout, so authAdapter clears the cache then.
+// Backend Django session auth tı paydalanadı, ol kirgen session dıń POST/PUT/PATCH/DELETE sın
+// X-CSRFToken header sız qabıllamaydı. csrftoken cookie HttpOnly,
+// sol sebepli token GET /api/v1/auth/csrf/ tan keledi (qarań .ai/contracts/auth.md).
+// Django token di kirgende hám shıqqanda aylandıradı, sol sebepli authAdapter sonda keshti tazalaydı.
 
 import { readApiError } from './errorHandler'
 import { getActiveLanguage } from '../i18n/languageChoice'
@@ -14,7 +14,7 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 let csrfToken: string | null = null
 let csrfRequest: Promise<string | null> | null = null
-// Bumped on every reset so a request started before login/logout cannot cache the old token
+// Hár qayta ornatıwda arttırıladı, sonda kirisiw/shıǵıwdan aldın baslanǵan soraw eski token di keshlemeydi
 let csrfGeneration = 0
 
 async function fetchCsrfToken(): Promise<string | null> {
@@ -31,7 +31,7 @@ async function fetchCsrfToken(): Promise<string | null> {
   }
 }
 
-/** Current CSRF token, fetched once and shared by concurrent callers. */
+/** Házirgi CSRF token, bir márte alınadı hám birdey waqıttaǵı shaqırıwshılar ortaq paydalanadı. */
 export async function getCsrfToken(): Promise<string | null> {
   if (csrfToken) return csrfToken
   if (!csrfRequest) {
@@ -47,14 +47,14 @@ export async function getCsrfToken(): Promise<string | null> {
   return csrfRequest
 }
 
-/** Set the cached token directly (tests, or a token from another response). */
+/** Keshlengen token di tikkeley belgilew (testler, yamasa basqa juwaptan alınǵan token). */
 export function setCsrfToken(token: string | null): void {
   csrfGeneration += 1
   csrfToken = token
   csrfRequest = null
 }
 
-/** Forget the cached token; the next unsafe request fetches a fresh one. Call after login/logout. */
+/** Keshlengen token di umıtıw; keyingi qáwipsiz emes soraw jańasın aladı. Kirgennen/shıqqannan keyin shaqırıń. */
 export function clearCsrfToken(): void {
   setCsrfToken(null)
 }
@@ -71,7 +71,7 @@ function withCsrfHeader(init: RequestInit, token: string | null): RequestInit {
   return { ...init, headers: { ...headersToObject(init.headers), 'X-CSRFToken': token } }
 }
 
-/** The API words its refusals in the page language; English is what it sends without the header */
+/** API óz biykar etiwlerin bet tilinde jazadı; header joq bolsa inglizsha jiberedi */
 function withLanguageHeader(init: RequestInit): RequestInit {
   const language = getActiveLanguage()
   const headers = headersToObject(init.headers)
@@ -86,9 +86,9 @@ async function isCsrfFailure(response: Response): Promise<boolean> {
 }
 
 /**
- * fetch() with credentials and, for unsafe methods, the X-CSRFToken header.
- * A CSRF 403 (stale token, e.g. after logging in from another tab) is retried once with a fresh token;
- * Django rejects those before the view runs, so the retry cannot duplicate a write.
+ * Credentials hám, qáwipsiz emes metodlar ushın, X-CSRFToken header i menen fetch().
+ * CSRF 403 (eski token, mısalı basqa tabtan kirgennen keyin) jańa token menen bir márte qayta uriladı;
+ * Django bulardı view islewden aldın biykar etedi, sol sebepli qayta urınıw jazıwdı eki ret islemeydi.
  */
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const options: RequestInit = withLanguageHeader({ credentials: 'include', ...init })
@@ -106,7 +106,7 @@ export async function apiFetch(url: string, init: RequestInit = {}): Promise<Res
   return fetch(url, withCsrfHeader(options, await getCsrfToken()))
 }
 
-/** DRF PageNumberPagination envelope (PAGE_SIZE 20 on the backend). */
+/** DRF PageNumberPagination konverti (backend te PAGE_SIZE 20). */
 export interface Paginated<T> {
   count: number
   next: string | null
@@ -114,22 +114,22 @@ export interface Paginated<T> {
   results: T[]
 }
 
-/** Upper bound on pages fetched by fetchAllPages (20 items per page -> 1000 items). */
+/** fetchAllPages alatuǵın betlerdiń eń kóp sanı (20 element hár bet -> 1000 element). */
 export const DEFAULT_MAX_PAGES = 50
 
 export interface FetchAllPagesOptions {
-  /** Stop after this many pages and report truncated: true */
+  /** Usı sandaǵı betten keyin toqtaw hám truncated: true xabarlaw */
   maxPages?: number
-  /** Per-status messages passed to readApiError */
+  /** readApiError ke berilgen hár status ushın xabarlar */
   errorMessages?: Record<number, string>
-  /** Message for network failures; defaults to the thrown error's text */
+  /** Tarmaq qátelikleri ushın xabar; ádetde taslanǵan qátelik teksti */
   networkErrorMessage?: string
 }
 
 export interface FetchAllPagesResult<T> {
   data: T[] | null
   error: string | null
-  /** True when more pages existed than were fetched (maxPages, or a next link to another origin) */
+  /** Alınǵannan kóp bet bar bolsa true (maxPages, yamasa basqa origin ge next silteme) */
   truncated: boolean
 }
 
@@ -138,13 +138,13 @@ function isPaginated<T>(body: unknown): body is Paginated<T> {
 }
 
 /**
- * GET a list endpoint and return every item, following DRF `next` links.
- * Plain-array responses (non-paginated endpoints) are returned as they are.
- * Only same-origin `next` links are followed.
+ * Dizim endpoint ine GET hám hár elementti qaytarıw, DRF `next` siltemelerin izlep.
+ * Ápiwayı massiv juwapları (betlenbegen endpoint ler) sol qalpında qaytadı.
+ * Tek bir origin degi `next` siltemeler izlenedi.
  */
 export async function fetchAllPages<T>(url: string, options: FetchAllPagesOptions = {}): Promise<FetchAllPagesResult<T>> {
   const { maxPages = DEFAULT_MAX_PAGES, errorMessages = {}, networkErrorMessage } = options
-  // A relative address (empty API_BASE_URL) is read against the page, so the origin check still works
+  // Salıstırmalı mánzil (bos API_BASE_URL) betke qarata oqıladı, sol sebepli origin tekseriwi ele isleydi
   const origin = new URL(url, window.location.href).origin
   const items: T[] = []
   let nextUrl: string | null = url

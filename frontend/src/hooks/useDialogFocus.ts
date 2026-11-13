@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react'
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /**
- * Keyboard behaviour of a modal dialog: focus moves into it, Tab stays inside it,
- * Escape closes it and focus returns to the element that opened it.
+ * Modal dialogtıń klaviatura minezi: fokus onıń ishine ótedi, Tab onıń ishinde qaladı,
+ * Escape onı jabadı hám fokus onı ashqan elementke qaytadı.
  */
 export function useDialogFocus<T extends HTMLElement>(open: boolean, onClose: () => void) {
   const ref = useRef<T>(null)

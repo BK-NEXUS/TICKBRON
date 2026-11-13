@@ -22,7 +22,7 @@ const TEXT_KEYS = textKeys({
 
 })
 
-/** Partner panel > Status > one of the owner's own hotels. Another owner's hotel is a "not found" page. */
+/** Partner panel > Status > iyeniń óz mehmanxanalarınıń biri. Basqa iyeniń mehmanxanası "tabılmadı" beti. */
 export function PartnerHotelStatus({ hotelId, onBack }: PartnerHotelStatusProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const { params, period, range, granularity, setPeriod, setRange, setGranularity } = useStatusPeriod()

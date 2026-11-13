@@ -18,7 +18,7 @@ interface CreatePromotionDialogProps {
   onClose: () => void
 }
 
-/** Create a promotion for one hotel. Starts unpaid: it is shown only after "Mark as paid". */
+/** Bir mehmanxana ushın reklama jaratıw. Tólenbegen halda baslanadı: ol tek "Tólendi dep belgilew" den keyin kórsetiledi. */
 export function CreatePromotionDialog({ hotel, onCreated, onClose }: CreatePromotionDialogProps) {
   const { t } = useI18n()
   const [startDate, setStartDate] = useState('')
@@ -112,7 +112,7 @@ interface CancelPromotionDialogProps {
   onClose: () => void
 }
 
-/** Cancelling needs a reason for the books; the money itself is settled outside the platform. */
+/** Biykar etiw esap ushın sebepti talap etedi; pulduń ózi platforma sırtında sheshiledi. */
 export function CancelPromotionDialog({ promotion, onCancelled, onClose }: CancelPromotionDialogProps) {
   const { t } = useI18n()
   const [reason, setReason] = useState('')

@@ -26,7 +26,7 @@ type Level =
   | { kind: 'user'; userId: number; name: string }
 
 interface AdminStatusSectionProps {
-  /** Leave the Status section (the "Admin Dashboard" breadcrumb, or Back from the tiles) */
+  /** Status bólimin taslap shıǵıw ("Admin Dashboard" belgisi, yamasa plitkalardan Artqa) */
   onExit: () => void
 }
 
@@ -41,8 +41,9 @@ function metricColumns<T extends Metrics>(t: (key: MessageKey) => string): Statu
 }
 
 /**
- * Admin panel > Status: Countries > Regions > Hotels > Hotel detail, and Users (guests ranking).
- * Numbers count confirmed and completed bookings, by check-in date; revenue per currency.
+ * Admin panel > Status: Mámleketler > Regionlar > Mehmanxanalar > Mehmanxana tolıq maǵlıwmatı, hám Paydalanıwshılar (mehmanlar
+ * reytingi).
+ * Sanlar tastıyıqlanǵan hám juwmaqlanǵan bronlardı kiriw sanası boyınsha esaplaydı; dáramat hár valyuta boyınsha.
  */
 export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const i18n = useI18n()
@@ -51,7 +52,7 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const [level, setLevel] = useState<Level>({ kind: 'home' })
   const { params, period, range, setPeriod, setRange } = useStatusPeriod()
   const navigate = useNavigate()
-  // Every list and detail takes the period and the custom range together
+  // Hár dizim hám tolıq maǵlıwmat dáwirdi hám qálegen aralıqtı birge aladı
   const periodProps = { period, range, onPeriodChange: setPeriod, onRangeChange: setRange }
 
   const goHome = () => setLevel({ kind: 'home' })
@@ -59,7 +60,8 @@ export function AdminStatusSection({ onExit }: AdminStatusSectionProps) {
   const goRegions = (country: StatusPlace) => setLevel({ kind: 'regions', country })
   const goHotels = (country: StatusPlace, region: StatusPlace) => setLevel({ kind: 'hotels', country, region })
 
-  // Home › Admin Dashboard › Status › Countries › Uzbekistan › Tashkent › Hotel (each level clickable, Back steps up)
+  // Bas bet › Admin Dashboard › Status › Mámleketler › Ózbekstan › Tashkent › Mehmanxana (hár dárejege basıwǵa boladı, Artqa
+  // joqarıǵa shıǵadı)
   const trail: Crumb[] = [{ label: t('header.adminDashboard'), onClick: onExit }]
   trail.push(level.kind === 'home' ? { label: t('partner.status') } : { label: t('partner.status'), onClick: goHome })
   const goUsers = () => setLevel({ kind: 'users' })

@@ -11,17 +11,17 @@ interface SearchFiltersProps {
   filters: FilterState
   onFiltersChange: (filters: FilterState) => void
   onClearFilters: () => void
-  /** From GET /properties/filter-options/ */
+  /** GET /properties/filter-options/ ten */
   propertyTypes: Array<{ id: number; name: string; slug: string; count?: number }>
-  /** Property counts per feature, from filter-options (optional) */
+  /** filter-options ten hár feature ushın mehmanxana sanları (ıqtıyarıy) */
   featureCounts?: Record<string, number>
-  /** Searchable amenities, from filter-options (optional) */
+  /** filter-options ten izlenetuǵın amenity ler (ıqtıyarıy) */
   amenities?: Array<{ id: number; name: string; slug?: string; icon?: string | null; count?: number }>
 }
 
 /**
- * SearchFilters component for filtering search results
- * Supports property type, price range, amenities (features), facilities and guest rating
+ * Izlew nátiyjelerin filterlew ushın SearchFilters komponenti
+ * Mehmanxana túri, baha aralıǵı, amenity ler (feature lar), qolaylıqlar hám mehmanlar reytingin qollaydı
  */
 export function SearchFilters({
   filters, onFiltersChange, onClearFilters, propertyTypes, featureCounts, amenities = [],
@@ -99,7 +99,7 @@ export function SearchFilters({
       </div>
 
       <div className={`search-filters-content ${isExpanded ? 'search-filters-content-expanded' : ''}`}>
-        {/* Property Type Filter */}
+        {/* Mehmanxana túri filteri */}
         <div className="search-filter-section">
           <h3 className="search-filter-section-title">{t('filters.propertyType')}</h3>
           <div className="search-filter-options">
@@ -112,7 +112,7 @@ export function SearchFilters({
                   checked={filters.property_type === type.id}
                   onChange={() => handlePropertyTypeChange(type.id)}
                   onClick={() => {
-                    // A second click on the checked type clears it (onChange does not fire then)
+                    // Belgilengen túrge ekinshi klik onı tazalaydı (sonda onChange iske túspeydi)
                     if (filters.property_type === type.id) handlePropertyTypeChange(type.id)
                   }}
                   className="search-filter-input"
@@ -125,7 +125,7 @@ export function SearchFilters({
           </div>
         </div>
 
-        {/* Price Range Filter */}
+        {/* Baha aralıǵı filteri */}
         <div className="search-filter-section">
           <h3 className="search-filter-section-title">{t('filters.priceRange')}</h3>
           <div className="search-filter-price-range">
@@ -162,7 +162,7 @@ export function SearchFilters({
           </div>
         </div>
 
-        {/* Guest Rating Filter */}
+        {/* Mehmanlar reytingi filteri */}
         <div className="search-filter-section">
           <h3 className="search-filter-section-title">{t('filters.guestRating')}</h3>
           <div className="search-filter-options">
@@ -186,7 +186,7 @@ export function SearchFilters({
           </div>
         </div>
 
-        {/* Amenities Filter (property features) */}
+        {/* Amenity ler filteri (mehmanxana feature ları) */}
         <div className="search-filter-section">
           <h3 className="search-filter-section-title">{t('filters.amenities')}</h3>
           <div className="search-filter-amenities">
@@ -209,7 +209,7 @@ export function SearchFilters({
           </div>
         </div>
 
-        {/* Facilities Filter (searchable amenities from the backend) */}
+        {/* Qolaylıqlar filteri (backend ten izlenetuǵın amenity ler) */}
         {amenities.length > 0 && (
           <div className="search-filter-section">
             <h3 className="search-filter-section-title">{t('filters.facilities')}</h3>
@@ -233,7 +233,7 @@ export function SearchFilters({
         )}
       </div>
 
-      {/* Mobile Expand/Collapse Button */}
+      {/* Mobil keńeytiw/jıyıw túymesi */}
       <button
         className="btn btn-secondary btn-full"
         onClick={() => setIsExpanded(!isExpanded)}

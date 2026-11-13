@@ -1,4 +1,4 @@
-// API Response Types (placeholders - to be defined when backend APIs are available)
+// API Response túrleri (placeholder lar - backend API lar bar bolǵanda anıqlanadı)
 export interface ApiResponse<T> {
   data: T;
   status: number;
@@ -11,7 +11,7 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-// Common Types
+// Ulıwma túrler
 export interface Property {
   id: string;
   name: string;

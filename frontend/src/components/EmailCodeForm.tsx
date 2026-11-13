@@ -6,11 +6,11 @@ import type { AuthResponse } from '../adapters/authAdapter'
 const CODE_LENGTH = 6
 
 interface EmailCodeFormProps {
-  /** "o***@gmail.com" or the full address: where the code went */
+  /** "o***@gmail.com" yamasa tolıq mánzil: kod qayaqqa barǵan */
   sentTo: string
-  /** Sign-up or sign-in: picks the words and the button */
+  /** Dizimnen ótiw yamasa kirisiw: sózlerdi hám túymeni tańlaydı */
   purpose: 'register' | 'login'
-  /** Seconds before a new code may be asked for (the answer that started this step says it) */
+  /** Jańa kod soralǵanǵa shekem sekundlar (usı qádemdi baslaǵan juwap aytadı) */
   resendAfter: number
   onSubmit: (code: string) => Promise<AuthResponse>
   onResend: () => Promise<AuthResponse>
@@ -20,7 +20,7 @@ interface EmailCodeFormProps {
 
 const digitsOnly = (value: string) => value.replace(/\D/g, '').slice(0, CODE_LENGTH)
 
-/** The step after the password: the six digits mailed to the address, with "send a new code" after a short wait. */
+/** Paroldan keyingi qádem: mánzilge jiberilgen altı san, qısqa kútiwden keyin "jańa kod jiberiw" penen. */
 export function EmailCodeForm({ sentTo, purpose, resendAfter, onSubmit, onResend, onSuccess, onBack }: EmailCodeFormProps) {
   const { t } = useI18n()
   const [value, setValue] = useState('')

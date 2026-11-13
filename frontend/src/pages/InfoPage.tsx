@@ -3,9 +3,9 @@ import type { MessageKey } from '../i18n/messages/en'
 import { Link } from 'react-router'
 
 /**
- * Static information pages linked from the header and footer.
- * The legal texts are short plain-language summaries; they need a review
- * before a public launch.
+ * Header hám footer den siltemelengen statik maǵlıwmat betleri.
+ * Huquqıy tekstler qısqa ápiwayı tildegi qısqasha mazmun; olar ashıq iske túsiriwden aldın
+ * tekserilwi kerek.
  */
 export type InfoPageSlug = 'about' | 'help' | 'contact' | 'safety' | 'terms' | 'privacy' | 'cookies'
 

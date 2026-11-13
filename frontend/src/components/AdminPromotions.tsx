@@ -19,7 +19,7 @@ const BADGE: Record<AdminPromotion['status'], string> = {
 }
 
 interface AdminPromotionsProps {
-  /** Only a super-admin may change promotions; staff can look. The backend enforces it too. */
+  /** Reklamalardı tek super-admin ózgerte aladı; staff kóre aladı. Backend te de májbúrlenedi. */
   isSuperAdmin: boolean
 }
 
@@ -40,10 +40,10 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
   const [statsFor, setStatsFor] = useState<AdminPromotion | null>(null)
   const [regionId, setRegionId] = useState<number | null>(null)
   const [photosFor, setPhotosFor] = useState<{ promotion: AdminPromotion; justCreated: boolean } | null>(null)
-  // Counts of the region panel are read again whenever the ads changed
+  // Region panelindegi sanlar reklamalar ózgergende qayta oqıladı
   const [changes, setChanges] = useState(0)
 
-  // The hotel name filter waits for a pause in typing; the other filters apply at once
+  // Mehmanxana atı filteri teriwde toqtap qalıwdı kútedi; basqa filterler birden qollanıladı
   useEffect(() => {
     const timer = setTimeout(() => {
       setName(nameInput.trim())
@@ -52,7 +52,7 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
     return () => clearTimeout(timer)
   }, [nameInput])
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)
@@ -85,7 +85,7 @@ export function AdminPromotions({ isSuperAdmin }: AdminPromotionsProps) {
     void load()
   }
 
-  // A new ad asks for its photos at once
+  // Jańa reklama súwretlerin birden soraydı
   const created = (promotion: AdminPromotion) => {
     closeAndReload()
     setPhotosFor({ promotion, justCreated: true })

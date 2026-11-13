@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 const supported = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 
-/** Whether a CSS media query matches right now, updated when the screen changes (false without matchMedia). */
+/** CSS media query hazir sáykes keledi me, ekran ózgergende jańalanadı (matchMedia joq bolsa false). */
 export function useMatchMedia(query: string): boolean {
   const [matches, setMatches] = useState(() => (supported() ? window.matchMedia(query).matches : false))
 

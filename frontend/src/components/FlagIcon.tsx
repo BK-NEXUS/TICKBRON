@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import type { Language } from '../i18n/options'
 
-// Inline SVG instead of flag emoji: emoji look different on every platform and Windows shows letters
+// Flag emoji emes, inline SVG: emoji hár platformada túrlishe kórinedi hám Windows háripler kórsetedi
 const FLAGS: Record<Language, ReactElement> = {
   uz: (
     <>

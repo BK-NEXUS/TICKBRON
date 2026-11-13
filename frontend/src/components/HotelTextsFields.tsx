@@ -10,7 +10,7 @@ interface HotelTextsFieldsProps {
 
 const LANGUAGE_NAMES: Record<HotelTextLanguage, string> = { uz: 'Oʻzbekcha', ru: 'Русский', en: 'English' }
 
-/** Hotel name and description in uz / ru / en; guests see their own language, else another one. */
+/** Uz / ru / en degi mehmanxana atı hám táripleme; mehmanlar óz tilin kóredi, bolmasa basqasın. */
 export function HotelTextsFields({ idPrefix, value, onChange, disabled = false }: HotelTextsFieldsProps) {
   const { t } = useI18n()
 

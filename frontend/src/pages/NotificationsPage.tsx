@@ -8,7 +8,7 @@ import { notificationText } from '../utils/notificationText'
 import { NOTIFICATIONS_CHANGED } from '../hooks/useNotificationCount'
 import { ErrorState } from '../components/ErrorState'
 
-/** Only an unread notice does something when pressed (it gets marked as read), so only that one is a button. */
+/** Tek oqılmaǵan xabarlandırıw basılǵanda ne isleydi (oqılǵan dep belgilenedi), sol sebepli tek sol túyme */
 function NoticeRow({ notice, onOpen, children }: { notice: AppNotification; onOpen: () => void; children: ReactNode }) {
   if (notice.is_read) return <div className="notification-row">{children}</div>
   return (

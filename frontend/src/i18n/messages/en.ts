@@ -2042,7 +2042,7 @@ export const en = {
   'admin.hotelsAllStatuses': "All statuses",
 } as const
 
-// Plural forms ("x.one", "x.few", "x.many") are extra keys: a language has the forms it needs, and "x.other" always
+// Kóplik formaları ("x.one", "x.few", "x.many") qosımsha kilt ler: til kerek formaların aladı, hám "x.other" hárdayım
 type AllKeys = keyof typeof en
 export type MessageKey = Exclude<AllKeys, `${string}.${'one' | 'few' | 'many'}`>
 export type PluralKey = Extract<MessageKey, `${string}.other`> extends `${infer Base}.other` ? Base : never

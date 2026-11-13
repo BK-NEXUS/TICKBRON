@@ -10,7 +10,7 @@ const BADGE: Record<NoShowReportStatus, string> = {
   pending: 'pending', approved: 'completed', rejected: 'cancelled', withdrawn: 'inactive',
 }
 
-/** The staff queue of "guest did not arrive" reports. Staff and super-admin may both decide. */
+/** "Mehmann kelmedi" esabatlarınıń staff náwbeti. Staff ta, super-admin de sheshe aladı. */
 export function AdminNoShowReports() {
   const { t, formatDate } = useI18n()
   const [status, setStatus] = useState('pending')
@@ -22,7 +22,7 @@ export function AdminNoShowReports() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [deciding, setDeciding] = useState<{ report: StaffNoShowReport; decision: NoShowDecision } | null>(null)
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)

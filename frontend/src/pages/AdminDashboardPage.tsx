@@ -28,15 +28,15 @@ export function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth()
   const waiting = useChatUnread(Boolean(user?.is_staff || user?.is_superuser), true)
   const [currentView, setCurrentView] = useState<AdminView>('properties')
-  // The account form in the main area: a hotel owner, an administrator, or none
+  // Tiykarǵı bólimdegi akkaunt forması: mehmanxana iyesi, administrator, yamasa hesh qaysısı
   const [creating, setCreating] = useState<'owner' | 'admin' | null>(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Check if user is super-admin or staff
+      // Paydalanıwshı super-admin yamasa staff ekenin tekseriw
       if (!user.is_staff && !user.is_superuser) {
-        // Non-admin users should not access this page
-        // They will be redirected by the route protection
+        // Admin emes paydalanıwshılar bul betke kirmewi kerek
+        // Olar route qorǵawı arqalı burıladı
       }
     }
   }, [isAuthenticated, user])
@@ -67,8 +67,8 @@ export function AdminDashboardPage() {
     )
   }
 
-  // UI permission boundaries - but never rely on frontend authorization alone
-  // Backend enforces actual permissions via 403 responses
+  // UI ruxsat shegaraları - biraq hesh qashan tek frontend avtorizaciyasına isenbeń
+  // Backend haqıyqıy ruxsatlardı 403 juwapları arqalı májbúrleydi
   if (!user.is_staff && !user.is_superuser) {
     return (
       <div className="admin-dashboard-page">

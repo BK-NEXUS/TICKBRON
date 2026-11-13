@@ -6,7 +6,9 @@ interface PartnerReviewsProps {
   properties: Array<{ id: number; name: string }>
 }
 
-/** The approved reviews of the owner's hotels, each with a public answer the owner can write, change or remove. */
+/**
+ * Iyeniń mehmanxanaları tastıyıqlanǵan sharhları, hárbirinde iye jaza, ózgerte yamasa alıp taslay alatuǵın ashıq juwap penen.
+ */
 export function PartnerReviews({ properties }: PartnerReviewsProps) {
   const { t, formatDate } = useI18n()
   const [propertyId, setPropertyId] = useState<number | undefined>(undefined)
@@ -15,7 +17,7 @@ export function PartnerReviews({ properties }: PartnerReviewsProps) {
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // The text being typed per review, kept until the answer is accepted
+  // Hár sharh ushın teriliwde turǵan tekst, juwap qabıllanǵansha saqlanadı
   const [drafts, setDrafts] = useState<Record<number, string>>({})
   const [busyId, setBusyId] = useState<number | null>(null)
 

@@ -14,9 +14,9 @@ function randomString(length: number): string {
 const hasEveryKind = (password: string) => /[A-Za-z]/.test(password) && /[0-9]/.test(password) && /[!@#$%^&*]/.test(password)
 
 /**
- * Random password from the browser's secure source; bytes that would skew the pick are skipped.
- * It always holds a letter, a digit and a special character, as the backend requires; a draw that
- * misses one is thrown away (not patched), so every valid password stays equally likely.
+ * Brauzerdiń qáwipsiz derekinen tosınarlıq parol; tańlawdı buzatuǵın baytlar ótkizip jiberiledi.
+ * Ol hárdayım háripti, sandı hám arnawlı belgini alıp júredi, backend talap etkenindey; birin
+ * taslap ketken tańlaw taslanadı (túzetilmeydi), sol sebepli hár jaramlı parol birdey itimallıqqa iye.
  */
 export function generatePassword(length: number): string {
   if (length < 3) throw new RangeError('A password needs room for a letter, a digit and a special character')

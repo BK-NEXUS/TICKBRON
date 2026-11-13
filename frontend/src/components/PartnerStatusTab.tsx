@@ -18,8 +18,8 @@ type StatusView = 'overview' | 'rooms' | 'arrivals' | 'reports'
 const VIEWS: readonly StatusView[] = ['overview', 'rooms', 'arrivals', 'reports']
 
 /**
- * Partner panel > Status in four tabs: overview (this month, key numbers, charts, hotels), rooms (which room
- * types are booked most), arrivals (who comes soon) and reports (the full numbers, reconciliation, export).
+ * Partner panel > Status tórt tabta: sholıw (usı ay, tiykarǵı sanlar, grafikler, mehmanxanalar), xonalar (qaysı xona
+ * túrleri kóbirek bronlanadı), keliwler (kim jaqında keledi) hám esabatlar (tolıq sanlar, sáykeslestiriw, eksport).
  */
 export function PartnerStatusTab() {
   const i18n = useI18n()

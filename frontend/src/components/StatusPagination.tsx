@@ -3,9 +3,9 @@ import { formatCount } from '../utils/statusFormat'
 
 interface StatusPaginationProps {
   page: number
-  /** Items in the whole list */
+  /** Pútkil dizimdegi elementler */
   count: number
-  /** Items per server page; the Status lists use 20 */
+  /** Server beti boyınsha elementler; Status dizimleri 20 paydalanadı */
   pageSize?: number
   hasPrevious: boolean
   hasNext: boolean
@@ -16,7 +16,7 @@ export const STATUS_PAGE_SIZE = 20
 
 const TEXT_KEYS = textKeys({ pagination: 'status.pagination', previous: 'admin.previous', next: 'partner.next', previousLabel: 'admin.previousPage', nextLabel: 'admin.nextPage' })
 
-/** Previous / Next with "Page X of Y" for the server-paginated Status lists */
+/** Server de betlerge bólingen Status dizimleri ushın "X-bet, Y dan" menen Aldınǵı / Keyingi */
 export function StatusPagination({
   page, count, pageSize = STATUS_PAGE_SIZE, hasPrevious, hasNext, onPage,
 }: StatusPaginationProps) {

@@ -7,8 +7,8 @@ interface PropertyPoliciesDetailProps {
 }
 
 /**
- * PropertyPoliciesDetail component for displaying detailed property policies
- * Shows check-in, cancellation, and other property policies with strictness indicators
+ * Mehmanxana siyasatların tolıq kórsetiw ushın PropertyPoliciesDetail komponenti
+ * Kiriw, biykar etiw hám basqa siyasatlardı qattılıq kórsetkishleri menen kórsetedi
  */
 export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetailProps) {
   const { t } = useI18n()
@@ -20,7 +20,7 @@ export function PropertyPoliciesDetail({ policies = [] }: PropertyPoliciesDetail
     )
   }
 
-  // Group policies by type for better organization
+  // Jaqsıraq shólkemlestiriw ushın siyasatlardı túri boyınsha toparlaw
   const groupedPolicies = policies.reduce((acc, policy) => {
     if (!acc[policy.policy_type]) {
       acc[policy.policy_type] = []

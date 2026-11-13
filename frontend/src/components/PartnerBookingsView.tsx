@@ -18,7 +18,7 @@ export function PartnerBookingsView() {
 
   useEffect(() => {
     loadBookings()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, paymentStatusFilter, reportableOnly])
 
@@ -35,7 +35,7 @@ export function PartnerBookingsView() {
       if (response.error) {
         setError(response.error)
       } else if (response.data) {
-        // Sort by check-in date (most recent first)
+        // Kiriw sanası boyınsha tártiplew (eń jańası birinshi)
         const sortedBookings = [...response.data].sort((a, b) => 
           new Date(b.check_in).getTime() - new Date(a.check_in).getTime()
         )

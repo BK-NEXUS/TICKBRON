@@ -6,8 +6,8 @@ import { useI18n } from '../i18n/I18nContext'
 type PropertyTypeChip = FilterOptions['property_types'][number]
 
 /**
- * Pill links for the property types that really exist, each with its hotel count. A type
- * without hotels is not shown; with an error or no types the strip is not shown at all.
+ * Haqıyqatında bar mehmanxana túrleri ushın tablet silteme ler, hár biri mehmanxana sanı menen. Mehmanxanası
+ * joq túr kórsetilmeydi; qátelik yamasa túr joq bolsa lenta pútkilley kórsetilmeydi.
  */
 export function HomePropertyTypes() {
   const { t } = useI18n()

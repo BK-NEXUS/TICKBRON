@@ -5,7 +5,7 @@ import { GeographyPicker, type GeographyValue } from './GeographyPicker'
 
 interface PropertyLocationFieldProps {
   propertyId: number
-  /** Saved location; both null = "Unspecified" */
+  /** Saqlanǵan orın; ekewi de null = "Unspecified" */
   location: GeographyValue
   onSaved?: (location: GeographyValue) => void
 }
@@ -16,10 +16,10 @@ const keyOf = (propertyId: number, location: GeographyValue) =>
 const sameLocation = (a: GeographyValue, b: GeographyValue) =>
   a.country_ref === b.country_ref && a.region_ref === b.region_ref
 
-/** A location is whole (both ids) or cleared (none): the backend refuses anything in between. */
+/** Orın pútin (eki id) yamasa tazalanǵan (hesh qaysısı): aradaǵı nárseni backend qabıllamaydı. */
 const isComplete = (value: GeographyValue) => (value.country_ref === null) === (value.region_ref === null)
 
-/** Admin: set a property's country and region, used by Status (country > region > hotel). */
+/** Admin: mehmanxananıń mámleketin hám regionın belgilew, Status paydalanadı (mámleket > region > mehmanxana). */
 export function PropertyLocationField({ propertyId, location, onSaved }: PropertyLocationFieldProps) {
   const { t } = useI18n()
   const [saved, setSaved] = useState(location)
@@ -28,8 +28,8 @@ export function PropertyLocationField({ propertyId, location, onSaved }: Propert
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Another property, or its location changed elsewhere: start from the new value.
-  // Our own save coming back through the props keeps the "Location saved" message.
+  // Basqa mehmanxana, yamasa onıń orni basqa jerde ózgergen: jańa mánisten baslaw.
+  // Óz saqlawımız props arqalı qaytqanda "Orın saqlandı" xabarı qaladı.
   const current = useRef(keyOf(propertyId, location))
   useEffect(() => {
     const key = keyOf(propertyId, location)

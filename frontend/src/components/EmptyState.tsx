@@ -2,14 +2,14 @@ import { Link } from 'react-router'
 import { ReactNode } from 'react'
 
 interface EmptyStateProps {
-  /** Visual icon: a text/emoji string (rendered as-is) or an element such as a lucide icon. */
+  /** Kórinis ikonkası: tekst/emoji qatarı (sol qalpında kórsetiledi) yamasa lucide ikonkası sıyaqlı element. */
   icon: ReactNode
   title: string
   message: string
   ctaText: string
   ctaLink?: string
   onClick?: () => void
-  /** 1 when this is the whole screen (e.g. "sign in required"), so the page still has its one h1 */
+  /** Bul pútkil ekran bolsa (mısalı "kiriw kerek") 1, sonda bette óziniń bir h1 i qaladı */
   headingLevel?: 1 | 2
 }
 

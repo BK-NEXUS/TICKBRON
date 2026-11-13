@@ -6,8 +6,8 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   /**
-   * twoFactorRequired: the password was right, the app's code is still needed (loginTwoFactor).
-   * emailCodeRequired: the password was right, the mailed code is still needed (loginEmailCode).
+   * twoFactorRequired: parol durıs edi, ilova kodı ele kerek (loginTwoFactor).
+   * emailCodeRequired: parol durıs edi, e-mail ge jiberilgen kod ele kerek (loginEmailCode).
    */
   login: (email: string, password: string) => Promise<AuthResponse>
   loginTwoFactor: (credential: TwoFactorCredential) => Promise<{ success: boolean; error?: string }>
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check authentication status on mount
+  // Ornatılǵanda autentifikaciya jaǵdayın tekseriw
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true)

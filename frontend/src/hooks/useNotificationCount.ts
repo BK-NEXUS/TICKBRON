@@ -3,10 +3,10 @@ import { notificationAdapter } from '../adapters/notificationAdapter'
 
 const REFRESH_MS = 60000
 
-/** The notifications page fires this when it marks notices read, so the badge updates at once */
+/** Xabarlandırıwlar beti olardı oqılǵan dep belgilegende bunı iske túsiredi, sonda belgi birden jańalanadı */
 export const NOTIFICATIONS_CHANGED = 'tickbron:notifications-changed'
 
-/** The number behind the notices badge: unread notices of the logged-in account */
+/** Xabarlandırıw belgisi artındaǵı san: kirgen akkauntıń oqılmaǵan xabarlandırıwları */
 export function useNotificationCount(enabled: boolean) {
   const [count, setCount] = useState(0)
 

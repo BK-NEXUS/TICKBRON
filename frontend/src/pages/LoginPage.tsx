@@ -18,16 +18,16 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  // The password was right and the app's code is the only thing missing
+  // Parol durıs edi hám jetispeytuǵın jalǵız nárse ilova kodı
   const [needsCode, setNeedsCode] = useState(false)
-  // The password was right and a code was mailed: where it went, and how soon a new one may be asked for
+  // Parol durıs edi hám kod e-mail ge jiberildi: qayaqqa barǵanı, hám jańasın qansha waqıttan keyin soraw múmkin
   const [mailedCode, setMailedCode] = useState<{ hint: string; resendAfter: number } | null>(null)
 
   const { login, loginEmailCode, resendLoginCode, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Redirect if already authenticated
+  // Aldınan kirgen bolsa burıw
   if (isAuthenticated) {
     return <Navigate to={redirectPathFrom(location.state)} replace />
   }

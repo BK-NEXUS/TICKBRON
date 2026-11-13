@@ -8,8 +8,8 @@ interface PropertyDetailHeaderProps {
 }
 
 /**
- * PropertyDetailHeader component for displaying property header information
- * Shows property name, location, rating, and key details
+ * Mehmanxana header maǵlıwmatın kórsetiw ushın PropertyDetailHeader komponenti
+ * Mehmanxana atın, jaylasıwın, reytingin hám tiykarǵı maǵlıwmatın kórsetedi
  */
 export function PropertyDetailHeader({ property }: PropertyDetailHeaderProps) {
   const { t, tp } = useI18n()

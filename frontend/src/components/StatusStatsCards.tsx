@@ -4,16 +4,16 @@ import { formatCount, formatMoneyList, statusCardClass } from '../utils/statusFo
 
 interface StatusStatsCardsProps {
   totals: StatusFullTotals
-  /** e.g. "All time" or "April 2026" */
+  /** mısalı "Pútkil waqıt" yamasa "Aprel 2026" */
   caption: string
-  /** Extra first card, e.g. the partner's "since" date */
+  /** Qosımsha birinshi karta, mısalı partnerdiń "beri" sanası */
   lead?: { label: string; value: string }
-  /** Label of the guests card (partner: "Guests via TICKBRON") */
+  /** Mehmanlar kartasınıń belgisi (partner: "TICKBRON arqalı mehmanlar") */
   guestsLabel?: string
 }
 
 const TEXT_KEYS = textKeys({
-  // TODO: show stayed_guests (persons) when the API provides it
+  // TODO: API bergende stayed_guests (adamlar) di kórsetiw
   stayed: 'status.stayed',
   stayedHint: 'status.stayedHint',
   counted: 'status.counted',
@@ -64,7 +64,7 @@ function cardsOf(totals: StatusFullTotals, guestsLabel: string, TEXT: Text): Car
   return cards
 }
 
-/** R12a summary cards: "stayed" is the headline; counted and upcoming are separate; money is per currency */
+/** R12a qısqasha kartaları: "stayed" tiykarǵı san; counted hám upcoming bólek; pul hár valyuta boyınsha */
 export function StatusStatsCards({ totals, caption, lead, guestsLabel: guestsLabelProp }: StatusStatsCardsProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const guestsLabel = guestsLabelProp ?? TEXT.guests

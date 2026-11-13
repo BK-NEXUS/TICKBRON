@@ -10,7 +10,7 @@ import { formatCount, formatDate } from '../utils/statusFormat'
 import { phoneLink } from '../utils/contactLinks'
 
 interface PartnerArrivalsProps {
-  /** Limit to one of the owner's hotels */
+  /** Iyeniń mehmanxanalarınıń biri menen shekemlew */
   propertyId?: number
 }
 
@@ -35,7 +35,10 @@ function PhoneCell({ phone }: { phone: string }) {
   return href ? <a href={href}>{phone}</a> : <>{phone}</>
 }
 
-/** Owner Status: confirmed bookings checking in today or tomorrow. The whole phone number, as a call link, so a late guest can be called. */
+/**
+ * Iye Status: búgin yamasa erteń kiretuǵın tastıyıqlanǵan bronlar. Tolıq telefon nomeri, qońıraw siltemesi retinde, sol
+ * sebepli keshikken mehmanǵa qońıraw etiwge boladı.
+ */
 export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
   const i18n = useI18n()
   const TEXT = useTexts(TEXT_KEYS)
@@ -48,7 +51,7 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
   const [data, setData] = useState<PartnerArrivalsPage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // Bookings the owner marked as arrived in this session (the list is not reloaded), and the one being sent
+  // Iye usı session da kelgen dep belgilegen bronlar (dizim qayta júklenbeydi), hám jiberilip atırǵanı
   const [markedIds, setMarkedIds] = useState<number[]>([])
   const [markingId, setMarkingId] = useState<number | null>(null)
   const [markError, setMarkError] = useState<string | null>(null)
@@ -62,7 +65,7 @@ export function PartnerArrivals({ propertyId }: PartnerArrivalsProps) {
     else setMarkedIds(prev => [...prev, id])
   }
 
-  // Another day starts from its first page
+  // Basqa kún óziniń birinshi betinen baslanadı
   const page = pageState.day === day ? pageState.page : 1
 
   useEffect(() => {

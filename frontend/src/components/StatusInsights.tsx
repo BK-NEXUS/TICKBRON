@@ -4,7 +4,7 @@ import { formatMoneyList, statusCardClass } from '../utils/statusFormat'
 
 interface StatusInsightsProps {
   insights: Insights
-  /** The owner's place in the region; null or missing hides the card */
+  /** Iyeniń regiondaǵı orni; null yamasa joq bolsa karta jasırıladı */
   rank?: StatusRank | null
 }
 
@@ -25,7 +25,7 @@ interface Change {
   text: string
 }
 
-/** R12 additions: rates, averages, the rank and the change against the previous period */
+/** R12 qosımshaları: dárejeler, ortashalar, orın hám aldınǵı dáwirge qarata ózgeris */
 export function StatusInsights({ insights, rank }: StatusInsightsProps) {
   const { t } = useI18n()
 

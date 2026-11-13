@@ -21,7 +21,7 @@ export function AdminCustomerProfile() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Internal notes state
+  // Ishki jazbalar jaǵdayı
   const [noteText, setNoteText] = useState('')
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
   const [editingNoteText, setEditingNoteText] = useState('')
@@ -32,7 +32,7 @@ export function AdminCustomerProfile() {
     if (customerId) {
       loadProfile()
     }
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, bookingFilter])
 
@@ -74,7 +74,7 @@ export function AdminCustomerProfile() {
         setNoteError(response.error)
       } else if (response.data) {
         setNoteText('')
-        // Reload profile to get updated notes
+        // Jańalanǵan jazbalardı alıw ushın profildi qayta júklew
         await loadProfile()
       }
     } catch {
@@ -112,7 +112,7 @@ export function AdminCustomerProfile() {
       } else if (response.data) {
         setEditingNoteId(null)
         setEditingNoteText('')
-        // Reload profile to get updated notes
+        // Jańalanǵan jazbalardı alıw ushın profildi qayta júklew
         await loadProfile()
       }
     } catch {
@@ -138,7 +138,7 @@ export function AdminCustomerProfile() {
       if (response.error) {
         setNoteError(response.error)
       } else {
-        // Reload profile to get updated notes
+        // Jańalanǵan jazbalardı alıw ushın profildi qayta júklew
         await loadProfile()
       }
     } catch {
@@ -158,7 +158,7 @@ export function AdminCustomerProfile() {
   }
 
   const formatPhoneNumber = (phone: string) => {
-    // Remove any non-digit characters for tel: links
+    // tel: siltemeleri ushın san emes belgilerdi alıp taslaw
     return phone.replace(/[^0-9+]/g, '')
   }
 
@@ -215,7 +215,7 @@ export function AdminCustomerProfile() {
 
   return (
     <div className="admin-customer-profile">
-      {/* Back button */}
+      {/* Artqa túymesi */}
       <button
         className="btn btn-ghost btn-sm"
         onClick={() => navigate('/admin')}
@@ -224,7 +224,7 @@ export function AdminCustomerProfile() {
         ← {t('admin.backArrow')}
       </button>
 
-      {/* Customer Header */}
+      {/* Mijoz header i */}
       <div className="customer-profile-header">
         <div className="customer-info">
           <h1 className="customer-name">{customer.full_name}</h1>
@@ -237,7 +237,7 @@ export function AdminCustomerProfile() {
           </div>
         </div>
 
-        {/* Contact Info */}
+        {/* Baylanıs maǵlıwmatı */}
         <div className="customer-contact-info">
           <div className="contact-item">
             <span className="contact-label">{t('admin.email')}</span>
@@ -299,7 +299,7 @@ export function AdminCustomerProfile() {
           </div>
         </div>
 
-        {/* Account Status */}
+        {/* Akkaunt statusı */}
         <div className="customer-status">
           <div className="status-item">
             <span className="status-label">{t('admin.accountStatus')}</span>
@@ -316,7 +316,7 @@ export function AdminCustomerProfile() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tablar */}
       <SegmentedControl<TabType>
         mode="tabs"
         aria-label={t('admin.customerSections')}
@@ -328,7 +328,7 @@ export function AdminCustomerProfile() {
         ]}
       />
 
-      {/* Tab Content */}
+      {/* Tab mazmunı */}
       <div className="customer-tab-content">
         {activeTab === 'bookings' && (
           <div className="tab-panel" id="bookings-panel" role="tabpanel">
@@ -403,7 +403,7 @@ export function AdminCustomerProfile() {
 
         {activeTab === 'notes' && (
           <div className="tab-panel" id="notes-panel" role="tabpanel">
-            {/* Add Note Form */}
+            {/* Jazba qosıw forması */}
             <div className="add-note-form">
               <label htmlFor="new-note" className="note-label">
                 {t('admin.addInternalNote')}
@@ -435,7 +435,7 @@ export function AdminCustomerProfile() {
               </div>
             )}
 
-            {/* Notes List */}
+            {/* Jazbalar dizimi */}
             {profile.internal_notes.length === 0 ? (
               <div className="empty-state">
                 <p>{t('admin.noInternalNotesFor')}</p>

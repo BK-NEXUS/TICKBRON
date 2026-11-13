@@ -13,7 +13,7 @@ import { GeographyRowDialog } from './GeographyRowDialog'
 
 const SEARCH_DELAY_MS = 300
 
-/** Super-admin: the Country > Region dictionary (hide, rename, reorder, add, delete when unused). */
+/** Super-admin: Country > Region sózligi (jasırıw, qayta ataw, tártipke keltiriw, qosıw, paydalanılmasa óshiriw). */
 export function AdminGeography() {
   const { t, language } = useI18n()
   const [country, setCountry] = useState<AdminCountry | null>(null)
@@ -36,7 +36,7 @@ export function AdminGeography() {
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  // Doubles as the Try Again button and the refresh after every change
+  // Try Again túymesi hám hár ózgeristen keyingi jańalaw sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)

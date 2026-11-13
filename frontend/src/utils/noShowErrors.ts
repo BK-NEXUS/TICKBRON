@@ -5,7 +5,7 @@ const KNOWN_CODES = [
   'not_decided', 'booking_not_reportable', 'inventory_unavailable',
 ] as const
 
-/** Message key for a no-show error: a known backend code, a bad comment, or the generic message. */
+/** No-show qátelik ushın xabar kilti: belgili backend kodı, jaramsız komment, yamasa ulıwma xabar. */
 export function noShowErrorKey(code: string | null, fieldErrors?: Record<string, string[]> | null): MessageKey {
   if (code && (KNOWN_CODES as readonly string[]).includes(code)) return `noShow.error.${code}` as MessageKey
   if (fieldErrors && ('comment' in fieldErrors || 'decision_comment' in fieldErrors)) return 'noShow.error.commentInvalid' as MessageKey

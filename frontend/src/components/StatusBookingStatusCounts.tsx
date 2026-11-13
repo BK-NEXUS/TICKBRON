@@ -22,7 +22,7 @@ const TEXT_KEYS = textKeys({
 const ALWAYS: (keyof BookingStatusCounts)[] = ['pending', 'confirmed', 'completed', 'cancelled', 'expired']
 const WHEN_NON_ZERO: (keyof BookingStatusCounts)[] = ['no_show', 'no_show_reported']
 
-/** Raw booking counts per status in the period; no-show counts appear only when non-zero */
+/** Dáwirdegi status boyınsha tikkeley bron sanları; no-show sanları tek nolden basqa bolǵanda kórinedi */
 export function StatusBookingStatusCounts({ counts }: StatusBookingStatusCountsProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const shown = [...ALWAYS, ...WHEN_NON_ZERO.filter(key => counts[key] > 0)]

@@ -26,7 +26,7 @@ const PROPERTY: Record<string, MessageKey> = {
   rejected: 'propertyStatus.rejected',
 }
 
-/** A status the API sends as a code, in the page language; an unknown code is shown as it came. */
+/** API kod retinde jiberetuǵın status, bet tilinde; belgisiz kod kelgenindey kórsetiledi. */
 const label = (keys: Record<string, MessageKey>, status: string, t: Translate) => (keys[status] ? t(keys[status]) : status)
 
 export const bookingStatusLabel = (status: string, t: Translate) => label(BOOKING, status, t)

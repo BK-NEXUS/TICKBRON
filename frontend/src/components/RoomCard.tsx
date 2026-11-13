@@ -12,12 +12,12 @@ interface RoomCardProps {
 }
 
 /**
- * RoomCard component for displaying room information
- * Shows room details, occupancy, bed configuration, size, and pricing
+ * Xona maǵlıwmatın kórsetiw ushın RoomCard komponenti
+ * Xona tolıq maǵlıwmatın, sıyımlılıq, tósek dúzilisin, ólshemin hám bahasın kórsetedi
  */
 export function RoomCard({ room, onSelect, isSelected = false }: RoomCardProps) {
   const { t, formatMoney, currency } = useI18n()
-  // The lowest price of the room's rate plans in the chosen currency (its own price when that cannot be told)
+  // Xonanıń rate plan larınıń tańlanǵan valyutadaǵı eń arzan bahası (anıqlap bolmasa óz bahası)
   const shown = roomFromPrice(room, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 

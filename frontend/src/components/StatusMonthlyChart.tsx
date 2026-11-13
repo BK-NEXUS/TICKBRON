@@ -5,12 +5,12 @@ import { formatCount, formatMoney, formatMoneyCompact, monthLabel } from '../uti
 interface StatusMonthlyChartProps {
   months: StatusMonth[]
   year: number
-  /** 'guests' or 'revenue' (revenue needs `currency`) */
+  /** 'guests' yamasa 'revenue' (revenue `currency` di talap etedi) */
   metric: 'guests' | 'revenue'
   currency?: string
 }
 
-/** Simple bar chart (same approach as the statistics dashboard): one bar per month */
+/** Ápiwayı bar grafigi (statistika dashboard sıyaqlı): hár aya bir bar */
 export function StatusMonthlyChart({ months, year, metric, currency }: StatusMonthlyChartProps) {
   const i18n = useI18n()
   const { t } = i18n
@@ -19,7 +19,7 @@ export function StatusMonthlyChart({ months, year, metric, currency }: StatusMon
     : Number(month.revenue.find(item => item.currency === currency)?.amount ?? 0)
   const moneyOf = (month: StatusMonth) => ({ currency: currency ?? '', amount: String(valueOf(month)) })
   const labelOf = (month: StatusMonth) => metric === 'guests' ? formatCount(month.guests) : formatMoney(moneyOf(month))
-  // Twelve full amounts side by side overlap: the bar shows a short one, its title the whole amount
+  // Qatar turǵan on eki tolıq summa bir-birin jabadı: bar qısqa summanı, onıń title ı tolıq summanı kórsetedi
   const shortLabelOf = (month: StatusMonth) => metric === 'guests' ? formatCount(month.guests) : formatMoneyCompact(moneyOf(month))
 
   const max = Math.max(0, ...months.map(valueOf))

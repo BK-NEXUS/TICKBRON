@@ -12,12 +12,12 @@ interface RatePlanCardProps {
 }
 
 /**
- * RatePlanCard component for displaying rate plan options
- * Shows rate plan details, pricing, cancellation policy, and deposit information
+ * Rate plan variantların kórsetiw ushın RatePlanCard komponenti
+ * Rate plan maǵlıwmatın, bahanı, biykar etiw siyasatın hám depozit maǵlıwmatın kórsetedi
  */
 export function RatePlanCard({ ratePlan, onSelect, isSelected = false }: RatePlanCardProps) {
   const { t, tp, formatMoney, currency } = useI18n()
-  // The price in the chosen currency: the owner's own, or a conversion marked with ≈
+  // Tańlanǵan valyutadaǵı baha: iyeniń óz bahası, yamasa ≈ penen belgilengen konvertaciya
   const shown = priceIn(ratePlan, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 

@@ -1,5 +1,5 @@
-// Auth API adapter for session-based authentication
-// Integrates with backend auth endpoints from Checkpoint 03-04
+// Session tiykarlı autentifikaciya ushın Auth API adapteri
+// 03-04 Checkpoint teği backend auth endpoint leri menen birlesedi
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, clearCsrfToken } from '../utils/api'
@@ -21,11 +21,11 @@ export interface User {
   last_login?: string
   email_verified: boolean
   two_factor_enabled: boolean
-  /** True for an administrator who must set up two-step sign-in and has not: the site shows the setup page */
+  /** Eki basqıshlı kirisiwdi sazlawı kerek hám sazlamaǵan administrator ushın True: sayt sazlaw betin kórsetedi */
   two_factor_setup_required?: boolean
   is_staff?: boolean
   is_superuser?: boolean
-  // Role name, e.g. 'hotel-owner'; null for regular users. Read-only on the backend
+  // Rol atı, mısalı 'hotel-owner'; ápiwayı paydalanıwshılar ushın null. Backend te tek oqıw
   role?: string | null
 }
 
@@ -61,37 +61,40 @@ export interface AuthResponse {
   success: boolean
   user?: User
   error?: string
-  /** Machine-readable reason from the backend, e.g. 'otp_invalid' */
+  /** Backend ten mashina oqıytuǵın sebep, mısalı 'otp_invalid' */
   code?: string
   detail?: string
-  /** The password was right but nobody is signed in until the app's code is sent too */
+  /** Parol durıs edi, biraq ilova kodı da jiberilmegenshe hesh kim kirgizilmeydi */
   twoFactorRequired?: boolean
-  /** A six-digit code was mailed: sign-up makes the account only after it is typed, sign-in starts only after it */
+  /**
+   * Altı sanlı kod e-mail ge jiberildi: dizimnen ótiw akkauntti tek kod terilgennen keyin jaratadı, kirisiw tek sonnan keyin
+   * baslanadı
+   */
   emailCodeRequired?: boolean
-  /** Sign-up: the address the code went to */
+  /** Dizimnen ótiw: kod barǵan mánzil */
   email?: string
-  /** Sign-in: "o***@gmail.com" */
+  /** Kirisiw: "o***@gmail.com" */
   emailHint?: string
-  /** Seconds until a new code may be asked for */
+  /** Jańa kod soraw múmkin bolǵanǵa shekem sekundlar */
   resendAfter?: number
 }
 
-/** The app's 6 digits, or one of the backup codes */
+/** Ilovanıń 6 sanı, yamasa zapas kodlardıń biri */
 export type TwoFactorCredential = { code: string } | { backupCode: string }
 
 export interface TwoFactorSetupResponse {
   success: boolean
   error?: string
-  /** otpauth:// link the authenticator app reads from the QR code */
+  /** Authenticator ilovası QR koddan oqıytuǵın otpauth:// siltemesi */
   otpauthUri?: string
-  /** The same secret as text, for typing it in */
+  /** Sol sır tekst retinde, qolda teriw ushın */
   secret?: string
 }
 
 export interface TwoFactorConfirmResponse {
   success: boolean
   error?: string
-  /** Shown once: the only way in when the phone is lost */
+  /** Bir márte kórsetiledi: telefon joǵalǵanda jalǵız kiriw jolı */
   backupCodes?: string[]
 }
 
@@ -108,11 +111,11 @@ export interface ChangePasswordRequest {
   password_confirm: string
 }
 
-/** The answer of a password call: only whether it worked, never the account. */
+/** Parol shaqırıwınıń juwabı: tek islegenin yamasa joq ekeni, hesh qashan akkaunt emes. */
 export interface PasswordActionResponse {
   success: boolean
   error?: string
-  /** Machine-readable reason from the backend, e.g. 'invalid_reset_link' */
+  /** Backend ten mashina oqıytuǵın sebep, mısalı 'invalid_reset_link' */
   code?: string
 }
 
@@ -130,7 +133,7 @@ class AuthAdapter {
     const url = `${this.baseUrl}${endpoint}`
     
     const defaultOptions: RequestInit = {
-      credentials: 'include', // Important for session-based auth with cookies
+      credentials: 'include', // Cookie li session tiykarlı auth ushın áhmiyetli
       headers: {
         'Content-Type': 'application/json',
       },
@@ -169,7 +172,7 @@ class AuthAdapter {
     }
   }
 
-  // Django rotates the CSRF token when a session starts or ends, so the cached one is dropped
+  // Django session baslanǵanda yamasa pitkende CSRF token di aylandıradı, sol sebepli keshtegisi taslanadı
   private async changeSession(endpoint: string, options: RequestInit): Promise<AuthResponse> {
     const response = await this.request(endpoint, options)
     clearCsrfToken()
@@ -181,7 +184,7 @@ class AuthAdapter {
     return { success, error, code }
   }
 
-  /** Ask for a reset link. The backend answers the same for every address, so success means "asked". */
+  /** Tiklew siltemesin soraw. Backend hár mánzil ushın birdey juwap beredi, sol sebepli tabıs "soraldı" degendi bildiredi. */
   async requestPasswordReset(email: string): Promise<PasswordActionResponse> {
     return this.passwordAction('/api/v1/auth/password-reset/request/', { email })
   }
@@ -190,7 +193,7 @@ class AuthAdapter {
     return this.passwordAction('/api/v1/auth/password-reset/confirm/', data)
   }
 
-  /** The current session stays signed in; the account's other sessions end. */
+  /** Házirgi session kirgen qaladı; akkaunttıń basqa session ları tawsıladı. */
   async changePassword(data: ChangePasswordRequest): Promise<PasswordActionResponse> {
     return this.passwordAction('/api/v1/auth/password/change/', data)
   }
@@ -209,27 +212,30 @@ class AuthAdapter {
     })
   }
 
-  /** Last step of sign-up, after register() answered emailCodeRequired: the right code makes the account and signs in */
+  /**
+   * Dizimnen ótiwdiń aqırǵı qádemi, register() emailCodeRequired dep juwap bergennen keyin: durıs kod akkauntti jaratadı hám
+   * kirgizedi
+   */
   async verifyRegistration(email: string, code: string): Promise<AuthResponse> {
     return this.changeSession('/api/v1/auth/register/verify/', { method: 'POST', body: JSON.stringify({ email, code }) })
   }
 
-  /** A new code for a sign-up that is waiting */
+  /** Kútip turǵan dizimnen ótiw ushın jańa kod */
   async resendRegistrationCode(email: string): Promise<AuthResponse> {
     return this.request('/api/v1/auth/register/resend/', { method: 'POST', body: JSON.stringify({ email }) })
   }
 
-  /** Second step of the sign-in of a guest or hotel owner, after login() answered emailCodeRequired */
+  /** Mehmann yamasa mehmanxana iyesi kirisiwiniń ekinshi qádemi, login() emailCodeRequired dep juwap bergennen keyin */
   async loginEmailCode(code: string): Promise<AuthResponse> {
     return this.changeSession('/api/v1/auth/login/email-code/', { method: 'POST', body: JSON.stringify({ code }) })
   }
 
-  /** A new code for the sign-in that is waiting */
+  /** Kútip turǵan kirisiw ushın jańa kod */
   async resendLoginCode(): Promise<AuthResponse> {
     return this.request('/api/v1/auth/login/email-code/resend/', { method: 'POST', body: JSON.stringify({}) })
   }
 
-  /** Second step of the login, after login() answered twoFactorRequired */
+  /** Kirisiwdiń ekinshi qádemi, login() twoFactorRequired dep juwap bergennen keyin */
   async loginTwoFactor(credential: TwoFactorCredential): Promise<AuthResponse> {
     const body = 'code' in credential ? { code: credential.code } : { backup_code: credential.backupCode }
     return this.changeSession('/api/v1/auth/login/2fa/', { method: 'POST', body: JSON.stringify(body) })
@@ -250,13 +256,13 @@ class AuthAdapter {
     }
   }
 
-  /** A new secret for the signed-in user's authenticator app; nothing is switched on until confirmTwoFactorSetup */
+  /** Kirgen paydalanıwshınıń authenticator ilovası ushın jańa sır; confirmTwoFactorSetup ǵa shekem hesh nárse qosılmaydı */
   async startTwoFactorSetup(): Promise<TwoFactorSetupResponse> {
     const { data, error } = await this.post<{ otpauth_uri: string; secret: string }>('/api/v1/auth/2fa/setup/')
     return data ? { success: true, otpauthUri: data.otpauth_uri, secret: data.secret } : { success: false, error }
   }
 
-  /** The first right code switches it on; the backup codes come back this once */
+  /** Birinshi durıs kod onı qosadı; zapas kodlar usı bir márte qaytadı */
   async confirmTwoFactorSetup(code: string): Promise<TwoFactorConfirmResponse> {
     const { data, error } = await this.post<{ backup_codes: string[] }>('/api/v1/auth/2fa/confirm/', { code })
     return data ? { success: true, backupCodes: data.backup_codes } : { success: false, error }
@@ -275,8 +281,8 @@ class AuthAdapter {
   }
 
   /**
-   * With onlyIfSession, first ask GET /auth/csrf/ whether the session is logged in and skip
-   * /auth/me/ when it is not (an anonymous visit then makes no 401 request).
+   * onlyIfSession menen aldın GET /auth/csrf/ dan session kirgen be dep soraydı hám kirmegen bolsa
+   * /auth/me/ ti ótkizip jiberedi (anonim kirgende 401 soraw bolmaydı).
    */
   async getCurrentUser(options: { onlyIfSession?: boolean } = {}): Promise<AuthResponse> {
     if (options.onlyIfSession) {
@@ -287,7 +293,7 @@ class AuthAdapter {
           return { success: false, error: 'Not logged in' }
         }
       } catch {
-        // Could not tell: fall through to /auth/me/
+        // Anıqlap bolmadı: /auth/me/ ge ótiw
       }
     }
     return this.request('/api/v1/auth/me/', {
@@ -303,8 +309,8 @@ class AuthAdapter {
   }
 }
 
-// Export singleton instance
+// Singleton nusqasın eksport etiw
 export const authAdapter = new AuthAdapter()
 
-// Export class for testing
+// Testlew ushın klasstı eksport etiw
 export { AuthAdapter }

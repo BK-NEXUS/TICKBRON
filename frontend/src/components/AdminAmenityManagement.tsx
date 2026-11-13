@@ -25,7 +25,7 @@ export function AdminAmenityManagement() {
   const [selectedItem, setSelectedItem] = useState<AdminAmenity | AdminAmenityCategory | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  // Form state for amenities
+  // Amenity ler ushın forma jaǵdayı
   const [amenityForm, setAmenityForm] = useState<CreateAmenityRequest>({
     category: 0,
     name: '',
@@ -36,7 +36,7 @@ export function AdminAmenityManagement() {
     sort_order: 0,
   })
 
-  // Form state for categories
+  // Kategoriyalar ushın forma jaǵdayı
   const [categoryForm, setCategoryForm] = useState<CreateAmenityCategoryRequest>({
     name: '',
     slug: '',
@@ -47,7 +47,7 @@ export function AdminAmenityManagement() {
 
   useEffect(() => {
     loadData()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode])
 

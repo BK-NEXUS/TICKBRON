@@ -1,12 +1,12 @@
-// Hotel promotions (R10): the public banner endpoints and the super-admin management endpoints.
-// Contract: .ai/API_CONTRACT.md, section "R10: hotel promotions".
+// Mehmanxana reklamaları (R10): ashıq banner endpoint leri hám super-admin basqarıw endpoint leri.
+// Contract: .ai/API_CONTRACT.md, "R10: hotel promotions" bólimi.
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Property } from './propertyAdapter'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 
-/** A search card plus the id the click counter needs and the pictures of the banner (at most 10; may be empty) */
+/** Izlew kartası, klik sanaǵısh ushın kerek id hám bannerdegi súwretler (eń kóbi 10; bos bolıwı múmkin) */
 export type PromotedProperty = Property & { promotion_id: number; promo_photos?: string[] }
 
 export type PromotionStatus = 'scheduled' | 'active' | 'paused' | 'ended' | 'cancelled'
@@ -20,14 +20,14 @@ export interface HotelSearchRow {
   has_running_promotion: boolean
 }
 
-/** One picture put on an ad */
+/** Reklamaǵa qoyılǵan bir súwret */
 export interface AdPhoto {
   id: number
   photo_url: string | null
   display_order: number
 }
 
-/** One region of the advertising panel: ads running and waiting in it, and the hotels running them */
+/** Reklama panelindegi bir region: onda isleytuǵın hám kútip turǵan reklamalar hám olardı júrgizip atırǵan mehmanxanalar */
 export interface PromotionRegion {
   id: number
   country_code: string
@@ -83,7 +83,7 @@ export interface PromotionList {
 
 export type RenewalStatus = 'pending' | 'renewed' | 'declined' | 'expired'
 
-/** An ad whose month ended: did the hotel pay for the next one? (.ai/PLAN_AD_RENEWAL.md) */
+/** Ayı pitken reklama: mehmanxana keyingisi ushın tóledi me? (.ai/PLAN_AD_RENEWAL.md) */
 export interface AdRenewalRow {
   id: number
   promotion_id: number
@@ -139,7 +139,7 @@ export interface PromotionStats {
   totals: { impressions: number; clicks: number; ctr: number | null }
 }
 
-/** `code` is the backend's stable error name (e.g. `overlap`) so screens can translate it. */
+/** `code` backend tiń turaqlı qátelik atı (mısalı `overlap`), sol sebepli ekranlar onı awdara aladı. */
 export interface PromotionResult<T> {
   data: T | null
   error: string | null
@@ -147,7 +147,7 @@ export interface PromotionResult<T> {
 }
 
 const ADMIN = '/api/v1/admin-panel'
-// Getters: the text is chosen when an error happens, in the language the page is in then
+// Getterler: tekst qátelik bolǵanda, bet sol waqıtta qaysı tilde bolsa sol tilde tańlanadı
 const STATUS_MESSAGES = {
   get 401() { return translateNow('apiError.authRequired') },
   get 403() { return translateNow('apiError.adminRequired') },
@@ -192,9 +192,9 @@ export class PromotionAdapter {
     return this.request<T>(endpoint, { method, body: body === undefined ? undefined : JSON.stringify(body) })
   }
 
-  // Public
+  // Ashıq
 
-  /** Banners for the home page. Advertising must never break a page, so failures give an empty list. */
+  /** Bas bet ushın banner ler. Reklama hesh qashan betti buzbawı kerek, sol sebepli qátelikte bos dizim qaytadı. */
   async getHomePromotions(country?: number): Promise<PromotionResult<PromotedProperty[]>> {
     const result = await this.request<{ results?: PromotedProperty[] }>(
       withQuery('/api/v1/promotions/home/', { country }),
@@ -202,7 +202,7 @@ export class PromotionAdapter {
     return { data: result.data?.results ?? [], error: result.error, code: result.code }
   }
 
-  /** Counts a banner click. Fire and forget: a failure is never shown to the guest. */
+  /** Banner kligin sanaydı. Jiberip umıtıw: qátelik mehmanǵa hesh qashan kórsetilmeydi. */
   async trackClick(promotionId: number): Promise<void> {
     await this.send(`/api/v1/promotions/${promotionId}/click/`, 'POST')
   }
@@ -224,12 +224,12 @@ export class PromotionAdapter {
     return this.request<RenewalList>(withQuery(`${ADMIN}/promotions/renewals/`, { ...params }))
   }
 
-  /** The hotel paid for the next month: the ad is extended by one month */
+  /** Mehmanxana keyingi ay ushın tóledi: reklama bir ayǵa uzaytıladı */
   confirmRenewal(id: number): Promise<PromotionResult<AdRenewalRow>> {
     return this.send(`${ADMIN}/promotions/renewals/${id}/confirm/`, 'POST')
   }
 
-  /** The hotel did not pay: the ad is removed from the banner now */
+  /** Mehmanxana tólemedi: reklama házir bannerden alıp taslanadı */
   declineRenewal(id: number): Promise<PromotionResult<AdRenewalRow>> {
     return this.send(`${ADMIN}/promotions/renewals/${id}/decline/`, 'POST')
   }
@@ -258,7 +258,7 @@ export class PromotionAdapter {
     return this.send(`${ADMIN}/promotions/${id}/cancel/`, 'POST', { reason })
   }
 
-  /** Every region with the ads running and waiting in it (the advertising panel by region) */
+  /** Hár region, onda isleytuǵın hám kútip turǵan reklamalar (region boyınsha reklama paneli) */
   getRegionPanel(): Promise<PromotionResult<PromotionRegion[]>> {
     return this.request<PromotionRegion[]>(`${ADMIN}/promotions/regions/`)
   }
@@ -267,7 +267,7 @@ export class PromotionAdapter {
     return this.request<AdPhoto[]>(`${ADMIN}/promotions/${id}/photos/`)
   }
 
-  /** Multipart upload of one picture; the server refuses an eleventh and anything that is not an image */
+  /** Bir súwretti multipart júklew; server onınshısın hám súwret bolmaǵan hár nárseni biykar etedi */
   async uploadPromotionPhoto(id: number, file: File): Promise<PromotionResult<AdPhoto>> {
     const body = new FormData()
     body.append('photo', file)

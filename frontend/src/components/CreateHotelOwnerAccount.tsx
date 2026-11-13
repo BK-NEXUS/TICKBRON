@@ -12,7 +12,7 @@ import { adminAdapter, CreateHotelOwnerRequest, CreateHotelOwnerResponse } from 
 const PERCENT_FORMAT = /^\d{1,3}(\.\d{1,2})?$/
 
 interface CreateHotelOwnerAccountProps {
-  /** `owner` (default) picks the place of the hotels; `admin` adds an administrator, which has no place */
+  /** `owner` (ádetde) mehmanxanalar orının tańlaydı; `admin` administrator qosadı, onıń orını joq */
   kind?: 'owner' | 'admin'
   onSuccess?: () => void
   onCancel?: () => void
@@ -24,7 +24,7 @@ export function CreateHotelOwnerAccount({ kind = 'owner', onSuccess, onCancel }:
   const { t } = useI18n()
   const isAdmin = kind === 'admin'
   const [place, setPlace] = useState<GeographyValue>(NO_PLACE)
-  // What the site takes from each booking of a new owner (required), and which rights a new administrator gets
+  // Sayt jańa iyeniń hár bronınan ne aladı (májbúriy), hám jańa administrator qanday huquq aladı
   const [commissionPercent, setCommissionPercent] = useState('')
   const [role, setRole] = useState<'staff' | 'super_admin'>('staff')
   const [formData, setFormData] = useState<Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'commission_percent'>>({

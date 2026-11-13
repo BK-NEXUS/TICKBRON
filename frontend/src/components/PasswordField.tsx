@@ -4,7 +4,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from './Button'
 import { useI18n } from '../i18n/I18nContext'
 
-// A shown password is hidden again after this long, in case the screen is left unattended
+// Kórsetilgen parol, ekran qarawsız qalǵan bolsa, usı waqıttan keyin qayta jasırıladı
 const AUTO_HIDE_MS = 30_000
 
 interface PasswordFieldProps {
@@ -20,7 +20,7 @@ interface PasswordFieldProps {
   minLength?: number
 }
 
-/** Password input with a show/hide toggle and a Caps Lock hint. The visible label stays in the form. */
+/** Kórsetiw/jasırıw almastırǵısh hám Caps Lock eskertpesi bar parol kirisiwi. Kórinetuǵın belgi formada qaladı. */
 export function PasswordField({ showLabel, hideLabel, ...inputProps }: PasswordFieldProps) {
   const { t } = useI18n()
   const [visible, setVisible] = useState(false)

@@ -8,11 +8,11 @@ interface Options {
 
 export const DEFAULT_GRANULARITY: StatusGranularity = 'month'
 
-/** Period, custom range and series granularity of a Status screen, with the params the adapter takes */
+/** Status ekranınıń dáwiri, custom aralıǵı hám seriya granularity i, adapter alatuǵın parametrler menen */
 export function useStatusPeriod({ period: initialPeriod = 'all' }: Options = {}) {
   const [period, setPeriod] = useState(initialPeriod)
   const [range, setRangeState] = useState<DateRange | null>(null)
-  // Sent only after the user picks one; until then the backend default (month) applies
+  // Tek paydalanıwshı birin tańlaǵannan keyin jiberiledi; sol waqıtqa shekem backend tiń ádetdegisi (ay) qollanıladı
   const [chosenGranularity, setGranularity] = useState<StatusGranularity | undefined>(undefined)
 
   const setRange = useCallback((next: DateRange) => {

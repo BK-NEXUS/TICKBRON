@@ -9,7 +9,7 @@ interface NewPasswordFieldsProps {
   disabled?: boolean
 }
 
-/** A new password typed twice, with the length hint. Used where a password is reset or changed. */
+/** Eki ret terilgen jańa parol, uzınlıq eskertpesi menen. Parol tiklengen yamasa ózgertilgen jerde paydalanıladı. */
 export function NewPasswordFields({
   password,
   confirmation,

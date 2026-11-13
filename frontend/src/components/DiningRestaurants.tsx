@@ -7,8 +7,8 @@ interface DiningRestaurantsProps {
 }
 
 /**
- * DiningRestaurants component for displaying nearby restaurants and dining options
- * Shows cuisine, distance, rating, and price range information
+ * Jaqındaǵı restoranlar hám tamaqlanıw orınların kórsetiw ushın DiningRestaurants komponenti
+ * Aspazlıq, qashıqlıq, reyting hám baha aralıǵı maǵlıwmatın kórsetedi
  */
 export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) {
   const { t } = useI18n()
@@ -20,7 +20,7 @@ export function DiningRestaurants({ restaurants = [] }: DiningRestaurantsProps) 
     )
   }
 
-  // Sort by distance
+  // Qashıqlıq boyınsha tártiplew
   const sortedRestaurants = [...restaurants].sort((a, b) => a.distance - b.distance)
 
   const formatPriceRange = (priceRange: string) => {

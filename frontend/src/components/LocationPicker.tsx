@@ -17,15 +17,15 @@ const fromLatLng = ({ lat, lng }: L.LatLng): Coordinates =>
   ({ lat: roundCoordinate(lat), lng: roundCoordinate(lng, 'lng') })
 
 /**
- * A hotel owner marks where the property is: click the map or drag the pin.
- * The coordinate fields next to it stay the keyboard way to do the same.
+ * Mehmanxana iyesi mehmanxananıń qayerde ekenin belgileydi: kartaǵa basıw yamasa belgini súyrew.
+ * Janındaǵı koordinata maydanları sonı islewdiń klaviatura jolı bolıp qaladı.
  */
 export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
-  // The map is built once; its handlers always call the latest onChange
+  // Karta bir márte quriladı; onıń handler leri hárdayım eń sońǵı onChange di shaqıradı
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
@@ -41,7 +41,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
       mapRef.current = null
       markerRef.current = null
     }
-    // Zoom titles are set once; a language change takes effect the next time the map opens
+    // Zoom sarlawhaları bir márte belgilenedi; til ózgeriwi karta keyingi ashılǵanda kúshke kiredi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

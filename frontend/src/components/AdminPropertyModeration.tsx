@@ -11,7 +11,8 @@ import { propertyStatusLabel } from '../utils/statusLabels'
 const PAGE_SIZE = 20
 const SEARCH_DELAY_MS = 300
 const STATUS_FILTERS = ['draft', 'pending_approval', 'active', 'suspended', 'rejected'] as const
-// A new hotel is a draft; the old 'pending' is kept for data made before. All of these wait for a decision.
+// Jańa mehmanxana qaralama; eski 'pending' bunnan aldın jaratılǵan maǵlıwmat ushın saqlanadı. Bulardıń hámmesi sheshimdi
+// kútedi.
 const AWAITING_DECISION = ['draft', 'pending_approval', 'pending']
 
 const MISSING_PART_KEYS: Record<string, MessageKey> = {
@@ -76,7 +77,7 @@ export function AdminPropertyModeration() {
       } else if (response.error) {
         setError(response.error)
       } else {
-        // Refresh the list
+        // Dizimdi jańalaw
         await loadProperties()
       }
     } catch {
@@ -106,7 +107,7 @@ export function AdminPropertyModeration() {
       } else {
         setRejectModal(null)
         setRejectionReason('')
-        // Refresh the list
+        // Dizimdi jańalaw
         await loadProperties()
       }
     } catch {
@@ -133,7 +134,7 @@ export function AdminPropertyModeration() {
       if (response.error) {
         setError(response.error)
       } else {
-        // Refresh the list
+        // Dizimdi jańalaw
         await loadProperties()
       }
     } catch {

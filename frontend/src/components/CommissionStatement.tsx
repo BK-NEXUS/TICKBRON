@@ -3,7 +3,7 @@ import type { CommissionMonth, CommissionStatement as Statement, MoneyLine } fro
 
 interface CommissionStatementProps {
   statement: Statement
-  /** Staff and super admins confirm paid months; the owner only reads */
+  /** Staff hám super adminler tólengen aylardı tastıyıqlaydı; iye tek oqıydı */
   confirmation?: {
     busyMonth: string | null
     onConfirm: (month: string) => void
@@ -11,13 +11,13 @@ interface CommissionStatementProps {
   }
 }
 
-/** "2026-05" of the browser's today, to tell the months that can still change from the ended ones */
+/** Brauzerdiń búgingisi "2026-05" ayı, ele ózgerip bolatuǵın aylardı pitkenlerinen ajıratıw ushın */
 function thisMonthKey(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
-/** The commission months (and year totals when the account is a year old) of one owner. */
+/** Bir iyeniń komissiya aylar (hám akkaunt bir jıllıq bolsa jıllıq jıynaqlar). */
 export function CommissionStatement({ statement, confirmation }: CommissionStatementProps) {
   const { t, formatDate, formatMoney } = useI18n()
 

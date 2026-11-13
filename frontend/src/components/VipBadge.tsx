@@ -1,7 +1,7 @@
 import { Crown } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 
-/** The mark of a VIP room type (the hotel owner sets it; guests see it on the room and in the booking summary). */
+/** VIP xona túriniń belgisi (mehmanxana iyesi belgileydi; mehmanlar onı xonada hám bron qısqasha mazmunında kóredi). */
 export function VipBadge() {
   const { t } = useI18n()
   return (

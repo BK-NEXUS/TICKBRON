@@ -16,18 +16,18 @@ interface StatusReportProps {
   periodRange: PeriodRange
   totals: StatusFullTotals
   insights: Insights
-  /** The owner's place in the region (owner hotel screen only) */
+  /** Iyeniń regiondaǵı orni (tek iye mehmanxana ekranı) */
   rank?: StatusRank | null
   series: StatusSeriesRow[]
   granularity: StatusGranularity
   onGranularityChange: (granularity: StatusGranularity) => void
   reconciliation: StatusReconciliation
-  /** Extra first card, e.g. the owner's "since" date */
+  /** Qosımsha birinshi karta, mısalı iyeniń "beri" sanası */
   lead?: { label: string; value: string }
   guestsLabel?: string
 }
 
-/** The R12a body shared by the admin hotel, owner summary and owner hotel screens */
+/** Admin mehmanxana, iye qısqasha mazmunı hám iye mehmanxana ekranları ortaq paydalanatuǵın R12a deneti */
 export function StatusReport({
   period, periodRange, totals, insights, rank, series, granularity, onGranularityChange, reconciliation, lead, guestsLabel,
 }: StatusReportProps) {

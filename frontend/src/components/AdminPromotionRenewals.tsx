@@ -13,9 +13,9 @@ const BADGE: Record<RenewalStatus, string> = {
 }
 
 interface AdminPromotionRenewalsProps {
-  /** Only a super-admin may answer; staff can look. The backend enforces it too. */
+  /** Tek super-admin juwap bere aladı; staff kóre aladı. Backend te de májbúrlenedi. */
   isSuperAdmin: boolean
-  /** Called after an answer, so the ads list and the region panel read their numbers again */
+  /** Juwaptan keyin shaqırıladı, sonda reklama dizimi hám region paneli óz sanların qayta oqıydı */
   onChanged: () => void
 }
 
@@ -24,7 +24,7 @@ function mapLink(row: AdRenewalRow): string | null {
   return `https://www.openstreetmap.org/?mlat=${row.latitude}&mlon=${row.longitude}#map=16/${row.latitude}/${row.longitude}`
 }
 
-/** The ads whose month ended: did the hotel pay for the next one? (.ai/PLAN_AD_RENEWAL.md) */
+/** Ayı pitken reklamalar: mehmanxana keyingi ay ushın tóledi me? (.ai/PLAN_AD_RENEWAL.md) */
 export function AdminPromotionRenewals({ isSuperAdmin, onChanged }: AdminPromotionRenewalsProps) {
   const { t, formatDate, formatMoney } = useI18n()
   const [status, setStatus] = useState<RenewalStatus>('pending')
@@ -36,7 +36,7 @@ export function AdminPromotionRenewals({ isSuperAdmin, onChanged }: AdminPromoti
   const [busyId, setBusyId] = useState<number | null>(null)
   const [askingId, setAskingId] = useState<number | null>(null)
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)

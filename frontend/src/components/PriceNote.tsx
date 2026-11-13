@@ -2,8 +2,8 @@ import { useI18n } from '../i18n/I18nContext'
 import type { ShownPrice } from '../utils/price'
 
 /**
- * Shown under a price when the guest's chosen currency has no rate yet and the price is in another currency:
- * the amount and its sign are the hotel's own, and this says why they are not in the chosen currency.
+ * Mehmannıń tańlaǵan valyutasınıń kursı ele joq hám baha basqa valyutada bolsa baha astında kórsetiledi:
+ * summa hám onıń belgisi mehmanxananıń óziki, hám bul olar tańlanǵan valyutada nege emes ekenin aytadı.
  */
 export function PriceNote({ shown }: { shown: Pick<ShownPrice, 'currency'> }) {
   const { t, currency } = useI18n()

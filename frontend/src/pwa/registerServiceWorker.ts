@@ -2,7 +2,10 @@ interface ServiceWorkerHost {
   serviceWorker?: { register(url: string, options?: { scope: string }): Promise<unknown> }
 }
 
-/** Registers the small offline worker (public/sw.js) in the built site; failing to do so never matters to the visitor */
+/**
+ * Kishi offline worker di (public/sw.js) qurılǵan saytta dizimnen ótkizedi; bunıń sátsiz bolıwı kelwshige hesh qashan
+ * áhmiyetli emes
+ */
 export async function registerServiceWorker(
   production: boolean = import.meta.env.PROD,
   host: ServiceWorkerHost = navigator,
@@ -11,6 +14,6 @@ export async function registerServiceWorker(
   try {
     await host.serviceWorker.register('/sw.js', { scope: '/' })
   } catch {
-    // The site works the same without it
+    // Sayt onsız da birdey isleydi
   }
 }

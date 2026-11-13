@@ -24,9 +24,9 @@ import { propertyStatusLabel } from '../utils/statusLabels'
 
 type DashboardView = 'properties' | 'rooms' | 'details' | 'photos' | 'rates' | 'availability' | 'calendar' | 'bookings' | 'reviews' | 'ads' | 'commission' | 'no-show-reports' | 'status' | 'add-property'
 
-/** Hotel name for cards and headings (older API responses have no name: fall back to the city) */
+/** Kartalar hám sarlawhalar ushın mehmanxana atı (eski API juwaplarında at joq: qalaǵa qaytıw) */
 const propertyName = (property: PartnerProperty) => property.name || property.city
-// An owner with only a few hotels does not need the alphabet
+// Tek bir neshe mehmanxanası bar iyege alfavit kerek emes
 const ALPHABET_FROM = 6
 
 export function PartnerDashboardPage() {
@@ -46,7 +46,7 @@ export function PartnerDashboardPage() {
     if (isAuthenticated) {
       loadProperties()
     }
-    // Reloads on sign-in only; a language change must not refetch
+    // Tek kirgende qayta júkleydi; til ózgeriwi qayta alıwdı keltirip shıǵarmawı kerek
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])
 
@@ -120,8 +120,8 @@ export function PartnerDashboardPage() {
     setCurrentView('rates')
   }
 
-  // Home › Partner Dashboard › Hotel › Room type › Rate plan, shown by the layout's Breadcrumbs.
-  // Each level is a button that goes back to that view; Back steps up one level.
+  // Bas bet › Partner Dashboard › Mehmanxana › Xona túri › Rate plan, layout tıń Breadcrumbs ı kórsetedi.
+  // Hár dárejege sol kórinisine qaytatuǵın túyme; Artqa bir dárejege joqarı shıǵadı.
   const trail: Crumb[] = [{ label: t('header.partnerDashboard') }]
   if (currentView !== 'properties') trail[0] = { label: t('header.partnerDashboard'), onClick: handleBackToProperties }
   if (currentView === 'add-property') trail.push({ label: t('partner.addProperty') })

@@ -14,7 +14,7 @@ interface ChargeProps {
   booking: ChargedBooking
 }
 
-/** The amount the guest is charged, as the backend stored it (the so'm snapshot for a hotel priced in dollars). */
+/** Mehmannan alınatuǵın summa, backend saqlaǵanday (dollarda bahalanǵan mehmanxana ushın som snapshot ı). */
 export function ChargeMain({ booking }: ChargeProps) {
   const { formatMoney } = useI18n()
   const charge = chargeOf(booking)
@@ -22,9 +22,9 @@ export function ChargeMain({ booking }: ChargeProps) {
 }
 
 /**
- * What goes with the charge when the hotel is priced in another currency: the hotel's own price after a
- * "≈", the date of the CBU rate, and a warning when that rate may be out of date. Nothing for a booking
- * that is charged in its own currency. All numbers come from the backend; nothing is converted here.
+ * Mehmanxana basqa valyutada bahalanǵanda alınatuǵın summa menen birge keletuǵın nárse: mehmanxananıń óz bahası
+ * "≈" den keyin, CBU kursı sanası, hám sol kurs eskirgen bolıwı múmkin bolsa eskertiw. Óz valyutasında
+ * alınatuǵın bron ushın hesh nárse. Barlıq sanlar backend ten keledi; bul jerde hesh nárse konvertaciyalanbaydı.
  */
 export function ChargeNotes({ booking }: ChargeProps) {
   const { t, formatMoney, formatDate } = useI18n()

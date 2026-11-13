@@ -11,8 +11,8 @@ interface PropertyGalleryProps {
 }
 
 /**
- * PropertyGallery component for displaying property images with navigation
- * Supports thumbnail navigation and responsive layout
+ * Mehmanxana súwretlerin navigaciya menen kórsetiw ushın PropertyGallery komponenti
+ * Miniatyura navigaciyasın hám responsive dúzilisti qollaydı
  */
 export function PropertyGallery({ property }: PropertyGalleryProps) {
  const { t } = useI18n()
@@ -20,14 +20,14 @@ export function PropertyGallery({ property }: PropertyGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const name = propertyDisplayName(property)
   
-  // Get gallery images from property.gallery organized by photo type
+  // Súwret túri boyınsha shólkemlestirilgen property.gallery den galereya súwretlerin alıw
   const galleryImages = property.gallery ? 
     Object.values(property.gallery).flat().sort((a, b) => a.display_order - b.display_order) :
     (property.primary_photo ? [property.primary_photo] : [])
   
   const hasPhotos = galleryImages.length > 0
 
-  // Fallback to placeholder if no images
+  // Súwret joq bolsa placeholder ge qaytıw
   const displayImages = galleryImages.length > 0 ? 
     galleryImages : 
     [{ id: 0, photo: '', photo_type: 'other', is_primary: true, display_order: 0 }]

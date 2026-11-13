@@ -18,7 +18,9 @@ const TEXT_KEYS = textKeys({
 
 })
 
-/** The period's series as charts (stayed, guests, revenue per currency) with the bucket size and currency choice */
+/**
+ * Dáwir seriyası grafikler retinde (stayed, mehmanlar, hár valyuta boyınsha dáramat), bucket ólshemi hám valyuta tańlawı menen
+ */
 export function StatusSeriesSection({ series, granularity, onGranularityChange }: StatusSeriesSectionProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const id = useId()

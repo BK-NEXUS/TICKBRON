@@ -7,8 +7,8 @@ interface SearchSortProps {
 }
 
 /**
- * SearchSort component for sorting search results
- * Provides sorting options for relevance, price, rating, and reviews
+ * Izlew nátiyjelerin tártiplew ushın SearchSort komponenti
+ * Relevance, baha, reyting hám sharhlar boyınsha tártiplew variantların usınadı
  */
 export function SearchSort({ sortBy, onSortChange }: SearchSortProps) {
   const { t } = useI18n()

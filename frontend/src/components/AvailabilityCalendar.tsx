@@ -10,12 +10,12 @@ interface AvailabilityCalendarProps {
   checkIn: string | null
   checkOut: string | null
   onRangeChange: (checkIn: string | null, checkOut: string | null) => void
-  /** Rate plan stay rules */
+  /** Rate plan turıw qaǵıydaları */
   minNights?: number | null
   maxNights?: number | null
 }
 
-// From this amount a night is shown compactly (1.09M): a day cell on a phone is narrow
+// Usı summadan baslap tún ıqshamlap kórsetiledi (1.09M): telefondaǵı kún katagı tar
 const COMPACT_FROM = 10_000
 const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 })
 
@@ -36,10 +36,10 @@ const STATUS_COLOR: Record<Status, string> = {
 }
 
 /**
- * Availability and price per night for one rate plan, with check-in/check-out
- * selection. A range is refused, naming the date, when a night is closed or
- * sold out or the stay breaks a minimum/maximum stay rule. The total itself
- * comes from the backend quote, not from here.
+ * Bir rate plan ushın tún boyınsha bos orın hám baha, check-in/check-out
+ * tańlawı menen. Tún jabıq yamasa satılıp bolǵan bolsa yamasa turıw eń kem/eń kóp
+ * turıw qaǵıydasın buzsa, aralıq sananı atap biykar etiledi. Jámi summanıń
+ * ózi usı jerden emes, backend quote tan keledi.
  */
 export function AvailabilityCalendar({
   inventory,
@@ -52,11 +52,11 @@ export function AvailabilityCalendar({
 }: AvailabilityCalendarProps) {
   const byDate = new Map(inventory.map(row => [row.date, row]))
   const { t, tp, formatMoney, formatDay, currency: chosenCurrency } = useI18n()
-  // The night in the chosen currency (≈ for a conversion); its own price when the backend has none
+  // Tańlanǵan valyutadaǵı tún (konvertaciya ushın ≈); backend te joq bolsa óz bahası
   const formatPrice = (row: DateInventory) => {
     const shown = nightPriceIn({ ...row, currency: row.currency || currency }, chosenCurrency)
     const exact = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
-    // A long amount (1 085 850 so'm) does not fit a day cell on a phone: 1.09M, the exact price is the tooltip
+    // Uzın summa (1 085 850 som) telefondaǵı kún katagına sıymaydı: 1.09M, anıq baha tooltip te
     const compact = Number(shown.amount) >= COMPACT_FROM ? COMPACT.format(Number(shown.amount)) : exact
     const approx = (text: string) => (shown.approximate ? t('charge.approx', { amount: text }) : text)
     return { text: approx(compact), title: approx(exact) }

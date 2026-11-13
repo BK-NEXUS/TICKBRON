@@ -11,7 +11,7 @@ const SEARCH_DELAY_MS = 300
 const PERCENT_FORMAT = /^\d{1,3}(\.\d{1,2})?$/
 
 interface AdminCommissionProps {
-  /** Only a super admin sets the percent; staff confirm payments. The backend enforces both. */
+  /** Procentti tek super admin belgileydi; staff tólemlerdi tastıyıqlaydı. Backend ekewin de májbúrleydi. */
   isSuperAdmin: boolean
 }
 
@@ -19,7 +19,7 @@ function isPercent(text: string): boolean {
   return PERCENT_FORMAT.test(text) && Number(text) <= 100
 }
 
-/** The super admin's and staff's Commission section: every hotel owner, a search, and one owner's months. */
+/** Super admin hám staff tıń Komissiya bólimi: hár mehmanxana iyesi, izlew hám bir iyeniń aylar. */
 export function AdminCommission({ isSuperAdmin }: AdminCommissionProps) {
   const { t, formatMoney } = useI18n()
   const [typed, setTyped] = useState('')
@@ -43,7 +43,7 @@ export function AdminCommission({ isSuperAdmin }: AdminCommissionProps) {
     return () => clearTimeout(timer)
   }, [typed])
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı da isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadError(null)

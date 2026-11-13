@@ -5,8 +5,8 @@ import { apiFetch, fetchAllPages } from '../utils/api'
 import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 
-// Favorite types from backend contract
-// GET /api/v1/me/favorites/ item (backend FavoriteSerializer). Decimals arrive as strings.
+// Backend contract tan Favorite túrleri
+// GET /api/v1/me/favorites/ elementi (backend FavoriteSerializer). Decimal lar qatar retinde keledi.
 export interface Favorite {
   id: number
   user: number
@@ -16,7 +16,7 @@ export interface Favorite {
   property_country: string
   property_base_price: string
   property_currency: string
-  /** R16: the hotel's "from" price in every currency (like a hotel card); absent in older responses */
+  /** R16: mehmanxananıń hár valyutadaǵı "dan" bahası (mehmanxana kartası sıyaqlı); eski juwaplarda joq */
   property_prices?: PriceList
   property_primary_photo: string | null
   notes: string | null
@@ -27,7 +27,7 @@ export interface FavoriteCount {
   count: number
 }
 
-// Account History types from backend contract
+// Backend contract tan Account History túrleri
 export interface AccountHistory {
   id: number
   user: number
@@ -44,7 +44,7 @@ export interface AccountHistoryStats {
   action_counts: Record<string, number>
 }
 
-// Booking types from backend contract (reused from bookingAdapter)
+// Backend contract tan Booking túrleri (bookingAdapter ten qayta paydalanılǵan)
 export interface Booking {
   id: number
   guest: number
@@ -67,17 +67,17 @@ export interface Booking {
   booking_items: BookingItem[]
   created_at: string
   updated_at: string
-  /** What the guest is charged, in UZS for bookings made since R6; absent on older bookings (charge = price) */
+  /** Mehmannan alınatuǵın summa, R6 dan beri jasalǵan bronlar ushın UZS de; eski bronlarda joq (alınatuǵın = baha) */
   charge_amount?: string
   charge_currency?: string
   exchange_rate?: ExchangeRateInfo | null
-  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); null on old bookings */
+  /** Mehmanxanada naqd: mehmannıń keletuǵının aytqan waqtı ('10:30:00'); eski bronlarda null */
   expected_arrival_time?: string | null
-  /** When the hotel marked the guest as arrived */
+  /** Mehmanxana mehmandı kelgen dep belgilegen waqıt */
   arrived_at?: string | null
 }
 
-// Review types from backend contract
+// Backend contract tan Review túrleri
 export interface Review {
   id: number
   user: number
@@ -99,11 +99,14 @@ export interface Review {
   replied_at?: string | null
 }
 
-/** An approved review as every visitor sees it (GET /api/v1/me/reviews/public/): the reviewer is "Aziz K.", never an address */
+/**
+ * Hár kelwshi kóretuǵın tastıyıqlanǵan sharh (GET /api/v1/me/reviews/public/): sharh jazıwshı "Aziz K.", hesh qashan mánzil
+ * emes
+ */
 export interface PublicReview {
   id: number
   reviewer: string
-  /** The month of the stay, YYYY-MM, or null when the booking is gone */
+  /** Turıw ayı, YYYY-MM, yamasa bron joq bolsa null */
   stay_month?: string | null
   overall_rating: number
   cleanliness_rating?: number | null
@@ -114,7 +117,7 @@ export interface PublicReview {
   title?: string
   comment?: string
   created_at: string
-  /** The hotel owner's public answer (empty: none yet) */
+  /** Mehmanxana iyesiniń ashıq juwabı (bos: ele joq) */
   owner_reply?: string
   replied_at?: string | null
 }
@@ -125,8 +128,8 @@ export interface PublicReviewsPage {
   results: PublicReview[]
 }
 
-// Mirrors backend ReviewCreateSerializer: flat category ratings, `property` and `booking` ids.
-// The booking must be the user's own completed, not yet reviewed stay at that property.
+// Backend ReviewCreateSerializer di kórsetedi: tegis kategoriya bahaları, `property` hám `booking` id leri.
+// Bron paydalanıwshınıń óz juwmaqlanǵan, ele sharh jazılmaǵan sol mehmanxanadaǵı turıwı bolıwı kerek.
 export interface CreateReviewRequest {
   property: number
   booking: number
@@ -183,8 +186,8 @@ export interface BookingItem {
   updated_at: string
 }
 
-// API Response types
-/** GET /api/v1/bookings/: one page of the guest's own bookings, newest first, 20 per page */
+// API Response túrleri
+/** GET /api/v1/bookings/: mehmannıń óz bronlarınıń bir beti, eń jańası birinshi, bir betke 20 */
 export interface BookingPage {
   count: number
   next: string | null
@@ -203,8 +206,8 @@ const ACCOUNT_LIST_OPTIONS = {
 }
 
 export const accountAdapter = {
-  // Favorites API methods
-  // Paginated on the backend: returns the items of every page
+  // Favorit API metodları
+  // Backend te betlerge bólingen: hár bettiń elementlerin qaytaradı
   async getFavorites(): Promise<ApiResponse<Favorite[]>> {
     const { data, error } = await fetchAllPages<Favorite>(`${API_BASE_URL}/api/v1/me/favorites/`, ACCOUNT_LIST_OPTIONS)
     return { data, error }
@@ -279,8 +282,8 @@ export const accountAdapter = {
     }
   },
 
-  // Account History API methods
-  // Paginated on the backend: returns the items of every page
+  // Akkaunt tariyxı API metodları
+  // Backend te betlerge bólingen: hár bettiń elementlerin qaytaradı
   async getAccountHistory(): Promise<ApiResponse<AccountHistory[]>> {
     const { data, error } = await fetchAllPages<AccountHistory>(`${API_BASE_URL}/api/v1/me/history/`, ACCOUNT_LIST_OPTIONS)
     return { data, error }
@@ -330,7 +333,7 @@ export const accountAdapter = {
     }
   },
 
-  // Booking History API methods (using booking endpoint from checkpoint 13-14)
+  // Bron tariyxı API metodları (13-14 checkpoint tan bron endpoint i paydalanıladı)
   async getBookings(status?: string, paymentStatus?: string, page = 1): Promise<ApiResponse<BookingPage>> {
     try {
       const params = new URLSearchParams()
@@ -358,8 +361,8 @@ export const accountAdapter = {
     }
   },
 
-  // Reviews API methods
-  // Paginated on the backend: returns the items of every page
+  // Sharhlar API metodları
+  // Backend te betlerge bólingen: hár bettiń elementlerin qaytaradı
   async getReviews(): Promise<ApiResponse<Review[]>> {
     const { data, error } = await fetchAllPages<Review>(`${API_BASE_URL}/api/v1/me/reviews/`, ACCOUNT_LIST_OPTIONS)
     return { data, error }
@@ -410,7 +413,7 @@ export const accountAdapter = {
     }
   },
 
-  /** One page (20) of the approved reviews of a hotel, newest first; public, no login needed */
+  /** Mehmanxananıń tastıyıqlanǵan sharhlarınıń bir beti (20), eń jańası birinshi; ashıq, kirisiw kerek emes */
   async getPublicReviews(propertyId: number, page = 1): Promise<ApiResponse<PublicReviewsPage>> {
     try {
       const response = await apiFetch(`${API_BASE_URL}/api/v1/me/reviews/public/?property_id=${propertyId}&page=${page}`, {

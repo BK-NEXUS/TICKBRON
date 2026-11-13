@@ -43,7 +43,7 @@ const SORTS = [
   { value: 'created_at', labelKey: 'status.createdDate' },
 ] as const
 
-/** Admin Status > Hotels: every hotel in one list, sorted and paginated by the backend, with CSV export */
+/** Admin Status > Mehmanxanalar: hár mehmanxana bir dizimde, backend tártiplegen hám betlerge bólgen, CSV eksport penen */
 export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange, onOpen }: AdminStatusHotelsProps) {
   const i18n = useI18n()
   const TEXT = useTexts(TEXT_KEYS)
@@ -52,7 +52,7 @@ export function AdminStatusHotels({ period, range, onPeriodChange, onRangeChange
   const [descending, setDescending] = useState(true)
   const [status, setStatus] = useState('')
   const [country, setCountry] = useState('')
-  // The countries that have hotels (the first page of the Status countries list); without it the filter just stays at "All"
+  // Mehmanxanaları bar mámleketler (Status mámleketler dizimniń birinshi beti); onsız filter "Hámmesi" de qaladı
   const [countries, setCountries] = useState<StatusCountry[]>([])
   const ordering = `${descending ? '-' : ''}${sort}`
   const filters = { ...(country && { country }), ...(status && { status }) }

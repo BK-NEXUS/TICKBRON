@@ -1,2 +1,2 @@
-/** The most pictures on one ad (same as MAX_PHOTOS in backend/promotions/service.py; the server enforces it) */
+/** Bir reklamadaǵı eń kóp súwret (backend/promotions/service.py degi MAX_PHOTOS penen birdey; server májbúrleydi) */
 export const MAX_AD_PHOTOS = 10

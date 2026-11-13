@@ -21,13 +21,13 @@ export function AdminUserManagement() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState<'' | (typeof ROLES)[number]>('')
   const [page, setPage] = useState(1)
-  // The account whose two-step sign-in the super admin is about to reset, with the super admin's own code
+  // Super admin óz kodı menen eki basqıshlı kirisiwin qayta ornatıwǵa tayarlanıp atırǵan akkaunt
   const [resetting, setResetting] = useState<AdminUser | null>(null)
   const [ownCode, setOwnCode] = useState('')
   const [resetError, setResetError] = useState('')
   const [resetBusy, setResetBusy] = useState(false)
   const [resetDone, setResetDone] = useState('')
-  // The account whose phone number and/or e-mail a super admin or a staff admin is changing
+  // Super admin yamasa staff admin telefon nomerin hám/yamasa e-mail ın ózgertip atırǵan akkaunt
   const [editing, setEditing] = useState<AdminUser | null>(null)
   const [newPhone, setNewPhone] = useState('')
   const [newEmail, setNewEmail] = useState('')
@@ -37,7 +37,7 @@ export function AdminUserManagement() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // The list is read a page at a time, in alphabetical order, narrowed by the letter, the role and the search
+  // Dizim bir waqıtta bir bet, alfavit tártibinde oqıladı, háripke, rolge hám izlewge shekemlengen
   const loadUsers = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -93,7 +93,8 @@ export function AdminUserManagement() {
     }
   }
 
-  // Staff may change guests and owners; a super admin also staff admins; nobody changes a super admin here
+  // Staff mehmanlardı hám iyelerdi ózgerte aladı; super admin staff adminlerdi de; bul jerde hesh kim super admin di
+  // ózgertpeydi
   const canEditContact = (account: AdminUser) => (
     !account.is_superuser && (Boolean(viewer?.is_superuser) || !account.is_staff)
   )

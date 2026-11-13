@@ -7,12 +7,12 @@ interface PropertyAmenitiesDetailProps {
 }
 
 /**
- * PropertyAmenitiesDetail component for displaying detailed property amenities
- * Groups amenities by category with availability status
+ * Mehmanxana amenity lerin tolıq kórsetiw ushın PropertyAmenitiesDetail komponenti
+ * Amenity lerdi kategoriya boyınsha bar-joqlıq statusı menen toparlaydı
  */
 export function PropertyAmenitiesDetail({ amenities = [] }: PropertyAmenitiesDetailProps) {
   const { t } = useI18n()
-  // Group amenities by category
+  // Amenity lerdi kategoriya boyınsha toparlaw
   const groupedAmenities = amenities.reduce((acc, propertyAmenity) => {
     const category = propertyAmenity.amenity.category
     if (!acc[category.id]) {

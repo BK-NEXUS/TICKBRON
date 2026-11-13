@@ -1,8 +1,8 @@
-// Responsive breakpoint utilities following TICKBRON Plan V4
-// 320–767px: mobile
-// 768–1023px: tablet
-// 1024–1439px: desktop
-// 1440px+: large desktop
+// TICKBRON Plan V4 boyınsha responsive breakpoint utility leri
+// 320–767px: mobil
+// 768–1023px: planshet
+// 1024–1439px: kompyuter
+// 1440px+: úlken kompyuter
 
 export const BREAKPOINTS = {
   mobile: 320,
@@ -19,7 +19,7 @@ export const MEDIA_QUERIES = {
   desktop: `(min-width: ${BREAKPOINTS.desktop}px)`,
   largeDesktop: `(min-width: ${BREAKPOINTS.largeDesktop}px)`,
   
-  // Max-width queries for mobile-first approach
+  // Mobil birinshi usıl ushın max-width query leri
   mobileOnly: `(max-width: ${BREAKPOINTS.tablet - 1}px)`,
   tabletOnly: `(min-width: ${BREAKPOINTS.tablet}px) and (max-width: ${BREAKPOINTS.desktop - 1}px)`,
   desktopOnly: `(min-width: ${BREAKPOINTS.desktop}px) and (max-width: ${BREAKPOINTS.largeDesktop - 1}px)`,
@@ -27,13 +27,13 @@ export const MEDIA_QUERIES = {
 } as const
 
 /**
- * Hook to get current breakpoint
- * Note: This is a simplified version. For production, consider using
- * a library like react-breakpoints or implement with ResizeObserver
+ * Házirgi breakpoint ti alıw ushın hook
+ * Eskertiw: Bul ápiwayılastırılǵan nusqa. Production ushın react-breakpoints sıyaqlı
+ * kitapxanadan paydalanıwdı yamasa ResizeObserver menen ámelge asırıwdı oylań
  */
 export function useBreakpoint(): Breakpoint {
   if (typeof window === 'undefined') {
-    return 'desktop' // Default for SSR
+    return 'desktop' // SSR ushın ádetdegi
   }
 
   const width = window.innerWidth
@@ -45,7 +45,7 @@ export function useBreakpoint(): Breakpoint {
 }
 
 /**
- * Check if current viewport matches a breakpoint
+ * Házirgi viewport breakpoint ke sáykes keliwin tekseriw
  */
 export function useMediaQuery(query: string): boolean {
   if (typeof window === 'undefined') {
@@ -57,7 +57,7 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Convenience hooks for specific breakpoints
+ * Belgili breakpoint ler ushın qolaylı hook lar
  */
 export function useIsMobile(): boolean {
   return useMediaQuery(MEDIA_QUERIES.mobileOnly)

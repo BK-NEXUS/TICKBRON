@@ -32,7 +32,7 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true)
-      // Prevent body scroll when menu is open
+      // Menyu ashıq waqıtta dene scroll ın tosıw
       document.body.style.overflow = 'hidden'
     } else {
       const timer = setTimeout(() => setIsAnimating(false), 300)
@@ -50,14 +50,14 @@ export function MobileMenu({ isOpen, onClose, className = '', isAuthenticated = 
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Fon */}
       <div
         className={`mobile-menu-backdrop ${isAnimating ? 'mobile-menu-backdrop-visible' : ''}`}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Menu */}
+      {/* Menyu */}
       <div
         className={`mobile-menu ${isAnimating ? 'mobile-menu-open' : ''} ${className}`}
         ref={menuRef}

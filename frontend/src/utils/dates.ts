@@ -1,18 +1,18 @@
 /**
- * The time zone the backend uses for "today" (settings.BUSINESS_TIME_ZONE, common/dates.py).
- * Booking dates are judged against it, so a guest in an earlier time zone must not be offered
- * a day that is already past in Tashkent: the availability request would be refused.
+ * Backend "búgin" ushın paydalanatuǵın waqıt zonası (settings.BUSINESS_TIME_ZONE, common/dates.py).
+ * Bron sanaları oǵan qarata bahalanadı, sol sebepli aldıńǵı waqıt zonasındaǵı mehman Tashkent te aldınan ótip
+ * ketken kúnge usınılmawı kerek: bos orın sorawı biykar etiler edi.
  */
 export const BUSINESS_TIME_ZONE = 'Asia/Tashkent'
 
-/** Today's date (YYYY-MM-DD) in the business time zone, not the browser's */
+/** Búgingi sana (YYYY-MM-DD) is waqıt zonasında, brauzerdiki emes */
 export function businessToday(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(now)
 }
 
-/** YYYY-MM-DD in local time */
+/** Jergilikli waqıttaǵı YYYY-MM-DD */
 export function toLocalDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
@@ -23,13 +23,13 @@ export function formatDay(date: string): string {
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-/** date +/- n days (n may be negative), as YYYY-MM-DD */
+/** sana +/- n kún (n teris bolıwı múmkin), YYYY-MM-DD retinde */
 export function addDays(date: string, days: number): string {
   const [year, month, day] = date.split('-').map(Number)
   return toLocalDate(new Date(year, month - 1, day + days))
 }
 
-/** Every night of a stay: [checkIn, checkOut) */
+/** Turıwdıń hár túni: [checkIn, checkOut) */
 export function nightsBetween(checkIn: string, checkOut: string): string[] {
   const nights: string[] = []
   const [year, month, day] = checkIn.split('-').map(Number)

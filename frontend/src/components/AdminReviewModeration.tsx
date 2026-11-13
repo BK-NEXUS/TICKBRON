@@ -5,7 +5,7 @@ import { useI18n } from '../i18n/I18nContext'
 const TABS: ReviewStatus[] = ['pending', 'approved', 'rejected']
 const TAB_LABEL = { pending: 'reviewAdmin.waiting', approved: 'reviewAdmin.approved', rejected: 'reviewAdmin.rejected' } as const
 
-/** Guest reviews become public only when the staff approves them: waiting, approved and rejected lists. */
+/** Mehmann sharhları tek staff tastıyıqlaǵanda ashıq boladı: kútip turǵan, tastıyıqlanǵan hám biykar etilgen dizimler. */
 export function AdminReviewModeration() {
   const { t, formatDate } = useI18n()
   const [status, setStatus] = useState<ReviewStatus>('pending')

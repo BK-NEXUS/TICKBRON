@@ -16,8 +16,8 @@ interface PropertyCardProps {
 }
 
 /**
- * PropertyCard component for displaying property search results
- * Shows property image, name, location, rating, price, and key amenities
+ * Mehmanxana izlew nátiyjelerin kórsetiw ushın PropertyCard komponenti
+ * Mehmanxana súwretin, atın, jaylasıwın, reytingin, bahasın hám tiykarǵı amenity lerin kórsetedi
  */
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const navigate = useNavigate()
@@ -35,7 +35,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
   }
 
 
-  // The "from" price in the chosen currency; the hotel's own price when the backend has none for it
+  // Tańlanǵan valyutadaǵı "dan" bahası; backend te joq bolsa mehmanxananıń óz bahası
   const shown = priceIn(property, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
 
@@ -134,7 +134,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
             </span>
             <span className="property-card-price-period">{t('card.perNight')}</span>
             <PriceNote shown={shown} />
-            {/* Without the per-currency prices (an older API) the hotel's own price keeps its so'm equivalent */}
+            {/* Hár valyutadaǵı bahasız (eski API) mehmanxananıń óz bahası óz som ekvivalentin saqlaydı */}
             {!property.prices && <PriceApprox approx={property.base_price_uzs_approx} />}
           </div>
           <button className="btn btn-secondary btn-small property-card-cta">

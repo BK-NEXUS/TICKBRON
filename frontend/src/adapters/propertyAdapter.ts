@@ -1,5 +1,5 @@
-// Property API adapter for search and property detail endpoints
-// Integrates with backend property endpoints from Checkpoint 10-11
+// Izlew hám mehmanxana tolıq maǵlıwmatı endpoint leri ushın Property API adapteri
+// 10-11 Checkpoint degi backend mehmanxana endpoint leri menen birlesedi
 
 import { parseApiError, readApiError } from '../utils/errorHandler'
 import { refusalOf, type Refusal } from '../utils/refusal'
@@ -98,14 +98,17 @@ export interface RoomType {
   total_rooms: number
   bed_configuration: string
   room_size?: number
-  /** R9: set by the hotel owner; VIP rooms come first */
+  /** R9: mehmanxana iyesi belgileydi; VIP xonalar birinshi keledi */
   is_vip?: boolean
   photos?: PropertyPhoto[]
   amenities?: PropertyAmenity[]
   rate_plans?: RatePlan[]
 }
 
-/** R16: a price in every currency: the owner's own (`owner`), the main one, or a conversion (`converted`, show with ≈); amount is null while a conversion has no rate */
+/**
+ * R16: hár valyutadaǵı baha: iyeniń óz bahası (`owner`), tiykarǵısı, yamasa konvertaciya (`converted`, ≈ menen kórsetiledi);
+ * konvertaciyanıń kursı joq waqıtta amount null
+ */
 export type PriceList = Record<string, { amount: string | null; source: 'main' | 'owner' | 'converted' }>
 
 export interface RatePlan {
@@ -134,7 +137,7 @@ export interface DateInventory {
   booked_rooms: number
   price: number
   currency: string
-  /** R16: the night in every currency (amount strings, null while a conversion has no rate) and the currencies that are conversions */
+  /** R16: hár valyutadaǵı tún (summa qatarları, konvertaciyanıń kursı joq waqıtta null) hám konvertaciya bolǵan valyutalar */
   prices?: Record<string, string | null>
   converted_currencies?: string[]
   min_stay: number
@@ -144,7 +147,7 @@ export interface DateInventory {
 }
 
 // GET /api/v1/properties/{id}/availability/ (backend PropertyAvailabilitySerializer).
-// Decimal fields arrive as strings; price is null when the rate plan's base price applies.
+// Decimal maydanlar qatar retinde keledi; rate plan nıń tiykarǵı bahası qollanılsa baha null.
 export interface AvailabilityDateInventory {
   id: number
   date: string
@@ -179,25 +182,25 @@ export interface QuoteParams {
   roomTypeId: number
   ratePlanId: number
   checkIn: string
-  /** Exclusive: the day the guest leaves */
+  /** Kirmeydi: mehmann ketetuǵın kún */
   checkOut: string
   rooms: number
-  /** R16: show the stay in this currency (default: the plan's own) */
+  /** R16: turıwdı usı valyutada kórsetiw (ádetde: plannıń óz valyutası) */
   currency?: string
 }
 
-// GET /api/v1/properties/{id}/quote/: the same pricing Booking.create_booking charges
+// GET /api/v1/properties/{id}/quote/: Booking.create_booking alatuǵın birdey bahalaw
 export interface StayQuote {
   check_in: string
   check_out: string
   number_of_nights: number
   number_of_rooms: number
   currency: string
-  /** R16: `main`, `owner` (the owner's own price in `currency`) or `converted` (show with ≈) */
+  /** R16: `main`, `owner` (iyeniń `currency` degi óz bahası) yamasa `converted` (≈ menen kórsetiledi) */
   price_source?: 'main' | 'owner' | 'converted'
   nights: Array<{ date: string; price: string }>
   total_price: string
-  /** The same stay in so'm at today's rate; null when no rate is stored yet */
+  /** Sol turıw búgingi kurs boyınsha somda; kurs ele saqlanbaǵan bolsa null */
   uzs_total?: string | null
   exchange_rate?: { rate: string; date: string | null; source: string; stale: boolean } | null
 }
@@ -225,9 +228,12 @@ export interface Property {
   longitude?: number
   base_price: number
   currency: string
-  /** R16: the "from" price in every currency (search cards); absent on the hotel page */
+  /** R16: hár valyutadaǵı "dan" bahası (izlew kartaları); mehmanxana betinde joq */
   prices?: PriceList
-  /** Informational so'm equivalent of `base_price` at the latest CBU rate; null while no rate exists, absent for hotels priced in so'm */
+  /**
+   * `base_price` tiń eń sońǵı CBU kursı boyınsha maǵlıwmat ushın som ekvivalenti; kurs joq waqıtta null, somda bahalanǵan
+   * mehmanxanalar ushın joq
+   */
   base_price_uzs_approx?: string | null
   uzs_rate?: ExchangeRateInfo | null
   total_area?: number
@@ -245,7 +251,7 @@ export interface Property {
   room_types?: RoomType[]
   gallery?: Record<string, PropertyPhoto[]>
   rating?: number
-  /** Search results: average of approved reviews (null when there are none) */
+  /** Izlew nátiyjeleri: tastıyıqlanǵan sharhlardıń ortashası (joq bolsa null) */
   average_rating?: number | null
   review_count?: number
   primary_photo?: PropertyPhoto
@@ -267,9 +273,9 @@ export interface SearchParams {
   max_guests?: number
   amenities?: number[]
   property_type?: number
-  /** Property flags that must all be set: wifi, parking, ac, heating, elevator */
+  /** Hámmesi belgilengen bolıwı kerek mehmanxana belgileri: wifi, parking, ac, heating, elevator */
   features?: string[]
-  /** Minimum average guest rating, 1-5 */
+  /** Mehmanlardıń eń kem ortasha reytingi, 1-5 */
   min_rating?: number
   check_in?: string
   check_out?: string
@@ -294,7 +300,7 @@ export interface SearchResponse {
   page: number
   page_size: number
   total_pages: number
-  /** Paid banners for the top of page 1 (R10); absent on older backends and on other pages */
+  /** 1-bettiń joqarısı ushın tólengen banner ler (R10); eski backend lerde hám basqa betlerde joq */
   promoted?: Array<Property & { promotion_id: number }>
 }
 
@@ -351,8 +357,8 @@ class PropertyAdapter {
   }
 
   /**
-   * Search properties based on search parameters
-   * Integrates with GET /api/v1/properties/search/ endpoint
+   * Izlew parametrleri boyınsha mehmanxanalardı izlew
+   * GET /api/v1/properties/search/ endpoint i menen birlesedi
    */
   async searchProperties(params: SearchParams): Promise<{ data: SearchResponse | null; error: string | null }> {
     const queryParams = new URLSearchParams()
@@ -385,16 +391,16 @@ class PropertyAdapter {
   }
 
   /**
-   * What the search sidebar can filter and sort by
-   * Integrates with GET /api/v1/properties/filter-options/ endpoint
+   * Izlew jan paneli neni filterley hám tártipley aladı
+   * GET /api/v1/properties/filter-options/ endpoint i menen birlesedi
    */
   async getFilterOptions(): Promise<{ data: FilterOptions | null; error: string | null }> {
     return this.request<FilterOptions>('/api/v1/properties/filter-options/')
   }
 
   /**
-   * Get search suggestions for autocomplete
-   * Integrates with GET /api/v1/properties/search/suggestions/ endpoint
+   * Avtotolıqtırıw ushın izlew usınısların alıw
+   * GET /api/v1/properties/search/suggestions/ endpoint i menen birlesedi
    */
   async getSearchSuggestions(query: string, limit: number = 5): Promise<{ data: { suggestions: string[] } | null; error: string | null }> {
     const queryParams = new URLSearchParams()
@@ -407,16 +413,16 @@ class PropertyAdapter {
   }
 
   /**
-   * Get property details by ID
-   * Integrates with GET /api/v1/properties/{id}/ endpoint
+   * Mehmanxana maǵlıwmatın ID boyınsha alıw
+   * GET /api/v1/properties/{id}/ endpoint i menen birlesedi
    */
   async getPropertyById(id: number): Promise<{ data: PropertyDetailResponse | null; error: string | null }> {
     return this.request<PropertyDetailResponse>(`/api/v1/properties/${id}/`)
   }
 
   /**
-   * Get per-date availability and prices for a property
-   * Integrates with GET /api/v1/properties/{id}/availability/?check_in=&check_out= (dates inclusive)
+   * Mehmanxana ushın sana boyınsha bos orın hám bahalardı alıw
+   * GET /api/v1/properties/{id}/availability/?check_in=&check_out= (sanalar kiredi) penen birlesedi
    */
   async getAvailability(
     propertyId: number,
@@ -427,9 +433,9 @@ class PropertyAdapter {
   }
 
   /**
-   * Price a stay with the code that charges for it.
-   * GET /api/v1/properties/{id}/quote/ (check_out exclusive). On 400 the error is the
-   * backend's reason, e.g. "2026-09-28 is not available."
+   * Turıwdı onı alatuǵın kod penen bahalaw.
+   * GET /api/v1/properties/{id}/quote/ (check_out kirmeydi). 400 de qátelik
+   * backend tiń sebebi, mısalı "2026-09-28 is not available."
    */
   async getQuote(
     propertyId: number,
@@ -450,7 +456,7 @@ class PropertyAdapter {
       if (!response.ok) {
         const body: unknown = await response.json().catch(() => undefined)
         const apiError = parseApiError(response, body)
-        // The field message ("... is not available.") is clearer than the envelope text
+        // Maydan xabarı ("... is not available.") ulıwma xabar tekstinen túsinikliraq
         const reason = apiError.fieldErrors ? Object.values(apiError.fieldErrors).flat()[0] : undefined
         return { data: null, error: reason || apiError.message, reason: refusalOf(body) }
       }
@@ -461,8 +467,8 @@ class PropertyAdapter {
   }
 }
 
-// Export singleton instance
+// Singleton nusqasın eksport etiw
 export const propertyAdapter = new PropertyAdapter()
 
-// Export class for testing
+// Testlew ushın klasstı eksport etiw
 export { PropertyAdapter }

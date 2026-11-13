@@ -1,5 +1,5 @@
-// Exchange rates of the Central Bank of Uzbekistan: history for staff, status and acceptance for the super-admin.
-// Contract: .ai/API_CONTRACT.md, section "Currency: UZS charge, CBU rate, booking snapshot (R6)".
+// Ózbekstan Orayılıq bankiniń valyuta kursları: staff ushın tariyx, super-admin ushın status hám qabıllaw.
+// Contract: .ai/API_CONTRACT.md, "Currency: UZS charge, CBU rate, booking snapshot (R6)" bólimi.
 import { apiFetch, type Paginated } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
@@ -10,7 +10,7 @@ const PAGE_SIZE = 20
 export interface ExchangeRateRow {
   id: number
   currency: string
-  /** UZS per `nominal` units, 6 decimals as a string */
+  /** `nominal` birlikke UZS, 6 onlıq belgi qatar retinde */
   rate: string
   nominal: number
   rate_date: string
@@ -60,7 +60,10 @@ export class ExchangeRateAdapter {
     return this.send<ExchangeRateStatus>('status/')
   }
 
-  /** The backend jumps over its change limit only when a super-admin accepts a rejected rate; it is audit-logged. */
+  /**
+   * Backend óziniń ózgeris shegi nen tek super-admin biykar etilgen kursti qabıllaǵanda sekirip ótedi; ol audit log qa
+   * jazıladı.
+   */
   accept(id: number) {
     return this.send<ExchangeRateRow>(`${id}/accept/`, { method: 'POST' })
   }

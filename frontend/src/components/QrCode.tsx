@@ -3,14 +3,14 @@ import QRCode from 'qrcode'
 
 interface QrCodeProps {
   value: string
-  /** What a screen reader says about the picture */
+  /** Ekran oqıwshı súwret haqqında ne aytadı */
   label: string
 }
 
-// Scanners need an empty border of 4 modules around the code
+// Skannerlerge kodtıń átirapında 4 moduldiń bos shegarası kerek
 const QUIET_ZONE = 4
 
-/** A QR code drawn as an inline SVG in the browser: the text never leaves the page (no image service, no data URL). */
+/** Brauzerde inline SVG retinde sızılǵan QR kod: tekst hesh qashan betten shıqpaydı (súwret xızmeti joq, data URL joq). */
 export function QrCode({ value, label }: QrCodeProps) {
   const { size, path } = useMemo(() => {
     const { modules } = QRCode.create(value, { errorCorrectionLevel: 'M' })
@@ -25,7 +25,7 @@ export function QrCode({ value, label }: QrCodeProps) {
 
   return (
     <svg className="qr-code" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label} shapeRendering="crispEdges">
-      {/* Always white with black squares, also in the dark theme: scanners expect dark on light */}
+      {/* Hárdayım aq fonda qara kvadratlar, qarańǵı temada da: skannerler jaqtı fonda qaranı kútedi */}
       <rect width={size} height={size} fill="#fff" />
       <path d={path} fill="#000" />
     </svg>

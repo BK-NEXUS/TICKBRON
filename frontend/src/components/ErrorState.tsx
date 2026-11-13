@@ -4,24 +4,24 @@ import { TriangleAlert } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 
 interface ErrorStateProps {
-  /** What happened, in words the visitor can use */
+  /** Ne boldı, kelwshi paydalana alatuǵın sózler menen */
   message: string
-  /** Default: "Something went wrong" */
+  /** Ádetde: "Something went wrong" */
   title?: string
-  /** Default: a warning triangle; a lucide icon or any element */
+  /** Ádetde: eskertiw úshmúyeshligi; lucide ikonkası yamasa qálegen element */
   icon?: ReactNode
-  /** Shows a "Try Again" button that calls this */
+  /** Usı shaqıratuǵın "Try Again" túymesin kórsetedi */
   onRetry?: () => void
-  /** A way out, as a link (ctaLink) or a button (onCta); ctaLabel is the accessible name when it says more than the text */
+  /** Shıǵıw jolı, silteme (ctaLink) yamasa túyme (onCta) retinde; ctaLabel teksten kóbirek aytsa, qol jetkiziwge bolatuǵın at */
   ctaText?: string
   ctaLink?: string
   onCta?: () => void
   ctaLabel?: string
-  /** 1 when this is the whole screen, so the page still has its one h1 */
+  /** Bul pútkil ekran bolsa 1, sonda bette óziniń bir h1 i qaladı */
   headingLevel?: 1 | 2
 }
 
-/** The same look as EmptyState, for a failure: an icon, a title, what happened and what to do next. */
+/** EmptyState penen birdey kórinis, qátelik ushın: ikonka, sarlawha, ne boldı hám keyin ne islew kerek. */
 export function ErrorState({
   message, title, icon, onRetry, ctaText, ctaLink, onCta, ctaLabel, headingLevel = 2,
 }: ErrorStateProps) {

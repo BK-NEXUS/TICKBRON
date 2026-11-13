@@ -17,15 +17,15 @@ interface I18nValue {
   setLanguage: (language: Language) => void
   setCurrency: (currency: Currency) => void
   t: (key: MessageKey, params?: Params) => string
-  /** Text with a number: picks the plural form of the language ("x.one", "x.few", ..., "x.other"); {count} is filled in */
+  /** San menen tekst: tildiń kóplik formasın tańlaydı ("x.one", "x.few", ..., "x.other"); {count} toltırıladı */
   tp: (base: PluralKey, count: number, params?: Params) => string
-  /** A date ("2026-10-09" or a Date) in the page language; '' when empty or invalid */
+  /** Bet tilindegi sana ("2026-10-09" yamasa Date); bos yamasa jaramsız bolsa '' */
   formatDate: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string
-  /** Country name in the page language (English names come from the app's own list) */
+  /** Bet tilindegi mámleket atı (inglizsha atlar ilovanıń óz dizimnen keledi) */
   regionName: (code: string, fallback: string) => string
-  /** "Mon, Sep 28" in the page language */
+  /** Bet tilindegi "Mon, Sep 28" */
   formatDay: (value: string | Date) => string
-  /** In the currency the amount is in; the selected currency only when none is given */
+  /** Summa qaysı valyutada bolsa sol valyutada; tańlanǵan valyuta tek hesh nárse berilmegende */
   formatMoney: (amount: number | string, currency?: string, options?: MoneyOptions) => string
 }
 
@@ -41,7 +41,7 @@ function translatePlural(language: Language, base: string, count: number, params
 }
 
 function parseDate(value: string | Date): Date | null {
-  // A date without time is the calendar day itself, not midnight UTC
+  // Waqıtsız sana kalendar kúnniń ózi, UTC yarım tún emes
   const day = typeof value === 'string' ? value.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null
   const date = day ? new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3])) : new Date(value)
   return Number.isNaN(date.getTime()) ? null : date
@@ -82,10 +82,10 @@ function buildValue(
   }
 }
 
-// Used when a component renders without the provider (isolated tests): English text, UZS
+// Komponent provider siz kórsetilgende paydalanıladı (izolyaciyalanǵan testler): inglizsha tekst, UZS
 const I18nContext = createContext<I18nValue>(buildValue('en', DEFAULT_CURRENCY, () => {}, () => {}))
 
-/** English text and dates for plain functions (utilities, tests) that are not given the page's i18n */
+/** Bettiń i18n i berilmegen ápiwayı funkciyalar (utility ler, testler) ushın inglizsha tekst hám sanalar */
 export const englishI18n: I18nValue = buildValue('en', DEFAULT_CURRENCY, () => {}, () => {})
 export type { I18nValue }
 
@@ -123,10 +123,10 @@ type Translated<T> = {
     : T[K] extends (...args: never[]) => unknown ? T[K] : T[K] extends object ? Translated<T[K]> : T[K]
 }
 
-/** Declares a tree of message keys (nested objects allowed); keeps the literal key types for `useTexts`. */
+/** Xabar kilt leri aǵashın belgileydi (ishki obyektlerge ruxsat); `useTexts` ushın literal kilt túrlerin saqlaydı. */
 export const textKeys = <const T extends TextTree>(tree: T): T => tree
 
-// Strings that are not message keys (ids such as 'day') come back unchanged, so a tree may hold both
+// Xabar kilti bolmaǵan qatarlar (mısalı 'day' sıyaqlı id ler) ózgerissiz qaytadı, sol sebepli aǵash ekewin de alıp júre aladı
 function translateNode(node: unknown, t: (key: MessageKey) => string): unknown {
   if (typeof node === 'string') return t(node as MessageKey)
   if (Array.isArray(node)) return node.map(item => translateNode(item, t))
@@ -136,7 +136,9 @@ function translateNode(node: unknown, t: (key: MessageKey) => string): unknown {
   return node
 }
 
-/** Translates a tree of message keys at once: `const TEXT = useTexts(TEXT_KEYS)` keeps `TEXT.title` call sites unchanged. */
+/**
+ * Xabar kilt leri aǵashın birden awdaradı: `const TEXT = useTexts(TEXT_KEYS)` `TEXT.title` shaqırıwların ózgerissiz saqlaydı.
+ */
 export function useTexts<T extends TextTree>(tree: T): Translated<T> {
   const { t } = useI18n()
   return translateNode(tree, t) as Translated<T>

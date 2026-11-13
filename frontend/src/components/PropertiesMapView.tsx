@@ -13,8 +13,8 @@ interface PropertiesMapViewProps {
 }
 
 /**
- * The map and the list of the same properties side by side (stacked on a phone): pointing at a card marks its pin,
- * choosing a pin marks and scrolls to its card.
+ * Birdey mehmanxanalardıń kartası hám dizimi qatar (telefonda ústi-ústine): kartaǵa baǵdarlaw onıń belgisin belgileydi,
+ * belgini tańlaw onıń kartasın belgileydi hám sonı kóriwge aylandıradı.
  */
 export function PropertiesMapView({ properties, onSearchArea }: PropertiesMapViewProps) {
   const { t } = useI18n()
@@ -22,7 +22,7 @@ export function PropertiesMapView({ properties, onSearchArea }: PropertiesMapVie
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  // Choosing a pin brings its card into view; on a narrow screen the card sits under the map instead
+  // Belgini tańlaw onıń kartasın kóriwge alıp keledi; tar ekranda karta ornına kartanıń astında turadı
   useEffect(() => {
     if (selectedId === null || !sideBySide) return
     document.querySelector(`[data-property-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })

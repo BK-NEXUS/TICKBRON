@@ -3,7 +3,7 @@ import { PublicReview, Review } from '../adapters/accountAdapter'
 import { StarIcon } from './StarIcon'
 
 interface ReviewCardProps {
-  /** The visitor's own review (with its status) or a guest review of the hotel page (with the reviewer's name) */
+  /** Kelwshiniń óz sharhı (statusı menen) yamasa mehmanxana betindegi mehmann sharhı (sharh jazıwshınıń atı menen) */
   review: Review | PublicReview
 }
 
@@ -27,7 +27,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
   const formatReviewDate = (dateString: string) =>
     formatDate(dateString, { year: 'numeric', month: 'long', day: 'numeric' })
 
-  // Only the visitor's own reviews carry a status; a guest review of the hotel page is always approved
+  // Tek kelwshiniń óz sharhlarında status bar; mehmanxana betindegi mehmann sharhı hárdayım tastıyıqlanǵan
   const status = 'status' in review ? review.status : 'approved'
   const reviewer = 'reviewer' in review ? review.reviewer : ''
   const stayMonth = 'stay_month' in review ? review.stay_month : null

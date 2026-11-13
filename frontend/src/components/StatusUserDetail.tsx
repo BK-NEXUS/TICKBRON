@@ -14,7 +14,7 @@ import { bookingStatusLabel } from '../utils/statusLabels'
 interface StatusUserDetailProps {
   userId: number
   period: string
-  /** The applied range when period is "custom" */
+  /** Dáwir "custom" bolǵanda qollanılǵan aralıq */
   range?: DateRange | null
   onPeriodChange: (period: string) => void
   onRangeChange: (range: DateRange) => void
@@ -53,7 +53,7 @@ function periodParams(period: string, range: DateRange | null | undefined): Stat
   return period === 'custom' && range ? { period, from: range.from, to: range.to } : { period }
 }
 
-/** Admin Status > Users > one guest: totals, hotels visited, per-hotel table and booking history */
+/** Admin Status > Paydalanıwshılar > bir mehmann: jıynaqlar, barılǵan mehmanxanalar, hár mehmanxana kestesi hám bron tariyxı */
 export function StatusUserDetail({ userId, period, range, onPeriodChange, onRangeChange }: StatusUserDetailProps) {
   const i18n = useI18n()
   const TEXT = useTexts(TEXT_KEYS)
@@ -62,7 +62,7 @@ export function StatusUserDetail({ userId, period, range, onPeriodChange, onRang
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // A new period starts the history again from the first page
+  // Jańa dáwir tariyxtı birinshi betten qayta baslaydı
   const periodKey = `${period}|${range?.from}|${range?.to}`
   const historyPage = page.key === periodKey ? page.value : 1
 

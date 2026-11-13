@@ -24,7 +24,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
 
   const [location, setLocation] = useState<GeographyValue>({ country_ref: null, region_ref: null })
   const [locationLabels, setLocationLabels] = useState<GeographyLabels>({ country: '', region: '' })
-  // The super admin may have given this account a place: then it is preset and cannot be changed here
+  // Super admin bul akkauntqa orın bergen bolıwı múmkin: sonda ol aldınan belgilengen hám bul jerde ózgertilmeydi
   const [placeLocked, setPlaceLocked] = useState(false)
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
     setError(null)
   }
 
-  /** Both coordinates or neither; the backend repeats the range check. */
+  /** Eki koordinata da yamasa hesh biri; backend aralıq tekseriwin qaytalaydı. */
   const validateCoordinates = (): boolean => {
     const { latitude, longitude } = formData
     if ((latitude === undefined) !== (longitude === undefined)) {
@@ -135,7 +135,7 @@ export function PartnerPropertyWizard({ onSuccess, onCancel }: PartnerPropertyWi
         return validateCoordinates()
         return true
       case 'amenities':
-        return true // No required fields
+        return true // Májbúriy maydan joq
       case 'pricing':
         if (!formData.base_price || formData.base_price < 0) {
           setError(t('partner.basePriceMustBe'))

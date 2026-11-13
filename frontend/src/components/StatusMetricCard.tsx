@@ -4,11 +4,11 @@ interface StatusMetricCardProps {
   label: string
   value: string
   caption: string
-  /** Colours the caption for a change against last month */
+  /** Aldınǵı ayǵa qarata ózgeris ushın jazıwdı reńleydi */
   tone?: 'up' | 'down' | 'same' | 'none'
 }
 
-/** One number of a Status page: label, value and a small caption (a hint, or the change against last month). */
+/** Status betiniń bir sanı: belgi, mánis hám kishi jazıw (eskertpe, yamasa aldınǵı ayǵa qarata ózgeris). */
 export function StatusMetricCard({ label, value, caption, tone }: StatusMetricCardProps) {
   return (
     <div className={statusCardClass(value)}>

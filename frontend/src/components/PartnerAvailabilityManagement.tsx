@@ -44,7 +44,7 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
 
   useEffect(() => {
     loadDateInventory()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ratePlanId])
 
@@ -58,9 +58,9 @@ export function PartnerAvailabilityManagement({ ratePlanId, ratePlanName }: Part
       if (response.error) {
         setError(response.error)
       } else if (response.data) {
-        // Filter date inventory for this rate plan
+        // Usı rate plan ushın date inventory di filterlew
         const ratePlanInventory = response.data.filter(di => di.rate_plan === ratePlanId)
-        // Sort by date
+        // Sana boyınsha tártiplew
         ratePlanInventory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         setDateInventory(ratePlanInventory)
       }

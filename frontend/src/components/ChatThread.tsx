@@ -12,12 +12,12 @@ type Side = 'guest' | 'team'
 
 interface ChatThreadProps {
   api: ChatApi
-  /** Which side is typing: decides whose messages sit on the right */
+  /** Qaysı tárep jazıp atır: kimniń xabarları oń jaqta turatuǵının sheshedi */
   side: Side
-  /** Told after every read, so a badge elsewhere can follow */
+  /** Hár oqıwdan keyin aytıladı, sonda basqa jerdegi belgi izinen bara aladı */
   onSeen?: () => void
   emptyText: string
-  /** Fills the box when the chat opens from a shortcut such as "request advertising" */
+  /** Chat "reklama sorawı" sıyaqlı qısqa jol arqalı ashılǵanda qutını toltıradı */
   initialText?: string
 }
 

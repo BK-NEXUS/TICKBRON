@@ -10,15 +10,15 @@ import { promotionErrorKey } from '../utils/promotionErrors'
 
 interface PromotionPhotosDialogProps {
   promotion: AdminPromotion
-  /** Only a super admin changes the photos; staff can look */
+  /** Súwretlerdi tek super admin ózgertedi; staff kóre aladı */
   canEdit: boolean
-  /** Opened right after the ad was created: asks for the photos */
+  /** Reklama jaratılǵannan keyin birden ashıladı: súwretlerdi soraydı */
   justCreated?: boolean
   onClose: () => void
   onChanged: () => void
 }
 
-/** The pictures of one ad (up to 10): add, remove, and what the site accepts. */
+/** Bir reklamanıń súwretleri (10 ǵa shekem): qosıw, alıp taslaw, hám sayt neni qabıllaytuǵını. */
 export function PromotionPhotosDialog({ promotion, canEdit, justCreated = false, onClose, onChanged }: PromotionPhotosDialogProps) {
   const { t } = useI18n()
   const [photos, setPhotos] = useState<AdPhoto[]>(promotion.photos)

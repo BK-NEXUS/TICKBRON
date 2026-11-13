@@ -1,5 +1,5 @@
-// Admin API adapter for admin moderation and management
-// Integrates with backend admin endpoints from Checkpoint 18
+// Admin moderation hám basqarıw ushın admin API adapteri
+// Checkpoint 18 degi backend admin endpoint leri menen birlesedi
 
 import { parseApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
@@ -7,7 +7,7 @@ import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 import type { CommissionOwnerPage, CommissionOwnerRow, CommissionStatement } from './commissionTypes'
 
-// Admin Property types from backend contract
+// Backend contract tan Admin Property túrleri
 export interface AdminProperty {
   id: number
   owner: number
@@ -47,7 +47,7 @@ export interface ApprovePropertyRequest {
   rejection_reason?: string
 }
 
-// Admin User types from backend contract
+// Backend contract tan Admin User túrleri
 export interface AdminUser {
   id: number
   email: string
@@ -71,20 +71,20 @@ export interface CreateHotelOwnerRequest {
   phone_number: string
   password: string
   password_confirm: string
-  /** Where the owner's hotels will appear (Geography ids) */
+  /** Iyeniń mehmanxanaları qayerde kórinedi (Geography id leri) */
   country_ref: number
   region_ref: number
-  /** What the site takes from each booking of this owner, "0" to "100" */
+  /** Sayt usı iyeniń hár bronınan ne aladı, "0" den "100" ge shekem */
   commission_percent: string
 }
 
-/** The body of a new administrator: no place and no commission; `role` is the only thing that sets the rights */
+/** Jańa administrator denesi: orın hám komissiya joq; huquqlardı belgilewshi jalǵız nárse `role` */
 export type CreateAdminRequest = Omit<CreateHotelOwnerRequest, 'country_ref' | 'region_ref' | 'commission_percent'> & {
   role: 'staff' | 'super_admin'
 }
 
-/** A new phone number and/or e-mail for an account (PATCH /api/v1/admin-panel/users/{id}/contact/) */
-/** One page of a list of the panel */
+/** Akkauntiń jańa telefon nomeri hám/yamasa e-mail ı (PATCH /api/v1/admin-panel/users/{id}/contact/) */
+/** Panel dizimniń bir beti */
 export interface AdminPage<T> {
   count: number
   hasMore: boolean
@@ -92,7 +92,7 @@ export interface AdminPage<T> {
 }
 
 export interface AdminUsersParams {
-  /** First letter of the shown name, or '#' */
+  /** Kórsetilgen attıń birinshi háripi, yamasa '#' */
   letter?: string
   search?: string
   role?: 'guest' | 'owner' | 'staff' | 'super_admin'
@@ -113,7 +113,7 @@ export interface ContactChange {
 
 export type ReviewStatus = 'pending' | 'approved' | 'rejected'
 
-/** A guest review for the staff: the reviewer's address is shown here and nowhere public */
+/** Staff ushın mehmann sharhı: sharh jazıwshınıń mánzili usı jerde kórsetiledi, ashıq jerde emes */
 export interface AdminReview {
   id: number
   property: number
@@ -147,7 +147,7 @@ export interface CreateHotelOwnerResponse {
   date_joined: string
 }
 
-// Admin Amenity types from backend contract
+// Backend contract tan Admin Amenity túrleri
 export interface AdminAmenity {
   id: number
   category: number
@@ -182,7 +182,7 @@ export interface UpdateAmenityRequest {
   sort_order?: number
 }
 
-// Admin Amenity Category types from backend contract
+// Backend contract tan Admin Amenity Category túrleri
 export interface AdminAmenityCategory {
   id: number
   name: string
@@ -210,7 +210,7 @@ export interface UpdateAmenityCategoryRequest {
   sort_order?: number
 }
 
-// Admin Customer types from backend contract (Checkpoint 24)
+// Backend contract tan Admin Customer túrleri (Checkpoint 24)
 export interface AdminCustomer {
   id: number
   registration_date: string
@@ -234,7 +234,7 @@ export interface AdminCustomersResponse {
 
 export interface GetCustomersParams {
   search?: string
-  /** First letter of the shown name, or '#' */
+  /** Kórsetilgen attıń birinshi háripi, yamasa '#' */
   letter?: string
   page?: number
   page_size?: number
@@ -242,7 +242,7 @@ export interface GetCustomersParams {
   sort_order?: 'asc' | 'desc'
 }
 
-// Admin Customer Profile types from backend contract (Checkpoint 25)
+// Backend contract tan Admin Customer Profile túrleri (Checkpoint 25)
 export interface AdminCustomerProfile {
   customer: {
     id: number
@@ -309,7 +309,7 @@ export interface UpdateNoteRequest {
   note: string
 }
 
-// Admin Statistics types from backend contract (Checkpoint 26)
+// Backend contract tan Admin Statistics túrleri (Checkpoint 26)
 export interface RegistrationStatistics {
   type: 'rolling_12_months' | 'calendar_year'
   data: Array<{
@@ -318,7 +318,7 @@ export interface RegistrationStatistics {
   }>
 }
 
-// Backend responses (admin_panel/views.py); the adapter maps them to the shapes above
+// Backend juwapları (admin_panel/views.py); adapter olardı joqarıdaǵı formalarǵa sáykeslestiredi
 interface RegistrationStatisticsResponse {
   type: 'rolling_12_months' | 'calendar_year'
   start_date?: string
@@ -370,7 +370,7 @@ export interface GetTopBookersParams {
   limit?: number
 }
 
-// Admin Support Lookup types from backend contract (Checkpoint 23)
+// Backend contract tan Admin Support Lookup túrleri (Checkpoint 23)
 export interface SupportLookupBooking {
   id: number
   reference_code: string
@@ -388,7 +388,7 @@ export interface SupportLookupBooking {
     country: string
     address_line1: string
   }
-  /** First booking item's room type and rate plan; null when the booking has no items */
+  /** Birinshi bron elementiniń xona túri hám rate plan ı; bronda element joq bolsa null */
   room: {
     id: number
     name: string
@@ -411,14 +411,14 @@ export interface GetSupportLookupParams {
   reference_code: string
 }
 
-// API Response types
+// API Response túrleri
 export interface ApiResponse<T> {
   data: T | null
   error: string | null
 }
 
 export interface ApprovePropertyResult extends ApiResponse<AdminProperty> {
-  /** Parts a hotel still lacks (room, rate, photo) when approval is refused */
+  /** Tastıyıqlaw biykar etilgende mehmanxanada ele jetispeytuǵın bólimler (xona, baha, súwret) */
   missing?: string[]
 }
 
@@ -434,8 +434,8 @@ class AdminAdapter {
     this.baseUrl = baseUrl
   }
 
-  /** GET a paginated list endpoint and return the items of every page */
-  /** One page of a paginated list: the rows, how many there are in all, and whether another page follows */
+  /** Betlerge bólingen dizim endpoint ine GET hám hár bettiń elementlerin qaytarıw */
+  /** Betlerge bólingen dizimniń bir beti: qatarlar, jámi neshe ekeni hám taǵı bir bet bar ma */
   private async requestPage<T>(endpoint: string, params: Record<string, string | number | undefined>): Promise<ApiResponse<AdminPage<T>>> {
     const query = new URLSearchParams()
     for (const [key, value] of Object.entries(params)) {
@@ -477,7 +477,7 @@ class AdminAdapter {
         return { data: null, error: apiError.message, errorBody }
       }
 
-      // Handle 204 No Content (DELETE operations)
+      // 204 No Content di islew (DELETE ámelleri)
       if (response.status === 204) {
         return { data: null as T, error: null }
       }
@@ -492,9 +492,9 @@ class AdminAdapter {
     }
   }
 
-  // Guest review moderation
+  // Mehmann sharhların moderation
 
-  /** One page of reviews by status (pending is the default on the server), as the staff sees them */
+  /** Status boyınsha sharhlardıń bir beti (serverde ádetde pending), staff kóretuǵınday */
   async getReviews(status: ReviewStatus, page = 1): Promise<ApiResponse<AdminReviewsPage>> {
     const { data, error } = await this.request<{ count: number; next: string | null; results: AdminReview[] }>(
       `/api/v1/admin-panel/reviews/?status=${status}&page=${page}`)
@@ -503,25 +503,25 @@ class AdminAdapter {
       : { data: null, error }
   }
 
-  /** Approve (shown on the hotel page, counted in its scores) or reject a review */
+  /** Sharhtı tastıyıqlaw (mehmanxana betinde kórsetiledi, bahalarına qosıladı) yamasa biykar etiw */
   async decideReview(id: number, decision: 'approve' | 'reject'): Promise<ApiResponse<AdminReview>> {
     const { data, error } = await this.request<AdminReview>(`/api/v1/admin-panel/reviews/${id}/${decision}/`, { method: 'POST' })
     return { data, error }
   }
 
-  // Admin Property Moderation Methods
+  // Admin mehmanxana moderation metodları
 
   /**
-   * One page of the properties for moderation, newest first
-   * Integrates with GET /api/v1/admin-panel/properties/ endpoint
+   * Moderation ushın mehmanxanalardıń bir beti, eń jańası birinshi
+   * GET /api/v1/admin-panel/properties/ endpoint i menen birlesedi
    */
   async getProperties({ letter, status, search, page = 1 }: AdminPropertiesParams = {}): Promise<ApiResponse<AdminPage<AdminProperty>>> {
     return this.requestPage<AdminProperty>('/api/v1/admin-panel/properties/', { letter, status, search, page })
   }
 
   /**
-   * Approve or reject property
-   * Integrates with POST /api/v1/admin-panel/properties/{id}/approve/ endpoint
+   * Mehmanxananı tastıyıqlaw yamasa biykar etiw
+   * POST /api/v1/admin-panel/properties/{id}/approve/ endpoint i menen birlesedi
    */
   async approveProperty(id: number, requestData: ApprovePropertyRequest): Promise<ApprovePropertyResult> {
     const { data, error, errorBody } = await this.request<AdminProperty>(`/api/v1/admin-panel/properties/${id}/approve/`, {
@@ -532,8 +532,8 @@ class AdminAdapter {
   }
 
   /**
-   * Suspend property
-   * Integrates with POST /api/v1/admin-panel/properties/{id}/suspend/ endpoint
+   * Mehmanxananı toqtatıw
+   * POST /api/v1/admin-panel/properties/{id}/suspend/ endpoint i menen birlesedi
    */
   async suspendProperty(id: number): Promise<ApiResponse<AdminProperty>> {
     return this.request<AdminProperty>(`/api/v1/admin-panel/properties/${id}/suspend/`, {
@@ -541,19 +541,19 @@ class AdminAdapter {
     })
   }
 
-  // Admin User Management Methods
+  // Admin paydalanıwshılardı basqarıw metodları
 
   /**
-   * One page of the users in the alphabetical order of their shown name
-   * Integrates with GET /api/v1/admin-panel/users/ endpoint
+   * Paydalanıwshılardıń kórsetilgen atı alfavit tártibinde bir beti
+   * GET /api/v1/admin-panel/users/ endpoint i menen birlesedi
    */
   async getUsers({ letter, search, role, page = 1 }: AdminUsersParams = {}): Promise<ApiResponse<AdminPage<AdminUser>>> {
     return this.requestPage<AdminUser>('/api/v1/admin-panel/users/', { letter, search, role, page })
   }
 
   /**
-   * Create hotel-owner account (super-admin only)
-   * Integrates with POST /api/v1/admin-panel/users/create-hotel-owner/ endpoint
+   * Mehmanxana iyesi akkaunt ın jaratıw (tek super-admin)
+   * POST /api/v1/admin-panel/users/create-hotel-owner/ endpoint i menen birlesedi
    */
   async createHotelOwner(ownerData: CreateHotelOwnerRequest): Promise<ApiResponse<CreateHotelOwnerResponse>> {
     return this.request<CreateHotelOwnerResponse>('/api/v1/admin-panel/users/create-hotel-owner/', {
@@ -563,8 +563,8 @@ class AdminAdapter {
   }
 
   /**
-   * Add another administrator (super-admin only; the account is staff, never a super-admin)
-   * Integrates with POST /api/v1/admin-panel/users/create-admin/ endpoint
+   * Basqa administrator qosıw (tek super-admin; akkaunt staff, hesh qashan super-admin emes)
+   * POST /api/v1/admin-panel/users/create-admin/ endpoint i menen birlesedi
    */
   async createAdmin(adminData: CreateAdminRequest): Promise<ApiResponse<CreateHotelOwnerResponse>> {
     return this.request<CreateHotelOwnerResponse>('/api/v1/admin-panel/users/create-admin/', {
@@ -574,8 +574,8 @@ class AdminAdapter {
   }
 
   /**
-   * Reset another account's two-step sign-in after a lost phone (super-admin only).
-   * `code` is the super admin's OWN current app code. Integrates with POST /api/v1/admin-panel/users/{id}/2fa-reset/
+   * Telefon joǵalǵannan keyin basqa akkauntıń eki basqıshlı kirisiwin qayta ornatıw (tek super-admin).
+   * `code` super admin niń ÓZ házirgi ilova kodı. POST /api/v1/admin-panel/users/{id}/2fa-reset/ penen birlesedi
    */
   async resetTwoFactor(userId: number, code: string): Promise<ApiResponse<AdminUser>> {
     return this.request<AdminUser>(`/api/v1/admin-panel/users/${userId}/2fa-reset/`, {
@@ -585,8 +585,8 @@ class AdminAdapter {
   }
 
   /**
-   * Change the phone number and/or e-mail of an account (super admin or staff; staff only for guests and owners).
-   * Integrates with PATCH /api/v1/admin-panel/users/{id}/contact/
+   * Akkauntıń telefon nomerin hám/yamasa e-mail ın ózgertiw (super admin yamasa staff; staff tek mehmanlar hám iyeler ushın).
+   * PATCH /api/v1/admin-panel/users/{id}/contact/ penen birlesedi
    */
   async changeContact(userId: number, change: ContactChange): Promise<ApiResponse<AdminUser>> {
     return this.request<AdminUser>(`/api/v1/admin-panel/users/${userId}/contact/`, {
@@ -595,9 +595,9 @@ class AdminAdapter {
     })
   }
 
-  // Commission
+  // Komissiya
 
-  /** GET /api/v1/admin-panel/commission/: hotel owners with percent, this month and unpaid commission */
+  /** GET /api/v1/admin-panel/commission/: procenti, usı ayı hám tólenbegen komissiyası menen mehmanxana iyeleri */
   async getCommissionOwners({ search, letter, page = 1 }: { search?: string; letter?: string; page?: number } = {}): Promise<ApiResponse<CommissionOwnerPage>> {
     const params = new URLSearchParams({ page: String(page) })
     if (search) params.set('search', search)
@@ -614,7 +614,7 @@ class AdminAdapter {
     return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/`)
   }
 
-  /** PUT .../commission/{ownerId}/rate/ (super admin): the percent from this month on */
+  /** PUT .../commission/{ownerId}/rate/ (super admin): usı aydan baslap procent */
   async setCommissionPercent(ownerId: number, percent: string): Promise<ApiResponse<CommissionStatement>> {
     return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/rate/`, {
       method: 'PUT',
@@ -622,29 +622,29 @@ class AdminAdapter {
     })
   }
 
-  /** POST .../commission/{ownerId}/months/{YYYY-MM}/paid/: the owner paid that ended month */
+  /** POST .../commission/{ownerId}/months/{YYYY-MM}/paid/: iye sol pitken ayın tóledi */
   async confirmCommissionMonth(ownerId: number, month: string): Promise<ApiResponse<CommissionStatement>> {
     return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/months/${month}/paid/`, { method: 'POST' })
   }
 
-  /** DELETE on the same URL: take the confirmation back */
+  /** Sol URL ge DELETE: tastıyıqlawdı qaytarıp alıw */
   async undoCommissionMonth(ownerId: number, month: string): Promise<ApiResponse<CommissionStatement>> {
     return this.request<CommissionStatement>(`/api/v1/admin-panel/commission/${ownerId}/months/${month}/paid/`, { method: 'DELETE' })
   }
 
-  // Admin Amenity Management Methods
+  // Admin amenity di basqarıw metodları
 
   /**
-   * List all amenities
-   * Integrates with GET /api/v1/admin-panel/amenities/ endpoint
+   * Barlıq amenity lerdi dizimlew
+   * GET /api/v1/admin-panel/amenities/ endpoint i menen birlesedi
    */
   async getAmenities(): Promise<ApiResponse<AdminAmenity[]>> {
     return this.requestAll<AdminAmenity>('/api/v1/admin-panel/amenities/')
   }
 
   /**
-   * Create amenity
-   * Integrates with POST /api/v1/admin-panel/amenities/ endpoint
+   * Amenity jaratıw
+   * POST /api/v1/admin-panel/amenities/ endpoint i menen birlesedi
    */
   async createAmenity(amenityData: CreateAmenityRequest): Promise<ApiResponse<AdminAmenity>> {
     return this.request<AdminAmenity>('/api/v1/admin-panel/amenities/', {
@@ -654,8 +654,8 @@ class AdminAdapter {
   }
 
   /**
-   * Update amenity
-   * Integrates with PATCH /api/v1/admin-panel/amenities/{id}/ endpoint
+   * Amenity di jańalaw
+   * PATCH /api/v1/admin-panel/amenities/{id}/ endpoint i menen birlesedi
    */
   async updateAmenity(id: number, amenityData: UpdateAmenityRequest): Promise<ApiResponse<AdminAmenity>> {
     return this.request<AdminAmenity>(`/api/v1/admin-panel/amenities/${id}/`, {
@@ -665,8 +665,8 @@ class AdminAdapter {
   }
 
   /**
-   * Delete amenity (soft delete)
-   * Integrates with DELETE /api/v1/admin-panel/amenities/{id}/ endpoint
+   * Amenity di óshiriw (soft delete)
+   * DELETE /api/v1/admin-panel/amenities/{id}/ endpoint i menen birlesedi
    */
   async deleteAmenity(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/admin-panel/amenities/${id}/`, {
@@ -674,19 +674,19 @@ class AdminAdapter {
     })
   }
 
-  // Admin Amenity Category Management Methods
+  // Admin amenity kategoriyasın basqarıw metodları
 
   /**
-   * List amenity categories
-   * Integrates with GET /api/v1/admin-panel/amenities/categories/ endpoint
+   * Amenity kategoriyaların dizimlew
+   * GET /api/v1/admin-panel/amenities/categories/ endpoint i menen birlesedi
    */
   async getAmenityCategories(): Promise<ApiResponse<AdminAmenityCategory[]>> {
     return this.requestAll<AdminAmenityCategory>('/api/v1/admin-panel/amenities/categories/')
   }
 
   /**
-   * Create amenity category
-   * Integrates with POST /api/v1/admin-panel/amenities/categories/ endpoint
+   * Amenity kategoriyası jaratıw
+   * POST /api/v1/admin-panel/amenities/categories/ endpoint i menen birlesedi
    */
   async createAmenityCategory(categoryData: CreateAmenityCategoryRequest): Promise<ApiResponse<AdminAmenityCategory>> {
     return this.request<AdminAmenityCategory>('/api/v1/admin-panel/amenities/categories/', {
@@ -696,8 +696,8 @@ class AdminAdapter {
   }
 
   /**
-   * Update amenity category
-   * Integrates with PATCH /api/v1/admin-panel/amenities/categories/{id}/ endpoint
+   * Amenity kategoriyasın jańalaw
+   * PATCH /api/v1/admin-panel/amenities/categories/{id}/ endpoint i menen birlesedi
    */
   async updateAmenityCategory(id: number, categoryData: UpdateAmenityCategoryRequest): Promise<ApiResponse<AdminAmenityCategory>> {
     return this.request<AdminAmenityCategory>(`/api/v1/admin-panel/amenities/categories/${id}/`, {
@@ -707,8 +707,8 @@ class AdminAdapter {
   }
 
   /**
-   * Delete amenity category (soft delete)
-   * Integrates with DELETE /api/v1/admin-panel/amenities/categories/{id}/ endpoint
+   * Amenity kategoriyasın óshiriw (soft delete)
+   * DELETE /api/v1/admin-panel/amenities/categories/{id}/ endpoint i menen birlesedi
    */
   async deleteAmenityCategory(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/admin-panel/amenities/categories/${id}/`, {
@@ -716,11 +716,11 @@ class AdminAdapter {
     })
   }
 
-  // Admin Customers Directory Methods (Checkpoint 24)
+  // Admin mijozlar dizimi metodları (Checkpoint 24)
 
   /**
-   * List customers directory with search, pagination, and sorting
-   * Integrates with GET /api/v1/admin-panel/customers/ endpoint
+   * Izlew, betlew hám tártiplew menen mijozlar dizimin dizimlew
+   * GET /api/v1/admin-panel/customers/ endpoint i menen birlesedi
    */
   async getCustomers(params?: GetCustomersParams): Promise<ApiResponse<AdminCustomersResponse>> {
     const queryParams = new URLSearchParams()
@@ -735,11 +735,11 @@ class AdminAdapter {
     return this.request<AdminCustomersResponse>(endpoint)
   }
 
-  // Admin Customer Profile Methods (Checkpoint 25)
+  // Admin mijoz profili metodları (Checkpoint 25)
 
   /**
-   * Get customer profile with bookings and internal notes
-   * Integrates with GET /api/v1/admin-panel/customers/{id}/ endpoint
+   * Bronlar hám ishki jazbalar menen mijoz profilin alıw
+   * GET /api/v1/admin-panel/customers/{id}/ endpoint i menen birlesedi
    */
   async getCustomerProfile(customerId: number, params?: GetCustomerProfileParams): Promise<ApiResponse<AdminCustomerProfile>> {
     const queryParams = new URLSearchParams()
@@ -750,8 +750,8 @@ class AdminAdapter {
   }
 
   /**
-   * Create internal note for customer
-   * Integrates with POST /api/v1/admin-panel/customers/{id}/notes/ endpoint
+   * Mijoz ushın ishki jazba jaratıw
+   * POST /api/v1/admin-panel/customers/{id}/notes/ endpoint i menen birlesedi
    */
   async createInternalNote(customerId: number, noteData: CreateNoteRequest): Promise<ApiResponse<InternalNote>> {
     return this.request<InternalNote>(`/api/v1/admin-panel/customers/${customerId}/notes/`, {
@@ -761,8 +761,8 @@ class AdminAdapter {
   }
 
   /**
-   * Update internal note
-   * Integrates with PUT /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint
+   * Ishki jazbanı jańalaw
+   * PUT /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint i menen birlesedi
    */
   async updateInternalNote(customerId: number, noteId: number, noteData: UpdateNoteRequest): Promise<ApiResponse<InternalNote>> {
     return this.request<InternalNote>(`/api/v1/admin-panel/customers/${customerId}/notes/${noteId}/`, {
@@ -772,8 +772,8 @@ class AdminAdapter {
   }
 
   /**
-   * Delete internal note (soft delete)
-   * Integrates with DELETE /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint
+   * Ishki jazbanı óshiriw (soft delete)
+   * DELETE /api/v1/admin-panel/customers/{id}/notes/{note_id}/ endpoint i menen birlesedi
    */
   async deleteInternalNote(customerId: number, noteId: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/admin-panel/customers/${customerId}/notes/${noteId}/`, {
@@ -781,11 +781,11 @@ class AdminAdapter {
     })
   }
 
-  // Admin Statistics Methods (Checkpoint 26)
+  // Admin statistika metodları (Checkpoint 26)
 
   /**
-   * Get registration statistics
-   * Integrates with GET /api/v1/admin-panel/statistics/registrations/ endpoint
+   * Dizimnen ótiw statistikasın alıw
+   * GET /api/v1/admin-panel/statistics/registrations/ endpoint i menen birlesedi
    */
   async getRegistrationStatistics(params?: GetRegistrationStatisticsParams): Promise<ApiResponse<RegistrationStatistics>> {
     const queryParams = new URLSearchParams()
@@ -798,8 +798,8 @@ class AdminAdapter {
   }
 
   /**
-   * Get top bookers leaderboard
-   * Integrates with GET /api/v1/admin-panel/statistics/top-bookers/ endpoint
+   * Eń kóp bronlaǵan mijozlar reytingin alıw
+   * GET /api/v1/admin-panel/statistics/top-bookers/ endpoint i menen birlesedi
    */
   async getTopBookers(params?: GetTopBookersParams): Promise<ApiResponse<TopBooker[]>> {
     const queryParams = new URLSearchParams()
@@ -812,11 +812,11 @@ class AdminAdapter {
     return { data: data.leaderboard, error: null }
   }
 
-  // Admin Support Lookup Methods (Checkpoint 23)
+  // Admin Support Lookup metodları (Checkpoint 23)
 
   /**
-   * Look up booking by reference code for support
-   * Integrates with GET /api/v1/admin-panel/bookings/lookup/ endpoint
+   * Qollap-quwatlaw ushın bronnı reference code boyınsha izlew
+   * GET /api/v1/admin-panel/bookings/lookup/ endpoint i menen birlesedi
    */
   async lookupBookingByReferenceCode(params: GetSupportLookupParams): Promise<ApiResponse<SupportLookupBooking>> {
     const queryParams = new URLSearchParams()
@@ -858,8 +858,8 @@ class AdminAdapter {
   }
 }
 
-// Export singleton instance
+// Singleton nusqasın eksport etiw
 export const adminAdapter = new AdminAdapter()
 
-// Export class for testing
+// Testlew ushın klasstı eksport etiw
 export { AdminAdapter }

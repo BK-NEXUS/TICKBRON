@@ -1,10 +1,10 @@
-/** Why a booking or a quote was refused, as a code with its values, so the site can say it in the page language */
+/** Bron yamasa quote nege biykar etildi, kod hám mánisler retinde, sonda sayt bet tilinde ayta aladı */
 export interface Refusal {
   code: string
   params: Record<string, string | number>
 }
 
-/** The `reason` of an error body, or undefined when the server sent none or a malformed one */
+/** Qátelik denesiniń `reason` ı, yamasa server joq yamasa buzılǵan jiberse undefined */
 export function refusalOf(body: unknown): Refusal | undefined {
   const reason = typeof body === 'object' && body !== null ? (body as { reason?: unknown }).reason : undefined
   if (typeof reason !== 'object' || reason === null) return undefined

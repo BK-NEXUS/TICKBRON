@@ -11,7 +11,7 @@ import { saveBlob } from '../utils/saveBlob'
 type Step = { name: 'starting' } | { name: 'failed'; error: string }
   | { name: 'scan'; uri: string; secret: string } | { name: 'codes'; codes: string[] }
 
-/** One-time setup of the authenticator app. Administrators are sent here until it is done. */
+/** Authenticator ilovasın bir márte sazlaw. Administratorlar ol pitkenshe usı jerge jiberiledi. */
 export function TwoFactorSetupPage() {
   const { t } = useI18n()
   const { user, isLoading, refreshUser, logout } = useAuth()
@@ -22,7 +22,7 @@ export function TwoFactorSetupPage() {
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
-  // Every call to setup makes a new secret, so the page asks once even when React runs the effect twice
+  // Hár setup shaqırıwı jańa sır jasaydı, sol sebepli React effect ti eki ret isletse de bet bir márte soraydı
   const asked = useRef(false)
 
   const start = async () => {
@@ -39,13 +39,13 @@ export function TwoFactorSetupPage() {
     if (!signedIn || alreadyOn || asked.current) return
     asked.current = true
     void start()
-  // start() only reads `t` for an error text; the effect must run once per visit
+  // start() `t` ni tek qátelik teksti ushın oqıydı; effect hár kiriwde bir márte islewi kerek
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, alreadyOn])
 
   if (isLoading) return <div className="page-loader">{t('common.loading')}</div>
   if (!user) return <Navigate to="/login" replace />
-  // Once it is on, only the backup-code screen keeps the page open
+  // Qosılǵannan keyin tek zapas kod ekranı betti ashıq saqlaydı
   if (user.two_factor_enabled && step.name !== 'codes') return <Navigate to="/" replace />
 
   const confirm = async (event: React.FormEvent) => {

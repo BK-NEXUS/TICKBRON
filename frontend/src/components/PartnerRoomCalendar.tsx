@@ -12,7 +12,7 @@ interface PartnerRoomCalendarProps {
   roomTypeId: number
   roomTypeName: string
   totalRooms: number
-  /** YYYY-MM shown first; defaults to the current month. A testing seam. */
+  /** Aldın kórsetiletuǵın YYYY-MM; ádetde házirgi ay. Testlew ushın jol. */
   initialMonth?: string
 }
 
@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<Status, MessageKey> = {
   closed: 'partner.statusClosed',
 }
 
-/** First and last day (inclusive) of a 'YYYY-MM' month: the range one request asks for. */
+/** 'YYYY-MM' aydıń birinshi hám sońǵı kúni (kiredi): bir soraw soraytuǵın aralıq. */
 function monthRange(month: string): { first: string; last: string } {
   const [year, monthNumber] = month.split('-').map(Number)
   const lastDay = new Date(year, monthNumber, 0).getDate()
@@ -41,7 +41,7 @@ function monthRange(month: string): { first: string; last: string } {
 
 const currentMonth = () => businessToday().slice(0, 7)
 
-/** Free room-nights, capacity and closed days of the days of `month` from `today` on (display only). */
+/** `today` dan baslap `month` kúnleriniń bos xona-túnleri, sıyımlılıq hám jabıq kúnler (tek kórsetiw ushın). */
 function summarize(month: string, rows: Map<string, PartnerRoomInventory>, totalRooms: number, today: string) {
   const { first, last } = monthRange(month)
   let free = 0
@@ -70,11 +70,11 @@ function statusOf(row: PartnerRoomInventory | undefined, totalRooms: number): St
 }
 
 /**
- * Owner calendar for one room type (3.6): a month grid showing free X of Y and a color
- * per day, a panel to edit one day or a date range (available rooms, open/closed), and
- * external-booking blocks (rooms sold outside TICKBRON) shown on the calendar and
- * removable. RoomInventory is shared by every rate plan of this room type, so this is
- * the room count that decides whether a room can still be sold (audit #31).
+ * Bir xona túri ushın iye kalendarı (3.6): bos X Y dan kórsetetuǵın ay toru hám hár kúnge reń,
+ * bir kúndi yamasa sana aralıǵın ózgertiw paneli (bos xonalar, ashıq/jabıq), hám
+ * sırtqı bron bloklar (TICKBRON sırtında satılǵan xonalar) kalendarda kórsetiledi hám
+ * alıp taslanadı. RoomInventory usı xona túriniń hár rate plan ı ortaq paydalanadı, sol sebepli bul
+ * xonanı ele satıw múmkin be degendi sheshetuǵın xona sanı (audit #31).
  */
 export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, initialMonth }: PartnerRoomCalendarProps) {
   const { t, tp, formatDay, formatMoney } = useI18n()
@@ -104,11 +104,11 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
   const [blockSaving, setBlockSaving] = useState(false)
   const [blockError, setBlockError] = useState<string | null>(null)
 
-  // Saving something bumps `reloads`, which loads the shown month again without leaving it
+  // Qanday da nárseni saqlaw `reloads` tı arttıradı, ol kórsetilgen aydı ketpesten qayta júkleydi
   const loadCalendarData = useCallback(async () => setReloads((count) => count + 1), [])
   const latestLoad = useRef(0)
 
-  // The room counts and the blocks of the month on screen; a late answer for another month is dropped
+  // Ekrandaǵı aydıń xona sanları hám bloklar; basqa ay ushın keshikken juwap taslanadı
   useEffect(() => {
     const load = ++latestLoad.current
     const { first, last } = monthRange(month)
@@ -126,7 +126,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     })
   }, [roomTypeId, month, reloads])
 
-  // The active rate plans of this room type, for the price shown in the cells
+  // Kataklardaǵı baha ushın usı xona túriniń aktiv rate plan ları
   useEffect(() => {
     let cancelled = false
     partnerAdapter.getRatePlans().then((response) => {
@@ -138,7 +138,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     return () => { cancelled = true }
   }, [roomTypeId])
 
-  // Prices of the chosen plan for the month on screen
+  // Ekrandaǵı ay ushın tańlanǵan plannıń bahaları
   useEffect(() => {
     if (planId === null) {
       setPrices(new Map())
@@ -230,7 +230,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
     await loadCalendarData()
   }
 
-  // One click: close or open the selected day or range, leaving the room count as it is
+  // Bir klik: tańlanǵan kúndi yamasa aralıqtı jabıw yamasa ashıw, xona sanın ózgertpesten
   const handleSetOpen = async (open: boolean) => {
     if (!checkIn) return
     setSaving(true)
@@ -262,7 +262,7 @@ export function PartnerRoomCalendar({ roomTypeId, roomTypeName, totalRooms, init
 
   const priceValid = PRICE_PATTERN.test(priceInput.trim())
 
-  // One price for every selected night of the chosen rate plan
+  // Tańlanǵan rate plan nıń hár tańlanǵan túni ushın bir baha
   const handleSetPrice = async () => {
     if (!checkIn || !plan || !priceValid) return
     const dateTo = checkOut ?? addDays(checkIn, 1)

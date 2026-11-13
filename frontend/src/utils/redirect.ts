@@ -1,4 +1,4 @@
-/** Page to return to after login or register: `location.state.from.pathname`, else the home page. */
+/** Kirgennen yamasa dizimnen ótkennen keyin qaytatuǵın bet: `location.state.from.pathname`, bolmasa bas bet. */
 export function redirectPathFrom(state: unknown): string {
   if (typeof state !== 'object' || state === null) return '/'
   const from = (state as { from?: unknown }).from

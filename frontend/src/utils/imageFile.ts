@@ -2,27 +2,30 @@ import type { MessageKey } from '../i18n/messages/en'
 import { imageSizeProblem, type ImageRuleKind } from './imageRules'
 import { readImageSize } from './imageSize'
 
-// Same limits as the backend (`common.image_rules`); the server checks again.
+// Backend penen birdey shekler (`common.image_rules`); server qayta tekseredi.
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const IMAGE_EXTENSIONS = /\.(jpe?g|png|webp)$/i
 
-/** The message key for what is wrong with the type or the file size of a chosen picture, or null when it can be sent */
+/**
+ * Tańlanǵan súwrettiń túri yamasa fayl ólshemi menen ne qátelik ekenin bildiretuǵın xabar kilti, yamasa jiberiw múmkin bolsa
+ * null
+ */
 export function imageFileError(file: File): MessageKey | null {
   if (!IMAGE_TYPES.includes(file.type) || !IMAGE_EXTENSIONS.test(file.name)) return 'geoAdmin.errImageType'
   if (file.size > MAX_IMAGE_BYTES) return 'geoAdmin.errImageSize'
   return null
 }
 
-/** A message with the values to put in it */
+/** Ishine qoyılatuǵın mánisleri bar xabar */
 export interface ImageProblem {
   key: MessageKey
   params?: Record<string, string | number>
 }
 
 /**
- * Everything the browser can tell about a chosen picture before it is sent: type, file size, then width and height
- * against the rule of the place. When the browser cannot read the picture the server decides.
+ * Jiberilmesten aldın brauzer tańlanǵan súwret haqqında ayta alatuǵın hámme nárse: túri, fayl ólshemi, keyin eni hám boyı
+ * orınnıń qaǵıydasına qarata. Brauzer súwretti oqıy almasa server sheshedi.
  */
 export async function imageProblem(file: File, kind: ImageRuleKind): Promise<ImageProblem | null> {
   const fileError = imageFileError(file)

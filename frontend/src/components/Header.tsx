@@ -32,7 +32,7 @@ export function Header() {
   const chat = useChatUnread(isAuthenticated)
   const notices = useNotificationCount(isAuthenticated)
   const { t, language, setLanguage, currency, setCurrency } = useI18n()
-  // Most profiles only have full_name since checkpoint 21
+  // Kópshilik profillerde 21 checkpoint ten beri tek full_name bar
   const displayName =
     user?.full_name?.trim() ||
     [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
@@ -51,7 +51,7 @@ export function Header() {
     <>
       <header className="header">
         <div className="container header-container">
-          {/* Mobile Menu Button */}
+          {/* Mobil menyu túymesi */}
           <button
             className="header-mobile-toggle"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -65,13 +65,13 @@ export function Header() {
             </span>
           </button>
 
-          {/* Logo */}
+          {/* Logotip */}
           <div className="header-logo">
             <BrandLogo variant="header" decorative />
             <span className="header-logo-text">TICKBRON</span>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Kompyuter navigaciyası */}
           <nav className="header-nav">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} className="nav-link">
@@ -80,7 +80,7 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Actions */}
+          {/* Háreketler */}
           <div className="header-actions">
             <LanguageSelector
               currentLanguage={language}
@@ -162,7 +162,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* Mobil menyu */}
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}

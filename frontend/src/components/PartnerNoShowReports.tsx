@@ -11,11 +11,11 @@ const BADGE: Record<NoShowReportStatus, string> = {
 }
 
 interface PartnerNoShowReportsProps {
-  /** The owner's hotels, for the hotel filter */
+  /** Iyeniń mehmanxanaları, mehmanxana filteri ushın */
   properties: Array<{ id: number; name: string }>
 }
 
-/** "My reports": what the owner told staff about guests who did not arrive, and what staff decided. */
+/** "Meniń esabatlarım": iye staff qa kelmegen mehmanlar haqqında ne aytqanı hám staff ne sheshkeni. */
 export function PartnerNoShowReports({ properties }: PartnerNoShowReportsProps) {
   const { t, formatDate } = useI18n()
   const [status, setStatus] = useState('')
@@ -27,7 +27,7 @@ export function PartnerNoShowReports({ properties }: PartnerNoShowReportsProps) 
   const [actionError, setActionError] = useState<ReturnType<typeof noShowErrorKey> | null>(null)
   const [busyId, setBusyId] = useState<number | null>(null)
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı isleydi
   const load = useCallback(async () => {
     setLoading(true)
     setLoadFailed(false)

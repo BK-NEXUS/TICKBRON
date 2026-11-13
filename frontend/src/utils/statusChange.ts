@@ -3,12 +3,12 @@ import type { MessageKey } from '../i18n/messages/en'
 type Translate = (key: MessageKey, params?: Record<string, string | number>) => string
 
 export interface ChangeText {
-  /** Short text for the card, e.g. "+25.0% vs last month"; empty when there is nothing to compare with */
+  /** Karta ushın qısqa tekst, mısalı "+25.0% vs last month"; salıstırıwǵa hesh nárse bolmasa bos */
   text: string
   tone: 'up' | 'down' | 'same' | 'none'
 }
 
-/** The change in percent of this month against last month, as a card caption (null: last month was empty). */
+/** Usı aydıń aldınǵı ayǵa qarata procent penen ózgerisi, karta jazıwı retinde (null: aldınǵı ay bos edi). */
 export function monthChange(pct: string | null, t: Translate): ChangeText {
   if (pct === null) return { text: t('ownerStatus.change.none'), tone: 'none' }
   const value = Number(pct)

@@ -12,14 +12,15 @@ import { PropertyCard } from './PropertyCard'
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './mapTiles'
 import { addBaseLayers } from './mapLayers'
 
-// Pins close together overlap; the hovered or focused pin comes to the front, the chosen one stays there
+// Bir-birine jaqın belgiler bir-birin jawıp qaladı; kursor ústindegi yamasa fokustaǵı belgi aldıǵa shıǵadı, tańlanǵanı sonda
+// qaladı
 const ACTIVE_Z_OFFSET = 10_000
-/** Groups of this many pins or more get a bigger bubble */
+/** Usı sanda yamasa onnan kóp belgi toparı úlkenirek kóbik aladı */
 const CLUSTER_MEDIUM = 10
 const CLUSTER_LARGE = 50
 const RAISED_Z_OFFSET = 20_000
 
-/** The visible part of the map as the backend's search takes it: a centre and a radius in whole kilometres (1-100). */
+/** Kartanıń kórinetuǵın bólegi backend izlewi qabıllaǵanınday: oray hám pútin kilometrlerdegi radius (1-100). */
 export interface MapArea {
   lat: number
   lng: number
@@ -28,13 +29,13 @@ export interface MapArea {
 
 interface PropertiesMapProps {
   properties: Property[]
-  /** The property a list next to the map is pointing at */
+  /** Kartanıń janındaǵı dizim kórsetip atırǵan mehmanxana */
   highlightedId?: number | null
-  /** Told which pin the guest chose (null when the choice is cleared) */
+  /** Mehmann qaysı belgini tańlaǵanı aytıladı (tańlaw tazalansa null) */
   onSelectedChange?: (id: number | null) => void
-  /** False when a list next to the map shows the chosen property instead */
+  /** Kartanıń janındaǵı dizim tańlanǵan mehmanxananı kórsetse False */
   showSelectedCard?: boolean
-  /** Offers "Search this area" once the guest has moved the map */
+  /** Mehmann kartanı jılıstırǵannan keyin "Usı aymaqtı izlew" dı usınadı */
   onSearchArea?: (area: MapArea) => void
 }
 
@@ -60,7 +61,10 @@ interface Pin {
   lng: number
 }
 
-/** Search results as price pins; choosing a pin shows the property card, which opens the property page (rooms, booking). */
+/**
+ * Izlew nátiyjeleri baha belgileri retinde; belgini tańlaw mehmanxana kartasın kórsetedi, ol mehmanxana betin (xonalar,
+ * bronlaw) ashadı.
+ */
 export function PropertiesMap({
   properties, highlightedId = null, onSelectedChange, showSelectedCard = true, onSearchArea,
 }: PropertiesMapProps) {
@@ -76,9 +80,9 @@ export function PropertiesMap({
   const highlightedIdRef = useRef<number | null>(null)
   highlightedIdRef.current = highlightedId
   const [moved, setMoved] = useState(false)
-  // True while the page itself moves the map (new results), so that is not taken for the guest moving it
+  // Bet kartanı ózi jılıstırǵanda (jańa nátiyjeler) true, sol sebepli ol mehmanniń jılıstırıwı dep qabıllanbaydı
   const programmaticRef = useRef(false)
-  // The pin buttons are built once per set of results: they must reach the latest callback
+  // Belgi túymeleri hár nátiyje toplamı ushın bir márte quriladı: olar eń sońǵı callback ke jetiwi kerek
   const onSelectedChangeRef = useRef(onSelectedChange)
   onSelectedChangeRef.current = onSelectedChange
   const select = (id: number | null) => {
@@ -94,7 +98,7 @@ export function PropertiesMap({
   const selected = pins.find(pin => pin.property.id === selectedId)?.property ?? null
   const hasPins = pins.length > 0
 
-  // The map is created once, when there is something to show
+  // Karta kórsetiwge nárse bolǵanda bir márte jaratıladı
   useEffect(() => {
     if (!hasPins || !containerRef.current) return
     const map = L.map(containerRef.current, {
@@ -102,7 +106,7 @@ export function PropertiesMap({
     })
     L.control.zoom({ zoomInTitle: t('map.zoomIn'), zoomOutTitle: t('map.zoomOut') }).addTo(map)
     addBaseLayers(map, { group: t('map.layerGroup'), street: t('map.layerStreet'), satellite: t('map.layerSatellite') })
-    // Pins that would cover each other become one numbered group; clicking it zooms in
+    // Bir-birin jabatuǵın belgiler bir nomerlengen topar boladı; oǵan basıw zoom etedi
     const group = L.markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: 40,
@@ -130,11 +134,11 @@ export function PropertiesMap({
       markers.clear()
       pinButtons.clear()
     }
-    // The zoom titles follow the language when the pins are redrawn below; the map itself is not rebuilt
+    // Zoom sarlawhaları belgiler tómende qayta sızılǵanda tilge ılayıq; kartanıń ózi qayta qurılmaydı
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPins])
 
-  // Pins follow the results and the language
+  // Belgiler nátiyjelerge hám tilge ılayıq
   useEffect(() => {
     const map = mapRef.current
     const group = groupRef.current
@@ -145,7 +149,7 @@ export function PropertiesMap({
     pinsRef.current.clear()
     for (const { property, lat, lng } of pins) {
       const name = property.translations[0]?.name ?? t('card.unknown')
-      // The "from" price in the chosen currency (≈ for a conversion)
+      // Tańlanǵan valyutadaǵı "dan" bahası (konvertaciya ushın ≈)
       const shown = priceIn(property, currency)
       const amount = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
       const price = shown.approximate ? t('charge.approx', { amount }) : amount
@@ -176,9 +180,9 @@ export function PropertiesMap({
     setMoved(false)
   }, [pins, t, tp, formatMoney, currency, hasPins])
 
-  // The chosen pin is marked; a new search that drops it clears the card
+  // Tańlanǵan belgi belgilenedi; onı taslaytuǵın jańa izlew kartanı tazalaydı
   useEffect(() => {
-    // The class sits on the pin button itself: it stays right while a group hides and shows the marker
+    // Klas belgi túymesiniń ózinde: topar markerdi jasırǵanda hám kórsetkende durıs qaladı
     pinsRef.current.forEach((pin, id) => {
       pin.classList.toggle('map-pin--active', id === selectedId)
       pin.classList.toggle('map-pin--hover', id === highlightedId)
@@ -188,7 +192,7 @@ export function PropertiesMap({
   }, [selectedId, highlightedId, pins])
   useEffect(() => {
     if (selectedId !== null && !selected) select(null)
-    // `select` only sets state and calls the callback; it is not a dependency on purpose
+    // `select` tek jaǵdaydı belgileydi hám callback ti shaqıradı; ol ataylap dependency emes
   }, [selectedId, selected])
 
   if (!hasPins) {

@@ -8,26 +8,27 @@ import { priceIn } from '../utils/price'
 import { StarIcon } from './StarIcon'
 
 const ROTATE_MS = 5000
-// An ad can hold up to 10 pictures: each is shown for this long, and the banner stays long enough to show them all
+// Reklama 10 ǵa shekem súwret alıp júre aladı: hárbiri usı waqıt kórsetiledi, hám banner olardıń hámmesin kórsetiwge jetetuǵın
+// waqıt turadı
 const PHOTO_MS = 1800
 const MAX_SLIDE_MS = 12000
-// A pointer movement shorter than this is a tap on the banner, not a swipe
+// Usıdan qısqa kursor háreketi banner ge tap, swipe emes
 const SWIPE_MIN_PX = 40
 
 interface PromoCarouselProps {
   items: PromotedProperty[]
   loading?: boolean
-  /** The place the ads are for (a country, a region); shown above the banner when known */
+  /** Reklama ushın orın (mámleket, region); belgili bolsa bannerdiń ústinde kórsetiledi */
   placeName?: string
 }
 
-/** The pictures of a banner: the ad's own, else the hotel's cover */
+/** Banner súwretleri: reklamanıń óziki, bolmasa mehmanxananıń muqabası */
 function photosOf(item: PromotedProperty): string[] {
   if (item.promo_photos && item.promo_photos.length > 0) return item.promo_photos
   return item.primary_photo?.photo ? [item.primary_photo.photo] : []
 }
 
-/** How long a banner stays: at least ROTATE_MS, more when it has many pictures, never more than MAX_SLIDE_MS */
+/** Banner qansha turadı: eń kemi ROTATE_MS, súwret kóp bolsa kóbirek, hesh qashan MAX_SLIDE_MS tan artıq emes */
 function stayMs(item: PromotedProperty): number {
   return Math.min(MAX_SLIDE_MS, Math.max(ROTATE_MS, photosOf(item).length * PHOTO_MS))
 }
@@ -37,9 +38,10 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * The paid "Reklama" banner: one big hotel banner at a time that rotates by itself.
- * It pauses on hover, keyboard focus, a hidden tab and the pause button, and never rotates
- * for visitors who prefer reduced motion. With nothing to show it renders nothing.
+ * Tólengen "Reklama" banner i: bir waqıtta bir úlken mehmanxana banner i, ózi aylanadı.
+ * Kursor ústine kelgende, klaviatura fokusında, jasırın tabta hám pauza túymesinde toqtaydı, hám
+ * háreketti azaytıwdı qáleytuǵın kelwshiler ushın hesh qashan aylanbaydı. Kórsetiwge hesh nárse joq bolsa hesh nárse
+ * jasamaydı.
  */
 export function PromoCarousel({ items, loading = false, placeName }: PromoCarouselProps) {
   const { t } = useI18n()
@@ -65,7 +67,7 @@ export function PromoCarousel({ items, loading = false, placeName }: PromoCarous
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
-  // The timer restarts after every change of banner, so a manual move gets a full 5 seconds
+  // Taymer hár banner ózgeriwinen keyin qayta baslanadı, sol sebepli qolda kóshiriw toliq 5 sekund aladı
   useEffect(() => {
     if (!canRotate) return
     const timer = setTimeout(() => show(current + 1), stayMs(items[current]))
@@ -126,7 +128,7 @@ export function PromoCarousel({ items, loading = false, placeName }: PromoCarous
             position={position + 1}
             total={count}
             onOpen={(event) => {
-              // The end of a swipe also fires a click on the link: do not open the hotel then
+              // Swipe aqırı siltemege klik te payda etedi: sonda mehmanxananı ashpań
               if (justSwiped.current) {
                 justSwiped.current = false
                 event.preventDefault()
@@ -191,7 +193,7 @@ export function PromoCarousel({ items, loading = false, placeName }: PromoCarous
 interface PromoSlideProps {
   item: PromotedProperty
   active: boolean
-  /** The pictures may move (not hovered, not paused, motion allowed) */
+  /** Súwretler háreketlene aladı (kursor ústinde emes, toqtatılmaǵan, háreketke ruxsat berilgen) */
   moving: boolean
   position: number
   total: number
@@ -200,7 +202,7 @@ interface PromoSlideProps {
 
 function PromoSlide({ item, active, moving, position, total, onOpen }: PromoSlideProps) {
   const { t, formatMoney, currency } = useI18n()
-  // The "from" price in the chosen currency (≈ for a conversion); the hotel's own price when the backend has none
+  // Tańlanǵan valyutadaǵı "dan" bahası (konvertaciya ushın ≈); backend te joq bolsa mehmanxananıń óz bahası
   const shown = priceIn(item, currency)
   const priceText = formatMoney(shown.amount, shown.currency, { minDecimals: 0, maxDecimals: 0 })
   const name = item.translations[0]?.name || t('card.unknown')
@@ -208,7 +210,7 @@ function PromoSlide({ item, active, moving, position, total, onOpen }: PromoSlid
   const photos = photosOf(item)
   const [photoIndex, setPhotoIndex] = useState(0)
 
-  // A banner that is not on show starts over, so it opens on its first picture the next time
+  // Kórsetilmeytuǵın banner qaytadan baslanadı, sonda keyingi ret birinshi súwretinen ashıladı
   useEffect(() => {
     if (!active) { setPhotoIndex(0); return }
     if (!moving || photos.length < 2) return

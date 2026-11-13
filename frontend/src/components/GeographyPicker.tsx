@@ -12,7 +12,7 @@ export interface GeographyValue {
   region_ref: number | null
 }
 
-/** Names of the chosen rows in the page language ('' = nothing chosen), for summaries. */
+/** Tańlanǵan qatarlardıń bet tilindegi atları ('' = hesh nárse tańlanbaǵan), qısqasha mazmun ushın. */
 export interface GeographyLabels {
   country: string
   region: string
@@ -21,7 +21,7 @@ export interface GeographyLabels {
 interface GeographyPickerProps {
   value: GeographyValue
   onChange: (value: GeographyValue, labels: GeographyLabels) => void
-  /** Called with the names of the chosen rows once they are loaded (for a value set from outside) */
+  /** Tańlanǵan qatarlardıń atları júklengennen keyin shaqırıladı (sırttan belgilengen mánis ushın) */
   onLabels?: (labels: GeographyLabels) => void
   disabled?: boolean
   required?: boolean
@@ -37,8 +37,9 @@ interface LoadedList<T> {
 let countriesRequest: ReturnType<typeof geographyAdapter.getCountries> | null = null
 
 /**
- * Pickers that mount in the same moment (one per moderation card) share one request for the countries.
- * Only that moment: a picker mounted later asks again, so a slow or hung request never blocks it.
+ * Birdey waqıtta ornatılatuǵın tańlaǵıshlar (hár moderation kartasına bir) mámleketler ushın bir soraw bóliskenledi.
+ * Tek sol waqıtta: keyin ornatılǵan tańlaǵısh qayta soraydı, sol sebepli sekin yamasa qatıp qalǵan soraw onı hesh qashan tosıp
+ * qoymaydı.
  */
 function loadCountries() {
   if (countriesRequest === null) {
@@ -48,7 +49,7 @@ function loadCountries() {
   return countriesRequest
 }
 
-/** Loads one list; `load` null means "nothing to load yet" (the parent is not chosen). */
+/** Bir dizimdi júkleydi; `load` null "ele júklew kerek emes" degendi bildiredi (ata-ana tańlanbaǵan). */
 function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | null }>) | null, key: string): LoadedList<T> {
   const [state, setState] = useState<{ key: string; items: T[]; failed: boolean } | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -60,7 +61,7 @@ function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | nul
       if (current) setState({ key, items: data ?? [], failed: error !== null })
     })
     return () => { current = false }
-    // `load` is rebuilt on every render; the key says when the request really differs
+    // `load` hár render de qayta quriladı; kilt soraw haqıyqatında ayırmashılıqlı bolǵanda aytadı
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, attempt])
 
@@ -73,7 +74,7 @@ function useList<T>(load: (() => Promise<{ data: T[] | null; error: string | nul
   }
 }
 
-/** Country > Region dropdowns from the public geography dictionary, names in the page language. */
+/** Ashıq geografiya sózliginen Country > Region dropdown ları, atlar bet tilinde. */
 export function GeographyPicker({ value, onChange, onLabels, disabled = false, required = false }: GeographyPickerProps) {
   const { t, language } = useI18n()
   const id = useId()
@@ -95,7 +96,7 @@ export function GeographyPicker({ value, onChange, onLabels, disabled = false, r
   }
   useEffect(() => {
     onLabels?.(labels)
-    // only when a name really changes; `onLabels` is rebuilt on every render
+    // tek at haqıyqatında ózgergende; `onLabels` hár render de qayta quriladı
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [labels.country, labels.region])
 

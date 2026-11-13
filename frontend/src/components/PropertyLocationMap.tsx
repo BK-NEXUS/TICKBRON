@@ -6,17 +6,17 @@ import { toCoordinates } from '../utils/coordinates'
 import { addBaseLayers } from './mapLayers'
 
 interface PropertyLocationMapProps {
-  /** As the API sends them: decimal strings, or null when the owner has not set a location */
+  /** API jibergenindey: onlıq qatarlar, yamasa iye orın belgilemegen bolsa null */
   latitude: unknown
   longitude: unknown
   name: string
 }
 
 const ZOOM = 15
-// Drawn by the app: Leaflet's own pin is an image file whose address the build breaks, so the hotel page showed no pin
+// Ilova sızadı: Leaflet tiń óz belgisi súwret fayl, onıń mánzilin build buzadı, sol sebepli mehmanxana beti belgisiz kórinedi
 const PIN = L.divIcon({ html: '<span class="map-pin-dot"></span>', className: 'map-pin-icon', iconSize: undefined })
 
-/** A small map of the property page with one pin where the hotel is. Nothing when there is no location. */
+/** Mehmanxananıń bir belgi menen mehmanxana betindegi kishi kartası. Orın joq bolsa hesh nárse. */
 export function PropertyLocationMap({ latitude, longitude, name }: PropertyLocationMapProps) {
   const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,7 +31,7 @@ export function PropertyLocationMap({ latitude, longitude, name }: PropertyLocat
     addBaseLayers(map, { group: t('map.layerGroup'), street: t('map.layerStreet'), satellite: t('map.layerSatellite') })
     L.marker([lat, lng], { icon: PIN, title: name, alt: name, keyboard: false }).addTo(map)
     return () => { map.remove() }
-    // Titles follow the language the next time the map is drawn; the pin and tiles do not depend on it
+    // Sarlawhalar karta keyingi sızılǵanda tilge ılayıq boladı; belgi hám tayllar oǵan baylanıslı emes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng, name])
 

@@ -7,10 +7,10 @@ interface PartnerRoomPhotosProps {
   roomTypeId: number
 }
 
-// Same as MAX_PHOTOS_PER_ROOM_TYPE on the backend
+// Backend degi MAX_PHOTOS_PER_ROOM_TYPE penen birdey
 export const MAX_ROOM_PHOTOS = 20
 
-/** The photos of one room type (inside the room form). */
+/** Bir xona túriniń súwretleri (xona formasınıń ishinde). */
 export function PartnerRoomPhotos({ roomTypeId }: PartnerRoomPhotosProps) {
   const api = useMemo<PhotoApi>(() => ({
     list: () => partnerAdapter.getRoomPhotos(roomTypeId),

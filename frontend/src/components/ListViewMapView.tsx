@@ -10,8 +10,8 @@ interface ListViewMapViewProps {
 }
 
 /**
- * ListViewMapView component for switching between list and map views
- * Provides toggle buttons for list and map presentation modes
+ * Dizim hám karta kórinisleri arasında almastırıw ushın ListViewMapView komponenti
+ * Dizim hám karta kórsetiw rejimleri ushın almastırıw túymelerin usınadı
  */
 export function ListViewMapView({ view, onViewChange }: ListViewMapViewProps) {
   const { t } = useI18n()

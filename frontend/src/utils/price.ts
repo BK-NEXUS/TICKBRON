@@ -1,15 +1,15 @@
-// Display helpers for prices in the chosen currency (R16). The backend computes every amount;
-// these only pick which of its amounts to show.
+// Tańlanǵan valyutadaǵı bahalar ushın kórsetiw járdemshileri (R16). Backend hár summanı esaplaydı;
+// bular tek onıń qaysı summasın kórsetiwdi tańlaydı.
 import type { RatePlan, RoomType } from '../adapters/propertyAdapter'
 
 export interface ShownPrice {
   amount: string
   currency: string
-  /** A conversion at the CBU rate (shown with "≈"), not a price the owner entered */
+  /** CBU kursı boyınsha konvertaciya ("≈" menen kórsetiledi), iye kirgizgen baha emes */
   approximate: boolean
 }
 
-/** The plan's price in `currency`; its main price when the backend has none for it (no rate yet, older API) */
+/** Plannıń `currency` degi bahası; backend te joq bolsa onıń tiykarǵı bahası (ele kurs joq, eski API) */
 export function priceIn(plan: Pick<RatePlan, 'base_price' | 'currency' | 'prices'>, currency: string): ShownPrice {
   const entry = plan.prices?.[currency]
   if (entry?.amount) {
@@ -18,7 +18,7 @@ export function priceIn(plan: Pick<RatePlan, 'base_price' | 'currency' | 'prices
   return { amount: String(plan.base_price), currency: plan.currency, approximate: false }
 }
 
-/** The lowest price of a room across its rate plans in `currency`; the room's own price when that cannot be told */
+/** Xonanıń rate plan ları arasındaǵı `currency` degi eń arzan bahası; anıqlap bolmasa xonanıń óz bahası */
 export function roomFromPrice(room: Pick<RoomType, 'base_price' | 'currency' | 'rate_plans'>, currency: string): ShownPrice {
   const own: ShownPrice = { amount: String(room.base_price), currency: room.currency, approximate: false }
   const plans = room.rate_plans ?? []
@@ -28,7 +28,7 @@ export function roomFromPrice(room: Pick<RoomType, 'base_price' | 'currency' | '
   return { amount: lowest?.amount ?? own.amount, currency, approximate: lowest?.source === 'converted' }
 }
 
-/** A calendar night in `currency`: the backend's amount for that night, else the night's own price */
+/** `currency` degi kalendar túni: sol tún ushın backend tiń summası, bolmasa túnniń óz bahası */
 export function nightPriceIn(
   night: { price: number; currency: string; prices?: Record<string, string | null>; converted_currencies?: string[] },
   currency: string,
@@ -40,7 +40,7 @@ export function nightPriceIn(
   return { amount: String(night.price), currency: night.currency, approximate: false }
 }
 
-/** The "from" price on the hotel page: the lowest room price in `currency`; the hotel's own price when that cannot be told */
+/** Mehmanxana betindegi "dan" bahası: `currency` degi eń arzan xona bahası; anıqlap bolmasa mehmanxananıń óz bahası */
 export function propertyFromPrice(
   property: { base_price: number; currency: string },
   rooms: Pick<RoomType, 'base_price' | 'currency' | 'rate_plans'>[],

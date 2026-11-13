@@ -13,7 +13,7 @@ import { propertyStatusLabel } from '../utils/statusLabels'
 interface StatusHotelDetailProps {
   hotelId: number
   period: string
-  /** The applied range when period is "custom" */
+  /** Dáwir "custom" bolǵanda qollanılǵan aralıq */
   range?: DateRange | null
   onPeriodChange: (period: string) => void
   onRangeChange: (range: DateRange) => void
@@ -43,7 +43,9 @@ function requestOf(
   return params
 }
 
-/** Admin Status > one hotel: info, owner contact, R12a totals, series, reconciliation and the monthly year chart */
+/**
+ * Admin Status > bir mehmanxana: maǵlıwmat, iyeniń baylanısı, R12a jıynaqları, seriya, sáykeslestiriw hám ayliq jıllıq grafik
+ */
 export function StatusHotelDetail({ hotelId, period, range, onPeriodChange, onRangeChange }: StatusHotelDetailProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const i18n = useI18n()

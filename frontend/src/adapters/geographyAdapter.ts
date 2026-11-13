@@ -1,5 +1,5 @@
-// Public geography dictionary: Country > Region > City.
-// Contract: .ai/API_CONTRACT.md, section "Geography: Country > Region > City".
+// Ashıq geografiya sózligi: Country > Region > City.
+// Contract: .ai/API_CONTRACT.md, "Geography: Country > Region > City" bólimi.
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import type { Language } from '../i18n/options'
@@ -28,7 +28,7 @@ export interface GeographyRegion extends GeographyNames {
 
 type Result<T> = { data: T | null; error: string | null }
 
-/** The name in the page language; English when that name is blank. */
+/** Bet tilindegi at; sol at bos bolsa inglizsha. */
 export function geographyName(row: GeographyNames, language: Language): string {
   return row[`name_${language}`].trim() || row.name_en
 }

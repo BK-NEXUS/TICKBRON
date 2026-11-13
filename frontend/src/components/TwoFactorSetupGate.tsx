@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 export const TWO_FACTOR_SETUP_PATH = '/two-factor-setup'
 
-/** An administrator who has not set up two-step sign-in can only see the setup page (the backend refuses everything else). */
+/** Eki basqıshlı kirisiwdi sazlamaǵan administrator tek sazlaw betin kóre aladı (backend basqa hámmesin qabıllamaydı). */
 export function TwoFactorSetupGate({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const { pathname } = useLocation()

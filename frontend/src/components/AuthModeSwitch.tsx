@@ -6,7 +6,7 @@ type AuthMode = 'login' | 'register'
 
 const ROUTES: Record<AuthMode, string> = { login: '/login', register: '/register' }
 
-/** Switches between the sign-in and the create-account page. */
+/** Kirisiw hám akkaunt jaratıw betleri arasında almastıradı. */
 export function AuthModeSwitch({ mode, disabled }: { mode: AuthMode; disabled?: boolean }) {
   const navigate = useNavigate()
   const { t } = useI18n()

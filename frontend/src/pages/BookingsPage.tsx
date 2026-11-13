@@ -20,7 +20,7 @@ interface BookingCardProps {
   onCancelled: (booking: CancelledBooking) => void
 }
 
-/** The guest may ask to cancel an upcoming booking that is still open; the backend has the last word. */
+/** Mehmann ele ashıq keletuǵın bronnan bas tartıwdı sorawı múmkin; sońǵı sózdi backend aytadı. */
 const canCancel = (booking: Booking) =>
   (booking.status === 'pending' || booking.status === 'confirmed') && booking.check_in > businessToday()
 
@@ -154,7 +154,7 @@ export function BookingsPage() {
   const [nextPage, setNextPage] = useState<number | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState(false)
-  // The filter the list on screen was loaded for: a page that arrives for another filter is dropped
+  // Ekrandaǵı dizim júklengen filter: basqa filter ushın kelgen bet taslanadı
   const shownFilter = useRef<BookingFilter>('all')
   const [filter, setFilter] = useState<BookingFilter>('all')
   const [loading, setLoading] = useState(true)
@@ -199,7 +199,7 @@ export function BookingsPage() {
       setLoadMoreError(true)
     } else {
       const more = result.data
-      // A booking can move between pages while the guest reads; the id keeps each one once
+      // Mehmann oqıp atırǵanda bron betler arasında jılısıwı múmkin; id hárbirin bir márte saqlaydı
       setBookings(current => [...current, ...more.results.filter(row => !current.some(seen => seen.id === row.id))])
       setTotal(more.count)
       setNextPage(more.next ? nextPage + 1 : null)
@@ -268,7 +268,7 @@ export function BookingsPage() {
     )
   }
 
-  // Only a guest with no bookings at all gets the bare empty screen; an empty filter keeps the buttons to switch back
+  // Tek bronı joq mehmanǵa ǵana bos ekran kórsetiledi; bos filter qayta almastırıw túymelerin saqlaydı
   if (filteredBookings.length === 0 && filter === 'all') {
     return (
       <div className="bookings-page">

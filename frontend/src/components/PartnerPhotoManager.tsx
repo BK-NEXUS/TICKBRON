@@ -8,20 +8,20 @@ import { imageProblem } from '../utils/imageFile'
 import type { ImageRuleKind } from '../utils/imageRules'
 
 interface PartnerPhotoManagerProps {
-  /** The calls for one hotel or one room type */
+  /** Bir mehmanxana yamasa bir xona túri ushın shaqırıwlar */
   api: PhotoApi
-  /** The most photos it can hold (the server enforces it; this only disables the picker) */
+  /** Sıyatuǵın eń kóp súwret (server májbúrleydi; bul tek tańlaǵıshtı óshiredi) */
   max: number
-  /** Unique on the page: the id of the file input and of the heading */
+  /** Bette unikal: fayl kirisiwiniń hám sarlawhanıń id si */
   idPrefix: string
-  /** Which size rule the pictures follow (hotel photos or room photos) */
+  /** Súwretler qaysı ólshem qaǵıydasına ılayıq (mehmanxana súwretleri yamasa xona súwretleri) */
   imageKind: ImageRuleKind
   titleKey: MessageKey
   emptyHintKey: MessageKey
   headingLevel?: 2 | 3
 }
 
-/** Photos of one hotel or one room type: upload several, make one the cover, caption, delete. */
+/** Bir mehmanxana yamasa bir xona túriniń súwretleri: bir neshewin júklew, birin muqaba etiw, jazıw qosıw, óshiriw. */
 export function PartnerPhotoManager({ api, max, idPrefix, imageKind, titleKey, emptyHintKey, headingLevel = 2 }: PartnerPhotoManagerProps) {
   const { t } = useI18n()
   const Heading = `h${headingLevel}` as const

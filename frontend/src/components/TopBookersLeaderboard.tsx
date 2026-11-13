@@ -16,7 +16,7 @@ export function TopBookersLeaderboard({ period = 'all_time', limit = 10 }: TopBo
 
   useEffect(() => {
     loadTopBookers()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, limit])
 

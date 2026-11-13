@@ -40,18 +40,18 @@ interface GuestDetails {
 }
 
 /**
- * BookingPage component for the booking flow
- * Includes guest details form, price summary, validation, and confirmation states
+ * Bronlaw aǵımı ushın BookingPage komponenti
+ * Mehmann maǵlıwmatı formasın, baha qısqasha mazmunın, tekseriwdi hám tastıyıqlaw jaǵdayların óz ishine aladı
  */
-/** A backend message (text) or one of ours (key): ours are translated when shown, also when set inside an effect */
+/** Backend xabarı (tekst) yamasa bizdiń biri (kilt): bizdikiler kórsetilgende, effect ishinde belgilengende de awdarıladı */
 type Message = { text: string } | { key: MessageKey; params?: Record<string, string | number> }
-// Refusals the backend names with a code: shown in the page language instead of the server's English text
+// Backend kod penen atap beretuǵın biykar etiwler: serverdiń inglizsha teksti ornına bet tilinde kórsetiledi
 const REFUSAL_KEYS: Partial<Record<string, MessageKey>> = {
-  exchange_rate_unavailable: 'booking.rateUnavailable', // 503: a hotel priced in dollars and no rate yet; nothing was reserved
+  exchange_rate_unavailable: 'booking.rateUnavailable', // 503: dollarda bahalanǵan mehmanxana hám ele kurs joq; hesh nárse rezervlenbedi
   too_many_upcoming_bookings: 'booking.tooManyUpcoming',
   overlapping_booking: 'booking.overlapping',
 }
-// Why a stay cannot be booked (the quote answers with a code and the values), said in the page language
+// Turıwdı nege bronlap bolmaytuǵını (quote kod hám mánisler menen juwap beredi), bet tilinde aytıladı
 const AVAILABILITY_KEYS: Partial<Record<string, MessageKey>> = {
   night_unavailable: 'booking.nightUnavailable',
   night_min_stay: 'booking.nightMinStay',
@@ -90,11 +90,11 @@ export function BookingPage() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  // The guest's own upcoming stays, to say before sending that the dates overlap one (the server decides)
+  // Mehmannıń óz keletuǵın turıwları, jibermesten aldın sanalar birewine kesilisetuǵının aytıw ushın (server sheshedi)
   const [ownStays, setOwnStays] = useState<StayDates[]>([])
   const [booking, setBooking] = useState<Booking | null>(null)
 
-  // Home › City › Hotel › Booking
+  // Bas bet › Qala › Mehmanxana › Bronlaw
   usePageTrail(property ? [
     { label: property.city, to: searchUrlForCity(property.city) },
     { label: propertyDisplayName(property), to: `/property/${property.id}` },
@@ -103,8 +103,8 @@ export function BookingPage() {
   const [error, setError] = useState<Message | null>(null)
   const [step, setStep] = useState<'details' | 'success'>('details')
 
-  // GET /properties/{id}/quote/: priced by the same backend code that charges the booking,
-  // so the total shown here is the amount paid. There is no local fallback price.
+  // GET /properties/{id}/quote/: bronnan alatuǵın birdey backend kodı penen bahalanǵan,
+  // sol sebepli bul jerde kórsetilgen jámi tólenetuǵın summa. Jergilikli zapas baha joq.
   const [quote, setQuote] = useState<StayQuote | null>(null)
   const [quoteError, setQuoteError] = useState<Message | null>(null)
   const quoteRequestId = useRef(0)
@@ -127,7 +127,7 @@ export function BookingPage() {
     return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
   }
 
-  // Parse booking state from location state
+  // Bron jaǵdayın location state ten oqıw
   useEffect(() => {
     const state = location.state as BookingState
     if (!state) {
@@ -137,9 +137,9 @@ export function BookingPage() {
     }
     setBookingState(state)
     
-    // Pre-fill guest details from user if authenticated
+    // Kirgen bolsa mehmann maǵlıwmatın paydalanıwshıdan aldınan toltırıw
     if (user) {
-      // Since checkpoint 21 most profiles only have full_name: first word = first name, rest = last name
+      // 21 checkpoint ten beri kóp profilde tek full_name bar: birinshi sóz = at, qalǵanı = familiya
       const [nameFromFull = '', ...restOfName] = (user.full_name || '').trim().split(/\s+/)
       setGuestDetails(prev => ({
         ...prev,
@@ -151,7 +151,7 @@ export function BookingPage() {
     }
   }, [location.state, user])
 
-  // Price the stay (again when the number of rooms changes)
+  // Turıwdı bahalaw (xonalar sanı ózgergende qayta)
   useEffect(() => {
     if (!bookingState) return
     const requestId = ++quoteRequestId.current
@@ -181,7 +181,7 @@ export function BookingPage() {
     loadQuote()
   }, [bookingState, roomsForQuote, chosenCurrency])
 
-  // Load property, room type, and rate plan data
+  // Mehmanxana, xona túri hám rate plan maǵlıwmatın júklew
   useEffect(() => {
     const loadData = async () => {
       if (!bookingState) return
@@ -189,7 +189,7 @@ export function BookingPage() {
       try {
         setLoading(true)
         
-        // Load property details
+        // Mehmanxana maǵlıwmatın júklew
         const propertyResponse = await propertyAdapter.getPropertyById(bookingState.propertyId)
         if (propertyResponse.error || !propertyResponse.data) {
           setError(failure(propertyResponse.error, 'booking.errorProperty'))
@@ -198,7 +198,7 @@ export function BookingPage() {
         }
         setProperty(propertyResponse.data)
 
-        // Find room type and rate plan from property data
+        // Mehmanxana maǵlıwmatınan xona túrin hám rate plan dı tabıw
         const foundRoomType = propertyResponse.data.room_types?.find(rt => rt.id === bookingState.roomTypeId)
         const foundRatePlan = foundRoomType?.rate_plans?.find(rp => rp.id === bookingState.ratePlanId)
         
@@ -220,16 +220,16 @@ export function BookingPage() {
     loadData()
   }, [bookingState])
 
-  // The booking's own total once it exists (the amount charged), else the backend quote;
-  // null while neither is known or when the stay cannot be booked
+  // Bron bar bolsa onıń óz jámi (alınǵan summa), bolmasa backend quote;
+  // ekewi de belgisiz yamasa turıwdı bronlap bolmasa null
   const totalPrice = booking ? Number(booking.total_price) : quote ? Number(quote.total_price) : null
   const currency = booking?.currency || quote?.currency || bookingState?.currency || 'USD'
   const formatMoney = (value: number) => formatAmount(value, currency, { minDecimals: 0, maxDecimals: 2 })
-  // A price the owner did not enter (a conversion at the CBU rate) is shown with ≈
+  // Iye kirgizbegen baha (CBU kursı boyınsha konvertaciya) ≈ penen kórsetiledi
   const approximate = !booking && quote?.price_source === 'converted'
   const showMoney = (value: number) => (approximate ? t('charge.approx', { amount: formatMoney(value) }) : formatMoney(value))
 
-  /** "$60 × 2 nights" when every night costs the same, otherwise "2 nights"; "× N rooms" when more than one */
+  /** Hár tún birdey bolsa "$60 × 2 tún", bolmasa "2 tún"; birden kóp bolsa "× N xona" */
   const priceBreakdownLabel = (): string => {
     const nights = quote?.number_of_nights ?? calculateNumberOfNights()
     const prices = (quote?.nights ?? []).map(night => Number(night.price))
@@ -240,7 +240,7 @@ export function BookingPage() {
     return roomsForQuote > 1 ? t('booking.times', { text: nightsText, rooms: tp('booking.roomsCount', roomsForQuote) }) : nightsText
   }
 
-  // A date among the values (YYYY-MM-DD) is written out in the page language when the message is shown
+  // Mánisler arasındaǵı sana (YYYY-MM-DD) xabar kórsetilgende bet tilinde jazıladı
   const messageValues = (params: Record<string, string | number> | undefined) => params && {
     ...params,
     ...(typeof params.date === 'string' ? { date: formatDate(params.date) } : {}),
@@ -252,7 +252,7 @@ export function BookingPage() {
     && overlapsOwnStay(ownStays, bookingState.checkIn, bookingState.checkOut)
   const quoteErrorText = messageText(quoteError)
 
-  // Redirect if not authenticated
+  // Kirmegen bolsa burıw
   useEffect(() => {
     if (!isAuthenticated && !loading) {
       navigate('/login', { state: { from: location.pathname, state: location.state } })
@@ -266,7 +266,7 @@ export function BookingPage() {
 
   const setField = (name: string, value: string) => {
     setGuestDetails(prev => ({ ...prev, [name]: value }))
-    // Clear validation error for this field
+    // Usı maydan ushın validation qátelikın tazalaw
     if (validationErrors[name]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev }
@@ -276,7 +276,7 @@ export function BookingPage() {
     }
   }
 
-  // Children are part of the guest count and one guest is always an adult
+  // Balalar mehmanlar sanınıń bólegi hám bir mehman hárdayım úlken adam
   const maxChildren = Math.max(0, (bookingState?.guestCount ?? 1) - 1)
 
   const addChild = () => {
@@ -383,7 +383,7 @@ export function BookingPage() {
         return
       }
 
-      // Cash at the hotel: the booking is confirmed at once, there is no payment step
+      // Mehmanxanada naqd: bron birden tastıyıqlanadı, tólem qádemi joq
       setBooking(response.data)
       setStep('success')
       setSubmitting(false)

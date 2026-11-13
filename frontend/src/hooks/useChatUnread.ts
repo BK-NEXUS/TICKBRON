@@ -3,7 +3,7 @@ import { chatAdapter } from '../adapters/chatAdapter'
 
 const REFRESH_MS = 30000
 
-/** The number behind a chat badge; `staff` counts threads waiting for the team, otherwise unread messages for the account. */
+/** Chat belgisi artındaǵı san; `staff` komandanı kútip turǵan thread lerdi sanaydı, bolmasa akkaunt ushın oqılmaǵan xabarlar. */
 export function useChatUnread(enabled: boolean, staff = false) {
   const [count, setCount] = useState(0)
 

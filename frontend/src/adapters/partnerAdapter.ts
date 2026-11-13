@@ -1,5 +1,5 @@
-// Partner API adapter for hotel-owner property management
-// Integrates with backend partner endpoints from Checkpoint 18
+// Mehmanxana iyesi mehmanxanalardı basqarıwı ushın Partner API adapteri
+// Checkpoint 18 degi backend partner endpoint leri menen birlesedi
 
 import { readApiError } from '../utils/errorHandler'
 import { apiFetch, fetchAllPages } from '../utils/api'
@@ -7,13 +7,13 @@ import { translateNow } from '../i18n/translateNow'
 import { API_BASE_URL } from '../utils/apiBase'
 import type { CommissionStatement } from './commissionTypes'
 
-// Property types from backend contract
-/** Hotel name and description per language (uz, ru, en) */
+// Backend contract tan Property túrleri
+/** Hár tildegi (uz, ru, en) mehmanxana atı hám táripleme */
 export type PropertyTexts = Partial<Record<'uz' | 'ru' | 'en', { name: string; description: string }>>
 
 export interface PartnerProperty {
   id: number
-  /** Hotel name (English translation, else any, else the address); read-only */
+  /** Mehmanxana atı (inglizsha awdarma, bolmasa qálegen, bolmasa mánzil); tek oqıw */
   name?: string
   translations?: PropertyTexts
   owner: number
@@ -46,7 +46,7 @@ export interface PartnerProperty {
 }
 
 export interface CreatePropertyRequest {
-  /** At least one language with a name */
+  /** Eń keminde atı bar bir til */
   translations: PropertyTexts
   property_type: number
   max_guests: number
@@ -54,7 +54,7 @@ export interface CreatePropertyRequest {
   bathrooms: number
   address_line1: string
   address_line2?: string
-  /** Geography ids (the old text fields country/state/city are read-only copies) */
+  /** Geografiya id leri (eski tekst maydanlar country/state/city tek oqıw nusqaları) */
   country_ref: number
   region_ref: number
   postal_code?: string
@@ -72,7 +72,7 @@ export interface CreatePropertyRequest {
 }
 
 export interface UpdatePropertyRequest {
-  /** The languages sent are replaced, the others stay */
+  /** Jiberilgen tiller almastırıladı, qalǵanları qaladı */
   translations?: PropertyTexts
   property_type?: number
   max_guests?: number
@@ -96,7 +96,7 @@ export interface UpdatePropertyRequest {
   has_heating?: boolean
 }
 
-// Room Type types from backend contract
+// Backend contract tan Room Type túrleri
 export interface PartnerRoomType {
   id: number
   property: number
@@ -111,7 +111,7 @@ export interface PartnerRoomType {
   bed_configuration: string
   room_size?: number
   is_vip: boolean
-  /** Live photos of the room type, and the cover's address (null without photos) */
+  /** Xona túriniń aktiv súwretleri hám muqabanıń mánzili (súwret joq bolsa null) */
   photos_count: number
   cover_url: string | null
   created_at: string
@@ -121,7 +121,7 @@ export interface PartnerRoomType {
 export interface CreateRoomTypeRequest {
   property: number
   name: string
-  /** Left out by the forms: the server makes it from the name */
+  /** Formalar taslap ketedi: server onı attan jasaydı */
   slug?: string
   description: string
   base_occupancy: number
@@ -148,7 +148,7 @@ export interface UpdateRoomTypeRequest {
   is_vip?: boolean
 }
 
-// Rate Plan types from backend contract
+// Backend contract tan Rate Plan túrleri
 export interface PartnerRatePlan {
   id: number
   room_type: number
@@ -158,7 +158,7 @@ export interface PartnerRatePlan {
   description: string
   base_price: number
   currency: string
-  /** R16: the price the owner entered in each currency (code -> amount string); the main one is `currency` */
+  /** R16: iye hár valyutada kirgizgen baha (kod -> summa qatarı); tiykarǵısı `currency` */
   prices?: Record<string, string>
   min_nights: number
   max_nights: number
@@ -174,11 +174,11 @@ export interface PartnerRatePlan {
 export interface CreateRatePlanRequest {
   room_type: number
   name: string
-  /** Left out by the forms: the server makes it from the name */
+  /** Formalar taslap ketedi: server onı attan jasaydı */
   slug?: string
   rate_type: string
   description: string
-  /** R16: the price in every currency; the backend takes the main price (the hotel's currency) from it */
+  /** R16: hár valyutadaǵı baha; backend tiykarǵı bahanı (mehmanxana valyutası) sonnan aladı */
   prices: Record<string, string>
   min_nights: number
   max_nights: number
@@ -194,7 +194,7 @@ export interface UpdateRatePlanRequest {
   slug?: string
   rate_type?: string
   description?: string
-  /** R16: the price in every currency (the backend sets the main price from it) */
+  /** R16: hár valyutadaǵı baha (backend tiykarǵı bahanı sonnan belgileydi) */
   prices?: Record<string, string>
   min_nights?: number
   max_nights?: number
@@ -205,7 +205,7 @@ export interface UpdateRatePlanRequest {
   advance_booking_days?: number
 }
 
-// Date Inventory types from backend contract
+// Backend contract tan Date Inventory túrleri
 export interface PartnerDateInventory {
   id: number
   rate_plan: number
@@ -215,7 +215,7 @@ export interface PartnerDateInventory {
   price: number
   currency: string
   is_available: boolean
-  minimum_stay: number | null // null: no limit set for this date
+  minimum_stay: number | null // null: usı sana ushın shek belgilenbegen
   maximum_stay: number | null
   notes?: string
   created_at: string
@@ -244,9 +244,9 @@ export interface UpdateDateInventoryRequest {
   notes?: string
 }
 
-// Room Inventory types from backend contract (RoomInventory, audit #31): the room
-// type's real, shared physical room count. DateInventory (above) still holds the price
-// and each rate plan's own rules.
+// Backend contract tan Room Inventory túrleri (RoomInventory, audit #31): xona
+// túriniń haqıyqıy, ortaq fizikalıq xona sanı. DateInventory (joqarıda) ele bahanı
+// hám hár rate plan nıń óz qaǵıydaların saqlaydı.
 export interface PartnerRoomInventory {
   id: number
   room_type: number
@@ -269,7 +269,7 @@ export interface UpdateRoomInventoryRequest {
   is_available?: boolean
 }
 
-/** Prices per day of one rate plan; both dates inclusive */
+/** Bir rate plan nıń kúnlik bahaları; eki sana da kiredi */
 export interface GetDateInventoryParams {
   rate_plan?: number
   date_from?: string
@@ -282,7 +282,7 @@ export interface GetRoomInventoryParams {
   date_to?: string
 }
 
-/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+/** date_to kirmeydi, bronnıń check_in/check_out ı sıyaqlı kelisim. */
 export interface BulkRoomInventoryRequest {
   room_type: number
   date_from: string
@@ -291,7 +291,7 @@ export interface BulkRoomInventoryRequest {
   is_available?: boolean
 }
 
-/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+/** date_to kirmeydi, bronnıń check_in/check_out ı sıyaqlı kelisim. */
 export interface BulkPriceRequest {
   rate_plan: number
   date_from: string
@@ -299,8 +299,8 @@ export interface BulkPriceRequest {
   price: number
 }
 
-// External booking block types from backend contract (RoomBlock, 3.5): rooms taken out
-// of sale for a date range without a TICKBRON booking.
+// Backend contract tan sırtqı bron blok túrleri (RoomBlock, 3.5): TICKBRON broni joq
+// sana aralıǵında satıwdan alınǵan xonalar.
 export interface PartnerBlock {
   id: number
   room_type: number
@@ -312,7 +312,7 @@ export interface PartnerBlock {
   created_at: string
 }
 
-/** date_to is exclusive, same convention as a booking's check_in/check_out. */
+/** date_to kirmeydi, bronnıń check_in/check_out ı sıyaqlı kelisim. */
 export interface CreateBlockRequest {
   room_type: number
   date_from: string
@@ -321,7 +321,7 @@ export interface CreateBlockRequest {
   note: string
 }
 
-// Photo Upload types from backend contract
+// Backend contract tan Photo Upload túrleri
 export interface PropertyPhoto {
   id: number
   photo: string
@@ -340,7 +340,7 @@ export interface UpdatePhotoRequest {
   is_primary?: true
 }
 
-/** The calls the photo manager needs for one hotel or one room type */
+/** Súwret basqarıwshısına bir mehmanxana yamasa bir xona túri ushın kerek shaqırıwlar */
 export interface PhotoApi {
   list(): Promise<ApiResponse<PropertyPhoto[]>>
   upload(data: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>>
@@ -354,7 +354,10 @@ export interface PartnerPropertyType {
   slug: string
 }
 
-/** A public review of one of the owner's hotels (GET /api/v1/partner/reviews/): the reviewer is "Aziz K.", never an address */
+/**
+ * Iyeniń mehmanxanalarınıń biriniń ashıq sharhı (GET /api/v1/partner/reviews/): sharh jazıwshı "Aziz K.", hesh qashan mánzil
+ * emes
+ */
 export interface OwnerReview {
   id: number
   property: number
@@ -375,7 +378,9 @@ export interface OwnerReviewsPage {
   results: OwnerReview[]
 }
 
-/** One ad of an owner's hotel in the banner: how it runs and how people reacted. No price: that stays with the staff. */
+/**
+ * Iyeniń mehmanxanasınıń bannerdegi bir reklaması: qalay isleydi hám adamlar qalay juwap berdi. Baha joq: ol staff ta qaladı.
+ */
 export interface OwnerPromotion {
   id: number
   property: { id: number; name: string }
@@ -388,7 +393,7 @@ export interface OwnerPromotion {
   impressions: number
   clicks: number
   click_rate: string | null
-  /** The open question "did the hotel pay for the next month?": the ad stays visible until `deadline` */
+  /** Ashıq soraw "mehmanxana keyingi ay ushın tóledi me?": reklama `deadline` ǵa shekem kórinip turadı */
   renewal: { ends_on: string; deadline: string; days_left: number } | null
 }
 
@@ -412,7 +417,7 @@ export interface UploadPhotoRequest {
   alt_text?: string
 }
 
-// Partner Booking types from backend contract
+// Backend contract tan Partner Booking túrleri
 export interface PartnerBooking {
   id: number
   guest: number
@@ -431,13 +436,13 @@ export interface PartnerBooking {
   confirmation_code: string
   created_at: string
   updated_at: string
-  /** R12b: true while the owner may still report that the guest did not arrive */
+  /** R12b: iye mehmann kelmegeni haqqında ele xabarlay alatuǵın waqıt true */
   can_report_no_show?: boolean
-  /** Last day (YYYY-MM-DD) the report can be filed; null when not reportable */
+  /** Esabat berile alatuǵın sońǵı kún (YYYY-MM-DD); esabat berip bolmaytuǵın bolsa null */
   report_deadline?: string | null
 }
 
-// API Response types
+// API Response túrleri
 export interface ApiResponse<T> {
   data: T | null
   error: string | null
@@ -450,7 +455,7 @@ class PartnerAdapter {
     this.baseUrl = baseUrl
   }
 
-  /** GET a paginated list endpoint and return the items of every page */
+  /** Betlerge bólingen dizim endpoint ine GET hám hár bettiń elementlerin qaytarıw */
   private async requestAll<T>(endpoint: string): Promise<ApiResponse<T[]>> {
     const { data, error } = await fetchAllPages<T>(`${this.baseUrl}${endpoint}`, {
       errorMessages: { 401: translateNow('apiError.authRequired'), 403: 'Hotel-owner role required', 404: translateNow('apiError.notFound') },
@@ -480,7 +485,7 @@ class PartnerAdapter {
         return { data: null, error: apiError.message }
       }
 
-      // Handle 204 No Content (DELETE operations)
+      // 204 No Content di islew (DELETE ámelleri)
       if (response.status === 204) {
         return { data: null as T, error: null }
       }
@@ -495,11 +500,11 @@ class PartnerAdapter {
     }
   }
 
-  // Property Management Methods
+  // Mehmanxanalardı basqarıw metodları
 
   /**
-   * Create a new property
-   * Integrates with POST /api/v1/partner/properties/ endpoint
+   * Jańa mehmanxana jaratıw
+   * POST /api/v1/partner/properties/ endpoint i menen birlesedi
    */
   async createProperty(propertyData: CreatePropertyRequest): Promise<ApiResponse<PartnerProperty>> {
     return this.request<PartnerProperty>('/api/v1/partner/properties/', {
@@ -509,16 +514,16 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's properties
-   * Integrates with GET /api/v1/partner/properties/ endpoint
+   * Mehmanxana iyesiniń mehmanxanaların dizimlew
+   * GET /api/v1/partner/properties/ endpoint i menen birlesedi
    */
   async getProperties(): Promise<ApiResponse<PartnerProperty[]>> {
     return this.requestAll<PartnerProperty>('/api/v1/partner/properties/')
   }
 
   /**
-   * Update a property
-   * Integrates with PATCH /api/v1/partner/properties/{id}/ endpoint
+   * Mehmanxanani jańalaw
+   * PATCH /api/v1/partner/properties/{id}/ endpoint i menen birlesedi
    */
   async updateProperty(id: number, propertyData: UpdatePropertyRequest): Promise<ApiResponse<PartnerProperty>> {
     return this.request<PartnerProperty>(`/api/v1/partner/properties/${id}/`, {
@@ -528,8 +533,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Delete a property (soft delete)
-   * Integrates with DELETE /api/v1/partner/properties/{id}/ endpoint
+   * Mehmanxananı óshiriw (soft delete)
+   * DELETE /api/v1/partner/properties/{id}/ endpoint i menen birlesedi
    */
   async deleteProperty(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/properties/${id}/`, {
@@ -537,11 +542,11 @@ class PartnerAdapter {
     })
   }
 
-  // Room Type Management Methods
+  // Xona túrin basqarıw metodları
 
   /**
-   * Create a new room type
-   * Integrates with POST /api/v1/partner/rooms/ endpoint
+   * Jańa xona túri jaratıw
+   * POST /api/v1/partner/rooms/ endpoint i menen birlesedi
    */
   async createRoomType(roomTypeData: CreateRoomTypeRequest): Promise<ApiResponse<PartnerRoomType>> {
     return this.request<PartnerRoomType>('/api/v1/partner/rooms/', {
@@ -551,16 +556,16 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's room types
-   * Integrates with GET /api/v1/partner/rooms/ endpoint
+   * Mehmanxana iyesiniń xona túrlerin dizimlew
+   * GET /api/v1/partner/rooms/ endpoint i menen birlesedi
    */
   async getRoomTypes(): Promise<ApiResponse<PartnerRoomType[]>> {
     return this.requestAll<PartnerRoomType>('/api/v1/partner/rooms/')
   }
 
   /**
-   * Update a room type
-   * Integrates with PATCH /api/v1/partner/rooms/{id}/ endpoint
+   * Xona túrin jańalaw
+   * PATCH /api/v1/partner/rooms/{id}/ endpoint i menen birlesedi
    */
   async updateRoomType(id: number, roomTypeData: UpdateRoomTypeRequest): Promise<ApiResponse<PartnerRoomType>> {
     return this.request<PartnerRoomType>(`/api/v1/partner/rooms/${id}/`, {
@@ -570,8 +575,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Delete a room type (soft delete)
-   * Integrates with DELETE /api/v1/partner/rooms/{id}/ endpoint
+   * Xona túrin óshiriw (soft delete)
+   * DELETE /api/v1/partner/rooms/{id}/ endpoint i menen birlesedi
    */
   async deleteRoomType(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/rooms/${id}/`, {
@@ -579,11 +584,11 @@ class PartnerAdapter {
     })
   }
 
-  // Rate Plan Management Methods
+  // Rate plan di basqarıw metodları
 
   /**
-   * Create a new rate plan
-   * Integrates with POST /api/v1/partner/rates/ endpoint
+   * Jańa rate plan jaratıw
+   * POST /api/v1/partner/rates/ endpoint i menen birlesedi
    */
   async createRatePlan(ratePlanData: CreateRatePlanRequest): Promise<ApiResponse<PartnerRatePlan>> {
     return this.request<PartnerRatePlan>('/api/v1/partner/rates/', {
@@ -593,16 +598,16 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's rate plans
-   * Integrates with GET /api/v1/partner/rates/ endpoint
+   * Mehmanxana iyesiniń rate planların dizimlew
+   * GET /api/v1/partner/rates/ endpoint i menen birlesedi
    */
   async getRatePlans(): Promise<ApiResponse<PartnerRatePlan[]>> {
     return this.requestAll<PartnerRatePlan>('/api/v1/partner/rates/')
   }
 
   /**
-   * Update a rate plan
-   * Integrates with PATCH /api/v1/partner/rates/{id}/ endpoint
+   * Rate plan dı jańalaw
+   * PATCH /api/v1/partner/rates/{id}/ endpoint i menen birlesedi
    */
   async updateRatePlan(id: number, ratePlanData: UpdateRatePlanRequest): Promise<ApiResponse<PartnerRatePlan>> {
     return this.request<PartnerRatePlan>(`/api/v1/partner/rates/${id}/`, {
@@ -612,8 +617,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Delete a rate plan (soft delete)
-   * Integrates with DELETE /api/v1/partner/rates/{id}/ endpoint
+   * Rate plan dı óshiriw (soft delete)
+   * DELETE /api/v1/partner/rates/{id}/ endpoint i menen birlesedi
    */
   async deleteRatePlan(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/rates/${id}/`, {
@@ -621,11 +626,11 @@ class PartnerAdapter {
     })
   }
 
-  // Date Inventory Management Methods
+  // Date inventory di basqarıw metodları
 
   /**
-   * Create date inventory
-   * Integrates with POST /api/v1/partner/inventory/ endpoint
+   * Date inventory jaratıw
+   * POST /api/v1/partner/inventory/ endpoint i menen birlesedi
    */
   async createDateInventory(inventoryData: CreateDateInventoryRequest): Promise<ApiResponse<PartnerDateInventory>> {
     return this.request<PartnerDateInventory>('/api/v1/partner/inventory/', {
@@ -635,8 +640,8 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's date inventory
-   * Integrates with GET /api/v1/partner/inventory/ endpoint
+   * Mehmanxana iyesiniń date inventory sın dizimlew
+   * GET /api/v1/partner/inventory/ endpoint i menen birlesedi
    */
   async getDateInventory(params: GetDateInventoryParams = {}): Promise<ApiResponse<PartnerDateInventory[]>> {
     const search = new URLSearchParams()
@@ -648,8 +653,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Update date inventory
-   * Integrates with PATCH /api/v1/partner/inventory/{id}/ endpoint
+   * Date inventory di jańalaw
+   * PATCH /api/v1/partner/inventory/{id}/ endpoint i menen birlesedi
    */
   async updateDateInventory(id: number, inventoryData: UpdateDateInventoryRequest): Promise<ApiResponse<PartnerDateInventory>> {
     return this.request<PartnerDateInventory>(`/api/v1/partner/inventory/${id}/`, {
@@ -659,8 +664,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Delete date inventory (soft delete)
-   * Integrates with DELETE /api/v1/partner/inventory/{id}/ endpoint
+   * Date inventory di óshiriw (soft delete)
+   * DELETE /api/v1/partner/inventory/{id}/ endpoint i menen birlesedi
    */
   async deleteDateInventory(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/inventory/${id}/`, {
@@ -669,8 +674,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Set one rate plan's nightly price over a date range (3.7 bulk price edit)
-   * Integrates with POST /api/v1/partner/inventory/bulk-price/ endpoint
+   * Bir rate plan nıń túngi bahasın sana aralıǵı boyınsha belgilew (3.7 kóp bahanı ózgertiw)
+   * POST /api/v1/partner/inventory/bulk-price/ endpoint i menen birlesedi
    */
   async bulkSetPrice(data: BulkPriceRequest): Promise<ApiResponse<PartnerDateInventory[]>> {
     return this.request<PartnerDateInventory[]>('/api/v1/partner/inventory/bulk-price/', {
@@ -679,11 +684,11 @@ class PartnerAdapter {
     })
   }
 
-  // Room Inventory Management Methods (RoomInventory, audit #31)
+  // Xona inventory sın basqarıw metodları (RoomInventory, audit #31)
 
   /**
-   * Create room inventory
-   * Integrates with POST /api/v1/partner/room-inventory/ endpoint
+   * Xona inventory sın jaratıw
+   * POST /api/v1/partner/room-inventory/ endpoint i menen birlesedi
    */
   async createRoomInventory(data: CreateRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory>> {
     return this.request<PartnerRoomInventory>('/api/v1/partner/room-inventory/', {
@@ -693,8 +698,8 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's room inventory, optionally filtered by room_type/date_from/date_to
-   * Integrates with GET /api/v1/partner/room-inventory/ endpoint
+   * Mehmanxana iyesiniń xona inventory sın dizimlew, ıqtıyarıy room_type/date_from/date_to boyınsha filterlengen
+   * GET /api/v1/partner/room-inventory/ endpoint i menen birlesedi
    */
   async getRoomInventory(params: GetRoomInventoryParams = {}): Promise<ApiResponse<PartnerRoomInventory[]>> {
     const search = new URLSearchParams()
@@ -706,8 +711,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Update room inventory
-   * Integrates with PATCH /api/v1/partner/room-inventory/{id}/ endpoint
+   * Xona inventory sın jańalaw
+   * PATCH /api/v1/partner/room-inventory/{id}/ endpoint i menen birlesedi
    */
   async updateRoomInventory(id: number, data: UpdateRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory>> {
     return this.request<PartnerRoomInventory>(`/api/v1/partner/room-inventory/${id}/`, {
@@ -717,8 +722,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Set available_rooms and/or is_available for a room type over a date range (3.6 calendar)
-   * Integrates with POST /api/v1/partner/room-inventory/bulk/ endpoint
+   * Xona túri ushın available_rooms hám/yamasa is_available di sana aralıǵı boyınsha belgilew (3.6 kalendar)
+   * POST /api/v1/partner/room-inventory/bulk/ endpoint i menen birlesedi
    */
   async bulkSetRoomInventory(data: BulkRoomInventoryRequest): Promise<ApiResponse<PartnerRoomInventory[]>> {
     return this.request<PartnerRoomInventory[]>('/api/v1/partner/room-inventory/bulk/', {
@@ -727,11 +732,11 @@ class PartnerAdapter {
     })
   }
 
-  // External Booking Blocks Methods (RoomBlock, 3.5)
+  // Sırtqı bron bloklarınıń metodları (RoomBlock, 3.5)
 
   /**
-   * Create an external-booking block
-   * Integrates with POST /api/v1/partner/blocks/ endpoint
+   * Sırtqı bron blokın jaratıw
+   * POST /api/v1/partner/blocks/ endpoint i menen birlesedi
    */
   async createBlock(data: CreateBlockRequest): Promise<ApiResponse<PartnerBlock>> {
     return this.request<PartnerBlock>('/api/v1/partner/blocks/', {
@@ -741,8 +746,8 @@ class PartnerAdapter {
   }
 
   /**
-   * List hotel-owner's blocks, optionally filtered by room_type
-   * Integrates with GET /api/v1/partner/blocks/ endpoint
+   * Mehmanxana iyesiniń blokların dizimlew, ıqtıyarıy room_type boyınsha filterlengen
+   * GET /api/v1/partner/blocks/ endpoint i menen birlesedi
    */
   async getBlocks(params: { room_type?: number } = {}): Promise<ApiResponse<PartnerBlock[]>> {
     const search = new URLSearchParams()
@@ -752,8 +757,8 @@ class PartnerAdapter {
   }
 
   /**
-   * Delete (undo) a block: restores the blocked rooms
-   * Integrates with DELETE /api/v1/partner/blocks/{id}/ endpoint
+   * Blokti óshiriw (biykar etiw): bloklanǵan xonalardı qaytaradı
+   * DELETE /api/v1/partner/blocks/{id}/ endpoint i menen birlesedi
    */
   async deleteBlock(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/blocks/${id}/`, {
@@ -762,8 +767,8 @@ class PartnerAdapter {
   }
 
   /**
-   * The hotel says the guest of one of its bookings has arrived (cash at the hotel).
-   * Integrates with POST /api/v1/partner/bookings/{id}/arrived/ endpoint
+   * Mehmanxana óz bronlarınıń birindegi mehmannıń kelgenin aytadı (mehmanxanada naqd).
+   * POST /api/v1/partner/bookings/{id}/arrived/ endpoint i menen birlesedi
    */
   async markGuestArrived(bookingId: number): Promise<ApiResponse<{ id: number; arrived_at: string }>> {
     return this.request<{ id: number; arrived_at: string }>(`/api/v1/partner/bookings/${bookingId}/arrived/`, {
@@ -771,9 +776,9 @@ class PartnerAdapter {
     })
   }
 
-  // Photo Upload Methods
+  // Súwret júklew metodları
 
-  /** The multipart POST both kinds of photo use */
+  /** Eki túrdegi súwret paydalanatuǵın multipart POST */
   private async postPhoto(url: string, photoData: UploadPhotoRequest, notFound: string): Promise<ApiResponse<PropertyPhoto>> {
     const formData = new FormData()
     formData.append('photo', photoData.photo)
@@ -806,19 +811,22 @@ class PartnerAdapter {
   }
 
   /**
-   * Upload property photo
-   * Integrates with POST /api/v1/partner/properties/{id}/photos/ endpoint
+   * Mehmanxana súwretin júklew
+   * POST /api/v1/partner/properties/{id}/photos/ endpoint i menen birlesedi
    */
   async uploadPropertyPhoto(propertyId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
     return this.postPhoto(`/api/v1/partner/properties/${propertyId}/photos/`, photoData, 'Property not found')
   }
 
-  /** GET /api/v1/partner/property-types/: every property type, also those no hotel uses yet */
+  /** GET /api/v1/partner/property-types/: hár mehmanxana túri, ele hesh bir mehmanxana paydalanbaǵanları da */
   async getPropertyTypes(): Promise<ApiResponse<PartnerPropertyType[]>> {
     return this.request<PartnerPropertyType[]>('/api/v1/partner/property-types/')
   }
 
-  /** One page of the approved reviews of the owner's hotels (all, or one with `propertyId`), newest first */
+  /**
+   * Iyeniń mehmanxanalarınıń tastıyıqlanǵan sharhlarınıń bir beti (barlıǵı, yamasa `propertyId` penen biri), eń jańası
+   * birinshi
+   */
   async getReviews({ propertyId, page = 1 }: { propertyId?: number; page?: number } = {}): Promise<ApiResponse<OwnerReviewsPage>> {
     const params = new URLSearchParams({ page: String(page) })
     if (propertyId) params.set('property', String(propertyId))
@@ -829,12 +837,12 @@ class PartnerAdapter {
       : { data: null, error }
   }
 
-  /** GET /api/v1/partner/commission/: the owner's percent, months and (for an account a year old) year totals */
+  /** GET /api/v1/partner/commission/: iyeniń procenti, aylar hám (bir jıllıq akkaunt ushın) jıllıq jıynaqlar */
   async getCommission(): Promise<ApiResponse<CommissionStatement>> {
     return this.request<CommissionStatement>('/api/v1/partner/commission/')
   }
 
-  /** One page of the ads of the owner's hotels, newest first (optionally only one status) */
+  /** Iyeniń mehmanxanaları reklamalarınıń bir beti, eń jańası birinshi (ıqtıyarıy tek bir status) */
   async getPromotions({ status, page = 1 }: { status?: OwnerPromotion['status']; page?: number } = {}): Promise<ApiResponse<OwnerPromotionsPage>> {
     const params = new URLSearchParams({ page: String(page) })
     if (status) params.set('status', status)
@@ -845,27 +853,27 @@ class PartnerAdapter {
       : { data: null, error }
   }
 
-  /** POST /api/v1/partner/reviews/{id}/reply/: write or replace the public answer to a review */
+  /** POST /api/v1/partner/reviews/{id}/reply/: sharhqa ashıq juwaptı jazıw yamasa almastırıw */
   async replyToReview(id: number, text: string): Promise<ApiResponse<OwnerReview>> {
     return this.request<OwnerReview>(`/api/v1/partner/reviews/${id}/reply/`, { method: 'POST', body: JSON.stringify({ text }) })
   }
 
-  /** DELETE /api/v1/partner/reviews/{id}/reply/: take the answer back */
+  /** DELETE /api/v1/partner/reviews/{id}/reply/: juwaptı qaytarıp alıw */
   async deleteReviewReply(id: number): Promise<ApiResponse<null>> {
     return this.request<null>(`/api/v1/partner/reviews/${id}/reply/`, { method: 'DELETE' })
   }
 
-  /** GET /api/v1/partner/assigned-place/: the place the super admin gave this account (all null when none) */
+  /** GET /api/v1/partner/assigned-place/: super admin usı akkauntqa bergen orın (joq bolsa hámmesi null) */
   async getAssignedPlace(): Promise<ApiResponse<AssignedPlace>> {
     return this.request<AssignedPlace>('/api/v1/partner/assigned-place/')
   }
 
-  /** GET /api/v1/partner/properties/{id}/photos/ (a plain list, cover and order as stored) */
+  /** GET /api/v1/partner/properties/{id}/photos/ (ápiwayı dizim, muqaba hám tártip saqlanǵanday) */
   async getPropertyPhotos(propertyId: number): Promise<ApiResponse<PropertyPhoto[]>> {
     return this.request<PropertyPhoto[]>(`/api/v1/partner/properties/${propertyId}/photos/`)
   }
 
-  /** PATCH /api/v1/partner/properties/{id}/photos/{photoId}/ (is_primary can only be set to true) */
+  /** PATCH /api/v1/partner/properties/{id}/photos/{photoId}/ (is_primary tek true ǵa qoyılıwı múmkin) */
   async updatePropertyPhoto(propertyId: number, photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
     return this.request<PropertyPhoto>(`/api/v1/partner/properties/${propertyId}/photos/${photoId}/`, {
       method: 'PATCH',
@@ -880,17 +888,17 @@ class PartnerAdapter {
     })
   }
 
-  /** GET /api/v1/partner/rooms/{id}/photos/ (a plain list, cover and order as stored) */
+  /** GET /api/v1/partner/rooms/{id}/photos/ (ápiwayı dizim, muqaba hám tártip saqlanǵanday) */
   async getRoomPhotos(roomTypeId: number): Promise<ApiResponse<PropertyPhoto[]>> {
     return this.request<PropertyPhoto[]>(`/api/v1/partner/rooms/${roomTypeId}/photos/`)
   }
 
-  /** POST /api/v1/partner/rooms/{id}/photos/ (multipart; the first photo becomes the cover) */
+  /** POST /api/v1/partner/rooms/{id}/photos/ (multipart; birinshi súwret muqaba boladı) */
   async uploadRoomPhoto(roomTypeId: number, photoData: UploadPhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
     return this.postPhoto(`/api/v1/partner/rooms/${roomTypeId}/photos/`, photoData, 'Room type not found')
   }
 
-  /** PATCH /api/v1/partner/rooms/{id}/photos/{photoId}/ (is_primary can only be set to true) */
+  /** PATCH /api/v1/partner/rooms/{id}/photos/{photoId}/ (is_primary tek true ǵa qoyılıwı múmkin) */
   async updateRoomPhoto(roomTypeId: number, photoId: number, data: UpdatePhotoRequest): Promise<ApiResponse<PropertyPhoto>> {
     return this.request<PropertyPhoto>(`/api/v1/partner/rooms/${roomTypeId}/photos/${photoId}/`, {
       method: 'PATCH',
@@ -903,11 +911,11 @@ class PartnerAdapter {
     return this.request<null>(`/api/v1/partner/rooms/${roomTypeId}/photos/${photoId}/`, { method: 'DELETE' })
   }
 
-  // Partner Bookings Methods
+  // Partner bronları metodları
 
   /**
-   * List bookings for hotel-owner's properties
-   * Integrates with GET /api/v1/partner/bookings/ endpoint
+   * Mehmanxana iyesiniń mehmanxanaları bronların dizimlew
+   * GET /api/v1/partner/bookings/ endpoint i menen birlesedi
    */
   async getPartnerBookings(status?: string, paymentStatus?: string, reportableOnly = false): Promise<ApiResponse<PartnerBooking[]>> {
     const params = new URLSearchParams()
@@ -920,8 +928,8 @@ class PartnerAdapter {
   }
 }
 
-// Export singleton instance
+// Singleton nusqasın eksport etiw
 export const partnerAdapter = new PartnerAdapter()
 
-// Export class for testing
+// Testlew ushın klasstı eksport etiw
 export { PartnerAdapter }

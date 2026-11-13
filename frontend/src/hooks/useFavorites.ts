@@ -3,8 +3,8 @@ import { accountAdapter } from '../adapters/accountAdapter'
 import { useAuth } from '../contexts/AuthContext'
 
 /**
- * Favorites of the logged-in user, shared by every heart button on the page.
- * The list is loaded once per user; add/remove keep it in sync.
+ * Kirgen paydalanıwshınıń favorit leri, bettegi hár júrek túymesi ortaq paydalanadı.
+ * Dizim hár paydalanıwshı ushın bir márte júklenedi; qosıw/alıp taslaw onı sinxron saqlaydı.
  */
 let favoriteIdByProperty = new Map<number, number>()
 let loadedForUser: number | null = null
@@ -37,7 +37,7 @@ function ensureLoaded(userId: number) {
   return loading
 }
 
-/** Forget everything (logout, tests). */
+/** Hámmesin umıtıw (shıǵıw, testler). */
 export function resetFavoritesStore() {
   favoriteIdByProperty = new Map()
   loadedForUser = null
@@ -45,12 +45,12 @@ export function resetFavoritesStore() {
   notify()
 }
 
-/** Keep heart buttons in sync when a favorite is removed elsewhere (e.g. the favorites page). */
+/** Favorit basqa jerde (mısalı favorit ler betinde) alıp taslanǵanda júrek túymelerin sinxron saqlaw. */
 export function markFavoriteRemoved(propertyId: number) {
   if (favoriteIdByProperty.delete(propertyId)) notify()
 }
 
-/** useAuth that also works outside an AuthProvider (treated as logged out). */
+/** AuthProvider sırtında da isleytuǵın useAuth (kirmegen dep esaplanadı). */
 function useAuthIfAvailable() {
   try {
     return useAuth()
@@ -82,7 +82,7 @@ export function useFavorites() {
       return true
     }
     const response = await accountAdapter.addFavorite(propertyId)
-    // The create response has no id; reload the list to learn it (also covers "already saved")
+    // Jaratıw juwabında id joq; onı biliw ushın dizimdi qayta júkleń ("aldınan saqlanǵan" jaǵdayın da qaplaydı)
     loading = loadFavorites(userId)
     await loading
     return !response.error
@@ -90,7 +90,7 @@ export function useFavorites() {
 
   return {
     isAuthenticated: userId !== null,
-    /** True while the session is still being checked: the visitor may be logged in already */
+    /** Session ele tekserilip atırǵanda true: kelwshi aldınan kirgen bolıwı múmkin */
     sessionLoading: Boolean(auth?.isLoading),
     isFavorite: (propertyId: number) => favoriteIdByProperty.has(propertyId),
     toggle,

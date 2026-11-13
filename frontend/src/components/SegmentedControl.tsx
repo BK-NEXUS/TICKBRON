@@ -5,7 +5,7 @@ export interface SegmentedOption<T extends string> {
   value: T
   label: ReactNode
   ariaLabel?: string
-  /** id of the panel this tab controls (tabs only) */
+  /** Usı tab basqaratuǵın panel id si (tek tablar ushın) */
   controls?: string
   className?: string
   activeClassName?: string
@@ -16,10 +16,10 @@ interface SegmentedControlProps<T extends string> {
   value: T
   onChange: (value: T) => void
   'aria-label': string
-  /** tabs: a tablist whose arrow keys also select; toggle: a group of pressed buttons */
+  /** tabs: strelka klavishleri de tańlaytuǵın tablist; toggle: basılǵan túymeler toparı */
   mode?: 'tabs' | 'toggle'
   className?: string
-  /** Stretch over the full width, options share it equally */
+  /** Pútkil enge sozıw, variantlar onı teń bóliskenledi */
   fullWidth?: boolean
   disabled?: boolean
 }
@@ -31,7 +31,7 @@ const MOVES: Record<string, (index: number, count: number) => number> = {
   End: (_index, count) => count - 1,
 }
 
-/** White pill container with the active option as a tinted pill. */
+/** Aq tablet konteyner, aktiv variant reńlengen tablet retinde. */
 export function SegmentedControl<T extends string>({
   options, value, onChange, mode = 'toggle', className, fullWidth, disabled, 'aria-label': ariaLabel,
 }: SegmentedControlProps<T>) {

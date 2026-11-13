@@ -1,11 +1,11 @@
-// Commission figures (contract: .ai/API_CONTRACT.md, section "Commission"). Money is always a list per currency.
+// Komissiya sanları (contract: .ai/API_CONTRACT.md, "Commission" bólimi). Pul hárdayım hár valyuta boyınsha dizim.
 
 export interface MoneyLine {
   currency: string
   amount: string
 }
 
-/** Who confirmed that the owner paid a month, and the amounts at that moment */
+/** Iye bir ayın tólegenin kim tastıyıqladı, hám sol waqıttaǵı summalar */
 export interface CommissionPaid {
   by: string
   role: 'super_admin' | 'staff'
@@ -18,7 +18,7 @@ export interface CommissionMonth {
   month: string
   bookings: number
   gross: MoneyLine[]
-  /** null: no percent was set for that month, so there is no commission */
+  /** null: sol ay ushın procent belgilenbegen, sol sebepli komissiya joq */
   percent: string | null
   commission: MoneyLine[] | null
   paid: CommissionPaid | null
@@ -35,7 +35,7 @@ export interface CommissionStatement {
   percent: string | null
   percent_since: string | null
   months: CommissionMonth[]
-  /** Only for an owner account that is at least a year old */
+  /** Tek eń keminde bir jıllıq iye akkaunt ı ushın */
   years: CommissionYear[] | null
 }
 
@@ -46,7 +46,7 @@ export interface CommissionOwnerRow {
   phone_number: string | null
   percent: string | null
   this_month: { month: string; bookings: number; gross: MoneyLine[]; commission: MoneyLine[] | null }
-  /** Commission of ended months that nobody confirmed as paid */
+  /** Hesh kim tólengen dep tastıyıqlamaǵan pitken aylardıń komissiyası */
   unpaid: MoneyLine[]
 }
 

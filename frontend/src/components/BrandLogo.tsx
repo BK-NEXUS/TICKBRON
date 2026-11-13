@@ -1,9 +1,9 @@
 /**
- * Client logo (gold, with a soft shadow) on a transparent background: made from the logo sheet by
- * tools/make_logo.py, so it sits on any page color. Two kinds of artwork: the full lockup with the
- * name for the sign-in pages, and the symbol alone for the header and footer, where the name is
- * written next to it. Each has a dark-theme version (drawn for a dark background); CSS shows the
- * one that matches the theme.
+ * Mijoz logotipi (altın, jumsaq kóleńke menen) tiniq fonda: logotip betinen
+ * tools/make_logo.py arqalı jasalǵan, sol sebepli qálegen bet reńine otıradı. Eki túrli dizayn: kirisiw betleri ushın atı bar
+ * tolıq lockup, hám header hám footer ushın tek belgi, olarda atı janında
+ * jazıladı. Hárbirinde qarańǵı tema nusqası bar (qarańǵı fonǵa salınǵan); CSS temaǵa
+ * sáykes keletuǵının kórsetedi.
  */
 const LOGO_FILES = {
   lockup: { light: '/brand/tickbron-logo.webp', dark: '/brand/tickbron-logo-dark.webp' },
@@ -20,7 +20,7 @@ const ARTWORK: Record<BrandLogoVariant, keyof typeof LOGO_FILES> = {
 
 interface BrandLogoProps {
   variant: BrandLogoVariant
-  /** Empty alt when a visible "TICKBRON" text sits next to the logo */
+  /** Logotip janında kórinetuǵın "TICKBRON" teksti bar bolsa bos alt */
   decorative?: boolean
 }
 

@@ -4,9 +4,9 @@ import { API_BASE_URL } from '../utils/apiBase'
 const CHECK_TIMEOUT_MS = 6000
 
 /**
- * Whether the device is online: what the browser says, followed live through its online and offline events.
- * The browser can be wrong (a Wi-Fi without internet reads "online"; a flaky signal "offline"), so `recheck`
- * asks the server itself and settles it.
+ * Qurılma onlayn ba: brauzer ne dese sol, online hám offline waqıyaları arqalı tikkeley izlenedi.
+ * Brauzer qátelesiwi múmkin (internetsiz Wi-Fi "online" dep oqıladı; turaqsız signal "offline"), sol sebepli `recheck`
+ * serverden ózi soraydı hám sheshedi.
  */
 export function useOnlineStatus() {
   const [online, setOnline] = useState(() => navigator.onLine)
@@ -22,7 +22,7 @@ export function useOnlineStatus() {
     }
   }, [])
 
-  /** True when the server answered. `no-cors`: only reaching it matters, not reading the answer. */
+  /** Server juwap bergen bolsa true. `no-cors`: tek oǵan jetiw áhmiyetli, juwaptı oqıw emes. */
   const recheck = useCallback(async () => {
     const controller = new AbortController()
     const timer = window.setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS)

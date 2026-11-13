@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/I18nContext'
 import { formAccepts } from '../utils/formProblem'
 import { newPasswordProblem, PASSWORD_PROBLEM_MESSAGE } from '../utils/passwordRules'
 
-/** Change the password of the signed-in account. The current password is asked for again. */
+/** Kirgen akkauntiń parolin ózgertiw. Házirgi parol qaytadan soraladı. */
 export function ChangePasswordForm() {
   const { t } = useI18n()
   const [currentPassword, setCurrentPassword] = useState('')

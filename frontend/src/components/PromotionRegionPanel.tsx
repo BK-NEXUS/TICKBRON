@@ -4,20 +4,20 @@ import { promotionAdapter, type PromotionRegion } from '../adapters/promotionAda
 import { geographyName } from '../adapters/geographyAdapter'
 
 interface PromotionRegionPanelProps {
-  /** The region the list below is limited to, or null for all */
+  /** Tómendegi dizim shekemlengen region, yamasa hámmesi ushın null */
   selected: number | null
   onSelect: (regionId: number | null) => void
-  /** Changes when the ads changed, so the counts are read again */
+  /** Reklamalar ózgergende ózgeredi, sonda sanlar qayta oqıladı */
   refreshKey: number
 }
 
-/** The advertising panel by region: how many ads run in each region and which hotels run them. */
+/** Region boyınsha reklama paneli: hár regionda neshe reklama isleydi hám olardı qaysı mehmanxanalar júrgizedi. */
 export function PromotionRegionPanel({ selected, onSelect, refreshKey }: PromotionRegionPanelProps) {
   const { t, language } = useI18n()
   const [regions, setRegions] = useState<PromotionRegion[] | null>(null)
   const [failed, setFailed] = useState(false)
 
-  // Doubles as the Try Again button
+  // Try Again túymesi sıyaqlı isleydi
   const load = useCallback(async () => {
     setFailed(false)
     const result = await promotionAdapter.getRegionPanel()

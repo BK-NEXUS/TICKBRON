@@ -1,5 +1,5 @@
-// Booking API adapter for booking endpoints
-// Integrates with backend booking endpoints from Checkpoint 13-14
+// Bron endpoint leri ushın Booking API adapteri
+// 13-14 Checkpoint degi backend bron endpoint leri menen birlesedi
 
 import { parseApiError } from '../utils/errorHandler'
 import { refusalOf, type Refusal } from '../utils/refusal'
@@ -18,7 +18,7 @@ export interface BookingItem {
   currency: string
 }
 
-/** The CBU rate a booking was charged at (UZS per one unit of the hotel currency) */
+/** Bron alınǵan CBU kursı (mehmanxana valyutasınıń bir birligine UZS) */
 export interface ExchangeRateInfo {
   rate: string
   date: string | null
@@ -53,15 +53,15 @@ export interface Booking {
   booking_items: BookingItem[]
   created_at: string
   updated_at: string
-  /** What the guest is charged, in UZS for bookings made since R6; absent on older bookings (charge = price) */
+  /** Mehmannan alınatuǵın summa, R6 dan beri jasalǵan bronlar ushın UZS de; eski bronlarda joq (alınatuǵın = baha) */
   charge_amount?: string
   charge_currency?: string
   exchange_rate?: ExchangeRateInfo | null
-  /** Cash at the hotel: the time the guest said they will arrive ('10:30:00'); absent on old bookings */
+  /** Mehmanxanada naqd: mehmannıń keletuǵının aytqan waqtı ('10:30:00'); eski bronlarda joq */
   expected_arrival_time?: string | null
-  /** When the hotel marked the guest as arrived */
+  /** Mehmanxana mehmandı kelgen dep belgilegen waqıt */
   arrived_at?: string | null
-  /** After this moment a guest who has not arrived is cancelled */
+  /** Usı waqıttan keyin kelmegen mehmannıń broni biykar etiledi */
   arrival_deadline?: string | null
 }
 
@@ -78,7 +78,7 @@ export interface BookingCreateRequest {
   number_of_rooms?: number
   children?: number[]
   special_requests?: string
-  /** 'HH:MM' on the check-in day (cash at the hotel) */
+  /** Kiriw kúni 'HH:MM' (mehmanxanada naqd) */
   expected_arrival_time: string
 }
 
@@ -144,10 +144,10 @@ class BookingAdapter {
   }
 
   /**
-   * Create a new booking
-   * Integrates with POST /api/v1/bookings/ endpoint
+   * Jańa bron jaratıw
+   * POST /api/v1/bookings/ endpoint i menen birlesedi
    */
-  /** `code` is the backend's machine code of a failure (for example `exchange_rate_unavailable`) */
+  /** `code` backend tiń qátelik mashina kodı (mısalı `exchange_rate_unavailable`) */
   async createBooking(
     request: BookingCreateRequest,
   ): Promise<{ data: Booking | null; error: string | null; code?: string; reason?: Refusal }> {
@@ -158,8 +158,8 @@ class BookingAdapter {
   }
 
   /**
-   * Get bookings for the current user
-   * Integrates with GET /api/v1/bookings/ endpoint
+   * Házirgi paydalanıwshınıń bronların alıw
+   * GET /api/v1/bookings/ endpoint i menen birlesedi
    */
   async getBookings(params?: BookingListParams): Promise<{ data: BookingListResponse | null; error: string | null }> {
     const queryParams = new URLSearchParams()
@@ -174,16 +174,16 @@ class BookingAdapter {
   }
 
   /**
-   * Get a specific booking by ID
-   * Integrates with GET /api/v1/bookings/{id}/ endpoint
+   * Belgili bir bronnı ID boyınsha alıw
+   * GET /api/v1/bookings/{id}/ endpoint i menen birlesedi
    */
   async getBookingById(id: number): Promise<{ data: Booking | null; error: string | null }> {
     return this.request<Booking>(`/api/v1/bookings/${id}/`)
   }
 
   /**
-   * Cancel a booking
-   * Integrates with POST /api/v1/bookings/{id}/cancel/ endpoint
+   * Bronnan bas tartıw
+   * POST /api/v1/bookings/{id}/cancel/ endpoint i menen birlesedi
    */
   async cancelBooking(
     id: number, request?: BookingCancelRequest,
@@ -195,8 +195,8 @@ class BookingAdapter {
   }
 }
 
-// Export singleton instance
+// Singleton nusqasın eksport etiw
 export const bookingAdapter = new BookingAdapter()
 
-// Export class for testing
+// Testlew ushın klasstı eksport etiw
 export { BookingAdapter }

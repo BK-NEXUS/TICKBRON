@@ -15,7 +15,7 @@ export function AdminStatisticsDashboard() {
 
   useEffect(() => {
     loadStatistics()
-  // Reloads when these inputs change; the loader is also the Retry action, so it stays a plain function
+  // Bul kirisiwler ózgergende qayta júkleydi; loader Retry háreketi de, sol sebepli ápiwayı funkciya bolıp qaladı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView])
 
@@ -119,7 +119,7 @@ export function AdminStatisticsDashboard() {
         </div>
 
         <div className="statistics-section">
-          {/* TopBookersLeaderboard renders its own "Top Bookers Leaderboard" heading */}
+          {/* TopBookersLeaderboard óziniń "Top Bookers Leaderboard" tolıq sarlawhasın kórsetedi */}
           <TopBookersLeaderboard period="all_time" limit={10} />
         </div>
       </div>

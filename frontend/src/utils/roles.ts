@@ -1,8 +1,8 @@
 import type { User } from '../adapters/authAdapter'
 
-// Mirrors the backend permission classes: partner.views.IsHotelOwner and
-// admin_panel.views.IsSuperAdminOrStaff. The backend is the real check;
-// these only decide what the UI shows.
+// Backend ruxsat klasların kórsetedi: partner.views.IsHotelOwner hám
+// admin_panel.views.IsSuperAdminOrStaff. Haqıyqıy tekseriw backend te;
+// bular tek UI ne kórsetetuǵının sheshedi.
 
 export const HOTEL_OWNER_ROLE = 'hotel-owner'
 

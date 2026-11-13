@@ -9,7 +9,7 @@ interface StatusCsvButtonProps {
 
 const TEXT_KEYS = textKeys({ export: 'status.exportCsv', exportExcel: 'status.exportExcel', exporting: 'status.exporting' })
 
-/** Downloads a Status CSV or Excel file through the authenticated adapter and shows why it failed */
+/** Status CSV yamasa Excel fayldı autentifikaciya adapteri arqalı júkleydi hám nege sátsiz bolǵanın kórsetedi */
 export function StatusCsvButton({ onExport }: StatusCsvButtonProps) {
   const TEXT = useTexts(TEXT_KEYS)
   const [busy, setBusy] = useState<ExportFormat | null>(null)

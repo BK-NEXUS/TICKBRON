@@ -22,7 +22,7 @@ interface NoShowReportDialogProps {
   onClose: () => void
 }
 
-/** The owner tells staff the guest did not arrive. Staff decide; nothing is refunded here. */
+/** Iye staff qa mehmannıń kelmegenin aytadı. Staff sheshedi; bul jerde hesh nárse qaytarılmaydı. */
 export function NoShowReportDialog({ booking, onReported, onClose }: NoShowReportDialogProps) {
   const { t, formatDate } = useI18n()
   const [comment, setComment] = useState('')

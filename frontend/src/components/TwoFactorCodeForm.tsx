@@ -8,7 +8,7 @@ interface TwoFactorCodeFormProps {
   onBack: () => void
 }
 
-/** Second step of the sign-in: the app's 6 digits, or a backup code when the phone is not at hand. */
+/** Kirisiwdiń ekinshi qádemi: ilovanıń 6 sanı, yamasa telefon qolda bolmasa zapas kod. */
 export function TwoFactorCodeForm({ onSuccess, onBack }: TwoFactorCodeFormProps) {
   const { t } = useI18n()
   const { loginTwoFactor } = useAuth()

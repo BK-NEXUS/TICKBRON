@@ -5,12 +5,12 @@ interface ContainerProps {
 }
 
 /**
- * Responsive container component that adapts to different screen sizes
- * following TICKBRON Plan V4 breakpoints:
- * - 320–767px: mobile
- * - 768–1023px: tablet
- * - 1024–1439px: desktop
- * - 1440px+: large desktop
+ * Túrli ekran ólshemlerine beyimlesetuǵın responsive konteyner komponenti
+ * TICKBRON Plan V4 breakpoint larına muwapıq:
+ * - 320–767px: mobil
+ * - 768–1023px: planshet
+ * - 1024–1439px: kompyuter
+ * - 1440px+: úlken kompyuter
  */
 export function Container({ 
   children, 

@@ -19,14 +19,14 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [eligibleProperties, setEligibleProperties] = useState<EligiblePropertiesResponse | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
-  // What other guests wrote (approved reviews, public): a page at a time
+  // Basqa mehmanlar ne jazdı (tastıyıqlanǵan sharhlar, ashıq): bir waqıtta bir bet
   const [guestReviews, setGuestReviews] = useState<PublicReview[]>([])
   const [guestPage, setGuestPage] = useState(0)
   const [guestHasMore, setGuestHasMore] = useState(false)
   const [guestLoading, setGuestLoading] = useState(true)
   const [guestFailed, setGuestFailed] = useState(false)
   const [loading, setLoading] = useState(true)
-  // A backend message (text) or one of ours (key), so ours follow the page language
+  // Backend xabarı (tekst) yamasa bizdiń biri (kilt), sol sebepli bizdikiler bet tilin izleydi
   const [error, setError] = useState<{ text: string } | { key: MessageKey } | null>(null)
 
   const loadGuestPage = useCallback(async (page: number) => {
@@ -54,7 +54,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
       setError(null)
 
       try {
-        // Load property scores
+        // Mehmanxana bahaların júklew
         const scoresResponse = await accountAdapter.getPropertyScores(propertyId)
         if (scoresResponse.error) {
           setError({ text: scoresResponse.error })
@@ -62,7 +62,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
           setPropertyScores(scoresResponse.data)
         }
 
-        // Load eligible properties if authenticated
+        // Kirgen bolsa sharh jaza alatuǵın mehmanxanalardı júklew
         if (isAuthenticated) {
           const eligibleResponse = await accountAdapter.getEligibleProperties()
           if (eligibleResponse.data) {
@@ -70,11 +70,11 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
           }
         }
 
-        // Load user's reviews
+        // Paydalanıwshınıń sharhların júklew
         if (isAuthenticated) {
           const reviewsResponse = await accountAdapter.getReviews()
           if (reviewsResponse.data) {
-            // Filter reviews for this property
+            // Usı mehmanxana ushın sharhlardı filterlew
             const propertyReviews = reviewsResponse.data.filter(
               (review) => review.property === propertyId
             )
@@ -94,7 +94,7 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
 
   const handleReviewSubmit = () => {
     setShowReviewForm(false)
-    // Reload reviews data
+    // Sharhlar maǵlıwmatın qayta júklew
     const loadReviewsData = async () => {
       try {
         const scoresResponse = await accountAdapter.getPropertyScores(propertyId)
@@ -147,7 +147,8 @@ export function ReviewsSection({ propertyId }: ReviewsSectionProps) {
     )
   }
 
-  // The rating card already says "No reviews yet" for a hotel without reviews: no second, empty "Guest reviews" block
+  // Reyting kartası sharhı joq mehmanxana ushın aldınan "Ele sharh joq" dep aytadı: ekinshi, bos "Mehmanlar sharhları" bloǵı
+  // joq
   const breakdownSaysNone = propertyScores !== null && (!propertyScores.average_rating || propertyScores.total_reviews === 0)
   const showGuestBlock = guestFailed || guestLoading || guestReviews.length > 0 || !breakdownSaysNone
 

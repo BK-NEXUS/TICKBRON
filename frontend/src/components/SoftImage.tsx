@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from 'react'
 
 /**
- * A picture that fades in once its file has loaded (the fade is in the CSS and only runs when motion is allowed).
- * A picture the browser already has, or one that fails to load, is shown at once, so the alt text is never hidden.
+ * Fayli júklengennen keyin ásten payda bolatuǵın súwret (ásten payda bolıw CSS te hám tek háreketke ruxsat berilgende
+ * isleydi).
+ * Brauzerde aldınan bar súwret yamasa júklenbegen súwret birden kórsetiledi, sol sebepli alt teksti hesh qashan jasırılmaydı.
  */
 export function SoftImage({ className, onLoad, onError, ...rest }: ImgHTMLAttributes<HTMLImageElement>) {
   const [loaded, setLoaded] = useState(false)

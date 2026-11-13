@@ -14,10 +14,13 @@ import { AvailabilityCalendar } from './AvailabilityCalendar'
 import { useI18n } from '../i18n/I18nContext'
 import { addDays, businessToday } from '../utils/dates'
 
-/** How far ahead the availability calendar loads, in days */
+/** Bos orın kalendarı neshe kún aldınǵa júkleydi, kúnlerde */
 const AVAILABILITY_DAYS = 90
 
-/** Map a backend inventory row to the calendar's shape. A null price means the rate plan's base price applies. */
+/**
+ * Backend inventory qatarın kalendar formasına sáykeslestiriw. null baha rate plan nıń tiykarǵı bahası qollanılatuǵının
+ * bildiredi.
+ */
 const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan): DateInventory => {
   const bookable = row.is_available && row.remaining_rooms > 0
   return {
@@ -39,14 +42,14 @@ const toCalendarInventory = (row: AvailabilityDateInventory, ratePlan: RatePlan)
 
 interface RoomSelectionProps {
   roomTypes: RoomType[]
-  /** Id of the property being viewed; the backend's room_types[] do not carry it */
+  /** Qaralıp atırǵan mehmanxana id si; backend tiń room_types[] i onı alıp júrmeydi */
   propertyId: number
   currency?: string
 }
 
 /**
- * RoomSelection component for room/rate selection UI
- * Combines room cards, rate plan cards, and availability calendar
+ * Xona/rate tańlaw UI ushın RoomSelection komponenti
+ * Xona kartaların, rate plan kartaların hám bos orın kalendarın birlestiredi
  */
 export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
   const navigate = useNavigate()
@@ -63,7 +66,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
   const [loading, setLoading] = useState(false)
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [availabilityError, setAvailabilityError] = useState<string | null>(null)
-  // Ignore responses for a rate plan the user has already moved away from
+  // Paydalanıwshı aldınan ketken rate plan ushın juwaplardı itibarǵa almaw
   const availabilityRequestId = useRef(0)
 
   const selectedRoom = roomTypes.find(room => room.id === selectedRoomId)
@@ -90,7 +93,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     
     setLoading(true)
     try {
-      // Use rate plans from room_types included in property detail
+      // Mehmanxana tolıq maǵlıwmatına kirgen room_types ten rate plan lardı paydalanıw
       const room = roomTypes.find(r => r.id === roomId)
       if (room) {
         setRatePlans(room.rate_plans || [])
@@ -136,7 +139,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     loadAvailability(ratePlanId)
   }
 
-  /** The backend prices the stay, with the same code that charges for it */
+  /** Backend turıwdı onı alatuǵın birdey kod penen bahalaydı */
   const loadQuote = async (start: string, end: string) => {
     if (selectedRoomId === null || selectedRatePlanId === null) return
     const requestId = ++quoteRequestId.current
@@ -175,10 +178,10 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
 
   const { t, tp, formatMoney: formatAmount, formatDate, currency } = useI18n()
 
-  // The guest changes the currency with a stay already priced: price it again in the new one
+  // Mehmann aldınan bahalanǵan turıw menen valyutanı ózgertedi: jańa valyutada qaytadan bahalaw
   useEffect(() => {
     if (checkIn && checkOut) loadQuote(checkIn, checkOut)
-  // Only the currency triggers it; the range handlers price their own changes
+  // Tek valyuta onı iske túsiredi; aralıq handler leri óz ózgerislerin ózleri bahalaydı
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currency])
   const formatMoney = (amount: string | number, code: string) =>
@@ -203,7 +206,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
     <div className="room-selection" tabIndex={-1}>
       <h2 className="room-selection-title">{t('rooms.select')}</h2>
       
-      {/* Room Types */}
+      {/* Xona túrleri */}
       <div className="room-selection-section">
         <h3 className="room-selection-section-title">{t('rooms.available')}</h3>
         <div className="room-selection-room-cards">
@@ -218,7 +221,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
         </div>
       </div>
 
-      {/* Rate Plans */}
+      {/* Rate plan lar */}
       {selectedRoom && ratePlans.length > 0 && (
         <div className="room-selection-section">
           <h3 className="room-selection-section-title">{t('rooms.ratePlansFor', { room: selectedRoom.name })}</h3>
@@ -242,7 +245,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
         </div>
       )}
 
-      {/* Availability Calendar */}
+      {/* Bos orın kalendarı */}
       {selectedRatePlan && (
         <div className="room-selection-section">
           <h3 className="room-selection-section-title">{t('rooms.calendar')}</h3>
@@ -287,7 +290,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
         </div>
       )}
 
-      {/* Selection Summary */}
+      {/* Tańlaw qısqasha mazmunı */}
       {selectedRoom && selectedRatePlan && checkIn && checkOut && (
         <div className="room-selection-summary">
           <h3 className="room-selection-summary-title">{t('rooms.selection')}</h3>

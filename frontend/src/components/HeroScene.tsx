@@ -1,4 +1,4 @@
-/** Decorative 3D backdrop of the home hero: three gold arches at different depths that turn with the pointer (CSS only). */
+/** Bas bettiń hero bóliminiń bezew 3D fonı: kursordı ılǵı burılatuǵın túrli tereńliktegi úsh altın arka (tek CSS). */
 export function HeroScene() {
   return (
     <div className="hero-scene" aria-hidden="true">

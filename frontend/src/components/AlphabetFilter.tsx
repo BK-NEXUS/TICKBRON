@@ -3,22 +3,22 @@ import { useI18n } from '../i18n/I18nContext'
 import { OTHER_LETTER } from '../utils/alphabet'
 
 const LATIN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-// The Russian alphabet and the four extra letters of Uzbek Cyrillic
+// Rus alfaviti hám ózbek Kirillinin tórt qosımsha háripi
 const CYRILLIC = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЎҚҒҲ'.split('')
 
 type Script = 'latin' | 'cyrillic'
 
 interface AlphabetFilterProps {
-  /** The chosen letter, '#' for names that do not start with a letter, or '' for everything */
+  /** Tańlanǵan háripi, háripten baslanbaytuǵın atlar ushın '#', yamasa hámmesi ushın '' */
   value: string
   onChange: (letter: string) => void
   disabled?: boolean
 }
 
 /**
- * Buttons A-Z (or the Cyrillic letters) that narrow a list of people or hotels to the names starting with a letter.
- * The list does the filtering on the server; this only says which letter. The script follows the page language
- * (Russian shows Cyrillic) and can be switched, because names are written in both.
+ * Adamlar yamasa mehmanxanalar dizimin háripten baslanatuǵın atlarǵa shekemlewshi A-Z (yamasa Kirill háripleri) túymeleri.
+ * Dizim filterlewdi serverde isleydi; bul tek qaysı háripti aytadı. Jazıw bet tiline ılayıq
+ * (rus tilinde Kirill kórsetiledi) hám almastırıw múmkin, sebebi atlar eki jazıwda da jazıladı.
  */
 export function AlphabetFilter({ value, onChange, disabled = false }: AlphabetFilterProps) {
   const { t, language } = useI18n()

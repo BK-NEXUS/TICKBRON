@@ -3,9 +3,9 @@ import { Link } from 'react-router'
 import { Lock } from 'lucide-react'
 
 interface AccessDeniedPageProps {
-  /** What the visitor tried to open */
+  /** Kelwshi neni ashıwǵa urındı */
   area: 'partner' | 'admin'
-  /** Anonymous visitors also get a sign-in link */
+  /** Anonim kelwshiler kirisiw siltemesin de aladı */
   signedIn: boolean
 }
 

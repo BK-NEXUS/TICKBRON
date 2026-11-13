@@ -3,7 +3,7 @@ import { toCoordinates } from './coordinates'
 
 const MAX_RADIUS_KM = 100
 
-/** The map area of a search URL (`lat`, `lng`, `radius` in km); null unless all three are valid. */
+/** Izlew URL ınıń karta aymaǵı (`lat`, `lng`, `radius` km de); úshewi de jaramlı bolmasa null. */
 export function areaFromUrl(params: URLSearchParams): MapArea | null {
   const point = toCoordinates(params.get('lat'), params.get('lng'))
   const radius = Number(params.get('radius'))
@@ -11,7 +11,7 @@ export function areaFromUrl(params: URLSearchParams): MapArea | null {
   return { ...point, radius }
 }
 
-/** A search around the map area replaces the destination text; dates, guests and filters stay. */
+/** Karta aymaǵı átirapındaǵı izlew barar orın tekstin almastıradı; sanalar, mehmanlar hám filterler qaladı. */
 export function areaToUrl(current: URLSearchParams, area: MapArea): URLSearchParams {
   const next = new URLSearchParams(current)
   next.delete('destination')

@@ -1,4 +1,7 @@
-/** Saves a blob as a file through a temporary link (the data was fetched with apiFetch, so auth already applied) */
+/**
+ * Blobtı waqtınsha silteme arqalı fayl retinde saqlaydı (maǵlıwmat apiFetch penen alınǵan, sol sebepli auth aldınan
+ * qollanılǵan)
+ */
 export function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')

@@ -12,7 +12,7 @@ import { RequireAccess } from './components/RequireAccess'
 import { TWO_FACTOR_SETUP_PATH, TwoFactorSetupGate } from './components/TwoFactorSetupGate'
 import { canUseAdminPanel, canUsePartnerPanel } from './utils/roles'
 
-// Lazy load pages for code splitting and performance optimization
+// Kodtı bóliw hám ónimdarlıqtı jaqsılaw ushın betlerdi keyin júklew (lazy load)
 const HomePage = lazy(() => import('./pages/HomePage'))
 const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'))
 const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
@@ -35,7 +35,7 @@ const SupportChatPage = lazy(() => import('./pages/SupportChatPage'))
 const InfoPage = lazy(() => import('./pages/InfoPage'))
 const DestinationsPage = lazy(() => import('./pages/DestinationsPage'))
 
-// Loading component for Suspense fallback
+// Suspense fallback ushın júklew komponenti
 function PageLoader() {
   const { t } = useI18n()
   return <div className="page-loader">{t('common.loading')}</div>

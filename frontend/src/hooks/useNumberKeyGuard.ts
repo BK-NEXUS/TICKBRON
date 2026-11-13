@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { blocksNumberKey } from '../utils/inputFilters'
 
-/** One listener for every number box in the app: no exponent letters or signs (Ctrl/Cmd shortcuts stay). */
+/** Ilovadaǵı hár san qutısı ushın bir listener: eksponent háripleri yamasa belgiler joq (Ctrl/Cmd qısqa jolları qaladı). */
 export function useNumberKeyGuard(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

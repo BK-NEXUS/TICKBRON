@@ -1,5 +1,5 @@
-// "Guest did not arrive" (R12b): the owner's reports and the staff queue.
-// Contract: .ai/API_CONTRACT.md, sections "R12b: no-show reports" and "Cash only".
+// "Mehmann kelmedi" (R12b): iyeniń esabatları hám staff náwbeti.
+// Contract: .ai/API_CONTRACT.md, "R12b: no-show reports" hám "Cash only" bólimleri.
 import { apiFetch } from '../utils/api'
 import { readApiError } from '../utils/errorHandler'
 import { translateNow } from '../i18n/translateNow'
@@ -46,7 +46,7 @@ export interface StaffReportParams extends OwnerReportParams {
   to?: string
 }
 
-/** `code` is the backend's stable error name; `fieldErrors` carries comment validation messages. */
+/** `code` backend tiń turaqlı qátelik atı; `fieldErrors` komment validation xabarların alıp júredi. */
 export interface NoShowResult<T> {
   data: T | null
   error: string | null
@@ -56,7 +56,7 @@ export interface NoShowResult<T> {
 
 const OWNER = '/api/v1/partner'
 const STAFF = '/api/v1/admin-panel/no-show-reports'
-// A getter: the text is chosen when an error happens, in the language the page is in then
+// Getter: tekst qátelik bolǵanda, bet sol waqıtta qaysı tilde bolsa sol tilde tańlanadı
 const STATUS_MESSAGES = {
   get 401() { return translateNow('apiError.authRequired') },
   403: 'Access denied',
@@ -100,7 +100,7 @@ export class NoShowAdapter {
     return this.request<T>(endpoint, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) })
   }
 
-  // Owner
+  // Iye
 
   reportNoShow(bookingId: number, comment: string): Promise<NoShowResult<OwnerNoShowReport>> {
     return this.post(`${OWNER}/bookings/${bookingId}/no-show-report/`, { comment })
@@ -114,7 +114,7 @@ export class NoShowAdapter {
     return this.post(`${OWNER}/no-show-reports/${reportId}/withdraw/`)
   }
 
-  // Staff and super-admin
+  // Staff hám super-admin
 
   listReports(params: StaffReportParams = {}): Promise<NoShowResult<ReportPage<StaffNoShowReport>>> {
     return this.request(withQuery(`${STAFF}/`, { ...params }))

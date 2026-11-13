@@ -1,6 +1,6 @@
-// Mock adapter for search results
-// TODO: Replace with real backend API integration when search endpoint is implemented
-// This adapter provides mock data based on the backend Property models from Backend Checkpoint 05
+// Izlew nátiyjeleri ushın mock adapter
+// TODO: Izlew endpoint i ámelge asırılǵanda haqıyqıy backend API integraciyası menen almastırıń
+// Bul adapter Backend Checkpoint 05 degi backend Property model lerine tiykarlanǵan mock maǵlıwmat beredi
 
 export interface PropertyType {
   id: number
@@ -83,7 +83,7 @@ export interface RoomType {
   total_rooms: number
   bed_configuration: string
   room_size?: number
-  /** R9: set by the hotel owner; VIP rooms come first */
+  /** R9: mehmanxana iyesi belgileydi; VIP xonalar birinshi keledi */
   is_vip?: boolean
 }
 
@@ -181,7 +181,7 @@ export interface SearchResponse {
   has_previous: boolean
 }
 
-// Mock property types based on backend PropertyType model
+// Backend PropertyType modeline tiykarlanǵan mock mehmanxana túrleri
 const MOCK_PROPERTY_TYPES: PropertyType[] = [
   { id: 1, name: 'Apartment', slug: 'apartment' },
   { id: 2, name: 'House', slug: 'house' },
@@ -190,7 +190,7 @@ const MOCK_PROPERTY_TYPES: PropertyType[] = [
   { id: 5, name: 'Condo', slug: 'condo' },
 ]
 
-// Mock properties based on backend Property model structure
+// Backend Property model dúzilisine tiykarlanǵan mock mehmanxanalar
 const MOCK_PROPERTIES: Property[] = [
   {
     id: 1,
@@ -506,7 +506,7 @@ const MOCK_PROPERTIES: Property[] = [
   },
 ]
 
-// Mock amenity categories based on backend AmenityCategory model
+// Backend AmenityCategory modeline tiykarlanǵan mock amenity kategoriyaları
 const MOCK_AMENITY_CATEGORIES: AmenityCategory[] = [
   { id: 1, name: 'Kitchen', slug: 'kitchen', description: 'Kitchen amenities', icon: '', sort_order: 1 },
   { id: 2, name: 'Bathroom', slug: 'bathroom', description: 'Bathroom amenities', icon: '', sort_order: 2 },
@@ -515,7 +515,7 @@ const MOCK_AMENITY_CATEGORIES: AmenityCategory[] = [
   { id: 5, name: 'Outdoor', slug: 'outdoor', description: 'Outdoor spaces', icon: '', sort_order: 5 },
 ]
 
-// Mock amenities based on backend Amenity model
+// Backend Amenity modeline tiykarlanǵan mock amenity ler
 const MOCK_AMENITIES: Amenity[] = [
   { id: 1, category: MOCK_AMENITY_CATEGORIES[0], name: 'WiFi', slug: 'wifi', description: 'High-speed internet', icon: '', is_searchable: true, sort_order: 1 },
   { id: 2, category: MOCK_AMENITY_CATEGORIES[0], name: 'Kitchen', slug: 'kitchen', description: 'Full kitchen', icon: '', is_searchable: true, sort_order: 2 },
@@ -529,7 +529,7 @@ const MOCK_AMENITIES: Amenity[] = [
   { id: 10, category: MOCK_AMENITY_CATEGORIES[0], name: 'Washer', slug: 'washer', description: 'Washing machine', icon: '', is_searchable: true, sort_order: 10 },
 ]
 
-// Mock nearby places
+// Mock jaqındaǵı orınlar
 const MOCK_NEARBY_PLACES: NearbyPlace[] = [
   { id: 1, name: 'Central Park', category: 'Park', distance: 0.3, distance_unit: 'km', rating: 4.8, address: 'Manhattan, NY' },
   { id: 2, name: 'Times Square', category: 'Landmark', distance: 1.2, distance_unit: 'km', rating: 4.5, address: 'Manhattan, NY' },
@@ -538,7 +538,7 @@ const MOCK_NEARBY_PLACES: NearbyPlace[] = [
   { id: 5, name: 'Empire State Building', category: 'Landmark', distance: 1.5, distance_unit: 'km', rating: 4.6, address: 'Manhattan, NY' },
 ]
 
-// Mock restaurants
+// Mock restoranlar
 const MOCK_RESTAURANTS: Restaurant[] = [
   { id: 1, name: 'Le Bernardin', cuisine: 'French', distance: 0.2, distance_unit: 'km', rating: 4.9, price_range: '$$$$', address: '155 W 51st St' },
   { id: 2, name: 'Joe\'s Pizza', cuisine: 'Italian', distance: 0.1, distance_unit: 'km', rating: 4.5, price_range: '$', address: '7 Carmine St' },
@@ -547,7 +547,7 @@ const MOCK_RESTAURANTS: Restaurant[] = [
   { id: 5, name: 'Tatiana by Kwame Onwuachi', cuisine: 'African', distance: 0.6, distance_unit: 'km', rating: 4.6, price_range: '$$$', address: 'Lincoln Center' },
 ]
 
-// Mock room types based on backend RoomType model
+// Backend RoomType modeline tiykarlanǵan mock xona túrleri
 const MOCK_ROOM_TYPES: RoomType[] = [
   {
     id: 1,
@@ -621,7 +621,7 @@ const MOCK_ROOM_TYPES: RoomType[] = [
   },
 ]
 
-// Mock rate plans based on backend RatePlan model
+// Backend RatePlan modeline tiykarlanǵan mock rate plan lar
 const MOCK_RATE_PLANS: RatePlan[] = [
   {
     id: 1,
@@ -701,10 +701,10 @@ const MOCK_RATE_PLANS: RatePlan[] = [
   },
 ]
 
-// Mock date inventory based on backend DateInventory model
+// Backend DateInventory modeline tiykarlanǵan mock date inventory
 const MOCK_DATE_INVENTORY: DateInventory[] = []
 
-// Generate mock date inventory for the next 30 days
+// Keyingi 30 kún ushın mock date inventory jaratıw
 function generateMockDateInventory() {
   const today = new Date()
   const inventory: DateInventory[] = []
@@ -715,7 +715,7 @@ function generateMockDateInventory() {
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0]
       
-      // Random availability between 0 and total rooms
+      // 0 hám jámi xonalar aralıǵında tosınarlıq bos orın
       const availableRooms = Math.floor(Math.random() * 3) + 1
       const bookedRooms = Math.floor(Math.random() * availableRooms)
       
@@ -725,7 +725,7 @@ function generateMockDateInventory() {
         date: dateStr,
         available_rooms: availableRooms,
         booked_rooms: bookedRooms,
-        price: ratePlan.base_price + (Math.random() > 0.7 ? 20 : 0), // Random price variation
+        price: ratePlan.base_price + (Math.random() > 0.7 ? 20 : 0), // Tosınarlıq baha ózgerisi
         currency: ratePlan.currency,
         is_available: availableRooms > bookedRooms,
         minimum_stay: ratePlan.min_nights,
@@ -740,69 +740,69 @@ function generateMockDateInventory() {
 
 MOCK_DATE_INVENTORY.push(...generateMockDateInventory())
 
-// Helper function to get amenities for a property
+// Mehmanxana ushın amenity lerdi alıw járdemshi funkciyası
 function getPropertyAmenities(propertyId: number): PropertyAmenity[] {
-  // For demo purposes, assign different amenities to different properties
+  // Demo maqsetinde túrli mehmanxanalarǵa túrli amenity lerdi beriw
   const baseAmenities = [
     { amenity: MOCK_AMENITIES[0], is_available: true }, // WiFi
-    { amenity: MOCK_AMENITIES[2], is_available: true }, // AC
-    { amenity: MOCK_AMENITIES[3], is_available: true }, // Heating
-    { amenity: MOCK_AMENITIES[5], is_available: true }, // Smoke Alarm
-    { amenity: MOCK_AMENITIES[6], is_available: true }, // First Aid Kit
+    { amenity: MOCK_AMENITIES[2], is_available: true }, // Kondicioner
+    { amenity: MOCK_AMENITIES[3], is_available: true }, // Jılıtıw
+    { amenity: MOCK_AMENITIES[5], is_available: true }, // Tútin signalizaciyası
+    { amenity: MOCK_AMENITIES[6], is_available: true }, // Birinshi járdem apteshkası
   ]
   
-  // Add property-specific amenities
+  // Mehmanxanaǵa tán amenity lerdi qosıw
   if (propertyId === 1) {
     return [
       ...baseAmenities,
-      { amenity: MOCK_AMENITIES[1], is_available: true }, // Kitchen
+      { amenity: MOCK_AMENITIES[1], is_available: true }, // Asxana
       { amenity: MOCK_AMENITIES[4], is_available: true }, // TV
-      { amenity: MOCK_AMENITIES[8], is_available: false }, // Parking (not available)
+      { amenity: MOCK_AMENITIES[8], is_available: false }, // Parking (joq)
     ]
   } else if (propertyId === 2) {
     return [
       ...baseAmenities,
-      { amenity: MOCK_AMENITIES[1], is_available: true }, // Kitchen
+      { amenity: MOCK_AMENITIES[1], is_available: true }, // Asxana
       { amenity: MOCK_AMENITIES[7], is_available: true }, // Parking
-      { amenity: MOCK_AMENITIES[9], is_available: true }, // Washer
+      { amenity: MOCK_AMENITIES[9], is_available: true }, // Kir juwatuǵın mashina
     ]
   }
   
   return baseAmenities
 }
 
-// Helper function to get room types for a property
+// Mehmanxana ushın xona túrlerin alıw járdemshi funkciyası
 function getPropertyRoomTypes(propertyId: number): RoomType[] {
   return MOCK_ROOM_TYPES.filter(room => room.property_id === propertyId)
 }
 
-// Helper function to get rate plans for a room type
+// Xona túri ushın rate plan lardı alıw járdemshi funkciyası
 function getRatePlansForRoomType(roomTypeId: number): RatePlan[] {
   return MOCK_RATE_PLANS.filter(plan => plan.room_type_id === roomTypeId && plan.is_active)
 }
 
-// Helper function to get date inventory for a rate plan
+// Rate plan ushın date inventory di alıw járdemshi funkciyası
 function getDateInventoryForRatePlan(ratePlanId: number): DateInventory[] {
   return MOCK_DATE_INVENTORY.filter(inventory => inventory.rate_plan_id === ratePlanId)
 }
 
 /**
- * Mock search adapter that simulates backend search API
- * This will be replaced by real API integration when the backend search endpoint is implemented
+ * Backend izlew API ın uqsatatuǵın mock izlew adapteri
+ * Backend izlew endpoint i ámelge asırılǵanda ol haqıyqıy API integraciyası menen almastırıladı
  */
 export class SearchAdapter {
   /**
-   * Search properties based on search parameters
-   * @param params - Search parameters from URL state
-   * @returns Promise with search results
+   * Izlew parametrleri boyınsha mehmanxanalardı izlew
+   * @param params - URL jaǵdayınan izlew parametrleri
+   * @returns Izlew nátiyjeleri menen Promise
    */
   static async searchProperties(params: SearchParams): Promise<SearchResponse> {
-    // Simulate API delay
+    // API kechikiwin uqsatıw
     await new Promise(resolve => setTimeout(resolve, 500))
 
     let filteredProperties = [...MOCK_PROPERTIES]
 
-    // Filter by destination (city match)
+    // Barar orın (qala sáykesligi) boyınsha filterlew
     if (params.destination) {
       const destinationLower = params.destination.toLowerCase()
       filteredProperties = filteredProperties.filter(property =>
@@ -812,21 +812,21 @@ export class SearchAdapter {
       )
     }
 
-    // Filter by property type
+    // Mehmanxana túri boyınsha filterlew
     if (params.property_type) {
       filteredProperties = filteredProperties.filter(property =>
         property.property_type.slug === params.property_type
       )
     }
 
-    // Filter by guest capacity
+    // Mehmanlar sıyımlılıǵı boyınsha filterlew
     if (params.guests) {
       filteredProperties = filteredProperties.filter(property =>
         property.max_guests >= params.guests!
       )
     }
 
-    // Filter by price range
+    // Baha aralıǵı boyınsha filterlew
     if (params.min_price !== undefined) {
       filteredProperties = filteredProperties.filter(property =>
         property.base_price >= params.min_price!
@@ -839,7 +839,7 @@ export class SearchAdapter {
       )
     }
 
-    // Filter by amenities
+    // Amenity ler boyınsha filterlew
     if (params.amenities && params.amenities.length > 0) {
       filteredProperties = filteredProperties.filter(property => {
         return params.amenities!.every(amenity => {
@@ -861,7 +861,7 @@ export class SearchAdapter {
       })
     }
 
-    // Sort results
+    // Nátiyjelerdi tártiplew
     if (params.sort_by) {
       switch (params.sort_by) {
         case 'price_low':
@@ -877,7 +877,7 @@ export class SearchAdapter {
           filteredProperties.sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
           break
         default:
-          // Default: relevance (no sorting for mock)
+          // Ádetde: relevance (mock ushın tártiplew joq)
           break
       }
     }
@@ -893,18 +893,18 @@ export class SearchAdapter {
   }
 
   /**
-   * Get property by ID
-   * @param id - Property ID
-   * @returns Promise with property details
+   * Mehmanxananı ID boyınsha alıw
+   * @param id - Mehmanxana ID si
+   * @returns Mehmanxana tolıq maǵlıwmatı menen Promise
    */
   static async getPropertyById(id: number): Promise<Property | null> {
-    // Simulate API delay
+    // API kechikiwin uqsatıw
     await new Promise(resolve => setTimeout(resolve, 300))
 
     const property = MOCK_PROPERTIES.find(p => p.id === id)
     if (!property) return null
 
-    // Add extended data for property detail page
+    // Mehmanxana tolıq maǵlıwmatı beti ushın keńeytilgen maǵlıwmat qosıw
     return {
       ...property,
       amenities: getPropertyAmenities(id),
@@ -915,46 +915,46 @@ export class SearchAdapter {
   }
 
   /**
-   * Get available property types
-   * @returns Promise with property types
+   * Bar mehmanxana túrlerin alıw
+   * @returns Mehmanxana túrleri menen Promise
    */
   static async getPropertyTypes(): Promise<PropertyType[]> {
-    // Simulate API delay
+    // API kechikiwin uqsatıw
     await new Promise(resolve => setTimeout(resolve, 200))
 
     return MOCK_PROPERTY_TYPES
   }
 
   /**
-   * Get rate plans for a room type
-   * @param roomTypeId - Room type ID
-   * @returns Promise with rate plans
+   * Xona túri ushın rate plan lardı alıw
+   * @param roomTypeId - Xona túri ID si
+   * @returns Rate plan lar menen Promise
    */
   static async getRatePlansForRoomType(roomTypeId: number): Promise<RatePlan[]> {
-    // Simulate API delay
+    // API kechikiwin uqsatıw
     await new Promise(resolve => setTimeout(resolve, 200))
 
     return getRatePlansForRoomType(roomTypeId)
   }
 
   /**
-   * Get date inventory for a rate plan
-   * @param ratePlanId - Rate plan ID
-   * @param startDate - Start date (ISO format)
-   * @param endDate - End date (ISO format)
-   * @returns Promise with date inventory
+   * Rate plan ushın date inventory di alıw
+   * @param ratePlanId - Rate plan ID si
+   * @param startDate - Baslanıw sanası (ISO formatı)
+   * @param endDate - Pitiw sanası (ISO formatı)
+   * @returns Date inventory menen Promise
    */
   static async getDateInventoryForRatePlan(
     ratePlanId: number,
     startDate?: string,
     endDate?: string
   ): Promise<DateInventory[]> {
-    // Simulate API delay
+    // API kechikiwin uqsatıw
     await new Promise(resolve => setTimeout(resolve, 200))
 
     let inventory = getDateInventoryForRatePlan(ratePlanId)
 
-    // Filter by date range if provided
+    // Berilgen bolsa sana aralıǵı boyınsha filterlew
     if (startDate) {
       inventory = inventory.filter(item => item.date >= startDate)
     }

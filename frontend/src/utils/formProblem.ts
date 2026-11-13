@@ -11,7 +11,7 @@ export interface FormProblem {
 const isField = (element: Element): element is Field =>
   element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement
 
-/** What the owner sees next to the field: its label without the required star or colon, else aria-label, else name */
+/** Iye maydan janında ne kóredi: májbúriy juldızsız yamasa eki noqatsız belgisi, bolmasa aria-label, bolmasa name */
 function nameOf(field: Field): string {
   const label = field.labels?.[0]?.textContent ?? field.getAttribute('aria-label') ?? field.name
   return label.replace(/\*/g, '').replace(/\s+/g, ' ').trim().replace(/[:：]$/, '').trim()
@@ -25,7 +25,7 @@ function messageFor(field: Field, t: Translate): string | null {
   if (validity.badInput) return t('form.number', { field: name })
   if (validity.rangeUnderflow) return t('form.min', { field: name, min: (field as HTMLInputElement).min })
   if (validity.rangeOverflow) return t('form.max', { field: name, max: (field as HTMLInputElement).max })
-  // The browser flags length only for text the user typed, so the value is measured here
+  // Brauzer uzınlıqtı tek paydalanıwshı tergen tekst ushın belgileydi, sol sebepli mánis usı jerde ólshenedi
   const { value } = field as HTMLInputElement
   const min = Number(field.getAttribute('minlength'))
   const max = field.getAttribute('maxlength')
@@ -36,8 +36,9 @@ function messageFor(field: Field, t: Translate): string | null {
 }
 
 /**
- * The first field (in page order) that breaks the rules the form's inputs declare (required, type,
- * min, max, length, pattern), worded in the page language instead of the browser's own language.
+ * Formanıń kirisiwleri belgilegen qaǵıydanı (required, type, min, max, length, pattern) buzatuǵın birinshi maydan (bet
+ * tártibinde),
+ * brauzerdiń óz tilinde emes, bet tilinde jazılǵan.
  */
 export function firstFormProblem(form: HTMLFormElement, t: Translate): FormProblem | null {
   for (const element of Array.from(form.elements)) {
@@ -49,8 +50,8 @@ export function firstFormProblem(form: HTMLFormElement, t: Translate): FormProbl
 }
 
 /**
- * Call first in a submit handler of a `noValidate` form: true when the form may be sent. Otherwise
- * the problem goes to `report`, the field is focused and the handler should stop.
+ * `noValidate` formanıń submit handler inde birinshi shaqırıń: forma jiberiliwi múmkin bolsa true. Bolmasa
+ * mashqala `report` ke baradı, maydan fokus alıp, handler toqtawı kerek.
  */
 export function formAccepts(form: HTMLFormElement, t: Translate, report: (message: string) => void): boolean {
   const problem = firstFormProblem(form, t)

@@ -1,13 +1,13 @@
 /**
- * Centralized error handling utilities for consistent error management
- * Provides standardized error handling across API adapters and components
+ * Izbe-iz qátelik basqarıwı ushın ortalıqlastırılǵan qátelik islew utility leri
+ * API adapterleri hám komponentler boyınsha standartlastırılǵan qátelik islewdi usınadı
  *
- * The backend returns errors in several shapes (see backend/common/exception_handlers.py):
- *   a) {error: {code, message, details}}   - uniform envelope from the DRF exception handler
- *   b) {error: "text", details?}           - hand-written view responses (booking create, property 404)
+ * Backend qátelikterdi bir neshe formada qaytaradı (qarań backend/common/exception_handlers.py):
+ *   a) {error: {code, message, details}}   - DRF exception handler den birdey konvert
+ *   b) {error: "text", details?}           - qolda jazılǵan view juwapları (bron jaratıw, mehmanxana 404)
  *   c) {detail: "text"}                    - login 401, logout
- *   d) {success: false, message} or raw serializer errors {field: ["text"]} - OTP, register, profile
- * parseApiError reads all of them and always returns a plain string message.
+ *   d) {success: false, message} yamasa tuwrıdan-tuwrı serializer qátelikleri {field: ["text"]} - OTP, register, profile
+ * parseApiError olardıń hámmesin oqıydı hám hárdayım ápiwayı qatar xabar qaytaradı.
  */
 
 import { translateNow } from '../i18n/translateNow'
@@ -21,7 +21,10 @@ export interface ApiError {
   fieldErrors?: Record<string, string[]>
 }
 
-/** Per-status fallback messages for an adapter (e.g. 403 on partner endpoints), used when the server gives no specific one. */
+/**
+ * Adapter ushın hár status boyınsha zapas xabarlar (mısalı partner endpoint lerde 403), server anıq xabar bermegende
+ * paydalanıladı.
+ */
 export type StatusMessages = Partial<Record<number, string>>
 
 const STATUS_KEYS: Record<number, MessageKey> = {
@@ -34,7 +37,7 @@ const STATUS_KEYS: Record<number, MessageKey> = {
   503: 'apiError.503',
 }
 
-// DRF defaults that say nothing useful to a user; the status message is shown instead
+// Paydalanıwshıǵa hesh nárse aytpaytuǵın DRF ádetdegileri; ornına status xabarı kórsetiledi
 const GENERIC_SERVER_MESSAGES = new Set([
   'Authentication credentials were not provided.',
   'You do not have permission to perform this action.',
@@ -42,11 +45,11 @@ const GENERIC_SERVER_MESSAGES = new Set([
 ])
 
 function isGenericServerMessage(message: string): boolean {
-  // get_object_or_404 text, e.g. "No Favorite matches the given query."
+  // get_object_or_404 teksti, mısalı "No Favorite matches the given query."
   return GENERIC_SERVER_MESSAGES.has(message) || /^No \w+ matches the given query\.$/.test(message)
 }
 
-// Keys that are envelope metadata, not form fields
+// Forma maydanları emes, konvert metadata kilt leri
 const NON_FIELD_KEYS = new Set(['detail', 'code', 'error', 'message', 'success', 'details', 'status_code'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,7 +63,7 @@ function toMessages(value: unknown): string[] {
   return []
 }
 
-/** Field errors ({field: ["msg"]}) from a serializer errors dict, ignoring envelope keys. */
+/** Serializer qátelikleri dict inen maydan qátelikleri ({field: ["msg"]}), konvert kilt lerin itibarǵa almay. */
 function extractFieldErrors(data: unknown): Record<string, string[]> | undefined {
   if (!isRecord(data)) return undefined
   const fieldErrors: Record<string, string[]> = {}
@@ -85,18 +88,18 @@ function formatFieldErrors(fieldErrors: Record<string, string[]>): string {
     .join(' ')
 }
 
-/** Pull the server's message, code and field errors out of any of the backend error shapes. */
+/** Serverdiń xabarın, kodın hám maydan qátelikların backend qátelik formalarınıń qálegeninen alıw. */
 function extractServerError(errorData: unknown): { message?: string; code?: string; fieldErrors?: Record<string, string[]> } {
   if (typeof errorData === 'string') {
     return { message: errorData || undefined }
   }
   if (!isRecord(errorData)) return {}
 
-  // a) uniform envelope
+  // a) birdey konvert
   if (isRecord(errorData.error)) {
     const envelope = errorData.error
     const fieldErrors = extractFieldErrors(envelope.details)
-    // For serializer errors the envelope message is a Python repr of the dict, so field errors win
+    // Serializer qátelikleri ushın konvert xabarı dict tiń Python repr ı, sol sebepli maydan qátelikleri jeńedi
     const message = fieldErrors
       ? formatFieldErrors(fieldErrors)
       : typeof envelope.message === 'string' ? envelope.message : undefined
@@ -107,11 +110,11 @@ function extractServerError(errorData: unknown): { message?: string; code?: stri
     }
   }
 
-  // b) flat {error: "text", details}
+  // b) tegis {error: "text", details}
   if (typeof errorData.error === 'string') {
     const fieldErrors = extractFieldErrors(errorData.details)
     const message = fieldErrors ? `${errorData.error.replace(/\.?$/, '.')} ${formatFieldErrors(fieldErrors)}` : errorData.error
-    // The promotions and no-show endpoints send a stable machine-readable `code` next to the text
+    // Reklama hám no-show endpoint leri tekst janında turaqlı mashina oqıytuǵın `code` jiberedi
     const code = typeof errorData.code === 'string' ? errorData.code : undefined
     return { message, code, fieldErrors }
   }
@@ -121,7 +124,7 @@ function extractServerError(errorData: unknown): { message?: string; code?: stri
     return { message: errorData.detail }
   }
 
-  // d) {success: false, message} or raw serializer errors
+  // d) {success: false, message} yamasa tuwrıdan-tuwrı serializer qátelikleri
   if (typeof errorData.message === 'string') {
     return { message: errorData.message }
   }
@@ -139,12 +142,12 @@ function statusMessage(status: number): string {
 }
 
 /**
- * Parse API error response into standardized format
+ * API qátelik juwabın standartlastırılǵan formatqa oqıw
  */
 export function parseApiError(response: Response, errorData?: unknown, overrides: StatusMessages = {}): ApiError {
   const status = response.status
   const server = extractServerError(errorData)
-  // Adapter overrides replace the generic status text, never a specific server message
+  // Adapter almastırıwları ulıwma status tekstin almastıradı, hesh qashan anıq server xabarın emes
   const fallback = overrides[status] ?? statusMessage(status)
   let message: string
 
@@ -154,7 +157,7 @@ export function parseApiError(response: Response, errorData?: unknown, overrides
       ? translateNow('apiError.retryAfter', { seconds: retryAfter })
       : fallback
   } else if (status >= 500) {
-    // Server-side text (exception names, provider errors) is not meant for users
+    // Server tárepindegi tekst (exception atları, provayder qátelikleri) paydalanıwshılar ushın emes
     message = fallback
   } else if (status === 403 && server.message?.startsWith('CSRF Failed')) {
     message = translateNow('apiError.csrf')
@@ -174,20 +177,20 @@ export function parseApiError(response: Response, errorData?: unknown, overrides
 }
 
 /**
- * Read the body of a failed response and parse it. Every adapter uses this for non-2xx responses.
+ * Sátsiz juwaptıń denesin oqıw hám parse etiw. Hár adapter 2xx emes juwaplar ushın usını paydalanadı.
  */
 export async function readApiError(response: Response, overrides: StatusMessages = {}): Promise<ApiError> {
-  // An HTML error page or empty body is not JSON; parseApiError then falls back to the status message
+  // HTML qátelik beti yamasa bos dene JSON emes; parseApiError sonda status xabarına qaytadı
   const errorData: unknown = await response.json().catch(() => undefined)
   return parseApiError(response, errorData, overrides)
 }
 
 /**
- * Handle network errors consistently
+ * Tarmaq qátelikların izbe-iz islew
  */
 export function handleNetworkError(error: unknown): ApiError {
   if (error instanceof Error) {
-    // Check for specific network error types
+    // Belgili tarmaq qátelik túrlerin tekseriw
     if (error.message.includes('fetch')) {
       return {
         message: translateNow('apiError.network'),
@@ -213,7 +216,7 @@ export function handleNetworkError(error: unknown): ApiError {
 }
 
 /**
- * Get user-friendly error message for display
+ * Kórsetiw ushın paydalanıwshıǵa qolaylı qátelik xabarın alıw
  */
 export function getUserErrorMessage(error: ApiError | Error | string): string {
   if (typeof error === 'string') {
@@ -232,7 +235,7 @@ export function getUserErrorMessage(error: ApiError | Error | string): string {
 }
 
 /**
- * Check if error is authentication-related
+ * Qátelik autentifikaciyaǵa baylanıslı ekenin tekseriw
  */
 export function isAuthError(error: ApiError | Error): boolean {
   const status = 'status' in error ? error.status : undefined
@@ -240,7 +243,7 @@ export function isAuthError(error: ApiError | Error): boolean {
 }
 
 /**
- * Check if error is network-related
+ * Qátelik tarmaqqa baylanıslı ekenin tekseriw
  */
 export function isNetworkError(error: ApiError | Error): boolean {
   if ('code' in error) {
@@ -250,7 +253,7 @@ export function isNetworkError(error: ApiError | Error): boolean {
 }
 
 /**
- * Check if error is server-related (5xx)
+ * Qátelik serverge baylanıslı ekenin (5xx) tekseriw
  */
 export function isServerError(error: ApiError | Error): boolean {
   const status = 'status' in error ? error.status : undefined

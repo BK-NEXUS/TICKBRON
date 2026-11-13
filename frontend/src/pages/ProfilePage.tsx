@@ -54,7 +54,7 @@ export function ProfilePage() {
     setError(null)
     setSuccess(false)
 
-    // The number can be changed but not blanked; an old account without one can save other changes
+    // Nomerdi ózgertiw múmkin, biraq bosatıp bolmaydı; nomersiz eski akkaunt basqa ózgerislerdi saqlay aladı
     const phone = editForm.phone_number.trim()
     if (phone ? !isPhoneValid(phone) : Boolean(user?.phone_number)) {
       setError(t('auth.errPhone'))

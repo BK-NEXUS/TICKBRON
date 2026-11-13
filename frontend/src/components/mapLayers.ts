@@ -11,7 +11,7 @@ export interface MapLayerLabels {
   satellite: string
 }
 
-// Browser storage can be blocked: the choice is then only for this map
+// Brauzer saqlawı bloklanǵan bolıwı múmkin: sonda tańlaw tek usı karta ushın
 function storedLayer(): MapLayer {
   try {
     return localStorage.getItem(STORAGE_KEY) === 'satellite' ? 'satellite' : 'street'
@@ -21,13 +21,13 @@ function storedLayer(): MapLayer {
 }
 
 function remember(layer: MapLayer) {
-  try { localStorage.setItem(STORAGE_KEY, layer) } catch { /* the choice just is not remembered */ }
+  try { localStorage.setItem(STORAGE_KEY, layer) } catch { /* tańlaw tek yadta saqlanbaydı */ }
 }
 
 /**
- * The map's pictures: the street map, or satellite pictures chosen with a two-button switch in the
- * corner (as on map sites). The choice is remembered for the next map. A `map--satellite` class on the
- * map lets the styles leave the pictures alone in the dark theme.
+ * Kartanıń súwretleri: kóshe kartası, yamasa buryshtaǵı eki túymeli almastırǵısh penen tańlanatuǵın sputnik
+ * súwretleri (karta saytlarındaǵıday). Tańlaw keyingi karta ushın yadta saqlanadı. Kartadaǵı `map--satellite`
+ * klası stillerge qarańǵı temada súwretlerge tiymewge múmkinshilik beredi.
  */
 export function addBaseLayers(map: L.Map, labels: MapLayerLabels): void {
   const layers: Record<MapLayer, L.TileLayer> = {
@@ -58,7 +58,7 @@ export function addBaseLayers(map: L.Map, labels: MapLayerLabels): void {
       buttons[name] = button
       button.addEventListener('click', () => { if (name !== current) { show(name); remember(name) } })
     }
-    // A click on the switch must not reach the map (it would move it or pick a place)
+    // Almastırǵıshqa klik kartaǵa jetpewi kerek (ol kartanı jılıstırar yamasa orın tańlar edi)
     L.DomEvent.disableClickPropagation(group)
     return group
   }

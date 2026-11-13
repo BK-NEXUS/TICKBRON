@@ -8,12 +8,12 @@ const DARK_QUERY = '(prefers-color-scheme: dark)'
 
 interface ThemeValue {
   theme: Theme
-  /** What is on screen: the chosen theme, or the system setting while none is chosen */
+  /** Ekranda ne bar: tańlanǵan tema, yamasa hesh biri tańlanbaǵanda sistema sazlaması */
   effectiveTheme: EffectiveTheme
   setTheme: (theme: Theme) => void
 }
 
-// Browser storage can be blocked: the choice then lasts only until the page is closed
+// Brauzer saqlawı bloklanǵan bolıwı múmkin: sonda tańlaw tek bet jabılǵansha turadı
 const readStored = (): Theme => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => query.removeEventListener('change', update)
   }, [])
 
-  // "system" leaves the attribute off so the stylesheet's media query decides
+  // "system" atributtı qaldıradı, sonda stylesheet tiń media query si sheshedi
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'system') root.removeAttribute('data-theme')
@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(next)
     try {
       localStorage.setItem(STORAGE_KEY, next)
-    } catch { /* the choice just is not remembered */ }
+    } catch { /* tańlaw tek yadta saqlanbaydı */ }
   }, [])
 
   const value = useMemo<ThemeValue>(

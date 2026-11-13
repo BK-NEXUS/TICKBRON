@@ -23,9 +23,9 @@ import {
 type LoadingState = 'idle' | 'loading' | 'success' | 'error'
 
 /**
- * SearchResultsPage component for displaying search results
- * The search (destination, dates, guests), sidebar filters and sort all live in the URL,
- * so results can be shared, refreshed and reached again with the back button.
+ * Izlew nátiyjelerin kórsetiw ushın SearchResultsPage komponenti
+ * Izlew (barar orın, sanalar, mehmanlar), jan panel filterleri hám tártiplew URL de turadı,
+ * sol sebepli nátiyjelerdi bólisiw, jańalaw hám artqa túymesi menen qayta ashıw múmkin.
  */
 export function SearchResultsPage() {
   const { t, tp, formatDate } = useI18n()
@@ -33,9 +33,9 @@ export function SearchResultsPage() {
   
   const [loadingState, setLoadingState] = useState<LoadingState>('idle')
   const [properties, setProperties] = useState<Property[]>([])
-  // null until the first response; the banner appears only when there is one, and stays while filters change
+  // Birinshi juwapqa shekem null; banner tek bar bolǵanda payda boladı hám filterler ózgergende qaladı
   const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
-  // Phones only: the filters panel is collapsed behind a button
+  // Tek telefonlarda: filterler paneli túyme artında jıyılǵan
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -48,12 +48,12 @@ export function SearchResultsPage() {
     [queryString]
   )
 
-  // The property page's breadcrumb leads back to this exact search (dates, guests, filters, sort)
+  // Mehmanxana betiniń breadcrumb ı dál usı izlewge (sanalar, mehmanlar, filterler, tártip) qaytaradı
   useEffect(() => {
     rememberSearch(queryString)
   }, [queryString])
 
-  // Property types, feature counts and amenities come from the backend
+  // Mehmanxana túrleri, feature sanları hám amenity ler backend ten keledi
   useEffect(() => {
     let cancelled = false
     propertyAdapter.getFilterOptions().then(response => {
@@ -62,14 +62,14 @@ export function SearchResultsPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Load search results whenever the URL changes
+  // URL ózgergen hár waqıtta izlew nátiyjelerin júklew
   useEffect(() => {
     let cancelled = false
     const params = new URLSearchParams(queryString)
     const guests = params.get('guests') ? parseInt(params.get('guests')!, 10) : undefined
     const area = areaFromUrl(params)
     const searchRequest: SearchParams = {
-      // A search around the map area replaces the destination text
+      // Karta aymaǵı átirapındaǵı izlew barar orın tekstin almastıradı
       q: area ? undefined : params.get('destination') || undefined,
       location: area ? undefined : params.get('destination') || undefined,
       ...(area ? { lat: area.lat, lng: area.lng, radius: area.radius } : {}),
@@ -78,7 +78,7 @@ export function SearchResultsPage() {
       min_guests: guests && !isNaN(guests) ? guests : undefined,
       ...filtersToSearchParams(filters, sortBy),
       page: 1,
-      // The map shows every hotel it can; the list stays at one page
+      // Karta ol kórsete alatuǵın hár mehmanxananı kórsetedi; dizim bir bette qaladı
       page_size: view === 'map' ? 100 : 20,
     }
 
@@ -118,7 +118,7 @@ export function SearchResultsPage() {
   }
 
   const handleFiltersChange = (newFilters: FilterState) => {
-    // Typing a price should not add a history entry per keystroke
+    // Bahanı teriw hár basıwǵa tariyx jazbasın qospawı kerek
     const onlyPriceChanged =
       newFilters.property_type === filters.property_type &&
       newFilters.min_rating === filters.min_rating &&
@@ -143,7 +143,7 @@ export function SearchResultsPage() {
     setSearchParams(areaToUrl(new URLSearchParams(queryString), area))
   }
 
-  // Get search context for display
+  // Kórsetiw ushın izlew konteksin alıw
   const inMapArea = areaFromUrl(searchParams) !== null
   const destination = searchParams.get('destination') || t('search.allDestinations')
   const checkIn = searchParams.get('check_in')
@@ -152,7 +152,7 @@ export function SearchResultsPage() {
 
   return (
     <div className="search-results-page">
-      {/* Search Form Header */}
+      {/* Izlew forması header i */}
       <div className="search-results-header">
         <div className="container">
           <div className="search-results-search-form">
@@ -182,15 +182,15 @@ export function SearchResultsPage() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Tiykarǵı mazmun */}
       <div className="search-results-main">
         <div className="container">
-          {/* Paid banners: above the filters and the list, only hotels that match this search */}
+          {/* Tólengen banner ler: filterler hám dizim ústinde, tek usı izlewge sáykes mehmanxanalar */}
           <div className="search-results-promo">
             <PromoCarousel items={promoted ?? []} placeName={searchParams.get('destination') || undefined} />
           </div>
           <div className="search-results-layout">
-            {/* Filters Sidebar */}
+            {/* Filterler jan paneli */}
             <aside
               id="search-results-filters"
               className={`search-results-sidebar${filtersOpen ? ' search-results-sidebar--open' : ''}`}
@@ -206,9 +206,9 @@ export function SearchResultsPage() {
               />
             </aside>
 
-            {/* Results Area */}
+            {/* Nátiyjeler aymaǵı */}
             <main className="search-results-content">
-              {/* Toolbar */}
+              {/* Qural paneli */}
               <div className="search-results-toolbar">
                 <button
                   type="button"
@@ -223,7 +223,7 @@ export function SearchResultsPage() {
                 <ListViewMapView view={view} onViewChange={handleViewChange} />
               </div>
 
-              {/* Loading State */}
+              {/* Júklew jaǵdayı */}
               {loadingState === 'loading' && (
                 <div className="search-results-loading" role="status" aria-live="polite">
                   <div className="search-results-loading-spinner" aria-hidden="true"></div>
@@ -243,7 +243,7 @@ export function SearchResultsPage() {
                 </div>
               )}
 
-              {/* Error State */}
+              {/* Qátelik jaǵdayı */}
               {loadingState === 'error' && (
                 <ErrorState
                   title={t('search.errorTitle')}
@@ -252,7 +252,7 @@ export function SearchResultsPage() {
                 />
               )}
 
-              {/* Empty State */}
+              {/* Bos jaǵday */}
               {loadingState === 'success' && properties.length === 0 && (
                 <EmptyState
                   icon={<SearchX size={40} />}
@@ -263,7 +263,7 @@ export function SearchResultsPage() {
                 />
               )}
 
-              {/* Results Grid */}
+              {/* Nátiyjeler toru */}
               {loadingState === 'success' && properties.length > 0 && (
                 <>
                   {view === 'list' ? (

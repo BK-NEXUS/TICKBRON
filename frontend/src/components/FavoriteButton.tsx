@@ -7,21 +7,21 @@ import { useFavorites } from '../hooks/useFavorites'
 interface FavoriteButtonProps {
   propertyId: number
   propertyName: string
-  /** 'card' sits on a property card, 'detail' next to the property page title */
+  /** 'card' mehmanxana kartasında turadı, 'detail' mehmanxana beti sarlawhası janında */
   variant?: 'card' | 'detail'
 }
 
-/** Heart toggle: saves / removes a property; sends visitors who are not logged in to the login page. */
+/** Júrek almastırǵısh: mehmanxananı saqlaydı / alıp taslaydı; kirmegen kelwshilerdi kirisiw betine jiberedi. */
 export function FavoriteButton({ propertyId, propertyName, variant = 'card' }: FavoriteButtonProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  // While the session is being checked a logged-in guest still looks logged out: do not send them to the login page
+  // Session tekserilip atırǵanda kirgen mehmann ele kirmegen sıyaqlı kórinedi: oǵan kirisiw betine jibermeń
   const { isAuthenticated, sessionLoading, isFavorite, toggle } = useFavorites()
   const [saving, setSaving] = useState(false)
   const saved = isFavorite(propertyId)
 
   const handleClick = async (event: React.MouseEvent) => {
-    // Cards are clickable as a whole; the heart must not open the property
+    // Kartalar pútkil basıladı; júrek mehmanxananı ashpawı kerek
     event.stopPropagation()
     event.preventDefault()
     if (!isAuthenticated) {

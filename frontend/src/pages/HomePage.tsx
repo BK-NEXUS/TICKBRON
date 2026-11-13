@@ -11,16 +11,16 @@ import { useI18n } from '../i18n/I18nContext'
 import { useTilt } from '../hooks/useTilt'
 import { HeroScene } from '../components/HeroScene'
 
-/** How many hotels each list on the home page shows */
+/** Bas bettegi hár dizim neshe mehmanxana kórsetedi */
 const HOTELS_PER_LIST = 8
 
 export function HomePage() {
   const navigate = useNavigate()
   const { t, language } = useI18n()
   const heroRef = useTilt<HTMLElement>(6)
-  // null until the answer arrives, so the banner space is reserved once and then kept or removed
+  // Juwap kelgenshe null, sonda banner orni bir márte rezervlenedi hám saqlanadı yamasa alıp taslanadı
   const [promoted, setPromoted] = useState<PromotedProperty[] | null>(null)
-  // The country the guest opened under "Where to?": the banner then shows the ads of hotels in it
+  // Mehmann "Qayaqqa?" astında ashqan mámleket: banner sonda onıń mehmanxanalarınıń reklamaların kórsetedi
   const [country, setCountry] = useState<GeographyCountry | null>(null)
 
   useEffect(() => {

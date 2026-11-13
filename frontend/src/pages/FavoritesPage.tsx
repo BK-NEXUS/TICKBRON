@@ -9,13 +9,13 @@ import { markFavoriteRemoved } from '../hooks/useFavorites'
 import { priceIn } from '../utils/price'
 import { ErrorState } from '../components/ErrorState'
 
-/** Display name of a favorite: its first translation, else the city */
+/** Favorittiń kórsetiletuǵın atı: birinshi awdarması, bolmasa qala */
 const favoriteName = (favorite: Favorite) => favorite.property_translations?.[0]?.name || favorite.property_city
 
 export function FavoritesPage() {
   const { t, tp, formatMoney, currency } = useI18n()
 
-  // The "from" price in the chosen currency (≈ for a conversion); the hotel's own price when the backend has none
+  // Tańlanǵan valyutadaǵı "dan" bahası (konvertaciya ushın ≈); backend te joq bolsa mehmanxananıń óz bahası
   const priceText = (favorite: Favorite) => {
     const shown = priceIn({
       base_price: Number(favorite.property_base_price), currency: favorite.property_currency, prices: favorite.property_prices,

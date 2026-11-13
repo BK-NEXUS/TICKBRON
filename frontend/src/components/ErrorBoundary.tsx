@@ -12,9 +12,9 @@ interface ErrorBoundaryState {
 }
 
 /**
- * ErrorBoundary component for catching and handling React component errors
- * Provides fallback UI when component trees throw errors
- * Prevents app-wide crashes and improves user experience
+ * React komponent qátelikların tutıw hám islew ushın ErrorBoundary komponenti
+ * Komponent aǵashları qátelik kótergende fallback UI beredi
+ * Pútkil ilovanıń qulawınıń aldın aladı hám paydalanıwshı tájiriybesin jaqsılaydı
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
@@ -27,11 +27,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
+    // Development te qátelikti konsolǵa jazıw
     if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an error:', error, errorInfo)
     }
-    // In production, you could send this to an error tracking service
+    // Production ta buni qátelik izlew xızmetine jiberiwge boladı
   }
 
   render() {

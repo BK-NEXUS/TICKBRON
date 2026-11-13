@@ -1,6 +1,6 @@
 import type { AppNotification } from '../adapters/notificationAdapter'
 
-/** The codes the site has its own uz/ru/en text for (keys `notification.<code>.title` and `.message`) */
+/** Saytta óz uz/ru/en teksti bar kodlar (kilt ler `notification.<code>.title` hám `.message`) */
 const KNOWN_CODES = new Set([
   'booking_confirmed', 'new_booking', 'booking_cancelled_by_guest', 'booking_not_arrived', 'guest_not_arrived',
   'no_show_marked', 'no_show_marked_no_refund', 'no_show_report_approved', 'no_show_report_rejected', 'refund_succeeded',
@@ -10,7 +10,7 @@ const KNOWN_CODES = new Set([
 
 type Translate = (key: string, params?: Record<string, string | number>) => string
 
-/** Title and message in the page language; a notice of an unknown code (or an old one without a code) shows the English fallback */
+/** Bet tilindegi sarlawha hám xabar; belgisiz kodlı (yamasa kodsız eski) xabarlandırıw inglizsha zapas tekstin kórsetedi */
 export function notificationText(notice: AppNotification, t: Translate): { title: string; message: string } {
   if (!notice.code || !KNOWN_CODES.has(notice.code)) return { title: notice.title, message: notice.message }
   const params = notice.params ?? {}
