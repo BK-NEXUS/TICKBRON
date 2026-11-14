@@ -10,6 +10,7 @@ import logging
 from datetime import date, datetime, time, timedelta
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 from accounts.notifications import notify
@@ -57,6 +58,21 @@ def _tell(booking):
     notify(booking.property.owner, 'guest_not_arrived', params, booking=booking)
 
 
+def cancel_if_unarrived(booking):
+    """
+    Cancel the booking unless the hotel marked the guest as arrived in the meantime. True when cancelled.
+
+    The row is locked and re-read first: the copy loaded earlier by the batch may be stale, and a guest
+    who arrived must not lose the room. Qatar qulıplanıp qayta oqıladı: kelgen meymannıń bronı bekarlanbaydı.
+    """
+    with transaction.atomic():
+        booking._lock_row()
+        if booking.arrived_at is not None:
+            return False
+        booking.cancel_booking('no_arrival')
+        return True
+
+
 def cancel_unarrived_bookings(now=None):
     """Cancel every confirmed booking past its arrival deadline. Returns {'cancelled': n, 'failed': n}."""
     now = now or timezone.now()
@@ -71,7 +87,8 @@ def cancel_unarrived_bookings(now=None):
         if deadline is None or deadline > now:
             continue
         try:
-            booking.cancel_booking('no_arrival')
+            if not cancel_if_unarrived(booking):
+                continue
             _tell(booking)
             cancelled += 1
         except Exception:

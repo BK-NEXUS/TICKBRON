@@ -3545,3 +3545,8 @@ master
 - Tests: `common/tests/test_backup_offsite.py`, `common/tests/test_backup_verify.py` (fake docker, restic and curl). `test_backup_script.py` is unchanged.
 - Not done yet (on purpose): A2, continuous archiving of the database (WAL, `pgBackRest` or `WAL-G`) because it needs a real server to test; phases C to F wait for the owner.
 - Needs the owner: the AWS account and buckets, the write-only AWS user, `RESTIC_PASSWORD` kept in two places, a lawyer's answer on where personal data may be stored.
+
+## Security F3: inventory and booking integrity (branch security-f3-1)
+- Oversell closed: block release is capped at `total_rooms` and runs once (row lock); room-inventory DELETE is 405; PATCH cannot go under booked rooms. Migration `properties/0018` repairs existing rows, then adds CHECK `booked_rooms <= available_rooms` and `price IS NULL OR price > 0`.
+- Cancel/expiry floor `booked_rooms` at 0; auto-cancel of unarrived bookings re-reads `arrived_at` under the row lock; inactive room types and over-large totals are 400.
+- Found, not fixed: `bulk_set` still overwrites a block's reduction (the cap stops the oversell, but the block no longer holds its rooms until released).

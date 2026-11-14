@@ -19,6 +19,10 @@ from django.utils.translation import gettext as _
 # Longest stay anyone can quote or book, whatever the rate plan allows. Without it a
 # far-away check_out made quote_stay build (and lock) one row per night (R4 security review).
 MAX_STAY_NIGHTS = 365
+# Largest total a booking can hold: Booking.total_price has 12 digits, and the so'm charge (14 digits) is
+# the total times the dollar rate, so the dollar limit is lower. A bigger total is refused, not a 500.
+# Eń úlken jámi summa: bazadaǵı baǵana sıymasa 500 emes, 400 qaytadı.
+MAX_BOOKING_TOTAL = {'USD': Decimal('10000000'), 'UZS': Decimal('9999999999.99')}
 
 
 @dataclass
@@ -248,6 +252,8 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
     """
     from properties.models import DateInventory
 
+    if not rate_plan.room_type.is_active:
+        raise ValidationError({'room_type_id': _('Room type not found or does not belong to this property')})
     if check_out <= check_in:
         raise ValidationError({'check_out': _('Check-out date must be after check-in date')})
 
@@ -305,4 +311,6 @@ def quote_stay(rate_plan, check_in, check_out, number_of_rooms=1, lock=False):
         quote.nights.append((night, price))
         quote.inventory.append(row)
         quote.room_inventory.append(room_row)
+    if quote.total_price > MAX_BOOKING_TOTAL.get(quote.currency, MAX_BOOKING_TOTAL['USD']):
+        raise ValidationError({'number_of_rooms': _('The total price of this stay is too large.')})
     return quote

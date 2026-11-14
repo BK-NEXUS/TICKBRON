@@ -57,7 +57,7 @@ Core endpoints:
 - POST `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
 - GET `/api/v1/partner/room-inventory/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4; `room_type`/`date_from`/`date_to` filters)
 - PATCH `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
-- DELETE `/api/v1/partner/room-inventory/{id}/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.4)
+- DELETE `/api/v1/partner/room-inventory/{id}/` removed (security F3): always 405 for the owner's own row (404 for another owner's). Close a night with `is_available=false`
 - POST `/api/v1/partner/room-inventory/bulk/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.6)
 - POST `/api/v1/partner/inventory/bulk-price/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.7)
 - POST `/api/v1/partner/blocks/` ✅ IMPLEMENTED (2026-09-29, Phase 3 item 3.5)
@@ -1392,3 +1392,10 @@ Rules live in `backend/common/image_rules.py`; the frontend repeats the numbers 
 - `GET /partner/assigned-place/` answers `{country_ref, region_ref}`; `POST /admin-panel/users/create-hotel-owner/` takes `country_ref` and `region_ref` (both required, they must fit together) and no `city_ref`.
 - `PATCH /admin-panel/properties/{id}/region/` takes `country_ref` and `region_ref` (both null clears them). Advertising (`/admin-panel/promotions/`): the place limit is `country_ref` and `region_ref`; `city_ref` is gone. Status answers have no `city_id`.
 - The admin list of regions has no `city_count`. Search and suggestions match the region and the country in uz/ru/en and the old text fields of hotels that have no dictionary rows.
+
+## Security F3 (inventory and booking integrity)
+- `DELETE /partner/room-inventory/{id}/` answers 405 (a deleted night was re-created at full `total_rooms`, which sold rooms already booked or blocked).
+- `PATCH/PUT /partner/room-inventory/{id}/`: 400 on `available_rooms` when below the night's `booked_rooms`.
+- Nightly prices (`/partner/inventory/` `price`, `/partner/inventory/bulk-price/`): at least 0.01 and at most 100000 (USD) / 99999999 (UZS); otherwise 400 on `price`.
+- Quote and booking: an inactive room type is refused (400 `room_type_id`); a stay whose total is above 10,000,000 USD / 9,999,999,999.99 UZS is refused (400 `number_of_rooms`) instead of a 500.
+- Releasing a block (`DELETE /partner/blocks/{id}/`) never raises `available_rooms` above the room type's `total_rooms` and is applied once.

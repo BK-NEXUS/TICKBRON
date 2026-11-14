@@ -11,6 +11,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import F
+from django.db.models.functions import Greatest
 from django.utils import timezone
 from common.dates import business_today
 from common.models import BaseModel
@@ -449,7 +450,7 @@ class Booking(BaseModel):
         afterwards see the latest committed status, not a stale in-memory copy.
         """
         locked = type(self).objects.select_for_update().get(pk=self.pk)
-        for field in ('status', 'payment_status', 'cancelled_at', 'cancellation_reason', 'expires_at'):
+        for field in ('status', 'payment_status', 'cancelled_at', 'cancellation_reason', 'expires_at', 'arrived_at'):
             setattr(self, field, getattr(locked, field))
 
     def cancel_booking(self, cancellation_reason=None):
@@ -501,8 +502,9 @@ class Booking(BaseModel):
                 ).select_for_update()
 
                 for inventory in inventory_records:
-                    # Decrement booked_rooms
-                    inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
+                    # Never below zero: a count that is already short must not turn the cancel into a 500
+                    # Nolden tómen túspeydi: aldınǵı qáte cancel di 500 qılmasın
+                    inventory.booked_rooms = Greatest(F('booked_rooms') - item.number_of_rooms, 0)
                     inventory.save(update_fields=['booked_rooms'])
 
             # Update booking status
@@ -561,8 +563,9 @@ class Booking(BaseModel):
                 ).select_for_update()
 
                 for inventory in inventory_records:
-                    # Decrement booked_rooms
-                    inventory.booked_rooms = F('booked_rooms') - item.number_of_rooms
+                    # Never below zero: a count that is already short must not turn the cancel into a 500
+                    # Nolden tómen túspeydi: aldınǵı qáte cancel di 500 qılmasın
+                    inventory.booked_rooms = Greatest(F('booked_rooms') - item.number_of_rooms, 0)
                     inventory.save(update_fields=['booked_rooms'])
 
             # Update booking status

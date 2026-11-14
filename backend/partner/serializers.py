@@ -36,6 +36,8 @@ MAX_PHOTOS_PER_ROOM_TYPE = 20
 
 # Sanity limits for the owner forms (a typing slip must not make a room that can never be booked)
 MIN_PRICE = Decimal('0.01')
+# Highest nightly price an owner can type; a slip of the finger must not make a total the booking cannot hold
+MAX_NIGHTLY_PRICE = {'USD': Decimal('100000'), 'UZS': Decimal('99999999')}
 MAX_BEDROOMS = 50
 MAX_BATHROOMS = 20
 MAX_OCCUPANCY = 20
@@ -49,9 +51,12 @@ PROPERTY_LIMITS = {
 
 
 def _check_price_unit(currency, amount, field):
-    """UZS prices are whole so'm (R6)."""
+    """UZS prices are whole so'm (R6); no price is above the nightly ceiling of its currency."""
     if currency == 'UZS' and amount is not None and not is_whole_som(amount):
         raise serializers.ValidationError({field: _("UZS prices must be whole so'm.")})
+    ceiling = MAX_NIGHTLY_PRICE.get(currency)
+    if ceiling is not None and amount is not None and amount > ceiling:
+        raise serializers.ValidationError({field: _('Cannot be more than %(max)s.') % {'max': ceiling}})
 
 
 class PropertyCurrencyMixin:
@@ -515,7 +520,7 @@ class PartnerDateInventorySerializer(ChildCurrencyMixin, serializers.ModelSerial
             'price', 'currency', 'is_available', 'minimum_stay', 'maximum_stay', 'notes'
         ]
         read_only_fields = ['id', 'booked_rooms', 'remaining_rooms']
-        extra_kwargs = {'notes': {'max_length': 500}}
+        extra_kwargs = {'notes': {'max_length': 500}, 'price': {'min_value': MIN_PRICE}}
 
     price_field = 'price'
 
@@ -608,6 +613,11 @@ class PartnerRoomInventorySerializer(serializers.ModelSerializer):
                 'available_rooms': _('Cannot be more than the %(count)s rooms of this room type.') % {
                 'count': room_type.total_rooms}
             })
+        if self.instance is not None and available_rooms is not None and available_rooms < self.instance.booked_rooms:
+            raise serializers.ValidationError({
+                'available_rooms': _('Cannot be less than the %(booked)s room(s) already booked.') % {
+                    'booked': self.instance.booked_rooms}
+            })
         return data
 
 
@@ -640,7 +650,7 @@ class PartnerDateInventoryBulkPriceSerializer(serializers.Serializer):
     rate_plan = serializers.PrimaryKeyRelatedField(queryset=RatePlan.objects.filter(is_deleted=False))
     date_from = serializers.DateField()
     date_to = serializers.DateField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=MIN_PRICE)
 
     def validate_rate_plan(self, value):
         request = self.context.get('request')

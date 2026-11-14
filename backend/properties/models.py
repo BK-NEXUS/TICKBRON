@@ -6,6 +6,7 @@ This module contains models for properties, translations, policies, and related 
 from datetime import timedelta
 from django.db import models, transaction, IntegrityError
 from django.db.models import F
+from django.db.models.functions import Least
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
@@ -1052,6 +1053,14 @@ class DateInventory(BaseModel):
             models.Index(fields=['is_available']),
             models.Index(fields=['available_rooms']),
         ]
+        constraints = [
+            # A nightly price of 0 would be a free stay; empty means "use the rate plan's base price"
+            # Bahası 0 bolsa mehmanxana tegin bolıp qaladı; bos mánisi: rate plan nıń tiykarǵı bahası alınadı
+            models.CheckConstraint(
+                condition=models.Q(price__isnull=True) | models.Q(price__gt=0),
+                name='date_inventory_price_positive',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.rate_plan.name} - {self.date} ({self.available_rooms} available)"
@@ -1165,6 +1174,15 @@ class RoomInventory(BaseModel):
         ordering = ['room_type', 'date']
         indexes = [
             models.Index(fields=['room_type', 'date']),
+        ]
+        constraints = [
+            # Last line of defence against selling a room twice: whatever code path runs, booked can
+            # never pass what is for sale (negative values are already refused by PositiveIntegerField)
+            # Eń sońǵı qorǵaw: qaysı kod islese de, bronlanǵan xona satıwdaǵı xonadan asıp ketpeydi
+            models.CheckConstraint(
+                condition=models.Q(booked_rooms__lte=models.F('available_rooms')),
+                name='room_inventory_booked_lte_available',
+            ),
         ]
 
     def __str__(self):
@@ -1359,13 +1377,22 @@ class RoomBlock(BaseModel):
             return block
 
     def release(self):
-        """Undo: restore the blocked rooms to RoomInventory and soft-delete the block."""
+        """
+        Undo: restore the blocked rooms to RoomInventory and soft-delete the block.
+
+        The block row is locked and checked first so two simultaneous releases (a double click, a retry)
+        restore the rooms once, and the restored count is capped at the room type's total_rooms: bulk_set
+        may already have overwritten the block's reduction, and "for sale" can never pass what the hotel has.
+        Blok qatarı qulıplanadı: eki birdey release xonanı bir márte qaytaradı; sanı total_rooms den aspaydı.
+        """
         nights = list(self._nights())
         with transaction.atomic():
+            if type(self).objects.select_for_update().get(pk=self.pk).is_deleted:
+                return
             rows = RoomInventory.objects.filter(
                 room_type=self.room_type, date__in=nights
             ).select_for_update()
             for row in rows:
-                row.available_rooms = F('available_rooms') + self.rooms
+                row.available_rooms = Least(F('available_rooms') + self.rooms, self.room_type.total_rooms)
                 row.save(update_fields=['available_rooms'])
             self.soft_delete()

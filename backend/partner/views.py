@@ -11,7 +11,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import routers, viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import MethodNotAllowed, ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
@@ -289,6 +289,16 @@ class PartnerRoomInventoryViewSet(viewsets.ModelViewSet):
         if 'date_to' in dates:
             queryset = queryset.filter(date__lte=dates['date_to'])
         return queryset
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        A night's row is never deleted: it holds the booked and blocked rooms, and a missing row is
+        re-created at the full total_rooms, which would sell rooms that are already taken. Close the
+        night with is_available=false instead. Another owner's row is still a 404.
+        Qatar óshirilmeydi: óshirilse qaytadan tolıq sanda jaratıladı hám bronlanǵan xonalar qayta satıladı.
+        """
+        self.get_object()
+        raise MethodNotAllowed(request.method)
 
     @action(detail=False, methods=['post'])
     def bulk(self, request):
