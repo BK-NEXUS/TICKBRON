@@ -41,3 +41,5 @@ max_requests_jitter = max_requests // 10  # so the processes are not all replace
 # In a container the files the processes use to say they are alive belong in memory: a slow disk freezes the server
 worker_tmp_dir = '/dev/shm'
 accesslog = '-'
+# Behind Caddy the connection always comes from the proxy (%(h)s), the real visitor is in X-Forwarded-For
+access_log_format = '%({x-forwarded-for}i)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'

@@ -17,6 +17,12 @@ mkdir -p backups
 
 # The optional settings of the outside copy and of the failure notice (plain KEY=value lines, written by the owner)
 if [ -f deploy/offsite.env ]; then
+  # The file is run as shell, so whoever can change it could run commands here: refuse it unless only its owner (this
+  # user) can read or write it
+  if [ -n "$(find deploy/offsite.env \( -perm -g=r -o -perm -g=w -o -perm -o=r -o -perm -o=w -o ! -user "$(id -un)" \) 2>/dev/null)" ]; then
+    echo "Refused: deploy/offsite.env must belong to this user and be private (chmod 600 deploy/offsite.env)" >&2
+    exit 1
+  fi
   set -a
   # shellcheck disable=SC1091
   . deploy/offsite.env

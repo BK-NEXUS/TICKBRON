@@ -11,6 +11,12 @@ if [ ! -f deploy/offsite.env ]; then
   echo "Cannot verify: deploy/offsite.env is missing (see deploy/offsite.env.example)" >&2
   exit 1
 fi
+# The file is run as shell, so whoever can change it could run commands here: refuse it unless only its owner (this
+# user) can read or write it
+if [ -n "$(find deploy/offsite.env \( -perm -g=r -o -perm -g=w -o -perm -o=r -o -perm -o=w -o ! -user "$(id -un)" \) 2>/dev/null)" ]; then
+  echo "Refused: deploy/offsite.env must belong to this user and be private (chmod 600 deploy/offsite.env)" >&2
+  exit 1
+fi
 set -a
 # shellcheck disable=SC1091
 . deploy/offsite.env
@@ -32,3 +38,6 @@ gzip -t "$media"
 docker compose exec -T db pg_restore --list < "$db" >/dev/null
 
 echo "Offsite backup verified: $(basename "$db") and $(basename "$media") can be read"
+# .env is deliberately not in the backup (it holds the keys). Without SECRET_KEY and TWO_FACTOR_KEY a restored database
+# cannot read the stored two-factor secrets, so a copy of .env must be kept elsewhere (password manager)
+echo "Reminder: .env (SECRET_KEY, TWO_FACTOR_KEY) is NOT in this backup. Keep a separate copy in the password manager."

@@ -31,7 +31,7 @@ server {
     client_max_body_size 1m;   # JSON API; the photo upload location below raises it
 
     # Headers for every response, SPA and media included. `always` keeps them on error pages too.
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Cross-Origin-Opener-Policy "same-origin" always;
@@ -46,7 +46,7 @@ server {
         try_files $uri /index.html;
         add_header Cache-Control "no-cache" always;
         add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;
         add_header Cross-Origin-Opener-Policy "same-origin" always;
@@ -59,7 +59,7 @@ server {
         root /var/www/tickbron/frontend/dist;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
         add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;
         add_header Cross-Origin-Opener-Policy "same-origin" always;
@@ -104,6 +104,6 @@ server {
         add_header Cache-Control "public, max-age=86400" always;  # a photo can be replaced under the same name
         add_header X-Content-Type-Options "nosniff" always;
         add_header Content-Security-Policy "default-src 'none'; sandbox" always;
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
     }
 }

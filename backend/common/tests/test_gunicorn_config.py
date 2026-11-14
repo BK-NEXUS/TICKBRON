@@ -56,3 +56,9 @@ def test_the_image_starts_gunicorn_with_this_file():
     dockerfile = (CONFIG.parent / 'Dockerfile').read_text()
     assert '"-c", "gunicorn.conf.py"' in dockerfile
     assert '"--workers"' not in dockerfile  # san tek konfiguraciya faylında turadı
+
+
+def test_the_access_log_names_the_real_visitor_not_the_proxy(monkeypatch):
+    # Caddy aldında bolǵanlıqtan %(h)s hámme waqıt proxy diń mánzili; haqıyqıy mánzil X-Forwarded-For ta
+    fmt = load(monkeypatch)['access_log_format']
+    assert '%({x-forwarded-for}i)s' in fmt

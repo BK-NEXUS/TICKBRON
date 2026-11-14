@@ -54,6 +54,7 @@ def server(tmp_path):
 
 def configure(server, text):
     (server / 'deploy' / 'offsite.env').write_text(text)
+    (server / 'deploy' / 'offsite.env').chmod(0o600)
 
 
 def run(server, **env):
@@ -142,3 +143,16 @@ def test_the_passwords_and_keys_are_never_printed(server):
         shown = result.stdout + result.stderr
         for secret in ('very-secret-repository-password', 'very-secret-access-key', 'AKIAFAKEFAKEFAKE', 'secret-bot-token'):
             assert secret not in shown
+
+
+def test_a_settings_file_that_others_can_read_is_refused_and_never_run(server):
+    # offsite.env shell retinde isletiledi: basqa paydalanıwshı jaza alsa, ol serverde komanda isletedi
+    configure(server, OFFSITE + 'touch "$PWD/pwned"' + chr(10))
+    (server / 'deploy' / 'offsite.env').chmod(0o666)
+
+    result = run(server)
+
+    assert result.returncode != 0
+    assert 'chmod 600' in result.stderr
+    assert not (server / 'pwned').exists()
+    assert 'restic' not in log(server)

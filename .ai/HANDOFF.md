@@ -3545,3 +3545,10 @@ master
 - Tests: `common/tests/test_backup_offsite.py`, `common/tests/test_backup_verify.py` (fake docker, restic and curl). `test_backup_script.py` is unchanged.
 - Not done yet (on purpose): A2, continuous archiving of the database (WAL, `pgBackRest` or `WAL-G`) because it needs a real server to test; phases C to F wait for the owner.
 - Needs the owner: the AWS account and buckets, the write-only AWS user, `RESTIC_PASSWORD` kept in two places, a lawyer's answer on where personal data may be stored.
+
+## Security fixes F8: deploy and ops (2026-11-14)
+- Compose: `applogs` volume on `/app/logs` for web and worker (the audit trail survives a recreate); `migrate` gets `PGOPTIONS=-c lock_timeout=10s`; worker `--concurrency=${CELERY_CONCURRENCY:-2}` (in `deploy/docker.env.example`). Gunicorn access log prints `X-Forwarded-For`. HSTS no longer has `includeSubDomains` (Caddy and the nginx example).
+- `deploy/backup.sh` and `deploy/verify_backup.sh` refuse `deploy/offsite.env` unless it is private and owned by the running user (it is run as shell); `verify_backup.sh` reminds that `.env` (SECRET_KEY, TWO_FACTOR_KEY) is not in the backup. `.ai/DEPLOY_DOCKER.md`: .env checklist, cron time zone, CDN/NUM_PROXIES warning, dump.rdb owner decision (history NOT rewritten).
+- Tests: `common/tests/test_docker_files.py` (TestOpsHardening), `test_gunicorn_config.py`, `test_backup_offsite.py`, `test_backup_verify.py` (the two "others can read" tests need real POSIX permissions: they fail on Windows like `test_backup_script` permissions). The backup fixtures now `chmod 600` offsite.env, assertions unchanged.
+- Found, not fixed: `backend/config/logging_config.py` already writes to `/app/logs`, no change needed there; WAL archiving (A2) still open.
+

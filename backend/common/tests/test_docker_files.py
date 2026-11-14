@@ -122,6 +122,28 @@ class TestCompose:
         assert used <= env_keys(ENV_EXAMPLE), sorted(used - env_keys(ENV_EXAMPLE))
 
 
+class TestOpsHardening:
+    def test_log_files_survive_a_container_recreate(self, compose):
+        # security.log audit izi: konteyner qayta jaratılsa joǵalmawı kerek
+        for name in ('web', 'worker'):
+            assert any(str(v).endswith(':/app/logs') for v in compose['services'][name]['volumes']), name
+        assert 'applogs' in compose['volumes']
+
+    def test_a_migration_gives_up_waiting_for_a_table_lock(self, compose):
+        # lock_timeout siz uzaq so'rov migratsiyani (hám sonıń artınan barlıq sorawlardı) toqtatıp qoyadı
+        assert 'lock_timeout' in compose['services']['migrate']['environment']['PGOPTIONS']
+
+    def test_the_celery_worker_has_a_set_number_of_processes(self, compose):
+        assert any(str(part).startswith('--concurrency=') for part in compose['services']['worker']['command'])
+
+    @pytest.mark.parametrize('path', [CADDYFILE, NGINX_EXAMPLE], ids=['caddy', 'nginx'])
+    def test_hsts_does_not_pin_every_subdomain_to_https(self, path):
+        # basqa subdomain (mail, test) HTTPS siz islewi múmkin; includeSubDomains olardı bir jılǵa jabadı
+        text = path.read_text()
+        assert 'Strict-Transport-Security' in text
+        assert 'includeSubDomains' not in text
+
+
 class TestImages:
     def test_backend_runs_gunicorn_as_a_normal_user(self):
         text = (REPO / 'backend' / 'Dockerfile').read_text()

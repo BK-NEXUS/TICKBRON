@@ -48,6 +48,7 @@ def server(tmp_path):
     good = tmp_path / 'media.tar.gz'
     good.write_bytes(gzip.compress(b'fake-tar-stream'))
     (tmp_path / 'deploy' / 'offsite.env').write_text(OFFSITE)
+    (tmp_path / 'deploy' / 'offsite.env').chmod(0o600)
     return tmp_path
 
 
@@ -115,3 +116,26 @@ def test_the_temporary_restore_folder_is_removed_and_no_secret_is_printed(server
     assert result.returncode == 0, result.stderr
     assert 'very-secret-repository-password' not in result.stdout + result.stderr
     assert list(scratch.iterdir()) == []
+
+
+def test_a_settings_file_that_others_can_read_is_refused_and_never_run(server):
+    # offsite.env shell retinde isletiledi: basqa paydalanıwshı jaza alsa, ol serverde komanda isletedi
+    env = server / 'deploy' / 'offsite.env'
+    env.write_text(OFFSITE + 'touch "$PWD/pwned"' + chr(10))
+    env.chmod(0o666)
+
+    result = run(server)
+
+    assert result.returncode != 0
+    assert 'chmod 600' in result.stderr
+    assert not (server / 'pwned').exists()
+    assert not (server / 'log.txt').exists()
+
+
+def test_a_good_run_reminds_that_the_env_file_is_not_in_the_backup(server):
+    # .env (SECRET_KEY, TWO_FACTOR_KEY) nusqada joq: onsız dump tiklense de 2FA kilt'leri oqılmaydı
+    result = run(server)
+
+    assert result.returncode == 0, result.stderr
+    assert '.env' in result.stdout
+    assert 'TWO_FACTOR_KEY' in result.stdout

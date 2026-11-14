@@ -157,6 +157,9 @@ sh deploy/backup.sh                # sınap kóriw: "Offsite copy done" shıǵı
 - `deploy/offsite.env` git'te joq. `RESTIC_PASSWORD` ti **eki jerde** saqlań (parol menejeri hám qaǵazda): onsız nusqalardı hesh kim tiklep almaydı.
 - AWS user tek usı bucket'ke **jazıw** huqıqına iye bolsın (óshiriw huqıqısız); bucket private, versioning yoq.
 - Saqlaw: 14 kún + 8 hápte + 6 ay (`KEEP_DAILY`, `KEEP_WEEKLY`, `KEEP_MONTHLY`).
+- `deploy/offsite.env` shell retinde isletiledi, sol sebepli skriptler ol tek ózińizge tiyisli hám `chmod 600` bolmasa isleytuǵın emes ("Refused").
+- **`.env` nusqaǵa kirmeydi** (ishinde `SECRET_KEY` hám `TWO_FACTOR_KEY` bar). Onsız tiklengen database degi 2FA sırları oqılmaydı: `.env` nusqasın parol menejerinde saqlań (`verify_backup.sh` bunı eske salıp turadı). Server qayta qurılsa birinshi sol nusqa kerek.
+- Cron serverdiń waqıt zonasında isleydi: `timedatectl` ti tekserip, bir zonanı (mısalı UTC) qoyıń, bolmasa 03:30 jaz/qıs waqıtı menen jılısıp ketedi.
 - Nusqa sátsiz bolsa Telegram'ǵa xabar baradı (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`); local nusqa saqlanıp qaladı.
 - **Aydıń bir ret tekseriń** nusqa haqıyqattan tiklenetuǵının: `sh deploy/verify_backup.sh` (repository tekseriledi, eń jańa nusqa waqtınsha papkaǵa tiklenedi, súwret arxivi hám database dump oqıladı).
 - Jaqın keleshekte: kúndelik toliq nusqadan tısqarı úzliksiz arxivlew (PostgreSQL WAL) qosıladı, `PLAN_INFRA_SCALE.md` A2 bólegi.
@@ -201,6 +204,11 @@ Tiklew usı sazlamanıń test nusqasında sınalǵan (óshirilgen paydalanıwsh�
 `.env` ishinde `DOMAIN=localhost`, `ALLOWED_HOSTS=localhost`, úsh https:// mánzilin `https://localhost:8443`, `HTTP_PORT=8080`, `HTTPS_PORT=8443` qoyıń, keyin `docker compose up -d --build` hám `https://localhost:8443` ashıń (brauzer local sertifikat haqqında eskertedi: bul jerde tek sol kútiledi).
 
 ## Belgili sheklewler (Known limits)
+
+- Log fayllar (`security.log`, `error.log`, ...) `applogs` volume inde (`/app/logs`): konteyner qayta jaratılsa joǵalmaydı. Olar `docker compose cp` yamasa `docker compose exec web tail /app/logs/security.log` arqalı oqıladı. Volume backup qa kirmeydi; kerek bolsa qosıń.
+- Caddy aldındaǵı sheklew: `NUM_PROXIES=1` (Caddy ǵana). Eger Caddy aldına CDN (Cloudflare t.b.) qoyılsa, Caddy tek CDN mánzilin kóredi, barlıq kelwshiler bir rate-limit "shelegine" túsedi. Aldın `NUM_PROXIES=2` hám Caddy da CDN dıń IP diapazonına isenim (`trusted_proxies`) sazlań, sonnan keyin ǵana CDN qosıń.
+- `dump.rdb` (Redis, kishi mazmun: keshlengen betler, throttle sanawıshları) erte git tariyxında bar edi, endi `.gitignore` da. Tariyxtı qayta jazıw (qáwipli, hámme klon buzıladı) **islenbedi**: ienesi sheshedi. Ishinde parol yamasa token joq dep esaplanadı; gúmán bolsa sol waqıttaǵı `SECRET_KEY` hám Redis parolin almastırıń.
+- Celery worker procesleri sanı `CELERY_CONCURRENCY` (ádetde 2); migratsiya kestede 10 s dan artıq kútse qátelik penen toqtaydı (`lock_timeout`), gunicorn access log da haqıyqıy kelwshi IP si (`X-Forwarded-For`) jazıladı.
 
 - Haqıyqıy domenli haqıyqıy server'de házirge shekem isletilmegen: joqarıdaǵı hámmesi test ortalıǵında isletilgen (hámme container'ler, API, ólshem limitleri, header'ler, backup hám tiklew), biraq haqıyqıy sertifikat hám haqıyqıy mail emes.
 - Sun'iy joldas súwretleri haqıyqıy trafikten aldın kilt'li provayderdi talap etedi (`.ai/RELEASE_CHECKLIST.md`).

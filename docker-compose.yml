@@ -49,6 +49,9 @@ services:
     image: tickbron-backend
     env_file: .env
     command: ["python", "manage.py", "migrate", "--noinput"]
+    environment:
+      # A migration that waits more than 10 s for a table lock stops with an error instead of freezing every request behind it
+      PGOPTIONS: "-c lock_timeout=10s"
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +63,8 @@ services:
     env_file: .env
     volumes:
       - media:/app/media
+      # security.log and the other Django log files: kept when the container is recreated (the audit trail)
+      - applogs:/app/logs
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -79,9 +84,10 @@ services:
     image: tickbron-backend
     restart: unless-stopped
     env_file: .env
-    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=${CELERY_CONCURRENCY:-2}"]
     volumes:
       - media:/app/media
+      - applogs:/app/logs
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -131,5 +137,6 @@ volumes:
   pgdata:
   redisdata:
   media:
+  applogs:
   caddy_data:
   caddy_config:
