@@ -1,4 +1,4 @@
-"""Tek super admin yamasa staff admin adamnıń telefon nomerin yamasa e-mail ın ózgertedi (joǵalǵan SIM, jabılǵan poshta
+"""Super admin adamnıń telefon nomerin hám e-mail ın, staff admin tek telefon nomerin ózgertedi (joǵalǵan SIM, jabılǵan poshta
 qutısı)."""
 import pytest
 from django.contrib.sessions.backends.db import SessionStore
@@ -44,13 +44,24 @@ def guest():
 
 
 class TestWhoMayChange:
-    @pytest.mark.parametrize('actor', ['boss', 'staff'])
-    def test_super_admin_and_staff_change_a_guests_phone_and_email(self, request, actor, guest):
-        api = acting(request.getfixturevalue(actor))
-        response = api.patch(url(guest), {'phone_number': '+998909998877', 'email': 'New.Guest@Example.com'}, format='json')
+    def test_super_admin_changes_a_guests_phone_and_email(self, boss, guest):
+        response = acting(boss).patch(url(guest), {'phone_number': '+998909998877', 'email': 'New.Guest@Example.com'}, format='json')
         assert response.status_code == 200, response.data
         guest.refresh_from_db()
         assert (guest.phone_number, guest.email) == ('+998909998877', 'new.guest@example.com')
+
+    def test_staff_changes_a_guests_phone(self, staff, guest):
+        response = acting(staff).patch(url(guest), {'phone_number': '+998909998877'}, format='json')
+        assert response.status_code == 200, response.data
+        guest.refresh_from_db()
+        assert guest.phone_number == '+998909998877'
+
+    def test_staff_cannot_change_an_email_so_no_password_reset_takeover(self, staff, guest):
+        response = acting(staff).patch(url(guest), {'phone_number': '+998909998877', 'email': 'attacker@example.com'}, format='json')
+        assert response.status_code == 403
+        guest.refresh_from_db()
+        assert (guest.email, guest.phone_number) == ('guest@example.com', '+998901112233')
+        assert not AdminAccessLog.objects.filter(action='user_contact_update').exists()
 
     def test_staff_changes_a_hotel_owners_contact(self, staff):
         role, _ = Role.objects.get_or_create(name='hotel-owner', defaults={'is_system_role': True})
@@ -119,7 +130,7 @@ class TestWhatFollows:
         acting(boss).patch(url(guest), {'phone_number': '+998909998877', 'email': 'new.guest@example.com'}, format='json')
         row = AdminAccessLog.objects.get(action='user_contact_update')
         assert (row.actor_id, row.target_user_id) == (boss.id, guest.id)
-        assert row.details == {'fields': 'email,phone_number'}
+        assert set(row.details) == {'fields', 'old_email', 'new_email'} and row.details['fields'] == 'email,phone_number'
         assert '998909998877' not in str(row.details) and 'new.guest' not in str(row.details)
 
     def test_a_change_of_email_signs_the_person_out_everywhere(self, boss, guest):
@@ -128,6 +139,29 @@ class TestWhatFollows:
         session.create()
         acting(boss).patch(url(guest), {'email': 'new.guest@example.com'}, format='json')
         assert not SessionStore(session_key=session.session_key).exists(session.session_key)
+
+    def test_the_audit_row_holds_masked_and_hashed_old_and_new_email(self, boss, guest):
+        acting(boss).patch(url(guest), {'email': 'new.guest@example.com'}, format='json')
+        details = AdminAccessLog.objects.get(action='user_contact_update').details
+        assert details['old_email'].startswith('g***@example.com#') and details['new_email'].startswith('n***@example.com#')
+        assert 'guest@example.com' not in str(details) and 'new.guest' not in str(details)
+
+    def test_the_old_address_gets_a_notice_with_only_a_hint_of_the_new_one(self, boss, guest, mailoutbox):
+        acting(boss).patch(url(guest), {'email': 'new.guest@example.com'}, format='json')
+        assert len(mailoutbox) == 1
+        assert mailoutbox[0].to == ['guest@example.com']
+        assert 'n***@example.com' in mailoutbox[0].body and 'new.guest' not in mailoutbox[0].body
+
+    def test_a_failing_mail_server_does_not_undo_the_change(self, boss, guest, settings):
+        settings.EMAIL_BACKEND = 'django.core.mail.backends.dummy.Nope'
+        response = acting(boss).patch(url(guest), {'email': 'new.guest@example.com'}, format='json')
+        assert response.status_code == 200
+        guest.refresh_from_db()
+        assert guest.email == 'new.guest@example.com'
+
+    def test_a_change_of_phone_only_sends_no_mail(self, boss, guest, mailoutbox):
+        acting(boss).patch(url(guest), {'phone_number': '+998909998877'}, format='json')
+        assert mailoutbox == []
 
     def test_a_change_of_phone_only_keeps_the_sessions(self, boss, guest):
         session = SessionStore()

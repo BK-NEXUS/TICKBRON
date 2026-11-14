@@ -3545,3 +3545,9 @@ master
 - Tests: `common/tests/test_backup_offsite.py`, `common/tests/test_backup_verify.py` (fake docker, restic and curl). `test_backup_script.py` is unchanged.
 - Not done yet (on purpose): A2, continuous archiving of the database (WAL, `pgBackRest` or `WAL-G`) because it needs a real server to test; phases C to F wait for the owner.
 - Needs the owner: the AWS account and buckets, the write-only AWS user, `RESTIC_PASSWORD` kept in two places, a lawyer's answer on where personal data may be stored.
+
+## Security F4: staff e-mail change takeover (2026-11-14, branch security-f4-1)
+- `PATCH /admin-panel/users/<id>/contact/`: only a super admin may change an e-mail now (staff sending `email` get 403, phone-only still works). The audit row also holds `old_email`/`new_email` masked + sha256 prefix; the OLD address gets a notice mail (`users/email_change.py`, `users/templates/users/email_changed_email.txt`). Tests: `admin_panel/tests/test_contact_change.py` (the old test that let staff change e-mail encoded the hole and was replaced; the access-log test now also checks the two new keys).
+- Not done on purpose: password reset still works for an address with `email_verified=false`. Refusing it would lock out every normal user who never verified (verification is off unless `EMAIL_VERIFICATION_REQUIRED`), so it needs an owner decision; with staff unable to change e-mails the takeover path is closed.
+- INFO, documented only (owner decides): staff pass `IsHotelOwner`; staff can approve/suspend properties and mark commission paid.
+- Found, not fixed (F4, other items): staff read super-admin contact data and add notes; session of a soft-deleted account keeps working; `TwoFactorSetupMiddleware` allows the whole `/auth/me/` prefix.

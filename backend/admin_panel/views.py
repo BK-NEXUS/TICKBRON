@@ -24,6 +24,7 @@ from properties.listing import missing_for_listing
 from properties.models import Property, PropertyTranslation, Amenity, AmenityCategory
 from partner import commission
 from users import two_factor
+from users.email_change import audit_trace, send_change_notice
 from users.models import User
 from users.throttles import TwoFactorResetThrottle
 from bookings.models import Booking
@@ -350,13 +351,19 @@ def admin_create_admin(request):
 @permission_classes([IsSuperAdminOrStaff])
 def admin_change_contact(request, user_id):
     """
-    Change the phone number and/or e-mail of an account (super admin or staff). Body: phone_number, email.
-    A staff admin may change guests and hotel owners; a super admin may also change staff admins. A super
-    admin's contact data cannot be changed here. A new e-mail marks the account unverified and signs it out
-    everywhere. Written to the admin access log (which fields, never the values).
+    Change the phone number and/or e-mail of an account. Body: phone_number, email. A staff admin may change
+    the phone number of guests and hotel owners only; the e-mail (the key to password reset) is for a super
+    admin, who may also change staff admins. A super admin's contact data cannot be changed here. A new
+    e-mail marks the account unverified, signs it out everywhere and is announced to the old address.
+    Written to the admin access log (which fields, plus the e-mails masked and hashed).
     """
     target = get_object_or_404(User.objects.filter(is_deleted=False), pk=user_id)
     allowed_over_staff = request.user.is_superuser
+    # Staff must not move an e-mail: with "forgot password" that would be an account takeover
+    # Staff e-mail ózgertiwi múmkin emes: "parol tiklaw" menen birge bul akkauntti tartıp alıw boladı
+    if 'email' in object_body(request) and not allowed_over_staff:
+        return Response({'detail': _('Only a super admin can change an e-mail address.')},
+                        status=status.HTTP_403_FORBIDDEN)
     if target.is_superuser or (target.is_staff and not allowed_over_staff):
         return Response({'detail': _('You cannot change the contact details of this account.')},
                         status=status.HTTP_403_FORBIDDEN)
@@ -364,6 +371,7 @@ def admin_change_contact(request, user_id):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     changed = serializer.validated_data
+    old_email = target.email
     for field, value in changed.items():
         setattr(target, field, value)
     if 'email' in changed:
@@ -371,8 +379,12 @@ def admin_change_contact(request, user_id):
     target.save(update_fields=list(changed) + (['email_verified'] if 'email' in changed else []))
     if 'email' in changed:
         two_factor.end_sessions(target)
-    AdminAccessLog.record(request.user, 'user_contact_update', target_user_id=target.id,
-                          details={'fields': ','.join(sorted(changed))})
+    details = {'fields': ','.join(sorted(changed))}
+    if 'email' in changed:
+        details.update(old_email=audit_trace(old_email), new_email=audit_trace(target.email))
+    AdminAccessLog.record(request.user, 'user_contact_update', target_user_id=target.id, details=details)
+    if 'email' in changed:
+        send_change_notice(old_email, target.email)
     return Response(AdminUserSerializer(target).data)
 
 

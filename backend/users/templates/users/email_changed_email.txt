@@ -1,0 +1,8 @@
+{% autoescape off %}E-mail o'zgartirildi / E-mail изменён / E-mail changed
+
+Uz: TICKBRON hisobingizning e-pochtasi administrator tomonidan {{ new_hint }} ga o'zgartirildi. Agar bu siz so'ramagan bo'lsa, darhol qo'llab-quvvatlash xizmatiga yozing.
+Ru: Администратор изменил e-mail вашего аккаунта TICKBRON на {{ new_hint }}. Если вы этого не просили, сразу напишите в поддержку.
+En: An administrator changed the e-mail of your TICKBRON account to {{ new_hint }}. If you did not ask for this, contact support at once.
+
+TICKBRON
+{% endautoescape %}
