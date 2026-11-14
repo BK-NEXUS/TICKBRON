@@ -3545,3 +3545,12 @@ master
 - Tests: `common/tests/test_backup_offsite.py`, `common/tests/test_backup_verify.py` (fake docker, restic and curl). `test_backup_script.py` is unchanged.
 - Not done yet (on purpose): A2, continuous archiving of the database (WAL, `pgBackRest` or `WAL-G`) because it needs a real server to test; phases C to F wait for the owner.
 - Needs the owner: the AWS account and buckets, the write-only AWS user, `RESTIC_PASSWORD` kept in two places, a lawyer's answer on where personal data may be stored.
+
+## Security F10, frontend (2026-11-14)
+- `index.html` meta CSP now matches the Caddy policy (no inline/eval script, no http:, map hosts only, `object-src 'none'`); `vite.config.ts` drops the meta tag on the dev server only (React refresh and the websocket need it). Test: `src/indexHtmlCsp.test.ts`; `deployCsp.test.ts` unchanged.
+- `BookingPage`: `useRef` in-flight guard against a double submit (no backend change).
+- `redirectPathFrom` accepts only `^/(?![/\])` paths without control characters.
+- `apiFetch` fires `SESSION_EXPIRED_EVENT` on a 401 outside `/api/v1/auth/`; `AuthContext` signs the user out of the UI.
+- Reset password page keeps uid/token in state and replaces the URL with `/reset-password`.
+- `console.error` replaced by `logDevError` (`utils/devLog.ts`, silent in production).
+- Found, not fixed: the 401 handler only clears the user; protected routes redirect on their own.

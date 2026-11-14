@@ -108,6 +108,7 @@ export function BookingPage() {
   const [quote, setQuote] = useState<StayQuote | null>(null)
   const [quoteError, setQuoteError] = useState<Message | null>(null)
   const quoteRequestId = useRef(0)
+  const submitInFlight = useRef(false)
   const roomsForQuote = Math.max(1, guestDetails.number_of_rooms || 1)
 
   useEffect(() => {
@@ -344,7 +345,10 @@ export function BookingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    // A second submit can arrive before React re-renders the disabled button
+    // Ekinshi submit disabled button render bolmay turıp keliwi múmkin
+    if (submitInFlight.current) return
+
     if (!validateGuestDetails()) {
       return
     }
@@ -354,6 +358,7 @@ export function BookingPage() {
       return
     }
 
+    submitInFlight.current = true
     setSubmitting(true)
     setError(null)
 
@@ -379,16 +384,16 @@ export function BookingPage() {
       if (response.error || !response.data) {
         const refusal = response.code ? REFUSAL_KEYS[response.code] : undefined
         setError(refusal ? { key: refusal } : refusalMessage(response.reason) ?? failure(response.error, 'booking.errorCreate'))
-        setSubmitting(false)
         return
       }
 
       // Cash at the hotel: the booking is confirmed at once, there is no payment step
       setBooking(response.data)
       setStep('success')
-      setSubmitting(false)
     } catch {
       setError({ key: 'booking.errorCreateRetry' })
+    } finally {
+      submitInFlight.current = false
       setSubmitting(false)
     }
   }

@@ -1,3 +1,4 @@
+import { logDevError } from '../utils/devLog'
 import { ErrorFallback } from './ErrorFallback'
 import { Component, ErrorInfo, ReactNode } from 'react'
 
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console in development
     if (import.meta.env.DEV) {
-      console.error('ErrorBoundary caught an error:', error, errorInfo)
+      logDevError('ErrorBoundary caught an error:', error, errorInfo)
     }
     // In production, you could send this to an error tracking service
   }

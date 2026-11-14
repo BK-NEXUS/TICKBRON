@@ -91,6 +91,10 @@ async function isCsrfFailure(response: Response): Promise<boolean> {
  * Django rejects those before the view runs, so the retry cannot duplicate a write.
  */
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  return announceExpiredSession(url, await sendWithCsrf(url, init))
+}
+
+async function sendWithCsrf(url: string, init: RequestInit): Promise<Response> {
   const options: RequestInit = withLanguageHeader({ credentials: 'include', ...init })
   const method = (options.method || 'GET').toUpperCase()
   if (!UNSAFE_METHODS.has(method)) {
@@ -104,6 +108,17 @@ export async function apiFetch(url: string, init: RequestInit = {}): Promise<Res
 
   clearCsrfToken()
   return fetch(url, withCsrfHeader(options, await getCsrfToken()))
+}
+
+/** Fired when a request is refused with 401: the session ended (timeout, logout in another tab) */
+export const SESSION_EXPIRED_EVENT = 'tickbron:session-expired'
+
+// /auth/ answers 401 for a wrong password or code, which is not an ended session
+function announceExpiredSession(url: string, response: Response): Response {
+  if (response.status === 401 && !url.includes('/api/v1/auth/')) {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+  }
+  return response
 }
 
 /** DRF PageNumberPagination envelope (PAGE_SIZE 20 on the backend). */

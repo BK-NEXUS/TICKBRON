@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { apiFetch, clearCsrfToken, getCsrfToken, setCsrfToken, fetchAllPages } from './api'
+import { SESSION_EXPIRED_EVENT, apiFetch, clearCsrfToken, getCsrfToken, setCsrfToken, fetchAllPages } from './api'
 import { AuthAdapter } from '../adapters/authAdapter'
 import { setActiveLanguage } from '../i18n/languageChoice'
 
@@ -218,6 +218,30 @@ describe('CSRF token and session changes', () => {
 
     mockFetch.mockResolvedValueOnce(jsonResponse({ csrf_token: 'new' }))
     expect(await getCsrfToken()).toBe('new')
+  })
+})
+
+describe('apiFetch session expiry', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('announces a 401 of an ordinary request so the app can sign the user out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'x' }, 401)))
+    const heard = vi.fn()
+    window.addEventListener(SESSION_EXPIRED_EVENT, heard)
+    await apiFetch('http://localhost:8000/api/v1/bookings/')
+    window.removeEventListener(SESSION_EXPIRED_EVENT, heard)
+    expect(heard).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not announce a 401 of the sign-in itself (a wrong password is not an expired session)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'x' }, 401)))
+    const heard = vi.fn()
+    window.addEventListener(SESSION_EXPIRED_EVENT, heard)
+    await apiFetch('http://localhost:8000/api/v1/auth/login/')
+    window.removeEventListener(SESSION_EXPIRED_EVENT, heard)
+    expect(heard).not.toHaveBeenCalled()
   })
 })
 

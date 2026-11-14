@@ -1,3 +1,5 @@
+import { logDevError } from '../utils/devLog'
+import { SESSION_EXPIRED_EVENT } from '../utils/api'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { authAdapter, User, type AuthResponse, type TwoFactorCredential } from '../adapters/authAdapter'
 
@@ -53,13 +55,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.user)
         }
       } catch (error) {
-        console.error('Failed to check auth status:', error)
+        logDevError('Failed to check auth status:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
+  }, [])
+
+  // One place for an ended session: any request answered with 401 signs the user out of the UI
+  // Sessiya tamamlanǵanda: qálegen 401 juwap paydalanıwshını UI-dan shıǵaradı
+  useEffect(() => {
+    const signOut = () => setUser(null)
+    window.addEventListener(SESSION_EXPIRED_EVENT, signOut)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, signOut)
   }, [])
 
   const login = async (email: string, password: string) => {

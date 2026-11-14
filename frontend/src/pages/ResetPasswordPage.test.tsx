@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { ResetPasswordPage } from './ResetPasswordPage'
 import { authAdapter } from '../adapters/authAdapter'
 
@@ -11,10 +11,15 @@ vi.mock('../adapters/authAdapter', () => ({
 const confirmPasswordReset = vi.mocked(authAdapter.confirmPasswordReset)
 const PASSWORD = 'Fresh9Grape#Tower42'
 
+function Where() {
+  return <p data-testid="where">{useLocation().search}</p>
+}
+
 const renderPage = (query = '?uid=MQ&token=abc-123') =>
   render(
     <MemoryRouter initialEntries={[`/reset-password${query}`]}>
       <ResetPasswordPage />
+      <Where />
     </MemoryRouter>
   )
 
@@ -27,6 +32,17 @@ const fill = (password: string, confirmation: string) => {
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('removes uid and token from the address bar but still sends them', async () => {
+    confirmPasswordReset.mockResolvedValue({ success: true })
+    renderPage()
+
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent(/^$/))
+    fill(PASSWORD, PASSWORD)
+
+    await waitFor(() => expect(confirmPasswordReset).toHaveBeenCalledWith(
+      expect.objectContaining({ uid: 'MQ', token: 'abc-123' })))
   })
 
   it('shows the new password form for a link with uid and token', () => {

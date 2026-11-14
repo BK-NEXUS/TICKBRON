@@ -1,3 +1,4 @@
+import { logDevError } from '../utils/devLog'
 import { ChargeMain, ChargeNotes } from '../components/ChargeAmount'
 import { useI18n } from '../i18n/I18nContext'
 import { statusText } from '../utils/statusText'
@@ -35,7 +36,7 @@ function BookingCard({ booking, onCancelled }: BookingCardProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Failed to copy code:', error)
+      logDevError('Failed to copy code:', error)
     }
   }
 

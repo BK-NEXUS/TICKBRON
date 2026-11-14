@@ -14,4 +14,11 @@ describe('redirectPathFrom', () => {
     expect(redirectPathFrom({ from: { pathname: '' } })).toBe('/')
     expect(redirectPathFrom('/x')).toBe('/')
   })
+
+  it('accepts only a path on this site (a leading // or a backslash would leave it)', () => {
+    for (const pathname of ['//evil.example', '///evil.example', 'https://evil.example', '/\\evil.example', 'bookings', '/a\nb']) {
+      expect(redirectPathFrom({ from: { pathname } })).toBe('/')
+    }
+    expect(redirectPathFrom({ from: { pathname: '/search/x' } })).toBe('/search/x')
+  })
 })

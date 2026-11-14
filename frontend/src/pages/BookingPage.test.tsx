@@ -816,6 +816,16 @@ describe('BookingPage', () => {
       expect(screen.queryByText('Payment Method')).not.toBeInTheDocument()
     })
 
+    it('sends one booking when the form is submitted twice before the answer comes', async () => {
+      await ready()
+      mockBookingAdapter.createBooking.mockReturnValue(new Promise(() => {}))
+      const form = screen.getByLabelText(/Arrival time/).closest('form') as HTMLFormElement
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+      await waitFor(() => expect(mockBookingAdapter.createBooking).toHaveBeenCalled())
+      expect(mockBookingAdapter.createBooking).toHaveBeenCalledTimes(1)
+    })
+
     it('refuses to book without an arrival time and does not call the server', async () => {
       await ready()
       const box = screen.getByLabelText(/Arrival time/)

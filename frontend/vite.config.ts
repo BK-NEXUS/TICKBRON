@@ -4,8 +4,17 @@ import react from '@vitejs/plugin-react'
 // Tunnels (ngrok) that may open the dev and preview servers; Vite refuses other host names
 const TUNNEL_HOSTS = ['.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.ngrok.dev', '.ngrok.io']
 
+// The strict policy in index.html is for the built site; the dev server needs an inline script
+// (React refresh) and a websocket, which that policy would block
+// Qatań policy build ushın; dev server inline script hám websocket talap etedi
+const devWithoutCsp = {
+  name: 'dev-without-csp',
+  apply: 'serve' as const,
+  transformIndexHtml: (html: string) => html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, ''),
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), devWithoutCsp],
   server: {
     port: 3000,
     allowedHosts: TUNNEL_HOSTS,

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { authAdapter } from '../adapters/authAdapter'
 import { BrandLogo } from '../components/BrandLogo'
 import { Breadcrumbs } from '../components/Breadcrumbs'
@@ -15,8 +15,17 @@ const INVALID_LINK_CODE = 'invalid_reset_link'
 export function ResetPasswordPage() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
-  const uid = searchParams.get('uid') ?? ''
-  const token = searchParams.get('token') ?? ''
+  const navigate = useNavigate()
+  // Kept in state: the address bar is cleaned below, so the URL can no longer be the source
+  // State-te saqlanadı: address bar tazalanadı, sol sebepli URL derek bola almaydı
+  const [uid] = useState(() => searchParams.get('uid') ?? '')
+  const [token] = useState(() => searchParams.get('token') ?? '')
+
+  // The token must not stay in the address bar, browser history or a copied link
+  // Token address bar-da, history-de yamasa kóshirilgen siltemede qalmawı kerek
+  useEffect(() => {
+    if (uid || token) navigate('/reset-password', { replace: true })
+  }, [uid, token, navigate])
 
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { AuthProvider, useAuth } from './AuthContext'
 import { authAdapter } from '../adapters/authAdapter'
+import { SESSION_EXPIRED_EVENT } from '../utils/api'
 
 // Mock the auth adapter
 vi.mock('../adapters/authAdapter', () => ({
@@ -210,6 +211,24 @@ describe('AuthContext', () => {
   })
 
   describe('logout', () => {
+    it('signs the user out when any request reports an expired session', async () => {
+      vi.mocked(authAdapter.getCurrentUser).mockResolvedValueOnce({
+        success: true,
+        user: {
+          id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe', full_name: 'John Doe',
+          is_active: true, date_joined: '2024-01-01T00:00:00Z', email_verified: true, two_factor_enabled: false,
+        },
+      })
+      const { result } = renderHook(() => useAuth(), { wrapper })
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(true))
+
+      act(() => {
+        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+      })
+
+      expect(result.current.isAuthenticated).toBe(false)
+    })
+
     it('logs out user successfully', async () => {
       const mockUser = {
         id: 1,

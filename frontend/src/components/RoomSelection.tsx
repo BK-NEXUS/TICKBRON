@@ -1,3 +1,4 @@
+import { logDevError } from '../utils/devLog'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -96,7 +97,7 @@ export function RoomSelection({ roomTypes, propertyId }: RoomSelectionProps) {
         setRatePlans(room.rate_plans || [])
       }
     } catch (error) {
-      console.error('Failed to load rate plans:', error)
+      logDevError('Failed to load rate plans:', error)
     } finally {
       setLoading(false)
     }

@@ -1,3 +1,4 @@
+import { logDevError } from '../utils/devLog'
 import { useState, useEffect, useMemo } from 'react'
 import { SearchX, SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router'
@@ -58,7 +59,7 @@ export function SearchResultsPage() {
     let cancelled = false
     propertyAdapter.getFilterOptions().then(response => {
       if (!cancelled && response.data) setFilterOptions(response.data)
-    }).catch(err => console.error('Failed to load filter options:', err))
+    }).catch(err => logDevError('Failed to load filter options:', err))
     return () => { cancelled = true }
   }, [])
 
@@ -102,7 +103,7 @@ export function SearchResultsPage() {
         }
       } catch (err) {
         if (cancelled) return
-        console.error('Failed to load search results:', err)
+        logDevError('Failed to load search results:', err)
         setError(null)
         setPromoted([])
         setLoadingState('error')
