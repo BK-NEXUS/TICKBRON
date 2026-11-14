@@ -5,7 +5,7 @@ This module contains views for favorites, reviews, notifications, and account hi
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
@@ -120,20 +120,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return reviews based on user role."""
+        """Return the caller's own reviews, staff included.
+
+        Staff moderate through /admin-panel/ where every decision is audited; letting them
+        PATCH or DELETE here would change a guest's review with no trace.
+        Staff ushın da tek óz sharhları: moderation /admin-panel/ arqalı, audit penen.
+        """
         if getattr(self, 'swagger_fake_view', False):  # OpenAPI schema generation: no user
             return self.get_serializer_class().Meta.model.objects.none()
-        user = self.request.user
-
-        # Regular users can only see their own reviews
-        if not user.is_staff:
-            return Review.objects.filter(
-                user=user,
-                is_deleted=False
-            ).select_related('user', 'property', 'booking')
-
-        # Staff can see all reviews
         return Review.objects.filter(
+            user=self.request.user,
             is_deleted=False
         ).select_related('user', 'property', 'booking')
 
@@ -168,7 +164,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         """Send an edited review back to moderation so unchecked text is not shown as approved."""
+        if serializer.instance.status == 'rejected':
+            # A staff rejection is final; editing must not push the text back into the queue
+            # Biykarlanǵan sharh qayta moderation ǵa túspeydi
+            raise PermissionDenied(_("A rejected review cannot be edited."))
         serializer.save(status='pending', reviewed_at=None)
+
+    def perform_destroy(self, instance):
+        """Soft delete: the row keeps holding the booking, so it cannot be reviewed a second time."""
+        instance.soft_delete()
 
     @action(detail=False, methods=['get'])
     def eligible_properties(self, request):

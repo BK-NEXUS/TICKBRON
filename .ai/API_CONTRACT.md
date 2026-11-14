@@ -686,6 +686,7 @@ Status: READY
   - Request: { property, notes (optional) } (`property` is the property id)
   - Response: 201 `{ property, notes }` (no `id`; list the favorites again to get it)
   - Validates property is active and not deleted
+  - 400 if the reviewer is the property's owner; `title` and `comment` are plain text (no `<` `>`, no control characters)
 - DELETE `/api/v1/me/favorites/{id}/` - Remove property from favorites
   - Auth: Session-based (required)
   - Response: 204 No Content
@@ -698,7 +699,7 @@ Status: READY
 - GET `/api/v1/me/reviews/` - List user's reviews
   - Auth: Session-based (required)
   - Response: Array of review objects
-  - Regular users see only their own reviews, staff see all
+  - Everyone, staff included, sees only their own reviews (staff moderate through `/admin-panel/`)
 - POST `/api/v1/me/reviews/` - Create a review
   - Auth: Session-based (required)
   - Request: { property, booking (required), overall_rating (1-5), category_ratings (optional), title, comment }
@@ -708,6 +709,8 @@ Status: READY
 - PATCH/PUT `/api/v1/me/reviews/{id}/` - Edit a review
   - `booking` and `property` are read-only (ignored if sent)
   - Any edit sets `status` back to 'pending' and clears `reviewed_at`, so an approved review leaves `property_scores` until re-approved
+  - A `rejected` review cannot be edited (403)
+- DELETE `/api/v1/me/reviews/{id}/` - Soft delete (204); the booking stays reviewed and cannot get a new review
 - GET `/api/v1/me/reviews/eligible_properties/` - Get bookings eligible for review
   - Auth: Session-based (required)
   - Response: { eligible_properties: [...] }, one entry per completed booking without a review (two stays at the same property are two entries), newest check_out first

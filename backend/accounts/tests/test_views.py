@@ -215,7 +215,7 @@ class ReviewViewSetTest(TestCase):
             slug='apartment'
         )
         self.property = Property.objects.create(
-            owner=self.user,
+            owner=User.objects.create_user(email='hotelowner@example.com', password='testpass123'),
             property_type=self.property_type,
             status='active',
             max_guests=4,

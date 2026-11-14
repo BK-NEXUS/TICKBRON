@@ -7,6 +7,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from bookings.fields import OwnBookingField
+from common.validators import validate_free_text
 from bookings.pricing import property_price_list, rate_lookup
 from properties.serializers import PropertyTranslationSerializer
 from .models import Favorite, Review, Notification, AccountHistory
@@ -104,7 +105,19 @@ class PublicReviewSerializer(serializers.ModelSerializer):
         return stay_month(review)
 
 
-class ReviewSerializer(serializers.ModelSerializer):
+class ReviewTextMixin:
+    """Guests' title and comment are shown to other guests: plain text only."""
+
+    def validate_title(self, value):
+        validate_free_text(value)
+        return value
+
+    def validate_comment(self, value):
+        validate_free_text(value)
+        return value
+
+
+class ReviewSerializer(ReviewTextMixin, serializers.ModelSerializer):
     """
     Serializer for Review model.
     """
@@ -150,7 +163,7 @@ class ReviewUpdateSerializer(ReviewSerializer):
         read_only_fields = ReviewSerializer.Meta.read_only_fields + ['property', 'booking']
 
 
-class ReviewCreateSerializer(serializers.ModelSerializer):
+class ReviewCreateSerializer(ReviewTextMixin, serializers.ModelSerializer):
     """
     Serializer for creating a review.
     """
@@ -182,7 +195,11 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        """Validate that the review is for the booked property."""
+        """Validate that the review is for the booked property and not the reviewer's own."""
+        if attrs['property'].owner_id == self.context['request'].user.id:
+            # An owner rating their own hotel would inflate its score
+            # Iye óz mehmanxanasına sharh jaza almaydı
+            raise serializers.ValidationError(_("You cannot review your own property."))
         if attrs['property'].id != attrs['booking'].property_id:
             raise serializers.ValidationError(
                 {'property': _("The review must be for the property of the booking.")}
